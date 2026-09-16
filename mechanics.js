@@ -79,15 +79,16 @@ function executeMove(org,t){
  const defender=organismAt(t.r,t.c);const from=coord(org.r,org.c),to=coord(t.r,t.c);
  if(defender){
   const defenderSpines=hasTrait(defender.owner,defender.lineage,'Espinhos')&&Math.max(Math.abs(org.r-defender.r),Math.abs(org.c-defender.c))===1;
-  removeOrganism(defender.id,`${owners[defender.owner].name} ${defender.lineage} foi capturado em ${to}.`);
+  removeOrganism(defender.id,`${owners[defender.owner].name} ${defender.lineage} foi capturado em ${to}.`,true);
   if(hasTrait(org.owner,org.lineage,'Predação')){org.biomass++;log(`${owners[org.owner].name} ${org.lineage} obteve 1 Biomassa por predação.`)}
   org.r=t.r;org.c=t.c;markHabitat(org);
   log(`${owners[org.owner].name} ${org.lineage} capturou em ${to} a partir de ${from}.`);
-  if(defenderSpines){removeOrganism(org.id,`Espinhos eliminaram também o atacante em ${to}.`)}
+  if(defenderSpines){removeOrganism(org.id,`Espinhos eliminaram também o atacante em ${to}.`,true)}
+  checkExtinction();if(state.gameOver){render();return}
  }else{org.r=t.r;org.c=t.c;markHabitat(org);log(`${owners[org.owner].name} ${org.lineage} migrou de ${from} para ${to}.`)}
  finishTurn();
 }
-function removeOrganism(id,msg){const i=state.organisms.findIndex(o=>o.id===id);if(i>=0)state.organisms.splice(i,1);if(msg)log(msg);checkExtinction()}
+function removeOrganism(id,msg,deferCheck=false){const i=state.organisms.findIndex(o=>o.id===id);if(i>=0)state.organisms.splice(i,1);if(msg)log(msg);if(!deferCheck)checkExtinction()}
 function markHabitat(org){state.habitatsVisited[org.owner].add(cell(org.r,org.c).terrain)}
 
 function executeReproduction(parent,t){
@@ -184,7 +185,10 @@ function applyEpochHazards(){
  doomed.forEach(id=>removeOrganism(id,'Um organismo sucumbiu à pressão do habitat hostil.'));
 }
 function checkExtinction(){
- for(const owner of ['blue','amber'])if(playerOrganisms(owner).length===0&&!state.gameOver){endGame(opposing(owner),`${owners[owner].name} sofreu Extinção Total.`);return}
+ const blue=playerOrganisms('blue').length,amber=playerOrganisms('amber').length;if(state.gameOver)return;
+ if(blue===0&&amber===0){endGame(null,'As duas populações sofreram extinção simultânea.');return}
+ if(blue===0){endGame('amber','Azul sofreu Extinção Total.');return}
+ if(amber===0){endGame('blue','Âmbar sofreu Extinção Total.');return}
 }
 function checkCollapse(){
  for(const owner of ['blue','amber']){
