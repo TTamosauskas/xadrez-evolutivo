@@ -142,8 +142,12 @@
     }else{
       org.r=t.r;org.c=t.c;markHabitat(org);
     }
-    if(fertile){destination.resource=0;destination.terrain='neutral';reproduce(org,'casa fértil')}
-    if(defender&&has(org,'Predação'))reproduce(org,'predação');
+    const predation=!!defender&&has(org,'Predação');
+    if(fertile){destination.resource=0;destination.terrain='neutral'}
+    if(fertile||predation){
+      const reason=fertile&&predation?'casa fértil + predação':fertile?'casa fértil':'predação';
+      reproduce(org,reason);
+    }
     checkExtinction();if(state.gameOver){render();return}
     if(locomotion&&!second&&state.organisms.some(o=>o.id===org.id)){
       const next=movementTargets(org);
@@ -154,7 +158,7 @@
 
   function applyBirthRuleText(){
     const rules=document.querySelectorAll('#rulesModal p');
-    if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao entrar numa casa fértil, a peça gera descendentes semelhantes antes das mutações: Peão 4, Cavalo 3, Bispo 2, Torre 2, Rei 1 e Rainha 1. Fertilidade 🐇 dobra essa taxa. O número efetivo ainda depende de casas livres próximas e do limite populacional. Cada novo descendente recebe sua própria rolagem independente de mutação.';
+    if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao entrar numa casa fértil, a peça gera descendentes semelhantes antes das mutações: Peão 4, Cavalo 3, Bispo 2, Torre 2, Rei 1 e Rainha 1. Fertilidade 🐇 dobra essa taxa. Predação 🦁 também pode disparar reprodução após uma captura, mas cada movimento gera no máximo um lote, mesmo se a captura ocorrer sobre uma casa fértil. O número efetivo ainda depende de casas livres próximas e do limite populacional. Cada novo descendente recebe sua própria rolagem independente de mutação.';
     if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> Cada descendente começa herdando o perfil do progenitor e depois faz sua própria rolagem de mutação. Em condições normais, cada recém-nascido tem 1/3 de chance de mutar; durante Tempestade Solar, 100%. Entre as mutações, 1/3 são downgrades e 2/3 ganhos. Resistência 🧬 torna a peça imune a novas infecções pelo Patógeno Virulento.';
   }
 
