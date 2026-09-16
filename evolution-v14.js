@@ -19,30 +19,31 @@
     return priorChoice(a);
   };
 
-  function openingZoneCells(s,rows){
-    const occupied=new Set((s.organisms||[]).map(o=>`${o.r},${o.c}`));
-    const out=[];
-    for(const r of rows)for(let c=0;c<SIZE;c++)if(!occupied.has(`${r},${c}`))out.push(s.board[r][c]);
+  function pawnForwardCorridor(s,org){
+    const dir=org.owner==='blue'?-1:1,out=[];
+    for(let step=1;step<=2;step++){
+      const r=org.r+dir*step,c=org.c;
+      if(r>=0&&r<SIZE&&!s.organisms.some(o=>o.r===r&&o.c===c))out.push(s.board[r][c]);
+    }
     return out;
   }
 
-  function guaranteeZoneFertile(s,rows,count=2){
-    const cells=openingZoneCells(s,rows);
-    const already=cells.filter(ce=>ce.terrain==='fertile');
-    let needed=Math.max(0,count-already.length);
-    if(!needed)return;
-    const neutral=shuffle(cells.filter(ce=>ce.terrain==='neutral'));
-    const fallback=shuffle(cells.filter(ce=>ce.terrain!=='fertile'&&ce.terrain!=='neutral'));
-    for(const ce of [...neutral,...fallback]){
-      if(!needed)break;
-      ce.terrain='fertile';ce.resource=1;ce.warning=null;ce.age=0;needed--;
-    }
+  function guaranteePawnFertile(s,org){
+    const corridor=pawnForwardCorridor(s,org);
+    if(!corridor.length||corridor.some(ce=>ce.terrain==='fertile'))return;
+    const neutral=shuffle(corridor.filter(ce=>ce.terrain==='neutral'));
+    const fallback=shuffle(corridor.filter(ce=>ce.terrain!=='neutral'));
+    const ce=(neutral.length?neutral:fallback)[0];
+    if(!ce)return;
+    ce.terrain='fertile';ce.resource=1;ce.warning=null;ce.age=0;
   }
 
   function guaranteeOpeningFertile(s){
     if(!s?.board||!Array.isArray(s.organisms))return;
-    guaranteeZoneFertile(s,[5,6],2);
-    guaranteeZoneFertile(s,[1,2],2);
+    for(const owner of ['blue','amber']){
+      const founders=s.organisms.filter(o=>o.owner===owner);
+      for(const org of founders)guaranteePawnFertile(s,org);
+    }
   }
 
   const priorNewState=newState;
@@ -56,7 +57,7 @@
     const adjacent=[];
     for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
       if(!dr&&!dc)continue;
-      const r=org.r+dr,c=org.c+dc;
+      const r=org.r+dr,c=org.c;
       if(inBounds(r,c))adjacent.push(`${r},${c}`);
     }
     return [...shuffle(adjacent),`${org.r},${org.c}`];
@@ -121,7 +122,7 @@
   if(state&&state.turn===0){guaranteeOpeningFertile(state);render()}
 
   const rules=document.querySelectorAll('#rulesModal p');
-  if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. Na abertura, cada lado começa com pelo menos duas casas férteis distribuídas aleatoriamente nas duas fileiras à frente de seus peões. Casas férteis evoluem por Conway e, se desaparecerem totalmente, um núcleo mínimo de três casas é reintroduzido.';
+  if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. Na abertura, cada peão fundador tem garantida pelo menos uma casa fértil em sua própria coluna de avanço, sorteada entre a primeira e a segunda casa à sua frente. Casas férteis evoluem por Conway e, se desaparecerem totalmente, um núcleo mínimo de três casas é reintroduzido.';
   const ecoRule=document.querySelector('#rulesModal .eco-events-rule');
   if(ecoRule)ecoRule.innerHTML='<strong>Eventos ecológicos.</strong> A cada 10 rodadas completas um evento é sorteado, anunciado em uma janela e aplicado. O evento anterior termina quando o próximo começa. Áreas perigosas temporárias funcionam como casas mortais; Voo oferece imunidade. Terremoto desloca simultaneamente todas as peças para casas adjacentes aleatórias.';
 })();
