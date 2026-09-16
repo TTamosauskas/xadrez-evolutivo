@@ -20,7 +20,8 @@
     'Fertilidade':{icon:'🐇',desc:'Dobra a taxa de natalidade da peça.'},
     'Carapaça':{icon:'🐢',desc:'Só pode ser capturada por uma peça em casa adjacente.'},
     'Resistência':{icon:'🧬',desc:'Impede novas infecções pelo Patógeno Virulento.'},
-    'Reprodução Sexuada':{icon:'❤️',desc:'Em casa fértil, permite combinar características com uma peça aliada adjacente.'}
+    'Reprodução Sexuada':{icon:'❤️',desc:'Em casa fértil, permite combinar características com uma peça aliada adjacente.'},
+    'Esterilidade':{icon:'🚫',desc:'Impede esta peça de se reproduzir. Ao entrar numa casa fértil, a casa ainda é consumida.'}
   };
 
   const explanationQueue=[];
@@ -101,6 +102,11 @@
       const from=cleanMutationName(pieceDown[1]),to=cleanMutationName(pieceDown[2]),effect=PIECE_INFO[to]||`Agora usa o movimento de ${to}.`;
       return {title:`Downgrade de peça: ${to}`,body:`<p>A peça passou de <strong>${htmlEscape(from)}</strong> para <strong>${htmlEscape(to)}</strong>.</p><p>${htmlEscape(effect)}</p>`};
     }
+    const sterility=text.match(/Downgrade:\s*Esterilidade/i);
+    if(sterility){
+      const info=MUTATION_INFO.Esterilidade;
+      return {title:`Downgrade: Esterilidade ${info.icon}`,body:`<p>${info.desc}</p>`};
+    }
     const gain=text.match(/Nova especialidade:\s*([^\.]+)/i);
     if(gain){const name=cleanMutationName(gain[1]),info=MUTATION_INFO[name];return info?{title:`Mutação: ${name} ${info.icon}`,body:`<p>${info.desc}</p>`}:{title:`Mutação: ${name}`,body:`<p>A peça adquiriu a especialização ${htmlEscape(name)}.</p>`}}
     const loss=text.match(/Downgrade:\s*perdeu\s+([^\.]+)/i);
@@ -118,6 +124,7 @@
     if(entry.kind==='resistance-loss')return 'Downgrade: perdeu Resistência';
     if(entry.kind==='sexual')return 'Nova especialidade: Reprodução Sexuada';
     if(entry.kind==='sexual-loss')return 'Downgrade: perdeu Reprodução Sexuada';
+    if(entry.kind==='sterility')return 'Downgrade: Esterilidade';
     return null;
   }
   function reverseMutation(p,m){
@@ -129,6 +136,7 @@
     else if(m.kind==='resistance-loss')p.resistance=true;
     else if(m.kind==='sexual')p.sexual=false;
     else if(m.kind==='sexual-loss')p.sexual=true;
+    else if(m.kind==='sterility')p.sterile=false;
     if(Array.isArray(p.mutations)&&p.mutations.length)p.mutations.pop();
   }
   function mutationEntriesForChild(child){
@@ -144,7 +152,7 @@
       const p=state?.lineages?.[child.owner]?.[child.lineage];if(!p)continue;
       const stack=Array.isArray(p.mutationStack)?p.mutationStack:[];
       if(p.mate){
-        while(stack.length&& !stack[stack.length-1].inherited){const m=stack.pop();reverseMutation(p,m)}
+        while(stack.length&&!stack[stack.length-1].inherited){const m=stack.pop();reverseMutation(p,m)}
       }else{
         const parent=state?.lineages?.[child.owner]?.[p.parent];
         const inheritedLength=Array.isArray(parent?.mutationStack)?parent.mutationStack.length:0;
@@ -156,7 +164,7 @@
     if(!Array.isArray(state?.logs))return;const ownerName=owners?.[owner]?.name||'';
     state.logs=state.logs.filter(x=>{
       const msg=String(x?.msg||'');
-      return !(msg.startsWith(`${ownerName}:`)&&/Mutação de peça:|Downgrade de peça:|Downgrade:\s*perdeu |Nova especialidade:/i.test(msg));
+      return !(msg.startsWith(`${ownerName}:`)&&/Mutação de peça:|Downgrade de peça:|Downgrade:\s*perdeu |Downgrade:\s*Esterilidade|Nova especialidade:/i.test(msg));
     });
   }
 
@@ -249,7 +257,7 @@
   renderActions=function(){
     previousRenderActions();
     const rules=document.querySelectorAll('#rulesModal p');
-    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> A primeira reprodução de cada lado não sofre mutações: toda a prole apenas herda ou recombina o perfil dos progenitores. A partir da segunda reprodução daquele lado, cada recém-nascido faz sua própria rolagem de mutação. Em condições normais a chance é 1/3; durante Tempestade Solar, 100%. Na reprodução comum, 1/3 das mutações são downgrades e 2/3 ganhos. Descendentes de Reprodução Sexuada ❤️ nunca sofrem downgrade em sua mutação adicional.';
+    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> A primeira reprodução de cada lado não sofre mutações: toda a prole apenas herda ou recombina o perfil dos progenitores. A partir da segunda reprodução daquele lado, cada recém-nascido faz sua própria rolagem de mutação. Em condições normais a chance é 1/3; durante Tempestade Solar, 100%. Na reprodução comum, 1/3 das mutações são downgrades e 2/3 ganhos. Entre os downgrades possíveis está Esterilidade 🚫, que impede a peça de se reproduzir mesmo que ela ainda consuma casas férteis. Descendentes de Reprodução Sexuada ❤️ nunca sofrem downgrade em sua mutação adicional.';
   };
 
   const previousFinishTurn=finishTurn;
