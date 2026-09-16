@@ -1,6 +1,8 @@
 .brand p{display:none!important}
 .side-players .player-panel{position:static!important}
 .left-log-panel{margin-top:14px}
+.utility-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.utility-actions .btn{width:100%}
 .controls-panel .actionbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0}
 .controls-panel .actionbar .btn{width:100%}
 .controls-panel .hint{text-align:left;min-height:0;margin:12px 0;color:var(--muted);line-height:1.45}
@@ -19,5 +21,5 @@
 @media(max-width:720px){
   .side-players{grid-template-columns:1fr}
   .left-log-panel{grid-column:auto}
-  .controls-panel .actionbar{grid-template-columns:1fr 1fr}
+  .utility-actions,.controls-panel .actionbar{grid-template-columns:1fr 1fr}
 }
