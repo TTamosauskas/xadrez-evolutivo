@@ -28,12 +28,12 @@
 
     for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
       const ce=cell(r,c);
-      if(nextMortal[r][c]){
-        ce.terrain='biohazard';
-        ce.resource=0;
-      }else if(nextFertile[r][c]){
+      if(nextFertile[r][c]){
         ce.terrain='fertile';
         ce.resource=1;
+      }else if(nextMortal[r][c]){
+        ce.terrain='biohazard';
+        ce.resource=0;
       }else{
         ce.terrain='neutral';
         ce.resource=0;
@@ -54,5 +54,5 @@
 
   const rules=document.querySelectorAll('#rulesModal p');
   if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. A cada Época, as casas férteis também evoluem pelas quatro regras de Conway e cada casa fértil ativa possui 1 uso.';
-  if(rules[4])rules[4].innerHTML='<strong>Casas ambientais.</strong> Casas verdes e vermelhas evoluem simultaneamente a cada Época pelas quatro regras de Conway. Cada cor conta apenas vizinhas da própria cor. Se as duas tentarem nascer na mesma casa, a casa mortal tem prioridade. Casas vermelhas eliminam organismos terrestres; Voo oferece imunidade.';
+  if(rules[4])rules[4].innerHTML='<strong>Casas ambientais.</strong> Casas verdes e vermelhas evoluem simultaneamente a cada Época pelas quatro regras de Conway. Cada cor conta apenas vizinhas da própria cor. Se as duas tentarem nascer na mesma casa, a casa fértil tem prioridade. Casas vermelhas eliminam organismos terrestres; Voo oferece imunidade.';
 })();
