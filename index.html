@@ -78,9 +78,9 @@
     <h2>Como jogar</h2>
     <p><strong>Objetivo.</strong> Leve a população adversária à extinção, provoque colapso ecológico por duas Épocas consecutivas ou termine a 10ª Época com maior Sucesso Evolutivo.</p>
     <p><strong>Turno.</strong> Cada organismo usa o movimento da peça de xadrez que representa. Peões avançam uma casa para frente e capturam uma casa na diagonal para frente. Locomoção permite uma segunda movimentação no mesmo turno.</p>
-    <p><strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. Predação gera uma reprodução imediata após cada captura.</p>
+    <p><strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. A cada Época, as casas férteis também evoluem pelas quatro regras de Conway e cada casa fértil ativa possui 1 uso.</p>
     <p><strong>Evolução.</strong> As mutações possíveis são Mutação de peça, Locomoção, Voo, Predação, Ovos, Fertilidade, Carapaça e Reversão. Em 25% dos nascimentos há apenas herança; nos outros 75% ocorre uma nova mutação.</p>
-    <p><strong>Casa mortal.</strong> Casas vermelhas eliminam organismos terrestres ao entrar ou atravessar. Voo oferece imunidade. A cada Época, as casas mortais mudam pelas quatro regras de Conway.</p>
+    <p><strong>Casas ambientais.</strong> Casas verdes e vermelhas evoluem simultaneamente a cada Época pelas quatro regras de Conway. Cada cor conta apenas vizinhas da própria cor. Se as duas tentarem nascer na mesma casa, a casa fértil tem prioridade. Casas vermelhas eliminam organismos terrestres; Voo oferece imunidade.</p>
     <p><strong>Controles.</strong> Clique numa peça sua e depois numa casa com borda azul. Use “Passar a vez” quando quiser encerrar o turno sem movimento. <span class="kbd">Esc</span> limpa a seleção.</p>
     <div class="modal-actions"><button class="btn primary" data-close="rulesModal">Entendi</button></div>
   </div>
@@ -102,5 +102,6 @@
 <script src="compat-v3.js"></script>
 <script src="evolution-v4.js"></script>
 <script src="evolution-v5.js"></script>
+<script src="evolution-v6.js"></script>
 </body>
 </html>
