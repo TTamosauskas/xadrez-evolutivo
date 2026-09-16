@@ -219,7 +219,6 @@
     });
   }
 
-  // Fácil: boa no lance imediato, reprodução e segurança básica, mas mantém pequena variedade entre equivalentes.
   function easyMoveScore(org,t){
     let score=coreMoveScore(org,t,1.4);
     if(moveWouldBeLethal(org,t))return score;
@@ -258,7 +257,6 @@
     });
   }
 
-  // Médio: antigo difícil, agora com o valor real dos lotes nas respostas das Brancas.
   function mediumMoveScore(org,t){
     let score=coreMoveScore(org,t,.25);
     if(moveWouldBeLethal(org,t))return score;
@@ -323,24 +321,27 @@
   }
   function worstReplyWithCounter(org,t){
     return withTemporaryMove(org,t,()=>{
-      let worst=0;
+      const replies=[];
       for(const enemy of playerOrganisms('blue')){
         for(const reply of movementTargets(enemy)){
           if(moveWouldBeLethal(enemy,reply))continue;
-          const replyValue=tacticalMoveValue(enemy,reply);
-          const net=withTemporaryMove(enemy,reply,()=>{
-            const amberMobility=mobilityTotal('amber');
-            const counter=amberMobility?bestCounterAfterReply():0;
-            return replyValue-counter*.34+(amberMobility?0:1800);
-          });
-          worst=Math.max(worst,net);
+          replies.push({enemy,reply,value:tacticalMoveValue(enemy,reply)});
         }
+      }
+      replies.sort((a,b)=>b.value-a.value);
+      let worst=0;
+      for(const candidate of replies.slice(0,8)){
+        const net=withTemporaryMove(candidate.enemy,candidate.reply,()=>{
+          const amberMobility=mobilityTotal('amber');
+          const counter=amberMobility?bestCounterAfterReply():0;
+          return candidate.value-counter*.34+(amberMobility?0:1800);
+        });
+        worst=Math.max(worst,net);
       }
       return worst;
     });
   }
 
-  // Difícil: Médio + crescimento sustentável + mobilidade + capacidade de contra-atacar após a melhor resposta branca.
   function hardMoveScore(org,t){
     let score=mediumMoveScore(org,t);
     if(moveWouldBeLethal(org,t))return score;
@@ -356,15 +357,21 @@
   }
   function bestSystemMove(){
     const moves=[];
+    const baseScorer=aiDifficulty==='hard'?mediumMoveScore:scoreSystemMove;
     if(state.moveChain){
       const org=state.organisms.find(o=>o.id===state.moveChain.orgId&&o.owner==='amber');
-      if(org)for(const target of movementTargets(org))moves.push({org,target,score:scoreSystemMove(org,target)});
+      if(org)for(const target of movementTargets(org))moves.push({org,target,score:baseScorer(org,target)});
     }else{
-      for(const org of playerOrganisms('amber'))for(const target of movementTargets(org))moves.push({org,target,score:scoreSystemMove(org,target)});
+      for(const org of playerOrganisms('amber'))for(const target of movementTargets(org))moves.push({org,target,score:baseScorer(org,target)});
     }
     if(!moves.length)return null;
     moves.sort((a,b)=>b.score-a.score);
-    if(aiDifficulty==='hard'||aiDifficulty==='medium')return moves[0];
+    if(aiDifficulty==='hard'){
+      const finalists=moves.slice(0,8).map(m=>({...m,score:hardMoveScore(m.org,m.target)}));
+      finalists.sort((a,b)=>b.score-a.score);
+      return finalists[0];
+    }
+    if(aiDifficulty==='medium')return moves[0];
     const tolerance=1.75;
     const topScore=moves[0].score,top=moves.filter(m=>m.score>=topScore-tolerance);
     return choice(top);
