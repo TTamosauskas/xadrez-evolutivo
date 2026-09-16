@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="clean-ui.css" />
 <link rel="stylesheet" href="evolution-v2.css" />
 <link rel="stylesheet" href="evolution-v3.css" />
+<link rel="stylesheet" href="evolution-v4.css" />
 </head>
 <body>
 <div class="app">
@@ -57,10 +58,11 @@
           <button class="btn" id="passBtn">Passar</button>
         </div>
         <div class="hint" id="hint"></div>
+        <button class="btn pass-turn-btn" id="passTurnBtn">Passar a vez</button>
         <div class="legend">
           <span><i class="checker-swatch"></i> habitat neutro</span>
-          <span><i class="legend-color biome"></i> bioma de uso único</span>
-          <span><i class="legend-color biohazard"></i> Biohazard</span>
+          <span><i class="legend-color biome"></i> casa fértil</span>
+          <span><i class="legend-color biohazard"></i> casa mortal</span>
         </div>
       </section>
       <section class="panel evolution-tree-panel"><h3>Árvores filogenéticas</h3><div id="trees" class="tree"></div></section>
@@ -75,10 +77,10 @@
     <h2>Como jogar</h2>
     <p><strong>Objetivo.</strong> Leve a população adversária à extinção, provoque colapso ecológico por duas Épocas consecutivas ou termine a 10ª Época com maior Sucesso Evolutivo.</p>
     <p><strong>Turno.</strong> Cada organismo usa o movimento da peça de xadrez que representa. Peões avançam uma casa para frente e capturam uma casa na diagonal para frente. Locomoção permite uma segunda movimentação no mesmo turno.</p>
-    <p><strong>Biomas e reprodução.</strong> Cada casa verde pode ser consumida uma única vez. Uma reprodução comum custa exatamente 1 bioma disponível ou previamente armazenado. Predação gera uma reprodução imediata após cada captura.</p>
-    <p><strong>Evolução.</strong> As mutações possíveis são Mutação de peça, Locomoção, Voo, Predação, Ovos, Fertilidade, Superespecialização, Carapaça e Reversão.</p>
-    <p><strong>Biohazard.</strong> Casas vermelhas são letais para organismos terrestres ao entrar ou atravessar. Voo oferece imunidade. A cada Época, o Biohazard muda pelas quatro regras de Conway.</p>
-    <p><strong>Controles.</strong> Clique numa peça sua e depois numa casa com borda azul. <span class="kbd">Esc</span> limpa a seleção.</p>
+    <p><strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. Predação gera uma reprodução imediata após cada captura.</p>
+    <p><strong>Evolução.</strong> As mutações possíveis são Mutação de peça, Locomoção, Voo, Predação, Ovos, Fertilidade, Carapaça e Reversão. Em 25% dos nascimentos há apenas herança; nos outros 75% ocorre uma nova mutação.</p>
+    <p><strong>Casa mortal.</strong> Casas vermelhas eliminam organismos terrestres ao entrar ou atravessar. Voo oferece imunidade. A cada Época, as casas mortais mudam pelas quatro regras de Conway.</p>
+    <p><strong>Controles.</strong> Clique numa peça sua e depois numa casa com borda azul. Use “Passar a vez” quando quiser encerrar o turno sem movimento. <span class="kbd">Esc</span> limpa a seleção.</p>
     <div class="modal-actions"><button class="btn primary" data-close="rulesModal">Entendi</button></div>
   </div>
 </div>
@@ -97,5 +99,6 @@
 <script src="evolution-v2.js"></script>
 <script src="evolution-v3.js"></script>
 <script src="compat-v3.js"></script>
+<script src="evolution-v4.js"></script>
 </body>
 </html>
