@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Xadrez Evolutivo — A Origem das Espécies</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <h1>Xadrez Evolutivo</h1>
+      <p>A Origem das Espécies — protótipo competitivo de evolução, ecologia e extinção.</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn" id="rulesBtn">Como jogar</button>
+      <button class="btn" id="saveBtn">Salvar</button>
+      <button class="btn" id="loadBtn">Carregar</button>
+      <button class="btn danger" id="resetBtn">Nova partida</button>
+    </div>
+  </div>
+
+  <div class="status-strip">
+    <div class="stat"><div class="label">Turno</div><div class="value" id="turnValue">—</div></div>
+    <div class="stat"><div class="label">Época</div><div class="value" id="epochValue">—</div></div>
+    <div class="stat"><div class="label">Rodada da época</div><div class="value" id="roundValue">—</div></div>
+    <div class="stat"><div class="label">População total</div><div class="value" id="populationValue">—</div></div>
+    <div class="stat"><div class="label">Tendência ambiental</div><div class="value" id="trendValue">Estável</div></div>
+  </div>
+
+  <div class="layout">
+    <div class="side-players">
+      <section class="panel player-panel" id="bluePanel"></section>
+      <section class="panel player-panel" id="amberPanel"></section>
+    </div>
+
+    <main class="center">
+      <div class="board-shell">
+        <div id="board" class="board" aria-label="Tabuleiro ecológico 8 por 8"></div>
+        <div class="actionbar">
+          <button class="btn active" id="moveBtn">Mover / Capturar</button>
+          <button class="btn" id="reproBtn">Reproduzir</button>
+          <button class="btn" id="feedBtn">Alimentar</button>
+          <button class="btn" id="specialBtn">Interação especial</button>
+          <button class="btn" id="passBtn">Passar</button>
+        </div>
+        <div class="hint" id="hint"></div>
+        <div class="legend">
+          <span><i class="swatch" style="background:var(--fertile)"></i> fértil</span>
+          <span><i class="swatch" style="background:var(--neutral)"></i> neutro</span>
+          <span><i class="swatch" style="background:var(--desert)"></i> deserto</span>
+          <span><i class="swatch" style="background:var(--ice)"></i> gelo</span>
+          <span><i class="swatch" style="background:var(--water)"></i> água</span>
+          <span><i class="swatch" style="background:var(--toxic)"></i> tóxico</span>
+          <span><i class="swatch" style="background:var(--volcanic)"></i> vulcânico</span>
+        </div>
+      </div>
+    </main>
+
+    <aside class="right-column">
+      <section class="panel">
+        <h3>Ambiente</h3>
+        <div id="events"></div>
+        <div class="rules" id="environmentSummary"></div>
+      </section>
+      <section class="panel">
+        <h3>Registro evolutivo</h3>
+        <div id="log" class="log"></div>
+      </section>
+      <section class="panel">
+        <h3>Árvores filogenéticas</h3>
+        <div id="trees" class="tree"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="rulesModal">
+  <div class="modal">
+    <h2>Como jogar</h2>
+    <p><strong>Objetivo.</strong> Leve a população adversária à extinção, provoque colapso ecológico por duas Épocas consecutivas ou termine a 10ª Época com maior Sucesso Evolutivo.</p>
+    <p><strong>Turno.</strong> Selecione um organismo e realize uma ação: mover/capturar, reproduzir, alimentar ou usar uma interação especial. Cinco rodadas completas formam uma Época.</p>
+    <p><strong>Recursos e reprodução.</strong> Recursos ficam nas casas férteis. Alimentar armazena um recurso no organismo. Reproduzir consome recursos armazenados e/ou da vizinhança. A primeira reprodução de cada jogador custa 1; depois, o custo-base é 2.</p>
+    <p><strong>Evolução.</strong> Nascimentos podem sofrer mutação. O descendente pode inaugurar nova linhagem, integrar o traço à linhagem atual ou descartar a mutação. Cada jogador mantém até quatro linhagens e cada linhagem até três traços principais.</p>
+    <p><strong>Ambiente.</strong> Grandes mudanças são anunciadas antes de ocorrer. Gelo, água, desertificação, toxinas, seca, patógenos, vulcanismo e meteoros alteram o valor dos traços conforme o contexto.</p>
+    <p><strong>Controles.</strong> Clique numa peça sua, escolha a ação e depois clique no destino realçado. Casas verdes são destinos legais; vermelhas representam captura. <span class="kbd">Esc</span> limpa a seleção.</p>
+    <div class="modal-actions"><button class="btn primary" data-close="rulesModal">Entendi</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="mutationModal">
+  <div class="modal">
+    <h2>Mutação hereditária</h2>
+    <div id="mutationBody"></div>
+    <div class="modal-actions" id="mutationActions"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="gameOverModal">
+  <div class="modal">
+    <h2 id="gameOverTitle">Fim da partida</h2>
+    <div id="gameOverBody"></div>
+    <div class="modal-actions"><button class="btn primary" id="newAfterEnd">Nova partida</button><button class="btn" data-close="gameOverModal">Ver tabuleiro</button></div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
