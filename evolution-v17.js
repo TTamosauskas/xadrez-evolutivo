@@ -92,39 +92,33 @@
   function hazardExplanation(){return {title:'Morte',body:'<p>Quando atinge uma casa perigosa (vermelha) a peça é eliminada.</p>'}}
   function cleanMutationName(name){return String(name||'').trim().replace(/[.]+$/,'')}
   function mutationExplanation(text){
-    const pieceUp=text.match(/Mutação de peça:\s*([^→.]+)\s*→\s*([^\.]+)/i);
-    if(pieceUp){
-      const from=cleanMutationName(pieceUp[1]),to=cleanMutationName(pieceUp[2]),effect=PIECE_INFO[to]||`Agora usa o movimento de ${to}.`;
+    const pieceChange=text.match(/(?:Mutação|Downgrade) de peça:\s*([^→.]+)\s*→\s*([^\.]+)/i);
+    if(pieceChange){
+      const from=cleanMutationName(pieceChange[1]),to=cleanMutationName(pieceChange[2]),effect=PIECE_INFO[to]||`Agora usa o movimento de ${to}.`;
       return {title:`Mutação de peça: ${to}`,body:`<p>A peça passou de <strong>${htmlEscape(from)}</strong> para <strong>${htmlEscape(to)}</strong>.</p><p>${htmlEscape(effect)}</p>`};
     }
-    const pieceDown=text.match(/Downgrade de peça:\s*([^→.]+)\s*→\s*([^\.]+)/i);
-    if(pieceDown){
-      const from=cleanMutationName(pieceDown[1]),to=cleanMutationName(pieceDown[2]),effect=PIECE_INFO[to]||`Agora usa o movimento de ${to}.`;
-      return {title:`Downgrade de peça: ${to}`,body:`<p>A peça passou de <strong>${htmlEscape(from)}</strong> para <strong>${htmlEscape(to)}</strong>.</p><p>${htmlEscape(effect)}</p>`};
-    }
-    const sterility=text.match(/Downgrade:\s*Esterilidade/i);
+    const sterility=text.match(/(?:Mutação|Downgrade):\s*Esterilidade/i);
     if(sterility){
       const info=MUTATION_INFO.Esterilidade;
-      return {title:`Downgrade: Esterilidade ${info.icon}`,body:`<p>${info.desc}</p>`};
+      return {title:`Mutação: Esterilidade ${info.icon}`,body:`<p>${info.desc}</p>`};
     }
     const gain=text.match(/Nova especialidade:\s*([^\.]+)/i);
     if(gain){const name=cleanMutationName(gain[1]),info=MUTATION_INFO[name];return info?{title:`Mutação: ${name} ${info.icon}`,body:`<p>${info.desc}</p>`}:{title:`Mutação: ${name}`,body:`<p>A peça adquiriu a especialização ${htmlEscape(name)}.</p>`}}
-    const loss=text.match(/Downgrade:\s*perdeu\s+([^\.]+)/i);
-    if(loss){const name=cleanMutationName(loss[1]),info=MUTATION_INFO[name];return info?{title:`Downgrade: ${name} ${info.icon}`,body:`<p>A peça perdeu esta mutação.</p><p><strong>Efeito perdido:</strong> ${info.desc}</p>`}:{title:`Downgrade: ${name}`,body:`<p>A peça perdeu a especialização ${htmlEscape(name)}.</p>`}}
+    const loss=text.match(/(?:Mutação|Downgrade):\s*perdeu\s+([^\.]+)/i);
+    if(loss){const name=cleanMutationName(loss[1]),info=MUTATION_INFO[name];return info?{title:`Mutação: ${name} ${info.icon}`,body:`<p>A peça perdeu esta característica.</p><p><strong>Efeito perdido:</strong> ${info.desc}</p>`}:{title:`Mutação: ${name}`,body:`<p>A peça perdeu a especialização ${htmlEscape(name)}.</p>`}}
     return {title:'Mutação',body:`<p>${htmlEscape(text)}</p>`};
   }
 
   function mutationText(entry){
     if(!entry)return null;
-    if(entry.kind==='piece')return `Mutação de peça: ${PIECES[entry.from]||'Peão'} → ${PIECES[entry.to]||PIECES[Math.max(0,Math.min(5,Number(entry.from)||0))]}`;
-    if(entry.kind==='piece-downgrade')return `Downgrade de peça: ${PIECES[entry.from]||'Peão'} → ${PIECES[entry.to]||'Peão'}`;
+    if(entry.kind==='piece'||entry.kind==='piece-downgrade')return `Mutação de peça: ${PIECES[entry.from]||'Peão'} → ${PIECES[entry.to]||'Peão'}`;
     if(entry.kind==='trait')return `Nova especialidade: ${entry.name}`;
-    if(entry.kind==='trait-loss')return `Downgrade: perdeu ${entry.name}`;
+    if(entry.kind==='trait-loss')return `Mutação: perdeu ${entry.name}`;
     if(entry.kind==='resistance')return 'Nova especialidade: Resistência';
-    if(entry.kind==='resistance-loss')return 'Downgrade: perdeu Resistência';
+    if(entry.kind==='resistance-loss')return 'Mutação: perdeu Resistência';
     if(entry.kind==='sexual')return 'Nova especialidade: Reprodução Sexuada';
-    if(entry.kind==='sexual-loss')return 'Downgrade: perdeu Reprodução Sexuada';
-    if(entry.kind==='sterility')return 'Downgrade: Esterilidade';
+    if(entry.kind==='sexual-loss')return 'Mutação: perdeu Reprodução Sexuada';
+    if(entry.kind==='sterility')return 'Mutação: Esterilidade';
     return null;
   }
   function reverseMutation(p,m){
@@ -164,7 +158,7 @@
     if(!Array.isArray(state?.logs))return;const ownerName=owners?.[owner]?.name||'';
     state.logs=state.logs.filter(x=>{
       const msg=String(x?.msg||'');
-      return !(msg.startsWith(`${ownerName}:`)&&/Mutação de peça:|Downgrade de peça:|Downgrade:\s*perdeu |Downgrade:\s*Esterilidade|Nova especialidade:/i.test(msg));
+      return !(msg.startsWith(`${ownerName}:`)&&/(?:Mutação|Downgrade) de peça:|(?:Mutação|Downgrade):\s*perdeu |(?:Mutação|Downgrade):\s*Esterilidade|Nova especialidade:/i.test(msg));
     });
   }
 
@@ -257,7 +251,7 @@
   renderActions=function(){
     previousRenderActions();
     const rules=document.querySelectorAll('#rulesModal p');
-    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> A primeira reprodução de cada lado não sofre mutações: toda a prole apenas herda ou recombina o perfil dos progenitores. A partir da segunda reprodução daquele lado, cada recém-nascido faz sua própria rolagem de mutação. Em condições normais a chance é 1/3; durante Tempestade Solar, 100%. Na reprodução comum, 1/3 das mutações são downgrades e 2/3 ganhos. Entre os downgrades possíveis está Esterilidade 🚫, que impede a peça de se reproduzir mesmo que ela ainda consuma casas férteis. Descendentes de Reprodução Sexuada ❤️ nunca sofrem downgrade em sua mutação adicional.';
+    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> A primeira reprodução de cada lado não sofre mutações: toda a prole apenas herda ou recombina o perfil dos progenitores. A partir da segunda reprodução daquele lado, cada recém-nascido faz sua própria rolagem de mutação. Em condições normais a chance é 1/3; durante Tempestade Solar, 100%. Peões nunca recebem mutações negativas. A partir de Cavalo, uma mutação pode adicionar ou remover características, reduzir o tipo de peça ou causar Esterilidade 🚫. Para o jogador, todas essas alterações são apresentadas simplesmente como mutações. Descendentes de Reprodução Sexuada ❤️ recebem apenas mutações positivas adicionais.';
   };
 
   const previousFinishTurn=finishTurn;
