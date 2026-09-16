@@ -52,7 +52,8 @@
     for(const owner of ['blue','amber']){
       const outbreak=outbreaks[owner];
       if(!outbreak?.active||!outbreak.outbreakId)continue;
-      const id=`overpop-${outbreak.outbreakId}`;
+      const inheritedId=(state.organisms||[]).find(o=>o.overpopSick?.outbreakId===outbreak.outbreakId&&o.overpopSick?.diseaseId)?.overpopSick?.diseaseId;
+      const id=outbreak.pathogenDiseaseId||inheritedId||`overpop-${outbreak.outbreakId}-${completedRounds()}`;
       const disease=ensureDisease(id,outbreak.pathogenLethalDelay);
       outbreak.pathogenDiseaseId=id;
       outbreak.pathogenLethalDelay=disease.lethalDelay;
@@ -70,10 +71,13 @@
       }
       if(!id)id=`eco-lingering-${inf.outbreakId||'legacy'}`;
     }else{
-      if(!id&&inf.outbreakId)id=`overpop-${inf.outbreakId}`;
       const outbreaks=state.overpopulationPathogen||{};
       const active=Object.values(outbreaks).find(o=>o?.outbreakId===inf.outbreakId);
-      if(active){preferred=active.pathogenLethalDelay;active.pathogenDiseaseId=id||active.pathogenDiseaseId}
+      if(active){
+        id=active.pathogenDiseaseId||id;
+        preferred=active.pathogenLethalDelay??preferred;
+      }
+      if(!id&&inf.outbreakId)id=`overpop-${inf.outbreakId}`;
       if(!id)id=`overpop-lingering-${inf.sourceOwner||org.owner}`;
     }
     const disease=ensureDisease(id,preferred);
@@ -153,6 +157,7 @@
       removeOrganism(d.id,`Uma peça sucumbiu ao Patógeno Virulento após ${d.delay} rodada(s) de infecção.`,true);
     }
     if(doomed.length)checkExtinction();
+    return doomed.length;
   }
   function transmissionRemainingFor(org,kind){
     if(kind==='eco'){
@@ -232,7 +237,8 @@
     if(!state)return result;
     if(finalEcoSnapshot)restoreFinalEcoSpread(finalEcoSnapshot);
     syncInfections(completedRounds());
-    if(completesRound&&!state.gameOver)tickIndividualDeaths(Math.floor((before+1)/2));
+    const deaths=completesRound&&!state.gameOver?tickIndividualDeaths(Math.floor((before+1)/2)):0;
+    if(deaths){render();return result}
     updatePathogenBadges();rewriteUiText();
     return result;
   };
