@@ -242,6 +242,7 @@
 
     if(completesRound&&ev){
       tickEcoPathogen(ev);
+      if(state.gameOver)return;
       const finishingRound=Math.floor((before+1)/2);
       const isFinalRound=finishingRound>=Number(state?.ecoCycle?.nextEventRound||Infinity);
       if(!isFinalRound&&state?.ecoCycle?.active===ev){
@@ -258,7 +259,7 @@
 
     if(state&&!state.gameOver){
       const initialized=initializeEcoPathogen();
-      if(initialized)updateEcoBanner(ecoEvent());
+      if(initialized)render();
       if(completesRound)tickOverpopulationPathogens();
       checkOverpopulationOutbreaks();
     }
