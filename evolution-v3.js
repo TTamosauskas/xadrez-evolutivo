@@ -37,6 +37,21 @@
   function flies(org){return !!profile(org.owner,org.lineage)?.traits?.includes('Voo')}
   function has(org,name){return !!profile(org.owner,org.lineage)?.traits?.includes(name)}
   function isBiohazard(r,c){return inBounds(r,c)&&cell(r,c).terrain==='biohazard'}
+  function basePawnDirection(org){return org?.pawnDir===1||org?.pawnDir===-1?org.pawnDir:(org?.owner==='blue'?-1:1)}
+  function pawnDirection(org){
+    let dr=basePawnDirection(org);
+    if(org?.r===0&&dr<0)dr=1;
+    else if(org?.r===SIZE-1&&dr>0)dr=-1;
+    return dr;
+  }
+  function syncPawnDirections(){
+    if(!state?.organisms)return;
+    for(const org of state.organisms){
+      if(pieceRank(org)!==0)continue;
+      const dr=pawnDirection(org);
+      if(org.pawnDir!==dr)org.pawnDir=dr;
+    }
+  }
 
   const previousNewState=newState;
   newState=function(){const s=previousNewState();return s};
@@ -59,7 +74,7 @@
     const targets=new Map(),rank=pieceRank(org),orth=[[-1,0],[1,0],[0,-1],[0,1]],diag=[[-1,-1],[-1,1],[1,-1],[1,1]],all=[...orth,...diag];
     if(has(org,'Superespecialização'))ray(org,orth,targets,SIZE);
     else if(rank===0){
-      const dr=org.owner==='blue'?-1:1,r=org.r+dr;
+      const dr=pawnDirection(org),r=org.r+dr;
       if(inBounds(r,org.c)&&!organismAt(r,org.c))addTarget(targets,org,r,org.c,'pawn',[[r,org.c]]);
       for(const dc of [-1,1]){const rr=org.r+dr,cc=org.c+dc;if(!inBounds(rr,cc))continue;const occ=organismAt(rr,cc);if(occ&&occ.owner!==org.owner)addTarget(targets,org,rr,cc,'pawn-capture',[[rr,cc]])}
     }else if(rank===1){for(const [dr,dc] of [[-2,-1],[-2,1],[2,-1],[2,1],[-1,-2],[-1,2],[1,-2],[1,2]])addTarget(targets,org,org.r+dr,org.c+dc,'knight',[[org.r+dr,org.c+dc]])}
@@ -147,6 +162,7 @@
 
   function iconHtml(p){return p.traits.map(t=>ICONS[t]?`<span class="mutation-icon" title="${t}">${ICONS[t]}</span>`:'').join('')}
   renderBoard=function(){
+    syncPawnDirections();
     boardEl.innerHTML='';const sel=currentSelected(),legal=sel?movementTargets(sel):[],legalMap=new Map(legal.map(t=>[key(t.r,t.c),t]));
     for(let r=0;r<SIZE;r++)for(let c=0;c<SIZE;c++){
       const ce=cell(r,c),org=organismAt(r,c),target=legalMap.get(key(r,c)),div=document.createElement('div');
@@ -180,7 +196,7 @@
   };
 
   const rules=document.querySelectorAll('#rulesModal p');
-  if(rules[1])rules[1].innerHTML='<strong>Turno.</strong> Selecione uma peça e mova para uma casa com borda azul. Capturas acontecem automaticamente ao entrar numa casa adversária. Locomoção concede uma segunda movimentação com a mesma peça.';
+  if(rules[1])rules[1].innerHTML='<strong>Turno.</strong> Selecione uma peça e mova para uma casa com borda azul. Peões avançam uma casa e capturam na diagonal para a frente; ao alcançar a última fileira, invertem a direção e passam a avançar de volta para o outro lado do tabuleiro. Capturas acontecem automaticamente ao entrar numa casa adversária. Locomoção concede uma segunda movimentação com a mesma peça.';
   if(rules[2])rules[2].innerHTML='<strong>Reprodução.</strong> Entrar em uma casa verde consome esse bioma e gera reprodução automaticamente. Predação também gera reprodução imediata após uma captura. Fertilidade produz dois descendentes; Ovos amplia a distância de nascimento.';
   if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> Cada descendente herda todas as mutações do progenitor. Em 25% dos nascimentos ocorre apenas herança; nos outros 75% uma nova mutação é aplicada automaticamente. O jogo usa organismos individuais, sem linhagens.';
 
