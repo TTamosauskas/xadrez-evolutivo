@@ -1,0 +1,21 @@
+.cell.fertile-active,
+.cell.square-light.fertile-active,
+.cell.square-dark.fertile-active{
+  background:#4f9256!important;
+}
+.cell.terrain-biohazard,
+.cell.square-light.terrain-biohazard,
+.cell.square-dark.terrain-biohazard{
+  background:#b93636!important;
+  box-shadow:none!important;
+}
+.cell.legal,.cell.capture,.cell.lethal-move,
+.cell.terrain-biohazard.legal,.cell.terrain-biohazard.capture{
+  box-shadow:inset 0 0 0 4px #3182f6!important;
+}
+.legend-color.biome,.controls-panel .legend .biome{background:#4f9256!important}
+.legend-color.biohazard,.controls-panel .legend .biohazard{background:#b93636!important}
+.pass-turn-btn{
+  width:100%;
+  margin:10px 0 4px;
+}
