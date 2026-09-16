@@ -50,7 +50,8 @@
   }
   function downgradeOptions(p){
     normalizeProfile(p);const out=[];
-    if(p.pieceRank>0)out.push({kind:'piece-down',to:p.pieceRank-1});
+    if(p.pieceRank===0)return out;
+    out.push({kind:'piece-down',to:p.pieceRank-1});
     for(const name of p.traits)out.push({kind:'trait-loss',name});
     if(p.resistance)out.push({kind:'resistance-loss'});
     if(p.sexual)out.push({kind:'sexual-loss'});
@@ -65,8 +66,8 @@
     }
     if(m.kind==='piece-down'){
       const from=p.pieceRank,to=m.to;p.pieceRank=to;
-      p.mutationStack.push({kind:'piece-downgrade',from,to,direction:'down'});p.mutations.push('Downgrade de peça');
-      return `Downgrade de peça: ${PIECES[from]} → ${PIECES[to]}`;
+      p.mutationStack.push({kind:'piece-downgrade',from,to,direction:'down'});p.mutations.push('Mutação de peça');
+      return `Mutação de peça: ${PIECES[from]} → ${PIECES[to]}`;
     }
     if(m.kind==='trait-gain'){
       p.traits.push(m.name);p.mutationStack.push({kind:'trait',name:m.name,direction:'up'});p.mutations.push(m.name);
@@ -74,7 +75,7 @@
     }
     if(m.kind==='trait-loss'){
       p.traits=p.traits.filter(t=>t!==m.name);p.mutationStack.push({kind:'trait-loss',name:m.name,direction:'down'});p.mutations.push(`Perda de ${m.name}`);
-      return `Downgrade: perdeu ${m.name}`;
+      return `Mutação: perdeu ${m.name}`;
     }
     if(m.kind==='resistance-gain'){
       p.resistance=true;p.mutationStack.push({kind:'resistance',direction:'up'});p.mutations.push('Resistência');
@@ -82,7 +83,7 @@
     }
     if(m.kind==='resistance-loss'){
       p.resistance=false;p.mutationStack.push({kind:'resistance-loss',direction:'down'});p.mutations.push('Perda de Resistência');
-      return 'Downgrade: perdeu Resistência';
+      return 'Mutação: perdeu Resistência';
     }
     if(m.kind==='sexual-gain'){
       p.sexual=true;p.mutationStack.push({kind:'sexual',direction:'up'});p.mutations.push(SEXUAL_TRAIT);
@@ -90,18 +91,18 @@
     }
     if(m.kind==='sexual-loss'){
       p.sexual=false;p.mutationStack.push({kind:'sexual-loss',direction:'down'});p.mutations.push(`Perda de ${SEXUAL_TRAIT}`);
-      return `Downgrade: perdeu ${SEXUAL_TRAIT}`;
+      return `Mutação: perdeu ${SEXUAL_TRAIT}`;
     }
     if(m.kind==='sterility'){
       p.sterile=true;p.mutationStack.push({kind:'sterility',direction:'down'});p.mutations.push(STERILITY_TRAIT);
-      return `Downgrade: ${STERILITY_TRAIT}`;
+      return `Mutação: ${STERILITY_TRAIT}`;
     }
     return null;
   }
   function applyMutation(child){
     const p=profileOf(child);normalizeProfile(p);
-    let downgrade=Math.random()<(1/3),options=downgrade?downgradeOptions(p):gainOptions(p);
-    if(!options.length){downgrade=!downgrade;options=downgrade?downgradeOptions(p):gainOptions(p)}
+    let negative=p.pieceRank>0&&Math.random()<(1/3),options=negative?downgradeOptions(p):gainOptions(p);
+    if(!options.length){negative=!negative;options=negative?downgradeOptions(p):gainOptions(p)}
     if(!options.length)return null;
     return applyChosenMutation(p,choice(options));
   }
@@ -383,7 +384,7 @@
   function applyBirthRuleText(){
     const rules=document.querySelectorAll('#rulesModal p');
     if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao entrar numa casa fértil, a peça gera descendentes semelhantes antes das mutações: Peão 4, Cavalo 3, Bispo 2, Torre 2, Rei 1 e Rainha 1. Fertilidade 🐇 dobra essa taxa. Predação 🦁 também pode disparar reprodução após uma captura, mas cada movimento gera no máximo um lote. Com Reprodução Sexuada ❤️, uma peça em casa fértil com aliados adjacentes escolhe um parceiro não estéril marcado em roxo antes do nascimento; o descendente usa a peça de maior valor como base e combina aproximadamente metade das especializações de cada progenitor. Esterilidade 🚫 impede a peça de gerar descendentes, mas uma casa fértil ainda é consumida quando ela entra nela.';
-    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> Cada descendente assexuado começa herdando o perfil do progenitor e depois faz sua própria rolagem de mutação. Em condições normais, cada recém-nascido tem 1/3 de chance de mutar; durante Tempestade Solar, 100%. Na reprodução comum, 1/3 das mutações são downgrades e 2/3 ganhos. Esterilidade 🚫 pode surgir apenas no sorteio de downgrade. Descendentes de Reprodução Sexuada ❤️ também rolam mutação individualmente, porém nunca sofrem downgrade: sua mutação adicional, quando ocorre, é sempre um ganho. Resistência 🧬 continua sendo uma especialização hereditária.';
+    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> Cada descendente assexuado começa herdando o perfil do progenitor e depois faz sua própria rolagem de mutação. Em condições normais, cada recém-nascido tem 1/3 de chance de mutar; durante Tempestade Solar, 100%. Na reprodução comum, peças a partir de Cavalo podem receber mutações positivas ou negativas; Peões nunca recebem mutações negativas. Esterilidade 🚫 é uma mutação negativa possível apenas a partir de Cavalo. Descendentes de Reprodução Sexuada ❤️ também rolam mutação individualmente, porém sua mutação adicional, quando ocorre, é sempre positiva. Resistência 🧬 continua sendo uma especialização hereditária.';
   }
   function renderSexualLegend(){
     const box=document.querySelector('#boardMutationLegend');if(!box)return;
@@ -393,8 +394,8 @@
     const anySterile=state.organisms.some(o=>{const p=profileOf(o);normalizeProfile(p);return !!p?.sterile});
     if(!anySexual&&!anySterile)return;
     box.querySelector('.board-mutation-empty')?.remove();
-    if(anySexual)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-sexual-row><span class="board-circle-icon">❤️</span><div><strong>Reprodução Sexuada</strong><small>Em casa fértil, permite escolher uma peça aliada adjacente e recombinar os dois perfis sem downgrade nos descendentes.</small></div></div>');
-    if(anySterile)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-sterility-row><span class="board-circle-icon">🚫</span><div><strong>Esterilidade</strong><small>Downgrade que impede esta peça de se reproduzir. Casas férteis ainda são consumidas ao serem alcançadas.</small></div></div>');
+    if(anySexual)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-sexual-row><span class="board-circle-icon">❤️</span><div><strong>Reprodução Sexuada</strong><small>Em casa fértil, permite escolher uma peça aliada adjacente e recombinar os dois perfis; a mutação adicional dos descendentes é sempre positiva.</small></div></div>');
+    if(anySterile)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-sterility-row><span class="board-circle-icon">🚫</span><div><strong>Esterilidade</strong><small>Mutação que impede esta peça de se reproduzir. Casas férteis ainda são consumidas ao serem alcançadas.</small></div></div>');
   }
 
   const previousRenderActions=renderActions;
