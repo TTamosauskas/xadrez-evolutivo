@@ -42,7 +42,7 @@
     const rounds=Math.floor((s.turn||0)/2);
     if(!s.ecoCycle||typeof s.ecoCycle!=='object')s.ecoCycle={};
     if(!Number.isFinite(s.ecoCycle.nextEventRound))s.ecoCycle.nextEventRound=(Math.floor(rounds/10)+1)*10;
-    if(s.ecoCycle.nextEventRound<=rounds)s.ecoCycle.nextEventRound=(Math.floor(rounds/10)+1)*10;
+    if(s.ecoCycle.nextEventRound<rounds)s.ecoCycle.nextEventRound=(Math.floor(rounds/10)+1)*10;
     if(!('previousId' in s.ecoCycle))s.ecoCycle.previousId=null;
     if(!('active' in s.ecoCycle))s.ecoCycle.active=null;
     for(const o of s.organisms||[])if(o.ecoSick&&typeof o.ecoSick.remaining!=='number')delete o.ecoSick;
@@ -249,7 +249,7 @@
     else if(def.id==='meteor'){ev.quadrant=randInt(4);markDanger(ev,quadrantCells(ev.quadrant))}
     else if(def.id==='desert'){ev.initialFertile=Math.max(1,fertileCells().length);trimFertileTo(ev.initialFertile)}
     else if(def.id==='blockade'){ev.anti=Math.random()<.5;markDanger(ev,diagonalCells(ev.anti))}
-    else if(def.id==='abundance'){const n=fertileCells().length;addFertileAdjacent(n)}
+    else if(def.id==='abundance'){if(fertileCells().length===0)trimFertileTo(1);const n=fertileCells().length;addFertileAdjacent(n)}
     else if(def.id==='fertilized')addFertileAdjacent(1);
     if(ev.hazardCells.length)eliminateHazardVictims();
     log(`Evento ecológico: ${def.name}. ${def.desc}`);announceEventUI();renderEventStatus();render();
