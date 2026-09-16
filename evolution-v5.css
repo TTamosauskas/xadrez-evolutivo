@@ -1,0 +1,56 @@
+.cell{
+  border-right:1px solid rgba(128,128,128,.48)!important;
+  border-bottom:1px solid rgba(128,128,128,.48)!important;
+  box-sizing:border-box!important;
+}
+.cell:nth-child(8n){border-right:0!important}
+.cell:nth-last-child(-n+8){border-bottom:0!important}
+
+.selected-evolution-info{
+  margin:10px 0 8px;
+  padding:10px;
+  border:1px solid rgba(150,150,150,.26);
+  border-radius:8px;
+  background:rgba(255,255,255,.025);
+  font-size:11px;
+  line-height:1.35;
+}
+.selected-evolution-info .selection-empty{color:var(--muted)}
+.selected-evolution-info .selection-title{
+  margin-bottom:7px;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.selected-evolution-info .piece-evolution-row,
+.selected-evolution-info .mutation-evolution-row{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  margin:6px 0;
+}
+.selected-evolution-info .chess-evolution-icon{
+  width:24px;
+  min-width:24px;
+  text-align:center;
+  font-size:23px;
+  line-height:1;
+}
+.selected-evolution-info .circle-evolution-icon{
+  width:22px;
+  height:22px;
+  min-width:22px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(18,18,18,.9);
+  border:1px solid rgba(255,255,255,.55);
+  font-size:12px;
+  line-height:1;
+}
+.selected-evolution-info strong{display:block;font-size:11px}
+.selected-evolution-info small{display:block;color:var(--muted);font-size:10px;line-height:1.3}
+.selected-evolution-info .no-extra-mutations{margin-top:6px;color:var(--muted);font-size:10px}
