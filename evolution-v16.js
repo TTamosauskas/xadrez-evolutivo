@@ -3,6 +3,7 @@
   const BIRTH_RATES=[4,3,2,2,1,1];
   const BASE_TRAITS=['Locomoção','Voo','Predação','Ovos','Fertilidade','Carapaça'];
   const SEXUAL_TRAIT='Reprodução Sexuada';
+  const STERILITY_TRAIT='Esterilidade';
   let sexualPending=null;
 
   function profileOf(org){return org&&state?.lineages?.[org.owner]?.[org.lineage]}
@@ -14,11 +15,13 @@
     p.mutations=Array.isArray(p.mutations)?p.mutations.filter(x=>x!=='Superespecialização'):[];
     p.resistance=!!p.resistance;
     p.sexual=!!p.sexual;
+    p.sterile=!!p.sterile;
   }
   function has(org,name){
     const p=profileOf(org);normalizeProfile(p);
     if(name==='Resistência')return !!p?.resistance;
     if(name===SEXUAL_TRAIT)return !!p?.sexual;
+    if(name===STERILITY_TRAIT)return !!p?.sterile;
     return !!p&&p.traits.includes(name);
   }
   function isMortal(r,c){return inBounds(r,c)&&cell(r,c).terrain==='biohazard'}
@@ -29,7 +32,7 @@
     const src=profileOf(parent);normalizeProfile(src);
     const p={
       id,parent:parent.lineage,traits:[...src.traits],pieceRank:src.pieceRank,
-      resistance:!!src.resistance,sexual:!!src.sexual,
+      resistance:!!src.resistance,sexual:!!src.sexual,sterile:!!src.sterile,
       mutationStack:src.mutationStack.map(x=>({...x})),bornEpoch:state.epoch,
       mutations:[...src.mutations],nameCounter:0
     };
@@ -51,6 +54,7 @@
     for(const name of p.traits)out.push({kind:'trait-loss',name});
     if(p.resistance)out.push({kind:'resistance-loss'});
     if(p.sexual)out.push({kind:'sexual-loss'});
+    if(!p.sterile)out.push({kind:'sterility'});
     return out;
   }
   function applyChosenMutation(p,m){
@@ -87,6 +91,10 @@
     if(m.kind==='sexual-loss'){
       p.sexual=false;p.mutationStack.push({kind:'sexual-loss',direction:'down'});p.mutations.push(`Perda de ${SEXUAL_TRAIT}`);
       return `Downgrade: perdeu ${SEXUAL_TRAIT}`;
+    }
+    if(m.kind==='sterility'){
+      p.sterile=true;p.mutationStack.push({kind:'sterility',direction:'down'});p.mutations.push(STERILITY_TRAIT);
+      return `Downgrade: ${STERILITY_TRAIT}`;
     }
     return null;
   }
@@ -132,6 +140,10 @@
     return child;
   }
   function reproduce(parent,reason){
+    if(has(parent,STERILITY_TRAIT)){
+      log(`${owners[parent.owner].name}: 🚫 ${STERILITY_TRAIT} impediu a reprodução por ${reason}.`);
+      return 0;
+    }
     if(playerOrganisms(parent.owner).length>=MAX_POP)return 0;
     const p=profileOf(parent);normalizeProfile(p);
     const intended=birthTarget(parent),cells=birthCells(parent);let born=0;
@@ -206,7 +218,7 @@
   function createSexualProfile(parent,mate,blueprint,id){
     const p={
       id,parent:parent.lineage,mate:mate.lineage,traits:[...blueprint.traits],pieceRank:blueprint.pieceRank,
-      resistance:!!blueprint.resistance,sexual:!!blueprint.sexual,
+      resistance:!!blueprint.resistance,sexual:!!blueprint.sexual,sterile:false,
       mutationStack:blueprint.mutationStack.map(x=>({...x})),bornEpoch:state.epoch,
       mutations:[...blueprint.mutations],nameCounter:0
     };
@@ -225,6 +237,10 @@
     return child;
   }
   function reproduceSexually(parent,mate,reason){
+    if(has(parent,STERILITY_TRAIT)||has(mate,STERILITY_TRAIT)){
+      log(`${owners[parent.owner].name}: 🚫 ${STERILITY_TRAIT} impediu a reprodução sexuada.`);
+      return 0;
+    }
     if(playerOrganisms(parent.owner).length>=MAX_POP)return 0;
     const blueprint=sexualBlueprint(parent,mate),intended=sexualBirthTarget(blueprint),cells=sexualBirthCells(parent,blueprint);let born=0;
     while(born<intended&&cells.length&&playerOrganisms(parent.owner).length<MAX_POP){
@@ -238,7 +254,7 @@
   }
 
   function adjacentAllies(org){
-    return state.organisms.filter(o=>o.id!==org.id&&o.owner===org.owner&&Math.max(Math.abs(o.r-org.r),Math.abs(o.c-org.c))===1);
+    return state.organisms.filter(o=>o.id!==org.id&&o.owner===org.owner&&!has(o,STERILITY_TRAIT)&&Math.max(Math.abs(o.r-org.r),Math.abs(o.c-org.c))===1);
   }
   function validPending(){
     if(!sexualPending||!state||state.gameOver)return null;
@@ -261,8 +277,8 @@
   function completeSexualReproduction(mate){
     const ctx=validPending();if(!ctx)return;
     const {pending,parent}=ctx;
-    if(!pending.partnerIds.includes(mate?.id)||mate.owner!==parent.owner||Math.max(Math.abs(mate.r-parent.r),Math.abs(mate.c-parent.c))!==1){
-      flashHint('Escolha uma das peças aliadas marcadas com ❤️.');return;
+    if(!pending.partnerIds.includes(mate?.id)||mate.owner!==parent.owner||has(parent,STERILITY_TRAIT)||has(mate,STERILITY_TRAIT)||Math.max(Math.abs(mate.r-parent.r),Math.abs(mate.c-parent.c))!==1){
+      flashHint('Escolha uma das peças aliadas férteis marcadas com ❤️.');return;
     }
     const ce=cell(pending.fertileR,pending.fertileC);
     if(ce.terrain==='fertile'&&ce.resource>0){ce.resource=0;ce.terrain='neutral'}
@@ -280,7 +296,7 @@
     if(isSinglePlayer()&&org.owner==='amber'){
       setTimeout(()=>{
         const ctx=validPending();if(!ctx||!isSinglePlayer()||ctx.parent.owner!=='amber')return;
-        const candidates=ctx.pending.partnerIds.map(id=>state.organisms.find(o=>o.id===id)).filter(Boolean);
+        const candidates=ctx.pending.partnerIds.map(id=>state.organisms.find(o=>o.id===id)).filter(o=>o&&!has(o,STERILITY_TRAIT));
         if(!candidates.length){sexualPending=null;render();continueAfterMove(ctx.parent,ctx.pending.second,ctx.pending.locomotion);return}
         const best=Math.max(...candidates.map(mateScore));
         completeSexualReproduction(choice(candidates.filter(m=>mateScore(m)===best)));
@@ -304,7 +320,7 @@
       org.r=t.r;org.c=t.c;markHabitat(org);
     }
     const predation=!!defender&&has(org,'Predação');
-    const mates=fertile&&has(org,SEXUAL_TRAIT)&&playerOrganisms(org.owner).length<MAX_POP?adjacentAllies(org):[];
+    const mates=fertile&&!has(org,STERILITY_TRAIT)&&has(org,SEXUAL_TRAIT)&&playerOrganisms(org.owner).length<MAX_POP?adjacentAllies(org):[];
     if(mates.length){
       beginSexualSelection(org,mates,{second,locomotion,predation});
       return;
@@ -333,11 +349,13 @@
   renderBoard=function(){
     previousRenderBoard();
     for(const o of state.organisms){
-      const p=profileOf(o);normalizeProfile(p);if(!p?.sexual)continue;
+      const p=profileOf(o);normalizeProfile(p);if(!p?.sexual&&!p?.sterile)continue;
       const cellEl=boardEl.children[o.r*SIZE+o.c],orgEl=cellEl?.querySelector('.org');if(!orgEl)continue;
       let icons=orgEl.querySelector('.mutation-icons');if(!icons){icons=document.createElement('div');icons.className='mutation-icons';orgEl.appendChild(icons)}
-      if(!icons.querySelector('[data-sexual-icon]')){const heart=document.createElement('span');heart.className='mutation-icon';heart.dataset.sexualIcon='1';heart.title=SEXUAL_TRAIT;heart.textContent='❤️';icons.appendChild(heart)}
-      if(!orgEl.title.includes(SEXUAL_TRAIT))orgEl.title+=`${orgEl.title?' · ':''}${SEXUAL_TRAIT}`;
+      if(p.sexual&&!icons.querySelector('[data-sexual-icon]')){const heart=document.createElement('span');heart.className='mutation-icon';heart.dataset.sexualIcon='1';heart.title=SEXUAL_TRAIT;heart.textContent='❤️';icons.appendChild(heart)}
+      if(p.sterile&&!icons.querySelector('[data-sterility-icon]')){const sterile=document.createElement('span');sterile.className='mutation-icon';sterile.dataset.sterilityIcon='1';sterile.title=STERILITY_TRAIT;sterile.textContent='🚫';icons.appendChild(sterile)}
+      if(p.sexual&&!orgEl.title.includes(SEXUAL_TRAIT))orgEl.title+=`${orgEl.title?' · ':''}${SEXUAL_TRAIT}`;
+      if(p.sterile&&!orgEl.title.includes(STERILITY_TRAIT))orgEl.title+=`${orgEl.title?' · ':''}${STERILITY_TRAIT}`;
     }
     const ctx=validPending();if(!ctx)return;
     for(const id of ctx.pending.partnerIds){
@@ -354,7 +372,7 @@
     const profiles=new Map();
     for(const o of playerOrganisms(owner)){
       const p=profileOf(o);normalizeProfile(p);if(!p)continue;
-      const sig=`${p.pieceRank}|${[...p.traits].sort().join(',')}|R${p.resistance?1:0}|S${p.sexual?1:0}`;
+      const sig=`${p.pieceRank}|${[...p.traits].sort().join(',')}|R${p.resistance?1:0}|S${p.sexual?1:0}|X${p.sterile?1:0}`;
       if(!profiles.has(sig))profiles.set(sig,p);
     }
     let mutations=0;for(const p of profiles.values())mutations+=p.mutationStack.length;
@@ -364,16 +382,19 @@
 
   function applyBirthRuleText(){
     const rules=document.querySelectorAll('#rulesModal p');
-    if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao entrar numa casa fértil, a peça gera descendentes semelhantes antes das mutações: Peão 4, Cavalo 3, Bispo 2, Torre 2, Rei 1 e Rainha 1. Fertilidade 🐇 dobra essa taxa. Predação 🦁 também pode disparar reprodução após uma captura, mas cada movimento gera no máximo um lote. Com Reprodução Sexuada ❤️, uma peça em casa fértil com aliados adjacentes escolhe um parceiro marcado em roxo antes do nascimento; o descendente usa a peça de maior valor como base e combina aproximadamente metade das especializações de cada progenitor.';
-    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> Cada descendente assexuado começa herdando o perfil do progenitor e depois faz sua própria rolagem de mutação. Em condições normais, cada recém-nascido tem 1/3 de chance de mutar; durante Tempestade Solar, 100%. Na reprodução comum, 1/3 das mutações são downgrades e 2/3 ganhos. Descendentes de Reprodução Sexuada ❤️ também rolam mutação individualmente, porém nunca sofrem downgrade: sua mutação adicional, quando ocorre, é sempre um ganho. Resistência 🧬 continua sendo uma especialização hereditária.';
+    if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao entrar numa casa fértil, a peça gera descendentes semelhantes antes das mutações: Peão 4, Cavalo 3, Bispo 2, Torre 2, Rei 1 e Rainha 1. Fertilidade 🐇 dobra essa taxa. Predação 🦁 também pode disparar reprodução após uma captura, mas cada movimento gera no máximo um lote. Com Reprodução Sexuada ❤️, uma peça em casa fértil com aliados adjacentes escolhe um parceiro não estéril marcado em roxo antes do nascimento; o descendente usa a peça de maior valor como base e combina aproximadamente metade das especializações de cada progenitor. Esterilidade 🚫 impede a peça de gerar descendentes, mas uma casa fértil ainda é consumida quando ela entra nela.';
+    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> Cada descendente assexuado começa herdando o perfil do progenitor e depois faz sua própria rolagem de mutação. Em condições normais, cada recém-nascido tem 1/3 de chance de mutar; durante Tempestade Solar, 100%. Na reprodução comum, 1/3 das mutações são downgrades e 2/3 ganhos. Esterilidade 🚫 pode surgir apenas no sorteio de downgrade. Descendentes de Reprodução Sexuada ❤️ também rolam mutação individualmente, porém nunca sofrem downgrade: sua mutação adicional, quando ocorre, é sempre um ganho. Resistência 🧬 continua sendo uma especialização hereditária.';
   }
   function renderSexualLegend(){
     const box=document.querySelector('#boardMutationLegend');if(!box)return;
     box.querySelector('[data-sexual-row]')?.remove();
-    const any=state.organisms.some(o=>{const p=profileOf(o);normalizeProfile(p);return !!p?.sexual});
-    if(!any)return;
+    box.querySelector('[data-sterility-row]')?.remove();
+    const anySexual=state.organisms.some(o=>{const p=profileOf(o);normalizeProfile(p);return !!p?.sexual});
+    const anySterile=state.organisms.some(o=>{const p=profileOf(o);normalizeProfile(p);return !!p?.sterile});
+    if(!anySexual&&!anySterile)return;
     box.querySelector('.board-mutation-empty')?.remove();
-    box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-sexual-row><span class="board-circle-icon">❤️</span><div><strong>Reprodução Sexuada</strong><small>Em casa fértil, permite escolher uma peça aliada adjacente e recombinar os dois perfis sem downgrade nos descendentes.</small></div></div>');
+    if(anySexual)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-sexual-row><span class="board-circle-icon">❤️</span><div><strong>Reprodução Sexuada</strong><small>Em casa fértil, permite escolher uma peça aliada adjacente e recombinar os dois perfis sem downgrade nos descendentes.</small></div></div>');
+    if(anySterile)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-sterility-row><span class="board-circle-icon">🚫</span><div><strong>Esterilidade</strong><small>Downgrade que impede esta peça de se reproduzir. Casas férteis ainda são consumidas ao serem alcançadas.</small></div></div>');
   }
 
   const previousRenderActions=renderActions;
