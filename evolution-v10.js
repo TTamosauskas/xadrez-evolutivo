@@ -2,6 +2,7 @@
   const EFFECT_TRAITS=['Locomoção','Voo','Predação','Ovos','Fertilidade','Carapaça'];
   const DIFFICULTIES=['easy','medium','hard'];
   const DIFFICULTY_LABELS={easy:'Fácil',medium:'Médio',hard:'Difícil'};
+  const BIRTH_RATES=[4,3,2,2,1,1];
   let singlePlayer=localStorage.getItem('xe_game_mode')==='single';
   let aiDifficulty=localStorage.getItem('xe_ai_difficulty')||'easy';
   if(!DIFFICULTIES.includes(aiDifficulty))aiDifficulty='easy';
@@ -245,10 +246,65 @@
     if(defender&&playerOrganisms('blue').length===1)score+=25000;
     return score;
   }
+  function nearestFertileDistance(r,c){
+    let best=Infinity;
+    for(let rr=0;rr<SIZE;rr++)for(let cc=0;cc<SIZE;cc++){
+      const ce=cell(rr,cc);
+      if(ce.terrain!=='fertile'||ce.resource<=0)continue;
+      best=Math.min(best,Math.max(Math.abs(rr-r),Math.abs(cc-c)));
+    }
+    return best;
+  }
+  function projectedBirthsOnFertile(org,t){
+    const dest=cell(t.r,t.c);
+    if(dest.terrain!=='fertile'||dest.resource<=0)return 0;
+    const p=profileOf(org);normalizeProfile(p);
+    const base=BIRTH_RATES[p?.pieceRank||0]||1;
+    const intended=has(org,'Fertilidade')?base*2:base;
+    const room=Math.max(0,MAX_POP-playerOrganisms(org.owner).length);
+    if(!room)return 0;
+    return withTemporaryMove(org,t,()=>{
+      const range=has(org,'Ovos')?2:1;
+      let spaces=0;
+      for(let dr=-range;dr<=range;dr++)for(let dc=-range;dc<=range;dc++){
+        if(!dr&&!dc)continue;
+        const r=org.r+dr,c=org.c+dc;
+        if(!inBounds(r,c)||organismAt(r,c))continue;
+        if(cell(r,c).terrain==='biohazard'&&!has(org,'Voo'))continue;
+        spaces++;
+      }
+      return Math.min(intended,room,spaces);
+    });
+  }
+  function fertileGrowthValue(org,t){
+    const room=Math.max(0,MAX_POP-playerOrganisms(org.owner).length);
+    if(!room)return 0;
+    const before=nearestFertileDistance(org.r,org.c);
+    const after=nearestFertileDistance(t.r,t.c);
+    let score=0;
+    if(Number.isFinite(before)&&Number.isFinite(after))score+=(before-after)*24;
+    const dest=cell(t.r,t.c);
+    if(dest.terrain==='fertile'&&dest.resource>0){
+      const born=projectedBirthsOnFertile(org,t);
+      if(born>0){
+        score+=born*220;
+        if(has(org,'Fertilidade'))score+=born*35;
+        if(playerOrganisms(org.owner).length<=4)score+=born*45;
+      }else{
+        score-=260;
+      }
+    }else if(after===1){
+      score+=35;
+    }
+    return score;
+  }
+  function strategicHardMoveScore(org,t){
+    return hardMoveScore(org,t)+fertileGrowthValue(org,t);
+  }
   function scoreSystemMove(org,target){
-    if(aiDifficulty==='hard')return hardMoveScore(org,target);
-    if(aiDifficulty==='medium')return mediumMoveScore(org,target);
-    return easyMoveScore(org,target);
+    if(aiDifficulty==='hard')return strategicHardMoveScore(org,target);
+    if(aiDifficulty==='medium')return hardMoveScore(org,target);
+    return mediumMoveScore(org,target);
   }
   function bestSystemMove(){
     const moves=[];
@@ -260,8 +316,8 @@
     }
     if(!moves.length)return null;
     moves.sort((a,b)=>b.score-a.score);
-    if(aiDifficulty==='hard')return moves[0];
-    const tolerance=aiDifficulty==='medium'?1.25:3;
+    if(aiDifficulty==='hard'||aiDifficulty==='medium')return moves[0];
+    const tolerance=1.25;
     const topScore=moves[0].score,top=moves.filter(m=>m.score>=topScore-tolerance);
     return choice(top);
   }
@@ -334,7 +390,7 @@
 
   const rules=document.querySelectorAll('#rulesModal p');
   if(rules[0])rules[0].innerHTML='<strong>Objetivo.</strong> A partida termina por extinção total ou por desempate técnico somente quando os dois lados ficam sem movimentos legais em sequência. O desempate compara, nesta ordem: peças, gerações, mutações e linhagens vivas.';
-  if(rules[5])rules[5].innerHTML='<strong>Controles.</strong> Use o botão de modo no topo para alternar entre 2 jogadores e 1 jogador. No modo de 1 jogador, você controla as Brancas e o sistema controla as Pretas. Há três dificuldades: Fácil mantém a estratégia básica; Médio considera segurança, mobilidade e valor das peças; Difícil também avalia a melhor resposta imediata das Brancas antes de escolher. Se um lado não tiver movimentos legais, sua vez passa automaticamente; o desempate técnico só ocorre se o adversário também estiver bloqueado na sequência. Clique numa peça sua e depois numa casa com borda azul; “Passar a vez” encerra seu turno sem movimento.';
+  if(rules[5])rules[5].innerHTML='<strong>Controles.</strong> Use o botão de modo no topo para alternar entre 2 jogadores e 1 jogador. No modo de 1 jogador, você controla as Brancas e o sistema controla as Pretas. Há três dificuldades: Fácil considera segurança, mobilidade e valor das peças; Médio também avalia a melhor resposta imediata das Brancas; Difícil acrescenta estratégia de crescimento, valorizando casas férteis conforme a taxa de natalidade da peça, Fertilidade 🐇, espaço disponível para os descendentes e capacidade populacional. Se um lado não tiver movimentos legais, sua vez passa automaticamente; o desempate técnico só ocorre se o adversário também estiver bloqueado na sequência. Clique numa peça sua e depois numa casa com borda azul; “Passar a vez” encerra seu turno sem movimento.';
 
   updateModeUI();
   if(singlePlayer&&state?.current==='amber'&&!state.gameOver)scheduleSystemTurn();
