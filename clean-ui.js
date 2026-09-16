@@ -24,4 +24,5 @@
   if(rulesParagraphs[4])rulesParagraphs[4].innerHTML='<strong>Biohazard.</strong> Casas vermelhas são letais para organismos terrestres ao entrar ou atravessar. Voar oferece imunidade. A cada Época, o Biohazard muda pelas quatro regras de Conway.';
 
   stripEnvironmentSymbols(document);
+  document.querySelector('#loadBtn')?.remove();
 })();
