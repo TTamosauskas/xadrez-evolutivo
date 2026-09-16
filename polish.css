@@ -1,0 +1,23 @@
+.brand p{display:none!important}
+.side-players .player-panel{position:static!important}
+.left-log-panel{margin-top:14px}
+.controls-panel .actionbar{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0}
+.controls-panel .actionbar .btn{width:100%}
+.controls-panel .hint{text-align:left;min-height:0;margin:12px 0;color:var(--muted);line-height:1.45}
+.controls-panel .legend{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:12px}
+.controls-panel .legend span{font-size:11px}
+.cell.terrain-biohazard{box-shadow:none!important}
+.cell.square-light.biohazard-preview{background:var(--board-light)!important;box-shadow:none!important}
+.cell.square-dark.biohazard-preview{background:var(--board-dark)!important;box-shadow:none!important}
+.cell.fertile-active.biohazard-preview{background:linear-gradient(135deg,#4f9256,#326d3a)!important;box-shadow:none!important}
+.biohazard-preview-swatch,.piece-credit{display:none!important}
+@media(max-width:1120px){
+  .side-players{grid-template-columns:1fr 1fr}
+  .left-log-panel{grid-column:1/-1;margin-top:0}
+  .controls-panel .actionbar{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:720px){
+  .side-players{grid-template-columns:1fr}
+  .left-log-panel{grid-column:auto}
+  .controls-panel .actionbar{grid-template-columns:1fr 1fr}
+}
