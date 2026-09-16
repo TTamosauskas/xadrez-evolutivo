@@ -1,0 +1,9 @@
+.topbar{align-items:center}
+.top-actions{display:flex!important;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.controls-panel .utility-actions{display:none!important}
+.environment-mark{display:none!important}
+.controls-panel .legend span{gap:7px}
+.legend-color{width:14px;height:14px;border-radius:3px;display:inline-block;flex:0 0 auto}
+.legend-color.biome{background:var(--fertile-live)}
+.legend-color.biohazard{background:#d01818}
+#loadBtn{display:none!important}
