@@ -2,6 +2,16 @@
   const HUMAN_REPLY_MIN=900;
   const HUMAN_REPLY_MAX=1400;
   const EXPLANATION_STATE_KEY='explanationSeen';
+  const MUTATION_INFO={
+    'Locomoção':{icon:'🐪',desc:'Permite uma segunda movimentação com a mesma peça no turno.'},
+    'Voo':{icon:'🐦',desc:'Permite entrar, permanecer e atravessar casas perigosas com segurança.'},
+    'Predação':{icon:'🦁',desc:'Ao capturar uma peça adversária, pode disparar reprodução mesmo fora de uma casa fértil.'},
+    'Ovos':{icon:'🦎',desc:'Descendentes podem nascer a até 2 casas do progenitor.'},
+    'Fertilidade':{icon:'🐇',desc:'Dobra a taxa de natalidade da peça.'},
+    'Carapaça':{icon:'🐢',desc:'Só pode ser capturada por uma peça em casa adjacente.'},
+    'Resistência':{icon:'🧬',desc:'Impede novas infecções pelo Patógeno Virulento.'},
+    'Reprodução Sexuada':{icon:'❤️',desc:'Em casa fértil, permite combinar características com uma peça aliada adjacente.'}
+  };
   const explanationQueue=[];
   let explanationOpen=false;
   let pumpScheduled=false;
@@ -105,48 +115,61 @@
     }
   }
 
-  function profileSummary(org){
-    const p=org&&state?.lineages?.[org.owner]?.[org.lineage];
-    if(!p)return '';
-    const pieces=['Peão','Cavalo','Bispo','Torre','Rei','Rainha'];
-    const rank=Math.max(0,Math.min(5,Number(p.pieceRank)||0));
-    const specs=[...(p.traits||[])];
-    if(p.resistance)specs.push('Resistência 🧬');
-    if(p.sexual)specs.push('Reprodução Sexuada ❤️');
-    return `<p><strong>Perfil perdido:</strong> ${pieces[rank]}${specs.length?` · ${htmlEscape(specs.join(', '))}`:''}.</p>`;
-  }
-
-  function fertileExplanation(text){
+  function fertileExplanation(){
     return {
-      title:'Reprodução em casa fértil',
-      body:`
-        <p><strong>O que aconteceu.</strong> Uma peça entrou numa casa fértil 🌿 e gerou um lote de descendentes. A casa fértil é consumida depois da reprodução.</p>
-        <p><strong>Hereditariedade.</strong> Na reprodução comum, cada filho começa herdando o tipo de peça e as especializações do progenitor. Depois, cada recém-nascido faz sua própria rolagem de mutação, por isso irmãos podem terminar com perfis diferentes.</p>
-        <p>Quando ❤️ Reprodução Sexuada participa, o descendente usa a peça de maior valor como base e recombina aproximadamente metade das especializações de cada progenitor. A mutação adicional de um filho sexuado nunca é downgrade.</p>
-        <p><strong>Resultado desta reprodução:</strong> ${htmlEscape(text)}</p>`
+      title:'Reprodução',
+      body:'<p>Quando atinge uma casa fértil (verde) a peça se reproduz.</p><p>Sua prole herdará suas características.</p>'
     };
   }
 
-  function hazardExplanation(text,victim){
+  function hazardExplanation(){
     return {
-      title:'Morte em casa perigosa',
-      body:`
-        <p><strong>O que aconteceu.</strong> Uma peça foi eliminada por uma casa perigosa ou por uma área ambiental mortal. Peças terrestres podem morrer ao entrar, atravessar ou permanecer numa zona que se torne perigosa; Voo 🐦 oferece imunidade às casas mortais.</p>
-        <p><strong>Hereditariedade.</strong> A morte elimina este indivíduo e impede que ele gere novos descendentes, mas não apaga características que já tenham sido herdadas por outras peças vivas. Cada descendente mantém seu próprio perfil evolutivo.</p>
-        ${profileSummary(victim)}
-        <p><strong>Ocorrência:</strong> ${htmlEscape(text)}</p>`
+      title:'Morte',
+      body:'<p>Quando atinge uma casa perigosa (vermelha) a peça é eliminada.</p>'
     };
+  }
+
+  function cleanMutationName(name){
+    return String(name||'').trim().replace(/[.]+$/,'');
   }
 
   function mutationExplanation(text){
-    const negative=/downgrade|perdeu|perda de/i.test(text);
-    return {
-      title:negative?'Mutação negativa — downgrade':'Mutação positiva',
-      body:`
-        <p><strong>${negative?'Downgrade':'Ganho evolutivo'}.</strong> ${htmlEscape(text)}</p>
-        <p>Esta mutação foi calculada para este descendente individualmente. ${negative?'O novo perfil perdeu uma característica ou reduziu o valor da peça.':'O novo perfil ganhou uma característica ou aumentou o valor da peça.'}</p>
-        <p><strong>Hereditariedade.</strong> A partir de agora, este novo perfil é a base hereditária desta peça. Se ela gerar descendentes, eles partem desse perfil antes de suas próprias mutações. Em Reprodução Sexuada ❤️, o perfil pode ser recombinado com o segundo progenitor.</p>`
-    };
+    const pieceUp=text.match(/Mutação de peça:\s*([^→.]+)\s*→\s*([^\.]+)/i);
+    if(pieceUp){
+      const from=cleanMutationName(pieceUp[1]),to=cleanMutationName(pieceUp[2]);
+      return {
+        title:`Mutação de peça: ${to}`,
+        body:`<p>A peça passou de <strong>${htmlEscape(from)}</strong> para <strong>${htmlEscape(to)}</strong> e agora usa o movimento de ${htmlEscape(to)}.</p>`
+      };
+    }
+
+    const pieceDown=text.match(/Downgrade de peça:\s*([^→.]+)\s*→\s*([^\.]+)/i);
+    if(pieceDown){
+      const from=cleanMutationName(pieceDown[1]),to=cleanMutationName(pieceDown[2]);
+      return {
+        title:`Downgrade: ${to}`,
+        body:`<p>A peça passou de <strong>${htmlEscape(from)}</strong> para <strong>${htmlEscape(to)}</strong> e agora usa o movimento de ${htmlEscape(to)}.</p>`
+      };
+    }
+
+    const gain=text.match(/Nova especialidade:\s*([^\.]+)/i);
+    if(gain){
+      const name=cleanMutationName(gain[1]),info=MUTATION_INFO[name];
+      if(info)return {title:`Mutação: ${name} ${info.icon}`,body:`<p>${info.desc}</p>`};
+      return {title:`Mutação: ${name}`,body:`<p>A peça adquiriu a especialização ${htmlEscape(name)}.</p>`};
+    }
+
+    const loss=text.match(/Downgrade:\s*perdeu\s+([^\.]+)/i);
+    if(loss){
+      const name=cleanMutationName(loss[1]),info=MUTATION_INFO[name];
+      if(info)return {
+        title:`Downgrade: ${name} ${info.icon}`,
+        body:`<p>A peça perdeu esta mutação.</p><p><strong>Efeito perdido:</strong> ${info.desc}</p>`
+      };
+      return {title:`Downgrade: ${name}`,body:`<p>A peça perdeu a especialização ${htmlEscape(name)}.</p>`};
+    }
+
+    return {title:'Mutação',body:`<p>${htmlEscape(text)}</p>`};
   }
 
   function isActualMutationLog(text){
@@ -193,20 +216,19 @@
 
     if(!seen.fertileReproduction&&isFertileReproductionLog(text)){
       seen.fertileReproduction=true;
-      enqueueExplanation(fertileExplanation(text),true);
+      enqueueExplanation(fertileExplanation(),true);
     }
     return result;
   };
 
   const previousRemoveOrganism=removeOrganism;
   removeOrganism=function(id,msg){
-    const victim=state?.organisms?.find(o=>o.id===id);
     const result=previousRemoveOrganism.apply(this,arguments);
     const text=String(msg||'');
     const seen=ensureExplanationState(state);
     if(!seen.hazardDeath&&isHazardDeathMessage(text)){
       seen.hazardDeath=true;
-      enqueueExplanation(hazardExplanation(text,victim),true);
+      enqueueExplanation(hazardExplanation(),true);
     }
     return result;
   };
