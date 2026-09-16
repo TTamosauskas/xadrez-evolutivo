@@ -1,0 +1,15 @@
+.eco-event-modal-card{max-width:520px}
+.eco-event-modal-kicker{
+  margin-bottom:6px;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.eco-event-modal-duration{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid rgba(128,128,128,.22);
+  color:var(--muted);
+}
