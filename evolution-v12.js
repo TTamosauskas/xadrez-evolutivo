@@ -282,8 +282,8 @@
   }
 
   const priorFinishTurn=finishTurn;
-  finishTurn=function(){
-    const before=state?.turn||0;priorFinishTurn();if(!state||state.gameOver)return;
+  finishTurn=function(...args){
+    const before=state?.turn||0;priorFinishTurn(...args);if(!state||state.gameOver)return;
     if(state.turn!==before&&state.turn%2===0)processCompletedRound(completedRounds());
   };
 
