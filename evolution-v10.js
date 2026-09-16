@@ -36,6 +36,20 @@
   };
   renderPlayers=function(){renderPlayer('blue',$('#bluePanel'));renderPlayer('amber',$('#amberPanel'))};
 
+  showGameOver=function(winner,reason){
+    const a=livingSummary('blue'),b=livingSummary('amber');
+    $('#gameOverTitle').textContent=winner?`${owners[winner].name} vence`:'Empate';
+    $('#gameOverBody').innerHTML=`
+      <p>${reason}</p>
+      <table class="score-table"><thead><tr><th>Critério</th><th>Brancas</th><th>Pretas</th></tr></thead><tbody>
+        <tr><td>Peças</td><td>${a.pieces}</td><td>${b.pieces}</td></tr>
+        <tr><td>Gerações</td><td>${a.generations}</td><td>${b.generations}</td></tr>
+        <tr><td>Mutações</td><td>${a.mutations}</td><td>${b.mutations}</td></tr>
+        <tr><td>Linhagens vivas</td><td>${a.lineages}</td><td>${b.lineages}</td></tr>
+      </tbody></table>`;
+    $('#gameOverModal').classList.add('open');
+  };
+
   function hasLegalMove(owner){return playerOrganisms(owner).some(o=>movementTargets(o).length>0)}
   function compareTechnical(a,b){
     for(const key of ['pieces','generations','mutations','lineages']){
