@@ -68,7 +68,7 @@
     clearAiTimer();render();
     $('#gameOverTitle').textContent=result.winner?`${owners[result.winner].name} vence por desempate técnico`:'Empate técnico';
     $('#gameOverBody').innerHTML=`
-      <p>${owners[blockedOwner].name} ficou sem qualquer movimento legal.${result.winner?` O primeiro critério diferente foi <strong>${labels[result.criterion]}</strong>.`:' Os quatro critérios permaneceram iguais.'}</p>
+      <p>Os dois lados ficaram sem movimentos legais em sequência.${result.winner?` O primeiro critério de desempate diferente foi <strong>${labels[result.criterion]}</strong>.`:' Os quatro critérios permaneceram iguais.'}</p>
       <table class="score-table"><thead><tr><th>Critério</th><th>Brancas</th><th>Pretas</th></tr></thead><tbody>
         <tr><td>Peças</td><td>${a.pieces}</td><td>${b.pieces}</td></tr>
         <tr><td>Gerações</td><td>${a.generations}</td><td>${b.generations}</td></tr>
@@ -276,7 +276,11 @@
     aiTimer=null;
     if(!singlePlayer||!state||state.gameOver||state.current!=='amber')return;
     const move=bestSystemMove();
-    if(!move){technicalEnd('amber');return}
+    if(!move){
+      log(`${owners.amber.name} não possui movimentos legais e passa automaticamente.`);
+      finishTurn(true);
+      return;
+    }
     state.selected=move.org.id;state.mode='move';render();
     setTimeout(()=>{
       if(!singlePlayer||!state||state.gameOver||state.current!=='amber')return;
@@ -289,14 +293,19 @@
     },180);
   }
 
-  finishTurn=function(){
+  finishTurn=function(forcedNoMove=false){
     if(state.gameOver)return;
     state.moveChain=null;state.selected=null;state.mode='move';state.organisms.forEach(o=>o.newborn=false);
     checkExtinction();if(state.gameOver){render();return}
     state.turn++;state.current=opposing(state.current);
     if(state.turn%TURNS_PER_EPOCH===0)endEpoch();
     if(state.gameOver){render();return}
-    if(!hasLegalMove(state.current)){technicalEnd(state.current);return}
+    if(!hasLegalMove(state.current)){
+      if(forcedNoMove){technicalEnd(state.current);return}
+      const blocked=state.current;
+      log(`${owners[blocked].name} não possui movimentos legais e passa automaticamente.`);
+      return finishTurn(true);
+    }
     render();
     if(singlePlayer&&state.current==='amber')scheduleSystemTurn();
   };
@@ -310,8 +319,8 @@
   });
 
   const rules=document.querySelectorAll('#rulesModal p');
-  if(rules[0])rules[0].innerHTML='<strong>Objetivo.</strong> A partida termina por extinção total ou por desempate técnico quando o lado da vez não possui movimento legal. O desempate compara, nesta ordem: peças, gerações, mutações e linhagens vivas.';
-  if(rules[5])rules[5].innerHTML='<strong>Controles.</strong> Use o botão de modo no topo para alternar entre 2 jogadores e 1 jogador. No modo de 1 jogador, você controla as Brancas e o sistema controla as Pretas. Há três dificuldades: Fácil mantém a estratégia básica; Médio considera segurança, mobilidade e valor das peças; Difícil também avalia a melhor resposta imediata das Brancas antes de escolher. Clique numa peça sua e depois numa casa com borda azul; “Passar a vez” encerra seu turno sem movimento.';
+  if(rules[0])rules[0].innerHTML='<strong>Objetivo.</strong> A partida termina por extinção total ou por desempate técnico somente quando os dois lados ficam sem movimentos legais em sequência. O desempate compara, nesta ordem: peças, gerações, mutações e linhagens vivas.';
+  if(rules[5])rules[5].innerHTML='<strong>Controles.</strong> Use o botão de modo no topo para alternar entre 2 jogadores e 1 jogador. No modo de 1 jogador, você controla as Brancas e o sistema controla as Pretas. Há três dificuldades: Fácil mantém a estratégia básica; Médio considera segurança, mobilidade e valor das peças; Difícil também avalia a melhor resposta imediata das Brancas antes de escolher. Se um lado não tiver movimentos legais, sua vez passa automaticamente; o desempate técnico só ocorre se o adversário também estiver bloqueado na sequência. Clique numa peça sua e depois numa casa com borda azul; “Passar a vez” encerra seu turno sem movimento.';
 
   updateModeUI();
   if(singlePlayer&&state?.current==='amber'&&!state.gameOver)scheduleSystemTurn();
