@@ -6,6 +6,7 @@
 <title>Xadrez Evolutivo — A Origem das Espécies</title>
 <link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="corrections.css" />
+<link rel="stylesheet" href="simplify.css" />
 </head>
 <body>
 <div class="app">
@@ -48,13 +49,9 @@
         </div>
         <div class="hint" id="hint"></div>
         <div class="legend">
-          <span><i class="swatch" style="background:var(--fertile)"></i> fértil</span>
-          <span><i class="swatch" style="background:var(--neutral)"></i> neutro</span>
-          <span><i class="swatch" style="background:var(--desert)"></i> deserto</span>
-          <span><i class="swatch" style="background:var(--ice)"></i> gelo</span>
-          <span><i class="swatch" style="background:var(--water)"></i> água</span>
-          <span><i class="swatch" style="background:var(--toxic)"></i> tóxico</span>
-          <span><i class="swatch" style="background:var(--volcanic)"></i> vulcânico</span>
+          <span><i class="checker-swatch"></i> habitat neutro</span>
+          <span><i class="swatch" style="background:var(--fertile-live)"></i> bioma com recurso</span>
+          <span><i class="swatch biohazard-swatch"></i> Biohazard</span>
         </div>
       </div>
     </main>
@@ -81,11 +78,11 @@
   <div class="modal">
     <h2>Como jogar</h2>
     <p><strong>Objetivo.</strong> Leve a população adversária à extinção, provoque colapso ecológico por duas Épocas consecutivas ou termine a 10ª Época com maior Sucesso Evolutivo.</p>
-    <p><strong>Turno.</strong> Selecione um organismo e realize uma ação: mover/capturar, reproduzir, alimentar ou usar uma interação especial. Cinco rodadas completas formam uma Época.</p>
-    <p><strong>Recursos e reprodução.</strong> Recursos ficam nas casas férteis. Alimentar armazena um recurso no organismo. Reproduzir consome recursos armazenados e/ou da vizinhança. A primeira reprodução de cada jogador custa 1; depois, o custo-base é 2.</p>
+    <p><strong>Turno.</strong> Selecione um organismo e realize uma ação: mover/capturar, reproduzir ou alimentar. Cinco rodadas completas formam uma Época.</p>
+    <p><strong>Recursos e reprodução.</strong> Toda reprodução custa exatamente 1 recurso de bioma. Linhagens com Predação usam 1 captura acumulada no lugar desse recurso.</p>
     <p><strong>Evolução.</strong> Nascimentos podem sofrer mutação. O descendente pode inaugurar nova linhagem, integrar o traço à linhagem atual ou descartar a mutação. Cada jogador mantém até quatro linhagens e cada linhagem até três traços principais.</p>
-    <p><strong>Ambiente.</strong> Grandes mudanças são anunciadas antes de ocorrer. Gelo, água, desertificação, toxinas, seca, patógenos, vulcanismo e meteoros alteram o valor dos traços conforme o contexto.</p>
-    <p><strong>Controles.</strong> Clique numa peça sua, escolha a ação e depois clique no destino realçado. Contornos verdes indicam destinos legais; contornos vermelhos representam captura. <span class="kbd">Esc</span> limpa a seleção.</p>
+    <p><strong>Ambiente.</strong> O único terreno hostil é o Biohazard, sempre vermelho. Qualquer organismo terrestre que entre ou atravesse uma casa Biohazard é eliminado na mesma jogada. A mutação Voar permite atravessar e ocupar essas casas com segurança.</p>
+    <p><strong>Controles.</strong> Clique numa peça sua, escolha a ação e depois clique no destino realçado. Contornos verdes indicam destinos legais; contornos vermelhos indicam movimentos letais por Biohazard. <span class="kbd">Esc</span> limpa a seleção.</p>
     <div class="modal-actions"><button class="btn primary" data-close="rulesModal">Entendi</button></div>
   </div>
 </div>
@@ -111,5 +108,6 @@
 <script src="environment.js"></script>
 <script src="ui.js"></script>
 <script src="corrections.js"></script>
+<script src="simplify.js"></script>
 </body>
 </html>
