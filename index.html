@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="polish.css" />
 <link rel="stylesheet" href="clean-ui.css" />
 <link rel="stylesheet" href="evolution-v2.css" />
+<link rel="stylesheet" href="evolution-v3.css" />
 </head>
 <body>
 <div class="app">
@@ -47,8 +48,8 @@
 
     <aside class="right-column">
       <section class="panel controls-panel">
-        <h3>Controles</h3>
-        <div class="actionbar">
+        <h3>Legenda</h3>
+        <div class="actionbar" aria-hidden="true">
           <button class="btn active" id="moveBtn">Mover / Capturar</button>
           <button class="btn" id="reproBtn">Reproduzir</button>
           <button class="btn" id="feedBtn">Alimentar</button>
@@ -62,7 +63,7 @@
           <span><i class="legend-color biohazard"></i> Biohazard</span>
         </div>
       </section>
-      <section class="panel"><h3>Árvores filogenéticas</h3><div id="trees" class="tree"></div></section>
+      <section class="panel evolution-tree-panel"><h3>Árvores filogenéticas</h3><div id="trees" class="tree"></div></section>
     </aside>
   </div>
 
@@ -75,9 +76,9 @@
     <p><strong>Objetivo.</strong> Leve a população adversária à extinção, provoque colapso ecológico por duas Épocas consecutivas ou termine a 10ª Época com maior Sucesso Evolutivo.</p>
     <p><strong>Turno.</strong> Cada organismo usa o movimento da peça de xadrez que representa. Peões avançam uma casa para frente e capturam uma casa na diagonal para frente. Locomoção permite uma segunda movimentação no mesmo turno.</p>
     <p><strong>Biomas e reprodução.</strong> Cada casa verde pode ser consumida uma única vez. Uma reprodução comum custa exatamente 1 bioma disponível ou previamente armazenado. Predação gera uma reprodução imediata após cada captura.</p>
-    <p><strong>Evolução.</strong> As mutações possíveis são Mutação de peça, Locomoção, Voo, Predação, Ovos, Fertilidade, Superespecialização, Carapaça e Reversão. Cada linhagem mantém até três adaptações adicionais, além de sua forma de peça.</p>
+    <p><strong>Evolução.</strong> As mutações possíveis são Mutação de peça, Locomoção, Voo, Predação, Ovos, Fertilidade, Superespecialização, Carapaça e Reversão.</p>
     <p><strong>Biohazard.</strong> Casas vermelhas são letais para organismos terrestres ao entrar ou atravessar. Voo oferece imunidade. A cada Época, o Biohazard muda pelas quatro regras de Conway.</p>
-    <p><strong>Controles.</strong> Clique numa peça sua, escolha a ação e depois clique no destino realçado. <span class="kbd">Esc</span> limpa a seleção.</p>
+    <p><strong>Controles.</strong> Clique numa peça sua e depois numa casa com borda azul. <span class="kbd">Esc</span> limpa a seleção.</p>
     <div class="modal-actions"><button class="btn primary" data-close="rulesModal">Entendi</button></div>
   </div>
 </div>
@@ -94,5 +95,6 @@
 <script src="polish.js"></script>
 <script src="clean-ui.js"></script>
 <script src="evolution-v2.js"></script>
+<script src="evolution-v3.js"></script>
 </body>
 </html>
