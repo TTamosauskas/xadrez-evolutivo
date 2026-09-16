@@ -1,7 +1,8 @@
 (function(){
   const PIECES=['Peão','Cavalo','Bispo','Torre','Rei','Rainha'];
   const BIRTH_RATES=[4,3,2,2,1,1];
-  const BASE_TRAITS=['Locomoção','Voo','Predação','Ovos','Fertilidade','Carapaça'];
+  const BASE_TRAITS=['Locomoção','Voo','Predação','Ovos','Fertilidade','Carapaça','Ooteca','Veneno'];
+  const PASSIVE_TRAITS=['Ooteca','Veneno'];
   const SEXUAL_TRAIT='Reprodução Sexuada';
   const STERILITY_TRAIT='Esterilidade';
   let sexualPending=null;
@@ -12,6 +13,16 @@
     p.pieceRank=Math.max(0,Math.min(5,Number(p.pieceRank)||0));
     p.traits=(p.traits||[]).filter(t=>BASE_TRAITS.includes(t));
     p.mutationStack=Array.isArray(p.mutationStack)?p.mutationStack.filter(x=>!(x.kind==='trait'&&x.name==='Superespecialização')):[];
+    for(const name of PASSIVE_TRAITS){
+      let active=p.traits.includes(name);
+      for(const entry of p.mutationStack){
+        if(entry?.name!==name)continue;
+        if(entry.kind==='trait')active=true;
+        else if(entry.kind==='trait-loss')active=false;
+      }
+      if(active&&!p.traits.includes(name))p.traits.push(name);
+      if(!active&&p.traits.includes(name))p.traits=p.traits.filter(t=>t!==name);
+    }
     p.mutations=Array.isArray(p.mutations)?p.mutations.filter(x=>x!=='Superespecialização'):[];
     p.resistance=!!p.resistance;
     p.sexual=!!p.sexual;
@@ -417,5 +428,8 @@
     }
   },true);
 
+  window.xeReproduceFromMutation=reproduce;
+  window.xeProfileHasMutation=has;
+  window.xeNormalizeMutationProfile=normalizeProfile;
   applyBirthRuleText();
 })();
