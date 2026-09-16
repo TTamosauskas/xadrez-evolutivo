@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="simplify.css" />
 <link rel="stylesheet" href="polish.css" />
 <link rel="stylesheet" href="clean-ui.css" />
+<link rel="stylesheet" href="evolution-v2.css" />
 </head>
 <body>
 <div class="app">
@@ -41,9 +42,7 @@
     </div>
 
     <main class="center">
-      <div class="board-shell">
-        <div id="board" class="board" aria-label="Tabuleiro ecológico 8 por 8"></div>
-      </div>
+      <div class="board-shell"><div id="board" class="board" aria-label="Tabuleiro ecológico 8 por 8"></div></div>
     </main>
 
     <aside class="right-column">
@@ -63,45 +62,28 @@
           <span><i class="legend-color biohazard"></i> Biohazard</span>
         </div>
       </section>
-      <section class="panel">
-        <h3>Árvores filogenéticas</h3>
-        <div id="trees" class="tree"></div>
-      </section>
+      <section class="panel"><h3>Árvores filogenéticas</h3><div id="trees" class="tree"></div></section>
     </aside>
   </div>
 
-  <div id="events" hidden></div>
-  <div id="environmentSummary" hidden></div>
+  <div id="events" hidden></div><div id="environmentSummary" hidden></div>
 </div>
 
 <div class="modal-backdrop" id="rulesModal">
   <div class="modal">
     <h2>Como jogar</h2>
     <p><strong>Objetivo.</strong> Leve a população adversária à extinção, provoque colapso ecológico por duas Épocas consecutivas ou termine a 10ª Época com maior Sucesso Evolutivo.</p>
-    <p><strong>Turno.</strong> Selecione um organismo e realize uma ação: mover/capturar, reproduzir ou alimentar. Cinco rodadas completas formam uma Época.</p>
-    <p><strong>Biomas e reprodução.</strong> Cada casa verde pode ser consumida uma única vez. Uma reprodução comum custa exatamente 1 bioma disponível ou previamente armazenado. Predadores usam 1 captura acumulada.</p>
-    <p><strong>Evolução.</strong> Nascimentos podem sofrer mutação. O descendente pode inaugurar nova linhagem, integrar o traço à linhagem atual ou descartar a mutação. Cada jogador mantém até quatro linhagens e cada linhagem até três traços principais.</p>
-    <p><strong>Biohazard.</strong> Casas vermelhas são letais para organismos terrestres ao entrar ou atravessar. Voar oferece imunidade. A cada Época, o Biohazard muda pelas quatro regras de Conway.</p>
-    <p><strong>Controles.</strong> Clique numa peça sua, escolha a ação e depois clique no destino realçado. Contornos verdes indicam destinos legais; contornos vermelhos indicam movimentos letais por Biohazard. <span class="kbd">Esc</span> limpa a seleção.</p>
+    <p><strong>Turno.</strong> Cada organismo usa o movimento da peça de xadrez que representa. Peões avançam uma casa para frente e capturam uma casa na diagonal para frente. Locomoção permite uma segunda movimentação no mesmo turno.</p>
+    <p><strong>Biomas e reprodução.</strong> Cada casa verde pode ser consumida uma única vez. Uma reprodução comum custa exatamente 1 bioma disponível ou previamente armazenado. Predação gera uma reprodução imediata após cada captura.</p>
+    <p><strong>Evolução.</strong> As mutações possíveis são Mutação de peça, Locomoção, Voo, Predação, Ovos, Fertilidade, Superespecialização, Carapaça e Reversão. Cada linhagem mantém até três adaptações adicionais, além de sua forma de peça.</p>
+    <p><strong>Biohazard.</strong> Casas vermelhas são letais para organismos terrestres ao entrar ou atravessar. Voo oferece imunidade. A cada Época, o Biohazard muda pelas quatro regras de Conway.</p>
+    <p><strong>Controles.</strong> Clique numa peça sua, escolha a ação e depois clique no destino realçado. <span class="kbd">Esc</span> limpa a seleção.</p>
     <div class="modal-actions"><button class="btn primary" data-close="rulesModal">Entendi</button></div>
   </div>
 </div>
 
-<div class="modal-backdrop" id="mutationModal">
-  <div class="modal">
-    <h2>Mutação hereditária</h2>
-    <div id="mutationBody"></div>
-    <div class="modal-actions" id="mutationActions"></div>
-  </div>
-</div>
-
-<div class="modal-backdrop" id="gameOverModal">
-  <div class="modal">
-    <h2 id="gameOverTitle">Fim da partida</h2>
-    <div id="gameOverBody"></div>
-    <div class="modal-actions"><button class="btn primary" id="newAfterEnd">Nova partida</button><button class="btn" data-close="gameOverModal">Ver tabuleiro</button></div>
-  </div>
-</div>
+<div class="modal-backdrop" id="mutationModal"><div class="modal"><h2>Mutação hereditária</h2><div id="mutationBody"></div><div class="modal-actions" id="mutationActions"></div></div></div>
+<div class="modal-backdrop" id="gameOverModal"><div class="modal"><h2 id="gameOverTitle">Fim da partida</h2><div id="gameOverBody"></div><div class="modal-actions"><button class="btn primary" id="newAfterEnd">Nova partida</button><button class="btn" data-close="gameOverModal">Ver tabuleiro</button></div></div></div>
 
 <script src="core.js"></script>
 <script src="mechanics.js"></script>
@@ -111,5 +93,6 @@
 <script src="simplify.js"></script>
 <script src="polish.js"></script>
 <script src="clean-ui.js"></script>
+<script src="evolution-v2.js"></script>
 </body>
 </html>
