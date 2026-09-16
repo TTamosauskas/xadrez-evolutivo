@@ -12,6 +12,14 @@
     'Resistência':{icon:'🧬',desc:'Impede novas infecções pelo Patógeno Virulento.'},
     'Reprodução Sexuada':{icon:'❤️',desc:'Em casa fértil, permite combinar características com uma peça aliada adjacente.'}
   };
+  const PIECE_INFO={
+    'Peão':'Avança 1 casa para frente e captura 1 casa na diagonal para frente.',
+    'Cavalo':'Move em L e pode saltar sobre outras peças.',
+    'Bispo':'Move livremente pelas diagonais até encontrar um obstáculo.',
+    'Torre':'Move livremente em linhas ortogonais até encontrar um obstáculo.',
+    'Rei':'Move 1 casa em qualquer direção.',
+    'Rainha':'Move livremente em linhas ortogonais ou diagonais até encontrar um obstáculo.'
+  };
   const explanationQueue=[];
   let explanationOpen=false;
   let pumpScheduled=false;
@@ -137,18 +145,20 @@
     const pieceUp=text.match(/Mutação de peça:\s*([^→.]+)\s*→\s*([^\.]+)/i);
     if(pieceUp){
       const from=cleanMutationName(pieceUp[1]),to=cleanMutationName(pieceUp[2]);
+      const effect=PIECE_INFO[to]||`Agora usa o movimento de ${to}.`;
       return {
         title:`Mutação de peça: ${to}`,
-        body:`<p>A peça passou de <strong>${htmlEscape(from)}</strong> para <strong>${htmlEscape(to)}</strong> e agora usa o movimento de ${htmlEscape(to)}.</p>`
+        body:`<p>A peça passou de <strong>${htmlEscape(from)}</strong> para <strong>${htmlEscape(to)}</strong>.</p><p>${htmlEscape(effect)}</p>`
       };
     }
 
     const pieceDown=text.match(/Downgrade de peça:\s*([^→.]+)\s*→\s*([^\.]+)/i);
     if(pieceDown){
       const from=cleanMutationName(pieceDown[1]),to=cleanMutationName(pieceDown[2]);
+      const effect=PIECE_INFO[to]||`Agora usa o movimento de ${to}.`;
       return {
-        title:`Downgrade: ${to}`,
-        body:`<p>A peça passou de <strong>${htmlEscape(from)}</strong> para <strong>${htmlEscape(to)}</strong> e agora usa o movimento de ${htmlEscape(to)}.</p>`
+        title:`Downgrade de peça: ${to}`,
+        body:`<p>A peça passou de <strong>${htmlEscape(from)}</strong> para <strong>${htmlEscape(to)}</strong>.</p><p>${htmlEscape(effect)}</p>`
       };
     }
 
@@ -173,7 +183,7 @@
   }
 
   function isActualMutationLog(text){
-    return /(?:^|:\s*❤️?\s*)(?:Mutação de peça:|Downgrade de peça:|Downgrade: perdeu |Nova especialidade:)/i.test(text);
+    return /Mutação de peça:|Downgrade de peça:|Downgrade:\s*perdeu |Nova especialidade:/i.test(text);
   }
 
   function isFertileReproductionLog(text){
@@ -183,6 +193,59 @@
 
   function isHazardDeathMessage(text){
     return /(casa mortal|área perigosa|zona perigosa|biohazard|habitat hostil|terreno perigoso|área perigosa do evento)/i.test(text);
+  }
+
+  function ownerFromMutationLog(text){
+    for(const owner of ['blue','amber']){
+      const name=owners?.[owner]?.name;
+      if(name&&text.startsWith(`${name}:`))return owner;
+    }
+    return null;
+  }
+
+  function latestNewborn(owner){
+    for(let i=(state?.organisms?.length||0)-1;i>=0;i--){
+      const org=state.organisms[i];
+      if(org.owner===owner&&org.newborn)return org;
+    }
+    return null;
+  }
+
+  function revertLatestMutation(owner){
+    const child=latestNewborn(owner);if(!child)return false;
+    const p=state?.lineages?.[owner]?.[child.lineage];if(!p)return false;
+    p.mutationStack=Array.isArray(p.mutationStack)?p.mutationStack:[];
+    p.mutations=Array.isArray(p.mutations)?p.mutations:[];
+    const m=p.mutationStack[p.mutationStack.length-1];if(!m||m.inherited)return false;
+
+    if(m.kind==='piece'||m.kind==='piece-downgrade'){
+      if(Number.isInteger(m.from))p.pieceRank=m.from;
+    }else if(m.kind==='trait'){
+      p.traits=(p.traits||[]).filter(t=>t!==m.name);
+    }else if(m.kind==='trait-loss'){
+      p.traits=Array.isArray(p.traits)?p.traits:[];
+      if(m.name&&!p.traits.includes(m.name))p.traits.push(m.name);
+    }else if(m.kind==='resistance'){
+      p.resistance=false;
+    }else if(m.kind==='resistance-loss'){
+      p.resistance=true;
+    }else if(m.kind==='sexual'){
+      p.sexual=false;
+    }else if(m.kind==='sexual-loss'){
+      p.sexual=true;
+    }else return false;
+
+    p.mutationStack.pop();
+    if(p.mutations.length)p.mutations.pop();
+    return true;
+  }
+
+  function suppressFirstReproductionMutation(text){
+    if(!isActualMutationLog(text)||!state)return null;
+    const owner=ownerFromMutationLog(text);if(!owner)return null;
+    if((state.reproCount?.[owner]||0)!==0)return null;
+    if(!revertLatestMutation(owner))return null;
+    return `${owners[owner].name}: primeira reprodução — descendente herdou o perfil sem mutação.`;
   }
 
   const previousNewState=newState;
@@ -206,11 +269,17 @@
 
   const previousLog=log;
   log=function(msg){
-    const result=previousLog.apply(this,arguments);
-    const text=String(msg||'');
+    let text=String(msg||'');
+    const replacement=suppressFirstReproductionMutation(text);
+    if(replacement){
+      text=replacement;
+      msg=replacement;
+    }
+
+    const result=previousLog.call(this,msg);
     const seen=ensureExplanationState(state);
 
-    if(isActualMutationLog(text)){
+    if(!replacement&&isActualMutationLog(text)){
       enqueueExplanation(mutationExplanation(text));
     }
 
@@ -260,9 +329,6 @@
     const nativeSetTimeout=window.setTimeout;
     const replyDelay=humanReplyDelay();
 
-    // Durante a transição Brancas → Pretas, alonga apenas o timer normal
-    // que agenda o início da resposta da IA. Timers imediatos de resolução
-    // ambiental/bloqueio e a animação interna da jogada das Pretas permanecem intactos.
     window.setTimeout=function(callback,delay,...args){
       const ms=Number(delay)||0;
       if(ms>=250&&ms<=400)return nativeSetTimeout(callback,replyDelay,...args);
