@@ -4,6 +4,11 @@
     name:'Terremoto',
     desc:'Todas as peças são deslocadas aleatoriamente para casas adjacentes.'
   };
+  const ABUNDANT_RAINS={
+    id:'abundant-rains',
+    name:'Chuvas Abundantes',
+    desc:'Um quadrante inteiro do tabuleiro se transforma em casas férteis.'
+  };
 
   function isEcoEventPool(a){
     return Array.isArray(a)&&a.length>=8&&a.every(x=>x&&typeof x.id==='string'&&typeof x.name==='string'&&typeof x.desc==='string')&&a.some(x=>x.id==='volcano')&&a.some(x=>x.id==='pathogen');
@@ -14,6 +19,7 @@
     if(isEcoEventPool(a)){
       const options=[...a];
       if(state?.ecoCycle?.previousId!=='earthquake')options.push(EARTHQUAKE);
+      if(state?.ecoCycle?.previousId!=='abundant-rains')options.push(ABUNDANT_RAINS);
       return options[randInt(options.length)];
     }
     return priorChoice(a);
@@ -121,12 +127,35 @@
     render();
   }
 
+  function quadrantCells(q){
+    const out=[],r0=q<2?0:4,c0=q%2===0?0:4;
+    for(let r=r0;r<r0+4;r++)for(let c=c0;c<c0+4;c++)out.push([r,c]);
+    return out;
+  }
+
+  function applyAbundantRains(ev){
+    if(!ev||ev.id!=='abundant-rains'||ev.rainsApplied)return;
+    ev.rainsApplied=true;
+    ev.quadrant=randInt(4);
+    const coords=quadrantCells(ev.quadrant);
+    for(const [r,c] of coords){
+      const ce=cell(r,c);
+      ce.terrain='fertile';
+      ce.resource=1;
+      ce.warning=null;
+      ce.age=0;
+    }
+    const names=['superior esquerdo','superior direito','inferior esquerdo','inferior direito'];
+    log(`Chuvas Abundantes tornaram férteis as 16 casas do quadrante ${names[ev.quadrant]}.`);
+    render();
+  }
+
   const priorFinishTurn=finishTurn;
   finishTurn=function(){
     const result=priorFinishTurn.apply(this,arguments);
-    if(state?.ecoCycle?.active?.id==='earthquake'&&!state.ecoCycle.active.quakeApplied&&!state.gameOver){
-      applyEarthquake(state.ecoCycle.active);
-    }
+    const ev=state?.ecoCycle?.active;
+    if(ev?.id==='earthquake'&&!ev.quakeApplied&&!state.gameOver)applyEarthquake(ev);
+    if(ev?.id==='abundant-rains'&&!ev.rainsApplied&&!state.gameOver)applyAbundantRains(ev);
     return result;
   };
 
@@ -135,5 +164,5 @@
   const rules=document.querySelectorAll('#rulesModal p');
   if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. Na abertura, as duas colunas dos peões fundadores recebem quatro casas férteis: duas por coluna, com uma sorteada na metade superior e outra na metade inferior do tabuleiro. Assim, cada peão tem duas casas férteis no próprio corredor de avanço, com variação de altura entre partidas. Casas férteis evoluem por Conway e, se desaparecerem totalmente, um núcleo mínimo de três casas é reintroduzido.';
   const ecoRule=document.querySelector('#rulesModal .eco-events-rule');
-  if(ecoRule)ecoRule.innerHTML='<strong>Eventos ecológicos.</strong> A cada 10 rodadas completas um evento é sorteado, anunciado em uma janela e aplicado. O evento anterior termina quando o próximo começa. Áreas perigosas temporárias funcionam como casas mortais; Voo oferece imunidade. Terremoto desloca simultaneamente todas as peças para casas adjacentes aleatórias.';
+  if(ecoRule)ecoRule.innerHTML='<strong>Eventos ecológicos.</strong> A cada 10 rodadas completas um evento é sorteado, anunciado em uma janela e aplicado. O evento anterior termina quando o próximo começa. Áreas perigosas temporárias funcionam como casas mortais; Voo oferece imunidade. Terremoto desloca simultaneamente todas as peças para casas adjacentes aleatórias. Chuvas Abundantes transforma as 16 casas de um quadrante aleatório em casas férteis.';
 })();
