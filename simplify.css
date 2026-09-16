@@ -1,0 +1,16 @@
+.cell.terrain-biohazard{
+  background:#c41414!important;
+  box-shadow:inset 0 0 0 3px #ff5a5a!important;
+}
+.cell.terrain-biohazard.legal{box-shadow:inset 0 0 0 4px rgba(82,190,111,.98)!important}
+.cell.terrain-biohazard.capture{box-shadow:inset 0 0 0 4px rgba(255,226,79,.98)!important}
+.cell.lethal-move{box-shadow:inset 0 0 0 4px #ff2b2b!important}
+.biohazard-mark{
+  position:absolute;top:4px;left:5px;z-index:2;color:#fff;font-weight:900;
+  font-size:clamp(12px,1.5vw,18px);line-height:1;text-shadow:0 1px 3px #5d0000;pointer-events:none;
+}
+.biohazard-swatch{width:10px;height:10px;border-radius:2px;display:inline-block;background:#c41414;border:1px solid #ff5a5a}
+.biohazard-event{border-color:#8d2727;background:#321717}
+.biohazard-event strong{color:#ff8585}
+.biohazard-event p{color:#e4b4b4}
+#specialBtn{display:none!important}
