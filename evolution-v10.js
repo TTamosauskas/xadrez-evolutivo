@@ -293,6 +293,20 @@
     },180);
   }
 
+  function deferBlockedResolution(blocked,secondBlock){
+    setTimeout(()=>{
+      if(!state||state.gameOver||state.current!==blocked)return;
+      if(hasLegalMove(blocked)){
+        render();
+        if(singlePlayer&&blocked==='amber')scheduleSystemTurn(180);
+        return;
+      }
+      if(secondBlock){technicalEnd(blocked);return}
+      log(`${owners[blocked].name} não possui movimentos legais e passa automaticamente.`);
+      finishTurn(true);
+    },0);
+  }
+
   finishTurn=function(forcedNoMove=false){
     if(state.gameOver)return;
     state.moveChain=null;state.selected=null;state.mode='move';state.organisms.forEach(o=>o.newborn=false);
@@ -301,10 +315,10 @@
     if(state.turn%TURNS_PER_EPOCH===0)endEpoch();
     if(state.gameOver){render();return}
     if(!hasLegalMove(state.current)){
-      if(forcedNoMove){technicalEnd(state.current);return}
       const blocked=state.current;
-      log(`${owners[blocked].name} não possui movimentos legais e passa automaticamente.`);
-      return finishTurn(true);
+      render();
+      deferBlockedResolution(blocked,forcedNoMove);
+      return;
     }
     render();
     if(singlePlayer&&state.current==='amber')scheduleSystemTurn();
