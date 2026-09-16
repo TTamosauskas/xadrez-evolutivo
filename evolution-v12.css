@@ -1,0 +1,43 @@
+.eco-event-banner{
+  margin:10px 0 0;
+  padding:9px 12px;
+  border:1px solid rgba(128,128,128,.28);
+  border-radius:9px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:11px;
+  color:var(--muted);
+  background:rgba(255,255,255,.025);
+}
+.eco-event-banner strong{color:var(--text);white-space:nowrap}
+.eco-event-banner span{flex:1}
+.eco-event-banner small{white-space:nowrap;color:var(--muted)}
+.eco-event-banner.active{border-color:rgba(49,130,246,.42)}
+.eco-event-banner.announce{animation:ecoEventPulse .65s ease-out}
+@keyframes ecoEventPulse{
+  0%{transform:scale(.99);box-shadow:0 0 0 0 rgba(49,130,246,.32)}
+  100%{transform:scale(1);box-shadow:0 0 0 10px rgba(49,130,246,0)}
+}
+.org{position:relative}
+.pathogen-badge{
+  position:absolute;
+  right:-5px;
+  top:-7px;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(20,20,20,.9);
+  border:1px solid rgba(255,255,255,.65);
+  font-size:12px;
+  line-height:1;
+  z-index:6;
+}
+.resistance-icon{filter:saturate(1.1)}
+@media (max-width:900px){
+  .eco-event-banner{align-items:flex-start;flex-wrap:wrap}
+  .eco-event-banner span{flex-basis:100%}
+}
