@@ -1,7 +1,6 @@
 (function(){
   const REMOVED='Superespecialização';
   const ALLOWED_TRAITS=['Locomoção','Voo','Predação','Ovos','Fertilidade','Carapaça'];
-  const PIECES=['Peão','Cavalo','Bispo','Torre','Rei','Rainha'];
 
   for(let i=traitCatalog.length-1;i>=0;i--)if(traitCatalog[i].name===REMOVED)traitCatalog.splice(i,1);
 
@@ -14,6 +13,7 @@
   function cleanAllProfiles(){
     if(!state?.lineages)return;
     for(const owner of ['blue','amber'])for(const p of Object.values(state.lineages[owner]||{}))cleanProfile(p);
+    if(Array.isArray(state.logs))state.logs=state.logs.filter(x=>!String(x.msg||'').includes(REMOVED));
   }
   function sample(items,count){return shuffle(items).slice(0,Math.min(count,items.length))}
   function trimInitialMortalCells(s){
@@ -39,30 +39,38 @@
     if(rank>0||rank<5)options.push({kind:'piece'});
     for(const name of ALLOWED_TRAITS)if(!p.traits.includes(name))options.push({kind:'trait',name});
     if(p.mutationStack.length)options.push({kind:'reversal'});
-    if(!options.length)return;
+    if(!options.length)return null;
     const m=choice(options);
     if(m.kind==='piece'){
-      const dirs=[];if(rank>0)dirs.push(-1);if(rank<5)dirs.push(1);const delta=choice(dirs);
+      const dirs=[];if(rank>0)dirs.push(-1);if(rank<5)dirs.push(1);const delta=choice(dirs),pieces=['Peão','Cavalo','Bispo','Torre','Rei','Rainha'];
       p.pieceRank=rank+delta;p.mutationStack.push({kind:'piece',delta});p.mutations.push('Mutação de peça');
-      return;
+      return `Mutação de peça: ${pieces[rank]} → ${pieces[p.pieceRank]}`;
     }
     if(m.kind==='trait'){
-      p.traits.push(m.name);p.mutationStack.push({kind:'trait',name:m.name});p.mutations.push(m.name);return;
+      p.traits.push(m.name);p.mutationStack.push({kind:'trait',name:m.name});p.mutations.push(m.name);
+      return `Nova mutação: ${m.name}`;
     }
     const x=p.mutationStack.pop();
-    if(!x)return;
+    if(!x)return null;
     if(x.kind==='piece')p.pieceRank=Math.max(0,Math.min(5,(Number(p.pieceRank)||0)-x.delta));
     else p.traits=p.traits.filter(t=>t!==x.name);
     p.mutations.push('Reversão');
+    return x.kind==='piece'?'Reversão removeu a última mudança de peça':`Reversão removeu ${x.name}`;
   }
   function repairNewChildren(beforeIds){
+    let repaired=false;
     for(const o of state.organisms){
       if(beforeIds.has(o.id))continue;
       const p=state.lineages[o.owner]?.[o.lineage];if(!p)continue;
       if((p.traits||[]).includes(REMOVED)){
-        cleanProfile(p);replaceRemovedMutation(p);
+        cleanProfile(p);
+        if(Array.isArray(state.logs))state.logs=state.logs.filter(x=>!String(x.msg||'').includes(REMOVED));
+        const result=replaceRemovedMutation(p);
+        if(result)log(`${owners[o.owner].name}: ${result}.`);
+        repaired=true;
       }
     }
+    if(repaired)cleanAllProfiles();
   }
   function replaceTerms(s){
     return String(s)
