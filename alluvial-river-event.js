@@ -2,7 +2,7 @@
   const ALLUVIAL_RIVER={
     id:'alluvial-river',
     name:'Rio Aluvial',
-    desc:'Uma diagonal fértil atravessa o tabuleiro do canto superior esquerdo ao canto inferior direito.'
+    desc:'Uma faixa diagonal larga de casas férteis corta o tabuleiro, como uma versão fértil da Barreira Geográfica.'
   };
 
   function isEcoEventPool(a){
@@ -20,19 +20,37 @@
     return previousChoice(a);
   };
 
+  function riverBandCells(anti){
+    const out=[],seen=new Set();
+    for(let r=0;r<SIZE;r++){
+      const center=anti?SIZE-1-r:r;
+      for(let offset=-1;offset<=1;offset++){
+        const c=center+offset;
+        if(!inBounds(r,c))continue;
+        const k=`${r},${c}`;
+        if(seen.has(k))continue;
+        seen.add(k);out.push([r,c]);
+      }
+    }
+    return out;
+  }
+
+  function makeFertile(r,c){
+    const ce=cell(r,c);
+    ce.terrain='fertile';
+    ce.resource=1;
+    ce.warning=null;
+    ce.age=0;
+  }
+
   function applyAlluvialRiver(ev){
     if(!ev||ev.id!==ALLUVIAL_RIVER.id||ev.alluvialRiverApplied)return;
     ev.alluvialRiverApplied=true;
-    const coords=[];
-    for(let i=0;i<SIZE;i++){
-      const ce=cell(i,i);
-      ce.terrain='fertile';
-      ce.resource=1;
-      ce.warning=null;
-      ce.age=0;
-      coords.push(coord(i,i));
-    }
-    log(`Rio Aluvial tornou fértil a diagonal ${coords.join(' → ')}.`);
+    ev.anti=Math.random()<.5;
+    const coords=riverBandCells(ev.anti);
+    for(const [r,c] of coords)makeFertile(r,c);
+    const direction=ev.anti?'canto superior direito ao inferior esquerdo':'canto superior esquerdo ao inferior direito';
+    log(`Rio Aluvial formou uma faixa fértil diagonal de ${coords.length} casas, do ${direction}.`);
     render();
   }
 
@@ -47,7 +65,7 @@
   function updateRule(){
     const ecoRule=document.querySelector('#rulesModal .eco-events-rule');
     if(!ecoRule)return;
-    if(!ecoRule.textContent.includes('Rio Aluvial'))ecoRule.innerHTML+=' Rio Aluvial cria uma diagonal de 8 casas férteis de A8 até H1.';
+    if(!ecoRule.textContent.includes('Rio Aluvial'))ecoRule.innerHTML+=' Rio Aluvial cria uma faixa diagonal de casas férteis, com três casas de largura e orientação aleatória, como uma versão fértil da Barreira Geográfica.';
   }
 
   const previousRenderActions=renderActions;
