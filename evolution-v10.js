@@ -62,7 +62,7 @@
     }
     return {winner:null,criterion:null};
   }
-  function technicalEnd(blockedOwner){
+  function technicalEnd(){
     const a=livingSummary('blue'),b=livingSummary('amber'),result=compareTechnical(a,b);
     const labels={pieces:'número de peças',generations:'gerações',mutations:'mutações',lineages:'linhagens vivas'};
     state.gameOver=true;state.selected=null;state.moveChain=null;
@@ -138,29 +138,13 @@
   }
   function organismValue(org){
     const p=profileOf(org);normalizeProfile(p);
-    const rankValues=[10,28,32,46,58,72];
-    return rankValues[p?.pieceRank||0]+(p?.traits?.length||0)*14;
+    const rankValues=[12,30,34,48,62,78];
+    const reproductive=(BIRTH_RATES[p?.pieceRank||0]||1)*(has(org,'Fertilidade')?2:1);
+    return rankValues[p?.pieceRank||0]+(p?.traits?.length||0)*14+reproductive*3;
   }
   function moveWouldBeLethal(org,t){
     return !has(org,'Voo')&&Array.isArray(t.path)&&t.path.some(([r,c])=>cell(r,c).terrain==='biohazard');
   }
-  function coreMoveScore(org,t,randomness){
-    const defender=organismAt(t.r,t.c),dest=cell(t.r,t.c),p=profileOf(org);normalizeProfile(p);
-    const lethal=moveWouldBeLethal(org,t);
-    let score=Math.random()*randomness;
-    if(lethal)score-=5000;
-    if(defender&&defender.owner!==org.owner){
-      const dp=profileOf(defender);normalizeProfile(dp);
-      score+=1000+(dp?.pieceRank||0)*35+(dp?.traits?.length||0)*20;
-      if(has(org,'Predação'))score+=180;
-    }
-    if(dest.terrain==='fertile'&&dest.resource>0){score+=260;if(has(org,'Fertilidade'))score+=80}
-    const before=nearestEnemyDistance(org.owner,org.r,org.c),after=nearestEnemyDistance(org.owner,t.r,t.c);
-    score+=(before-after)*9;
-    if(dest.terrain!=='biohazard')score+=15;
-    return score;
-  }
-  function easyMoveScore(org,t){return coreMoveScore(org,t,4)}
 
   function withTemporaryMove(org,t,fn){
     const fromR=org.r,fromC=org.c;
@@ -173,94 +157,17 @@
       if(defenderIndex>=0)state.organisms.splice(defenderIndex,0,defender);
     }
   }
-  function immediateThreatToMovedPiece(org,t){
-    return withTemporaryMove(org,t,()=>{
-      let threat=0,attackers=0;
-      for(const enemy of playerOrganisms('blue')){
-        for(const reply of movementTargets(enemy)){
-          if(moveWouldBeLethal(enemy,reply))continue;
-          if(reply.r===org.r&&reply.c===org.c){
-            attackers++;
-            threat=Math.max(threat,organismValue(enemy));
-          }
-        }
-      }
-      return {threat,attackers,mobility:movementTargets(org).length};
-    });
-  }
-  function mediumMoveScore(org,t){
-    let score=coreMoveScore(org,t,1.5);
-    if(moveWouldBeLethal(org,t))return score;
-    const safety=immediateThreatToMovedPiece(org,t),value=organismValue(org);
-    if(safety.attackers)score-=value*9+safety.attackers*35;
-    else score+=value*.65;
-    score+=Math.min(18,safety.mobility)*4;
-    const defender=organismAt(t.r,t.c);
-    if(defender&&playerOrganisms('blue').length===1)score+=10000;
-    return score;
-  }
-  function bestOpponentReplyPenalty(org,t){
-    return withTemporaryMove(org,t,()=>{
-      let best=0;
-      for(const enemy of playerOrganisms('blue')){
-        for(const reply of movementTargets(enemy)){
-          if(moveWouldBeLethal(enemy,reply))continue;
-          const victim=organismAt(reply.r,reply.c),dest=cell(reply.r,reply.c);
-          let score=0;
-          if(victim&&victim.owner==='amber'){
-            score+=650+organismValue(victim)*13;
-            if(playerOrganisms('amber').length===1)score+=20000;
-          }
-          if(dest.terrain==='fertile'&&dest.resource>0)score+=170;
-          if(has(enemy,'Predação')&&victim&&victim.owner==='amber')score+=120;
-          best=Math.max(best,score);
-        }
-      }
-      return best;
-    });
-  }
-  function ownFollowupValue(org,t){
-    return withTemporaryMove(org,t,()=>{
-      let best=0;
-      for(const next of movementTargets(org)){
-        if(moveWouldBeLethal(org,next))continue;
-        const defender=organismAt(next.r,next.c),dest=cell(next.r,next.c);
-        let value=0;
-        if(defender&&defender.owner==='blue')value+=organismValue(defender)*7+220;
-        if(dest.terrain==='fertile'&&dest.resource>0)value+=90;
-        best=Math.max(best,value);
-      }
-      return best;
-    });
-  }
-  function hardMoveScore(org,t){
-    let score=coreMoveScore(org,t,.2);
-    if(moveWouldBeLethal(org,t))return score;
-    const safety=immediateThreatToMovedPiece(org,t),value=organismValue(org);
-    if(safety.attackers)score-=value*11+safety.attackers*45;
-    else score+=value;
-    score+=Math.min(20,safety.mobility)*5;
-    score-=bestOpponentReplyPenalty(org,t)*1.08;
-    score+=ownFollowupValue(org,t)*.42;
-    const defender=organismAt(t.r,t.c);
-    if(defender&&playerOrganisms('blue').length===1)score+=25000;
-    return score;
-  }
-  function nearestFertileDistance(r,c){
-    let best=Infinity;
-    for(let rr=0;rr<SIZE;rr++)for(let cc=0;cc<SIZE;cc++){
-      const ce=cell(rr,cc);
-      if(ce.terrain!=='fertile'||ce.resource<=0)continue;
-      best=Math.min(best,Math.max(Math.abs(rr-r),Math.abs(cc-c)));
-    }
-    return best;
-  }
-  function projectedBirthsOnFertile(org,t){
-    const dest=cell(t.r,t.c);
-    if(dest.terrain!=='fertile'||dest.resource<=0)return 0;
+
+  function birthCapacity(org){
     const p=profileOf(org);normalizeProfile(p);
-    const base=BIRTH_RATES[p?.pieceRank||0]||1;
-    const intended=has(org,'Fertilidade')?base*2:base;
+    return (BIRTH_RATES[p?.pieceRank||0]||1)*(has(org,'Fertilidade')?2:1);
+  }
+  function projectedBirthsForMove(org,t){
+    if(moveWouldBeLethal(org,t))return 0;
+    const dest=cell(t.r,t.c),defender=organismAt(t.r,t.c);
+    const fertile=dest.terrain==='fertile'&&dest.resource>0;
+    const predation=!!defender&&defender.owner!==org.owner&&has(org,'Predação');
+    if(!fertile&&!predation)return 0;
     const room=Math.max(0,MAX_POP-playerOrganisms(org.owner).length);
     if(!room)return 0;
     return withTemporaryMove(org,t,()=>{
@@ -273,7 +180,122 @@
         if(cell(r,c).terrain==='biohazard'&&!has(org,'Voo'))continue;
         spaces++;
       }
-      return Math.min(intended,room,spaces);
+      return Math.min(birthCapacity(org),room,spaces);
+    });
+  }
+  function reproductionValue(org,t){
+    const births=projectedBirthsForMove(org,t);
+    if(!births)return 0;
+    const p=profileOf(org);normalizeProfile(p);
+    const childBase=[12,30,34,48,62,78][p?.pieceRank||0]||12;
+    return births*(42+childBase*.8)+(has(org,'Fertilidade')?births*10:0);
+  }
+  function tacticalMoveValue(org,t,randomness=0){
+    const defender=organismAt(t.r,t.c),dest=cell(t.r,t.c);
+    let score=Math.random()*randomness;
+    if(moveWouldBeLethal(org,t))return score-5000;
+    if(defender&&defender.owner!==org.owner)score+=650+organismValue(defender)*11;
+    score+=reproductionValue(org,t);
+    const before=nearestEnemyDistance(org.owner,org.r,org.c),after=nearestEnemyDistance(org.owner,t.r,t.c);
+    score+=(before-after)*8;
+    if(dest.terrain!=='biohazard')score+=12;
+    return score;
+  }
+  function coreMoveScore(org,t,randomness){return tacticalMoveValue(org,t,randomness)}
+
+  function immediateThreatToMovedPiece(org,t){
+    return withTemporaryMove(org,t,()=>{
+      let attackers=0,worst=0,mobility=movementTargets(org).length;
+      for(const enemy of playerOrganisms('blue')){
+        for(const reply of movementTargets(enemy)){
+          if(moveWouldBeLethal(enemy,reply))continue;
+          if(reply.r===org.r&&reply.c===org.c){
+            attackers++;
+            worst=Math.max(worst,tacticalMoveValue(enemy,reply));
+          }
+        }
+      }
+      return {attackers,worst,mobility};
+    });
+  }
+
+  // Fácil: boa no lance imediato, reprodução e segurança básica, mas mantém pequena variedade entre equivalentes.
+  function easyMoveScore(org,t){
+    let score=coreMoveScore(org,t,1.4);
+    if(moveWouldBeLethal(org,t))return score;
+    const safety=immediateThreatToMovedPiece(org,t),value=organismValue(org);
+    if(safety.attackers)score-=value*5+safety.worst*.22+safety.attackers*18;
+    else score+=value*.35;
+    score+=Math.min(14,safety.mobility)*2.5;
+    return score;
+  }
+
+  function bestOpponentReplyPenalty(org,t){
+    return withTemporaryMove(org,t,()=>{
+      let best=0;
+      for(const enemy of playerOrganisms('blue')){
+        for(const reply of movementTargets(enemy)){
+          if(moveWouldBeLethal(enemy,reply))continue;
+          let score=tacticalMoveValue(enemy,reply);
+          const victim=organismAt(reply.r,reply.c);
+          if(victim&&victim.owner==='amber'&&playerOrganisms('amber').length===1)score+=20000;
+          best=Math.max(best,score);
+        }
+      }
+      return best;
+    });
+  }
+  function ownFollowupValue(org,t){
+    return withTemporaryMove(org,t,()=>{
+      let best=0;
+      for(const ally of playerOrganisms('amber')){
+        for(const next of movementTargets(ally)){
+          if(moveWouldBeLethal(ally,next))continue;
+          best=Math.max(best,tacticalMoveValue(ally,next));
+        }
+      }
+      return best;
+    });
+  }
+
+  // Médio: antigo difícil, agora com o valor real dos lotes nas respostas das Brancas.
+  function mediumMoveScore(org,t){
+    let score=coreMoveScore(org,t,.25);
+    if(moveWouldBeLethal(org,t))return score;
+    const safety=immediateThreatToMovedPiece(org,t),value=organismValue(org);
+    if(safety.attackers)score-=value*8+safety.worst*.32+safety.attackers*32;
+    else score+=value*.8;
+    score+=Math.min(20,safety.mobility)*4;
+    score-=bestOpponentReplyPenalty(org,t)*1.04;
+    score+=ownFollowupValue(org,t)*.25;
+    const defender=organismAt(t.r,t.c);
+    if(defender&&defender.owner==='blue'&&playerOrganisms('blue').length===1)score+=25000;
+    return score;
+  }
+
+  function nearestFertileDistance(r,c){
+    let best=Infinity;
+    for(let rr=0;rr<SIZE;rr++)for(let cc=0;cc<SIZE;cc++){
+      const ce=cell(rr,cc);
+      if(ce.terrain!=='fertile'||ce.resource<=0)continue;
+      best=Math.min(best,Math.max(Math.abs(rr-r),Math.abs(cc-c)));
+    }
+    return best;
+  }
+  function mobilityTotal(owner){
+    let total=0;
+    for(const o of playerOrganisms(owner))total+=movementTargets(o).length;
+    return total;
+  }
+  function positionalValueAfterMove(org,t){
+    return withTemporaryMove(org,t,()=>{
+      const own=mobilityTotal('amber'),opp=mobilityTotal('blue');
+      let value=own*5-opp*2.5;
+      if(own===0)value-=1800;
+      if(opp===0)value+=900;
+      const populationGap=playerOrganisms('amber').length-playerOrganisms('blue').length;
+      value+=populationGap*18;
+      return value;
     });
   }
   function fertileGrowthValue(org,t){
@@ -282,29 +304,55 @@
     const before=nearestFertileDistance(org.r,org.c);
     const after=nearestFertileDistance(t.r,t.c);
     let score=0;
-    if(Number.isFinite(before)&&Number.isFinite(after))score+=(before-after)*24;
-    const dest=cell(t.r,t.c);
-    if(dest.terrain==='fertile'&&dest.resource>0){
-      const born=projectedBirthsOnFertile(org,t);
-      if(born>0){
-        score+=born*220;
-        if(has(org,'Fertilidade'))score+=born*35;
-        if(playerOrganisms(org.owner).length<=4)score+=born*45;
-      }else{
-        score-=260;
-      }
-    }else if(after===1){
-      score+=35;
-    }
+    if(Number.isFinite(before)&&Number.isFinite(after))score+=(before-after)*14;
+    const births=projectedBirthsForMove(org,t);
+    if(births>0)score+=births*75;
+    else if(cell(t.r,t.c).terrain==='fertile'&&cell(t.r,t.c).resource>0)score-=180;
+    else if(after===1)score+=24;
     return score;
   }
-  function strategicHardMoveScore(org,t){
-    return hardMoveScore(org,t)+fertileGrowthValue(org,t);
+  function bestCounterAfterReply(){
+    let best=0;
+    for(const ally of playerOrganisms('amber')){
+      for(const next of movementTargets(ally)){
+        if(moveWouldBeLethal(ally,next))continue;
+        best=Math.max(best,tacticalMoveValue(ally,next)+reproductionValue(ally,next)*.25);
+      }
+    }
+    return best;
+  }
+  function worstReplyWithCounter(org,t){
+    return withTemporaryMove(org,t,()=>{
+      let worst=0;
+      for(const enemy of playerOrganisms('blue')){
+        for(const reply of movementTargets(enemy)){
+          if(moveWouldBeLethal(enemy,reply))continue;
+          const replyValue=tacticalMoveValue(enemy,reply);
+          const net=withTemporaryMove(enemy,reply,()=>{
+            const amberMobility=mobilityTotal('amber');
+            const counter=amberMobility?bestCounterAfterReply():0;
+            return replyValue-counter*.34+(amberMobility?0:1800);
+          });
+          worst=Math.max(worst,net);
+        }
+      }
+      return worst;
+    });
+  }
+
+  // Difícil: Médio + crescimento sustentável + mobilidade + capacidade de contra-atacar após a melhor resposta branca.
+  function hardMoveScore(org,t){
+    let score=mediumMoveScore(org,t);
+    if(moveWouldBeLethal(org,t))return score;
+    score+=fertileGrowthValue(org,t);
+    score+=positionalValueAfterMove(org,t)*.75;
+    score-=worstReplyWithCounter(org,t)*.48;
+    return score;
   }
   function scoreSystemMove(org,target){
-    if(aiDifficulty==='hard')return strategicHardMoveScore(org,target);
-    if(aiDifficulty==='medium')return hardMoveScore(org,target);
-    return mediumMoveScore(org,target);
+    if(aiDifficulty==='hard')return hardMoveScore(org,target);
+    if(aiDifficulty==='medium')return mediumMoveScore(org,target);
+    return easyMoveScore(org,target);
   }
   function bestSystemMove(){
     const moves=[];
@@ -317,7 +365,7 @@
     if(!moves.length)return null;
     moves.sort((a,b)=>b.score-a.score);
     if(aiDifficulty==='hard'||aiDifficulty==='medium')return moves[0];
-    const tolerance=1.25;
+    const tolerance=1.75;
     const topScore=moves[0].score,top=moves.filter(m=>m.score>=topScore-tolerance);
     return choice(top);
   }
@@ -357,7 +405,7 @@
         if(singlePlayer&&blocked==='amber')scheduleSystemTurn(180);
         return;
       }
-      if(secondBlock){technicalEnd(blocked);return}
+      if(secondBlock){technicalEnd();return}
       log(`${owners[blocked].name} não possui movimentos legais e passa automaticamente.`);
       finishTurn(true);
     },0);
@@ -390,7 +438,7 @@
 
   const rules=document.querySelectorAll('#rulesModal p');
   if(rules[0])rules[0].innerHTML='<strong>Objetivo.</strong> A partida termina por extinção total ou por desempate técnico somente quando os dois lados ficam sem movimentos legais em sequência. O desempate compara, nesta ordem: peças, gerações, mutações e linhagens vivas.';
-  if(rules[5])rules[5].innerHTML='<strong>Controles.</strong> Use o botão de modo no topo para alternar entre 2 jogadores e 1 jogador. No modo de 1 jogador, você controla as Brancas e o sistema controla as Pretas. Há três dificuldades: Fácil considera segurança, mobilidade e valor das peças; Médio também avalia a melhor resposta imediata das Brancas; Difícil acrescenta estratégia de crescimento, valorizando casas férteis conforme a taxa de natalidade da peça, Fertilidade 🐇, espaço disponível para os descendentes e capacidade populacional. Se um lado não tiver movimentos legais, sua vez passa automaticamente; o desempate técnico só ocorre se o adversário também estiver bloqueado na sequência. Clique numa peça sua e depois numa casa com borda azul; “Passar a vez” encerra seu turno sem movimento.';
+  if(rules[5])rules[5].innerHTML='<strong>Controles.</strong> Use o botão de modo no topo para alternar entre 2 jogadores e 1 jogador. No modo de 1 jogador, você controla as Brancas e o sistema controla as Pretas. Há três dificuldades: Fácil considera valor imediato, reprodução e segurança básica, mantendo alguma variedade entre lances equivalentes; Médio também calcula a melhor resposta imediata das Brancas e o valor reprodutivo dessa resposta; Difícil acrescenta crescimento sustentável, mobilidade global e uma camada adicional de contra-jogo após a resposta branca. Se um lado não tiver movimentos legais, sua vez passa automaticamente; o desempate técnico só ocorre se o adversário também estiver bloqueado na sequência. Clique numa peça sua e depois numa casa com borda azul; “Passar a vez” encerra seu turno sem movimento.';
 
   updateModeUI();
   if(singlePlayer&&state?.current==='amber'&&!state.gameOver)scheduleSystemTurn();
