@@ -16,12 +16,14 @@
 <link rel="stylesheet" href="evolution-v7.css" />
 <link rel="stylesheet" href="evolution-v8.css" />
 <link rel="stylesheet" href="evolution-v9.css" />
+<link rel="stylesheet" href="evolution-v10.css" />
 </head>
 <body>
 <div class="app">
   <div class="topbar">
     <div class="brand"><h1>Xadrez Evolutivo</h1></div>
     <div class="top-actions">
+      <button class="btn" id="modeBtn" aria-pressed="false">Modo: 2 jogadores</button>
       <button class="btn" id="rulesBtn">Como jogar</button>
       <button class="btn" id="saveBtn">Salvar</button>
       <button class="btn danger" id="resetBtn">Nova partida</button>
@@ -78,12 +80,12 @@
 <div class="modal-backdrop" id="rulesModal">
   <div class="modal">
     <h2>Como jogar</h2>
-    <p><strong>Objetivo.</strong> A partida termina apenas por extinção: vence o lado que eliminar todas as peças adversárias. Se as duas populações forem eliminadas simultaneamente, a partida termina empatada.</p>
+    <p><strong>Objetivo.</strong> A partida termina por extinção total ou por desempate técnico quando o lado da vez não possui movimento legal. O desempate compara, nesta ordem: peças, gerações, mutações e linhagens vivas.</p>
     <p><strong>Turno.</strong> Cada organismo usa o movimento da peça de xadrez que representa. Peões avançam uma casa para frente e capturam uma casa na diagonal para frente. Locomoção permite uma segunda movimentação no mesmo turno.</p>
     <p><strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. Casas férteis evoluem por Conway e, se desaparecerem totalmente, um núcleo mínimo de três casas é reintroduzido.</p>
     <p><strong>Evolução.</strong> Cada descendente herda todas as mutações do progenitor. Em 2/3 dos nascimentos ocorre apenas herança; em 1/3 ocorre uma nova mutação automática. Linhagens vivas correspondem a perfis evolutivos distintos ainda presentes no tabuleiro.</p>
     <p><strong>Casas ambientais.</strong> Casas verdes e vermelhas evoluem simultaneamente a cada Época pelas quatro regras de Conway. Cada cor conta apenas vizinhas da própria cor e a casa fértil tem prioridade em conflitos. Se uma das duas cores desaparecer totalmente, um núcleo mínimo de três casas é reintroduzido. Casas vermelhas eliminam organismos terrestres; Voo oferece imunidade.</p>
-    <p><strong>Controles.</strong> Clique numa peça sua e depois numa casa com borda azul. Use “Passar a vez” quando quiser encerrar o turno sem movimento. <span class="kbd">Esc</span> limpa a seleção.</p>
+    <p><strong>Controles.</strong> Use o botão de modo no topo para alternar entre 2 jogadores e 1 jogador. No modo de 1 jogador, você controla as Brancas e o sistema controla as Pretas. Clique numa peça sua e depois numa casa com borda azul; “Passar a vez” encerra seu turno sem movimento.</p>
     <div class="modal-actions"><button class="btn primary" data-close="rulesModal">Entendi</button></div>
   </div>
 </div>
@@ -108,5 +110,6 @@
 <script src="evolution-v7.js"></script>
 <script src="evolution-v8.js"></script>
 <script src="evolution-v9.js"></script>
+<script src="evolution-v10.js"></script>
 </body>
 </html>
