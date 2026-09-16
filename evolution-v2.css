@@ -1,0 +1,35 @@
+.org{overflow:visible!important}
+.org img{position:relative;z-index:2}
+.mutation-icons{
+  position:absolute;
+  left:50%;
+  bottom:-9px;
+  transform:translateX(-50%);
+  z-index:7;
+  display:flex;
+  gap:2px;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+  pointer-events:none;
+}
+.mutation-icon{
+  width:17px;
+  height:17px;
+  border-radius:50%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(18,18,18,.92);
+  border:1px solid rgba(255,255,255,.78);
+  box-shadow:0 1px 3px rgba(0,0,0,.7);
+  font-size:10px;
+  line-height:1;
+}
+.org-state{right:-7px!important;bottom:10px!important;z-index:8}
+.lineage-id{display:flex;align-items:center;gap:4px}
+.controls-panel .hint{min-height:42px}
+@media(max-width:720px){
+  .mutation-icons{bottom:-7px;gap:1px}
+  .mutation-icon{width:15px;height:15px;font-size:9px}
+}
