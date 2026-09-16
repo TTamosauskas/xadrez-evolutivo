@@ -12,7 +12,7 @@
   const INSULARIZATION={
     id:'insularization',
     name:'Insularização',
-    desc:'Uma cruz central de casas perigosas separa o tabuleiro em quatro ilhas iguais.'
+    desc:'Uma linha horizontal e uma linha vertical de casas perigosas dividem o tabuleiro em quatro áreas.'
   };
 
   function isEcoEventPool(a){
@@ -156,14 +156,15 @@
     render();
   }
 
-  function insularizationCells(){
+  function insularizationCells(ev){
+    if(!Number.isInteger(ev.insularRow))ev.insularRow=1+randInt(Math.max(1,SIZE-2));
+    if(!Number.isInteger(ev.insularCol))ev.insularCol=1+randInt(Math.max(1,SIZE-2));
     const coords=[],seen=new Set();
-    const middle=[Math.floor(SIZE/2)-1,Math.floor(SIZE/2)];
-    for(const r of middle)for(let c=0;c<SIZE;c++){
-      const k=`${r},${c}`;if(!seen.has(k)){seen.add(k);coords.push([r,c])}
+    for(let c=0;c<SIZE;c++){
+      const k=`${ev.insularRow},${c}`;seen.add(k);coords.push([ev.insularRow,c]);
     }
-    for(const c of middle)for(let r=0;r<SIZE;r++){
-      const k=`${r},${c}`;if(!seen.has(k)){seen.add(k);coords.push([r,c])}
+    for(let r=0;r<SIZE;r++){
+      const k=`${r},${ev.insularCol}`;if(!seen.has(k)){seen.add(k);coords.push([r,ev.insularCol])}
     }
     return coords;
   }
@@ -174,7 +175,7 @@
     ev.hazardCells=Array.isArray(ev.hazardCells)?ev.hazardCells:[];
     ev.snapshots=Array.isArray(ev.snapshots)?ev.snapshots:[];
     const existing=new Set(ev.hazardCells);
-    const coords=insularizationCells();
+    const coords=insularizationCells(ev);
     for(const [r,c] of coords){
       const k=`${r},${c}`,ce=cell(r,c);
       if(!existing.has(k)){
@@ -187,12 +188,13 @@
       ce.warning=null;
       ce.age=0;
     }
+    const dangerous=new Set(coords.map(([r,c])=>`${r},${c}`));
     const doomed=[];
     for(const org of [...state.organisms]){
-      if(coords.some(([r,c])=>r===org.r&&c===org.c)&&!hasTrait(org.owner,org.lineage,'Voo'))doomed.push(org.id);
+      if(dangerous.has(`${org.r},${org.c}`)&&!hasTrait(org.owner,org.lineage,'Voo'))doomed.push(org.id);
     }
-    doomed.forEach(id=>removeOrganism(id,'Uma peça terrestre ficou isolada sobre a faixa perigosa da Insularização.',true));
-    log(`Insularização criou uma cruz central perigosa com ${coords.length} casas, separando o tabuleiro em quatro ilhas 3×3.`);
+    doomed.forEach(id=>removeOrganism(id,'Uma peça terrestre ficou sobre uma linha perigosa da Insularização.',true));
+    log(`Insularização criou 2 linhas perigosas simples: fileira ${ev.insularRow+1} e coluna ${String.fromCharCode(65+ev.insularCol)}, dividindo o tabuleiro em quatro áreas.`);
     checkExtinction();
     render();
   }
@@ -212,5 +214,5 @@
   const rules=document.querySelectorAll('#rulesModal p');
   if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. Na abertura, as duas colunas dos peões fundadores recebem quatro casas férteis: duas por coluna, com uma sorteada na metade superior e outra na metade inferior do tabuleiro. Assim, cada peão tem duas casas férteis no próprio corredor de avanço, com variação de altura entre partidas. Casas férteis evoluem por Conway e, se desaparecerem totalmente, um núcleo mínimo de três casas é reintroduzido.';
   const ecoRule=document.querySelector('#rulesModal .eco-events-rule');
-  if(ecoRule)ecoRule.innerHTML='<strong>Eventos ecológicos.</strong> A cada 10 rodadas completas um evento é sorteado, anunciado em uma janela e aplicado. O evento anterior termina quando o próximo começa. Áreas perigosas temporárias funcionam como casas mortais; Voo oferece imunidade. Terremoto desloca simultaneamente todas as peças para casas adjacentes aleatórias. Chuvas Abundantes transforma as 16 casas de um quadrante aleatório em casas férteis. Insularização cria duas faixas centrais perigosas, horizontal e vertical, cada uma com duas casas de espessura, formando quatro ilhas iguais de 3×3 casas.';
+  if(ecoRule)ecoRule.innerHTML='<strong>Eventos ecológicos.</strong> A cada 10 rodadas completas um evento é sorteado, anunciado em uma janela e aplicado. O evento anterior termina quando o próximo começa. Áreas perigosas temporárias funcionam como casas mortais; Voo oferece imunidade. Terremoto desloca simultaneamente todas as peças para casas adjacentes aleatórias. Chuvas Abundantes transforma as 16 casas de um quadrante aleatório em casas férteis. Insularização sorteia uma fileira e uma coluna internas e transforma essas duas linhas simples em casas perigosas, dividindo temporariamente o tabuleiro em quatro áreas que podem ter tamanhos diferentes.';
 })();
