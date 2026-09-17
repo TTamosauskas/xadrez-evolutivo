@@ -70,17 +70,20 @@
     const modal=document.querySelector('#rulesModal .modal');if(!modal)return;
     let row=modal.querySelector('.deleterious-mutation-rule');
     if(!row){row=document.createElement('p');row.className='deleterious-mutation-rule';modal.insertBefore(row,modal.querySelector('.modal-actions'))}
-    row.innerHTML='<strong>Mutação Deletéria 💀.</strong> É uma mutação negativa hereditária. A peça que a possui vive somente 3 rodadas completas e então morre. Peões voltam a poder receber mutações negativas, mas somente em 1/5 das mutações; nas demais peças a chance de mutação negativa continua em 1/3.';
+    const html='<strong>Mutação Deletéria 💀.</strong> É uma mutação negativa hereditária. A peça que a possui vive somente 3 rodadas completas e então morre. Peões voltam a poder receber mutações negativas, mas somente em 1/5 das mutações; nas demais peças a chance de mutação negativa continua em 1/3.';
+    if(row.innerHTML!==html)row.innerHTML=html;
   }
   function patchMutationModal(){
     const modal=document.querySelector('#explanationModal');if(!modal?.classList.contains('open'))return;
     const title=modal.querySelector('#explanationModalTitle'),body=modal.querySelector('#explanationModalBody');if(!title||!body)return;
     if(!/Mutação Deletéria/i.test(title.textContent||'')&&!/Mutação Deletéria/i.test(body.textContent||''))return;
     const lost=/perdeu|efeito perdido/i.test(body.textContent||'');
-    title.textContent='Mutação: Mutação Deletéria 💀';
-    body.innerHTML=lost
+    const desiredTitle='Mutação: Mutação Deletéria 💀';
+    const desiredBody=lost
       ?'<p>A peça perdeu a Mutação Deletéria 💀 e não está mais limitada ao ciclo de vida de 3 rodadas.</p>'
       :'<p>Esta peça recebeu a Mutação Deletéria 💀.</p><p>Ela viverá somente 3 rodadas completas e morrerá ao final da terceira.</p>';
+    if(title.textContent!==desiredTitle)title.textContent=desiredTitle;
+    if(body.innerHTML!==desiredBody)body.innerHTML=desiredBody;
   }
   function patchDisplayedLogs(){
     const root=document.querySelector('#log');if(!root)return;
