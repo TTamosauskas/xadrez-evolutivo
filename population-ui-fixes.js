@@ -1,5 +1,13 @@
 (function(){
   let blackPassedNotice=false;
+  const PIECE_SYMBOLS={
+    blue:['♙','♘','♗','♖','♔','♕'],
+    amber:['♟','♞','♝','♜','♚','♛']
+  };
+  const MUTATION_ICONS={
+    'Locomoção':'🐪','Voo':'🐦','Predação':'🦁','Ovos':'🦎','Fertilidade':'🐇','Carapaça':'🐢',
+    'Ooteca':'🕷','Veneno':'🐍','Mutação Deletéria':'💀','Mutação Disfuncional':'🦵','Camuflagem':'👀'
+  };
 
   // A população real é usada por placar, IA, eventos e patógeno.
   // Não existe mais teto artificial de população: o limite prático é o espaço do tabuleiro.
@@ -13,9 +21,73 @@
     text=text.replace(/\bcasas mortais\b/g,'casas hostis');
     text=text.replace(/\bCasa mortal\b/g,'Casa hostil');
     text=text.replace(/\bcasa mortal\b/g,'casa hostil');
+    text=text.replace(/\bHabitats hostis\b/g,'Casas neutras');
+    text=text.replace(/\bhabitats hostis\b/g,'casas neutras');
+    text=text.replace(/\bHabitat hostil\b/g,'Casa neutra');
+    text=text.replace(/\bhabitat hostil\b/g,'casa neutra');
     text=text.replace(/Quando atinge uma casa fértil \(verde\) a peça se reproduz\./gi,'Quando uma peça atinge uma casa fértil (verde) ela se reproduz.');
     text=text.replace(/\b(\d+)\s*\/\s*64\s+organismos\b/g,'$1 organismos');
     return text;
+  }
+
+  function ensureInterfaceStyles(){
+    if(document.querySelector('#populationInterfacePolish'))return;
+    const style=document.createElement('style');
+    style.id='populationInterfacePolish';
+    style.textContent=`
+      .controls-panel .hint{min-height:18px!important;margin-top:5px!important;margin-bottom:2px!important;line-height:1.3}
+      .controls-panel #passTurnBtn{margin-top:0!important}
+      .controls-panel .legend{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;gap:14px!important}
+      .controls-panel .legend span{white-space:nowrap!important}
+      .selected-piece-summary{margin:8px 0 10px;padding:8px 10px;border:1px solid rgba(190,151,113,.28);border-radius:10px;background:rgba(126,91,63,.12)}
+      .selected-piece-summary-label{display:block;font-size:10px;color:var(--muted);margin-bottom:3px}
+      .selected-piece-summary-value{font-size:22px;line-height:1.15;letter-spacing:.02em;color:var(--text)}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function profileOf(org){return org&&state?.lineages?.[org.owner]?.[org.lineage]}
+  function profileTraitActive(profile,name){
+    if(!profile)return false;
+    let active=Array.isArray(profile.traits)&&profile.traits.includes(name);
+    for(const entry of Array.isArray(profile.mutationStack)?profile.mutationStack:[]){
+      if(entry?.name!==name)continue;
+      if(entry.kind==='trait')active=true;
+      else if(entry.kind==='trait-loss')active=false;
+    }
+    return active;
+  }
+  function selectedPieceIcons(org,profile){
+    const icons=[],seen=new Set();
+    const add=icon=>{if(icon&&!seen.has(icon)){seen.add(icon);icons.push(icon)}};
+    const cellEl=boardEl?.children?.[org.r*SIZE+org.c],orgEl=cellEl?.querySelector?.('.org');
+    if(orgEl)for(const el of orgEl.querySelectorAll('.mutation-icons .mutation-icon'))add((el.textContent||'').trim());
+    for(const [name,icon] of Object.entries(MUTATION_ICONS))if(profileTraitActive(profile,name))add(icon);
+    if(profile?.resistance)add('🧬');
+    if(profile?.sexual)add('❤️');
+    if(profile?.sterile)add('🚫');
+    if(org.ecoSick||org.overpopSick)add('🤢');
+    if(org.venomPoison)add('💀');
+    return icons.join('');
+  }
+  function renderSelectedPieceSummary(){
+    const legend=document.querySelector('#boardMutationLegend,.board-mutation-legend');if(!legend?.parentNode)return;
+    let box=document.querySelector('#selectedPieceSummary');
+    if(!box){
+      box=document.createElement('div');
+      box.id='selectedPieceSummary';box.className='selected-piece-summary';
+      box.innerHTML='<span class="selected-piece-summary-label">Peça selecionada:</span><div class="selected-piece-summary-value">—</div>';
+      legend.parentNode.insertBefore(box,legend);
+    }else if(box.nextElementSibling!==legend){
+      legend.parentNode.insertBefore(box,legend);
+    }
+    const value=box.querySelector('.selected-piece-summary-value');
+    const org=typeof currentSelected==='function'?currentSelected():null;
+    if(!org){if(value&&value.textContent!=='—')value.textContent='—';return}
+    const profile=profileOf(org),rank=Math.max(0,Math.min(5,Number(profile?.pieceRank)||0));
+    const symbol=(PIECE_SYMBOLS[org.owner]||PIECE_SYMBOLS.blue)[rank]||'♟';
+    const icons=selectedPieceIcons(org,profile),text=`${symbol}:${icons}`;
+    if(value&&value.textContent!==text)value.textContent=text;
   }
 
   function ensureHostileTutorialState(target=state){
@@ -141,14 +213,14 @@
   const previousRenderActions=renderActions;
   renderActions=function(){
     const result=previousRenderActions.apply(this,arguments);
-    setHostileLegend();rewriteNode(document.body);applyBlackPassHint();
+    setHostileLegend();rewriteNode(document.body);applyBlackPassHint();renderSelectedPieceSummary();
     return result;
   };
 
   const previousRender=render;
   render=function(){
     const result=previousRender.apply(this,arguments);
-    setHostileLegend();rewriteNode(document.body);applyBlackPassHint();
+    setHostileLegend();rewriteNode(document.body);applyBlackPassHint();renderSelectedPieceSummary();
     return result;
   };
 
@@ -158,6 +230,6 @@
   });
   observer.observe(document.body,{subtree:true,childList:true});
 
-  ensureHostileTutorialState(state);
-  setHostileLegend();rewriteNode(document.body);applyBlackPassHint();
+  ensureInterfaceStyles();ensureHostileTutorialState(state);
+  setHostileLegend();rewriteNode(document.body);applyBlackPassHint();renderSelectedPieceSummary();
 })();
