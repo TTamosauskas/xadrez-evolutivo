@@ -1,5 +1,6 @@
 (function(){
   const HOSTILE_DEATH_CHANCE=.5;
+  const CARAPACE_DEATH_CHANCE=.34;
   let captureContext=null;
 
   function profileOf(org){return org&&state?.lineages?.[org.owner]?.[org.lineage]}
@@ -11,6 +12,7 @@
   function resistant(org){return !!profileOf(org)?.resistance}
   function completedRound(){return Math.floor((state?.turn||0)/2)}
   function isHostileCell(org){return !!org&&inBounds(org.r,org.c)&&cell(org.r,org.c).terrain==='biohazard'}
+  function hostileDeathChance(org){return has(org,'Carapaça')?CARAPACE_DEATH_CHANCE:HOSTILE_DEATH_CHANCE}
 
   const previousLog=log;
   log=function(message){
@@ -108,11 +110,15 @@
       if(!isHostileCell(org)||flies(org))continue;
       if(org.hostileRiskRound===round)continue;
       org.hostileRiskRound=round;
-      if(Math.random()<HOSTILE_DEATH_CHANCE)doomed.push(org.id);
+      const chance=hostileDeathChance(org);
+      if(Math.random()<chance)doomed.push({id:org.id,carapace:has(org,'Carapaça')});
     }
-    for(const id of doomed){
-      if(!state.organisms.some(o=>o.id===id))continue;
-      previousRemoveOrganism.call(this,id,'Uma casa hostil eliminou a peça após o sorteio de risco de 50% desta rodada.',true);
+    for(const entry of doomed){
+      if(!state.organisms.some(o=>o.id===entry.id))continue;
+      const msg=entry.carapace
+        ?'Uma casa hostil eliminou a peça apesar da Carapaça 🐢 após o sorteio de 34% de risco desta rodada.'
+        :'Uma casa hostil eliminou a peça após o sorteio de risco de 50% desta rodada.';
+      previousRemoveOrganism.call(this,entry.id,msg,true);
     }
     if(doomed.length)checkExtinction();
     return doomed.length;
@@ -133,8 +139,8 @@
 
   function rewriteUi(){
     const legend=[...document.querySelectorAll('.legend span')].find(el=>/casa mortal|casa hostil/i.test(el.textContent||''));
-    if(legend&&legend.textContent.trim()!=='casa hostil · 50% de risco por rodada'){
-      const icon=legend.querySelector('i');legend.textContent=' casa hostil · 50% de risco por rodada';if(icon)legend.prepend(icon);
+    if(legend&&legend.textContent.trim()!=='casa hostil · 50% de risco · Carapaça 🐢: 66% de sobrevivência'){
+      const icon=legend.querySelector('i');legend.textContent=' casa hostil · 50% de risco · Carapaça 🐢: 66% de sobrevivência';if(icon)legend.prepend(icon);
     }
 
     const fresh=document.querySelector('#rulesModal .overpopulation-rule');
@@ -152,7 +158,7 @@
     if(modal){
       let p=modal.querySelector('.hostile-risk-rule');
       if(!p){p=document.createElement('p');p.className='hostile-risk-rule';modal.insertBefore(p,modal.querySelector('.modal-actions'))}
-      const html='<strong>Casas hostis.</strong> Uma peça terrestre que permanece em uma casa hostil faz um novo sorteio a cada rodada completa: 50% de chance de morrer e 50% de sobreviver. Voo 🐦 evita esse risco. Erupção Vulcânica cria uma área hostil 3×3, totalizando 9 casas.';
+      const html='<strong>Casas hostis.</strong> Uma peça terrestre sem Carapaça tem 50% de chance de sobreviver por rodada numa casa hostil. Com Carapaça 🐢, a sobrevivência sobe para 66%. Voo 🐦 evita esse risco. Erupção Vulcânica cria uma área hostil 3×3, totalizando 9 casas.';
       if(p.innerHTML!==html)p.innerHTML=html;
     }
 
