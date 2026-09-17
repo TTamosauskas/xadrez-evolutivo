@@ -60,4 +60,11 @@
     script.dataset.firstReproductionMutations='1';
     document.body.appendChild(script);
   }
+
+  if(!document.querySelector('script[data-top-menu-ui]')){
+    const script=document.createElement('script');
+    script.src='top-menu-ui.js';
+    script.dataset.topMenuUi='1';
+    document.body.appendChild(script);
+  }
 })();
