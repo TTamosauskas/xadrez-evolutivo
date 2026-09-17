@@ -63,8 +63,57 @@
     return previousRemoveOrganism.apply(this,arguments);
   };
 
+  function pieceRank(org){return Math.max(0,Math.min(5,Number(profileOf(org)?.pieceRank)||0))}
+  function straightPath(org,t){
+    if(!org||!t||t.stay)return [];
+    if(pieceRank(org)===1)return [[t.r,t.c]];
+    const rr=t.r-org.r,cc=t.c-org.c,ar=Math.abs(rr),ac=Math.abs(cc);
+    if(!(rr===0||cc===0||ar===ac))return [[t.r,t.c]];
+    const steps=Math.max(ar,ac),dr=Math.sign(rr),dc=Math.sign(cc),out=[];
+    for(let i=1;i<=steps;i++)out.push([org.r+dr*i,org.c+dc*i]);
+    return out;
+  }
+  function traversalCells(org,t){
+    if(!org||!t||t.stay)return [];
+    if(pieceRank(org)===1)return [[t.r,t.c]];
+    const source=Array.isArray(t.path)&&t.path.length?t.path:straightPath(org,t);
+    const out=[],seen=new Set();
+    for(const pos of source){
+      if(!Array.isArray(pos)||pos.length<2)continue;
+      const r=Number(pos[0]),c=Number(pos[1]);
+      if(!Number.isInteger(r)||!Number.isInteger(c)||!inBounds(r,c)||(r===org.r&&c===org.c))continue;
+      const k=`${r},${c}`;if(seen.has(k))continue;seen.add(k);out.push([r,c]);
+    }
+    const dk=`${t.r},${t.c}`;
+    if(inBounds(t.r,t.c)&&!seen.has(dk))out.push([t.r,t.c]);
+    return out;
+  }
+  function hostileTraversalDeath(org,t){
+    if(!org||!t||flies(org))return false;
+    const chance=hostileDeathChance(org),carapace=has(org,'Carapaça');
+    for(const [r,c] of traversalCells(org,t)){
+      if(cell(r,c).terrain!=='biohazard')continue;
+      if(Math.random()>=chance)continue;
+      const msg=carapace
+        ?`Uma casa hostil eliminou a peça durante o deslocamento, apesar da Carapaça 🐢 (34% de risco por casa).`
+        :`Uma casa hostil eliminou a peça durante o deslocamento (50% de risco por casa).`;
+      removeOrganism(org.id,msg,true);
+      checkExtinction();
+      if(state.gameOver)render();else finishTurn();
+      return true;
+    }
+    if(inBounds(t.r,t.c)&&cell(t.r,t.c).terrain==='biohazard'){
+      // A entrada na casa de destino já foi testada. O próximo teste por permanência
+      // só ocorre ao fim da rodada seguinte, não novamente no mesmo ciclo.
+      org.hostileRiskRound=completedRound()+1;
+    }
+    return false;
+  }
+
   const previousExecuteMove=executeMove;
   executeMove=function(org,t){
+    if(hostileTraversalDeath(org,t))return;
+
     const defender=org&&t?organismAt(t.r,t.c):null;
     const priorContext=captureContext;
     if(defender&&defender.owner!==org.owner){
@@ -73,6 +122,8 @@
 
     let target=t;
     if(org&&t&&!flies(org)&&Array.isArray(t.path)&&t.path.some(([r,c])=>inBounds(r,c)&&cell(r,c).terrain==='biohazard')){
+      // A rota já foi testada casa a casa acima. Esvazia o path apenas para impedir
+      // a regra legada de morte automática (100%) de evolution-v16.
       target={...t,path:[]};
     }
     try{return previousExecuteMove.call(this,org,target)}finally{captureContext=priorContext}
@@ -158,7 +209,7 @@
     if(modal){
       let p=modal.querySelector('.hostile-risk-rule');
       if(!p){p=document.createElement('p');p.className='hostile-risk-rule';modal.insertBefore(p,modal.querySelector('.modal-actions'))}
-      const html='<strong>Casas hostis.</strong> Uma peça terrestre sem Carapaça tem 50% de chance de sobreviver por rodada numa casa hostil. Com Carapaça 🐢, a sobrevivência sobe para 66%. Voo 🐦 evita esse risco. Erupção Vulcânica cria uma área hostil 3×3, totalizando 9 casas.';
+      const html='<strong>Casas hostis.</strong> Cada casa hostil atravessada ou alcançada faz uma rolagem independente de risco: 50% de morte para peças terrestres e 34% com Carapaça 🐢. Cavalo salta as casas intermediárias e testa apenas a casa onde pousa. Voo 🐦 ignora esse risco. Uma peça que permanecer numa casa hostil faz novo sorteio a cada rodada. Erupção Vulcânica cria uma área hostil 3×3, totalizando 9 casas.';
       if(p.innerHTML!==html)p.innerHTML=html;
     }
 
