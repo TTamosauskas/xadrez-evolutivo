@@ -65,8 +65,10 @@
   function registerInfection(org,kind){
     const inf=kind==='eco'?org?.ecoSick:org?.overpopSick;
     if(!inf)return null;
-    const id=diseaseIdFor(org,kind);if(!id)return null;
-    const disease=ensureDisease(id);if(!disease)return null;
+    const id=diseaseIdFor(org,kind);
+    if(!id)return null;
+    const disease=ensureDisease(id);
+    if(!disease)return null;
     if(!disease.mortalityInfectedIds.includes(org.id))disease.mortalityInfectedIds.push(org.id);
     inf.mortalityPercent=disease.mortalityPercent;
     return {id,disease,inf,kind};
@@ -79,14 +81,14 @@
   }
 
   function clearRecoveredReinfection(org,kind,record){
-    if(!record?.disease?.mortalitySurvivorIds?.includes(org.id))return false;
+    if(!record?.disease?.mortalitySurvivorIds?.includes(org.id))return;
     if(kind==='eco')delete org.ecoSick;
     else delete org.overpopSick;
-    return true;
   }
 
   function syncMortalityState(){
     if(!state)return;
+
     const ev=state.ecoCycle?.active;
     if(ev?.id==='pathogen'&&ev.managedPathogen&&ev.pathogenDiseaseId){
       const disease=ensureDisease(ev.pathogenDiseaseId);
@@ -101,7 +103,7 @@
       outbreak.pathogenMortalityPercent=disease.mortalityPercent;
     }
 
-    for(const org of [...((state&&state.organisms)||[])]){
+    for(const org of [...(state.organisms||[])]){
       if(org.ecoSick?.managed){
         const record=registerInfection(org,'eco');
         if(record)clearRecoveredReinfection(org,'eco',record);
@@ -136,7 +138,10 @@
     const body=document.querySelector('#pathogenInfoBody');
     const text=(body?.textContent||'').toLowerCase();
     const ev=state?.ecoCycle?.active;
-    if(text.includes('evento ecológico')&&ev?.id==='pathogen'&&ev.pathogenDiseaseId)return ensureDisease(ev.pathogenDiseaseId);
+
+    if(text.includes('evento ecológico')&&ev?.id==='pathogen'&&ev.pathogenDiseaseId){
+      return ensureDisease(ev.pathogenDiseaseId);
+    }
 
     const outbreaks=state?.overpopulationPathogen||{};
     for(const owner of ['blue','amber']){
@@ -168,6 +173,7 @@
         triggerOwner:pop.triggerOwner
       };
     }
+
     const ev=state?.ecoCycle?.active;
     if(ev?.id==='pathogen'&&ev.managedPathogen&&ev.pathogenDiseaseId){
       const disease=ensureDisease(ev.pathogenDiseaseId);
@@ -184,12 +190,16 @@
   }
 
   function updateBanner(){
-    const data=bannerData();if(!data)return;
-    const banner=document.querySelector('#ecoEventBanner');if(!banner)return;
+    const data=bannerData();
+    if(!data)return;
+    const banner=document.querySelector('#ecoEventBanner');
+    if(!banner)return;
+
     const delay=data.delay?`${data.delay} rodada(s)`:'2–6 rodadas';
     const trigger=data.triggerOwner?`Gatilho: ${owners[data.triggerOwner].name} atingiu 17 peças`:'';
+    const html=`<strong>${data.title}</strong><span>Mortalidade: ${data.disease.mortalityPercent}% · Desfecho: ${delay} · Contágio: ${data.mode} · Transmissão: ${data.remaining} rodada(s) restante(s)</span><small>${trigger}</small>`;
     banner.classList.add('active');
-    banner.innerHTML=`<strong>${data.title}</strong><span>Mortalidade: ${data.disease.mortalityPercent}% · Desfecho: ${delay} · Contágio: ${data.mode} · Transmissão: ${data.remaining} rodada(s) restante(s)</span><small>${trigger}</small>`;
+    if(banner.innerHTML!==html)banner.innerHTML=html;
   }
 
   function rewriteUi(){
@@ -200,13 +210,16 @@
     if(legend&&legend.textContent!==legendText)legend.textContent=legendText;
 
     for(const org of state?.organisms||[]){
-      const kind=org.ecoSick?.managed?'eco':org.overpopSick?'overpop':null;if(!kind)continue;
-      const record=registerInfection(org,kind);if(!record)continue;
+      const kind=org.ecoSick?.managed?'eco':org.overpopSick?'overpop':null;
+      if(!kind)continue;
+      const record=registerInfection(org,kind);
+      if(!record)continue;
       const cellEl=boardEl?.children?.[org.r*SIZE+org.c];
-      const badge=cellEl?.querySelector?.('.org .pathogen-badge');if(!badge)continue;
-      const inf=record.inf;
-      const remaining=Number.isInteger(inf.deathRemaining)?inf.deathRemaining:'?';
-      badge.title=`Patógeno Virulento: desfecho em ${remaining} rodada(s). Mortalidade deste patógeno: ${record.disease.mortalityPercent}%.`;
+      const badge=cellEl?.querySelector?.('.org .pathogen-badge');
+      if(!badge)continue;
+      const remaining=Number.isInteger(record.inf.deathRemaining)?record.inf.deathRemaining:'?';
+      const title=`Patógeno Virulento: desfecho em ${remaining} rodada(s). Mortalidade deste patógeno: ${record.disease.mortalityPercent}%.`;
+      if(badge.title!==title)badge.title=title;
     }
 
     const body=document.querySelector('#pathogenInfoBody');
@@ -217,7 +230,8 @@
       if(target){
         const mortality=disease?`${disease.mortalityPercent}%`:`entre ${MIN_MORTALITY}% e ${MAX_MORTALITY}%`;
         const delay=disease?.lethalDelay?`${disease.lethalDelay} rodada(s)`:'2 a 6 rodadas';
-        target.textContent=`O surto pode transmitir por até 10 rodadas. Mortalidade: ${mortality}. O desfecho ocorre após ${delay} de infecção; o patógeno mata infectados até atingir a mortalidade sorteada, e os demais sobrevivem.`;
+        const text=`O surto pode transmitir por até 10 rodadas. Mortalidade: ${mortality}. O desfecho ocorre após ${delay} de infecção; o patógeno mata infectados até atingir a mortalidade sorteada, e os demais sobrevivem.`;
+        if(target.textContent!==text)target.textContent=text;
       }
     }
 
@@ -227,7 +241,9 @@
   const previousRemoveOrganism=removeOrganism;
   removeOrganism=function(id,msg){
     const text=String(msg||'');
-    if(!/sucumbiu ao Patógeno Virulento após/i.test(text))return previousRemoveOrganism.apply(this,arguments);
+    if(!/sucumbiu ao Patógeno Virulento após/i.test(text)){
+      return previousRemoveOrganism.apply(this,arguments);
+    }
 
     syncMortalityState();
     const org=(state?.organisms||[]).find(o=>o.id===id);
@@ -252,31 +268,20 @@
     if(/Patógeno Virulento/i.test(text)){
       const data=bannerData();
       if(data){
-        text=text.replace(/letalidade\s+\d+\s+rodada\(s\)/i,`mortalidade ${data.disease.mortalityPercent}%; desfecho após ${data.delay||data.disease.lethalDelay||'?'} rodada(s)`);
+        text=text.replace(
+          /letalidade\s+\d+\s+rodada\(s\)/i,
+          `mortalidade ${data.disease.mortalityPercent}%; desfecho após ${data.delay||data.disease.lethalDelay||'?'} rodada(s)`
+        );
       }
     }
     return previousLog.call(this,text);
   };
 
-  const previousNewState=newState;
-  newState=function(){
-    const next=previousNewState.apply(this,arguments);
-    if(next.pathogenDiseases&&typeof next.pathogenDiseases==='object'){
-      for(const disease of Object.values(next.pathogenDiseases)){
-        if(!disease||typeof disease!=='object')continue;
-        disease.mortalityPercent=randomMortality();
-        disease.mortalityInfectedIds=[];
-        disease.mortalitySurvivorIds=[];
-        disease.mortalityDeaths=0;
-      }
-    }
-    return next;
-  };
-
   const previousDeserializeState=deserializeState;
   deserializeState=function(){
     const result=previousDeserializeState.apply(this,arguments);
-    syncMortalityState();rewriteUi();
+    syncMortalityState();
+    rewriteUi();
     return result;
   };
 
@@ -284,7 +289,8 @@
   finishTurn=function(){
     syncMortalityState();
     const result=previousFinishTurn.apply(this,arguments);
-    syncMortalityState();rewriteUi();
+    syncMortalityState();
+    rewriteUi();
     return result;
   };
 
@@ -292,7 +298,8 @@
   render=function(){
     syncMortalityState();
     const result=previousRender.apply(this,arguments);
-    syncMortalityState();rewriteUi();
+    syncMortalityState();
+    rewriteUi();
     return result;
   };
 
@@ -306,5 +313,6 @@
   const observer=new MutationObserver(()=>rewriteUi());
   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
 
-  syncMortalityState();rewriteUi();
+  syncMortalityState();
+  rewriteUi();
 })();
