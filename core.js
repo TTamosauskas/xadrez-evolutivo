@@ -1,5 +1,5 @@
 'use strict';
-const SIZE=8, MAX_POP=12, MAX_LINEAGES=4, TURNS_PER_EPOCH=10, MAX_EPOCHS=10;
+const SIZE=8, MAX_POP=64, MAX_LINEAGES=4, TURNS_PER_EPOCH=10, MAX_EPOCHS=10;
 const owners={blue:{name:'Azul',color:'#58a6ff'},amber:{name:'Âmbar',color:'#f2b84b'}};
 const traitCatalog=[
  {name:'Vetor Alongado',cat:'locomoção',desc:'Alcance ortogonal de até 2 casas.',cost:'Reprodução custa +1 recurso.'},
