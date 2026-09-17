@@ -58,7 +58,7 @@
     const ce=sel&&inBounds(sel.r,sel.c)?cell(sel.r,sel.c):null;
     const fertile=!!ce&&ce.terrain==='fertile'&&ce.resource>0;
     if(sel&&fertile&&state?.mode==='move'&&hint&&!window.xeModalBlocking&&!document.querySelector('.sexual-partner')){
-      hint.textContent+=' Como está numa casa fértil, você também pode clicar novamente na própria peça para permanecer e se reproduzir.';
+      hint.textContent+=' Você pode clicar novamente na casa atual para se reproduzir.';
     }
     return result;
   };
