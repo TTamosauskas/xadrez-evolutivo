@@ -1,7 +1,7 @@
 (function(){
   const OOTHECA='Ooteca';
   const VENOM='Veneno';
-  const VENOM_TURNS=3;
+  const VENOM_TURNS=2;
   let captureContext=null;
 
   function profileOf(org){return org&&state?.lineages?.[org.owner]?.[org.lineage]}
@@ -22,12 +22,12 @@
       const el=document.createElement('span');el.className='mutation-icon';el.dataset.oothecaIcon='1';el.textContent='🕷';el.title='Ooteca — ao morrer, realiza uma reprodução';icons.appendChild(el);
     }
     if(hasMutation(org,VENOM)&&!icons.querySelector('[data-venom-icon]')){
-      const el=document.createElement('span');el.className='mutation-icon';el.dataset.venomIcon='1';el.textContent='🐍';el.title='Veneno — ao ser morta por uma peça, intoxica o agressor';icons.appendChild(el);
+      const el=document.createElement('span');el.className='mutation-icon';el.dataset.venomIcon='1';el.textContent='🐍';el.title='Veneno — ao ser morta por uma peça, condena o agressor';icons.appendChild(el);
     }
     if(org.venomPoison){
-      let sick=icons.querySelector('[data-venom-sick-icon]');
-      if(!sick){sick=document.createElement('span');sick.className='mutation-icon';sick.dataset.venomSickIcon='1';sick.textContent='🤮';icons.appendChild(sick)}
-      sick.title=`Envenenado: morre em ${org.venomPoison.remaining} turno(s)`;
+      let doomed=icons.querySelector('[data-venom-sick-icon]');
+      if(!doomed){doomed=document.createElement('span');doomed.className='mutation-icon';doomed.dataset.venomSickIcon='1';doomed.textContent='💀';icons.appendChild(doomed)}
+      doomed.title=`Condenado por Veneno: morre em ${org.venomPoison.remaining} turno(s) próprios`;
     }
   }
   function renderMutationIcons(){for(const org of state?.organisms||[])ensureIcons(org)}
@@ -35,13 +35,13 @@
   function applyVenom(attacker,source){
     if(!attacker||!state?.organisms?.some(o=>o.id===attacker.id))return;
     attacker.venomPoison={remaining:VENOM_TURNS,infectedAtTurn:state.turn,sourceOwner:source?.owner,sourceLineage:source?.lineage};
-    log(`${owners[attacker.owner].name}: 🤮 uma peça foi envenenada por Veneno 🐍 e morrerá em ${VENOM_TURNS} turnos.`);
+    log(`${owners[attacker.owner].name}: 💀 uma peça foi marcada por Veneno 🐍 e morrerá após ${VENOM_TURNS} turnos próprios.`);
   }
   function triggerOotheca(dead){
     if(!dead||typeof window.xeReproduceFromMutation!=='function')return 0;
     const born=window.xeReproduceFromMutation(dead,'Ooteca 🕷 após a morte')||0;
     if(born)log(`${owners[dead.owner].name}: 🕷 Ooteca realizou uma reprodução após a morte.`);
-    else log(`${owners[dead.owner].name}: 🕷 Ooteca foi ativada após a morte, mas não houve espaço/população disponível para descendentes.`);
+    else log(`${owners[dead.owner].name}: 🕷 Ooteca foi ativada após a morte, mas a reprodução não gerou descendentes.`);
     return born;
   }
 
@@ -55,28 +55,32 @@
   };
 
   const previousRemoveOrganism=removeOrganism;
-  removeOrganism=function(id,msg){
+  removeOrganism=function(id,msg,deferCheck){
     const dead=state?.organisms?.find(o=>o.id===id);
     if(!dead)return previousRemoveOrganism.apply(this,arguments);
     const snapshot={...dead};
     const ootheca=hasMutation(dead,OOTHECA);
     const venom=hasMutation(dead,VENOM);
     const attackerId=captureContext?.defenderId===id?captureContext.attackerId:null;
-    const result=previousRemoveOrganism.apply(this,arguments);
+    const requestedDefer=deferCheck===true;
+    const args=[...arguments];args[2]=true;
+    const result=previousRemoveOrganism.apply(this,args);
     const removed=!state?.organisms?.some(o=>o.id===id);
     if(!removed)return result;
+
     if(venom&&attackerId){
       const attacker=state.organisms.find(o=>o.id===attackerId);
       if(attacker)applyVenom(attacker,snapshot);
     }
     if(ootheca)triggerOotheca(snapshot);
+    if(!requestedDefer)checkExtinction();
     return result;
   };
 
-  function tickVenom(beforeTurn){
+  function tickVenom(beforeTurn,actingOwner){
     const doomed=[];
     for(const org of state?.organisms||[]){
-      const poison=org.venomPoison;if(!poison)continue;
+      const poison=org.venomPoison;if(!poison||org.owner!==actingOwner)continue;
       if(!Number.isInteger(poison.remaining)||poison.remaining<1)poison.remaining=VENOM_TURNS;
       if(!Number.isInteger(poison.infectedAtTurn))poison.infectedAtTurn=beforeTurn;
       if(poison.infectedAtTurn>=beforeTurn)continue;
@@ -85,7 +89,7 @@
     }
     for(const id of doomed){
       if(!state.organisms.some(o=>o.id===id))continue;
-      removeOrganism(id,'Uma peça sucumbiu ao Veneno 🐍 após 3 turnos de intoxicação.',true);
+      removeOrganism(id,'Uma peça sucumbiu ao Veneno 🐍 após 2 turnos próprios.',true);
     }
     if(doomed.length)checkExtinction();
     return doomed.length;
@@ -93,11 +97,11 @@
 
   const previousFinishTurn=finishTurn;
   finishTurn=function(){
-    const before=state?.turn||0;
+    const before=state?.turn||0,actingOwner=state?.current;
     const result=previousFinishTurn.apply(this,arguments);
-    if(!state||state.turn===before||state.gameOver)return result;
-    const deaths=tickVenom(before);
-    if(deaths)render();else renderMutationIcons();
+    if(!state||state.turn===before)return result;
+    const deaths=tickVenom(before,actingOwner);
+    if(deaths&&!state.gameOver)render();else renderMutationIcons();
     return result;
   };
 
@@ -113,14 +117,14 @@
     if(!anyOotheca&&!anyVenom&&!anySick)return;
     box.querySelector('.board-mutation-empty')?.remove();
     if(anyOotheca)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-ootheca-row><span class="board-circle-icon">🕷</span><div><strong>Ooteca</strong><small>Quando a peça morre, ativa uma reprodução normal a partir de sua última posição. Esterilidade 🚫 ainda impede a reprodução.</small></div></div>');
-    if(anyVenom)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-venom-row><span class="board-circle-icon">🐍</span><div><strong>Veneno</strong><small>Quando esta peça é morta por outra peça, o agressor fica intoxicado.</small></div></div>');
-    if(anySick)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-venom-sick-row><span class="board-circle-icon">🤮</span><div><strong>Intoxicação</strong><small>O agressor envenenado morre após 3 turnos. Uma nova exposição reinicia o contador.</small></div></div>');
+    if(anyVenom)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-venom-row><span class="board-circle-icon">🐍</span><div><strong>Veneno</strong><small>Quando esta peça é morta por outra peça, o agressor recebe a marca 💀.</small></div></div>');
+    if(anySick)box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-venom-sick-row><span class="board-circle-icon">💀</span><div><strong>Condenado por Veneno</strong><small>O agressor marcado morre após completar 2 turnos próprios. Uma nova exposição reinicia o contador em 2.</small></div></div>');
   }
   function ensureRules(){
     const modal=document.querySelector('#rulesModal .modal');if(!modal)return;
     let row=modal.querySelector('.death-mutations-rule');
     if(!row){row=document.createElement('p');row.className='death-mutations-rule';modal.insertBefore(row,modal.querySelector('.modal-actions'))}
-    const html='<strong>Mutações de morte.</strong> Ooteca 🕷 ativa uma reprodução normal quando a peça morre; Esterilidade 🚫 ainda bloqueia esse nascimento. Veneno 🐍 é acionado quando a peça é morta por outra peça: o agressor recebe 🤮 e morre após 3 turnos. Uma nova exposição ao Veneno reinicia o contador em 3.';
+    const html='<strong>Mutações de morte.</strong> Ooteca 🕷 ativa uma reprodução normal quando a peça morre; Esterilidade 🚫 ainda bloqueia esse nascimento. Veneno 🐍 é acionado quando a peça é morta por outra peça: o agressor recebe 💀 e morre após completar 2 turnos próprios. Uma nova exposição ao Veneno reinicia o contador em 2.';
     if(row.innerHTML!==html)row.innerHTML=html;
   }
   function patchMutationModal(){
@@ -133,7 +137,7 @@
       if(body.innerHTML!==html)body.innerHTML=html;
     }else if(/^Mutação:\s*Veneno\b/i.test(text)){
       const newTitle='Mutação: Veneno 🐍';if(title.textContent!==newTitle)title.textContent=newTitle;
-      const html=lost?'<p>A peça perdeu Veneno 🐍.</p><p><strong>Efeito perdido:</strong> ela não intoxica mais a peça que a matar.</p>':'<p>Quando esta peça é morta por outra peça, o agressor recebe 🤮.</p><p>O agressor intoxicado morre após 3 turnos; uma nova exposição reinicia o contador.</p>';
+      const html=lost?'<p>A peça perdeu Veneno 🐍.</p><p><strong>Efeito perdido:</strong> ela não marca mais a peça que a matar.</p>':'<p>Quando esta peça é morta por outra peça, o agressor recebe 💀.</p><p>O agressor marcado morre após completar 2 turnos próprios; uma nova exposição reinicia o contador.</p>';
       if(body.innerHTML!==html)body.innerHTML=html;
     }
   }
