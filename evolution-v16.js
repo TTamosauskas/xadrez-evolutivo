@@ -1,8 +1,10 @@
 (function(){
   const PIECES=['Peão','Cavalo','Bispo','Torre','Rei','Rainha'];
   const BIRTH_RATES=[4,3,2,2,1,1];
-  const BASE_TRAITS=['Locomoção','Voo','Predação','Ovos','Fertilidade','Carapaça','Ooteca','Veneno'];
-  const PASSIVE_TRAITS=['Ooteca','Veneno'];
+  const DELETERIOUS_TRAIT='Mutação Deletéria';
+  const BASE_TRAITS=['Locomoção','Voo','Predação','Ovos','Fertilidade','Carapaça','Ooteca','Veneno',DELETERIOUS_TRAIT];
+  const PASSIVE_TRAITS=['Ooteca','Veneno',DELETERIOUS_TRAIT];
+  const GAIN_TRAITS=BASE_TRAITS.filter(name=>name!==DELETERIOUS_TRAIT);
   const SEXUAL_TRAIT='Reprodução Sexuada';
   const STERILITY_TRAIT='Esterilidade';
   let sexualPending=null;
@@ -54,19 +56,19 @@
   function gainOptions(p){
     normalizeProfile(p);const out=[];
     for(let rank=p.pieceRank+1;rank<=5;rank++)out.push({kind:'piece-up',to:rank});
-    for(const name of BASE_TRAITS)if(!p.traits.includes(name))out.push({kind:'trait-gain',name});
+    for(const name of GAIN_TRAITS)if(!p.traits.includes(name))out.push({kind:'trait-gain',name});
     if(!p.resistance)out.push({kind:'resistance-gain'});
     if(!p.sexual)out.push({kind:'sexual-gain'});
     return out;
   }
   function downgradeOptions(p){
     normalizeProfile(p);const out=[];
-    if(p.pieceRank===0)return out;
-    out.push({kind:'piece-down',to:p.pieceRank-1});
+    if(p.pieceRank>0)out.push({kind:'piece-down',to:p.pieceRank-1});
     for(const name of p.traits)out.push({kind:'trait-loss',name});
     if(p.resistance)out.push({kind:'resistance-loss'});
     if(p.sexual)out.push({kind:'sexual-loss'});
     if(!p.sterile)out.push({kind:'sterility'});
+    if(!p.traits.includes(DELETERIOUS_TRAIT))out.push({kind:'deleterious'});
     return out;
   }
   function applyChosenMutation(p,m){
@@ -108,11 +110,18 @@
       p.sterile=true;p.mutationStack.push({kind:'sterility',direction:'down'});p.mutations.push(STERILITY_TRAIT);
       return `Mutação: ${STERILITY_TRAIT}`;
     }
+    if(m.kind==='deleterious'){
+      if(!p.traits.includes(DELETERIOUS_TRAIT))p.traits.push(DELETERIOUS_TRAIT);
+      p.mutationStack.push({kind:'trait',name:DELETERIOUS_TRAIT,direction:'down',deleterious:true});
+      p.mutations.push(DELETERIOUS_TRAIT);
+      return `Nova especialidade: ${DELETERIOUS_TRAIT}`;
+    }
     return null;
   }
   function applyMutation(child){
     const p=profileOf(child);normalizeProfile(p);
-    let negative=p.pieceRank>0&&Math.random()<(1/3),options=negative?downgradeOptions(p):gainOptions(p);
+    const negativeChance=p.pieceRank===0?(1/5):(1/3);
+    let negative=Math.random()<negativeChance,options=negative?downgradeOptions(p):gainOptions(p);
     if(!options.length){negative=!negative;options=negative?downgradeOptions(p):gainOptions(p)}
     if(!options.length)return null;
     return applyChosenMutation(p,choice(options));
@@ -202,7 +211,7 @@
     const resistance=specs.includes('Resistência'),sexual=specs.includes(SEXUAL_TRAIT);
     const mutationStack=[];
     if(pieceRank>0)mutationStack.push({kind:'piece',from:0,to:pieceRank,direction:'up',inherited:true});
-    for(const name of traits)mutationStack.push({kind:'trait',name,direction:'up',inherited:true});
+    for(const name of traits)mutationStack.push({kind:'trait',name,direction:name===DELETERIOUS_TRAIT?'down':'up',inherited:true,deleterious:name===DELETERIOUS_TRAIT});
     if(resistance)mutationStack.push({kind:'resistance',direction:'up',inherited:true});
     if(sexual)mutationStack.push({kind:'sexual',direction:'up',inherited:true});
     const mutations=[];
@@ -395,7 +404,7 @@
   function applyBirthRuleText(){
     const rules=document.querySelectorAll('#rulesModal p');
     if(rules[2])rules[2].innerHTML='<strong>Casas férteis e reprodução.</strong> Ao entrar numa casa fértil, a peça gera descendentes semelhantes antes das mutações: Peão 4, Cavalo 3, Bispo 2, Torre 2, Rei 1 e Rainha 1. Fertilidade 🐇 dobra essa taxa. Predação 🦁 também pode disparar reprodução após uma captura, mas cada movimento gera no máximo um lote. Com Reprodução Sexuada ❤️, uma peça em casa fértil com aliados adjacentes escolhe um parceiro não estéril marcado em roxo antes do nascimento; o descendente usa a peça de maior valor como base e combina aproximadamente metade das especializações de cada progenitor. Esterilidade 🚫 impede a peça de gerar descendentes, mas uma casa fértil ainda é consumida quando ela entra nela.';
-    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> Cada descendente assexuado começa herdando o perfil do progenitor e depois faz sua própria rolagem de mutação. Em condições normais, cada recém-nascido tem 1/3 de chance de mutar; durante Tempestade Solar, 100%. Na reprodução comum, peças a partir de Cavalo podem receber mutações positivas ou negativas; Peões nunca recebem mutações negativas. Esterilidade 🚫 é uma mutação negativa possível apenas a partir de Cavalo. Descendentes de Reprodução Sexuada ❤️ também rolam mutação individualmente, porém sua mutação adicional, quando ocorre, é sempre positiva. Resistência 🧬 continua sendo uma especialização hereditária.';
+    if(rules[3])rules[3].innerHTML='<strong>Evolução.</strong> Cada descendente assexuado começa herdando o perfil do progenitor e depois faz sua própria rolagem de mutação. Em condições normais, cada recém-nascido tem 1/3 de chance de mutar; durante Tempestade Solar, 100%. Quando um Peão sofre mutação, 1/5 das mutações são negativas; a partir de Cavalo, 1/3 são negativas. Peões não podem cair abaixo de Peão, mas podem perder características ou receber Esterilidade 🚫 ou Mutação Deletéria 💀. Descendentes de Reprodução Sexuada ❤️ também rolam mutação individualmente, porém sua mutação adicional, quando ocorre, é sempre positiva. Resistência 🧬 continua sendo uma especialização hereditária.';
   }
   function renderSexualLegend(){
     const box=document.querySelector('#boardMutationLegend');if(!box)return;
