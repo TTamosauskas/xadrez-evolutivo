@@ -1,27 +1,18 @@
 (function(){
   let blackPassedNotice=false;
+  let populationCapBypassDepth=0;
 
-  function stackText(){
-    try{return new Error().stack||''}catch(_){return ''}
+  function withPopulationCapBypass(fn){
+    populationCapBypassDepth++;
+    try{return fn()}finally{populationCapBypassDepth=Math.max(0,populationCapBypassDepth-1)}
   }
 
-  // O limite populacional antigo continua existindo como constante histórica,
-  // mas não deve mais bloquear reprodução. Mantemos a população real em todos
-  // os demais sistemas (placar, eventos e gatilho do patógeno).
-  const previousPlayerOrganisms=playerOrganisms;
+  // Mantém a população real para placar, eventos, patógeno e IA.
+  // O antigo MAX_POP só é neutralizado durante a execução real de reprodução.
   playerOrganisms=function(owner){
-    const list=previousPlayerOrganisms(owner);
-    const stack=stackText();
-
-    // Nunca falsear população durante renderização, placar ou controle do patógeno.
-    if(/\b(?:render|renderPlayer|renderPlayers|renderStatus|livingSummary|scoreFor|startGlobalPopulationOutbreak|checkOverpopulationOutbreaks)\b/.test(stack))return list;
-
-    // A IA não deve considerar a população antiga como falta de espaço reprodutivo.
-    if(/\b(?:projectedBirthsForMove|fertileGrowthValue)\b/.test(stack))return [];
-
-    // Reprodução assexuada/sexuada e a checagem que oferece parceiro sexual
-    // devem enxergar sempre uma população abaixo do antigo MAX_POP.
-    if(/\b(?:reproduce|reproduceSexually|executeMove)\b/.test(stack)&&list.length>=MAX_POP){
+    const list=(state?.organisms||[]).filter(o=>o.owner===owner);
+    const sexualSelection=!!document.querySelector?.('.sexual-partner');
+    if((populationCapBypassDepth>0||sexualSelection)&&list.length>=MAX_POP){
       return list.slice(0,Math.max(0,MAX_POP-1));
     }
     return list;
@@ -146,10 +137,17 @@
     ensureHostileTutorialState(state);
     const entersHostile=!!org&&!!t&&!state.hostileEntryTutorialSeen&&(org.r!==t.r||org.c!==t.c)&&inBounds(t.r,t.c)&&cell(t.r,t.c).terrain==='biohazard';
     if(entersHostile)state.hostileEntryTutorialSeen=true;
-    const result=previousExecuteMove.apply(this,arguments);
+    const result=withPopulationCapBypass(()=>previousExecuteMove.apply(this,arguments));
     if(entersHostile)showHostileTutorial();
     return result;
   };
+
+  if(typeof window.xeReproduceFromMutation==='function'){
+    const previousMutationReproduction=window.xeReproduceFromMutation;
+    window.xeReproduceFromMutation=function(){
+      return withPopulationCapBypass(()=>previousMutationReproduction.apply(this,arguments));
+    };
+  }
 
   const previousHandleCellClick=handleCellClick;
   handleCellClick=function(){
