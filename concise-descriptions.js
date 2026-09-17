@@ -46,4 +46,11 @@
   observer.observe(document.body,{subtree:true,childList:true});
 
   rewriteDescriptions();
+
+  if(!document.querySelector('script[data-ai-input-lock]')){
+    const script=document.createElement('script');
+    script.src='ai-input-lock.js';
+    script.dataset.aiInputLock='1';
+    document.body.appendChild(script);
+  }
 })();
