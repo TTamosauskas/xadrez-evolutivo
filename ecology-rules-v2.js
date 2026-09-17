@@ -12,6 +12,13 @@
   function completedRound(){return Math.floor((state?.turn||0)/2)}
   function isHostileCell(org){return !!org&&inBounds(org.r,org.c)&&cell(org.r,org.c).terrain==='biohazard'}
 
+  const previousLog=log;
+  log=function(message){
+    let text=String(message??'');
+    text=text.replace(/Erupção Vulcânica\. Uma área 2×2 adicional é marcada como perigosa\./i,'Erupção Vulcânica. Uma área 3×3 de 9 casas é marcada como perigosa.');
+    return previousLog.call(this,text);
+  };
+
   function infectionSnapshot(org){
     if(org?.ecoSick?.managed)return {kind:'eco',data:{...org.ecoSick}};
     if(org?.overpopSick)return {kind:'overpop',data:{...org.overpopSick}};
@@ -130,11 +137,15 @@
       const icon=legend.querySelector('i');legend.textContent=' casa hostil · 50% de risco por rodada';if(icon)legend.prepend(icon);
     }
 
-    const old=document.querySelector('#rulesModal .population-pathogen-rule');if(old)old.remove();
-    const row=document.querySelector('#rulesModal .overpopulation-rule');
-    if(row){
-      row.classList.remove('overpopulation-rule');row.classList.add('population-pathogen-rule');
-      row.innerHTML='<strong>Patógeno Virulento.</strong> O surto por população começa ao atingir 32 peças totais. Ele nasce na cor mais numerosa, na peça suscetível mais distante possível da cor menos numerosa. Capturar uma peça infectada transfere a mesma doença para a peça vencedora, exceto quando ela possui Resistência 🧬. A transmissão ambiental dura 10 rodadas; o prazo letal continua sendo o da doença.';
+    const fresh=document.querySelector('#rulesModal .overpopulation-rule');
+    let pathogenRule=document.querySelector('#rulesModal .population-pathogen-rule');
+    if(fresh){
+      if(pathogenRule&&pathogenRule!==fresh)pathogenRule.remove();
+      fresh.classList.remove('overpopulation-rule');fresh.classList.add('population-pathogen-rule');pathogenRule=fresh;
+    }
+    if(pathogenRule){
+      const html='<strong>Patógeno Virulento.</strong> O surto por população começa ao atingir 32 peças totais. Ele nasce na cor mais numerosa, na peça suscetível mais distante possível da cor menos numerosa. Capturar uma peça infectada transfere a mesma doença para a peça vencedora, exceto quando ela possui Resistência 🧬. A transmissão ambiental dura 10 rodadas; o prazo letal continua sendo o da doença.';
+      if(pathogenRule.innerHTML!==html)pathogenRule.innerHTML=html;
     }
 
     const modal=document.querySelector('#rulesModal .modal');
