@@ -13,6 +13,7 @@
 .status-strip{margin-bottom:14px!important}
 
 /* O texto de orientação assume a hierarquia visual que antes era do título "Legenda". */
+.controls-panel>h3{display:none!important}
 .controls-panel .hint{
   font-size:1.17em!important;
   font-weight:700!important;
