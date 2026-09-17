@@ -1,7 +1,7 @@
 (function(){
   const DYSFUNCTIONAL='Mutação Disfuncional';
   const NEGATIVE_KINDS=new Set(['piece-down','trait-loss','resistance-loss','sexual-loss','sterility','deleterious']);
-  let suppressRestForOrgId=null;
+  let activeDysfunctionalActionOrgId=null;
 
   function profileOf(org){return org&&state?.lineages?.[org.owner]?.[org.lineage]}
   function profileHasDysfunction(p){
@@ -50,9 +50,14 @@
   movementTargets=function(org){
     const targets=previousMovementTargets.apply(this,arguments)||[];
     if(!org||!isBlocked(org))return targets;
-    if(suppressRestForOrgId===org.id)return [];
+    if(activeDysfunctionalActionOrgId===org.id)return [];
     if(otherUsablePiece(org))return [];
     return [{r:org.r,c:org.c,kind:'dysfunctional-rest',capture:false,path:[],dysfunctionalRest:true,hidden:true}];
+  };
+
+  const previousFinishTurn=finishTurn;
+  finishTurn=function(){
+    try{return previousFinishTurn.apply(this,arguments)}finally{activeDysfunctionalActionOrgId=null}
   };
 
   const previousExecuteMove=executeMove;
@@ -69,9 +74,8 @@
     }
     if(org&&hasDysfunction(org)){
       org.dysfunctionalLastMoveRound=roundNow();
-      const previousSuppressed=suppressRestForOrgId;suppressRestForOrgId=org.id;
+      activeDysfunctionalActionOrgId=org.id;
       try{return previousExecuteMove.apply(this,arguments)}finally{
-        suppressRestForOrgId=previousSuppressed;
         if(state&&!state.gameOver)render();
       }
     }
@@ -161,10 +165,14 @@
 
   const previousDeserializeState=deserializeState;
   deserializeState=function(){
+    activeDysfunctionalActionOrgId=null;
     const result=previousDeserializeState.apply(this,arguments);
     for(const org of state?.organisms||[])if(!hasDysfunction(org))delete org.dysfunctionalLastMoveRound;
     return result;
   };
+
+  const previousNewState=newState;
+  newState=function(){activeDysfunctionalActionOrgId=null;return previousNewState.apply(this,arguments)};
 
   const observer=new MutationObserver(()=>{patchMutationModal();patchDisplayedLogs()});
   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
