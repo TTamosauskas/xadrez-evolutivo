@@ -61,6 +61,13 @@
     pendingLines.push(item.line);
   }
 
+  function releaseBlockIfIdle(){
+    if(summaryOpen||intercepting||pendingLines.length||flushTimer!==null)return;
+    if(document.querySelector('#explanationModal.open'))return;
+    if(document.querySelector('#mutationSummaryModal.open'))return;
+    if(window.xeModalBlocking)window.xeModalBlocking=false;
+  }
+
   function scheduleFlush(){
     if(flushTimer!==null)clearTimeout(flushTimer);
     flushTimer=setTimeout(()=>{
@@ -72,7 +79,7 @@
   }
 
   function showSummary(){
-    if(summaryOpen||!pendingLines.length)return;
+    if(summaryOpen||!pendingLines.length){releaseBlockIfIdle();return}
     const modal=ensureSummaryModal();
     const body=modal.querySelector('#mutationSummaryBody');
     body.innerHTML=pendingLines.map(line=>`<div class="mutation-summary-line">${line}</div>`).join('');
@@ -88,13 +95,14 @@
     summaryOpen=false;
     pendingLines.length=0;
     pendingKeys.clear();
-    if(!document.querySelector('.modal-backdrop.open'))window.xeModalBlocking=false;
+    releaseBlockIfIdle();
+    document.dispatchEvent(new CustomEvent('xe:explanations-complete'));
   }
 
   function inspectExplanationModal(){
     if(intercepting||summaryOpen)return;
     const modal=document.querySelector('#explanationModal');
-    if(!modal?.classList.contains('open'))return;
+    if(!modal?.classList.contains('open')){releaseBlockIfIdle();return}
     const title=(modal.querySelector('#explanationModalTitle')?.textContent||'').trim();
     const bodyText=(modal.querySelector('#explanationModalBody')?.textContent||'').trim();
     const item=conciseMutation(title,bodyText);
@@ -131,6 +139,10 @@
 
   const observer=new MutationObserver(inspectExplanationModal);
   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+
+  /* Recupera estados órfãos sem interferir enquanto existe modal ou resumo pendente. */
+  setInterval(releaseBlockIfIdle,250);
+
   ensureStyles();
   inspectExplanationModal();
 })();
