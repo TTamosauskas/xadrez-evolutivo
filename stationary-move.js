@@ -3,7 +3,9 @@
   movementTargets=function(org){
     const targets=previousMovementTargets.apply(this,arguments)||[];
     if(!org||!state?.organisms?.some(o=>o.id===org.id))return targets;
-    if(!targets.some(t=>t.r===org.r&&t.c===org.c)){
+    const ce=inBounds(org.r,org.c)?cell(org.r,org.c):null;
+    const fertile=!!ce&&ce.terrain==='fertile'&&ce.resource>0;
+    if(fertile&&!targets.some(t=>t.r===org.r&&t.c===org.c)){
       targets.push({r:org.r,c:org.c,kind:'stay',dist:0,capture:false,stay:true,path:[]});
     }
     return targets;
@@ -49,12 +51,14 @@
     const result=previousRenderActions.apply(this,arguments);
     const rules=document.querySelectorAll('#rulesModal p');
     if(rules[1]&&!rules[1].textContent.includes('permanecer na própria casa')){
-      rules[1].innerHTML+=' Uma peça também pode permanecer na própria casa como sua ação de movimento; se estiver sobre uma casa fértil, isso consome a casa e ativa a reprodução normalmente.';
+      rules[1].innerHTML+=' Uma peça que já esteja sobre uma casa fértil pode permanecer na própria casa como sua ação de movimento; isso consome a casa e ativa a reprodução normalmente.';
     }
     const sel=typeof currentSelected==='function'?currentSelected():null;
     const hint=document.querySelector('#hint');
-    if(sel&&state?.mode==='move'&&hint&&!window.xeModalBlocking&&!document.querySelector('.sexual-partner')){
-      hint.textContent+=' Você também pode clicar novamente na própria peça para permanecer na casa.';
+    const ce=sel&&inBounds(sel.r,sel.c)?cell(sel.r,sel.c):null;
+    const fertile=!!ce&&ce.terrain==='fertile'&&ce.resource>0;
+    if(sel&&fertile&&state?.mode==='move'&&hint&&!window.xeModalBlocking&&!document.querySelector('.sexual-partner')){
+      hint.textContent+=' Como está numa casa fértil, você também pode clicar novamente na própria peça para permanecer e se reproduzir.';
     }
     return result;
   };
