@@ -1,16 +1,20 @@
 .side-players{display:none!important}
 
+.app{padding:10px!important}
+
 .layout{
   grid-template-columns:minmax(0,1fr) 320px!important;
   align-items:start;
 }
 
 .center{min-width:0}
+.board-shell{margin-top:13px!important}
+.panel{margin-top:13px!important}
 
 /* Faz a distância visual dos botões até o status coincidir com a do status até o tabuleiro. */
 .top-actions{align-self:flex-end}
 .topbar{margin-bottom:14px!important}
-.status-strip{margin-bottom:14px!important}
+.status-strip{margin-bottom:0!important}
 
 /* O texto de orientação assume a hierarquia visual que antes era do título "Legenda". */
 .controls-panel>h3{display:none!important}
