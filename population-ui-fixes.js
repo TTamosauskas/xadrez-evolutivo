@@ -1,9 +1,5 @@
 (function(){
   let blackPassedNotice=false;
-  const PIECE_SYMBOLS={
-    blue:['♙','♘','♗','♖','♔','♕'],
-    amber:['♟','♞','♝','♜','♚','♛']
-  };
   const MUTATION_ICONS={
     'Locomoção':'🐪','Voo':'🐦','Predação':'🦁','Ovos':'🦎','Fertilidade':'🐇','Carapaça':'🐢',
     'Ooteca':'🕷','Veneno':'🐍','Mutação Deletéria':'💀','Mutação Disfuncional':'🦵','Camuflagem':'👀'
@@ -31,23 +27,42 @@
   }
 
   function ensureInterfaceStyles(){
-    if(document.querySelector('#populationInterfacePolish'))return;
-    const style=document.createElement('style');
-    style.id='populationInterfacePolish';
+    let style=document.querySelector('#populationInterfacePolish');
+    if(!style){style=document.createElement('style');style.id='populationInterfacePolish';document.head.appendChild(style)}
     style.textContent=`
       .controls-panel .hint{min-height:18px!important;margin-top:5px!important;margin-bottom:2px!important;line-height:1.3}
       .controls-panel #passTurnBtn{margin-top:0!important}
-      .controls-panel .legend{display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important;gap:14px!important;width:100%!important}
-      .controls-panel .legend span{white-space:nowrap!important}
+      .controls-panel .legend{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:flex-start!important;gap:14px!important;width:100%!important}
+      .controls-panel .legend span{display:inline-flex!important;align-items:center!important;white-space:nowrap!important;width:auto!important;flex:0 0 auto!important;margin:0!important}
       .selected-piece-summary{margin:8px 0 10px;padding:8px 10px;border:1px solid rgba(190,151,113,.28);border-radius:10px;background:rgba(126,91,63,.12)}
       .selected-piece-summary-label{display:block;font-size:10px;color:var(--muted);margin-bottom:3px}
-      .selected-piece-summary-value{display:flex;align-items:center;min-height:38px;line-height:1;color:var(--text)}
-      .selected-piece-summary-symbol{font-size:36px;font-weight:900;line-height:1;-webkit-text-stroke:.35px currentColor}
-      .selected-piece-summary-separator{font-size:18px;font-weight:800;line-height:1;margin:0 5px 0 2px}
-      .selected-piece-summary-icons{display:inline-flex;align-items:center;gap:4px}
-      .selected-piece-summary-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;box-sizing:border-box;border-radius:50%;border:1px solid rgba(213,183,151,.48);background:rgba(52,36,27,.72);font-size:13px;font-weight:400;line-height:1;flex:0 0 24px}
+      .selected-piece-summary-value{display:flex;align-items:center;min-height:42px;line-height:1;color:var(--text)}
+      .selected-piece-summary-piece{display:block;width:42px;height:42px;object-fit:contain;flex:0 0 42px}
+      .selected-piece-summary-separator{font-size:18px;font-weight:800;line-height:1;margin:0 6px 0 2px}
+      .selected-piece-summary-icons{display:inline-flex;align-items:center;gap:3px}
+      .selected-piece-summary-icon{position:static!important;transform:none!important;flex:0 0 17px!important;margin:0!important}
     `;
-    document.head.appendChild(style);
+  }
+
+  function forceTerrainLegendLayout(){
+    const legend=document.querySelector('.controls-panel .legend');
+    if(!legend)return;
+    const set=(el,name,value)=>el.style.setProperty(name,value,'important');
+    set(legend,'display','flex');
+    set(legend,'flex-direction','row');
+    set(legend,'flex-wrap','nowrap');
+    set(legend,'align-items','center');
+    set(legend,'justify-content','flex-start');
+    set(legend,'gap','14px');
+    set(legend,'width','100%');
+    for(const span of legend.querySelectorAll(':scope > span')){
+      set(span,'display','inline-flex');
+      set(span,'align-items','center');
+      set(span,'white-space','nowrap');
+      set(span,'width','auto');
+      set(span,'flex','0 0 auto');
+      set(span,'margin','0');
+    }
   }
 
   function profileOf(org){return org&&state?.lineages?.[org.owner]?.[org.lineage]}
@@ -61,6 +76,7 @@
     }
     return active;
   }
+
   function selectedPieceIcons(org,profile){
     const icons=[],seen=new Set();
     const add=icon=>{if(icon&&!seen.has(icon)){seen.add(icon);icons.push(icon)}};
@@ -74,6 +90,7 @@
     if(org.venomPoison)add('💀');
     return icons;
   }
+
   function renderSelectedPieceSummary(){
     const legend=document.querySelector('#boardMutationLegend,.board-mutation-legend');if(!legend?.parentNode)return;
     let box=document.querySelector('#selectedPieceSummary');
@@ -85,24 +102,43 @@
     }else if(box.nextElementSibling!==legend){
       legend.parentNode.insertBefore(box,legend);
     }
+
     const value=box.querySelector('.selected-piece-summary-value');
     const org=typeof currentSelected==='function'?currentSelected():null;
     if(!org){
       if(value&&value.textContent!=='—'){value.textContent='—';delete value.dataset.summaryKey}
       return;
     }
-    const profile=profileOf(org),rank=Math.max(0,Math.min(5,Number(profile?.pieceRank)||0));
-    const symbol=(PIECE_SYMBOLS[org.owner]||PIECE_SYMBOLS.blue)[rank]||'♟';
-    const icons=selectedPieceIcons(org,profile),key=`${symbol}|${icons.join('|')}`;
+
+    const profile=profileOf(org);
+    const cellEl=boardEl?.children?.[org.r*SIZE+org.c];
+    const orgEl=cellEl?.querySelector?.('.org');
+    const boardImg=orgEl?.querySelector?.('img');
+    const icons=selectedPieceIcons(org,profile);
+    const pieceKey=boardImg?.currentSrc||boardImg?.src||`${org.owner}:${org.lineage}`;
+    const key=`${pieceKey}|${icons.join('|')}`;
     if(!value||value.dataset.summaryKey===key)return;
+
     value.replaceChildren();
-    const symbolEl=document.createElement('span');symbolEl.className='selected-piece-summary-symbol';symbolEl.textContent=symbol;
-    const separator=document.createElement('span');separator.className='selected-piece-summary-separator';separator.textContent=':';
+    if(boardImg){
+      const pieceImg=boardImg.cloneNode(false);
+      pieceImg.className='selected-piece-summary-piece';
+      pieceImg.removeAttribute('width');pieceImg.removeAttribute('height');
+      pieceImg.draggable=false;
+      value.appendChild(pieceImg);
+    }else{
+      const fallback=document.createElement('strong');fallback.textContent=org.lineage||'Peça';fallback.style.fontSize='24px';value.appendChild(fallback);
+    }
+
+    const separator=document.createElement('span');separator.className='selected-piece-summary-separator';separator.textContent=':';value.appendChild(separator);
     const iconsEl=document.createElement('span');iconsEl.className='selected-piece-summary-icons';
     for(const icon of icons){
-      const iconEl=document.createElement('span');iconEl.className='selected-piece-summary-icon';iconEl.textContent=icon;iconsEl.appendChild(iconEl);
+      const iconEl=document.createElement('span');
+      iconEl.className='mutation-icon selected-piece-summary-icon';
+      iconEl.textContent=icon;
+      iconsEl.appendChild(iconEl);
     }
-    value.append(symbolEl,separator,iconsEl);value.dataset.summaryKey=key;
+    value.appendChild(iconsEl);value.dataset.summaryKey=key;
   }
 
   function ensureHostileTutorialState(target=state){
@@ -175,9 +211,11 @@
     const span=[...document.querySelectorAll('.legend span')].find(el=>el.querySelector('.legend-color.biohazard')||/casa hostil|casa mortal/i.test(el.textContent||''));
     if(!span)return;
     const icon=span.querySelector('i');
-    if((span.textContent||'').trim()==='casa hostil')return;
-    span.textContent=' casa hostil';
-    if(icon)span.prepend(icon);
+    if((span.textContent||'').trim()!=='casa hostil'){
+      span.textContent=' casa hostil';
+      if(icon)span.prepend(icon);
+    }
+    forceTerrainLegendLayout();
   }
 
   function applyBlackPassHint(){
@@ -228,23 +266,23 @@
   const previousRenderActions=renderActions;
   renderActions=function(){
     const result=previousRenderActions.apply(this,arguments);
-    setHostileLegend();rewriteNode(document.body);applyBlackPassHint();renderSelectedPieceSummary();
+    setHostileLegend();forceTerrainLegendLayout();rewriteNode(document.body);applyBlackPassHint();renderSelectedPieceSummary();
     return result;
   };
 
   const previousRender=render;
   render=function(){
     const result=previousRender.apply(this,arguments);
-    setHostileLegend();rewriteNode(document.body);applyBlackPassHint();renderSelectedPieceSummary();
+    setHostileLegend();forceTerrainLegendLayout();rewriteNode(document.body);applyBlackPassHint();renderSelectedPieceSummary();
     return result;
   };
 
   const observer=new MutationObserver(records=>{
     for(const record of records)for(const node of record.addedNodes)rewriteNode(node);
-    setHostileLegend();applyBlackPassHint();
+    setHostileLegend();forceTerrainLegendLayout();applyBlackPassHint();
   });
   observer.observe(document.body,{subtree:true,childList:true});
 
   ensureInterfaceStyles();ensureHostileTutorialState(state);
-  setHostileLegend();rewriteNode(document.body);applyBlackPassHint();renderSelectedPieceSummary();
+  setHostileLegend();forceTerrainLegendLayout();rewriteNode(document.body);applyBlackPassHint();renderSelectedPieceSummary();
 })();
