@@ -33,7 +33,37 @@
     text=text.replace(/\bcasas mortais\b/g,'casas hostis');
     text=text.replace(/\bCasa mortal\b/g,'Casa hostil');
     text=text.replace(/\bcasa mortal\b/g,'casa hostil');
+    text=text.replace(/Quando atinge uma casa fértil \(verde\) a peça se reproduz\./gi,'Quando uma peça atinge uma casa fértil (verde) ela se reproduz.');
     return text;
+  }
+
+  function ensureHostileTutorialState(target=state){
+    if(!target)return;
+    if(typeof target.hostileEntryTutorialSeen!=='boolean')target.hostileEntryTutorialSeen=false;
+  }
+
+  function ensureHostileTutorialModal(){
+    let modal=document.querySelector('#hostileTutorialModal');
+    if(modal)return modal;
+    modal=document.createElement('div');
+    modal.id='hostileTutorialModal';
+    modal.className='modal-backdrop';
+    modal.setAttribute('role','dialog');
+    modal.setAttribute('aria-modal','true');
+    modal.innerHTML='<div class="modal"><h2>Casa hostil</h2><p>Quando uma peça está em uma casa hostil (vermelha) ela tem 50% de chance de morrer.</p><div class="modal-actions"><button class="btn primary" type="button" data-hostile-tutorial-close>Entendi</button></div></div>';
+    document.body.appendChild(modal);
+    modal.querySelector('[data-hostile-tutorial-close]').addEventListener('click',()=>{
+      modal.classList.remove('open');
+      if(!document.querySelector('.modal-backdrop.open'))window.xeModalBlocking=false;
+    });
+    return modal;
+  }
+
+  function showHostileTutorial(){
+    const modal=ensureHostileTutorialModal();
+    modal.classList.add('open');
+    window.xeModalBlocking=true;
+    modal.querySelector('[data-hostile-tutorial-close]')?.focus();
   }
 
   const previousLog=log;
@@ -97,6 +127,30 @@
     if(hint)hint.textContent='Pretas passaram. Turno das Brancas. Selecione uma peça.';
   }
 
+  const previousNewState=newState;
+  newState=function(){
+    const next=previousNewState.apply(this,arguments);
+    next.hostileEntryTutorialSeen=false;
+    return next;
+  };
+
+  const previousDeserializeState=deserializeState;
+  deserializeState=function(){
+    const result=previousDeserializeState.apply(this,arguments);
+    ensureHostileTutorialState(state);
+    return result;
+  };
+
+  const previousExecuteMove=executeMove;
+  executeMove=function(org,t){
+    ensureHostileTutorialState(state);
+    const entersHostile=!!org&&!!t&&!state.hostileEntryTutorialSeen&&(org.r!==t.r||org.c!==t.c)&&inBounds(t.r,t.c)&&cell(t.r,t.c).terrain==='biohazard';
+    if(entersHostile)state.hostileEntryTutorialSeen=true;
+    const result=previousExecuteMove.apply(this,arguments);
+    if(entersHostile)showHostileTutorial();
+    return result;
+  };
+
   const previousHandleCellClick=handleCellClick;
   handleCellClick=function(){
     if(blackPassedNotice&&localStorage.getItem('xe_game_mode')==='single'&&state?.current==='blue')blackPassedNotice=false;
@@ -123,5 +177,6 @@
   });
   observer.observe(document.body,{subtree:true,childList:true});
 
+  ensureHostileTutorialState(state);
   setHostileLegend();rewriteNode(document.body);applyBlackPassHint();
 })();
