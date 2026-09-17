@@ -75,23 +75,21 @@
     const before=state?.turn||0;
     const completing=!!state&&!state.gameOver&&before%2===1;
     const targetRound=hostileRoundAfterTurn(before);
-    let queue=[];
-    if(completing){
-      queue=(state.organisms||[]).filter(o=>hostileCell(o)&&!hasMutation(o,'Voo')&&o.hostileRiskRound!==targetRound).map(o=>o.id);
-    }
+    const preMarked=new Set();
+    const processed=new Set();
+    if(completing)for(const org of state.organisms||[])if(org.hostileRiskRound===targetRound)preMarked.add(org.id);
     const nativeRandom=Math.random;
-    let hostileIndex=0;
     if(completing){
       Math.random=function(){
         const value=nativeRandom();
         let stack='';try{stack=new Error().stack||''}catch(_){}
         if(!/rollHostileSurvival/.test(stack))return value;
-        let org=null;
-        while(hostileIndex<queue.length&&!org){
-          const id=queue[hostileIndex++],candidate=state?.organisms?.find(o=>o.id===id);
-          if(candidate&&hostileCell(candidate)&&!hasMutation(candidate,'Voo'))org=candidate;
-        }
-        if(org&&hasMutation(org,CARAPACE))return value<.34?0:1;
+        const org=(state?.organisms||[]).find(candidate=>
+          !preMarked.has(candidate.id)&&!processed.has(candidate.id)&&candidate.hostileRiskRound===targetRound&&hostileCell(candidate)&&!hasMutation(candidate,'Voo')
+        );
+        if(!org)return value;
+        processed.add(org.id);
+        if(hasMutation(org,CARAPACE))return value<.34?0:1;
         return value;
       };
     }
@@ -121,7 +119,7 @@
       const strong=row.querySelector('strong');if(strong?.textContent.trim()!==CARAPACE)continue;
       const small=row.querySelector('small');if(small)small.textContent='Aumenta a segurança em casa hostil: 66% de chance de sobrevivência em cada rodada.';
     }
-    let carapaceRow=[...box.querySelectorAll('.board-mutation-row')].find(row=>row.querySelector('strong')?.textContent.trim()===CARAPACE);
+    const carapaceRow=[...box.querySelectorAll('.board-mutation-row')].find(row=>row.querySelector('strong')?.textContent.trim()===CARAPACE);
     if(anyCarapace&&!carapaceRow){
       box.querySelector('.board-mutation-empty')?.remove();
       box.insertAdjacentHTML('beforeend','<div class="board-mutation-row" data-carapace-safety-row><span class="board-circle-icon">🐢</span><div><strong>Carapaça</strong><small>Aumenta a segurança em casa hostil: 66% de chance de sobrevivência em cada rodada.</small></div></div>');
@@ -154,9 +152,9 @@
   function rewriteHostileLegend(){
     const legend=[...document.querySelectorAll('.legend span')].find(el=>/casa mortal|casa hostil/i.test(el.textContent||''));
     if(!legend)return;
-    const desired=' casa hostil · 50% de risco · Carapaça 🐢: 66% de sobrevivência';
-    if(legend.textContent===desired.trim())return;
-    const icon=legend.querySelector('i');legend.textContent=desired;if(icon)legend.prepend(icon);
+    const desired='casa hostil · 50% de risco · Carapaça 🐢: 66% de sobrevivência';
+    if((legend.textContent||'').trim()===desired)return;
+    const icon=legend.querySelector('i');legend.textContent=` ${desired}`;if(icon)legend.prepend(icon);
   }
 
   function syncHowToPlay(){
