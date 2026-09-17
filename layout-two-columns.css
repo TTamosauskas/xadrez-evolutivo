@@ -7,10 +7,24 @@
 
 .center{min-width:0}
 
+/* Faz a distância visual dos botões até o status coincidir com a do status até o tabuleiro. */
+.top-actions{align-self:flex-end}
+.topbar{margin-bottom:14px!important}
+.status-strip{margin-bottom:14px!important}
+
+/* O texto de orientação assume a hierarquia visual que antes era do título "Legenda". */
+.controls-panel .hint{
+  font-size:1.17em!important;
+  font-weight:700!important;
+  line-height:1.2!important;
+  color:var(--text)!important;
+}
+
 @media(max-width:1120px){
   .layout{grid-template-columns:1fr!important}
 }
 
 @media(max-width:720px){
   .right-column{grid-template-columns:1fr!important}
+  .top-actions{align-self:stretch}
 }
