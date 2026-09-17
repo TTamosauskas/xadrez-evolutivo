@@ -109,6 +109,7 @@
     queueMicrotask(()=>{
       modal.style.removeProperty('visibility');
       intercepting=false;
+      if(pendingLines.length)window.xeModalBlocking=true;
       scheduleFlush();
     });
   }
