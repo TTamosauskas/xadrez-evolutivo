@@ -132,17 +132,20 @@
     const modal=document.querySelector('#rulesModal .modal');if(!modal)return;
     let row=modal.querySelector('.dysfunctional-mutation-rule');
     if(!row){row=document.createElement('p');row.className='dysfunctional-mutation-rule';modal.insertBefore(row,modal.querySelector('.modal-actions'))}
-    row.innerHTML='<strong>Mutação Disfuncional 🦵.</strong> É uma mutação negativa hereditária. Depois que a peça realiza um movimento, ela fica desbotada e precisa permanecer em repouso durante toda a rodada seguinte. Na rodada posterior volta a poder se mover. Locomoção 🐪 não concede um segundo movimento no turno em que a Mutação Disfuncional entra em repouso.';
+    const html='<strong>Mutação Disfuncional 🦵.</strong> É uma mutação negativa hereditária. Depois que a peça realiza um movimento, ela fica desbotada e precisa permanecer em repouso durante toda a rodada seguinte. Na rodada posterior volta a poder se mover. Locomoção 🐪 não concede um segundo movimento no turno em que a Mutação Disfuncional entra em repouso.';
+    if(row.innerHTML!==html)row.innerHTML=html;
   }
   function patchMutationModal(){
     const modal=document.querySelector('#explanationModal');if(!modal?.classList.contains('open'))return;
     const title=modal.querySelector('#explanationModalTitle'),body=modal.querySelector('#explanationModalBody');if(!title||!body)return;
     if(!/Mutação Disfuncional/i.test(title.textContent||'')&&!/Mutação Disfuncional/i.test(body.textContent||''))return;
     const lost=/perdeu|efeito perdido/i.test(body.textContent||'');
-    title.textContent='Mutação: Mutação Disfuncional 🦵';
-    body.innerHTML=lost
+    const desiredTitle='Mutação: Mutação Disfuncional 🦵';
+    const desiredBody=lost
       ?'<p>A peça perdeu a Mutação Disfuncional 🦵 e pode voltar a se mover em rodadas consecutivas.</p>'
       :'<p>Esta peça recebeu a Mutação Disfuncional 🦵.</p><p>Depois de se mover, ela deve descansar durante a rodada seguinte inteira e só pode voltar a se mover na rodada posterior.</p>';
+    if(title.textContent!==desiredTitle)title.textContent=desiredTitle;
+    if(body.innerHTML!==desiredBody)body.innerHTML=desiredBody;
   }
   function patchDisplayedLogs(){
     const root=document.querySelector('#log');if(!root)return;
