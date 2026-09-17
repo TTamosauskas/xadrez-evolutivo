@@ -1,0 +1,16 @@
+.side-players{display:none!important}
+
+.layout{
+  grid-template-columns:minmax(0,1fr) 320px!important;
+  align-items:start;
+}
+
+.center{min-width:0}
+
+@media(max-width:1120px){
+  .layout{grid-template-columns:1fr!important}
+}
+
+@media(max-width:720px){
+  .right-column{grid-template-columns:1fr!important}
+}
