@@ -68,34 +68,6 @@
     return !(hasMutation(defender,CAMOUFLAGE)&&distance>1);
   };
 
-  function hostileCell(org){return !!org&&inBounds(org.r,org.c)&&cell(org.r,org.c).terrain==='biohazard'}
-  function hostileRoundAfterTurn(before){return Math.floor((before+1)/2)}
-  const previousFinishTurn=finishTurn;
-  finishTurn=function(){
-    const before=state?.turn||0;
-    const completing=!!state&&!state.gameOver&&before%2===1;
-    const targetRound=hostileRoundAfterTurn(before);
-    const preMarked=new Set();
-    const processed=new Set();
-    if(completing)for(const org of state.organisms||[])if(org.hostileRiskRound===targetRound)preMarked.add(org.id);
-    const nativeRandom=Math.random;
-    if(completing){
-      Math.random=function(){
-        const value=nativeRandom();
-        let stack='';try{stack=new Error().stack||''}catch(_){}
-        if(!/rollHostileSurvival/.test(stack))return value;
-        const org=(state?.organisms||[]).find(candidate=>
-          !preMarked.has(candidate.id)&&!processed.has(candidate.id)&&candidate.hostileRiskRound===targetRound&&hostileCell(candidate)&&!hasMutation(candidate,'Voo')
-        );
-        if(!org)return value;
-        processed.add(org.id);
-        if(hasMutation(org,CARAPACE))return value<.34?0:1;
-        return value;
-      };
-    }
-    try{return previousFinishTurn.apply(this,arguments)}finally{Math.random=nativeRandom}
-  };
-
   function renderCamouflageIcons(){
     resolveSexualInheritance();
     for(const org of state?.organisms||[]){
