@@ -53,4 +53,11 @@
     script.dataset.aiInputLock='1';
     document.body.appendChild(script);
   }
+
+  if(!document.querySelector('script[data-first-reproduction-mutations]')){
+    const script=document.createElement('script');
+    script.src='first-reproduction-mutations.js';
+    script.dataset.firstReproductionMutations='1';
+    document.body.appendChild(script);
+  }
 })();
