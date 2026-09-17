@@ -1,21 +1,10 @@
 (function(){
   let blackPassedNotice=false;
-  let populationCapBypassDepth=0;
 
-  function withPopulationCapBypass(fn){
-    populationCapBypassDepth++;
-    try{return fn()}finally{populationCapBypassDepth=Math.max(0,populationCapBypassDepth-1)}
-  }
-
-  // Mantém a população real para placar, eventos, patógeno e IA.
-  // O antigo MAX_POP só é neutralizado durante a execução real de reprodução.
+  // A população real é usada por placar, IA, eventos e patógeno.
+  // Não existe mais teto artificial de população: o limite prático é o espaço do tabuleiro.
   playerOrganisms=function(owner){
-    const list=(state?.organisms||[]).filter(o=>o.owner===owner);
-    const sexualSelection=!!document.querySelector?.('.sexual-partner');
-    if((populationCapBypassDepth>0||sexualSelection)&&list.length>=MAX_POP){
-      return list.slice(0,Math.max(0,MAX_POP-1));
-    }
-    return list;
+    return (state?.organisms||[]).filter(o=>o.owner===owner);
   };
 
   function hostileTerms(value){
@@ -25,6 +14,7 @@
     text=text.replace(/\bCasa mortal\b/g,'Casa hostil');
     text=text.replace(/\bcasa mortal\b/g,'casa hostil');
     text=text.replace(/Quando atinge uma casa fértil \(verde\) a peça se reproduz\./gi,'Quando uma peça atinge uma casa fértil (verde) ela se reproduz.');
+    text=text.replace(/\b(\d+)\s*\/\s*64\s+organismos\b/g,'$1 organismos');
     return text;
   }
 
@@ -137,17 +127,10 @@
     ensureHostileTutorialState(state);
     const entersHostile=!!org&&!!t&&!state.hostileEntryTutorialSeen&&(org.r!==t.r||org.c!==t.c)&&inBounds(t.r,t.c)&&cell(t.r,t.c).terrain==='biohazard';
     if(entersHostile)state.hostileEntryTutorialSeen=true;
-    const result=withPopulationCapBypass(()=>previousExecuteMove.apply(this,arguments));
+    const result=previousExecuteMove.apply(this,arguments);
     if(entersHostile)showHostileTutorial();
     return result;
   };
-
-  if(typeof window.xeReproduceFromMutation==='function'){
-    const previousMutationReproduction=window.xeReproduceFromMutation;
-    window.xeReproduceFromMutation=function(){
-      return withPopulationCapBypass(()=>previousMutationReproduction.apply(this,arguments));
-    };
-  }
 
   const previousHandleCellClick=handleCellClick;
   handleCellClick=function(){
