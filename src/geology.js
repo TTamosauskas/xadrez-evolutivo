@@ -9,7 +9,7 @@ export const GEOLOGICAL_STAGES = [
     id: "archean",
     group: "Pré-Cambriano",
     period: "Arqueano",
-    required: ["Fotossíntese", "Fertilidade", "Dormência"],
+    required: ["Fotossíntese", "Fertilidade", "Dormência", "Predação"],
     cycleRoundLimit: 40,
     habitat: { fertile: 52, hostile: 0, founderFertile: true },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2 },
@@ -22,8 +22,7 @@ export const GEOLOGICAL_STAGES = [
       "Reprodução Sexuada",
       "Regeneração",
       "Resistência",
-      "Construção de Nicho",
-      "Necrófago",
+      "Carnívoro",
       "Esporos",
     ],
     cycleRoundLimit: 40,
@@ -41,7 +40,7 @@ export const GEOLOGICAL_STAGES = [
     id: "ediacaran",
     group: "Pré-Cambriano",
     period: "Ediacarano",
-    required: ["Locomoção"],
+    required: ["Locomoção", "Construção de Nicho", "Necrófago"],
     cycleRoundLimit: 40,
     habitat: { fertile: 30, hostile: 4, founderFertile: true },
     events: {
@@ -56,7 +55,7 @@ export const GEOLOGICAL_STAGES = [
     id: "cambrian",
     group: "Paleozoico",
     period: "Cambriano",
-    required: ["Predador", "Carapaça", "Camuflagem", "Veneno"],
+    required: ["Carapaça", "Camuflagem", "Veneno"],
     habitat: { fertile: 14, hostile: 7, standard: true },
     events: {
       sea: 3,
@@ -170,7 +169,7 @@ export const GEOLOGICAL_STAGES = [
     id: "neogene",
     group: "Cenozoico",
     period: "Neógeno",
-    required: ["Polegar Opositor"],
+    required: ["Polegar Opositor", "Chifre", "Construtor Avançado"],
     habitat: { fertile: 14, hostile: 7, standard: true },
     events: { drought: 3, desert: 3, earthquake: 2, ice: 1, "alluvial-river": 1 },
   },
@@ -193,11 +192,12 @@ export const TRAIT_STAGE = {
   "Reprodução Sexuada": "proterozoic",
   Regeneração: "proterozoic",
   Resistência: "proterozoic",
-  "Construção de Nicho": "proterozoic",
-  Necrófago: "proterozoic",
+  Predação: "archean",
+  Carnívoro: "proterozoic",
   Esporos: "proterozoic",
   Locomoção: "ediacaran",
-  Predador: "cambrian",
+  "Construção de Nicho": "ediacaran",
+  Necrófago: "ediacaran",
   Carapaça: "cambrian",
   Camuflagem: "cambrian",
   Veneno: "cambrian",
@@ -214,17 +214,23 @@ export const TRAIT_STAGE = {
   Eusocialidade: "cretaceous",
   Ovífagia: "cretaceous",
   "Polegar Opositor": "neogene",
+  Chifre: "neogene",
+  "Construtor Avançado": "neogene",
   "Neocórtex Desenvolvido": "quaternary",
 };
 
 export const TRAIT_DEPENDENCIES = {
+  Carnívoro: { historical: ["Predação"] },
   "Locomoção Avançada": { historical: ["Locomoção"] },
   Voo: { historical: ["Locomoção"] },
   "Cuidado Parental": { historical: ["Ovíparo"] },
   Vivíparo: { historical: ["Ovíparo"] },
   "Visão Noturna": { historical: ["Camuflagem"] },
   Ovífagia: { historical: ["Ovíparo"] },
+  Onívoro: { historical: ["Carnívoro"] },
   "Polegar Opositor": { historical: ["Construção de Nicho"] },
+  Chifre: { historical: ["Predação"] },
+  "Construtor Avançado": { historical: ["Construção de Nicho"] },
   "Neocórtex Desenvolvido": { historical: ["Polegar Opositor"] },
 };
 
@@ -293,8 +299,11 @@ export function rankMutationUnlocked(state) {
   return currentGeologicalStage(state).index >= geologicalStage("cambrian").index;
 }
 
-export function captureUnlocked(state) {
-  return rankMutationUnlocked(state);
+export function captureUnlocked(state, piece = null) {
+  if (!piece) return false;
+  return ["Predação", "Carnívoro", "Onívoro"].some((trait) =>
+    piece.traits?.includes(trait),
+  );
 }
 
 export function pathogenUnlocked(state) {
