@@ -7,7 +7,11 @@ export const SYMBOLS = {
 };
 export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
 export const TRAITS = {
-  Locomoção: ["🐪", "Permite uma segunda movimentação no mesmo turno."],
+  Locomoção: ["🐾", "Permite realizar movimentos de xadrez."],
+  "Locomoção Avançada": [
+    "🐪",
+    "Permite uma segunda movimentação no mesmo turno.",
+  ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
   Predador: [
     "🦁",
