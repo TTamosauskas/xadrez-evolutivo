@@ -36,6 +36,7 @@ import {
 import {
   innovationWeight,
   normalizeEnergyBranch,
+  pawnMutationUnlocked,
   rankMutationUnlocked,
   traitLossAllowed,
   traitUnlocked,
@@ -102,7 +103,7 @@ function eusocialBonus(state, parent) {
 
 function mutation(state, p, positiveOnly) {
   const gains = [];
-  if (p.rank === 4)
+  if (p.rank === 4 && pawnMutationUnlocked(state))
     gains.push({ rank: 0, weight: 1 });
   else if (rankMutationUnlocked(state) && DERIVED_FORM_NEXT.has(p.rank))
     gains.push({ rank: DERIVED_FORM_NEXT.get(p.rank), weight: 1 });

@@ -42,6 +42,23 @@ test("ancestral gray King splits into two opposite founder Kings", () => {
   assertState(s);
 });
 
+test("round limits and mutual blocking never end a match without extinction", () => {
+  let s = createState(302);
+  s.board.fill("neutral");
+  s.pieces = [
+    newPiece(s, "blue", 7, 4, { rank: 4 }),
+    newPiece(s, "amber", 0, 4, { rank: 4 }),
+  ];
+  s.turn = 79;
+  s.current = "blue";
+  s.notices = [];
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.result, null);
+  assert.ok(s.turn >= 80);
+  assert.equal(s.pieces.length, 2);
+  assertState(s);
+});
+
 test("invalid actions roll back the complete state, including random generator", () => {
   const s = createState(1),
     before = clone(s);
@@ -501,7 +518,7 @@ test("non-capture deaths do not create decomposition", () => {
   assert.equal(s.deathSites.length, 0);
   assertState(s);
 });
-test("ancestral King offspring can mutate into Pawn in the first cycle", () => {
+test("ancestral King offspring can mutate into Pawn from the second cycle", () => {
   const s = fixture([
       {
         owner: "blue",
@@ -522,6 +539,8 @@ test("ancestral King offspring can mutate into Pawn in the first cycle", () => {
     parent = s.pieces[0],
     mate = s.pieces[1];
   s.geologicalStage = "archean";
+  s.totalCycles = 2;
+  s.cycle = 2;
   s.historicalTraits = ["Fotossíntese", "Predação", "Fertilidade", "Dormência"];
   s.event = {
     ...EVENTS.find((event) => event.id === "solar"),
