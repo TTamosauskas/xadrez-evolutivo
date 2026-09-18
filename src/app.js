@@ -5,6 +5,13 @@ import { movesFor, partnersFor, manipulationTargets } from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
 import { TRAITS } from "./constants.js";
+import {
+  GEOLOGICAL_STAGES,
+  currentGeologicalStage,
+  nextGeologicalStage,
+  stageComplete,
+  stageProgress,
+} from "./geology.js";
 const $ = (id) => document.getElementById(id);
 let selected = null,
   confirmAction = null;
@@ -123,6 +130,22 @@ $("game-over-new").addEventListener("click", () => {
   if ($("game-over-dialog").open) $("game-over-dialog").close();
   if ($("notice-dialog").open) $("notice-dialog").close();
   selected = null;
+  const state = controller.state,
+    stage = currentGeologicalStage(state),
+    progress = stageProgress(state),
+    next = nextGeologicalStage(stage.id),
+    advances = stageComplete(state) && next.id !== stage.id;
+  $("mass-extinction-title").textContent = advances
+    ? "Transição Evolutiva"
+    : "Extinção em Massa";
+  $("mass-extinction-copy").textContent = advances
+    ? `As principais inovações de ${stage.period} foram descobertas. Inicia-se ${next.group} · ${next.period}.`
+    : progress.required.length
+      ? `A vida persiste em ${stage.period}. ${progress.discovered.length} de ${progress.required.length} inovação(ões) foram descobertas.`
+      : `A vida completa seu ciclo em ${stage.period} e está pronta para a próxima transição.`;
+  $("mass-extinction-continue").textContent = advances
+    ? "Iniciar 1º Ciclo"
+    : `Iniciar ${state.cycle + 1}º Ciclo`;
   $("mass-extinction-dialog").showModal();
 });
 $("mass-extinction-continue").addEventListener("click", () => {
@@ -248,6 +271,37 @@ $("import-file").addEventListener("change", async (event) => {
     closeMenu();
   }
 });
+$("evolution-history").addEventListener("click", () => {
+  const state = controller.state,
+    current = currentGeologicalStage(state),
+    progress = stageProgress(state),
+    historicalGeneration =
+      state.generationOffset + state.maxGenerationReached + 1,
+    lines = [
+      `${current.group} · ${current.period}`,
+      `${state.cycle}º Ciclo · ${historicalGeneration}ª Geração histórica`,
+      "",
+      progress.required.length
+        ? `Inovações do período: ${progress.discovered.length}/${progress.required.length}`
+        : "Estágio de transição: um Ciclo completo é suficiente para avançar.",
+      ...progress.required.map(
+        (trait) =>
+          `${state.historicalTraits.includes(trait) ? "✓" : "○"} ${TRAITS[trait][0]} ${trait}`,
+      ),
+      "",
+      "Linha do tempo:",
+      ...GEOLOGICAL_STAGES.map((stage) => {
+        const mark =
+          stage.index < current.index
+            ? "✓"
+            : stage.id === current.id
+              ? "●"
+              : "○";
+        return `${mark} ${stage.group} · ${stage.period}`;
+      }),
+    ];
+  info("História evolutiva", lines);
+});
 $("game-log").addEventListener("click", () =>
   info(
     "Log da partida",
@@ -264,11 +318,12 @@ $("game-log").addEventListener("click", () =>
 );
 $("rules").addEventListener("click", () =>
   info("Como jogar", [
-    "Na primeira Era, você começa com dois peões. Nas Eras seguintes, os dois lados começam com dois organismos da linhagem selecionada na Era anterior. Selecione uma peça e depois um destino destacado. O objetivo é extinguir a população adversária. Os movimentos seguem o xadrez, sem xeque; os peões invertem a direção nas bordas.",
+    "A campanha começa no Pré-Cambriano · Arqueano. Organismos ancestrais ainda não possuem Locomoção: expandem-se principalmente reproduzindo sobre casas férteis. 🐾 Locomoção, liberada no Ediacarano, permite os movimentos normais do xadrez; 🐪 Locomoção Avançada, liberada mais tarde, permite uma segunda movimentação.",
+    "Cada partida completa é um Ciclo Evolutivo. Ao fim de uma Extinção em Massa, a linhagem dominante sobrevivente funda os dois lados do próximo Ciclo. O período geológico só avança quando todas as inovações obrigatórias daquele estágio já foram observadas pelo menos uma vez.",
     "Casas verdes geram descendentes e são consumidas. Você pode reproduzir permanecendo sobre uma casa verde. Peões geram até 4 descendentes; cavalos, 3; bispos e torres, 2; reis e rainhas, 1. Cada nascimento tem 1/3 de chance de mutação, inclusive na primeira reprodução.",
     "Casas vermelhas oferecem 50% de risco em cada casa atravessada e por rodada de permanência. Voo ignora o risco apenas ao atravessar casas hostis; pousar ou permanecer nelas continua sujeito ao risco normal. Carapaça reduz o risco para 34%. Cavalos testam apenas a casa de chegada. Uma captura deixa a casa em decomposição: ela fica hostil por três rodadas e depois se torna fértil. O capturador recebe uma rodada completa de imunidade ao risco da casa criada pela própria captura.",
-    "A evolução ambiental acompanha a maior geração local já alcançada. O habitat muda pela primeira vez na G3 local e depois a cada duas gerações. Eventos ecológicos começam na G4 local e depois a cada seis gerações; cada evento dura dez rodadas completas, e novos eventos aguardam o anterior terminar. Populações com 17 peças podem disparar um surto de patógeno. Cada surto sorteia mortalidade de 60% a 100%, prazo de 2 a 6 rodadas e transmite por 10 rodadas.",
-    "Ao fim de uma partida, Nova partida inicia uma nova Era após uma Extinção em Massa. A linhagem dominante sobrevivente funda os dois lados da Era seguinte. O Período e os gatilhos ecológicos reiniciam localmente, enquanto a numeração histórica das gerações continua avançando.",
+    "A evolução ambiental acompanha a maior geração local já alcançada. O habitat muda pela primeira vez na G3 local e depois a cada duas gerações. Eventos ecológicos começam na G4 local e depois a cada seis gerações; duram dez rodadas e são sorteados com pesos próprios do período geológico. Surtos de Patógeno por superpopulação são liberados a partir do Proterozoico.",
+    "Mutações positivas entram no pool conforme o tempo geológico e suas dependências. Inovações obrigatórias ainda não descobertas recebem peso crescente em Ciclos posteriores do mesmo período, sem serem concedidas automaticamente. Genes recessivos só contam como descobertos quando o fenótipo é realmente expresso.",
     "Na reprodução sexuada, escolha um aliado adjacente fértil. Os descendentes combinam características dos dois progenitores. As novas mutações dessa reprodução são positivas.",
     "Ovíparo e Vivíparo são variantes do mesmo locus de desenvolvimento; Ovos e Esporos pertencem ao locus de dispersão. Cada peça carrega dois alelos por locus. Alelos dominantes se expressam com uma cópia; recessivos podem permanecer ocultos e reaparecer quando herdados em par. Na reprodução sexuada, cada descendente recebe um alelo de cada progenitor em cada locus.",
     "Ovíparos depositam um ovo com a ninhada e ele eclode após três rodadas. Vivíparos carregam a ninhada por três rodadas; se o progenitor morrer antes, a gestação é perdida. Esporos espalham os descendentes em posições distantes. Apenas Ovífagia permite capturar ovos inimigos; a ninhada consumida determina quantos descendentes o ovífago tenta gerar.",
