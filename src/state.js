@@ -1,4 +1,11 @@
 import { inside, square, TRAITS, EVENTS } from "./constants.js";
+import {
+  cloneReproGenes,
+  normalizeReproGenes,
+  reproGeneSignature,
+  syncReproTraits,
+  validReproGenes,
+} from "./reproductive-genetics.js";
 export const clone = (value) => structuredClone(value);
 export function random(state) {
   state.rng = (Math.imul(state.rng, 1664525) + 1013904223) >>> 0;
@@ -16,6 +23,8 @@ export function shuffle(state, items) {
 }
 export const at = (state, r, c) =>
   state.pieces.find((p) => p.r === r && p.c === c);
+export const eggAt = (state, r, c) =>
+  state.eggs?.find((egg) => egg.r === r && egg.c === c);
 export const terrain = (state, r, c) => state.board[square(r, c)];
 export const round = (state) => Math.floor(state.turn / 2);
 export function log(state, text) {
@@ -37,20 +46,25 @@ export function notice(state, title, lines, key = null) {
     });
 }
 export function newPiece(state, owner, r, c, source = {}) {
-  return {
+  const piece = {
     id: state.nextId++,
     owner,
     r,
     c,
     rank: source.rank ?? 0,
     traits: [...(source.traits ?? [])],
+    reproGenes: cloneReproGenes(
+      source.reproGenes ?? normalizeReproGenes(null, source.traits ?? []),
+    ),
     mutations: source.mutations ?? 0,
     generation: source.generation ?? 0,
     parentId: source.parentId ?? null,
     pawnDir: owner === "blue" ? -1 : 1,
     seeds: 0,
+    pregnancies: [],
     bornRound: round(state),
   };
+  return syncReproTraits(piece);
 }
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null;
@@ -84,6 +98,8 @@ export function createState(seed = Date.now(), options = {}) {
     fertileTraces: [],
     diseases: [],
     nextDisease: 1,
+    nextEgg: 1,
+    eggs: [],
     populationLatched: { blue: false, amber: false },
     result: null,
   };
@@ -94,7 +110,13 @@ export function createState(seed = Date.now(), options = {}) {
     for (const c of [3, 4])
       state.pieces.push(
         newPiece(state, owner, r, c, founder
-          ? { rank: founder.rank, traits: founder.traits, mutations: 0, generation: 0 }
+          ? {
+              rank: founder.rank,
+              traits: founder.traits,
+              reproGenes: founder.reproGenes,
+              mutations: 0,
+              generation: 0,
+            }
           : {}),
       );
   const empty = shuffle(
@@ -127,7 +149,9 @@ export function createState(seed = Date.now(), options = {}) {
   return state;
 }
 export function signature(p) {
-  return `${p.rank}|${[...p.traits].sort().join("|")}`;
+  return `${p.rank}|${[...p.traits].sort().join("|")}|${reproGeneSignature(
+    p.reproGenes,
+  )}`;
 }
 export function dominantLineage(state, owner = null) {
   const pieces = owner
@@ -157,6 +181,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       ? {
           rank: selected.piece.rank,
           traits: selected.piece.traits.filter((t) => !excluded.has(t)),
+          reproGenes: cloneReproGenes(selected.piece.reproGenes),
         }
       : null,
     era = previous.era + 1,
@@ -189,6 +214,7 @@ export function assertState(state) {
     !integer(state.revision) ||
     !integer(state.nextNotice, 1) ||
     !integer(state.nextDisease, 1) ||
+    !integer(state.nextEgg, 1) ||
     !integer(state.era, 1) ||
     !integer(state.generationOffset) ||
     !integer(state.maxGenerationReached) ||
@@ -200,6 +226,7 @@ export function assertState(state) {
     state.seenMutations.some((m) => typeof m !== "string") ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
+    !Array.isArray(state.eggs) ||
     state.fertileTraces.some(
       (t) =>
         !integer(t.cell, 0, 63) ||
@@ -260,7 +287,9 @@ export function assertState(state) {
       p.rank < 0 ||
       p.rank > 5 ||
       !Array.isArray(p.traits) ||
-      p.traits.some((t) => !TRAITS[t])
+      p.traits.some((t) => !TRAITS[t]) ||
+      !validReproGenes(p.reproGenes) ||
+      !Array.isArray(p.pregnancies)
     )
       throw Error("Peça inválida.");
     if (
@@ -273,6 +302,35 @@ export function assertState(state) {
     ids.add(p.id);
     cells.add(square(p.r, p.c));
   }
+  const eggIds = new Set();
+  for (const egg of state.eggs) {
+    const cell = square(egg.r, egg.c);
+    if (
+      !integer(egg.id, 1) ||
+      eggIds.has(egg.id) ||
+      !["blue", "amber"].includes(egg.owner) ||
+      !inside(egg.r, egg.c) ||
+      cells.has(cell) ||
+      !integer(egg.hatchRound) ||
+      !["local", "eggs", "spores"].includes(egg.dispersal) ||
+      !Array.isArray(egg.brood) ||
+      !egg.brood.length
+    )
+      throw Error("Ovo inválido.");
+    eggIds.add(egg.id);
+    cells.add(cell);
+  }
+  if (state.nextEgg <= Math.max(0, ...eggIds))
+    throw Error("Identificadores de ovos inválidos.");
+  for (const p of state.pieces)
+    for (const pregnancy of p.pregnancies)
+      if (
+        !integer(pregnancy.dueRound) ||
+        !["local", "eggs", "spores"].includes(pregnancy.dispersal) ||
+        !Array.isArray(pregnancy.brood) ||
+        !pregnancy.brood.length
+      )
+        throw Error("Gestação inválida.");
   if (!Number.isInteger(state.nextId) || state.nextId <= Math.max(0, ...ids))
     throw Error("Identificadores inválidos.");
   if (
