@@ -49,7 +49,8 @@ export function render(
       state.partner?.id ??
       state.chain ??
       selected,
-    actor = state.pieces.find((p) => p.id === actorId);
+    actor = state.pieces.find((p) => p.id === actorId),
+    origin = state.origin;
   const locked =
     !!state.result ||
     state.notices.length > 0 ||
@@ -67,17 +68,24 @@ export function render(
           state.pieces.find((p) => p.id === state.partner.id),
         )
       : [];
-  $("turn").textContent = state.result
-    ? state.result.winner
-      ? `${OWNERS[state.result.winner]} venceram`
-      : "Empate"
-    : `Vez das ${OWNERS[state.current]}${busy ? " · IA pensando…" : ""}`;
+  $("turn").textContent =
+    state.phase === "origin"
+      ? origin?.selected
+        ? "Toque novamente no Rei ancestral para iniciar"
+        : "Selecione o Rei ancestral"
+      : state.result
+        ? state.result.winner
+          ? `${OWNERS[state.result.winner]} venceram`
+          : "Empate"
+        : `Vez das ${OWNERS[state.current]}${busy ? " · IA pensando…" : ""}`;
   const currentRound = round(state),
     geological = currentGeologicalStage(state),
     historicalGeneration =
       state.generationOffset + state.maxGenerationReached + 1;
   $("round").textContent =
-    `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${historicalGeneration}ª Geração`;
+    state.phase === "origin"
+      ? "Origem da campanha · antes do 1º Ciclo"
+      : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${historicalGeneration}ª Geração`;
   const ev = state.event,
     diseases = state.diseases.filter((d) => d.endRound >= currentRound);
   $("event").textContent = [
@@ -97,6 +105,7 @@ export function render(
     for (let c = 0; c < 8; c++) {
       const p = at(state, r, c),
         egg = eggAt(state, r, c),
+        originHere = !!origin && origin.r === r && origin.c === c,
         target = targets.some((t) => t.r === r && t.c === c),
         manipulate = manipulation.some((t) => t.r === r && t.c === c),
         build = construction.some((t) => t.r === r && t.c === c),
@@ -108,7 +117,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg ? " occupied" : ""}${egg ? " egg" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || originHere ? " occupied" : ""}${egg ? " egg" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -121,12 +130,16 @@ export function render(
       const eggLabel = egg
           ? `, ovo das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s)`
           : "",
-        label = `${coord(r, c)}, ${terrain}${barrier ? ", barreira" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}`;
+        label = originHere
+          ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
+          : `${coord(r, c)}, ${terrain}${barrier ? ", barreira" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
       if (egg) cell.append(make("span", "🥚", "egg-mark"));
+      if (originHere)
+        cell.append(make("span", "♚", "piece origin-piece"));
       if (p) {
         cell.append(
           make(
@@ -168,7 +181,9 @@ export function render(
       .querySelector(`[data-r="${focusKey[0]}"][data-c="${focusKey[1]}"]`)
       ?.focus({ preventScroll: true });
   $("pass").disabled =
-    locked || !["move", "manipulate", "build"].includes(state.phase);
+    state.phase === "origin" ||
+    locked ||
+    !["move", "manipulate", "build"].includes(state.phase);
   $("pass").textContent =
     state.phase === "manipulate"
       ? "Não transferir"
@@ -223,9 +238,28 @@ export function render(
         ),
       );
     $("selected").replaceChildren(heading, ...details);
+  } else if (origin?.selected) {
+    const heading = make("div", undefined, "selected-piece-heading");
+    heading.append(
+      make("span", "♚", "piece origin-piece selected-piece-symbol"),
+      doc.createTextNode(" Rei ancestral"),
+    );
+    $("selected").replaceChildren(
+      heading,
+      make(
+        "p",
+        "Ancestral comum das duas linhagens. Toque novamente no Rei cinza para originar o Rei branco e o Rei preto.",
+        "selected-ancestral",
+      ),
+    );
   } else {
     $("selected").replaceChildren(
-      make("span", "Selecione uma peça para ver suas características."),
+      make(
+        "span",
+        state.phase === "origin"
+          ? "Selecione o Rei ancestral cinza para iniciar a campanha."
+          : "Selecione uma peça para ver suas características.",
+      ),
     );
   }
   const gameOverDialog = $("game-over-dialog");
