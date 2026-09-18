@@ -118,6 +118,7 @@ export class Controller {
         const actor = this.state.pieces.find((p) => p.id === action.id);
         if (
           actor?.owner === this.state.current &&
+          (actor.r !== action.r || actor.c !== action.c) &&
           has(actor, "Neocórtex Desenvolvido")
         )
           this.neocortexPending = {
