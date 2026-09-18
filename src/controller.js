@@ -135,17 +135,16 @@ export class Controller {
 
       if (this.neocortexPending) {
         const pending = this.neocortexPending;
-        if (
-          this.state.turn > pending.originTurn &&
-          this.state.current !== pending.owner
-        ) {
+        if (this.state.turn > pending.originTurn) {
           const survived = this.state.pieces.some(
             (piece) => piece.id === pending.actorId,
           );
-          if (survived && !this.state.result)
+          if (survived)
             this.neocortexWindow = {
               ...pending,
-              responseComplete: false,
+              responseComplete:
+                this.state.current === pending.owner &&
+                this.state.turn >= pending.originTurn + 2,
             };
           this.neocortexPending = null;
         }
