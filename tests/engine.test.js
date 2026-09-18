@@ -511,14 +511,15 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   s.pieces[1].reproGenes.development = structuredClone(
     s.pieces[0].reproGenes.development,
   );
-  s.era = 1;
   s.generationOffset = 0;
   s.maxGenerationReached = 9;
   s.result = { winner: "blue", reason: "Extinção total." };
   s.phase = "over";
 
   const next = createSuccessorState(s, 123);
-  assert.equal(next.era, 2);
+  assert.equal(next.geologicalStage, "quaternary");
+  assert.equal(next.cycle, 2);
+  assert.equal(next.totalCycles, 2);
   assert.equal(next.generationOffset, 10);
   assert.equal(next.generationOffset + next.maxGenerationReached + 1, 11);
   assert.equal(next.maxGenerationReached, 0);
