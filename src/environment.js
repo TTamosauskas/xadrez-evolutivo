@@ -202,13 +202,16 @@ function earthquake(ctx) {
       ctx.kill(p.id, "Terremoto");
   return original.size;
 }
+function endEvent(state) {
+  if (!state.event) return;
+  for (const [i, t] of Object.entries(state.event.snapshots))
+    state.board[Number(i)] = t;
+  state.previousEvent = state.event.id;
+  state.event = null;
+}
 export function startEvent(ctx, id = null) {
   const state = ctx.state;
-  if (state.event) {
-    for (const [i, t] of Object.entries(state.event.snapshots))
-      state.board[Number(i)] = t;
-    state.previousEvent = state.event.id;
-  }
+  if (state.event) endEvent(state);
   const def = id
     ? EVENTS.find((e) => e.id === id)
     : pick(
@@ -223,7 +226,6 @@ export function startEvent(ctx, id = null) {
     snapshots: {},
   };
   state.event = event;
-  state.nextEventRound = round(state) + 10;
   switch (event.id) {
     case "volcano": {
       const r = Math.floor(random(state) * 6),
@@ -331,8 +333,20 @@ export function startEvent(ctx, id = null) {
 }
 export function tickEnvironment(ctx) {
   const state = ctx.state,
-    event = state.event,
     now = round(state);
+
+  while (state.maxGenerationReached >= state.nextHabitatGeneration) {
+    advanceConway(ctx);
+    state.nextHabitatGeneration += 2;
+  }
+  while (state.maxGenerationReached >= state.nextEventGeneration) {
+    state.pendingEcologicalEvents++;
+    state.nextEventGeneration += 6;
+  }
+
+  if (state.event && now - state.event.startRound >= 10) endEvent(state);
+
+  const event = state.event;
   if (event) {
     const age = now - event.startRound;
     if (event.id === "ice") {
@@ -342,9 +356,11 @@ export function tickEnvironment(ctx) {
       markHazard(state, event, iceCells(event));
     } else if (event.id === "drought") trim(state, event.cap);
     else if (event.id === "desert")
-      trim(state, Math.ceil((event.initial * (10 - age)) / 10));
+      trim(state, Math.max(1, Math.ceil((event.initial * (10 - age)) / 10)));
     else if (event.id === "fertilized") addFertile(state, 1);
     for (const i of event.hazards) state.board[i] = "hostile";
+  } else if (state.pendingEcologicalEvents > 0) {
+    state.pendingEcologicalEvents--;
+    startEvent(ctx);
   }
-  if (now >= state.nextEventRound) startEvent(ctx);
 }
