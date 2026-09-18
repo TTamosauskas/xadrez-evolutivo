@@ -12,7 +12,7 @@ import {
   V3_KEY,
   V2_KEY,
 } from "../src/storage.js";
-import { createState, clone } from "../src/state.js";
+import { createState, clone, assertState } from "../src/state.js";
 import { reproPhenotype } from "../src/reproductive-genetics.js";
 test("round trip saves deterministic state and rejects duplicate occupancy", () => {
   const s = createState(3);
@@ -41,6 +41,36 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
   assert.equal(entries.get(V2_KEY), raw);
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Locomoção")));
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
+});
+
+test("first-cycle saves discard deleterious mutations from the old rules", () => {
+  const old = createState(17);
+  old.totalCycles = 1;
+  old.cycle = 1;
+  old.pieces[0].traits.push("Mutação Deletéria", "Mutação Disfuncional");
+  old.pieces[0].deleteriousDue = 3;
+  old.pieces[0].lastMoveRound = 1;
+  old.seenMutations.push(
+    "Mutação Deletéria",
+    "Mutação Disfuncional",
+    "Perda de Fotossíntese",
+  );
+  old.discoveries.mutations.push("Mutação Deletéria", "Mutação Disfuncional");
+  old.discoveries.read.push(
+    "mutations:Mutação Deletéria",
+    "mutations:Mutação Disfuncional",
+  );
+  const migrated = deserialize(JSON.stringify(old));
+  assert.ok(!migrated.pieces[0].traits.includes("Mutação Deletéria"));
+  assert.ok(!migrated.pieces[0].traits.includes("Mutação Disfuncional"));
+  assert.equal(migrated.pieces[0].deleteriousDue, undefined);
+  assert.equal(migrated.pieces[0].lastMoveRound, undefined);
+  assert.ok(!migrated.seenMutations.includes("Mutação Deletéria"));
+  assert.ok(!migrated.seenMutations.includes("Mutação Disfuncional"));
+  assert.ok(!migrated.seenMutations.includes("Perda de Fotossíntese"));
+  assert.ok(!migrated.discoveries.mutations.includes("Mutação Deletéria"));
+  assert.ok(!migrated.discoveries.mutations.includes("Mutação Disfuncional"));
+  assertState(migrated);
 });
 
 test("v6 saves migrate without an origin prelude", () => {
