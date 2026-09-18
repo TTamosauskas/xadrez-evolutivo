@@ -2,6 +2,7 @@ import { has, square, other, OWNERS, coord } from "./constants.js";
 import {
   clone,
   at,
+  eggAt,
   terrain,
   round,
   random,
@@ -15,8 +16,14 @@ import {
   partnersFor,
   legalActions,
   canWaitForRest,
+  canWaitForBirth,
 } from "./moves.js";
-import { reproduce, harvest, scatterSeeds } from "./reproduction.js";
+import {
+  reproduce,
+  harvest,
+  scatterSeeds,
+  tickReproduction,
+} from "./reproduction.js";
 import { checkPopulation, tickDiseases, infect } from "./disease.js";
 import {
   consumeDecomposition,
@@ -41,7 +48,8 @@ export function context(state) {
         );
         if (disease) infect(state, attacker, disease);
       }
-      if (has(dead, "Ooteca")) reproduce(ctx, dead, null, "Ooteca");
+      if (has(dead, "Ooteca"))
+        reproduce(ctx, dead, null, "Ooteca", { immediateDevelopment: true });
       scatterSeeds(state, dead);
       log(state, `${OWNERS[dead.owner]} perderam uma peça por ${reason}.`);
     },
@@ -56,8 +64,12 @@ function finishGame(state, winner, reason) {
   log(state, reason);
 }
 function extinction(state) {
-  const blue = state.pieces.some((p) => p.owner === "blue"),
-    amber = state.pieces.some((p) => p.owner === "amber");
+  const blue =
+      state.pieces.some((p) => p.owner === "blue") ||
+      state.eggs.some((egg) => egg.owner === "blue"),
+    amber =
+      state.pieces.some((p) => p.owner === "amber") ||
+      state.eggs.some((egg) => egg.owner === "amber");
   if (!blue || !amber) {
     finishGame(
       state,
@@ -116,6 +128,8 @@ function advanceTurn(ctx) {
     (t) => state.turn <= t.clearAfterTurn,
   );
   if (state.turn % 2 === 0) {
+    tickReproduction(ctx);
+    if (extinction(state)) return;
     tickEnvironment(ctx);
     if (extinction(state)) return;
     tickDiseases(ctx);
@@ -144,13 +158,21 @@ function settle(ctx) {
   const state = ctx.state;
   if (extinction(state) || state.phase === "partner") return;
   // At most one automatic pass; the opposing side is checked explicitly.
-  if (legalActions(state).length || canWaitForRest(state, state.current))
+  if (
+    legalActions(state).length ||
+    canWaitForRest(state, state.current) ||
+    canWaitForBirth(state, state.current)
+  )
     return;
   const blocked = state.current;
   log(state, `${OWNERS[blocked]} passaram automaticamente por bloqueio.`);
   advanceTurn(ctx);
   if (state.result) return;
-  if (!legalActions(state).length && !canWaitForRest(state, state.current))
+  if (
+    !legalActions(state).length &&
+    !canWaitForRest(state, state.current) &&
+    !canWaitForBirth(state, state.current)
+  )
     technicalEnd(state);
 }
 function completeMove(ctx, p, second, locomotion) {
@@ -211,9 +233,12 @@ function executeMove(ctx, action) {
     p.hostileRiskRound = round(state) + 1;
   if (has(p, "Mutação Disfuncional")) p.lastMoveRound = round(state) + 1;
   const victim = at(state, target.r, target.c),
-    capture = !!victim && victim.id !== p.id;
+    egg = eggAt(state, target.r, target.c),
+    pieceCapture = !!victim && victim.id !== p.id,
+    eggCapture = !!egg,
+    capture = pieceCapture || eggCapture;
   ctx.reserved.add(square(target.r, target.c));
-  if (capture) {
+  if (pieceCapture) {
     ctx.kill(victim.id, "captura", p);
     const cell = square(target.r, target.c);
     markDecomposition(state, cell);
@@ -222,6 +247,7 @@ function executeMove(ctx, action) {
       throughTurn: state.turn + 2,
     };
   }
+  if (eggCapture) state.eggs = state.eggs.filter((x) => x.id !== egg.id);
   p.r = target.r;
   p.c = target.c;
   moveDirection(p);
@@ -238,7 +264,7 @@ function executeMove(ctx, action) {
       !scavenging &&
       ((!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay),
     fertile = fertileResource && (!predator || omnivore),
-    predation = capture && (predator || omnivore);
+    predation = pieceCapture && (predator || omnivore);
   log(
     state,
     `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
@@ -265,7 +291,16 @@ function executeMove(ctx, action) {
     return;
   }
   if (fertile && !collectorStay) state.board[cell] = "neutral";
-  if (scavenging) {
+  if (eggCapture) {
+    reproduce(ctx, p, null, "ovifagia", {
+      forcedCount: egg.brood.length,
+      immediateDevelopment: true,
+    });
+    log(
+      state,
+      `${OWNERS[p.owner]} consumiram um ovo com ${egg.brood.length} descendente(s).`,
+    );
+  } else if (scavenging) {
     const born = reproduce(ctx, p, null, "necrofagia");
     if (born) consumeDecomposition(state, cell);
   } else if (fertile || predation) {
