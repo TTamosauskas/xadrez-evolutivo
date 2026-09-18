@@ -344,6 +344,12 @@ select {
   font-weight: 500;
   color: var(--muted);
 }
+.evolutionary-end-primary .evolutionary-end-piece {
+  display: inline-block;
+  margin: 0 4px;
+  font-size: 32px;
+  vertical-align: -4px;
+}
 .evolutionary-end-traits > div {
   font-size: 15px;
   line-height: 1.7;
