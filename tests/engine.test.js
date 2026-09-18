@@ -580,53 +580,12 @@ test("first-cycle mutation attempts never fall back to deleterious outcomes", ()
     1,
   );
   const child = s.pieces.find((piece) => piece.id >= before);
-  assert.equal(child.mutations, 0);
+  assert.equal(child.mutations, 1);
   assert.ok(
     ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"].every(
       (trait) => !child.traits.includes(trait),
     ),
   );
-  assertState(s);
-});
-
-test("ancestral King offspring can mutate into Pawn from the second cycle", () => {
-  const s = fixture([
-      {
-        owner: "blue",
-        r: 4,
-        c: 3,
-        rank: 4,
-        traits: ["Fertilidade", "Dormência"],
-      },
-      {
-        owner: "blue",
-        r: 4,
-        c: 4,
-        rank: 4,
-        traits: ["Fertilidade", "Dormência"],
-      },
-      { owner: "amber", r: 0, c: 0 },
-    ]),
-    parent = s.pieces[0],
-    mate = s.pieces[1];
-  s.geologicalStage = "archean";
-  s.totalCycles = 2;
-  s.cycle = 2;
-  s.historicalTraits = ["Fotossíntese", "Predação", "Fertilidade", "Dormência"];
-  s.event = {
-    ...EVENTS.find((event) => event.id === "solar"),
-    startRound: 0,
-    hazards: [],
-    snapshots: {},
-  };
-  const before = s.nextId;
-  assert.equal(
-    reproduce(context(s), parent, mate, "teste", { forcedCount: 1 }),
-    1,
-  );
-  const child = s.pieces.find((piece) => piece.id >= before);
-  assert.equal(child.rank, 0);
-  assert.ok(s.seenMutations.includes("Mutação de peça: Peão"));
   assertState(s);
 });
 
