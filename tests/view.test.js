@@ -123,6 +123,24 @@ test("renders eggs and carried brood count", () => {
   dom.window.close();
 });
 
+test("renders barriers, build targets and yellow niche-construction icon", () => {
+  const dom = setup(),
+    s = createState(25),
+    p = s.pieces[0];
+  p.traits = ["Construção de Nicho", "Construtor Avançado"];
+  s.barriers = [18];
+  s.phase = "build";
+  s.building = { id: p.id, second: false, locomotion: false };
+
+  render(dom.window.document, s, { selected: p.id });
+  const d = dom.window.document;
+  assert.ok(d.querySelector('[data-r="2"][data-c="2"]').classList.contains("barrier"));
+  assert.ok(d.querySelectorAll(".cell.build-target").length > 0);
+  assert.ok(d.querySelector("#selected .niche-icon"));
+  assert.equal(d.getElementById("pass").textContent, "Não construir");
+  dom.window.close();
+});
+
 test("dysfunctional rest fades the piece without adding a sleep badge", () => {
   const dom = setup(),
     s = createState(23),
