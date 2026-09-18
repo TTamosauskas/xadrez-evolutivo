@@ -1,5 +1,5 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
-import { at, round, signature } from "./state.js";
+import { at, dominantLineage, round, signature } from "./state.js";
 import { movesFor, partnersFor, resting } from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
@@ -8,35 +8,22 @@ const element = (doc, tag, text, cls) => {
   return e;
 };
 function evolutionarySummary(state, owner) {
-  const pieces = state.pieces.filter((p) => p.owner === owner);
-  const pieceCounts = Array(PIECES.length).fill(0);
-  const traitCounts = new Map();
-  const lineages = new Set();
-
-  for (const piece of pieces) {
-    pieceCounts[piece.rank]++;
-    lineages.add(signature(piece));
-    for (const trait of piece.traits)
-      traitCounts.set(trait, (traitCounts.get(trait) || 0) + 1);
-  }
-
-  let predominantRank = 0;
-  for (let rank = 1; rank < pieceCounts.length; rank++)
-    if (pieceCounts[rank] > pieceCounts[predominantRank]) predominantRank = rank;
-
-  const predominantCount = pieceCounts[predominantRank] || 0;
-  const piecePercent = pieces.length
-    ? Math.round((predominantCount / pieces.length) * 100)
-    : 0;
-  const traits = [...traitCounts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"))
-    .slice(0, 3)
-    .map(([name]) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
+  const pieces = state.pieces.filter((p) => p.owner === owner),
+    lineages = new Set(pieces.map(signature)),
+    selected = dominantLineage(state, owner),
+    representative = selected.piece,
+    rank = representative?.rank ?? 0,
+    piecePercent = pieces.length
+      ? Math.round((selected.count / pieces.length) * 100)
+      : 0,
+    traits = (representative?.traits ?? [])
+      .slice(0, 3)
+      .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
 
   return {
     lineages: lineages.size,
-    pieceName: PIECES[predominantRank],
-    pieceSymbol: SYMBOLS[owner][predominantRank],
+    pieceName: PIECES[rank],
+    pieceSymbol: SYMBOLS[owner][rank],
     piecePercent,
     traits,
   };
@@ -68,10 +55,12 @@ export function render(
       ? `${OWNERS[state.result.winner]} venceram`
       : "Empate"
     : `Vez das ${OWNERS[state.current]}${busy ? " · IA pensando…" : ""}`;
-  const currentRound = round(state);
-  const era = Math.floor(state.maxGenerationReached / 10) + 1,
-    generationInEra = (state.maxGenerationReached % 10) + 1;
-  $("round").textContent = `${era}° Era · ${generationInEra}° Geração`;
+  const currentRound = round(state),
+    period = Math.floor(state.maxGenerationReached / 10) + 1,
+    historicalGeneration =
+      state.generationOffset + state.maxGenerationReached + 1;
+  $("round").textContent =
+    `${state.era}ª Era · ${period}º Período · ${historicalGeneration}ª Geração`;
   const ev = state.event,
     diseases = state.diseases.filter((d) => d.endRound >= currentRound);
   $("event").textContent = [
@@ -138,7 +127,7 @@ export function render(
       ? [
           make(
             "strong",
-            `${SYMBOLS[actor.owner][actor.rank]} ${PIECES[actor.rank]} · ${coord(actor.r, actor.c)} · G${actor.generation}`,
+            `${SYMBOLS[actor.owner][actor.rank]} ${PIECES[actor.rank]} · ${coord(actor.r, actor.c)} · ${state.generationOffset + actor.generation + 1}ª Geração`,
           ),
           make(
             "p",
