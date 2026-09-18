@@ -26,9 +26,33 @@ export const TRAITS = {
   Ovífagia: ["🦎", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
   Esporos: ["🍄", "Espalha a prole em casas distantes pelo tabuleiro."],
   Vivíparo: ["🎈", "A prole é carregada por três rodadas antes de nascer."],
-  Fertilidade: ["🐇", "Dobra a quantidade de descendentes."],
+  Fertilidade: ["🧫", "Dobra a quantidade de descendentes."],
+  Fotossíntese: [
+    "☀️",
+    "Transforma em fértil uma casa neutra após permanecer nela por uma rodada completa.",
+  ],
+  Eusocialidade: [
+    "🐜",
+    "Indivíduos estéreis aparentados e adjacentes aumentam a ninhada em até dois descendentes.",
+  ],
+  Regeneração: [
+    "♻️",
+    "Uma vez por vida, sobrevive a uma morte não causada por captura e descansa na rodada seguinte.",
+  ],
+  "Cuidado Parental": [
+    "🪺",
+    "Ovos adjacentes ao progenitor ficam protegidos contra Ovífagia.",
+  ],
+  Dormência: [
+    "💤",
+    "Em casas hostis, fica imobilizada e evita o risco ambiental enquanto permanecer ali.",
+  ],
   Carapaça: ["🐢", "Oferece 66% de sobrevivência por casa hostil."],
   Camuflagem: ["👀", "Só pode ser capturada por uma peça adjacente."],
+  "Visão Noturna": [
+    "👁️",
+    "Permite detectar e capturar criaturas com Camuflagem à distância.",
+  ],
   Resistência: ["🧬", "Impede novas infecções pelo Patógeno Virulento."],
   "Reprodução Sexuada": ["❤️", "Combina características de dois progenitores."],
   Esterilidade: ["🚫", "Impede a reprodução."],
