@@ -7,10 +7,30 @@ const fertile = (state) =>
 function deathSiteAt(state, cell) {
   return state.deathSites.find((d) => d.cell === cell);
 }
+function fertileTraceAt(state, cell) {
+  return state.fertileTraces.find((t) => t.cell === cell);
+}
+export function hasDecomposition(state, cell) {
+  return !!deathSiteAt(state, cell) || !!fertileTraceAt(state, cell);
+}
+export function consumeDecomposition(state, cell) {
+  const site = deathSiteAt(state, cell),
+    trace = fertileTraceAt(state, cell),
+    base = site?.base ?? trace?.base;
+  if (!site && !trace) return false;
+  state.deathSites = state.deathSites.filter((d) => d.cell !== cell);
+  state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
+  if (state.event?.hazards.includes(cell))
+    state.event.snapshots[cell] = base ?? "neutral";
+  else state.board[cell] = base ?? "neutral";
+  return true;
+}
 export function markDecomposition(state, cell) {
-  const existing = deathSiteAt(state, cell);
-  const base = existing?.base ?? state.board[cell];
+  const existing = deathSiteAt(state, cell),
+    trace = fertileTraceAt(state, cell);
+  const base = existing?.base ?? trace?.base ?? state.board[cell];
   const dueRound = round(state) + 3;
+  state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
   if (existing) {
     existing.dueRound = dueRound;
     existing.base = base;
@@ -36,7 +56,11 @@ function tickDecomposition(state) {
       state.event.snapshots[site.cell] = "fertile";
     else state.board[site.cell] = "fertile";
     state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== site.cell);
-    state.fertileTraces.push({ cell: site.cell, clearAfterTurn: state.turn });
+    state.fertileTraces.push({
+      cell: site.cell,
+      clearAfterTurn: state.turn,
+      base: site.base,
+    });
     state.deathSites = state.deathSites.filter((d) => d.cell !== site.cell);
   }
 }
