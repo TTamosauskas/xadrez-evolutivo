@@ -25,6 +25,25 @@ export const dormant = (state, p) =>
   terrain(state, p.r, p.c) === "hostile";
 export const resting = (state, p) =>
   dysfunctionalResting(state, p) || regenerationResting(state, p);
+
+export function manipulationTargets(state) {
+  const pending = state.manipulation;
+  if (state.phase !== "manipulate" || !pending) return [];
+  const origin = {
+      r: Math.floor(pending.origin / 8),
+      c: pending.origin % 8,
+    },
+    targets = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = origin.r + dr,
+        c = origin.c + dc;
+      if (inside(r, c) && terrain(state, r, c) === "neutral")
+        targets.push({ r, c });
+    }
+  return targets;
+}
 export function movesFor(state, p, { ignoreChain = false } = {}) {
   if (
     !p ||
@@ -134,6 +153,15 @@ export function partnersFor(state, p) {
 }
 export function legalActions(state) {
   if (state.result) return [];
+  if (state.phase === "manipulate")
+    return [
+      ...manipulationTargets(state).map((target) => ({
+        type: "MANIPULATE",
+        r: target.r,
+        c: target.c,
+      })),
+      { type: "SKIP_MANIPULATION" },
+    ];
   if (state.phase === "partner") {
     const p = state.pieces.find((x) => x.id === state.partner.id);
     return partnersFor(state, p).map((m) => ({ type: "PARTNER", id: m.id }));
