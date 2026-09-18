@@ -129,6 +129,10 @@ export function reproduce(ctx, parent, mate = null, reason = "casa fértil") {
     if (has(child, "Mutação Deletéria"))
       child.deleteriousDue = Math.max(1, Math.ceil(state.turn / 2)) + 3;
     state.pieces.push(child);
+    state.maxGenerationReached = Math.max(
+      state.maxGenerationReached,
+      child.generation,
+    );
     born++;
   }
   if (born) {
