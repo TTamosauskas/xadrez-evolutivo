@@ -228,6 +228,7 @@ function advanceTurn(ctx) {
 function settle(ctx) {
   const state = ctx.state;
   if (
+    state.result ||
     extinction(state) ||
     state.phase === "partner" ||
     state.phase === "manipulate"
