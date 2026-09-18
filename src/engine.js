@@ -309,7 +309,7 @@ function executeMove(ctx, action) {
   );
   if (!target) throw Error("Escolha um destino disponível.");
   const second = state.chain === p.id,
-    locomotion = has(p, "Locomoção"),
+    locomotion = has(p, "Locomoção Avançada"),
     landingCell = square(target.r, target.c),
     landingTerrain = terrain(state, target.r, target.c),
     stableLanding =
