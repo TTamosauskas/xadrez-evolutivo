@@ -131,6 +131,14 @@ main {
   pointer-events: none;
   z-index: 1;
 }
+.egg-mark {
+  position: relative;
+  z-index: 2;
+  font-size: clamp(24px, 5vw, 50px);
+  line-height: 1;
+  filter: drop-shadow(0 2px 1px #0006);
+  pointer-events: none;
+}
 .cell.decomposition .piece,
 .cell.decomposition .badges {
   position: relative;
