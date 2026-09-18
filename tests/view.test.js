@@ -55,6 +55,39 @@ test("renders one board occupant per piece and exactly one stylesheet and module
   assert.equal(d.querySelectorAll("link[rel=stylesheet]").length, 1);
   dom.window.close();
 });
+test("aesthetic genes alter only the rendered piece phenotype", () => {
+  const dom = setup(),
+    s = createState(3),
+    p = s.pieces[0];
+  p.aestheticGenes.style = [
+    { value: "bold", dominance: "dominant" },
+    { value: "normal", dominance: "neutral" },
+  ];
+  p.aestheticGenes.width = [
+    { value: "wide", dominance: "dominant" },
+    { value: "normal", dominance: "neutral" },
+  ];
+  p.aestheticGenes.stroke = [
+    { value: 0.4, dominance: "dominant" },
+    { value: 0, dominance: "neutral" },
+  ];
+  p.aestheticGenes.pigment = [
+    { value: "violet", dominance: "dominant" },
+    { value: "none", dominance: "neutral" },
+  ];
+
+  render(dom.window.document, s);
+  const piece = dom.window.document.querySelector(".piece.blue");
+  assert.equal(piece.style.getPropertyValue("--piece-weight"), "800");
+  assert.equal(piece.style.getPropertyValue("--piece-scale-x"), "1.07");
+  assert.equal(piece.style.getPropertyValue("--piece-stroke-width"), "0.4px");
+  assert.equal(piece.style.getPropertyValue("--piece-stroke-color"), "#c084fc");
+  assert.equal(
+    dom.window.document.querySelector("#notice-dialog[open]"),
+    null,
+  );
+  dom.window.close();
+});
 test("application UI can play, acknowledge reproduction, save, load and reset", async () => {
   const dom = setup(),
     w = dom.window;
