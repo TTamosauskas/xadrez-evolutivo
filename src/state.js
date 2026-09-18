@@ -76,6 +76,7 @@ export function createState(seed = Date.now()) {
     nextHabitatGeneration: 3,
     nextEventGeneration: 4,
     pendingEcologicalEvents: 0,
+    deathSites: [],
     diseases: [],
     nextDisease: 1,
     populationLatched: { blue: false, amber: false },
@@ -141,6 +142,14 @@ export function assertState(state) {
     !integer(state.nextEventGeneration, 4) ||
     !integer(state.pendingEcologicalEvents) ||
     !Array.isArray(state.seen) ||
+    !Array.isArray(state.deathSites) ||
+    state.deathSites.some(
+      (d) =>
+        !integer(d.cell, 0, 63) ||
+        !integer(d.dueRound, 1) ||
+        !["neutral", "fertile", "hostile"].includes(d.base),
+    ) ||
+    new Set(state.deathSites.map((d) => d.cell)).size !== state.deathSites.length ||
     state.seen.some((s) => typeof s !== "string")
   )
     throw Error("Metadados inválidos.");
@@ -261,6 +270,12 @@ export function assertState(state) {
     diseaseIds.add(d.id);
   }
   for (const p of state.pieces) {
+    if (
+      p.decompositionImmunity &&
+      (!integer(p.decompositionImmunity.cell, 0, 63) ||
+        !integer(p.decompositionImmunity.throughTurn))
+    )
+      throw Error("Imunidade de decomposição inválida.");
     if (
       p.infection &&
       (!diseaseIds.has(p.infection.disease) || !integer(p.infection.due))
