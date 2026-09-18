@@ -518,6 +518,40 @@ test("non-capture deaths do not create decomposition", () => {
   assert.equal(s.deathSites.length, 0);
   assertState(s);
 });
+test("photosynthetic offspring can mutate into Predação by losing Fotossíntese", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Fotossíntese"],
+      },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    parent = s.pieces[0];
+  s.totalCycles = 1;
+  s.cycle = 1;
+  s.geologicalStage = "archean";
+  s.historicalTraits = ["Fotossíntese"];
+  s.event = {
+    ...EVENTS.find((event) => event.id === "solar"),
+    startRound: 0,
+    hazards: [],
+    snapshots: {},
+  };
+  const before = s.nextId;
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
+    1,
+  );
+  const child = s.pieces.find((piece) => piece.id >= before);
+  assert.ok(child.traits.includes("Predação"));
+  assert.ok(!child.traits.includes("Fotossíntese"));
+  assert.ok(s.historicalTraits.includes("Predação"));
+  assertState(s);
+});
+
 test("first-cycle mutation attempts never fall back to deleterious outcomes", () => {
   const s = fixture([
       {
