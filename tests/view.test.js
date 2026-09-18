@@ -44,6 +44,13 @@ test("rendering a pathogen notice settles and never mutates game state", async (
   observer.disconnect();
   dom.window.close();
 });
+test("menu exposes the match log for consultation", () => {
+  const dom = setup(),
+    d = dom.window.document;
+  assert.equal(d.getElementById("game-log").textContent, "Log da partida");
+  dom.window.close();
+});
+
 test("renders one board occupant per piece and exactly one stylesheet and module entry", () => {
   const dom = setup(),
     s = createState(2);
