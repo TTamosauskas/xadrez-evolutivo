@@ -168,16 +168,10 @@ export function render(
     );
     return e;
   });
-  const decompositionLegend = make("div", undefined, "trait decomposition-legend");
-  decompositionLegend.append(
-    make("strong", "☠️ Decomposição."),
-    make("small", "Casa está sendo fertilizada."),
-  );
   $("traits").replaceChildren(
     ...(traitRows.length
       ? traitRows
       : [make("span", "As mutações aparecem com os nascimentos.")]),
-    decompositionLegend,
   );
   const gameOverDialog = $("game-over-dialog");
   if (state.result) {
