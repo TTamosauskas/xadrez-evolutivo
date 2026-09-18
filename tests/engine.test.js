@@ -154,7 +154,24 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
     !simulate(s, move(s.pieces[0], 3, 3)).pieces.some((p) => p.id === 1),
   );
 
-  s.board[27] = "neutral";
+  s = fixture([
+    { owner: "blue", r: 7, c: 7 },
+    { owner: "amber", r: 3, c: 3, rank: 3, traits: ["Voo"] },
+  ]);
+  s.turn = 1;
+  s.current = "amber";
+  s.board[27] = "hostile";
+  s.rng = 1;
+  s = simulate(s, { type: "PASS" });
+  assert.ok(!s.pieces.some((p) => p.id === 2));
+
+  s = fixture([
+    { owner: "blue", r: 6, c: 3, rank: 3 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.rng = 1;
+  s.board[43] = "hostile";
+  s.board[35] = "hostile";
   s.pieces[0].traits = [];
   s.pieces[0].rank = 1;
   assert.ok(
@@ -820,6 +837,7 @@ test("Polegar Opositor offers adjacent transfer and preserves terrain type", () 
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "hostile";
+  s.rng = 1000;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.equal(s.board[36], "neutral");
   assert.equal(s.manipulation.terrain, "hostile");
@@ -855,6 +873,7 @@ test("Polegar Opositor can decline transfer and ignores temporary decomposition"
   ]);
   s.board[36] = "hostile";
   s.deathSites.push({ cell: 36, dueRound: 3, base: "neutral" });
+  s.rng = 1000;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.notEqual(s.phase, "manipulate");
   assert.equal(s.turn, 1);
