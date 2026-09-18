@@ -90,11 +90,12 @@ export function render(
     for (let c = 0; c < 8; c++) {
       const p = at(state, r, c),
         target = targets.some((t) => t.r === r && t.c === c),
-        partner = mates.some((m) => m.id === p?.id);
+        partner = mates.some((m) => m.id === p?.id),
+        deathSite = state.deathSites.find((d) => d.cell === square(r, c));
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${p ? " occupied" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${partner ? " partner" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${deathSite ? " decomposition" : ""}${p ? " occupied" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${partner ? " partner" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -107,6 +108,8 @@ export function render(
       const label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
+      if (deathSite)
+        cell.append(make("span", "☠️", "decomposition-mark"));
       if (p) {
         cell.append(make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`));
         const badges = p.traits.map((t) => TRAITS[t][0]);
@@ -154,17 +157,24 @@ export function render(
       : [make("span", "Selecione uma peça para ver suas características.")]),
   );
   const active = [...new Set(state.pieces.flatMap((p) => p.traits))];
+  const traitRows = active.map((t) => {
+    const e = make("div", undefined, "trait");
+    e.append(
+      make("strong", `${TRAITS[t][0]} ${t}`),
+      make("small", TRAITS[t][1]),
+    );
+    return e;
+  });
+  const decompositionLegend = make("div", undefined, "trait decomposition-legend");
+  decompositionLegend.append(
+    make("strong", "☠️ Decomposição."),
+    make("small", "Casa está sendo fertilizada."),
+  );
   $("traits").replaceChildren(
-    ...(active.length
-      ? active.map((t) => {
-          const e = make("div", undefined, "trait");
-          e.append(
-            make("strong", `${TRAITS[t][0]} ${t}`),
-            make("small", TRAITS[t][1]),
-          );
-          return e;
-        })
+    ...(traitRows.length
+      ? traitRows
       : [make("span", "As mutações aparecem com os nascimentos.")]),
+    decompositionLegend,
   );
   const gameOverDialog = $("game-over-dialog");
   if (state.result) {
