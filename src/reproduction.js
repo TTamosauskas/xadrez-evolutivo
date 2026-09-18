@@ -156,8 +156,10 @@ export function reproduce(ctx, parent, mate = null, reason = "casa fértil") {
   if (born) {
     const reproductionNumber =
         state.reproductions.blue + state.reproductions.amber + 1,
-      aestheticRate = aestheticMutationRate(reproductionNumber),
       firstAesthetic = state.aestheticMutations === 0,
+      aestheticRate = firstAesthetic
+        ? aestheticMutationRate(reproductionNumber)
+        : 0.18,
       guaranteedFirst = firstAesthetic && reproductionNumber >= 10;
     if (
       aestheticRate &&
