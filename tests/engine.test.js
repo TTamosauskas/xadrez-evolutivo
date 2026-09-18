@@ -514,8 +514,8 @@ test("capture decomposition never bypasses immunity during Conway habitat update
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  s.nextHabitatGeneration = 1;
-  s.maxGenerationReached = 1;
+  s.nextHabitatGeneration = 3;
+  s.maxGenerationReached = 3;
 
   s = simulate(s, move(s.pieces[0], 4, 4));
   const attackerId = 1;
