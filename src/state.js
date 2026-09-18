@@ -347,6 +347,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
   if (
     founder &&
     previous.historicalTraits.includes("Locomoção") &&
+    founder.traits.includes("Predação") &&
     !founder.traits.includes("Locomoção") &&
     !founder.traits.includes("Locomoção Avançada")
   )
