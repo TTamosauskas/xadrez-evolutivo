@@ -6,6 +6,7 @@ import {
   load,
   LEGACY_KEY,
   SAVE_KEY,
+  V5_KEY,
   V4_KEY,
   V3_KEY,
   V2_KEY,
@@ -35,10 +36,32 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
       getItem: (k) => entries.get(k) ?? null,
     };
   const migrated = load(storage);
-  assert.equal(migrated.version, 5);
+  assert.equal(migrated.version, 6);
   assert.equal(entries.get(V2_KEY), raw);
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Locomoção")));
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
+});
+
+test("v5 saves split invalid Fotossíntese + Predação hybrids during migration", () => {
+  const old = createState(15);
+  old.version = 5;
+  old.historicalTraits = ["Fotossíntese", "Predação"];
+  old.pieces[0].traits = ["Fotossíntese", "Predação"];
+  old.pieces[1].traits = ["Fotossíntese", "Predação", "Locomoção"];
+  const raw = JSON.stringify(old),
+    entries = new Map([[V5_KEY, raw]]),
+    storage = {
+      setItem: (k, v) => entries.set(k, v),
+      getItem: (k) => entries.get(k) ?? null,
+    },
+    migrated = load(storage);
+  assert.equal(migrated.version, 6);
+  assert.deepEqual(migrated.pieces[0].traits, ["Fotossíntese"]);
+  assert.ok(migrated.pieces[1].traits.includes("Predação"));
+  assert.ok(migrated.pieces[1].traits.includes("Locomoção"));
+  assert.ok(!migrated.pieces[1].traits.includes("Fotossíntese"));
+  assert.deepEqual(migrated.historicalTraits, ["Fotossíntese", "Predação"]);
+  assert.equal(entries.get(V5_KEY), raw);
 });
 
 test("v4 saves migrate discoveries without creating unread backlog", () => {
@@ -54,7 +77,7 @@ test("v4 saves migrate discoveries without creating unread backlog", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 5);
+  assert.equal(migrated.version, 6);
   assert.ok(migrated.discoveries.geology.includes("archean"));
   assert.ok(migrated.discoveries.mutations.includes("Fotossíntese"));
   assert.equal(
@@ -80,7 +103,7 @@ test("v3 saves rename Predador to Carnívoro and preserve capture with Predaçã
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 5);
+  assert.equal(migrated.version, 6);
   assert.ok(migrated.pieces[0].traits.includes("Carnívoro"));
   assert.ok(migrated.pieces[0].traits.includes("Predação"));
   assert.ok(!migrated.pieces[0].traits.includes("Predador"));
@@ -145,7 +168,7 @@ test("imports legacy positions, specialization loss, seeds, poison and timers", 
   assert.equal(s.turn, 3);
   assert.equal(s.pieces[0].venom.remaining, 2);
 });
-test("v2 saves migrate old locomotion semantics and Ovos genes into v4", () => {
+test("v2 saves migrate old locomotion semantics and Ovos genes into v6", () => {
   const old = createState(9);
   old.version = 2;
   old.era = 4;
@@ -162,7 +185,7 @@ test("v2 saves migrate old locomotion semantics and Ovos genes into v4", () => {
   old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
-  assert.equal(s.version, 5);
+  assert.equal(s.version, 6);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "eggs");

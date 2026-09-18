@@ -225,7 +225,7 @@ export const TRAIT_STAGE = {
 
 export const TRAIT_DEPENDENCIES = {
   Carnívoro: { historical: ["Predação"], piece: ["Predação"] },
-  Locomoção: { historical: ["Predação"] },
+  Locomoção: { historical: ["Predação"], piece: ["Predação"] },
   "Locomoção Avançada": { historical: ["Locomoção"] },
   Voo: { historical: ["Locomoção"] },
   "Cuidado Parental": { historical: ["Ovíparo"] },
@@ -241,6 +241,44 @@ export const TRAIT_DEPENDENCIES = {
   },
   "Neocórtex Desenvolvido": { historical: ["Polegar Opositor"] },
 };
+
+export function traitCombinationValid(traits) {
+  const set = new Set(traits ?? []);
+  if (set.has("Fotossíntese") && set.has("Predação")) return false;
+  if (set.has("Locomoção") && !set.has("Predação")) return false;
+  if (set.has("Carnívoro") && !set.has("Predação")) return false;
+  if (set.has("Onívoro") && !set.has("Carnívoro")) return false;
+  return true;
+}
+
+export function normalizeEnergyBranch(traits, preferred = null) {
+  const set = new Set(traits ?? []);
+  if (set.has("Fotossíntese") && set.has("Predação")) {
+    const requiresPredation =
+      set.has("Locomoção") || set.has("Carnívoro") || set.has("Onívoro");
+    if (requiresPredation || preferred === "Predação")
+      set.delete("Fotossíntese");
+    else set.delete("Predação");
+  }
+  if (!set.has("Predação")) {
+    set.delete("Locomoção");
+    set.delete("Carnívoro");
+    set.delete("Onívoro");
+  }
+  if (!set.has("Carnívoro")) set.delete("Onívoro");
+  return [...set];
+}
+
+export function traitLossAllowed(piece, trait) {
+  const traits = new Set(piece?.traits ?? []);
+  if (
+    trait === "Predação" &&
+    (traits.has("Locomoção") || traits.has("Carnívoro") || traits.has("Onívoro"))
+  )
+    return false;
+  if (trait === "Carnívoro" && traits.has("Onívoro")) return false;
+  return true;
+}
 
 export function geologicalStage(id) {
   return byId.get(id) ?? byId.get("archean");
@@ -308,6 +346,12 @@ export function stageComplete(state) {
 
 export function traitUnlocked(state, trait, piece = null) {
   if (NEGATIVE_TRAITS.has(trait)) return true;
+  if (
+    piece &&
+    ((trait === "Predação" && piece.traits?.includes("Fotossíntese")) ||
+      (trait === "Fotossíntese" && piece.traits?.includes("Predação")))
+  )
+    return false;
   const stageId = TRAIT_STAGE[trait];
   if (!stageId) return true;
   const current = currentGeologicalStage(state),
@@ -362,13 +406,6 @@ export function innovationWeight(state, trait, piece = null) {
       cycleBoost = Math.min(200, 3 * 3 ** (cycle - 1));
     weight = Math.min(240, cycleBoost * (missing.length === 1 ? 1.5 : 1));
   }
-  const opposite =
-    trait === "Fotossíntese"
-      ? "Predação"
-      : trait === "Predação"
-        ? "Fotossíntese"
-        : null;
-  if (opposite && piece?.traits?.includes(opposite)) weight *= 0.2;
   return weight;
 }
 

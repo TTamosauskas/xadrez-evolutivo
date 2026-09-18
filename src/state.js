@@ -171,7 +171,7 @@ function seedHabitat(state) {
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null;
   const state = {
-    version: 5,
+    version: 6,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
@@ -384,7 +384,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 5 ||
+    state.version !== 6 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))

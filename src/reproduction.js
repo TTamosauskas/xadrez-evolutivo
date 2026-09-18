@@ -35,7 +35,9 @@ import {
 } from "./reproductive-genetics.js";
 import {
   innovationWeight,
+  normalizeEnergyBranch,
   rankMutationUnlocked,
+  traitLossAllowed,
   traitUnlocked,
 } from "./geology.js";
 import { mutationDiscoveryId, recordDiscovery } from "./discoveries.js";
@@ -100,7 +102,11 @@ function mutation(state, p, positiveOnly) {
   const losses = [];
   if (p.rank > 0) losses.push({ rank: p.rank - 1 });
   for (const trait of p.traits)
-    if (trait !== "Esterilidade" && !GENETIC_TRAITS.includes(trait))
+    if (
+      trait !== "Esterilidade" &&
+      !GENETIC_TRAITS.includes(trait) &&
+      traitLossAllowed(p, trait)
+    )
       losses.push({ loss: trait });
   for (const trait of geneLossOptions(p.reproGenes))
     losses.push({ geneLoss: trait });
@@ -187,16 +193,22 @@ function sexualProfile(state, a, b) {
       traits.push(t);
   }
 
-  const profile = {
-    rank: Math.max(a.rank, b.rank),
-    traits,
-    reproGenes: inheritSexualReproGenes(
-      a.reproGenes,
-      b.reproGenes,
-      () => random(state),
+  const hasEnergyConflict =
+      traits.includes("Fotossíntese") && traits.includes("Predação"),
+    normalizedTraits = normalizeEnergyBranch(
+      traits,
+      hasEnergyConflict && random(state) < 0.5 ? "Predação" : null,
     ),
-    mutations: Math.max(a.mutations, b.mutations),
-  };
+    profile = {
+      rank: Math.max(a.rank, b.rank),
+      traits: normalizedTraits,
+      reproGenes: inheritSexualReproGenes(
+        a.reproGenes,
+        b.reproGenes,
+        () => random(state),
+      ),
+      mutations: Math.max(a.mutations, b.mutations),
+    };
   return syncReproTraits(profile);
 }
 

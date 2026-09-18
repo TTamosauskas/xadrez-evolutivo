@@ -86,6 +86,44 @@ test("sexual partner is an explicit phase and survives save/restore", () => {
   assert.equal(s.turn, 1);
   assert.ok(s.pieces.filter((p) => p.id > 3).every((p) => p.rank >= 3));
 });
+test("sexual reproduction never combines Fotossíntese with the predatory branch", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 3,
+        traits: ["Fotossíntese", "Reprodução Sexuada"],
+      },
+      { owner: "blue", r: 4, c: 4, traits: ["Predação", "Locomoção"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    mate = s.pieces[1];
+  const produced = reproduce(context(s), parent, mate, "teste", {
+    forcedCount: 4,
+  });
+  assert.ok(produced > 0);
+  const children = s.pieces.filter((piece) => piece.parentId === parent.id);
+  assert.ok(children.length > 0);
+  assert.ok(
+    children.every(
+      (piece) =>
+        !(
+          piece.traits.includes("Fotossíntese") &&
+          piece.traits.includes("Predação")
+        ),
+    ),
+  );
+  assert.ok(
+    children.every(
+      (piece) =>
+        !piece.traits.includes("Locomoção") ||
+        piece.traits.includes("Predação"),
+    ),
+  );
+  assertState(s);
+});
+
 test("dysfunctional movement rests the following full round and suppresses Locomoção Avançada", () => {
   let s = fixture([
     {

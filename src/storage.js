@@ -8,11 +8,13 @@ import {
   GEOLOGICAL_STAGES,
   firstCompatibleStage,
   geologicalStage,
+  normalizeEnergyBranch,
   priorRequiredInnovations,
   isNegativeTrait,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v5";
+export const SAVE_KEY = "xadrez-evolutivo-save-v6";
+export const V5_KEY = "xadrez-evolutivo-save-v5";
 export const V4_KEY = "xadrez-evolutivo-save-v4";
 export const V3_KEY = "xadrez-evolutivo-save-v3";
 export const V2_KEY = "xadrez-evolutivo-save-v2";
@@ -23,7 +25,7 @@ const legacyTraitName = (name) =>
   name === "Predador" || name === "Predação" ? "Carnívoro" : name;
 const v2TraitName = (name) =>
   name === "Locomoção" ? "Locomoção Avançada" : legacyTraitName(name);
-const mutationLabel = (label, version = 5) => {
+const mutationLabel = (label, version = 6) => {
   let mapped = label;
   if (version <= 3) {
     if (mapped === "Predador") mapped = "Carnívoro";
@@ -37,7 +39,7 @@ const mutationLabel = (label, version = 5) => {
   }
   return mapped;
 };
-function historicalMutations(data, version = 5) {
+function historicalMutations(data, version = 6) {
   const valid = new Set([
       ...Object.keys(TRAITS),
       ...Object.keys(TRAITS).map((t) => `Perda de ${t}`),
@@ -78,7 +80,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([5, 4, 3, 2].includes(data?.version)) {
+  if ([6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -91,7 +93,9 @@ export function deserialize(raw) {
           traits = new Set((profile.traits ?? []).map(mapper));
         if (legacyV2) traits.add("Locomoção");
         if (sourceVersion < 4) traits.add("Predação");
-        profile.traits = [...traits].filter((trait) => TRAITS[trait]);
+        const validTraits = [...traits].filter((trait) => TRAITS[trait]);
+        profile.traits =
+          sourceVersion < 6 ? normalizeEnergyBranch(validTraits) : validTraits;
         profile.reproGenes = normalizeReproGenes(
           profile.reproGenes,
           profile.traits,
@@ -210,7 +214,7 @@ export function deserialize(raw) {
         previousEvent: data.previousEvent,
         diseases: data.diseases,
       });
-    data.version = 5;
+    data.version = 6;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -393,6 +397,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V5_KEY) ??
     storage.getItem(V4_KEY) ??
     storage.getItem(V3_KEY) ??
     storage.getItem(V2_KEY) ??
