@@ -75,7 +75,7 @@ export function createState(seed = Date.now()) {
     maxGenerationReached: 0,
     nextHabitatGeneration: 3,
     nextEventGeneration: 4,
-    pendingEcologicalEvent: false,
+    pendingEcologicalEvents: 0,
     diseases: [],
     nextDisease: 1,
     populationLatched: { blue: false, amber: false },
@@ -139,7 +139,7 @@ export function assertState(state) {
     !integer(state.maxGenerationReached) ||
     !integer(state.nextHabitatGeneration, 3) ||
     !integer(state.nextEventGeneration, 4) ||
-    typeof state.pendingEcologicalEvent !== "boolean" ||
+    !integer(state.pendingEcologicalEvents) ||
     !Array.isArray(state.seen) ||
     state.seen.some((s) => typeof s !== "string")
   )
