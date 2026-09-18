@@ -1,5 +1,15 @@
 import { inside, square, TRAITS, EVENTS } from "./constants.js";
 import {
+  GEOLOGICAL_STAGES,
+  currentGeologicalStage,
+  nextGeologicalStage,
+  geologicalLabel,
+  habitatProfile,
+  recordHistoricalTraits,
+  stageComplete,
+  stageProgress,
+} from "./geology.js";
+import {
   cloneReproGenes,
   normalizeReproGenes,
   reproGeneSignature,
@@ -66,10 +76,86 @@ export function newPiece(state, owner, r, c, source = {}) {
   };
   return syncReproTraits(piece);
 }
+
+export function registerDiscoveries(state, piece) {
+  const added = recordHistoricalTraits(state, piece);
+  if (!added.length) return added;
+  const progress = stageProgress(state);
+  notice(state, "Marco Evolutivo", [
+    ...added.map((trait) => `${TRAITS[trait][0]} ${trait} surgiu pela primeira vez.`),
+    `Progresso de ${currentGeologicalStage(state).period}: ${progress.discovered.length} de ${progress.required.length} inovação(ões).`,
+  ]);
+  for (const trait of added)
+    log(
+      state,
+      `Marco Evolutivo: ${TRAITS[trait][0]} ${trait} foi descoberto.`,
+    );
+  return added;
+}
+
+function seedHabitat(state) {
+  const profile = habitatProfile(state);
+  state.board.fill("neutral");
+  const founderCells = new Set(state.pieces.map((p) => square(p.r, p.c)));
+  if (profile.standard) {
+    const empty = shuffle(
+      state,
+      Array.from({ length: 64 }, (_, i) => i).filter(
+        (i) => !founderCells.has(i),
+      ),
+    );
+    for (const i of empty.slice(0, profile.fertile)) state.board[i] = "fertile";
+    const safe = new Set([3, 4, 11, 12, 51, 52, 59, 60]);
+    for (const i of empty
+      .filter((i) => !safe.has(i) && state.board[i] === "neutral")
+      .slice(0, profile.hostile))
+      state.board[i] = "hostile";
+    for (const c of [3, 4]) {
+      for (let r = 1; r <= 6; r++)
+        if (terrain(state, r, c) === "fertile")
+          state.board[square(r, c)] = "neutral";
+      for (const rows of [
+        [1, 2, 3],
+        [4, 5, 6],
+      ]) {
+        const candidates = rows.filter(
+          (r) => terrain(state, r, c) === "neutral",
+        );
+        state.board[
+          square(pick(state, candidates.length ? candidates : rows), c)
+        ] = "fertile";
+      }
+    }
+    return;
+  }
+
+  if (profile.founderFertile)
+    for (const cell of founderCells) state.board[cell] = "fertile";
+  const fertileNeeded = Math.max(
+    0,
+    profile.fertile - state.board.filter((t) => t === "fertile").length,
+  );
+  const fertileCandidates = shuffle(
+    state,
+    Array.from({ length: 64 }, (_, i) => i).filter(
+      (i) => state.board[i] === "neutral",
+    ),
+  );
+  for (const cell of fertileCandidates.slice(0, fertileNeeded))
+    state.board[cell] = "fertile";
+  const hostileCandidates = shuffle(
+    state,
+    Array.from({ length: 64 }, (_, i) => i).filter(
+      (i) => state.board[i] === "neutral" && !founderCells.has(i),
+    ),
+  );
+  for (const cell of hostileCandidates.slice(0, profile.hostile))
+    state.board[cell] = "hostile";
+}
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null;
   const state = {
-    version: 2,
+    version: 3,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
@@ -86,10 +172,13 @@ export function createState(seed = Date.now(), options = {}) {
     notices: [],
     seen: [],
     seenMutations: [],
+    historicalTraits: [...(options.historicalTraits ?? [])],
     logs: [],
     event: null,
     previousEvent: null,
-    era: options.era ?? 1,
+    geologicalStage: options.geologicalStage ?? "archean",
+    cycle: options.cycle ?? 1,
+    totalCycles: options.totalCycles ?? 1,
     generationOffset: options.generationOffset ?? 0,
     maxGenerationReached: 0,
     nextHabitatGeneration: 3,
@@ -120,33 +209,11 @@ export function createState(seed = Date.now(), options = {}) {
             }
           : {}),
       );
-  const empty = shuffle(
+  seedHabitat(state);
+  log(
     state,
-    Array.from({ length: 64 }, (_, i) => i).filter(
-      (i) => !at(state, Math.floor(i / 8), i % 8),
-    ),
+    `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com dois organismos de cada lado.`,
   );
-  for (const i of empty.slice(0, 14)) state.board[i] = "fertile";
-  const safe = new Set([3, 4, 11, 12, 51, 52, 59, 60]);
-  for (const i of empty
-    .filter((i) => !safe.has(i) && state.board[i] === "neutral")
-    .slice(0, 7))
-    state.board[i] = "hostile";
-  for (const c of [3, 4]) {
-    for (let r = 1; r <= 6; r++)
-      if (terrain(state, r, c) === "fertile")
-        state.board[square(r, c)] = "neutral";
-    for (const rows of [
-      [1, 2, 3],
-      [4, 5, 6],
-    ]) {
-      const candidates = rows.filter((r) => terrain(state, r, c) === "neutral");
-      state.board[
-        square(pick(state, candidates.length ? candidates : rows), c)
-      ] = "fertile";
-    }
-  }
-  log(state, "A partida começa com dois organismos de cada lado.");
   return state;
 }
 export function signature(p) {
@@ -185,15 +252,29 @@ export function createSuccessorState(previous, seed = Date.now()) {
           reproGenes: cloneReproGenes(selected.piece.reproGenes),
         }
       : null,
-    era = previous.era + 1,
+    priorStage = currentGeologicalStage(previous),
+    candidate = stageComplete(previous)
+      ? nextGeologicalStage(priorStage.id)
+      : priorStage,
+    advanced = candidate.id !== priorStage.id,
+    geologicalStage = candidate.id,
+    cycle = advanced ? 1 : previous.cycle + 1,
+    totalCycles = previous.totalCycles + 1,
     generationOffset =
       previous.generationOffset + previous.maxGenerationReached + 1;
-  const state = createState(seed, { era, generationOffset, founder });
+  const state = createState(seed, {
+    geologicalStage,
+    cycle,
+    totalCycles,
+    generationOffset,
+    historicalTraits: previous.historicalTraits,
+    founder,
+  });
   log(
     state,
-    founder
-      ? `A ${era}ª Era começa com a linhagem sobrevivente da Era anterior.`
-      : `A ${era}ª Era começa após uma extinção em massa.`,
+    advanced
+      ? `Transição Evolutiva: inicia-se ${candidate.group} · ${candidate.period}.`
+      : `A vida persiste em ${candidate.period}; inicia-se o ${cycle}º Ciclo.`,
   );
   return state;
 }
@@ -226,7 +307,10 @@ export function assertState(state) {
     !integer(state.nextNotice, 1) ||
     !integer(state.nextDisease, 1) ||
     !integer(state.nextEgg, 1) ||
-    !integer(state.era, 1) ||
+    !GEOLOGICAL_STAGES.some((stage) => stage.id === state.geologicalStage) ||
+    !integer(state.cycle, 1) ||
+    !integer(state.totalCycles, 1) ||
+    state.totalCycles < state.cycle ||
     !integer(state.generationOffset) ||
     !integer(state.maxGenerationReached) ||
     !integer(state.nextHabitatGeneration, 3) ||
@@ -235,6 +319,9 @@ export function assertState(state) {
     !Array.isArray(state.seen) ||
     !Array.isArray(state.seenMutations) ||
     state.seenMutations.some((m) => typeof m !== "string") ||
+    !Array.isArray(state.historicalTraits) ||
+    state.historicalTraits.some((trait) => !TRAITS[trait]) ||
+    new Set(state.historicalTraits).size !== state.historicalTraits.length ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
     !Array.isArray(state.eggs) ||
@@ -265,7 +352,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 2 ||
+    state.version !== 3 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
