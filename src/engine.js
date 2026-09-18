@@ -107,6 +107,9 @@ function advanceTurn(ctx) {
   if (extinction(state)) return;
   state.turn++;
   state.current = other(acting);
+  state.fertileTraces = state.fertileTraces.filter(
+    (t) => state.turn <= t.clearAfterTurn,
+  );
   if (state.turn % 2 === 0) {
     tickEnvironment(ctx);
     if (extinction(state)) return;
