@@ -204,7 +204,10 @@ function info(title, lines, action = null) {
         const item = document.createElement("div");
         item.className = "mutation-item";
         const iconElement = document.createElement("span");
-        iconElement.className = "mutation-icon";
+        iconElement.className =
+          name === "Construção de Nicho"
+            ? "mutation-icon niche-icon"
+            : "mutation-icon";
         iconElement.textContent = icon;
         const copy = document.createElement("span");
         copy.className = "mutation-copy";
