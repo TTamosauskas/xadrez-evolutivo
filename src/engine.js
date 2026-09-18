@@ -219,10 +219,13 @@ function executeMove(ctx, action) {
   moveDirection(p);
   ctx.reserved.delete(square(p.r, p.c));
   if (!capture) harvest(state, p, p.r, p.c);
-  const collectorStay = has(p, "Coletor") && target.stay && p.seeds > 0;
-  const fertile =
-    (!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay;
-  const predation = capture && has(p, "Predação");
+  const collectorStay = has(p, "Coletor") && target.stay && p.seeds > 0,
+    predator = has(p, "Predador"),
+    omnivore = has(p, "Onívoro"),
+    fertileResource =
+      (!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay,
+    fertile = fertileResource && (!predator || omnivore),
+    predation = capture && (predator || omnivore);
   log(
     state,
     `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
