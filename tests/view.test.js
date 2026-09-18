@@ -112,6 +112,26 @@ test("renders eggs and carried brood count", () => {
   dom.window.close();
 });
 
+test("dysfunctional rest fades the piece without adding a sleep badge", () => {
+  const dom = setup(),
+    s = createState(23),
+    p = s.pieces[0];
+  p.traits = ["Mutação Disfuncional", "Fertilidade"];
+  p.lastMoveRound = 1;
+
+  render(dom.window.document, s, { selected: p.id });
+  const d = dom.window.document,
+    piece = d.querySelector(
+      `[data-r="${p.r}"][data-c="${p.c}"] .piece`,
+    ),
+    badges = piece.parentElement.querySelector(".badges");
+  assert.ok(piece.classList.contains("dysfunctional-resting"));
+  assert.ok(!badges.textContent.includes("💤"));
+  assert.ok(badges.textContent.includes("🧫"));
+  assert.match(d.getElementById("selected").textContent, /🧫 Fertilidade/);
+  dom.window.close();
+});
+
 test("application UI can play, acknowledge reproduction, save, load and reset", async () => {
   const dom = setup(),
     w = dom.window;
