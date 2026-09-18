@@ -1,4 +1,4 @@
-import { createState, createSuccessorState } from "./state.js";
+import { createCampaignState, createSuccessorState } from "./state.js";
 import { Controller } from "./controller.js";
 import { render } from "./view.js";
 import {
@@ -31,7 +31,7 @@ let selected = null,
 const report = (text) => {
   $("message").textContent = text;
 };
-const controller = new Controller(createState(), {
+const controller = new Controller(createCampaignState(), {
   report,
   render: (state, busy) => {
     if (selected && !state.pieces.some((p) => p.id === selected))
@@ -74,6 +74,11 @@ $("board").addEventListener("click", (event) => {
   const r = Number(cell.dataset.r),
     c = Number(cell.dataset.c),
     p = at(state, r, c);
+  if (state.phase === "origin") {
+    if (state.origin?.r === r && state.origin?.c === c)
+      dispatch({ type: "ORIGIN_CLICK" });
+    return;
+  }
   if (state.phase === "manipulate") {
     if (
       manipulationTargets(state).some(
@@ -370,7 +375,7 @@ $("new").addEventListener("click", () =>
     [
       "A partida em andamento será substituída. Use Salvar partida para guardá-la antes de recomeçar.",
     ],
-    () => controller.replace(createState()),
+    () => controller.replace(createCampaignState()),
   ),
 );
 $("save").addEventListener("click", () => {
@@ -449,14 +454,14 @@ $("game-log").addEventListener("click", () =>
 );
 $("rules").addEventListener("click", () =>
   info("Como jogar", [
-    "A campanha começa no Pré-Cambriano · Arqueano. Organismos ancestrais começam imóveis e expandem-se principalmente pela reprodução. 🦈 Predação surge antes da mobilidade e permite ataques de contato nas oito casas adjacentes; 🐾 Locomoção entra no Ediacarano somente em linhagens que possuem Predação e libera os movimentos normais do xadrez; 🐪 Locomoção Avançada surge mais tarde e permite uma segunda movimentação.",
+    "Antes do 1º Ciclo, um Rei ancestral cinza aparece em uma das quatro casas centrais. Selecione-o e toque nele novamente para separar o ancestral comum em um Rei branco e um Rei preto, posicionados de forma oposta e simétrica. Esses dois Reis fundam a 1ª Geração. A partir do Ciclo seguinte, cada lado começa com um único representante da linhagem dominante em sua posição canônica.",
     "Cada partida completa é um Ciclo Evolutivo. Ao fim de uma Extinção em Massa, a linhagem dominante sobrevivente funda os dois lados do próximo Ciclo. No Arqueano, o 1º Ciclo oferece somente ☀️ Fotossíntese e depois 🦈 Predação; 🧫 Fertilidade e depois 💤 Dormência entram a partir do 2º Ciclo, após a primeira dupla ter surgido. Nos demais períodos, a sequência narrativa continua liberando uma inovação obrigatória de cada vez.",
     "Ciclos do Pré-Cambriano duram no máximo 40 rodadas completas; do Cambriano em diante, no máximo 80. Se não houver extinção antes, o Ciclo termina por comparação de população, reproduções, mutações e diversidade de linhagens.",
     "Casas verdes geram descendentes e são consumidas. Você pode reproduzir permanecendo sobre uma casa verde. Peões geram até 4 descendentes; cavalos, 3; bispos e torres, 2; reis e rainhas, 1. Cada nascimento tem 1/3 de chance de mutação, inclusive na primeira reprodução.",
-    "🦈 Predação é uma mutação basal do Arqueano. Antes da Locomoção, a captura ocorre por contato e o predador permanece em sua casa. 🦁 Carnívoro exige Predação na própria linhagem, reproduz ao capturar e abandona o uso de casas férteis; 🐻 Onívoro surge depois de Carnívoro e recupera também o uso de recursos férteis. As mutações de tipo de peça entram no pool no Cambriano.",
-    "Casas vermelhas oferecem 50% de risco em cada casa atravessada e por rodada de permanência. Voo ignora o risco apenas ao atravessar casas hostis; pousar ou permanecer nelas continua sujeito ao risco normal. Carapaça reduz o risco para 34%. Cavalos testam apenas a casa de chegada. Uma captura deixa a casa em decomposição: ela fica hostil por três rodadas e depois se torna fértil. O capturador recebe uma rodada completa de imunidade ao risco da casa criada pela própria captura.",
+    "🦈 Predação é uma mutação basal do Arqueano. Antes da Locomoção, ela permite apenas capturas que já pertencem à geometria tradicional da peça: Reis capturam uma casa em qualquer direção e Peões apenas nas diagonais de captura. 🐾 Locomoção libera deslocamentos para casas vazias. 🦁 Carnívoro exige Predação na própria linhagem, reproduz ao capturar e abandona o uso de casas férteis; 🐻 Onívoro surge depois de Carnívoro e recupera também o uso de recursos férteis.",
+    "Casas vermelhas oferecem 50% de risco em cada casa atravessada e por rodada de permanência. Voo ignora o risco apenas ao atravessar casas hostis; pousar ou permanecer nelas continua sujeito ao risco normal. Carapaça reduz o risco para 34%. Cavalos testam apenas a casa de chegada. Uma captura deixa a casa em decomposição: ela fica hostil por três rodadas e depois se torna fértil. O capturador fica imune ao risco dessa casa pelos dois turnos seguintes: um turno do adversário e o seu próximo turno.",
     "A evolução ambiental acompanha a maior geração local já alcançada. O habitat muda pela primeira vez na G3 local e depois a cada duas gerações. Eventos ecológicos começam na G4 local e depois a cada seis gerações; duram dez rodadas e são sorteados com pesos próprios do período geológico. Surtos de Patógeno por superpopulação são liberados a partir do Proterozoico.",
-    "Mutações positivas entram no pool conforme o tempo geológico, o Ciclo ativo, uma micro-ordem interna e dependências específicas. Inovações reservadas para um Ciclo posterior ficam fora do pool até sua abertura. Formas de peça também avançam passo a passo, sem saltar ranks. A próxima inovação elegível ainda inédita recebe peso crescente em Ciclos posteriores, sempre por mutação em descendentes. Genes recessivos contam como descoberta quando o fenótipo é expresso.",
+    "Mutações positivas entram no pool conforme o tempo geológico, o Ciclo ativo, uma micro-ordem interna e dependências específicas. Os Reis fundadores podem gerar Peões por mutação desde o primeiro Ciclo. Depois, as formas derivadas avançam em sequência Peão → Cavalo → Bispo → Torre → Rainha quando as mutações de forma tardias são liberadas. A próxima inovação elegível ainda inédita recebe peso crescente em Ciclos posteriores, sempre por mutação em descendentes. Genes recessivos contam como descoberta quando o fenótipo é expresso.",
     "Na reprodução sexuada, escolha um aliado adjacente fértil. Os descendentes combinam características dos dois progenitores. As novas mutações dessa reprodução são positivas.",
     "Ovíparo e Vivíparo são variantes do mesmo locus de desenvolvimento; Ovos e Esporos pertencem ao locus de dispersão. Cada peça carrega dois alelos por locus. Alelos dominantes se expressam com uma cópia; recessivos podem permanecer ocultos e reaparecer quando herdados em par. Na reprodução sexuada, cada descendente recebe um alelo de cada progenitor em cada locus.",
     "Ovíparos depositam um ovo com a ninhada e ele eclode após três rodadas. Vivíparos carregam a ninhada por três rodadas; se o progenitor morrer antes, a gestação é perdida. Esporos espalham os descendentes em posições distantes. Apenas Ovífagia permite capturar ovos inimigos; a ninhada consumida determina quantos descendentes o ovífago tenta gerar.",
