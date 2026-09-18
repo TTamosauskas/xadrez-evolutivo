@@ -4,16 +4,31 @@ import {
   normalizeReproGenes,
   syncReproTraits,
 } from "./reproductive-genetics.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v2";
+import {
+  firstCompatibleStage,
+  geologicalStage,
+  priorRequiredInnovations,
+  isNegativeTrait,
+} from "./geology.js";
+export const SAVE_KEY = "xadrez-evolutivo-save-v3";
+export const V2_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
 const traitName = (name) => (name === "Predação" ? "Predador" : name);
-const mutationLabel = (label) =>
-  label === "Predação"
-    ? "Predador"
-    : label === "Perda de Predação"
-      ? "Perda de Predador"
-      : label;
-function historicalMutations(data) {
+const v2TraitName = (name) =>
+  name === "Locomoção" ? "Locomoção Avançada" : traitName(name);
+const mutationLabel = (label, legacyV2 = false) => {
+  const mapped =
+    label === "Predação"
+      ? "Predador"
+      : label === "Perda de Predação"
+        ? "Perda de Predador"
+        : label;
+  if (!legacyV2) return mapped;
+  if (mapped === "Locomoção") return "Locomoção Avançada";
+  if (mapped === "Perda de Locomoção") return "Perda de Locomoção Avançada";
+  return mapped;
+};
+function historicalMutations(data, legacyV2 = false) {
   const valid = new Set([
       ...Object.keys(TRAITS),
       ...Object.keys(TRAITS).map((t) => `Perda de ${t}`),
@@ -21,13 +36,15 @@ function historicalMutations(data) {
     ]),
     seen = new Set(
       Array.isArray(data.seenMutations)
-        ? data.seenMutations.map(mutationLabel).filter((m) => valid.has(m))
+        ? data.seenMutations
+            .map((label) => mutationLabel(label, legacyV2))
+            .filter((m) => valid.has(m))
         : [],
     );
   for (const notice of data.notices ?? [])
     if (notice?.title === "Novas mutações")
       for (const line of notice.lines ?? []) {
-        const label = mutationLabel(line);
+        const label = mutationLabel(line, legacyV2);
         if (valid.has(label)) seen.add(label);
       }
   for (const entry of data.logs ?? []) {
@@ -36,6 +53,7 @@ function historicalMutations(data) {
     const colon = text.indexOf(": "),
       label = mutationLabel(
         (colon >= 0 ? text.slice(colon + 2) : text).replace(/\.$/, ""),
+        legacyV2,
       );
     if (valid.has(label)) seen.add(label);
   }
@@ -51,16 +69,20 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if (data?.version === 2) {
-    const normalizeProfile = (profile) => {
-      profile.traits = [...new Set((profile.traits ?? []).map(traitName))];
-      profile.reproGenes = normalizeReproGenes(
-        profile.reproGenes,
-        profile.traits,
-      );
-      syncReproTraits(profile);
-      return profile;
-    };
+  if (data?.version === 3 || data?.version === 2) {
+    const legacyV2 = data.version === 2,
+      normalizeProfile = (profile) => {
+        const mapper = legacyV2 ? v2TraitName : traitName,
+          traits = new Set((profile.traits ?? []).map(mapper));
+        if (legacyV2) traits.add("Locomoção");
+        profile.traits = [...traits].filter((trait) => TRAITS[trait]);
+        profile.reproGenes = normalizeReproGenes(
+          profile.reproGenes,
+          profile.traits,
+        );
+        syncReproTraits(profile);
+        return profile;
+      };
     if (Array.isArray(data.pieces))
       for (const piece of data.pieces) {
         normalizeProfile(piece);
@@ -81,7 +103,7 @@ export function deserialize(raw) {
       ? data.nextEgg
       : Math.max(0, ...data.eggs.map((egg) => egg.id ?? 0)) + 1;
     if (data.manipulation === undefined) data.manipulation = null;
-    data.seenMutations = historicalMutations(data);
+    data.seenMutations = historicalMutations(data, legacyV2);
     const liveMax = Array.isArray(data.pieces)
       ? Math.max(0, ...data.pieces.map((p) => p.generation ?? 0))
       : 0;
@@ -91,7 +113,43 @@ export function deserialize(raw) {
         : 0,
       liveMax,
     );
-    if (!Number.isInteger(data.era) || data.era < 1) data.era = 1;
+    if (legacyV2) {
+      const profiles = [
+          ...(data.pieces ?? []),
+          ...(data.eggs ?? []).flatMap((egg) => egg.brood ?? []),
+          ...(data.pieces ?? []).flatMap((piece) =>
+            (piece.pregnancies ?? []).flatMap(
+              (pregnancy) => pregnancy.brood ?? [],
+            ),
+          ),
+        ],
+        observed = new Set([
+          ...profiles.flatMap((profile) => profile.traits ?? []),
+          ...data.seenMutations.filter((label) => TRAITS[label]),
+        ]);
+      observed.delete("Esterilidade");
+      observed.delete("Mutação Deletéria");
+      observed.delete("Mutação Disfuncional");
+      let stage = firstCompatibleStage(observed);
+      if (stage.index < geologicalStage("cambrian").index)
+        stage = geologicalStage("cambrian");
+      data.geologicalStage = stage.id;
+      data.cycle = 1;
+      data.totalCycles =
+        Number.isInteger(data.era) && data.era > 0 ? data.era : 1;
+      data.historicalTraits = [
+        ...new Set([
+          ...priorRequiredInnovations(stage.id),
+          ...[...observed].filter((trait) => !isNegativeTrait(trait)),
+        ]),
+      ];
+      data.version = 3;
+      delete data.era;
+    }
+    if (!Number.isInteger(data.cycle) || data.cycle < 1) data.cycle = 1;
+    if (!Number.isInteger(data.totalCycles) || data.totalCycles < data.cycle)
+      data.totalCycles = data.cycle;
+    if (!Array.isArray(data.historicalTraits)) data.historicalTraits = [];
     if (!Number.isInteger(data.generationOffset) || data.generationOffset < 0)
       data.generationOffset = 0;
     if (!Number.isInteger(data.nextHabitatGeneration)) {
@@ -139,10 +197,11 @@ export function deserialize(raw) {
     const profile = data.lineages?.[org.owner]?.[org.lineage];
     if (!profile) throw Error("Linhagem ausente no arquivo antigo.");
     const traits = new Set(
-      (profile.traits ?? []).map(traitName).filter((t) => TRAITS[t]),
+      (profile.traits ?? []).map(v2TraitName).filter((t) => TRAITS[t]),
     );
+    traits.add("Locomoção");
     for (const entry of profile.mutationStack ?? []) {
-      const name = traitName(entry.name);
+      const name = v2TraitName(entry.name);
       if (entry.kind === "trait" && TRAITS[name]) traits.add(name);
       if (entry.kind === "trait-loss") traits.delete(name);
     }
@@ -253,7 +312,25 @@ export function deserialize(raw) {
   state.logs = (data.logs ?? [])
     .slice(0, 150)
     .map((l) => ({ turn: state.turn, text: l.msg ?? l.text ?? "" }));
-  state.seenMutations = historicalMutations(data);
+  state.seenMutations = historicalMutations(data, true);
+  const observed = new Set([
+      ...state.pieces.flatMap((piece) => piece.traits),
+      ...state.seenMutations.filter((label) => TRAITS[label]),
+    ]),
+    compatible = firstCompatibleStage(observed),
+    stage =
+      compatible.index < geologicalStage("cambrian").index
+        ? geologicalStage("cambrian")
+        : compatible;
+  state.geologicalStage = stage.id;
+  state.cycle = 1;
+  state.totalCycles = 1;
+  state.historicalTraits = [
+    ...new Set([
+      ...priorRequiredInnovations(stage.id),
+      ...[...observed].filter((trait) => !isNegativeTrait(trait)),
+    ]),
+  ];
   notice(state, "Partida importada", [
     "Posições, características e contadores foram convertidos. A jogada atual recomeça na fase de movimento. O arquivo antigo continua preservado.",
   ]);
@@ -264,7 +341,10 @@ export function save(storage, state) {
   storage.setItem(SAVE_KEY, JSON.stringify(state));
 }
 export function load(storage) {
-  const raw = storage.getItem(SAVE_KEY) ?? storage.getItem(LEGACY_KEY);
+  const raw =
+    storage.getItem(SAVE_KEY) ??
+    storage.getItem(V2_KEY) ??
+    storage.getItem(LEGACY_KEY);
   if (!raw) throw Error("Nenhuma partida salva neste navegador.");
   return deserialize(raw);
 }
