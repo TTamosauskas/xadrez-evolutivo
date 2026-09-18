@@ -8,6 +8,7 @@ import {
   SAVE_KEY,
 } from "../src/storage.js";
 import { createState, clone } from "../src/state.js";
+import { reproPhenotype } from "../src/reproductive-genetics.js";
 test("round trip saves deterministic state and rejects duplicate occupancy", () => {
   const s = createState(3);
   assert.deepEqual(deserialize(JSON.stringify(s)), s);
@@ -68,6 +69,24 @@ test("imports legacy positions, specialization loss, seeds, poison and timers", 
   assert.equal(s.turn, 3);
   assert.equal(s.pieces[0].venom.remaining, 2);
 });
+test("v2 saves migrate old Ovos trait into reproductive genes", () => {
+  const old = createState(9);
+  delete old.eggs;
+  delete old.nextEgg;
+  for (const piece of old.pieces) {
+    delete piece.reproGenes;
+    delete piece.pregnancies;
+  }
+  old.pieces[0].traits = ["Ovos"];
+
+  const s = deserialize(JSON.stringify(old));
+  assert.deepEqual(s.eggs, []);
+  assert.equal(s.nextEgg, 1);
+  assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "eggs");
+  assert.ok(s.pieces[0].traits.includes("Ovos"));
+  assert.ok(s.pieces.every((p) => Array.isArray(p.pregnancies)));
+});
+
 test("malformed nested disease and event data are rejected before replacing state", () => {
   const s = createState(1);
   s.diseases = [{ id: 1 }];
