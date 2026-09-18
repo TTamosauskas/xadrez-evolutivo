@@ -323,7 +323,11 @@ test("Predador reproduces on capture but not on fertile cells", () => {
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
-  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(
+    !movesFor(s, s.pieces[0]).some(
+      (target) => target.r === 4 && target.c === 4 && target.stay,
+    ),
+  );
   assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
   assert.equal(s.board[36], "fertile");
   assertState(s);
