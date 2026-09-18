@@ -39,7 +39,7 @@ export const TRAITS = {
     "Depois de se mover, descansa na rodada seguinte.",
   ],
   Coletor: [
-    "🐿",
+    "🐿️",
     "Transporta fertilidade e usa sementes para reproduzir parado.",
   ],
 };
