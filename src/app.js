@@ -1,7 +1,12 @@
 import { createState, createSuccessorState } from "./state.js";
 import { Controller } from "./controller.js";
 import { render } from "./view.js";
-import { movesFor, partnersFor, manipulationTargets } from "./moves.js";
+import {
+  movesFor,
+  partnersFor,
+  manipulationTargets,
+  constructionTargets,
+} from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
 import { TRAITS } from "./constants.js";
@@ -69,6 +74,15 @@ $("board").addEventListener("click", (event) => {
       dispatch({ type: "MANIPULATE", r, c });
     return;
   }
+  if (state.phase === "build") {
+    if (
+      constructionTargets(state).some(
+        (target) => target.r === r && target.c === c,
+      )
+    )
+      dispatch({ type: "BUILD", r, c });
+    return;
+  }
   if (state.phase === "partner") {
     const parent = state.pieces.find((p) => p.id === state.partner.id);
     if (p && partnersFor(state, parent).some((m) => m.id === p.id))
@@ -107,7 +121,9 @@ $("pass").addEventListener("click", () =>
   dispatch(
     controller.state.phase === "manipulate"
       ? { type: "SKIP_MANIPULATION" }
-      : { type: "PASS" },
+      : controller.state.phase === "build"
+        ? { type: "SKIP_BUILD" }
+        : { type: "PASS" },
   ),
 );
 $("undo-neocortex").addEventListener("click", () => {
@@ -322,7 +338,7 @@ $("rules").addEventListener("click", () =>
     "Cada partida completa é um Ciclo Evolutivo. Ao fim de uma Extinção em Massa, a linhagem dominante sobrevivente funda os dois lados do próximo Ciclo. O período geológico só avança quando todas as inovações obrigatórias daquele estágio já foram observadas pelo menos uma vez.",
     "Ciclos do Pré-Cambriano duram no máximo 40 rodadas completas; do Cambriano em diante, no máximo 80. Se não houver extinção antes, o Ciclo termina por comparação de população, reproduções, mutações e diversidade de linhagens.",
     "Casas verdes geram descendentes e são consumidas. Você pode reproduzir permanecendo sobre uma casa verde. Peões geram até 4 descendentes; cavalos, 3; bispos e torres, 2; reis e rainhas, 1. Cada nascimento tem 1/3 de chance de mutação, inclusive na primeira reprodução.",
-    "Antes do Cambriano não existem capturas voluntárias. No Cambriano, a disputa predatória passa a fazer parte das regras e as mutações de tipo de peça também entram no pool.",
+    "🦈 Predação é uma mutação basal do Arqueano e permite capturar criaturas adversárias. 🦁 Carnívoro surge a partir do Proterozoico: mantém a capacidade predatória e reproduz ao capturar, mas não usa casas férteis. As mutações de tipo de peça continuam entrando no pool no Cambriano.",
     "Casas vermelhas oferecem 50% de risco em cada casa atravessada e por rodada de permanência. Voo ignora o risco apenas ao atravessar casas hostis; pousar ou permanecer nelas continua sujeito ao risco normal. Carapaça reduz o risco para 34%. Cavalos testam apenas a casa de chegada. Uma captura deixa a casa em decomposição: ela fica hostil por três rodadas e depois se torna fértil. O capturador recebe uma rodada completa de imunidade ao risco da casa criada pela própria captura.",
     "A evolução ambiental acompanha a maior geração local já alcançada. O habitat muda pela primeira vez na G3 local e depois a cada duas gerações. Eventos ecológicos começam na G4 local e depois a cada seis gerações; duram dez rodadas e são sorteados com pesos próprios do período geológico. Surtos de Patógeno por superpopulação são liberados a partir do Proterozoico.",
     "Mutações positivas entram no pool conforme o tempo geológico e suas dependências. Inovações obrigatórias ainda não descobertas recebem peso crescente em Ciclos posteriores do mesmo período, sem serem concedidas automaticamente. Genes recessivos só contam como descobertos quando o fenótipo é realmente expresso.",
@@ -331,7 +347,8 @@ $("rules").addEventListener("click", () =>
     "Ovíparos depositam um ovo com a ninhada e ele eclode após três rodadas. Vivíparos carregam a ninhada por três rodadas; se o progenitor morrer antes, a gestação é perdida. Esporos espalham os descendentes em posições distantes. Apenas Ovífagia permite capturar ovos inimigos; a ninhada consumida determina quantos descendentes o ovífago tenta gerar.",
     "Fotossíntese torna fértil uma casa neutra após uma rodada completa sem sair dela. Dormência imobiliza a criatura em casa hostil e evita o risco ambiental enquanto ela permanecer ali, mas não impede capturas. Regeneração evita uma morte não causada por captura uma vez por vida e força descanso na rodada seguinte.",
     "Cuidado Parental protege contra Ovífagia enquanto o progenitor estiver vivo e adjacente ao ovo. Visão Noturna permite capturar Camuflagem à distância. Eusocialidade recebe até +2 descendentes de trabalhadores estéreis aparentados e adjacentes.",
-    "Construção de Nicho neutraliza uma casa hostil estável quando a criatura termina ali e sobrevive. Polegar Opositor pode transferir o terreno fértil ou hostil de chegada para uma casa neutra adjacente; terrenos temporários de eventos e decomposição não podem ser manipulados.",
+    "🫎 Chifre surge no Neógeno após a origem da Predação. Quando uma criatura com Chifre sofre uma tentativa de captura, há 20% de chance de o agressor morrer imediatamente e a captura falhar. 🐢 Carapaça no agressor neutraliza essa defesa.",
+    "⬡ Construção de Nicho neutraliza uma casa hostil estável quando a criatura termina ali e sobrevive. 🦫 Construtor Avançado, liberado no Neógeno após Construção de Nicho, pode erguer uma barreira marrom adjacente depois de uma reprodução bem-sucedida que consumiu uma casa fértil. Barreiras bloqueiam o deslocamento: Voo pode atravessá-las sem destruí-las e Chifre as destrói ao atravessar. Polegar Opositor pode transferir o terreno fértil ou hostil de chegada para uma casa neutra adjacente; terrenos temporários de eventos, decomposição e barreiras não podem ser manipulados.",
     "Neocórtex Desenvolvido permite observar a próxima ação adversária. O botão ↻ restaura o estado anterior à jogada, inclusive RNG, desfazendo sua ação e a resposta observada uma única vez; a nova linha de jogo é definitiva naquele ciclo.",
     ...Object.entries(TRAITS).map(
       ([name, [icon, description]]) => `${icon} ${name}: ${description}`,
