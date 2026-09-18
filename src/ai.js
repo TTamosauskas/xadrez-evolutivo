@@ -22,7 +22,9 @@ function priority(state, a) {
     (state.board[square(a.r, a.c)] === "fertile" ? 8 : 0) +
     (victim ? 4 + victim.rank : 0) +
     (egg && egg.owner !== state.current ? 4 + egg.brood.length : 0) -
-    (state.board[square(a.r, a.c)] === "hostile" && !has(p, "Voo") ? 8 : 0)
+    (state.board[square(a.r, a.c)] === "hostile" && !has(p, "Dormência")
+      ? 8
+      : 0)
   );
 }
 function evaluate(state, owner) {
