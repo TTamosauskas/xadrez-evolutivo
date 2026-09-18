@@ -1,5 +1,5 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
-import { at, summary, round } from "./state.js";
+import { at, round } from "./state.js";
 import { movesFor, partnersFor, resting } from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
@@ -34,18 +34,22 @@ export function render(
       ? `${OWNERS[state.result.winner]} venceram`
       : "Empate"
     : `Vez das ${OWNERS[state.current]}${busy ? " · IA pensando…" : ""}`;
-  $("round").textContent =
-    `Rodada ${round(state) + 1} · Época ${Math.floor(round(state) / 10) + 1}`;
+  const currentRound = round(state),
+    era = Math.floor(currentRound / 10) + 1,
+    roundsRemaining = 10 - (currentRound % 10);
+  $("round").textContent = `${era}° Era · ${roundsRemaining} rodadas restantes.`;
   const ev = state.event,
     diseases = state.diseases.filter((d) => d.endRound >= round(state));
   $("event").textContent = [
     ev
-      ? `${ev.name} · ${Math.max(0, state.nextEventRound - round(state))} rodadas restantes`
-      : `Próximo evento em ${state.nextEventRound - round(state)} rodadas`,
+      ? `${ev.name} · ${Math.max(0, state.nextEventRound - currentRound)} rodadas restantes`
+      : "",
     ...diseases.map(
       (d) => `Patógeno: ${d.mortality}% · desfecho em ${d.delay} rodadas`,
     ),
-  ].join(" | ");
+  ]
+    .filter(Boolean)
+    .join(" | ");
   const board = doc.createDocumentFragment();
   for (let r = 0; r < 8; r++)
     for (let c = 0; c < 8; c++) {
@@ -68,7 +72,6 @@ export function render(
       const label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
-      cell.append(make("span", coord(r, c), "coordinate"));
       if (p) {
         cell.append(make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`));
         const badges = p.traits.map((t) => TRAITS[t][0]);
@@ -89,33 +92,20 @@ export function render(
       ?.focus({ preventScroll: true });
   $("pass").disabled = locked || state.phase !== "move";
   $("pass").textContent = state.chain ? "Encerrar movimento" : "Passar vez";
-  $("instruction").textContent = state.result
-    ? state.result.reason
-    : state.phase === "partner"
-      ? "Escolha um parceiro destacado em rosa."
-      : state.chain
-        ? "Locomoção: mova a mesma peça ou encerre o movimento."
-        : busy
-          ? "O computador está escolhendo a jogada."
-          : "Selecione uma peça e um destino destacado.";
-  $("populations").replaceChildren(
-    ...Object.keys(OWNERS).map((owner) => {
-      const s = summary(state, owner),
-        e = make("div", undefined, "population");
-      e.append(
-        make("strong", `${OWNERS[owner]} · ${s.pieces}`),
-        make("span", `${s.generations} reproduções`),
-      );
-      return e;
-    }),
-  );
   $("selected").replaceChildren(
     ...(actor
       ? [
-          make("strong", `${PIECES[actor.rank]} · ${coord(actor.r, actor.c)}`),
+          make(
+            "strong",
+            `${SYMBOLS[actor.owner][actor.rank]} ${PIECES[actor.rank]} · ${coord(actor.r, actor.c)}`,
+          ),
           make(
             "p",
-            actor.traits.length ? actor.traits.join(" · ") : "Perfil ancestral",
+            actor.traits.length
+              ? actor.traits
+                  .map((t) => `${TRAITS[t][0]} ${t}`)
+                  .join(" · ")
+              : "🧬 Perfil ancestral",
           ),
           ...(actor.infection
             ? [
@@ -141,16 +131,29 @@ export function render(
         })
       : [make("span", "As mutações aparecem com os nascimentos.")]),
   );
-  $("log").replaceChildren(
-    ...state.logs.map((l) =>
-      make("li", `R${Math.floor(l.turn / 2) + 1} · ${l.text}`),
-    ),
-  );
   const dialog = $("notice-dialog"),
     n = state.notices[0];
   if (n) {
     $("notice-title").textContent = n.title;
-    $("notice-content").replaceChildren(...n.lines.map((l) => make("p", l)));
+    if (n.title === "Novas mutações") {
+      const list = make("ul", undefined, "mutation-list");
+      for (const line of n.lines) {
+        const lostTrait = line.startsWith("Perda de ")
+          ? line.slice("Perda de ".length)
+          : null;
+        const traitName = TRAITS[line] ? line : lostTrait;
+        const icon = traitName && TRAITS[traitName] ? TRAITS[traitName][0] : "🧬";
+        const item = make("li", undefined, "mutation-item");
+        item.append(
+          make("span", icon, "mutation-icon"),
+          make("span", line, "mutation-copy"),
+        );
+        list.append(item);
+      }
+      $("notice-content").replaceChildren(list);
+    } else {
+      $("notice-content").replaceChildren(...n.lines.map((l) => make("p", l)));
+    }
     if (!dialog.open) dialog.showModal();
   } else if (dialog.open) dialog.close();
 }
