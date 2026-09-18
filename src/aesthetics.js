@@ -3,7 +3,7 @@ export const AESTHETIC_GENE_DEFS = {
   height: { normal: "normal", mutants: ["low", "high"] },
   width: { normal: "normal", mutants: ["narrow", "wide"] },
   posture: { normal: "normal", mutants: ["left", "right"] },
-  stroke: { normal: 0, mutants: [0.4, 0.8] },
+  stroke: { normal: 0, mutants: [1, 2] },
   pigment: { normal: "none", mutants: ["violet", "cyan"] },
 };
 
@@ -27,7 +27,17 @@ export function normalizeAestheticGenes(source) {
   for (const name of geneNames) {
     const def = AESTHETIC_GENE_DEFS[name],
       allowed = new Set([def.normal, ...def.mutants]),
-      pair = Array.isArray(source[name]) ? source[name] : null;
+      pair = Array.isArray(source[name])
+        ? source[name].map((a) =>
+            name === "stroke" && a
+              ? {
+                  ...a,
+                  value:
+                    a.value === 0.4 ? 1 : a.value === 0.8 ? 2 : a.value,
+                }
+              : a,
+          )
+        : null;
     if (
       !pair ||
       pair.length !== 2 ||
@@ -232,7 +242,7 @@ export function aestheticDescription(source) {
   if (p.width === "wide") labels.push("larga");
   if (p.stroke)
     labels.push(
-      `contorno ${p.stroke === 0.4 ? "fino" : "marcado"}${
+      `contorno ${p.stroke === 1 ? "fino" : "marcado"}${
         p.pigment === "violet"
           ? " violeta"
           : p.pigment === "cyan"
