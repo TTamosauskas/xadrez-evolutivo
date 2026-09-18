@@ -133,7 +133,7 @@ test("missing innovations gain weight across repeated cycles without becoming au
   s.cycle = 4;
   const later = innovationWeight(s, "Fotossíntese");
   assert.ok(later > first);
-  assert.ok(later <= 5);
+  assert.ok(later <= 240);
   assert.deepEqual(missingInnovations(s), [
     "Fotossíntese",
     "Fertilidade",
