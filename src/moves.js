@@ -117,7 +117,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       ...extra,
     });
   }
-  function ray(directions) {
+  const occupiedTarget = (r, c) => !!at(state, r, c) || !!eggAt(state, r, c);
+  function ray(directions, captureOnly = false) {
     for (const [dr, dc] of directions) {
       const path = [];
       for (let n = 1; n < 8; n++) {
@@ -125,64 +126,65 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           c = p.c + dc * n;
         if (!inside(r, c)) break;
         path.push([r, c]);
-        const barrier = barrierAt(state, r, c);
+        const barrier = barrierAt(state, r, c),
+          occupied = occupiedTarget(r, c);
         if (barrier) {
-          if (has(p, "Chifre")) add(r, c, [...path]);
+          if (!captureOnly && has(p, "Chifre")) add(r, c, [...path]);
           if (!has(p, "Voo") && !has(p, "Chifre")) break;
-        } else add(r, c, [...path]);
-        if (at(state, r, c) || eggAt(state, r, c)) break;
+        } else if (!captureOnly || occupied) add(r, c, [...path]);
+        if (occupied) break;
       }
     }
   }
-  const mobile = has(p, "Locomoção") || has(p, "Locomoção Avançada");
-  if (mobile) {
-  if (p.rank === 0) {
-    const dir = p.r === 0 ? 1 : p.r === 7 ? -1 : p.pawnDir,
-      r = p.r + dir;
-    if (
-      inside(r, p.c) &&
-      !at(state, r, p.c) &&
-      !eggAt(state, r, p.c)
-    )
-      add(r, p.c, [[r, p.c]]);
-    for (const c of [p.c - 1, p.c + 1]) {
-      const victim = at(state, r, c),
-        egg = eggAt(state, r, c);
+  function chessTargets(captureOnly = false) {
+    if (p.rank === 0) {
+      const dir = p.r === 0 ? 1 : p.r === 7 ? -1 : p.pawnDir,
+        r = p.r + dir;
       if (
-        inside(r, c) &&
-        ((victim?.owner && victim.owner !== p.owner) ||
-          (egg?.owner && egg.owner !== p.owner && has(p, "Ovífagia")))
+        !captureOnly &&
+        inside(r, p.c) &&
+        !at(state, r, p.c) &&
+        !eggAt(state, r, p.c)
       )
-        add(r, c, [[r, c]]);
-    }
-  } else if (p.rank === 1) {
-    for (const [dr, dc] of [
-      [-2, -1],
-      [-2, 1],
-      [2, -1],
-      [2, 1],
-      [-1, -2],
-      [-1, 2],
-      [1, -2],
-      [1, 2],
-    ])
-      add(p.r + dr, p.c + dc, [[p.r + dr, p.c + dc]]);
-  } else if (p.rank === 2) ray(DIAG);
-  else if (p.rank === 3) ray(ORTH);
-  else if (p.rank === 4)
-    for (const [dr, dc] of [...ORTH, ...DIAG])
-      add(p.r + dr, p.c + dc, [[p.r + dr, p.c + dc]]);
-  else ray([...ORTH, ...DIAG]);
+        add(r, p.c, [[r, p.c]]);
+      for (const c of [p.c - 1, p.c + 1]) {
+        const victim = at(state, r, c),
+          egg = eggAt(state, r, c);
+        if (
+          inside(r, c) &&
+          ((victim?.owner && victim.owner !== p.owner) ||
+            (egg?.owner && egg.owner !== p.owner && has(p, "Ovífagia")))
+        )
+          add(r, c, [[r, c]]);
+      }
+    } else if (p.rank === 1) {
+      for (const [dr, dc] of [
+        [-2, -1],
+        [-2, 1],
+        [2, -1],
+        [2, 1],
+        [-1, -2],
+        [-1, 2],
+        [1, -2],
+        [1, 2],
+      ]) {
+        const r = p.r + dr,
+          c = p.c + dc;
+        if (!captureOnly || occupiedTarget(r, c)) add(r, c, [[r, c]]);
+      }
+    } else if (p.rank === 2) ray(DIAG, captureOnly);
+    else if (p.rank === 3) ray(ORTH, captureOnly);
+    else if (p.rank === 4) {
+      for (const [dr, dc] of [...ORTH, ...DIAG]) {
+        const r = p.r + dr,
+          c = p.c + dc;
+        if (!captureOnly || occupiedTarget(r, c)) add(r, c, [[r, c]]);
+      }
+    } else ray([...ORTH, ...DIAG], captureOnly);
   }
-  if (!mobile && has(p, "Predação")) {
-    for (const [dr, dc] of [...ORTH, ...DIAG]) {
-      const r = p.r + dr,
-        c = p.c + dc,
-        victim = at(state, r, c);
-      if (victim?.owner && victim.owner !== p.owner)
-        add(r, c, [], { contactCapture: true });
-    }
-  }
+  const mobile = has(p, "Locomoção") || has(p, "Locomoção Avançada");
+  if (mobile) chessTargets(false);
+  else if (has(p, "Predação")) chessTargets(true);
   const collector = has(p, "Coletor"),
     canUseFertility = !has(p, "Carnívoro") || has(p, "Onívoro");
   if (
