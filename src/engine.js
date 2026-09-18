@@ -263,6 +263,7 @@ function executeMove(ctx, action) {
     for (const [r, c] of target.path)
       if (
         terrain(state, r, c) === "hostile" &&
+        !(has(p, "Dormência") && r === target.r && c === target.c) &&
         !(
           p.decompositionImmunity &&
           p.decompositionImmunity.cell === square(r, c) &&
@@ -273,7 +274,7 @@ function executeMove(ctx, action) {
           state,
           "Casas hostis",
           [
-            "Cada casa atravessada tem 50% de risco; Carapaça reduz o risco para 34%. Voo oferece imunidade.",
+            "Cada casa hostil atravessada tem 50% de risco; Carapaça reduz para 34%, Voo oferece imunidade e Dormência protege a casa de chegada ao imobilizar a criatura.",
           ],
           "hostile",
         );
