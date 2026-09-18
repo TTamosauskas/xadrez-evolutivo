@@ -132,6 +132,31 @@ test("dysfunctional rest fades the piece without adding a sleep badge", () => {
   dom.window.close();
 });
 
+test("Polegar Opositor renders colored adjacent transfer choices", () => {
+  const dom = setup(),
+    s = createState(24),
+    p = s.pieces.find((piece) => piece.owner === "blue");
+  s.board.fill("neutral");
+  p.r = 4;
+  p.c = 4;
+  s.phase = "manipulate";
+  s.manipulation = {
+    id: p.id,
+    origin: 36,
+    terrain: "fertile",
+    second: false,
+    locomotion: false,
+  };
+
+  render(dom.window.document, s, { selected: p.id });
+  const d = dom.window.document;
+  assert.equal(d.querySelectorAll(".manipulate-fertile").length, 8);
+  assert.equal(d.getElementById("pass").textContent, "Não transferir");
+  assert.equal(d.getElementById("pass").disabled, false);
+  assert.ok(d.getElementById("undo-neocortex").hidden);
+  dom.window.close();
+});
+
 test("application UI can play, acknowledge reproduction, save, load and reset", async () => {
   const dom = setup(),
     w = dom.window;
