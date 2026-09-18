@@ -18,7 +18,7 @@ import {
 } from "./moves.js";
 import { reproduce, harvest, scatterSeeds } from "./reproduction.js";
 import { checkPopulation, tickDiseases, infect } from "./disease.js";
-import { tickEnvironment } from "./environment.js";
+import { markDecomposition, tickEnvironment } from "./environment.js";
 export function context(state) {
   const ctx = {
     state,
@@ -95,7 +95,15 @@ function advanceTurn(ctx) {
       p.venom.remaining--;
       if (p.venom.remaining <= 0) ctx.kill(p.id, "Veneno");
     }
-  for (const p of state.pieces) moveDirection(p);
+  for (const p of state.pieces) {
+    moveDirection(p);
+    if (
+      p.owner === acting &&
+      p.decompositionImmunity &&
+      before >= p.decompositionImmunity.throughTurn
+    )
+      delete p.decompositionImmunity;
+  }
   if (extinction(state)) return;
   state.turn++;
   state.current = other(acting);
@@ -110,6 +118,11 @@ function advanceTurn(ctx) {
       if (
         terrain(state, p.r, p.c) === "hostile" &&
         !has(p, "Voo") &&
+        !(
+          p.decompositionImmunity &&
+          p.decompositionImmunity.cell === square(p.r, p.c) &&
+          state.turn <= p.decompositionImmunity.throughTurn
+        ) &&
         p.hostileRiskRound !== round(state)
       ) {
         p.hostileRiskRound = round(state);
@@ -163,7 +176,14 @@ function executeMove(ctx, action) {
   harvest(state, p, p.r, p.c);
   if (!has(p, "Voo"))
     for (const [r, c] of target.path)
-      if (terrain(state, r, c) === "hostile") {
+      if (
+        terrain(state, r, c) === "hostile" &&
+        !(
+          p.decompositionImmunity &&
+          p.decompositionImmunity.cell === square(r, c) &&
+          state.turn <= p.decompositionImmunity.throughTurn
+        )
+      ) {
         notice(
           state,
           "Casas hostis",
@@ -185,14 +205,23 @@ function executeMove(ctx, action) {
   const victim = at(state, target.r, target.c),
     capture = !!victim && victim.id !== p.id;
   ctx.reserved.add(square(target.r, target.c));
-  if (capture) ctx.kill(victim.id, "captura", p);
+  if (capture) {
+    ctx.kill(victim.id, "captura", p);
+    const cell = square(target.r, target.c);
+    markDecomposition(state, cell);
+    p.decompositionImmunity = {
+      cell,
+      throughTurn: state.turn + 2,
+    };
+  }
   p.r = target.r;
   p.c = target.c;
   moveDirection(p);
   ctx.reserved.delete(square(p.r, p.c));
-  harvest(state, p, p.r, p.c);
+  if (!capture) harvest(state, p, p.r, p.c);
   const collectorStay = has(p, "Coletor") && target.stay && p.seeds > 0;
-  const fertile = terrain(state, p.r, p.c) === "fertile" || collectorStay;
+  const fertile =
+    (!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay;
   const predation = capture && has(p, "Predação");
   log(
     state,
