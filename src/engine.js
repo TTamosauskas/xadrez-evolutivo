@@ -48,6 +48,13 @@ function finishGame(state, winner, reason) {
   state.phase = "over";
   state.chain = null;
   state.partner = null;
+  state.notices = [
+    {
+      id: state.nextNotice++,
+      title: winner ? `🏆 ${OWNERS[winner]} venceram` : "Empate",
+      lines: [reason],
+    },
+  ];
   log(state, reason);
 }
 function extinction(state) {
