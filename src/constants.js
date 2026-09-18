@@ -13,7 +13,7 @@ export const TRAITS = {
     "Permite uma segunda movimentação no mesmo turno.",
   ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
-  Predação: ["🦈", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese. Sem Locomoção, apenas capturas são permitidas."],
+  Predação: ["🦈", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
   Carnívoro: [
     "🦁",
     "Especialização de uma linhagem com Predação: reproduz ao eliminar uma peça e deixa de usar casas férteis.",
