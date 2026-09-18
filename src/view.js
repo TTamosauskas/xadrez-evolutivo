@@ -177,46 +177,46 @@ export function render(
       ?.focus({ preventScroll: true });
   $("pass").disabled = locked || state.phase !== "move";
   $("pass").textContent = state.chain ? "Encerrar movimento" : "Passar vez";
-  $("selected").replaceChildren(
-    ...(actor
-      ? [
-          make(
-            "strong",
-            `${SYMBOLS[actor.owner][actor.rank]} ${PIECES[actor.rank]} · ${coord(actor.r, actor.c)} · ${state.generationOffset + actor.generation + 1}ª Geração`,
-          ),
-          make(
-            "p",
-            actor.traits.length
-              ? actor.traits
-                  .map((t) => `${TRAITS[t][0]} ${t}`)
-                  .join(" · ")
-              : "🧬 Perfil ancestral",
-          ),
-          ...(actor.infection
-            ? [
-                make(
-                  "p",
-                  `🦠 Desfecho em ${Math.max(0, actor.infection.due - round(state))} rodadas.`,
-                ),
-              ]
-            : []),
-        ]
-      : [make("span", "Selecione uma peça para ver suas características.")]),
-  );
-  const active = [...new Set(state.pieces.flatMap((p) => p.traits))];
-  const traitRows = active.map((t) => {
-    const e = make("div", undefined, "trait");
-    e.append(
-      make("strong", `${TRAITS[t][0]} ${t}`),
-      make("small", TRAITS[t][1]),
+  if (actor) {
+    const ownerName = actor.owner === "blue" ? "Branco" : "Preto",
+      heading = make("div", undefined, "selected-piece-heading"),
+      symbol = applyAestheticStyle(
+        make(
+          "span",
+          SYMBOLS[actor.owner][actor.rank],
+          `piece ${actor.owner} selected-piece-symbol`,
+        ),
+        actor.aestheticGenes,
+      );
+    heading.append(
+      symbol,
+      doc.createTextNode(` ${PIECES[actor.rank]} (${ownerName})`),
     );
-    return e;
-  });
-  $("traits").replaceChildren(
-    ...(traitRows.length
-      ? traitRows
-      : [make("span", "As mutações aparecem com os nascimentos.")]),
-  );
+
+    const details = actor.traits.map((trait) => {
+      const row = make("div", undefined, "trait selected-trait");
+      row.append(
+        make("strong", `${TRAITS[trait][0]} ${trait}`),
+        make("small", TRAITS[trait][1]),
+      );
+      return row;
+    });
+    if (!details.length)
+      details.push(make("p", "🧬 Perfil ancestral", "selected-ancestral"));
+    if (actor.infection)
+      details.push(
+        make(
+          "p",
+          `🦠 Desfecho em ${Math.max(0, actor.infection.due - round(state))} rodadas.`,
+          "selected-status",
+        ),
+      );
+    $("selected").replaceChildren(heading, ...details);
+  } else {
+    $("selected").replaceChildren(
+      make("span", "Selecione uma peça para ver suas características."),
+    );
+  }
   const gameOverDialog = $("game-over-dialog");
   if (state.result) {
     const winner = state.result.winner;
