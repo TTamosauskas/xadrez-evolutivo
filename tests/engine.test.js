@@ -13,7 +13,8 @@ import { context, transition, simulate } from "../src/engine.js";
 import { movesFor } from "../src/moves.js";
 import { startEvent, tickEnvironment } from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
-import { reproduce } from "../src/reproduction.js";
+import { reproduce, tickReproduction } from "../src/reproduction.js";
+import { cloneReproGenes } from "../src/reproductive-genetics.js";
 import { EVENTS, TRAITS } from "../src/constants.js";
 
 test("invalid actions roll back the complete state, including random generator", () => {
@@ -492,6 +493,122 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 2);
   assertState(next);
 });
+test("Ovíparo stores the brood in one egg and hatches after three rounds", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ovíparo"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    ctx = context(s),
+    parent = s.pieces[0];
+
+  assert.equal(reproduce(ctx, parent), 1);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
+  assert.equal(s.eggs.length, 1);
+  assert.equal(s.eggs[0].brood.length, 1);
+  assert.equal(s.eggs[0].hatchRound, 3);
+
+  s.turn = 4;
+  tickReproduction(ctx);
+  assert.equal(s.eggs.length, 1);
+  s.turn = 6;
+  tickReproduction(ctx);
+  assert.equal(s.eggs.length, 0);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 2);
+  assertState(s);
+});
+
+test("Vivíparo carries the brood for three rounds and loses it with the parent", () => {
+  let s = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Vivíparo"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    ctx = context(s),
+    parent = s.pieces[0];
+
+  assert.equal(reproduce(ctx, parent), 1);
+  assert.equal(parent.pregnancies.length, 1);
+  assert.equal(parent.pregnancies[0].dueRound, 3);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
+  s.turn = 6;
+  tickReproduction(ctx);
+  assert.equal(parent.pregnancies.length, 0);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 2);
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Vivíparo"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  ctx = context(s);
+  parent = s.pieces[0];
+  reproduce(ctx, parent);
+  ctx.kill(parent.id, "teste");
+  s.turn = 6;
+  tickReproduction(ctx);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 0);
+});
+
+test("Esporos spreads siblings far across the board", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Esporos"] },
+      { owner: "amber", r: 3, c: 4 },
+    ]),
+    ctx = context(s),
+    parent = s.pieces[0];
+
+  assert.equal(reproduce(ctx, parent), 4);
+  const children = s.pieces.filter((p) => p.owner === "blue" && p.id !== parent.id);
+  assert.equal(children.length, 4);
+  for (let i = 0; i < children.length; i++)
+    for (let j = i + 1; j < children.length; j++)
+      assert.ok(
+        Math.max(
+          Math.abs(children[i].r - children[j].r),
+          Math.abs(children[i].c - children[j].c),
+        ) >= 3,
+      );
+  assertState(s);
+});
+
+test("only Ovífagia can capture an enemy egg and converts its brood into offspring", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Ovífagia"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    eater = s.pieces[0],
+    source = s.pieces[1],
+    profile = {
+      owner: "amber",
+      rank: 0,
+      traits: [],
+      reproGenes: cloneReproGenes(source.reproGenes),
+      mutations: 0,
+      generation: 1,
+      parentId: source.id,
+    };
+  s.eggs.push({
+    id: 1,
+    owner: "amber",
+    r: 4,
+    c: 4,
+    hatchRound: 3,
+    brood: [structuredClone(profile), structuredClone(profile)],
+    dispersal: "local",
+  });
+  s.nextEgg = 2;
+  s.maxGenerationReached = 1;
+
+  const without = clone(s);
+  without.pieces[0].traits = [];
+  assert.ok(!movesFor(without, without.pieces[0]).some((t) => t.r === 4 && t.c === 4));
+  assert.ok(movesFor(s, eater).some((t) => t.r === 4 && t.c === 4));
+
+  const next = simulate(s, move(eater, 4, 4));
+  assert.equal(next.eggs.length, 0);
+  assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 3);
+  assert.equal(next.deathSites.length, 0);
+  assertState(next);
+});
+
 test("stale revisions cannot advance the turn", () => {
   const s = createState(1);
   assert.equal(transition(s, { type: "PASS", revision: 100 }), s);
