@@ -132,7 +132,7 @@ test("venom excludes capture turn and kills after two later own turns", () => {
   s = simulate(s, { type: "PASS" });
   assert.ok(!s.pieces.some((p) => p.id === 1));
 });
-test("each hostile ray square consumes risk; Voo bypasses it; knight only tests landing", () => {
+test("Voo bypasses hostile traversal but not hostile landing; knight only tests landing", () => {
   let s = fixture([
     { owner: "blue", r: 6, c: 3, rank: 3 },
     { owner: "amber", r: 0, c: 0 },
@@ -142,10 +142,19 @@ test("each hostile ray square consumes risk; Voo bypasses it; knight only tests 
   s.board[35] = "hostile";
   const lost = simulate(s, move(s.pieces[0], 3, 3));
   assert.ok(!lost.pieces.some((p) => p.id === 1));
+
   s.pieces[0].traits = ["Voo"];
   assert.ok(
     simulate(s, move(s.pieces[0], 3, 3)).pieces.some((p) => p.id === 1),
   );
+
+  s.board[27] = "hostile";
+  s.rng = 1;
+  assert.ok(
+    !simulate(s, move(s.pieces[0], 3, 3)).pieces.some((p) => p.id === 1),
+  );
+
+  s.board[27] = "neutral";
   s.pieces[0].traits = [];
   s.pieces[0].rank = 1;
   assert.ok(
@@ -327,6 +336,7 @@ test("Necrófago consumes red and green decomposition to reproduce", () => {
   ]);
   s.board[36] = "hostile";
   s.deathSites.push({ cell: 36, dueRound: 3, base: "neutral" });
+  s.rng = 1000;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
   assert.equal(s.deathSites.length, 0);
@@ -370,6 +380,23 @@ test("capture creates hostile decomposition, protects attacker and fertilizes af
   assert.equal(s.board[36], "hostile");
   assert.equal(attacker.decompositionImmunity.cell, 36);
   assert.equal(attacker.decompositionImmunity.throughTurn, 2);
+
+  s.rng = 1;
+  s = simulate(s, { type: "PASS" });
+  assert.ok(s.pieces.some((p) => p.id === attacker.id));
+  assert.equal(s.turn, 2);
+  s = simulate(s, { type: "PASS" });
+  assert.ok(s.pieces.some((p) => p.id === attacker.id));
+  s.rng = 1;
+  s = simulate(s, { type: "PASS" });
+  assert.ok(!s.pieces.some((p) => p.id === attacker.id));
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3 },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s = simulate(s, move(s.pieces[0], 4, 4));
   s.turn = 4;
   tickEnvironment(context(s));
   assert.equal(s.board[36], "hostile");
@@ -675,6 +702,7 @@ test("Dormência immobilizes on hostile terrain but the piece remains capturable
     { owner: "amber", r: 4, c: 4, traits: ["Dormência"] },
   ]);
   s.board[36] = "hostile";
+  s.rng = 1000;
   const sleeper = s.pieces[1],
     attacker = s.pieces[0];
   assert.equal(movesFor(s, sleeper).length, 0);
@@ -753,6 +781,7 @@ test("Construção de Nicho neutralizes a stable hostile landing after survival"
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "hostile";
+  s.rng = 1000;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.equal(s.board[36], "neutral");
   assert.equal(s.pieces[0].r, 4);
