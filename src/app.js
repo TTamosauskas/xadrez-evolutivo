@@ -3,7 +3,7 @@ import { Controller } from "./controller.js";
 import { render } from "./view.js";
 import { movesFor, partnersFor } from "./moves.js";
 import { at } from "./state.js";
-import { save, load, deserialize } from "./storage.js";
+import { save, deserialize } from "./storage.js";
 import { TRAITS } from "./constants.js";
 const $ = (id) => document.getElementById(id);
 let selected = null,
@@ -27,7 +27,7 @@ try {
     controller.difficulty = difficulty;
 } catch {
   report(
-    "O navegador restringiu o armazenamento. Você pode exportar a partida para um arquivo.",
+    "O navegador restringiu o armazenamento. As preferências ficam disponíveis apenas nesta sessão.",
   );
 }
 $("mode").value = controller.mode;
@@ -112,6 +112,25 @@ function info(title, lines, action = null) {
   $("info-title").textContent = title;
   $("info-content").replaceChildren(
     ...lines.map((text) => {
+      const trait = Object.entries(TRAITS).find(
+        ([name, [icon]]) => text.startsWith(`${icon} ${name}:`),
+      );
+      if (trait) {
+        const [name, [icon]] = trait;
+        const item = document.createElement("div");
+        item.className = "mutation-item";
+        const iconElement = document.createElement("span");
+        iconElement.className = "mutation-icon";
+        iconElement.textContent = icon;
+        const copy = document.createElement("span");
+        copy.className = "mutation-copy";
+        copy.textContent = text.slice(`${icon} ${name}: `.length);
+        const strong = document.createElement("strong");
+        strong.textContent = name;
+        copy.prepend(strong, document.createTextNode(": "));
+        item.append(iconElement, copy);
+        return item;
+      }
       const p = document.createElement("p");
       p.textContent = text;
       return p;
@@ -166,32 +185,6 @@ $("save").addEventListener("click", () => {
     report(`Falha ao salvar: ${error.message}`);
     closeMenu();
   }
-});
-$("load").addEventListener("click", () => {
-  try {
-    const state = load(localStorage);
-    selected = null;
-    controller.replace(state);
-    closeMenu();
-    report("Partida carregada.");
-  } catch (error) {
-    closeMenu();
-    report(`Falha ao carregar: ${error.message}`);
-  }
-});
-$("export").addEventListener("click", () => {
-  const url = URL.createObjectURL(
-    new Blob([JSON.stringify(controller.state, null, 2)], {
-      type: "application/json",
-    }),
-  );
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "xadrez-evolutivo-partida.json";
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  report("Partida exportada.");
-  closeMenu();
 });
 $("import").addEventListener("click", () => $("import-file").click());
 $("import-file").addEventListener("change", async (event) => {
