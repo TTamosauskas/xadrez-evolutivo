@@ -34,6 +34,7 @@ import {
   syncReproTraits,
 } from "./reproductive-genetics.js";
 import {
+  applyTraitMutation,
   deleteriousMutationUnlocked,
   innovationWeight,
   normalizeEnergyBranch,
@@ -162,7 +163,7 @@ function mutation(state, p, positiveOnly) {
     syncReproTraits(p);
     label = `Perda de ${choice.geneLoss}`;
   } else if (choice.gain) {
-    p.traits.push(choice.gain);
+    p.traits = applyTraitMutation(p.traits, choice.gain);
     label = choice.gain;
   } else {
     p.traits = p.traits.filter((t) => t !== choice.loss);
