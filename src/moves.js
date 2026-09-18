@@ -12,16 +12,26 @@ const ORTH = [
     [1, -1],
     [1, 1],
   ];
-export const resting = (state, p) =>
+export const dysfunctionalResting = (state, p) =>
   has(p, "Mutação Disfuncional") &&
   Number.isInteger(p.lastMoveRound) &&
   round(state) + 1 <= p.lastMoveRound + 1;
+export const regenerationResting = (state, p) =>
+  Number.isInteger(p.regenerationRestThroughRound) &&
+  round(state) <= p.regenerationRestThroughRound;
+export const dormant = (state, p) =>
+  has(p, "Dormência") &&
+  !has(p, "Voo") &&
+  terrain(state, p.r, p.c) === "hostile";
+export const resting = (state, p) =>
+  dysfunctionalResting(state, p) || regenerationResting(state, p);
 export function movesFor(state, p, { ignoreChain = false } = {}) {
   if (
     !p ||
     state.result ||
     !state.pieces.some((x) => x.id === p.id) ||
-    resting(state, p)
+    resting(state, p) ||
+    dormant(state, p)
   )
     return [];
   if (!ignoreChain && state.chain && state.chain !== p.id) return [];
@@ -31,8 +41,21 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     const victim = at(state, r, c),
       egg = eggAt(state, r, c);
     if (victim?.owner === p.owner || egg?.owner === p.owner) return;
-    if (egg && !has(p, "Ovífagia")) return;
-    if (victim && has(victim, "Camuflagem") && distance(p, victim) > 1) return;
+    if (egg) {
+      const parent = state.pieces.find((piece) => piece.id === egg.parentId),
+        protectedEgg =
+          parent &&
+          has(parent, "Cuidado Parental") &&
+          distance(parent, egg) === 1;
+      if (!has(p, "Ovífagia") || protectedEgg) return;
+    }
+    if (
+      victim &&
+      has(victim, "Camuflagem") &&
+      distance(p, victim) > 1 &&
+      !has(p, "Visão Noturna")
+    )
+      return;
     targets.push({
       r,
       c,
@@ -105,6 +128,7 @@ export function partnersFor(state, p) {
       x.id !== p.id &&
       x.owner === p.owner &&
       !has(x, "Esterilidade") &&
+      !dormant(state, x) &&
       distance(p, x) === 1,
   );
 }
@@ -126,7 +150,9 @@ export function legalActions(state) {
     );
 }
 export function canWaitForRest(state, owner) {
-  return state.pieces.some((p) => p.owner === owner && resting(state, p));
+  return state.pieces.some(
+    (p) => p.owner === owner && (resting(state, p) || dormant(state, p)),
+  );
 }
 export function canWaitForBirth(state, owner) {
   return (
