@@ -55,6 +55,31 @@ test("renders one board occupant per piece and exactly one stylesheet and module
   assert.equal(d.querySelectorAll("link[rel=stylesheet]").length, 1);
   dom.window.close();
 });
+test("selected panel inspects either side and explains only that piece traits", () => {
+  const dom = setup(),
+    s = createState(21),
+    opponent = s.pieces.find((p) => p.owner === "amber");
+  opponent.traits = ["Resistência", "Reprodução Sexuada"];
+
+  render(dom.window.document, s, { selected: opponent.id });
+  const d = dom.window.document,
+    selected = d.getElementById("selected");
+
+  assert.match(selected.textContent, /♟ Peão \(Preto\)/);
+  assert.match(selected.textContent, /🧬 Resistência/);
+  assert.match(
+    selected.textContent,
+    /Impede novas infecções pelo Patógeno Virulento/,
+  );
+  assert.match(selected.textContent, /❤️ Reprodução Sexuada/);
+  assert.match(
+    selected.textContent,
+    /Combina características de dois progenitores/,
+  );
+  assert.equal(d.getElementById("traits"), null);
+  assert.equal(d.querySelectorAll(".cell.legal").length, 0);
+  dom.window.close();
+});
 test("aesthetic genes alter only the rendered piece phenotype", () => {
   const dom = setup(),
     s = createState(3),
@@ -131,6 +156,9 @@ test("application UI can play, acknowledge reproduction, save, load and reset", 
     await import("../src/app.js");
     const d = w.document;
     const click = (id) => d.getElementById(id).click();
+    d.querySelector(".piece.amber").parentElement.click();
+    assert.match(d.getElementById("selected").textContent, /\(Preto\)/);
+    assert.equal(d.querySelectorAll(".cell.legal").length, 0);
     let turns = 0;
     while (
       turns < 40 &&
