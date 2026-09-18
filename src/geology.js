@@ -263,11 +263,16 @@ export function geologicalLabel(state) {
 export function cycleRequiredInnovations(state) {
   const stage = currentGeologicalStage(state);
   if (!stage.cycles?.length) return [...stage.required];
-  const cycleIndex = Math.min(
-    Math.max(1, state.cycle ?? 1) - 1,
-    stage.cycles.length - 1,
-  );
-  return [...stage.cycles[cycleIndex]];
+  const history = new Set(state.historicalTraits ?? []),
+    availableCount = Math.min(
+      Math.max(1, state.cycle ?? 1),
+      stage.cycles.length,
+    ),
+    available = stage.cycles.slice(0, availableCount),
+    pending = available.find((group) =>
+      group.some((trait) => !history.has(trait)),
+    );
+  return [...(pending ?? available.at(-1) ?? stage.required)];
 }
 
 export function missingInnovations(state) {
