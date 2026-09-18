@@ -8,7 +8,7 @@ export const SYMBOLS = {
 export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
 export const TRAITS = {
   Locomoção: ["🐪", "Permite uma segunda movimentação no mesmo turno."],
-  Voo: ["🐦", "Permite atravessar e permanecer em casas hostis."],
+  Voo: ["🐦", "Permite atravessar casas hostis."],
   Predador: [
     "🦁",
     "Reproduz ao eliminar uma peça, mas não usa casas férteis.",
