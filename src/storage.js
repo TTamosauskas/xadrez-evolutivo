@@ -1,5 +1,9 @@
 import { createState, newPiece, assertState, round, notice } from "./state.js";
 import { TRAITS, EVENTS, PIECES, square, has } from "./constants.js";
+import {
+  normalizeReproGenes,
+  syncReproTraits,
+} from "./reproductive-genetics.js";
 export const SAVE_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
 const traitName = (name) => (name === "Predação" ? "Predador" : name);
@@ -48,9 +52,34 @@ export function deserialize(raw) {
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
   if (data?.version === 2) {
+    const normalizeProfile = (profile) => {
+      profile.traits = [...new Set((profile.traits ?? []).map(traitName))];
+      profile.reproGenes = normalizeReproGenes(
+        profile.reproGenes,
+        profile.traits,
+      );
+      syncReproTraits(profile);
+      return profile;
+    };
     if (Array.isArray(data.pieces))
-      for (const piece of data.pieces)
-        piece.traits = [...new Set((piece.traits ?? []).map(traitName))];
+      for (const piece of data.pieces) {
+        normalizeProfile(piece);
+        piece.pregnancies = Array.isArray(piece.pregnancies)
+          ? piece.pregnancies.map((pregnancy) => ({
+              ...pregnancy,
+              brood: (pregnancy.brood ?? []).map(normalizeProfile),
+            }))
+          : [];
+      }
+    data.eggs = Array.isArray(data.eggs)
+      ? data.eggs.map((egg) => ({
+          ...egg,
+          brood: (egg.brood ?? []).map(normalizeProfile),
+        }))
+      : [];
+    data.nextEgg = Number.isInteger(data.nextEgg)
+      ? data.nextEgg
+      : Math.max(0, ...data.eggs.map((egg) => egg.id ?? 0)) + 1;
     data.seenMutations = historicalMutations(data);
     const liveMax = Array.isArray(data.pieces)
       ? Math.max(0, ...data.pieces.map((p) => p.generation ?? 0))
