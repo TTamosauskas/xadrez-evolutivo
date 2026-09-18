@@ -10,25 +10,31 @@ import {
   priorRequiredInnovations,
   isNegativeTrait,
 } from "./geology.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v3";
+export const SAVE_KEY = "xadrez-evolutivo-save-v4";
+export const V3_KEY = "xadrez-evolutivo-save-v3";
 export const V2_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
-const traitName = (name) => (name === "Predação" ? "Predador" : name);
+const currentTraitName = (name) => name;
+const v3TraitName = (name) => (name === "Predador" ? "Carnívoro" : name);
+const legacyTraitName = (name) =>
+  name === "Predador" || name === "Predação" ? "Carnívoro" : name;
 const v2TraitName = (name) =>
-  name === "Locomoção" ? "Locomoção Avançada" : traitName(name);
-const mutationLabel = (label, legacyV2 = false) => {
-  const mapped =
-    label === "Predação"
-      ? "Predador"
-      : label === "Perda de Predação"
-        ? "Perda de Predador"
-        : label;
-  if (!legacyV2) return mapped;
-  if (mapped === "Locomoção") return "Locomoção Avançada";
-  if (mapped === "Perda de Locomoção") return "Perda de Locomoção Avançada";
+  name === "Locomoção" ? "Locomoção Avançada" : legacyTraitName(name);
+const mutationLabel = (label, version = 4) => {
+  let mapped = label;
+  if (version <= 3) {
+    if (mapped === "Predador") mapped = "Carnívoro";
+    if (mapped === "Perda de Predador") mapped = "Perda de Carnívoro";
+  }
+  if (version <= 2) {
+    if (mapped === "Predação") mapped = "Carnívoro";
+    if (mapped === "Perda de Predação") mapped = "Perda de Carnívoro";
+    if (mapped === "Locomoção") mapped = "Locomoção Avançada";
+    if (mapped === "Perda de Locomoção") mapped = "Perda de Locomoção Avançada";
+  }
   return mapped;
 };
-function historicalMutations(data, legacyV2 = false) {
+function historicalMutations(data, version = 4) {
   const valid = new Set([
       ...Object.keys(TRAITS),
       ...Object.keys(TRAITS).map((t) => `Perda de ${t}`),
@@ -37,14 +43,14 @@ function historicalMutations(data, legacyV2 = false) {
     seen = new Set(
       Array.isArray(data.seenMutations)
         ? data.seenMutations
-            .map((label) => mutationLabel(label, legacyV2))
+            .map((label) => mutationLabel(label, version))
             .filter((m) => valid.has(m))
         : [],
     );
   for (const notice of data.notices ?? [])
     if (notice?.title === "Novas mutações")
       for (const line of notice.lines ?? []) {
-        const label = mutationLabel(line, legacyV2);
+        const label = mutationLabel(line, version);
         if (valid.has(label)) seen.add(label);
       }
   for (const entry of data.logs ?? []) {
@@ -53,7 +59,7 @@ function historicalMutations(data, legacyV2 = false) {
     const colon = text.indexOf(": "),
       label = mutationLabel(
         (colon >= 0 ? text.slice(colon + 2) : text).replace(/\.$/, ""),
-        legacyV2,
+        version,
       );
     if (valid.has(label)) seen.add(label);
   }
@@ -69,12 +75,19 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if (data?.version === 3 || data?.version === 2) {
-    const legacyV2 = data.version === 2,
+  if ([4, 3, 2].includes(data?.version)) {
+    const sourceVersion = data.version,
+      legacyV2 = sourceVersion === 2,
+      legacyV3 = sourceVersion === 3,
       normalizeProfile = (profile) => {
-        const mapper = legacyV2 ? v2TraitName : traitName,
+        const mapper = legacyV2
+            ? v2TraitName
+            : legacyV3
+              ? v3TraitName
+              : currentTraitName,
           traits = new Set((profile.traits ?? []).map(mapper));
         if (legacyV2) traits.add("Locomoção");
+        if (sourceVersion < 4) traits.add("Predação");
         profile.traits = [...traits].filter((trait) => TRAITS[trait]);
         profile.reproGenes = normalizeReproGenes(
           profile.reproGenes,
@@ -103,7 +116,9 @@ export function deserialize(raw) {
       ? data.nextEgg
       : Math.max(0, ...data.eggs.map((egg) => egg.id ?? 0)) + 1;
     if (data.manipulation === undefined) data.manipulation = null;
-    data.seenMutations = historicalMutations(data, legacyV2);
+    if (data.building === undefined) data.building = null;
+    if (!Array.isArray(data.barriers)) data.barriers = [];
+    data.seenMutations = historicalMutations(data, sourceVersion);
     const liveMax = Array.isArray(data.pieces)
       ? Math.max(0, ...data.pieces.map((p) => p.generation ?? 0))
       : 0;
@@ -143,9 +158,20 @@ export function deserialize(raw) {
           ...[...observed].filter((trait) => !isNegativeTrait(trait)),
         ]),
       ];
-      data.version = 3;
       delete data.era;
     }
+    if (legacyV3) {
+      data.historicalTraits = [
+        ...new Set(
+          (data.historicalTraits ?? [])
+            .map(v3TraitName)
+            .filter((trait) => TRAITS[trait]),
+        ),
+      ];
+    }
+    if (sourceVersion < 4 && !data.historicalTraits.includes("Predação"))
+      data.historicalTraits.push("Predação");
+    data.version = 4;
     if (!Number.isInteger(data.cycle) || data.cycle < 1) data.cycle = 1;
     if (!Number.isInteger(data.totalCycles) || data.totalCycles < data.cycle)
       data.totalCycles = data.cycle;
@@ -200,6 +226,7 @@ export function deserialize(raw) {
       (profile.traits ?? []).map(v2TraitName).filter((t) => TRAITS[t]),
     );
     traits.add("Locomoção");
+    traits.add("Predação");
     for (const entry of profile.mutationStack ?? []) {
       const name = v2TraitName(entry.name);
       if (entry.kind === "trait" && TRAITS[name]) traits.add(name);
@@ -312,7 +339,7 @@ export function deserialize(raw) {
   state.logs = (data.logs ?? [])
     .slice(0, 150)
     .map((l) => ({ turn: state.turn, text: l.msg ?? l.text ?? "" }));
-  state.seenMutations = historicalMutations(data, true);
+  state.seenMutations = historicalMutations(data, 2);
   const observed = new Set([
       ...state.pieces.flatMap((piece) => piece.traits),
       ...state.seenMutations.filter((label) => TRAITS[label]),
@@ -329,6 +356,7 @@ export function deserialize(raw) {
     ...new Set([
       ...priorRequiredInnovations(stage.id),
       ...[...observed].filter((trait) => !isNegativeTrait(trait)),
+      "Predação",
     ]),
   ];
   notice(state, "Partida importada", [
@@ -343,6 +371,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V3_KEY) ??
     storage.getItem(V2_KEY) ??
     storage.getItem(LEGACY_KEY);
   if (!raw) throw Error("Nenhuma partida salva neste navegador.");
