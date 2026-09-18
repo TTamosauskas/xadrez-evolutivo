@@ -367,6 +367,10 @@ function executeMove(ctx, action) {
       cell,
       throughTurn: state.turn + 2,
     };
+    log(
+      state,
+      `${OWNERS[p.owner]}: imunidade à decomposição em ${coord(target.r, target.c)} por uma rodada.`,
+    );
   }
   if (eggCapture) state.eggs = state.eggs.filter((x) => x.id !== egg.id);
   p.r = target.r;
