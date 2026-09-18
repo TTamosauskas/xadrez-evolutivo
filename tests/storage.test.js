@@ -6,6 +6,7 @@ import {
   load,
   LEGACY_KEY,
   SAVE_KEY,
+  V3_KEY,
   V2_KEY,
 } from "../src/storage.js";
 import { createState, clone } from "../src/state.js";
@@ -33,9 +34,35 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
       getItem: (k) => entries.get(k) ?? null,
     };
   const migrated = load(storage);
-  assert.equal(migrated.version, 3);
+  assert.equal(migrated.version, 4);
   assert.equal(entries.get(V2_KEY), raw);
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Locomoção")));
+  assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
+});
+
+test("v3 saves rename Predador to Carnívoro and preserve capture with Predação", () => {
+  const old = createState(8);
+  old.version = 3;
+  delete old.barriers;
+  delete old.building;
+  old.pieces[0].traits.push("Predador");
+  old.historicalTraits = ["Predador", "Locomoção"];
+  const raw = JSON.stringify(old),
+    entries = new Map([[V3_KEY, raw]]),
+    storage = {
+      setItem: (k, v) => entries.set(k, v),
+      getItem: (k) => entries.get(k) ?? null,
+    },
+    migrated = load(storage);
+  assert.equal(migrated.version, 4);
+  assert.ok(migrated.pieces[0].traits.includes("Carnívoro"));
+  assert.ok(migrated.pieces[0].traits.includes("Predação"));
+  assert.ok(!migrated.pieces[0].traits.includes("Predador"));
+  assert.ok(migrated.historicalTraits.includes("Carnívoro"));
+  assert.ok(migrated.historicalTraits.includes("Predação"));
+  assert.deepEqual(migrated.barriers, []);
+  assert.equal(migrated.building, null);
+  assert.equal(entries.get(V3_KEY), raw);
 });
 
 test("save version uses separate key and preserves original save", () => {
@@ -92,7 +119,7 @@ test("imports legacy positions, specialization loss, seeds, poison and timers", 
   assert.equal(s.turn, 3);
   assert.equal(s.pieces[0].venom.remaining, 2);
 });
-test("v2 saves migrate old locomotion semantics and Ovos genes into v3", () => {
+test("v2 saves migrate old locomotion semantics and Ovos genes into v4", () => {
   const old = createState(9);
   old.version = 2;
   old.era = 4;
@@ -109,7 +136,7 @@ test("v2 saves migrate old locomotion semantics and Ovos genes into v3", () => {
   old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
-  assert.equal(s.version, 3);
+  assert.equal(s.version, 4);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "eggs");
@@ -120,6 +147,19 @@ test("v2 saves migrate old locomotion semantics and Ovos genes into v3", () => {
   assert.ok(s.pieces.every((p) => Array.isArray(p.pregnancies)));
   assert.equal(s.totalCycles, 4);
   assert.ok(s.historicalTraits.includes("Locomoção"));
+});
+
+test("barriers and construction phase survive save round trip", () => {
+  const s = createState(13),
+    p = s.pieces.find((piece) => piece.owner === "blue");
+  s.barriers = [18, 19];
+  s.phase = "build";
+  s.building = {
+    id: p.id,
+    second: false,
+    locomotion: false,
+  };
+  assert.deepEqual(deserialize(JSON.stringify(s)), s);
 });
 
 test("terrain manipulation phase survives save round trip", () => {
