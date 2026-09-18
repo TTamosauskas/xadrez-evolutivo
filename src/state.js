@@ -269,6 +269,13 @@ export function createSuccessorState(previous, seed = Date.now()) {
     totalCycles = previous.totalCycles + 1,
     generationOffset =
       previous.generationOffset + previous.maxGenerationReached + 1;
+  if (
+    founder &&
+    previous.historicalTraits.includes("Locomoção") &&
+    !founder.traits.includes("Locomoção") &&
+    !founder.traits.includes("Locomoção Avançada")
+  )
+    founder.traits.push("Locomoção");
   const state = createState(seed, {
     geologicalStage,
     cycle,
