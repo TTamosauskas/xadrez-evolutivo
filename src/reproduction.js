@@ -38,6 +38,7 @@ import {
   rankMutationUnlocked,
   traitUnlocked,
 } from "./geology.js";
+import { mutationDiscoveryId, recordDiscovery } from "./discoveries.js";
 
 const NEGATIVE = ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"];
 const POSITIVE = Object.keys(TRAITS).filter(
@@ -87,9 +88,8 @@ function eusocialBonus(state, parent) {
 
 function mutation(state, p, positiveOnly) {
   const gains = [];
-  if (rankMutationUnlocked(state))
-    for (let rank = p.rank + 1; rank < 6; rank++)
-      gains.push({ rank, weight: 1 });
+  if (rankMutationUnlocked(state) && p.rank < PIECES.length - 1)
+    gains.push({ rank: p.rank + 1, weight: 1 });
   for (const trait of POSITIVE)
     if (!has(p, trait) && traitUnlocked(state, trait, p))
       gains.push({ gain: trait, weight: innovationWeight(state, trait, p) });
@@ -146,6 +146,8 @@ function mutation(state, p, positiveOnly) {
     state.seenMutations.push(label);
     notice(state, "Novas mutações", [label]);
   }
+  const discoveryId = mutationDiscoveryId(label);
+  if (discoveryId) recordDiscovery(state, "mutations", discoveryId);
   log(state, `${OWNERS[p.owner]}: ${label}.`);
 }
 
