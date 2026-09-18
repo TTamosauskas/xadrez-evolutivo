@@ -125,8 +125,15 @@ export function tickDiseases(ctx) {
         (disease.infected.length * disease.mortality) / 100,
       );
       if (disease.deaths < quota) {
-        disease.deaths++;
-        ctx.kill(p.id, "Patógeno Virulento");
+        if (ctx.kill(p.id, "Patógeno Virulento")) disease.deaths++;
+        else {
+          disease.survivors.push(p.id);
+          delete p.infection;
+          log(
+            state,
+            `${OWNERS[p.owner]}: uma peça regenerou e sobreviveu ao patógeno.`,
+          );
+        }
       } else {
         disease.survivors.push(p.id);
         delete p.infection;
