@@ -1,5 +1,5 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
-import { at, dominantLineage, round, signature } from "./state.js";
+import { at, eggAt, dominantLineage, round, signature } from "./state.js";
 import { movesFor, partnersFor, resting } from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
@@ -79,6 +79,7 @@ export function render(
   for (let r = 0; r < 8; r++)
     for (let c = 0; c < 8; c++) {
       const p = at(state, r, c),
+        egg = eggAt(state, r, c),
         target = targets.some((t) => t.r === r && t.c === c),
         partner = mates.some((m) => m.id === p?.id),
         deathSite = state.deathSites.find((d) => d.cell === square(r, c)),
@@ -87,7 +88,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${decompositionMark ? " decomposition" : ""}${p ? " occupied" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${partner ? " partner" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${decompositionMark ? " decomposition" : ""}${p || egg ? " occupied" : ""}${egg ? " egg" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${partner ? " partner" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -97,17 +98,26 @@ export function render(
         hostile: "casa hostil",
         neutral: "casa neutra",
       }[state.board[square(r, c)]];
-      const label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
+      const eggLabel = egg
+          ? `, ovo das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s)`
+          : "",
+        label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : eggLabel || ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
+      if (egg) cell.append(make("span", "🥚", "egg-mark"));
       if (p) {
         cell.append(make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`));
         const badges = p.traits.map((t) => TRAITS[t][0]);
         if (p.infection) badges.push("🦠");
         if (p.venom) badges.push("☠");
         if (p.seeds) badges.push(`${p.seeds}🌰`);
+        const carried = (p.pregnancies ?? []).reduce(
+          (sum, pregnancy) => sum + pregnancy.brood.length,
+          0,
+        );
+        if (carried) badges.push(`+${carried}`);
         if (resting(state, p)) badges.push("💤");
         cell.append(make("span", badges.slice(0, 5).join(""), "badges"));
       }
@@ -150,6 +160,14 @@ export function render(
         make(
           "p",
           `🦠 Desfecho em ${Math.max(0, actor.infection.due - round(state))} rodadas.`,
+          "selected-status",
+        ),
+      );
+    for (const pregnancy of actor.pregnancies ?? [])
+      details.push(
+        make(
+          "p",
+          `🎈 +${pregnancy.brood.length} · nascimento em ${Math.max(0, pregnancy.dueRound - round(state))} rodada(s).`,
           "selected-status",
         ),
       );
