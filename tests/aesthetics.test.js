@@ -97,8 +97,20 @@ test("aesthetic mutation changes one allele and assigns dominance", () => {
 
 test("aesthetic mutation rate unlocks gradually by successful reproductions", () => {
   for (let n = 0; n <= 4; n++) assert.equal(aestheticMutationRate(n), 0);
-  for (let n = 5; n <= 8; n++) assert.equal(aestheticMutationRate(n), 0.05);
-  for (let n = 9; n <= 14; n++) assert.equal(aestheticMutationRate(n), 0.1);
-  assert.equal(aestheticMutationRate(15), 0.15);
-  assert.equal(aestheticMutationRate(100), 0.15);
+  for (let n = 5; n <= 7; n++) assert.equal(aestheticMutationRate(n), 0.2);
+  for (let n = 8; n <= 10; n++) assert.equal(aestheticMutationRate(n), 0.35);
+  assert.equal(aestheticMutationRate(11), 0.5);
+  assert.equal(aestheticMutationRate(100), 0.5);
+});
+
+test("first aesthetic mutation can be forced to produce a visible phenotype", () => {
+  const genes = ancestralAestheticGenes();
+  const sequence = [0];
+  let i = 0;
+  const result = mutateAestheticGenes(genes, () => sequence[i++] ?? 0, {
+    forceVisible: true,
+  });
+  assert.ok(result.mutation);
+  assert.equal(result.mutation.dominance, "dominant");
+  assert.notDeepEqual(aestheticPhenotype(result.genes), aestheticPhenotype(genes));
 });
