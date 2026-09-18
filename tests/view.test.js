@@ -199,10 +199,9 @@ test("application UI can play, acknowledge reproduction, save and reset", async 
     await import("../src/app.js");
     const d = w.document;
     const click = (id) => d.getElementById(id).click();
-    const origin = d.querySelector(".origin-piece").parentElement;
-    origin.click();
+    d.querySelector(".origin-piece").parentElement.click();
     assert.match(d.getElementById("turn").textContent, /Toque novamente/);
-    origin.click();
+    d.querySelector(".origin-piece").parentElement.click();
     assert.equal(d.querySelectorAll(".piece").length, 2);
     d.querySelector(".piece.amber").parentElement.click();
     assert.match(d.getElementById("selected").textContent, /\(Preto\)/);
