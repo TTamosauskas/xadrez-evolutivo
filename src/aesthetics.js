@@ -104,9 +104,10 @@ export function inheritSexualAestheticGenes(a, b, random) {
   );
 }
 
-export function mutateAestheticGenes(source, random) {
+export function mutateAestheticGenes(source, random, options = {}) {
   const genes = cloneAestheticGenes(source),
-    candidates = [];
+    candidates = [],
+    before = aestheticDescription(genes);
   for (const name of geneNames) {
     const def = AESTHETIC_GENE_DEFS[name];
     for (let allele = 0; allele < 2; allele++) {
@@ -115,7 +116,16 @@ export function mutateAestheticGenes(source, random) {
           current === def.normal
             ? def.mutants
             : [def.normal, ...def.mutants.filter((value) => value !== current)];
-      for (const value of values) candidates.push({ name, allele, value });
+      for (const value of values) {
+        const candidate = { name, allele, value };
+        if (options.forceVisible) {
+          if (value === def.normal) continue;
+          const trial = cloneAestheticGenes(genes);
+          trial[name][allele] = { value, dominance: "dominant" };
+          if (aestheticDescription(trial) === before) continue;
+        }
+        candidates.push(candidate);
+      }
     }
   }
   if (!candidates.length) return { genes, mutation: null };
@@ -124,9 +134,11 @@ export function mutateAestheticGenes(source, random) {
     dominance =
       selected.value === def.normal
         ? "neutral"
-        : random() < 0.5
+        : options.forceVisible
           ? "dominant"
-          : "recessive";
+          : random() < 0.5
+            ? "dominant"
+            : "recessive";
   genes[selected.name][selected.allele] = {
     value: selected.value,
     dominance,
@@ -205,9 +217,9 @@ export function aestheticPhenotype(source) {
 
 export function aestheticMutationRate(reproductionCount) {
   if (reproductionCount < 5) return 0;
-  if (reproductionCount <= 8) return 0.05;
-  if (reproductionCount <= 14) return 0.1;
-  return 0.15;
+  if (reproductionCount <= 7) return 0.2;
+  if (reproductionCount <= 10) return 0.35;
+  return 0.5;
 }
 
 export function aestheticDescription(source) {
