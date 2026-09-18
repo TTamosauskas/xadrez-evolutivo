@@ -4,6 +4,40 @@ import { startDisease } from "./disease.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
 const fertile = (state) =>
   allCells().filter((i) => state.board[i] === "fertile");
+function deathSiteAt(state, cell) {
+  return state.deathSites.find((d) => d.cell === cell);
+}
+export function markDecomposition(state, cell) {
+  const existing = deathSiteAt(state, cell);
+  const base = existing?.base ?? state.board[cell];
+  const dueRound = round(state) + 3;
+  if (existing) {
+    existing.dueRound = dueRound;
+    existing.base = base;
+  } else {
+    state.deathSites.push({ cell, dueRound, base });
+  }
+  if (state.event?.hazards.includes(cell)) {
+    if (!Object.hasOwn(state.event.snapshots, cell))
+      state.event.snapshots[cell] = base;
+  } else {
+    state.board[cell] = "hostile";
+  }
+}
+function tickDecomposition(state) {
+  const now = round(state);
+  for (const site of [...state.deathSites]) {
+    if (now < site.dueRound) {
+      if (!state.event?.hazards.includes(site.cell))
+        state.board[site.cell] = "hostile";
+      continue;
+    }
+    if (state.event?.hazards.includes(site.cell))
+      state.event.snapshots[site.cell] = "fertile";
+    else state.board[site.cell] = "fertile";
+    state.deathSites = state.deathSites.filter((d) => d.cell !== site.cell);
+  }
+}
 function seedCluster(state, type) {
   const candidates = [];
   for (let r = 0; r < 8; r++)
@@ -43,6 +77,11 @@ export function advanceConway(ctx) {
   if (event)
     for (const [i, base] of Object.entries(event.snapshots))
       state.board[Number(i)] = base;
+  const deathBases = new Map();
+  for (const site of state.deathSites) {
+    deathBases.set(site.cell, state.board[site.cell]);
+    state.board[site.cell] = site.base;
+  }
   const before = [...state.board];
   const alive = (i, type) => {
     const r = Math.floor(i / 8),
@@ -91,6 +130,10 @@ export function advanceConway(ctx) {
         state.board[move[1]] = type;
       }
     }
+  }
+  for (const site of state.deathSites) {
+    site.base = state.board[site.cell];
+    if (!event?.hazards.includes(site.cell)) state.board[site.cell] = "hostile";
   }
   if (event)
     for (const key of Object.keys(event.snapshots)) {
@@ -334,6 +377,8 @@ export function startEvent(ctx, id = null) {
 export function tickEnvironment(ctx) {
   const state = ctx.state,
     now = round(state);
+
+  tickDecomposition(state);
 
   while (state.maxGenerationReached >= state.nextHabitatGeneration) {
     advanceConway(ctx);
