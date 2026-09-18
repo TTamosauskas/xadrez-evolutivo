@@ -113,8 +113,11 @@ test("later innovations obey historical and individual dependencies", () => {
     ),
   });
   const p = s.pieces[0];
+  s.historicalTraits = s.historicalTraits.filter(
+    (trait) => trait !== "Locomoção",
+  );
   assert.equal(traitUnlocked(s, "Locomoção Avançada", p), false);
-  p.traits.push("Locomoção");
+  s.historicalTraits.push("Locomoção");
   assert.equal(traitUnlocked(s, "Locomoção Avançada", p), true);
 
   s.geologicalStage = "triassic";
