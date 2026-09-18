@@ -59,11 +59,14 @@ $("board").addEventListener("click", (event) => {
     return;
   }
   const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
-  if (actor && movesFor(state, actor).some((t) => t.r === r && t.c === c)) {
+  if (
+    actor?.owner === state.current &&
+    movesFor(state, actor).some((t) => t.r === r && t.c === c)
+  ) {
     dispatch({ type: "MOVE", id: actor.id, r, c });
     return;
   }
-  selected = p?.owner === state.current ? p.id : null;
+  selected = p?.id ?? null;
   controller.refresh();
 });
 $("board").addEventListener("keydown", (event) => {
