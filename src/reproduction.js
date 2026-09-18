@@ -218,6 +218,7 @@ function freeCells(ctx, origin, dispersal) {
   const range = dispersal === "eggs" ? 2 : 1;
   for (let dr = -range; dr <= range; dr++)
     for (let dc = -range; dc <= range; dc++) {
+      if (!dr && !dc) continue;
       const r = origin.r + dr,
         c = origin.c + dc;
       if (

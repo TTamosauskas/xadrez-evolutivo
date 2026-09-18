@@ -177,6 +177,7 @@ test("later innovations obey historical and individual dependencies", () => {
   assert.equal(traitUnlocked(s, "Carnívoro", p), true);
 
   s.geologicalStage = "devonian";
+  s.historicalTraits.push("Locomoção Avançada");
   p.traits = p.traits.filter((trait) => trait !== "Carnívoro");
   assert.equal(traitUnlocked(s, "Onívoro", p), false);
   p.traits.push("Carnívoro");
@@ -191,7 +192,7 @@ test("later innovations obey historical and individual dependencies", () => {
   assert.equal(traitUnlocked(s, "Locomoção", p), true);
 
   s.geologicalStage = "neogene";
-  s.historicalTraits.push("Construção de Nicho");
+  s.historicalTraits.push("Chifre", "Construção de Nicho");
   p.traits = p.traits.filter((trait) => trait !== "Construção de Nicho");
   assert.equal(traitUnlocked(s, "Construtor Avançado", p), false);
   p.traits.push("Construção de Nicho");

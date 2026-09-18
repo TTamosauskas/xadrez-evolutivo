@@ -143,7 +143,7 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   const lost = simulate(s, move(s.pieces[0], 3, 3));
   assert.ok(!lost.pieces.some((p) => p.id === 1));
 
-  s.pieces[0].traits = ["Voo"];
+  s.pieces[0].traits = ["Locomoção", "Voo"];
   assert.ok(
     simulate(s, move(s.pieces[0], 3, 3)).pieces.some((p) => p.id === 1),
   );
@@ -172,7 +172,7 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   s.rng = 1;
   s.board[43] = "hostile";
   s.board[35] = "hostile";
-  s.pieces[0].traits = [];
+  s.pieces[0].traits = ["Locomoção"];
   s.pieces[0].rank = 1;
   assert.ok(
     simulate(s, move(s.pieces[0], 4, 4)).pieces.some((p) => p.id === 1),

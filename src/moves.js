@@ -1,4 +1,4 @@
-import { inside, has, distance } from "./constants.js";
+import { inside, has, distance, square } from "./constants.js";
 import { at, eggAt, barrierAt, terrain, round } from "./state.js";
 import { captureUnlocked } from "./geology.js";
 const ORTH = [
