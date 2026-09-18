@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Controller } from "../src/controller.js";
-import { createState, clone } from "../src/state.js";
+import { createState, clone, newPiece } from "../src/state.js";
 import { fallbackAction, chooseAction } from "../src/ai.js";
 function setup() {
   const workers = [],
@@ -119,6 +119,65 @@ test("AI respects node/time budgets, never mutates live state, always returns le
     assert.equal(a.type, "MOVE");
   }
   assert.deepEqual(s, before);
+});
+
+test("Neocórtex rollback survives the opponent response and restores deterministic state", () => {
+  const s = createState(31);
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("neutral");
+  s.pieces.push(
+    newPiece(s, "blue", 4, 0, {
+      rank: 3,
+      traits: ["Neocórtex Desenvolvido"],
+    }),
+    newPiece(s, "amber", 0, 7, { rank: 3 }),
+  );
+  const c = new Controller(s, { render: () => {} }),
+    before = clone(c.state);
+
+  assert.equal(
+    c.dispatch({ type: "MOVE", id: c.state.pieces[0].id, r: 4, c: 1 }),
+    true,
+  );
+  assert.equal(c.state.current, "amber");
+  assert.equal(c.canUndoNeocortex(), true);
+
+  const amber = c.state.pieces.find((p) => p.owner === "amber");
+  assert.equal(
+    c.dispatch({ type: "MOVE", id: amber.id, r: 0, c: 6 }),
+    true,
+  );
+  assert.equal(c.state.current, "blue");
+  assert.equal(c.canUndoNeocortex(), true);
+
+  const revisionAfterScenario = c.state.revision;
+  assert.equal(c.undoNeocortex(), true);
+  assert.ok(c.state.revision > revisionAfterScenario);
+  const restored = clone(c.state);
+  restored.revision = before.revision;
+  assert.deepEqual(restored, before);
+
+  const blue = c.state.pieces.find((p) => p.owner === "blue");
+  assert.equal(
+    c.dispatch({ type: "MOVE", id: blue.id, r: 4, c: 2 }),
+    true,
+  );
+  assert.equal(c.canUndoNeocortex(), false);
+  const secondAmber = c.state.pieces.find((p) => p.owner === "amber");
+  assert.equal(
+    c.dispatch({ type: "MOVE", id: secondAmber.id, r: 0, c: 6 }),
+    true,
+  );
+  assert.equal(c.canUndoNeocortex(), false);
+
+  const nextBlue = c.state.pieces.find((p) => p.owner === "blue");
+  assert.equal(
+    c.dispatch({ type: "MOVE", id: nextBlue.id, r: 4, c: 3 }),
+    true,
+  );
+  assert.equal(c.canUndoNeocortex(), true);
+  c.dispose();
 });
 
 test("native browser timers are called without binding the controller as their receiver", () => {
