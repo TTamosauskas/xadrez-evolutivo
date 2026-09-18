@@ -34,10 +34,10 @@ $("mode").value = controller.mode;
 $("difficulty").value = controller.difficulty;
 function dispatch(action) {
   const revision = controller.state.revision;
-  if (controller.dispatch({ ...action, revision })) {
-    selected = null;
-    controller.refresh();
-  }
+  const previousSelection = selected;
+  selected = null;
+  if (!controller.dispatch({ ...action, revision }))
+    selected = previousSelection;
 }
 $("board").addEventListener("click", (event) => {
   const cell = event.target.closest(".cell");

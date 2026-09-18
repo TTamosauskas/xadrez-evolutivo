@@ -13,8 +13,8 @@ export class Controller {
         new Worker(new URL("./ai-worker.js", import.meta.url), {
           type: "module",
         }),
-      setTimer = setTimeout,
-      clearTimer = clearTimeout,
+      setTimer = (...args) => setTimeout(...args),
+      clearTimer = (id) => clearTimeout(id),
       timeout = 2000,
     } = {},
   ) {

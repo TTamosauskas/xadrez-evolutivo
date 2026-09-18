@@ -120,3 +120,34 @@ test("AI respects node/time budgets, never mutates live state, always returns le
   }
   assert.deepEqual(s, before);
 });
+
+test("native browser timers are called without binding the controller as their receiver", () => {
+  const originalSet = globalThis.setTimeout,
+    originalClear = globalThis.clearTimeout;
+  let scheduled = 0,
+    cleared = 0;
+  globalThis.setTimeout = function () {
+    assert.ok(!(this instanceof Controller), "Illegal invocation");
+    scheduled++;
+    return 1;
+  };
+  globalThis.clearTimeout = function () {
+    assert.ok(!(this instanceof Controller), "Illegal invocation");
+    cleared++;
+  };
+  try {
+    const s = createState(2);
+    s.current = "amber";
+    s.turn = 1;
+    const c = new Controller(s, {
+      workerFactory: () => ({ postMessage() {}, terminate() {} }),
+    });
+    c.configure("single");
+    assert.equal(scheduled, 1);
+    c.dispose();
+    assert.equal(cleared, 1);
+  } finally {
+    globalThis.setTimeout = originalSet;
+    globalThis.clearTimeout = originalClear;
+  }
+});
