@@ -34,6 +34,7 @@ import {
   syncReproTraits,
 } from "./reproductive-genetics.js";
 import {
+  deleteriousMutationUnlocked,
   innovationWeight,
   normalizeEnergyBranch,
   pawnMutationUnlocked,
@@ -129,10 +130,14 @@ function mutation(state, p, positiveOnly) {
   for (const trait of NEGATIVE)
     if (!has(p, trait)) losses.push({ gain: trait });
 
-  const negative =
-    !positiveOnly && random(state) < (p.rank === 0 ? 1 / 5 : 1 / 3);
+  const negativeAllowed =
+      !positiveOnly && deleteriousMutationUnlocked(state),
+    negative =
+      negativeAllowed && random(state) < (p.rank === 0 ? 1 / 5 : 1 / 3);
   let options = negative ? losses : gains;
-  if (!options.length) options = positiveOnly ? [] : negative ? gains : losses;
+  if (!options.length)
+    options =
+      positiveOnly || !negativeAllowed ? [] : negative ? gains : losses;
   const choice = negative ? pick(state, options) : weightedPick(state, options);
   if (!choice) return;
 
