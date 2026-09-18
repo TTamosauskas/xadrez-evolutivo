@@ -179,9 +179,9 @@ export const GEOLOGICAL_STAGES = [
     habitat: { fertile: 14, hostile: 7, standard: true },
     events: { ice: 5, drought: 3, desert: 3, earthquake: 2, meteor: 1 },
   },
-];
+].map((stage, index) => ({ ...stage, index }));
 
-const byId = new Map(GEOLOGICAL_STAGES.map((stage, index) => [stage.id, { ...stage, index }]));
+const byId = new Map(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
 
 export const TRAIT_STAGE = {
   Fotossíntese: "archean",
