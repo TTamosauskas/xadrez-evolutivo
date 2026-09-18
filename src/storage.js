@@ -2,6 +2,7 @@ import { createState, newPiece, assertState, round, notice } from "./state.js";
 import { TRAITS, EVENTS, square, has } from "./constants.js";
 export const SAVE_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
+const traitName = (name) => (name === "Predação" ? "Predador" : name);
 const terrain = (t) =>
   t === "biohazard"
     ? "hostile"
@@ -13,6 +14,9 @@ export function deserialize(raw) {
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
   if (data?.version === 2) {
+    if (Array.isArray(data.pieces))
+      for (const piece of data.pieces)
+        piece.traits = [...new Set((piece.traits ?? []).map(traitName))];
     const liveMax = Array.isArray(data.pieces)
       ? Math.max(0, ...data.pieces.map((p) => p.generation ?? 0))
       : 0;
@@ -59,10 +63,13 @@ export function deserialize(raw) {
   for (const org of data.organisms) {
     const profile = data.lineages?.[org.owner]?.[org.lineage];
     if (!profile) throw Error("Linhagem ausente no arquivo antigo.");
-    const traits = new Set((profile.traits ?? []).filter((t) => TRAITS[t]));
+    const traits = new Set(
+      (profile.traits ?? []).map(traitName).filter((t) => TRAITS[t]),
+    );
     for (const entry of profile.mutationStack ?? []) {
-      if (entry.kind === "trait" && TRAITS[entry.name]) traits.add(entry.name);
-      if (entry.kind === "trait-loss") traits.delete(entry.name);
+      const name = traitName(entry.name);
+      if (entry.kind === "trait" && TRAITS[name]) traits.add(name);
+      if (entry.kind === "trait-loss") traits.delete(name);
     }
     for (const [key, name] of [
       ["sterile", "Esterilidade"],
