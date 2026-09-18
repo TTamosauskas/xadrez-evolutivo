@@ -245,6 +245,42 @@ test("Ooteca reproduction and hostile births remain bounded by free cells", () =
   assert.equal(s.pieces.length, 63);
   assertState(s);
 });
+test("genealogical clock advances from births and never depends on living frontier", () => {
+  const s = createState(1),
+    ctx = context(s),
+    parent = s.pieces[0];
+  parent.generation = 2;
+  s.maxGenerationReached = 2;
+  s.board[parent.r * 8 + parent.c] = "fertile";
+  assert.ok(reproduce(ctx, parent) > 0);
+  assert.equal(s.maxGenerationReached, 3);
+  for (const p of s.pieces)
+    if (p.generation === 3) ctx.kill(p.id, "teste de regressão");
+  assert.equal(s.maxGenerationReached, 3);
+  assertState(s);
+});
+test("generation milestones drive habitat and queue ecological events", () => {
+  const s = createState(2),
+    ctx = context(s);
+  s.maxGenerationReached = 4;
+  tickEnvironment(ctx);
+  assert.equal(s.nextHabitatGeneration, 5);
+  assert.equal(s.nextEventGeneration, 10);
+  assert.ok(s.event);
+  s.maxGenerationReached = 10;
+  s.turn = 2;
+  tickEnvironment(ctx);
+  assert.equal(s.pendingEcologicalEvents, 1);
+  assert.equal(s.nextEventGeneration, 16);
+  const first = s.event.id;
+  s.turn = 20;
+  tickEnvironment(ctx);
+  assert.equal(s.pendingEcologicalEvents, 0);
+  assert.ok(s.event);
+  assert.notEqual(s.event.id, first);
+  assert.equal(s.event.startRound, 10);
+  assertState(s);
+});
 test("stale revisions cannot advance the turn", () => {
   const s = createState(1);
   assert.equal(transition(s, { type: "PASS", revision: 100 }), s);
