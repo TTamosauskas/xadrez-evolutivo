@@ -1,4 +1,8 @@
 import { createState, newPiece } from "../src/state.js";
+import { GEOLOGICAL_STAGES } from "../src/geology.js";
+const FULL_HISTORY = [
+  ...new Set(GEOLOGICAL_STAGES.flatMap((stage) => stage.required)),
+];
 export function fixture(
   specs = [
     { owner: "blue", r: 6, c: 3 },
@@ -6,13 +10,20 @@ export function fixture(
   ],
   seed = 1,
 ) {
-  const s = createState(seed);
+  const s = createState(seed, {
+    geologicalStage: "quaternary",
+    historicalTraits: FULL_HISTORY,
+  });
   s.pieces = [];
   s.nextId = 1;
   s.board.fill("neutral");
   for (const spec of specs) {
-    const p = newPiece(s, spec.owner, spec.r, spec.c, spec);
-    Object.assign(p, spec);
+    const source = {
+        ...spec,
+        traits: [...new Set(["Locomoção", ...(spec.traits ?? [])])],
+      },
+      p = newPiece(s, source.owner, source.r, source.c, source);
+    Object.assign(p, source);
     s.pieces.push(p);
   }
   return s;
