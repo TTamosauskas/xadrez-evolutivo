@@ -118,7 +118,7 @@ export function render(
         const badges = p.traits.map((t) => TRAITS[t][0]);
         if (p.infection) badges.push("🦠");
         if (p.venom) badges.push("☠");
-        if (p.seeds) badges.push(`🌱${p.seeds}`);
+        if (p.seeds) badges.push(`${p.seeds}🌰`);
         if (resting(state, p)) badges.push("💤");
         cell.append(make("span", badges.slice(0, 5).join(""), "badges"));
       }
