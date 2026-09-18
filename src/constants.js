@@ -9,7 +9,14 @@ export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
 export const TRAITS = {
   Locomoção: ["🐪", "Permite uma segunda movimentação no mesmo turno."],
   Voo: ["🐦", "Permite atravessar e permanecer em casas hostis."],
-  Predação: ["🦁", "Capturas podem gerar descendentes."],
+  Predador: [
+    "🦁",
+    "Reproduz ao eliminar uma peça, mas não usa casas férteis.",
+  ],
+  Onívoro: [
+    "🐻",
+    "Reproduz tanto em casas férteis quanto ao eliminar peças.",
+  ],
   Ovos: ["🦎", "Descendentes podem nascer a até duas casas do progenitor."],
   Fertilidade: ["🐇", "Dobra a quantidade de descendentes."],
   Carapaça: ["🐢", "Oferece 66% de sobrevivência por casa hostil."],
