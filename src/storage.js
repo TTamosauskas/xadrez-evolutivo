@@ -34,6 +34,7 @@ export function deserialize(raw) {
     }
     if (!Number.isInteger(data.pendingEcologicalEvents))
       data.pendingEcologicalEvents = 0;
+    if (!Array.isArray(data.deathSites)) data.deathSites = [];
     delete data.nextEventRound;
     return assertState(data);
   }
