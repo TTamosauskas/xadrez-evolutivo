@@ -621,6 +621,115 @@ test("only Ovífagia can capture an enemy egg and converts its brood into offspr
   assertState(next);
 });
 
+test("Fotossíntese fertilizes a neutral square after one full round without moving", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  assert.equal(s.board[36], "neutral");
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.board[36], "neutral");
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.board[36], "fertile");
+  assertState(s);
+});
+
+test("Eusocialidade gains up to two offspring from adjacent sterile kin", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Eusocialidade"] },
+      { owner: "blue", r: 4, c: 3, traits: ["Esterilidade"] },
+      { owner: "blue", r: 3, c: 4, traits: ["Esterilidade"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0];
+  assert.equal(reproduce(context(s), parent), 6);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 9);
+  assertState(s);
+});
+
+test("Regeneração prevents one non-capture death but never a capture", () => {
+  let s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Regeneração"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    ctx = context(s),
+    p = s.pieces[0];
+  assert.equal(ctx.kill(p.id, "casa hostil"), false);
+  assert.ok(s.pieces.some((x) => x.id === p.id));
+  assert.equal(p.regenerationUsed, true);
+  assert.equal(movesFor(s, p).length, 0);
+  assert.equal(ctx.kill(p.id, "casa hostil"), true);
+  assert.ok(!s.pieces.some((x) => x.id === p.id));
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Voo"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Regeneração"] },
+  ]);
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(!s.pieces.some((x) => x.owner === "amber"));
+});
+
+test("Dormência immobilizes on hostile terrain but the piece remains capturable", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Voo"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Dormência"] },
+  ]);
+  s.board[36] = "hostile";
+  const sleeper = s.pieces[1],
+    attacker = s.pieces[0];
+  assert.equal(movesFor(s, sleeper).length, 0);
+  assert.ok(movesFor(s, attacker).some((t) => t.r === 4 && t.c === 4));
+  s = simulate(s, move(attacker, 4, 4));
+  assert.ok(!s.pieces.some((p) => p.id === sleeper.id));
+});
+
+test("Visão Noturna counters distant Camuflagem", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 0, rank: 3 },
+      { owner: "amber", r: 4, c: 4, traits: ["Camuflagem"] },
+    ]),
+    observer = s.pieces[0];
+  assert.ok(!movesFor(s, observer).some((t) => t.r === 4 && t.c === 4));
+  observer.traits.push("Visão Noturna");
+  assert.ok(movesFor(s, observer).some((t) => t.r === 4 && t.c === 4));
+});
+
+test("Cuidado Parental protects adjacent eggs from Ovífagia", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Ovífagia"] },
+      { owner: "amber", r: 3, c: 4, traits: ["Cuidado Parental"] },
+    ]),
+    eater = s.pieces[0],
+    parent = s.pieces[1];
+  s.eggs.push({
+    id: 1,
+    owner: "amber",
+    r: 4,
+    c: 4,
+    hatchRound: 3,
+    parentId: parent.id,
+    brood: [
+      {
+        owner: "amber",
+        rank: 0,
+        traits: [],
+        reproGenes: cloneReproGenes(parent.reproGenes),
+        mutations: 0,
+        generation: 1,
+        parentId: parent.id,
+      },
+    ],
+    dispersal: "local",
+  });
+  s.nextEgg = 2;
+  s.maxGenerationReached = 1;
+  assert.ok(!movesFor(s, eater).some((t) => t.r === 4 && t.c === 4));
+  parent.r = 0;
+  parent.c = 0;
+  assert.ok(movesFor(s, eater).some((t) => t.r === 4 && t.c === 4));
+  assertState(s);
+});
+
 test("stale revisions cannot advance the turn", () => {
   const s = createState(1);
   assert.equal(transition(s, { type: "PASS", revision: 100 }), s);
