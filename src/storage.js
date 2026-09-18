@@ -61,6 +61,9 @@ export function deserialize(raw) {
         : 0,
       liveMax,
     );
+    if (!Number.isInteger(data.era) || data.era < 1) data.era = 1;
+    if (!Number.isInteger(data.generationOffset) || data.generationOffset < 0)
+      data.generationOffset = 0;
     if (!Number.isInteger(data.nextHabitatGeneration)) {
       data.nextHabitatGeneration = 3;
       while (data.nextHabitatGeneration <= data.maxGenerationReached)
