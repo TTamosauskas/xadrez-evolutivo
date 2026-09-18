@@ -266,6 +266,21 @@ export function normalizeEnergyBranch(traits, preferred = null) {
   return [...set];
 }
 
+export function applyTraitMutation(traits, trait) {
+  const set = new Set(traits ?? []);
+  if (trait === "Predação") {
+    set.delete("Fotossíntese");
+    set.add("Predação");
+  } else if (trait === "Fotossíntese") {
+    set.delete("Predação");
+    set.delete("Locomoção");
+    set.delete("Carnívoro");
+    set.delete("Onívoro");
+    set.add("Fotossíntese");
+  } else set.add(trait);
+  return [...set];
+}
+
 export function traitLossAllowed(piece, trait) {
   const traits = new Set(piece?.traits ?? []);
   if (
@@ -343,12 +358,6 @@ export function stageComplete(state) {
 
 export function traitUnlocked(state, trait, piece = null) {
   if (NEGATIVE_TRAITS.has(trait)) return true;
-  if (
-    piece &&
-    ((trait === "Predação" && piece.traits?.includes("Fotossíntese")) ||
-      (trait === "Fotossíntese" && piece.traits?.includes("Predação")))
-  )
-    return false;
   const stageId = TRAIT_STAGE[trait];
   if (!stageId) return true;
   const current = currentGeologicalStage(state),

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   ancestralReproGenes,
+  gainReproAllele,
   inheritSexualReproGenes,
   reproPhenotype,
   syncReproTraits,
@@ -46,6 +47,20 @@ test("mutually exclusive loci express one development and one dispersal strategy
   assert.ok(piece.traits.includes("Esporos"));
   assert.ok(!piece.traits.includes("Ovos"));
   assert.ok(piece.traits.includes("Voo"));
+});
+
+test("reproductive alternatives can replace an already occupied locus", () => {
+  let genes = ancestralReproGenes();
+  genes.development = [
+    dominant("oviparous"),
+    dominant("oviparous"),
+  ];
+  genes = gainReproAllele(genes, "Vivíparo", () => 0);
+  assert.ok(
+    genes.development.some((allele) => allele.value === "viviparous"),
+  );
+  genes = gainReproAllele(genes, "Vivíparo", () => 0);
+  assert.equal(reproPhenotype(genes).development, "viviparous");
 });
 
 test("sexual inheritance receives one allele from each parent per locus", () => {
