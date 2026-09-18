@@ -216,6 +216,55 @@ export function deserialize(raw) {
         previousEvent: data.previousEvent,
         diseases: data.diseases,
       });
+    if (data.totalCycles < 2) {
+      const cleanProfile = (profile) => {
+          profile.traits = (profile.traits ?? []).filter(
+            (trait) => !isNegativeTrait(trait),
+          );
+          delete profile.deleteriousDue;
+          delete profile.lastMoveRound;
+          return profile;
+        },
+        profiles = [
+          ...(data.pieces ?? []),
+          ...(data.eggs ?? []).flatMap((egg) => egg.brood ?? []),
+          ...(data.pieces ?? []).flatMap((piece) =>
+            (piece.pregnancies ?? []).flatMap(
+              (pregnancy) => pregnancy.brood ?? [],
+            ),
+          ),
+        ];
+      for (const profile of profiles) cleanProfile(profile);
+      data.seenMutations = data.seenMutations.filter(
+        (label) => !isNegativeTrait(label) && !label.startsWith("Perda de "),
+      );
+      data.notices = (data.notices ?? [])
+        .map((entry) =>
+          entry.title === "Novas mutações"
+            ? {
+                ...entry,
+                lines: (entry.lines ?? []).filter(
+                  (label) =>
+                    !isNegativeTrait(label) && !label.startsWith("Perda de "),
+                ),
+              }
+            : entry,
+        )
+        .filter((entry) => entry.title !== "Novas mutações" || entry.lines.length);
+      if (data.discoveries) {
+        const removed = new Set([
+          "Esterilidade",
+          "Mutação Deletéria",
+          "Mutação Disfuncional",
+        ]);
+        data.discoveries.mutations = (data.discoveries.mutations ?? []).filter(
+          (id) => !removed.has(id),
+        );
+        data.discoveries.read = (data.discoveries.read ?? []).filter(
+          (key) => ![...removed].some((id) => key === `mutations:${id}`),
+        );
+      }
+    }
     data.version = 7;
     delete data.nextEventRound;
     return assertState(data);

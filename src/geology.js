@@ -356,15 +356,16 @@ export function traitUnlocked(state, trait, piece = null) {
   if (current.index < requiredStage.index) return false;
   const deps = TRAIT_DEPENDENCIES[trait],
     history = new Set(state.historicalTraits ?? []);
-  if (
-    current.id === requiredStage.id &&
-    current.required.includes(trait) &&
-    !history.has(trait)
-  ) {
-    const activeRequired = cycleRequiredInnovations(state);
-    if (!activeRequired.includes(trait)) return false;
-    if (
-      activeRequired.find((candidate) => !history.has(candidate)) !== trait
+  if (current.id === requiredStage.id && current.required.includes(trait)) {
+    const activeRequired = cycleRequiredInnovations(state),
+      nextRequired = activeRequired.find((candidate) => !history.has(candidate));
+    if (!history.has(trait)) {
+      if (!activeRequired.includes(trait)) return false;
+      if (nextRequired !== trait) return false;
+    } else if (
+      nextRequired &&
+      activeRequired.includes(trait) &&
+      activeRequired.indexOf(trait) < activeRequired.indexOf(nextRequired)
     )
       return false;
   }
@@ -383,6 +384,10 @@ export function pawnMutationUnlocked(state) {
   return (state.totalCycles ?? 1) >= 2;
 }
 
+export function deleteriousMutationUnlocked(state) {
+  return (state.totalCycles ?? 1) >= 2;
+}
+
 export function rankMutationUnlocked(state) {
   return currentGeologicalStage(state).index >= geologicalStage("cambrian").index;
 }
@@ -396,18 +401,8 @@ export function pathogenUnlocked(state) {
   return currentGeologicalStage(state).index >= geologicalStage("proterozoic").index;
 }
 
-export function innovationWeight(state, trait, piece = null) {
-  const stage = currentGeologicalStage(state),
-    history = new Set(state.historicalTraits ?? []),
-    activeRequired = cycleRequiredInnovations(state);
-  let weight = 1;
-  if (activeRequired.includes(trait) && !history.has(trait)) {
-    const missing = activeRequired.filter((candidate) => !history.has(candidate)),
-      cycle = Math.max(1, state.cycle ?? 1),
-      cycleBoost = Math.min(200, 3 * 3 ** (cycle - 1));
-    weight = Math.min(240, cycleBoost * (missing.length === 1 ? 1.5 : 1));
-  }
-  return weight;
+export function innovationWeight() {
+  return 1;
 }
 
 export function eventWeights(state) {

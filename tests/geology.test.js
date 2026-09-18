@@ -6,6 +6,7 @@ import {
   TRAIT_STAGE,
   captureUnlocked,
   currentGeologicalStage,
+  deleteriousMutationUnlocked,
   eventWeights,
   innovationWeight,
   missingInnovations,
@@ -236,19 +237,37 @@ test("later innovations obey historical and individual dependencies", () => {
   assert.equal(traitUnlocked(s, "Vivíparo", p), true);
 });
 
-test("missing innovations gain weight across repeated cycles without becoming automatic", () => {
-  const s = createState(108);
-  const first = innovationWeight(s, "Fotossíntese");
+test("evolutionary precedence changes eligibility but never mutation weight", () => {
+  const s = createState(108),
+    p = { traits: [] };
+  assert.equal(innovationWeight(s, "Fotossíntese", p), 1);
   s.cycle = 4;
-  const later = innovationWeight(s, "Fotossíntese");
-  assert.ok(later > first);
-  assert.ok(later <= 240);
+  assert.equal(innovationWeight(s, "Fotossíntese", p), 1);
+  assert.equal(innovationWeight(s, "Predação", p), 1);
   assert.deepEqual(missingInnovations(s), [
     "Fotossíntese",
     "Predação",
     "Fertilidade",
     "Dormência",
   ]);
+});
+
+test("a discovered required innovation pauses new appearances until the next one is discovered", () => {
+  const s = createState(114),
+    p = { traits: [] };
+  s.historicalTraits = ["Fotossíntese"];
+  assert.equal(traitUnlocked(s, "Fotossíntese", p), false);
+  assert.equal(traitUnlocked(s, "Predação", p), true);
+  s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
+  assert.equal(traitUnlocked(s, "Predação", p), true);
+});
+
+test("deleterious mutations unlock only from the second campaign cycle", () => {
+  const s = createState(115);
+  assert.equal(deleteriousMutationUnlocked(s), false);
+  s.totalCycles = 2;
+  assert.equal(deleteriousMutationUnlocked(s), true);
 });
 
 test("Pawn mutation unlocks only from the second campaign cycle", () => {
