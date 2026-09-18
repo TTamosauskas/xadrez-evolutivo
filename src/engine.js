@@ -18,7 +18,12 @@ import {
 } from "./moves.js";
 import { reproduce, harvest, scatterSeeds } from "./reproduction.js";
 import { checkPopulation, tickDiseases, infect } from "./disease.js";
-import { markDecomposition, tickEnvironment } from "./environment.js";
+import {
+  consumeDecomposition,
+  hasDecomposition,
+  markDecomposition,
+  tickEnvironment,
+} from "./environment.js";
 export function context(state) {
   const ctx = {
     state,
@@ -221,12 +226,17 @@ function executeMove(ctx, action) {
   p.c = target.c;
   moveDirection(p);
   ctx.reserved.delete(square(p.r, p.c));
-  if (!capture) harvest(state, p, p.r, p.c);
-  const collectorStay = has(p, "Coletor") && target.stay && p.seeds > 0,
+  const cell = square(p.r, p.c),
+    scavenging =
+      !capture && has(p, "Necrófago") && hasDecomposition(state, cell);
+  if (!capture && !scavenging) harvest(state, p, p.r, p.c);
+  const collectorStay =
+      !scavenging && has(p, "Coletor") && target.stay && p.seeds > 0,
     predator = has(p, "Predador"),
     omnivore = has(p, "Onívoro"),
     fertileResource =
-      (!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay,
+      !scavenging &&
+      ((!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay),
     fertile = fertileResource && (!predator || omnivore),
     predation = capture && (predator || omnivore);
   log(
@@ -254,8 +264,11 @@ function executeMove(ctx, action) {
     state.chain = null;
     return;
   }
-  if (fertile && !collectorStay) state.board[square(p.r, p.c)] = "neutral";
-  if (fertile || predation) {
+  if (fertile && !collectorStay) state.board[cell] = "neutral";
+  if (scavenging) {
+    const born = reproduce(ctx, p, null, "necrofagia");
+    if (born) consumeDecomposition(state, cell);
+  } else if (fertile || predation) {
     const born = reproduce(
       ctx,
       p,
