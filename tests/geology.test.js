@@ -37,6 +37,52 @@ test("geological timeline assigns every positive mutation to one stage", () => {
   for (const trait of required) assert.equal(TRAIT_STAGE[trait] !== undefined, true);
 });
 
+test("period innovations follow the didactic sequence", () => {
+  const required = Object.fromEntries(
+    GEOLOGICAL_STAGES.map((stage) => [stage.id, stage.required]),
+  );
+  assert.deepEqual(required.archean, [
+    "Fertilidade",
+    "Dormência",
+    "Fotossíntese",
+    "Predação",
+  ]);
+  assert.deepEqual(required.proterozoic, [
+    "Resistência",
+    "Regeneração",
+    "Reprodução Sexuada",
+    "Esporos",
+    "Carnívoro",
+  ]);
+  assert.deepEqual(required.ediacaran, [
+    "Locomoção",
+    "Necrófago",
+    "Construção de Nicho",
+  ]);
+  assert.deepEqual(required.carboniferous, ["Ovíparo", "Ooteca", "Voo"]);
+  assert.deepEqual(required.neogene, [
+    "Chifre",
+    "Construtor Avançado",
+    "Polegar Opositor",
+  ]);
+});
+
+test("only the next required innovation is eligible inside a period", () => {
+  const s = createState(110),
+    p = s.pieces[0];
+  assert.equal(traitUnlocked(s, "Fertilidade", p), true);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
+  assert.equal(traitUnlocked(s, "Fotossíntese", p), false);
+  assert.equal(traitUnlocked(s, "Predação", p), false);
+
+  s.historicalTraits.push("Fertilidade");
+  assert.equal(traitUnlocked(s, "Dormência", p), true);
+  s.historicalTraits.push("Dormência");
+  assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
+  s.historicalTraits.push("Fotossíntese");
+  assert.equal(traitUnlocked(s, "Predação", p), true);
+});
+
 test("geological event pools contain only valid ecological events and no pathogen lottery", () => {
   const ids = new Set(EVENTS.map((event) => event.id));
   for (const stage of GEOLOGICAL_STAGES) {
@@ -126,9 +172,25 @@ test("later innovations obey historical and individual dependencies", () => {
   );
   assert.equal(traitUnlocked(s, "Carnívoro", p), false);
   s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Carnívoro", p), false);
+  p.traits.push("Predação");
   assert.equal(traitUnlocked(s, "Carnívoro", p), true);
 
-    s.geologicalStage = "neogene";
+  s.geologicalStage = "devonian";
+  p.traits = p.traits.filter((trait) => trait !== "Carnívoro");
+  assert.equal(traitUnlocked(s, "Onívoro", p), false);
+  p.traits.push("Carnívoro");
+  assert.equal(traitUnlocked(s, "Onívoro", p), true);
+
+  s.geologicalStage = "ediacaran";
+  s.historicalTraits = s.historicalTraits.filter(
+    (trait) => trait !== "Predação",
+  );
+  assert.equal(traitUnlocked(s, "Locomoção", p), false);
+  s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Locomoção", p), true);
+
+  s.geologicalStage = "neogene";
   s.historicalTraits.push("Construção de Nicho");
   p.traits = p.traits.filter((trait) => trait !== "Construção de Nicho");
   assert.equal(traitUnlocked(s, "Construtor Avançado", p), false);
@@ -150,11 +212,26 @@ test("missing innovations gain weight across repeated cycles without becoming au
   assert.ok(later > first);
   assert.ok(later <= 240);
   assert.deepEqual(missingInnovations(s), [
-    "Fotossíntese",
     "Fertilidade",
     "Dormência",
+    "Fotossíntese",
     "Predação",
   ]);
+});
+
+test("Fotossíntese and Predação strongly antagonize mutation weight", () => {
+  const s = createState(111);
+  s.historicalTraits = ["Fertilidade", "Dormência", "Fotossíntese"];
+  const baseline = innovationWeight(s, "Predação", { traits: [] }),
+    photosynthetic = innovationWeight(s, "Predação", {
+      traits: ["Fotossíntese"],
+    });
+  assert.equal(photosynthetic, baseline * 0.2);
+
+  const predatory = innovationWeight(s, "Fotossíntese", {
+    traits: ["Predação"],
+  });
+  assert.equal(predatory, 0.2);
 });
 
 test("Paleogene is a one-cycle transition stage", () => {
