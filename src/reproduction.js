@@ -39,7 +39,14 @@ const POSITIVE = Object.keys(TRAITS).filter(
 function mutation(state, p, positiveOnly) {
   const gains = [];
   for (let rank = p.rank + 1; rank < 6; rank++) gains.push({ rank });
-  for (const trait of POSITIVE) if (!has(p, trait)) gains.push({ gain: trait });
+  const oviparousPresent =
+    state.eggs.length > 0 || state.pieces.some((piece) => has(piece, "Ovíparo"));
+  for (const trait of POSITIVE)
+    if (
+      !has(p, trait) &&
+      (trait !== "Ovífagia" || oviparousPresent)
+    )
+      gains.push({ gain: trait });
   for (const trait of geneGainOptions(p.reproGenes)) gains.push({ gene: trait });
 
   const losses = [];
