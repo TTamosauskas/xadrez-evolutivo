@@ -199,6 +199,11 @@ test("application UI can play, acknowledge reproduction, save and reset", async 
     await import("../src/app.js");
     const d = w.document;
     const click = (id) => d.getElementById(id).click();
+    const origin = d.querySelector(".origin-piece").parentElement;
+    origin.click();
+    assert.match(d.getElementById("turn").textContent, /Toque novamente/);
+    origin.click();
+    assert.equal(d.querySelectorAll(".piece").length, 2);
     d.querySelector(".piece.amber").parentElement.click();
     assert.match(d.getElementById("selected").textContent, /\(Preto\)/);
     assert.equal(d.querySelectorAll(".cell.legal").length, 0);
@@ -238,8 +243,9 @@ test("application UI can play, acknowledge reproduction, save and reset", async 
     click("info-ok");
     assert.match(
       d.getElementById("round").textContent,
-      /Pré-Cambriano · Arqueano · 1º Ciclo · 1ª Geração/,
+      /Origem da campanha · antes do 1º Ciclo/,
     );
+    assert.equal(d.querySelectorAll(".origin-piece").length, 1);
     assert.notEqual(d.getElementById("round").textContent, saved);
   } finally {
     globalThis.document = prior.document;
