@@ -1,5 +1,5 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
-import { at, round } from "./state.js";
+import { at, round, signature } from "./state.js";
 import { movesFor, partnersFor, resting } from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
@@ -7,6 +7,40 @@ const element = (doc, tag, text, cls) => {
   if (cls) e.className = cls;
   return e;
 };
+function evolutionarySummary(state, owner) {
+  const pieces = state.pieces.filter((p) => p.owner === owner);
+  const pieceCounts = Array(PIECES.length).fill(0);
+  const traitCounts = new Map();
+  const lineages = new Set();
+
+  for (const piece of pieces) {
+    pieceCounts[piece.rank]++;
+    lineages.add(signature(piece));
+    for (const trait of piece.traits)
+      traitCounts.set(trait, (traitCounts.get(trait) || 0) + 1);
+  }
+
+  let predominantRank = 0;
+  for (let rank = 1; rank < pieceCounts.length; rank++)
+    if (pieceCounts[rank] > pieceCounts[predominantRank]) predominantRank = rank;
+
+  const predominantCount = pieceCounts[predominantRank] || 0;
+  const piecePercent = pieces.length
+    ? Math.round((predominantCount / pieces.length) * 100)
+    : 0;
+  const traits = [...traitCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"))
+    .slice(0, 3)
+    .map(([name]) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
+
+  return {
+    lineages: lineages.size,
+    pieceName: PIECES[predominantRank],
+    pieceSymbol: SYMBOLS[owner][predominantRank],
+    piecePercent,
+    traits,
+  };
+}
 /** Rendering only reads state. No observers, commands, timers or rule callbacks. */
 export function render(
   doc,
@@ -131,6 +165,79 @@ export function render(
         })
       : [make("span", "As mutações aparecem com os nascimentos.")]),
   );
+  const gameOverDialog = $("game-over-dialog");
+  if (state.result) {
+    const winner = state.result.winner;
+    if (winner) {
+      const loser = winner === "blue" ? "amber" : "blue";
+      const summary = evolutionarySummary(state, winner);
+      const loserExtinct = state.pieces.every((p) => p.owner !== loser);
+      const extinction = make(
+        "p",
+        undefined,
+        "evolutionary-end-extinction",
+      );
+      if (loserExtinct) {
+        extinction.append(
+          `As ${OWNERS[loser]} sofreram `,
+          make("strong", "Extinção Total"),
+          ".",
+        );
+      } else {
+        extinction.textContent =
+          state.result.reason || `As ${OWNERS[loser]} foram superadas.`;
+      }
+
+      const lineageText = `${summary.lineages} ${
+        summary.lineages === 1
+          ? "linhagem sobrevivente"
+          : "linhagens sobreviventes"
+      }`;
+      const content = make("div", undefined, "evolutionary-end-summary");
+      const lineages = make("p", lineageText, "evolutionary-end-lineages");
+      const selection = make("div", undefined, "evolutionary-end-section");
+      selection.append(
+        make("strong", "Seleção natural", "evolutionary-end-heading"),
+        make(
+          "div",
+          `${summary.pieceName} ${summary.pieceSymbol} (${summary.piecePercent}% da população sobrevivente)`,
+          "evolutionary-end-primary",
+        ),
+      );
+      const traits = make(
+        "div",
+        undefined,
+        "evolutionary-end-section evolutionary-end-traits",
+      );
+      traits.append(
+        make(
+          "strong",
+          "Características predominantes:",
+          "evolutionary-end-heading",
+        ),
+        make(
+          "div",
+          summary.traits.length
+            ? summary.traits
+                .map((t) => `${t.name} ${t.icon}`)
+                .join(" · ")
+            : "Nenhuma característica hereditária predominante",
+        ),
+      );
+      content.append(extinction, lineages, selection, traits);
+      $("game-over-title").textContent = `Vitória das ${OWNERS[winner]}`;
+      $("game-over-body").replaceChildren(content);
+    } else {
+      $("game-over-title").textContent = "Empate";
+      $("game-over-body").replaceChildren(
+        make("p", state.result.reason || "A partida terminou empatada."),
+      );
+    }
+    if (!gameOverDialog.open) gameOverDialog.showModal();
+  } else if (gameOverDialog.open) {
+    gameOverDialog.close();
+  }
+
   const dialog = $("notice-dialog"),
     n = state.notices[0];
   if (n) {
