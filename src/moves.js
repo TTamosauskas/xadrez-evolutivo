@@ -1,5 +1,6 @@
 import { inside, has, distance } from "./constants.js";
 import { at, eggAt, terrain, round } from "./state.js";
+import { captureUnlocked } from "./geology.js";
 const ORTH = [
     [-1, 0],
     [1, 0],
@@ -58,6 +59,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     const victim = at(state, r, c),
       egg = eggAt(state, r, c);
     if (victim?.owner === p.owner || egg?.owner === p.owner) return;
+    if ((victim || egg) && !captureUnlocked(state)) return;
     if (egg) {
       const parent = state.pieces.find((piece) => piece.id === egg.parentId),
         protectedEgg =
@@ -94,6 +96,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       }
     }
   }
+  if (has(p, "Locomoção")) {
   if (p.rank === 0) {
     const dir = p.r === 0 ? 1 : p.r === 7 ? -1 : p.pawnDir,
       r = p.r + dir;
@@ -131,6 +134,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     for (const [dr, dc] of [...ORTH, ...DIAG])
       add(p.r + dr, p.c + dc, [[p.r + dr, p.c + dc]]);
   else ray([...ORTH, ...DIAG]);
+  }
   const collector = has(p, "Coletor");
   if (
     (terrain(state, p.r, p.c) === "fertile" || (collector && p.seeds > 0)) &&
