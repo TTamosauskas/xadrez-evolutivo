@@ -112,13 +112,13 @@ main {
   background: #799552;
 }
 .cell.fertile.dark {
-  background: #637c3f;
+  background: #799552;
 }
 .cell.hostile {
   background: #ad6650;
 }
 .cell.hostile.dark {
-  background: #8b4c41;
+  background: #ad6650;
 }
 .cell.selected {
   box-shadow: inset 0 0 0 4px #ffdf84;
@@ -158,13 +158,6 @@ main {
   color: #242623;
   text-shadow: 1px 0 #f7eace77;
 }
-.coordinate {
-  position: absolute;
-  left: 3px;
-  top: 2px;
-  font-size: clamp(8px, 1.3vw, 11px);
-  color: #172213b0;
-}
 .badges {
   position: absolute;
   bottom: 2px;
@@ -191,9 +184,9 @@ main {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
+  margin-right: auto;
   font-size: 12px;
   color: var(--muted);
-  padding: 12px 0;
 }
 .panel {
   background: #242a22;
@@ -208,16 +201,6 @@ main {
   letter-spacing: 0.07em;
   color: #c1c6b5;
   margin: 0 0 14px;
-}
-.population {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 10px 0;
-}
-.population span {
-  font-size: 13px;
-  color: var(--muted);
 }
 .trait {
   font-size: 13px;
@@ -237,20 +220,6 @@ main {
   font-size: 14px;
   min-height: 20px;
   margin: 0;
-}
-#log {
-  padding-left: 20px;
-  max-height: 300px;
-  overflow: auto;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.6;
-}
-body > footer {
-  text-align: center;
-  padding: 32px;
-  color: #919983;
-  font-size: 12px;
 }
 dialog {
   color: inherit;
@@ -315,6 +284,33 @@ summary {
   max-height: 55vh;
   overflow: auto;
 }
+.mutation-list {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+.mutation-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  line-height: 1.45;
+  font-size: 14px;
+  color: #d2d8c8;
+}
+.mutation-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 50%;
+  background: #343d30;
+  border: 1px solid #56624d;
+  font-size: 18px;
+}
 #traits {
   max-height: 360px;
   overflow: auto;
@@ -330,14 +326,11 @@ summary {
   }
   aside {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 12px;
   }
   aside .panel {
     margin: 0;
-  }
-  aside .panel:nth-child(n + 3) {
-    grid-column: 1/-1;
   }
   .piece {
     font-size: clamp(25px, 8vw, 55px);
