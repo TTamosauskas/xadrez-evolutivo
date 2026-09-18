@@ -14,7 +14,6 @@ export const GEOLOGICAL_STAGES = [
       ["Fotossíntese", "Predação"],
       ["Fertilidade", "Dormência"],
     ],
-    cycleRoundLimit: 40,
     habitat: { fertile: 52, hostile: 0, founderFertile: true },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2 },
   },
@@ -29,7 +28,6 @@ export const GEOLOGICAL_STAGES = [
       "Esporos",
       "Carnívoro",
     ],
-    cycleRoundLimit: 40,
     habitat: { fertile: 42, hostile: 2, founderFertile: true },
     events: {
       fertilized: 3,
@@ -45,7 +43,6 @@ export const GEOLOGICAL_STAGES = [
     group: "Pré-Cambriano",
     period: "Ediacarano",
     required: ["Locomoção", "Necrófago", "Construção de Nicho"],
-    cycleRoundLimit: 40,
     habitat: { fertile: 30, hostile: 4, founderFertile: true },
     events: {
       abundance: 3,
@@ -382,6 +379,10 @@ export function traitUnlocked(state, trait, piece = null) {
   return true;
 }
 
+export function pawnMutationUnlocked(state) {
+  return (state.totalCycles ?? 1) >= 2;
+}
+
 export function rankMutationUnlocked(state) {
   return currentGeologicalStage(state).index >= geologicalStage("cambrian").index;
 }
@@ -451,9 +452,6 @@ export function priorRequiredInnovations(stageId) {
   );
 }
 
-export function cycleRoundLimit(state) {
-  return currentGeologicalStage(state).cycleRoundLimit ?? 80;
-}
 
 export function isNegativeTrait(trait) {
   return NEGATIVE_TRAITS.has(trait);
