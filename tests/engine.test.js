@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { fixture, move } from "./helpers.js";
 import {
   createState,
+  createSuccessorState,
   clone,
   assertState,
   newPiece,
@@ -425,6 +426,71 @@ test("mutation modal only queues outcomes that have not appeared before", () => 
   assert.ok(notice?.lines.length);
   assert.ok(notice.lines.every((line) => s.seenMutations.includes(line)));
   assertState(s);
+});
+test("mass extinction starts a new Era from the dominant surviving lineage", () => {
+  const s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 2,
+      rank: 3,
+      traits: ["Voo", "Necrófago", "Esterilidade", "Mutação Deletéria"],
+      mutations: 7,
+      generation: 9,
+      deleteriousDue: 20,
+    },
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Voo", "Necrófago", "Esterilidade", "Mutação Deletéria"],
+      mutations: 4,
+      generation: 8,
+      deleteriousDue: 20,
+    },
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Onívoro"],
+      mutations: 2,
+      generation: 9,
+    },
+  ]);
+  s.era = 1;
+  s.generationOffset = 0;
+  s.maxGenerationReached = 9;
+  s.result = { winner: "blue", reason: "Extinção total." };
+  s.phase = "over";
+
+  const next = createSuccessorState(s, 123);
+  assert.equal(next.era, 2);
+  assert.equal(next.generationOffset, 10);
+  assert.equal(next.generationOffset + next.maxGenerationReached + 1, 11);
+  assert.equal(next.maxGenerationReached, 0);
+  assert.equal(next.nextHabitatGeneration, 3);
+  assert.equal(next.nextEventGeneration, 4);
+  assert.equal(next.pieces.length, 4);
+  assert.deepEqual(
+    [...new Set(next.pieces.map((p) => p.rank))],
+    [3],
+  );
+  assert.ok(
+    next.pieces.every(
+      (p) =>
+        p.generation === 0 &&
+        p.mutations === 0 &&
+        p.traits.includes("Voo") &&
+        p.traits.includes("Necrófago") &&
+        !p.traits.includes("Esterilidade") &&
+        !p.traits.includes("Mutação Deletéria"),
+    ),
+  );
+  assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 2);
+  assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 2);
+  assertState(next);
 });
 test("stale revisions cannot advance the turn", () => {
   const s = createState(1);
