@@ -306,8 +306,11 @@ export function innovationWeight(state, trait) {
   if ((state.historicalTraits ?? []).includes(trait)) return 1;
   const missing = missingInnovations(state),
     cycle = Math.max(1, state.cycle ?? 1),
-    cycleBoost = Math.min(14, 2 + (cycle - 1) * 3);
-  return Math.min(16, cycleBoost + (missing.length === 1 ? 2 : 0));
+    cycleBoost = Math.min(200, 3 * 3 ** (cycle - 1));
+  return Math.min(
+    240,
+    cycleBoost * (missing.length === 1 ? 1.5 : 1),
+  );
 }
 
 export function eventWeights(state) {
