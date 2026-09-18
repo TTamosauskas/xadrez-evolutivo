@@ -171,12 +171,15 @@ export function advanceConway(ctx) {
     }
   // Retain legacy Conway mortality; other hostile risk is resolved once per round.
   const doomed = state.pieces
-    .filter(
-      (p) =>
-        state.board[square(p.r, p.c)] === "hostile" &&
+    .filter((p) => {
+      const cell = square(p.r, p.c);
+      return (
+        state.board[cell] === "hostile" &&
+        !hasDecomposition(state, cell) &&
         !has(p, "Voo") &&
-        !event?.hazards.includes(square(p.r, p.c)),
-    )
+        !event?.hazards.includes(cell)
+      );
+    })
     .map((p) => p.id);
   for (const id of doomed) ctx.kill(id, "mudança do habitat por Conway");
 }

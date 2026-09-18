@@ -508,6 +508,30 @@ test("capture creates hostile decomposition, protects attacker and fertilizes af
   assert.equal(s.deathSites.length, 0);
   assertState(s);
 });
+test("capture decomposition never bypasses immunity during Conway habitat updates", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3 },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.nextHabitatGeneration = 3;
+  s.maxGenerationReached = 3;
+
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  const attackerId = 1;
+  assert.ok(s.pieces.some((p) => p.id === attackerId));
+  assert.equal(s.board[36], "hostile");
+  assert.equal(s.deathSites[0].cell, 36);
+
+  s = simulate(s, { type: "PASS" });
+  assert.ok(
+    s.pieces.some((p) => p.id === attackerId),
+    "Conway must not kill a piece on a temporary decomposition overlay",
+  );
+  assert.equal(s.board[36], "hostile");
+  assertState(s);
+});
+
 test("non-capture deaths do not create decomposition", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 3 },
