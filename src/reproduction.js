@@ -8,6 +8,12 @@ import {
   OWNERS,
 } from "./constants.js";
 import {
+  aestheticMutationRate,
+  cloneAestheticGenes,
+  inheritSexualAestheticGenes,
+  mutateAestheticGenes,
+} from "./aesthetics.js";
+import {
   at,
   random,
   pick,
@@ -114,6 +120,7 @@ export function reproduce(ctx, parent, mate = null, reason = "casa fértil") {
   const wanted =
     BIRTH_RATES[profile.rank] * (has(profile, "Fertilidade") ? 2 : 1);
   let born = 0;
+  const bornChildren = [];
   for (const target of shuffle(state, cells)) {
     if (born >= wanted || state.pieces.length >= 64) break;
     // Recheck occupancy at the actual insertion boundary, including death effects.
@@ -124,6 +131,13 @@ export function reproduce(ctx, parent, mate = null, reason = "casa fértil") {
       continue;
     const child = newPiece(state, parent.owner, target.r, target.c, {
       ...profile,
+      aestheticGenes: mate
+        ? inheritSexualAestheticGenes(
+            parent.aestheticGenes,
+            mate.aestheticGenes,
+            () => random(state),
+          )
+        : cloneAestheticGenes(parent.aestheticGenes),
       generation: Math.max(parent.generation, mate?.generation ?? 0) + 1,
       parentId: parent.id,
     });
@@ -132,6 +146,7 @@ export function reproduce(ctx, parent, mate = null, reason = "casa fértil") {
     if (has(child, "Mutação Deletéria"))
       child.deleteriousDue = Math.max(1, Math.ceil(state.turn / 2)) + 3;
     state.pieces.push(child);
+    bornChildren.push(child);
     state.maxGenerationReached = Math.max(
       state.maxGenerationReached,
       child.generation,
@@ -139,6 +154,14 @@ export function reproduce(ctx, parent, mate = null, reason = "casa fértil") {
     born++;
   }
   if (born) {
+    const reproductionNumber =
+        state.reproductions.blue + state.reproductions.amber + 1,
+      aestheticRate = aestheticMutationRate(reproductionNumber);
+    if (aestheticRate && random(state) < aestheticRate) {
+      const child = pick(state, bornChildren),
+        evolved = mutateAestheticGenes(child.aestheticGenes, () => random(state));
+      child.aestheticGenes = evolved.genes;
+    }
     state.reproductions[parent.owner]++;
     log(
       state,
