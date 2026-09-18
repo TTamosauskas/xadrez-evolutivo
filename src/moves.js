@@ -38,7 +38,11 @@ export function manipulationTargets(state) {
       if (!dr && !dc) continue;
       const r = origin.r + dr,
         c = origin.c + dc;
-      if (inside(r, c) && terrain(state, r, c) === "neutral")
+      if (
+        inside(r, c) &&
+        terrain(state, r, c) === "neutral" &&
+        !barrierAt(state, r, c)
+      )
         targets.push({ r, c });
     }
   return targets;
