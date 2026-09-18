@@ -23,7 +23,7 @@ test("invalid actions roll back the complete state, including random generator",
 });
 test("stationary reproduction keeps its parent and unique occupancy with Ooteca", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, traits: ["Ooteca", "Predação"] },
+    { owner: "blue", r: 4, c: 4, traits: ["Ooteca"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
@@ -279,6 +279,43 @@ test("generation milestones drive habitat and queue ecological events", () => {
   assert.ok(s.event);
   assert.notEqual(s.event.id, first);
   assert.equal(s.event.startRound, 10);
+  assertState(s);
+});
+test("Predador reproduces on capture but not on fertile cells", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Predador"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Predador"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
+  assert.equal(s.board[36], "fertile");
+  assertState(s);
+});
+test("Onívoro reproduces on both fertile cells and captures", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Onívoro"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Onívoro"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
   assertState(s);
 });
 test("capture creates hostile decomposition, protects attacker and fertilizes after three rounds", () => {
