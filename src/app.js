@@ -303,10 +303,12 @@ $("evolution-history").addEventListener("click", () => {
       progress.required.length
         ? `Inovações do período: ${progress.discovered.length}/${progress.required.length}`
         : "Estágio de transição: um Ciclo completo é suficiente para avançar.",
-      ...progress.required.map(
-        (trait) =>
-          `${state.historicalTraits.includes(trait) ? "✓" : "○"} ${TRAITS[trait][0]} ${trait}`,
-      ),
+      ...progress.required.map((trait, index) => {
+        const discovered = state.historicalTraits.includes(trait),
+          next = progress.missing[0] === trait,
+          mark = discovered ? "✓" : next ? "→" : "○";
+        return `${mark} ${index + 1}. ${TRAITS[trait][0]} ${trait}${next ? " · próxima inovação elegível" : ""}`;
+      }),
       "",
       "Linha do tempo:",
       ...GEOLOGICAL_STAGES.map((stage) => {
@@ -337,18 +339,18 @@ $("game-log").addEventListener("click", () =>
 );
 $("rules").addEventListener("click", () =>
   info("Como jogar", [
-    "A campanha começa no Pré-Cambriano · Arqueano. Organismos ancestrais ainda não possuem Locomoção: expandem-se principalmente reproduzindo sobre casas férteis. 🐾 Locomoção, liberada no Ediacarano, permite os movimentos normais do xadrez; 🐪 Locomoção Avançada, liberada mais tarde, permite uma segunda movimentação.",
-    "Cada partida completa é um Ciclo Evolutivo. Ao fim de uma Extinção em Massa, a linhagem dominante sobrevivente funda os dois lados do próximo Ciclo. O período geológico só avança quando todas as inovações obrigatórias daquele estágio já foram observadas pelo menos uma vez.",
+    "A campanha começa no Pré-Cambriano · Arqueano. Organismos ancestrais começam imóveis e expandem-se principalmente pela reprodução. 🦈 Predação surge antes da mobilidade e permite ataques de contato nas oito casas adjacentes; 🐾 Locomoção entra no Ediacarano após a descoberta histórica da Predação e libera os movimentos normais do xadrez; 🐪 Locomoção Avançada surge mais tarde e permite uma segunda movimentação.",
+    "Cada partida completa é um Ciclo Evolutivo. Ao fim de uma Extinção em Massa, a linhagem dominante sobrevivente funda os dois lados do próximo Ciclo. Cada período possui uma sequência narrativa: somente a próxima inovação obrigatória entra no pool; sua primeira descoberta libera a seguinte. O período avança após todas as inovações da sequência terem aparecido ao menos uma vez.",
     "Ciclos do Pré-Cambriano duram no máximo 40 rodadas completas; do Cambriano em diante, no máximo 80. Se não houver extinção antes, o Ciclo termina por comparação de população, reproduções, mutações e diversidade de linhagens.",
     "Casas verdes geram descendentes e são consumidas. Você pode reproduzir permanecendo sobre uma casa verde. Peões geram até 4 descendentes; cavalos, 3; bispos e torres, 2; reis e rainhas, 1. Cada nascimento tem 1/3 de chance de mutação, inclusive na primeira reprodução.",
-    "🦈 Predação é uma mutação basal do Arqueano e permite capturar criaturas adversárias. 🦁 Carnívoro surge a partir do Proterozoico: mantém a capacidade predatória e reproduz ao capturar, mas não usa casas férteis. As mutações de tipo de peça continuam entrando no pool no Cambriano.",
+    "🦈 Predação é uma mutação basal do Arqueano. Antes da Locomoção, a captura ocorre por contato e o predador permanece em sua casa. 🦁 Carnívoro exige Predação na própria linhagem, reproduz ao capturar e abandona o uso de casas férteis; 🐻 Onívoro surge depois de Carnívoro e recupera também o uso de recursos férteis. As mutações de tipo de peça entram no pool no Cambriano.",
     "Casas vermelhas oferecem 50% de risco em cada casa atravessada e por rodada de permanência. Voo ignora o risco apenas ao atravessar casas hostis; pousar ou permanecer nelas continua sujeito ao risco normal. Carapaça reduz o risco para 34%. Cavalos testam apenas a casa de chegada. Uma captura deixa a casa em decomposição: ela fica hostil por três rodadas e depois se torna fértil. O capturador recebe uma rodada completa de imunidade ao risco da casa criada pela própria captura.",
     "A evolução ambiental acompanha a maior geração local já alcançada. O habitat muda pela primeira vez na G3 local e depois a cada duas gerações. Eventos ecológicos começam na G4 local e depois a cada seis gerações; duram dez rodadas e são sorteados com pesos próprios do período geológico. Surtos de Patógeno por superpopulação são liberados a partir do Proterozoico.",
-    "Mutações positivas entram no pool conforme o tempo geológico e suas dependências. Inovações obrigatórias ainda não descobertas recebem peso crescente em Ciclos posteriores do mesmo período, sem serem concedidas automaticamente. Genes recessivos só contam como descobertos quando o fenótipo é realmente expresso.",
+    "Mutações positivas entram no pool conforme o tempo geológico, a sequência interna do período e dependências específicas. A próxima inovação ainda inédita recebe peso crescente em Ciclos posteriores, sempre por mutação em descendentes. Genes recessivos contam como descoberta quando o fenótipo é expresso.",
     "Na reprodução sexuada, escolha um aliado adjacente fértil. Os descendentes combinam características dos dois progenitores. As novas mutações dessa reprodução são positivas.",
     "Ovíparo e Vivíparo são variantes do mesmo locus de desenvolvimento; Ovos e Esporos pertencem ao locus de dispersão. Cada peça carrega dois alelos por locus. Alelos dominantes se expressam com uma cópia; recessivos podem permanecer ocultos e reaparecer quando herdados em par. Na reprodução sexuada, cada descendente recebe um alelo de cada progenitor em cada locus.",
     "Ovíparos depositam um ovo com a ninhada e ele eclode após três rodadas. Vivíparos carregam a ninhada por três rodadas; se o progenitor morrer antes, a gestação é perdida. Esporos espalham os descendentes em posições distantes. Apenas Ovífagia permite capturar ovos inimigos; a ninhada consumida determina quantos descendentes o ovífago tenta gerar.",
-    "Fotossíntese torna fértil uma casa neutra após uma rodada completa sem sair dela. Dormência imobiliza a criatura em casa hostil e evita o risco ambiental enquanto ela permanecer ali, mas não impede capturas. Regeneração evita uma morte não causada por captura uma vez por vida e força descanso na rodada seguinte.",
+    "Fotossíntese torna fértil uma casa neutra após uma rodada completa de permanência. Fotossíntese e Predação representam estratégias energéticas antagônicas: possuir uma reduz para 20% o peso de surgimento da outra, mantendo uma combinação rara possível. Dormência imobiliza a criatura em casa hostil e evita o risco ambiental durante a permanência. Regeneração evita uma morte causada pelo ambiente uma vez por vida e força descanso na rodada seguinte.",
     "Cuidado Parental protege contra Ovífagia enquanto o progenitor estiver vivo e adjacente ao ovo. Visão Noturna permite capturar Camuflagem à distância. Eusocialidade recebe até +2 descendentes de trabalhadores estéreis aparentados e adjacentes.",
     "🫎 Chifre surge no Neógeno após a origem da Predação. Quando uma criatura com Chifre sofre uma tentativa de captura, há 20% de chance de o agressor morrer imediatamente e a captura falhar. 🐢 Carapaça no agressor neutraliza essa defesa.",
     "⬡ Construção de Nicho neutraliza uma casa hostil estável quando a criatura termina ali e sobrevive. 🦫 Construtor Avançado, liberado no Neógeno após Construção de Nicho, pode erguer uma barreira marrom adjacente depois de uma reprodução bem-sucedida que consumiu uma casa fértil. Barreiras bloqueiam o deslocamento: Voo pode atravessá-las sem destruí-las e Chifre as destrói ao atravessar. Polegar Opositor pode transferir o terreno fértil ou hostil de chegada para uma casa neutra adjacente; terrenos temporários de eventos, decomposição e barreiras não podem ser manipulados.",

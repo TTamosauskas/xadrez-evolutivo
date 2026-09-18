@@ -92,10 +92,10 @@ function mutation(state, p, positiveOnly) {
       gains.push({ rank, weight: 1 });
   for (const trait of POSITIVE)
     if (!has(p, trait) && traitUnlocked(state, trait, p))
-      gains.push({ gain: trait, weight: innovationWeight(state, trait) });
+      gains.push({ gain: trait, weight: innovationWeight(state, trait, p) });
   for (const trait of geneGainOptions(p.reproGenes))
     if (traitUnlocked(state, trait, p))
-      gains.push({ gene: trait, weight: innovationWeight(state, trait) });
+      gains.push({ gene: trait, weight: innovationWeight(state, trait, p) });
 
   const losses = [];
   if (p.rank > 0) losses.push({ rank: p.rank - 1 });
@@ -218,6 +218,7 @@ function freeCells(ctx, origin, dispersal) {
   const range = dispersal === "eggs" ? 2 : 1;
   for (let dr = -range; dr <= range; dr++)
     for (let dc = -range; dc <= range; dc++) {
+      if (!dr && !dc) continue;
       const r = origin.r + dr,
         c = origin.c + dc;
       if (
