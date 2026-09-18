@@ -272,7 +272,7 @@ function earthquake(ctx) {
     p.c = i % 8;
   }
   for (const p of [...state.pieces])
-    if (state.board[square(p.r, p.c)] === "hostile" && !has(p, "Voo"))
+    if (state.board[square(p.r, p.c)] === "hostile")
       ctx.kill(p.id, "Terremoto");
   return original.size;
 }
@@ -397,7 +397,7 @@ export function startEvent(ctx, id = null) {
         allCells().filter((i) => Math.floor(i / 8) === r || i % 8 === c),
       );
       for (const p of [...state.pieces])
-        if (event.hazards.includes(square(p.r, p.c)) && !has(p, "Voo"))
+        if (event.hazards.includes(square(p.r, p.c)))
           ctx.kill(p.id, "Insularização");
       break;
     }
