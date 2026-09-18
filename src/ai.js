@@ -19,7 +19,10 @@ function priority(state, a) {
     ),
     egg = eggAt(state, a.r, a.c);
   return (
-    (state.board[square(a.r, a.c)] === "fertile" ? 8 : 0) +
+    (state.board[square(a.r, a.c)] === "fertile" &&
+    (!has(p, "Predador") || has(p, "Onívoro"))
+      ? 8
+      : 0) +
     (victim ? 4 + victim.rank : 0) +
     (egg && egg.owner !== state.current ? 4 + egg.brood.length : 0) -
     (state.board[square(a.r, a.c)] === "hostile" && !has(p, "Dormência")
