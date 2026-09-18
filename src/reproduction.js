@@ -46,6 +46,18 @@ const NEGATIVE = ["Esterilidade", "Mutação Deletéria", "Mutação Disfunciona
 const POSITIVE = Object.keys(TRAITS).filter(
   (t) => !NEGATIVE.includes(t) && !GENETIC_TRAITS.includes(t),
 );
+const DERIVED_FORM_NEXT = new Map([
+  [0, 1],
+  [1, 2],
+  [2, 3],
+  [3, 5],
+]);
+const DERIVED_FORM_PREVIOUS = new Map([
+  [1, 0],
+  [2, 1],
+  [3, 2],
+  [5, 3],
+]);
 
 function weightedPick(state, options) {
   const total = options.reduce((sum, option) => sum + (option.weight ?? 1), 0);
@@ -90,8 +102,10 @@ function eusocialBonus(state, parent) {
 
 function mutation(state, p, positiveOnly) {
   const gains = [];
-  if (rankMutationUnlocked(state) && p.rank < PIECES.length - 1)
-    gains.push({ rank: p.rank + 1, weight: 1 });
+  if (p.rank === 4)
+    gains.push({ rank: 0, weight: 1 });
+  else if (rankMutationUnlocked(state) && DERIVED_FORM_NEXT.has(p.rank))
+    gains.push({ rank: DERIVED_FORM_NEXT.get(p.rank), weight: 1 });
   for (const trait of POSITIVE)
     if (!has(p, trait) && traitUnlocked(state, trait, p))
       gains.push({ gain: trait, weight: innovationWeight(state, trait, p) });
@@ -100,7 +114,8 @@ function mutation(state, p, positiveOnly) {
       gains.push({ gene: trait, weight: innovationWeight(state, trait, p) });
 
   const losses = [];
-  if (p.rank > 0) losses.push({ rank: p.rank - 1 });
+  if (DERIVED_FORM_PREVIOUS.has(p.rank))
+    losses.push({ rank: DERIVED_FORM_PREVIOUS.get(p.rank) });
   for (const trait of p.traits)
     if (
       trait !== "Esterilidade" &&
