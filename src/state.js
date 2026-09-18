@@ -5,8 +5,10 @@ import {
   nextGeologicalStage,
   geologicalLabel,
   habitatProfile,
+  normalizeEnergyBranch,
   recordHistoricalTraits,
   stageComplete,
+  traitCombinationValid,
   stageProgress,
 } from "./geology.js";
 import {
@@ -63,15 +65,16 @@ export function notice(state, title, lines, key = null) {
     });
 }
 export function newPiece(state, owner, r, c, source = {}) {
+  const traits = normalizeEnergyBranch(source.traits ?? []);
   const piece = {
     id: state.nextId++,
     owner,
     r,
     c,
     rank: source.rank ?? 0,
-    traits: [...(source.traits ?? [])],
+    traits,
     reproGenes: cloneReproGenes(
-      source.reproGenes ?? normalizeReproGenes(null, source.traits ?? []),
+      source.reproGenes ?? normalizeReproGenes(null, traits),
     ),
     mutations: source.mutations ?? 0,
     generation: source.generation ?? 0,
@@ -326,6 +329,7 @@ export function assertState(state) {
       integer(profile.rank, 0, 5) &&
       Array.isArray(profile.traits) &&
       profile.traits.every((t) => TRAITS[t]) &&
+      traitCombinationValid(profile.traits) &&
       validReproGenes(profile.reproGenes) &&
       integer(profile.mutations) &&
       integer(profile.generation);
@@ -418,6 +422,7 @@ export function assertState(state) {
       p.rank > 5 ||
       !Array.isArray(p.traits) ||
       p.traits.some((t) => !TRAITS[t]) ||
+      !traitCombinationValid(p.traits) ||
       !validReproGenes(p.reproGenes) ||
       !Array.isArray(p.pregnancies)
     )
