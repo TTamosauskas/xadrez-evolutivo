@@ -52,7 +52,8 @@ export function newPiece(state, owner, r, c, source = {}) {
     bornRound: round(state),
   };
 }
-export function createState(seed = Date.now()) {
+export function createState(seed = Date.now(), options = {}) {
+  const founder = options.founder ?? null;
   const state = {
     version: 2,
     rng: seed >>> 0,
@@ -73,6 +74,8 @@ export function createState(seed = Date.now()) {
     logs: [],
     event: null,
     previousEvent: null,
+    era: options.era ?? 1,
+    generationOffset: options.generationOffset ?? 0,
     maxGenerationReached: 0,
     nextHabitatGeneration: 3,
     nextEventGeneration: 4,
@@ -88,7 +91,12 @@ export function createState(seed = Date.now()) {
     ["blue", 7],
     ["amber", 0],
   ])
-    for (const c of [3, 4]) state.pieces.push(newPiece(state, owner, r, c));
+    for (const c of [3, 4])
+      state.pieces.push(
+        newPiece(state, owner, r, c, founder
+          ? { rank: founder.rank, traits: founder.traits, mutations: 0, generation: 0 }
+          : {}),
+      );
   const empty = shuffle(
     state,
     Array.from({ length: 64 }, (_, i) => i).filter(
@@ -121,6 +129,48 @@ export function createState(seed = Date.now()) {
 export function signature(p) {
   return `${p.rank}|${[...p.traits].sort().join("|")}`;
 }
+export function dominantLineage(state, owner = null) {
+  const pieces = owner
+      ? state.pieces.filter((p) => p.owner === owner)
+      : state.pieces,
+    groups = new Map();
+  for (const piece of pieces) {
+    const key = signature(piece),
+      group = groups.get(key);
+    if (group) group.count++;
+    else groups.set(key, { piece, count: 1 });
+  }
+  const selected = [...groups.values()].sort(
+    (a, b) =>
+      b.count - a.count ||
+      b.piece.generation - a.piece.generation ||
+      signature(a.piece).localeCompare(signature(b.piece), "pt-BR"),
+  )[0];
+  return selected
+    ? { ...selected, total: pieces.length }
+    : { piece: null, count: 0, total: pieces.length };
+}
+export function createSuccessorState(previous, seed = Date.now()) {
+  const selected = dominantLineage(previous, previous.result?.winner ?? null),
+    excluded = new Set(["Esterilidade", "Mutação Deletéria"]),
+    founder = selected.piece
+      ? {
+          rank: selected.piece.rank,
+          traits: selected.piece.traits.filter((t) => !excluded.has(t)),
+        }
+      : null,
+    era = previous.era + 1,
+    generationOffset =
+      previous.generationOffset + previous.maxGenerationReached + 1;
+  const state = createState(seed, { era, generationOffset, founder });
+  log(
+    state,
+    founder
+      ? `A ${era}ª Era começa com a linhagem sobrevivente da Era anterior.`
+      : `A ${era}ª Era começa após uma extinção em massa.`,
+  );
+  return state;
+}
 export function summary(state, owner) {
   const pieces = state.pieces.filter((p) => p.owner === owner),
     profiles = new Map(pieces.map((p) => [signature(p), p]));
@@ -139,6 +189,8 @@ export function assertState(state) {
     !integer(state.revision) ||
     !integer(state.nextNotice, 1) ||
     !integer(state.nextDisease, 1) ||
+    !integer(state.era, 1) ||
+    !integer(state.generationOffset) ||
     !integer(state.maxGenerationReached) ||
     !integer(state.nextHabitatGeneration, 3) ||
     !integer(state.nextEventGeneration, 4) ||
