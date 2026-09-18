@@ -276,6 +276,47 @@ select {
   gap: 10px;
   margin-top: 20px;
 }
+.evolutionary-end-summary {
+  padding: 2px 0 4px;
+}
+.evolutionary-end-summary p {
+  margin: 0;
+}
+.evolutionary-end-extinction {
+  font-size: 15px;
+  line-height: 1.55;
+}
+.evolutionary-end-lineages {
+  margin-top: 18px !important;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ebe8de !important;
+}
+.evolutionary-end-section {
+  margin-top: 26px;
+}
+.evolutionary-end-heading {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.evolutionary-end-primary {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ebe8de;
+  line-height: 1.35;
+}
+.evolutionary-end-primary span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.evolutionary-end-traits > div {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #ebe8de;
+}
 summary {
   cursor: pointer;
   font-size: 14px;
