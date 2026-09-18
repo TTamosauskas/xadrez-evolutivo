@@ -10,6 +10,11 @@ import {
   stageProgress,
 } from "./geology.js";
 import {
+  cloneDiscoveries,
+  recordDiscovery,
+  validDiscoveries,
+} from "./discoveries.js";
+import {
   cloneReproGenes,
   normalizeReproGenes,
   reproGeneSignature,
@@ -87,11 +92,13 @@ export function registerDiscoveries(state, piece) {
     ...added.map((trait) => `${TRAITS[trait][0]} ${trait} surgiu pela primeira vez.`),
     `Progresso de ${currentGeologicalStage(state).period}: ${progress.discovered.length} de ${progress.required.length} inovação(ões).`,
   ]);
-  for (const trait of added)
+  for (const trait of added) {
+    recordDiscovery(state, "mutations", trait);
     log(
       state,
       `Marco Evolutivo: ${TRAITS[trait][0]} ${trait} foi descoberto.`,
     );
+  }
   return added;
 }
 
@@ -164,7 +171,7 @@ function seedHabitat(state) {
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null;
   const state = {
-    version: 4,
+    version: 5,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
@@ -183,6 +190,7 @@ export function createState(seed = Date.now(), options = {}) {
     seen: [],
     seenMutations: [],
     historicalTraits: [...(options.historicalTraits ?? [])],
+    discoveries: cloneDiscoveries(options.discoveries),
     logs: [],
     event: null,
     previousEvent: null,
@@ -221,6 +229,7 @@ export function createState(seed = Date.now(), options = {}) {
           : {}),
       );
   seedHabitat(state);
+  recordDiscovery(state, "geology", state.geologicalStage);
   log(
     state,
     `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com dois organismos de cada lado.`,
@@ -286,6 +295,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
     totalCycles,
     generationOffset,
     historicalTraits: previous.historicalTraits,
+    discoveries: previous.discoveries,
     founder,
   });
   log(
@@ -340,6 +350,7 @@ export function assertState(state) {
     !Array.isArray(state.historicalTraits) ||
     state.historicalTraits.some((trait) => !TRAITS[trait]) ||
     new Set(state.historicalTraits).size !== state.historicalTraits.length ||
+    !validDiscoveries(state.discoveries) ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
     !Array.isArray(state.eggs) ||
@@ -373,7 +384,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 4 ||
+    state.version !== 5 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))

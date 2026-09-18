@@ -5,12 +5,15 @@ import {
   syncReproTraits,
 } from "./reproductive-genetics.js";
 import {
+  GEOLOGICAL_STAGES,
   firstCompatibleStage,
   geologicalStage,
   priorRequiredInnovations,
   isNegativeTrait,
 } from "./geology.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v4";
+import { legacyDiscoveries } from "./discoveries.js";
+export const SAVE_KEY = "xadrez-evolutivo-save-v5";
+export const V4_KEY = "xadrez-evolutivo-save-v4";
 export const V3_KEY = "xadrez-evolutivo-save-v3";
 export const V2_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
@@ -20,7 +23,7 @@ const legacyTraitName = (name) =>
   name === "Predador" || name === "Predação" ? "Carnívoro" : name;
 const v2TraitName = (name) =>
   name === "Locomoção" ? "Locomoção Avançada" : legacyTraitName(name);
-const mutationLabel = (label, version = 4) => {
+const mutationLabel = (label, version = 5) => {
   let mapped = label;
   if (version <= 3) {
     if (mapped === "Predador") mapped = "Carnívoro";
@@ -34,7 +37,7 @@ const mutationLabel = (label, version = 4) => {
   }
   return mapped;
 };
-function historicalMutations(data, version = 4) {
+function historicalMutations(data, version = 5) {
   const valid = new Set([
       ...Object.keys(TRAITS),
       ...Object.keys(TRAITS).map((t) => `Perda de ${t}`),
@@ -75,7 +78,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([4, 3, 2].includes(data?.version)) {
+  if ([5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -171,7 +174,6 @@ export function deserialize(raw) {
     }
     if (sourceVersion < 4 && !data.historicalTraits.includes("Predação"))
       data.historicalTraits.push("Predação");
-    data.version = 4;
     if (!Number.isInteger(data.cycle) || data.cycle < 1) data.cycle = 1;
     if (!Number.isInteger(data.totalCycles) || data.totalCycles < data.cycle)
       data.totalCycles = data.cycle;
@@ -198,6 +200,17 @@ export function deserialize(raw) {
         ? trace.base
         : "neutral",
     }));
+    if (sourceVersion < 5)
+      data.discoveries = legacyDiscoveries({
+        geologicalStage: data.geologicalStage,
+        stages: GEOLOGICAL_STAGES,
+        historicalTraits: data.historicalTraits,
+        seenMutations: data.seenMutations,
+        event: data.event,
+        previousEvent: data.previousEvent,
+        diseases: data.diseases,
+      });
+    data.version = 5;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -359,6 +372,15 @@ export function deserialize(raw) {
       "Predação",
     ]),
   ];
+  state.discoveries = legacyDiscoveries({
+    geologicalStage: state.geologicalStage,
+    stages: GEOLOGICAL_STAGES,
+    historicalTraits: state.historicalTraits,
+    seenMutations: state.seenMutations,
+    event: state.event,
+    previousEvent: state.previousEvent,
+    diseases: state.diseases,
+  });
   notice(state, "Partida importada", [
     "Posições, características e contadores foram convertidos. A jogada atual recomeça na fase de movimento. O arquivo antigo continua preservado.",
   ]);
@@ -371,6 +393,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V4_KEY) ??
     storage.getItem(V3_KEY) ??
     storage.getItem(V2_KEY) ??
     storage.getItem(LEGACY_KEY);

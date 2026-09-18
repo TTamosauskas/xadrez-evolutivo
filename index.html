@@ -92,6 +92,7 @@
         ><button id="import">Importar arquivo</button
         ><button id="rules">Como jogar</button
         ><button id="evolution-history">História evolutiva</button
+        ><button id="discoveries">Descobertas <span id="discoveries-badge" class="unread-badge" hidden></span></button
         ><button id="game-log">Log da partida</button
         ><button id="new">Nova partida</button>
       </div>
@@ -101,6 +102,24 @@
         accept="application/json,.json"
         hidden
       /><button id="menu-close" class="primary">Voltar ao jogo</button>
+    </dialog>
+    <dialog id="discoveries-dialog" aria-labelledby="discoveries-title">
+      <h2 id="discoveries-title">Descobertas</h2>
+      <div class="discovery-tabs" role="tablist" aria-label="Categorias de descobertas">
+        <button type="button" role="tab" data-discovery-tab="geology">Eras <span id="discoveries-geology-badge" class="unread-badge" hidden></span></button>
+        <button type="button" role="tab" data-discovery-tab="events">Eventos <span id="discoveries-events-badge" class="unread-badge" hidden></span></button>
+        <button type="button" role="tab" data-discovery-tab="mutations">Mutações <span id="discoveries-mutations-badge" class="unread-badge" hidden></span></button>
+      </div>
+      <div id="discovery-list" class="discovery-list"></div>
+      <article id="discovery-detail" class="discovery-detail" hidden>
+        <button id="discovery-back" type="button" class="discovery-back">← Voltar</button>
+        <h3 id="discovery-detail-title"></h3>
+        <img id="discovery-detail-image" alt="" />
+        <p id="discovery-detail-text"></p>
+        <p class="discovery-attribution">Resumo educacional baseado no verbete indicado da Wikipédia em português (CC BY-SA 4.0). Ilustração local do projeto.</p>
+        <a id="discovery-wikipedia" class="wikipedia-link" target="_blank" rel="noopener noreferrer">Wikipedia</a>
+      </article>
+      <button id="discoveries-close" class="primary">Voltar ao menu</button>
     </dialog>
     <dialog id="info-dialog" aria-labelledby="info-title">
       <h2 id="info-title"></h2>

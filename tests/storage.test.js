@@ -6,6 +6,7 @@ import {
   load,
   LEGACY_KEY,
   SAVE_KEY,
+  V4_KEY,
   V3_KEY,
   V2_KEY,
 } from "../src/storage.js";
@@ -34,10 +35,35 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
       getItem: (k) => entries.get(k) ?? null,
     };
   const migrated = load(storage);
-  assert.equal(migrated.version, 4);
+  assert.equal(migrated.version, 5);
   assert.equal(entries.get(V2_KEY), raw);
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Locomoção")));
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
+});
+
+test("v4 saves migrate discoveries without creating unread backlog", () => {
+  const old = createState(14);
+  old.version = 4;
+  delete old.discoveries;
+  old.historicalTraits.push("Fotossíntese");
+  old.seenMutations.push("Fotossíntese");
+  const raw = JSON.stringify(old),
+    entries = new Map([[V4_KEY, raw]]),
+    storage = {
+      setItem: (k, v) => entries.set(k, v),
+      getItem: (k) => entries.get(k) ?? null,
+    },
+    migrated = load(storage);
+  assert.equal(migrated.version, 5);
+  assert.ok(migrated.discoveries.geology.includes("archean"));
+  assert.ok(migrated.discoveries.mutations.includes("Fotossíntese"));
+  assert.equal(
+    migrated.discoveries.read.length,
+    migrated.discoveries.geology.length +
+      migrated.discoveries.events.length +
+      migrated.discoveries.mutations.length,
+  );
+  assert.equal(entries.get(V4_KEY), raw);
 });
 
 test("v3 saves rename Predador to Carnívoro and preserve capture with Predação", () => {
@@ -54,7 +80,7 @@ test("v3 saves rename Predador to Carnívoro and preserve capture with Predaçã
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 4);
+  assert.equal(migrated.version, 5);
   assert.ok(migrated.pieces[0].traits.includes("Carnívoro"));
   assert.ok(migrated.pieces[0].traits.includes("Predação"));
   assert.ok(!migrated.pieces[0].traits.includes("Predador"));
@@ -136,7 +162,7 @@ test("v2 saves migrate old locomotion semantics and Ovos genes into v4", () => {
   old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
-  assert.equal(s.version, 4);
+  assert.equal(s.version, 5);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "eggs");

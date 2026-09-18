@@ -1,6 +1,7 @@
 import { EVENTS, inside, square, has, distance } from "./constants.js";
 import { at, eggAt, barrierAt, pick, random, shuffle, round, log, notice } from "./state.js";
 import { eventWeights } from "./geology.js";
+import { recordDiscovery } from "./discoveries.js";
 import { startDisease } from "./disease.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
 const fertile = (state) =>
@@ -316,6 +317,7 @@ export function startEvent(ctx, id = null) {
     snapshots: {},
   };
   state.event = event;
+  recordDiscovery(state, "events", event.id);
   switch (event.id) {
     case "volcano": {
       const r = Math.floor(random(state) * 6),

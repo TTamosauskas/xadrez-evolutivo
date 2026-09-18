@@ -17,6 +17,14 @@ import {
   stageComplete,
   stageProgress,
 } from "./geology.js";
+import {
+  DISCOVERY_CATEGORIES,
+  DISCOVERY_CONTENT,
+  discoveredContent,
+  isDiscoveryUnread,
+  markDiscoveryRead,
+  unreadDiscoveries,
+} from "./discoveries.js";
 const $ = (id) => document.getElementById(id);
 let selected = null,
   confirmAction = null;
@@ -30,6 +38,7 @@ const controller = new Controller(createState(), {
       selected = null;
     render(document, state, { selected, busy, mode: controller.mode });
     $("undo-neocortex").hidden = !controller.canUndoNeocortex();
+    renderDiscoveryBadges();
   },
 });
 try {
@@ -191,6 +200,107 @@ $("menu-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
   closeMenu();
 });
+
+let activeDiscoveryCategory = "geology";
+
+function setUnreadBadge(element, count) {
+  if (!element) return;
+  element.textContent = String(count);
+  element.hidden = count === 0;
+}
+
+function renderDiscoveryBadges() {
+  if (!controller?.state?.discoveries) return;
+  setUnreadBadge($("discoveries-badge"), unreadDiscoveries(controller.state));
+  for (const [category] of DISCOVERY_CATEGORIES)
+    setUnreadBadge(
+      $(`discoveries-${category}-badge`),
+      unreadDiscoveries(controller.state, category),
+    );
+}
+
+function renderDiscoveryList() {
+  const list = $("discovery-list"),
+    detail = $("discovery-detail");
+  detail.hidden = true;
+  list.hidden = false;
+  list.replaceChildren();
+  for (const button of document.querySelectorAll("[data-discovery-tab]")) {
+    const active = button.dataset.discoveryTab === activeDiscoveryCategory;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", active ? "true" : "false");
+  }
+  const entries = discoveredContent(controller.state, activeDiscoveryCategory);
+  if (!entries.length) {
+    const empty = document.createElement("p");
+    empty.className = "discovery-empty";
+    empty.textContent = "Nenhuma descoberta registrada nesta categoria.";
+    list.append(empty);
+    return;
+  }
+  for (const entry of entries) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "discovery-item";
+    const title = document.createElement("span");
+    title.textContent = entry.title;
+    button.append(title);
+    if (isDiscoveryUnread(controller.state, activeDiscoveryCategory, entry.id)) {
+      button.classList.add("unread");
+      const badge = document.createElement("span");
+      badge.className = "unread-badge";
+      badge.textContent = "1";
+      badge.setAttribute("aria-label", "não lido");
+      button.append(badge);
+    }
+    button.addEventListener("click", () =>
+      openDiscovery(activeDiscoveryCategory, entry.id),
+    );
+    list.append(button);
+  }
+}
+
+function openDiscovery(category, id) {
+  const entry = DISCOVERY_CONTENT[category]?.[id];
+  if (!entry) return;
+  markDiscoveryRead(controller.state, category, id);
+  renderDiscoveryBadges();
+  $("discovery-list").hidden = true;
+  const detail = $("discovery-detail");
+  detail.hidden = false;
+  $("discovery-detail-title").textContent = entry.title;
+  $("discovery-detail-image").src = entry.image;
+  $("discovery-detail-image").alt = `Ilustração de ${entry.title}`;
+  $("discovery-detail-text").textContent = entry.text;
+  $("discovery-wikipedia").href = entry.wikipedia;
+}
+
+function openDiscoveries() {
+  if ($("menu-dialog").open) $("menu-dialog").close();
+  controller.pause(true);
+  renderDiscoveryBadges();
+  renderDiscoveryList();
+  $("discoveries-dialog").showModal();
+}
+
+function closeDiscoveries() {
+  if ($("discoveries-dialog").open) $("discoveries-dialog").close();
+  renderDiscoveryBadges();
+  $("menu-dialog").showModal();
+}
+
+$("discoveries").addEventListener("click", openDiscoveries);
+$("discoveries-close").addEventListener("click", closeDiscoveries);
+$("discovery-back").addEventListener("click", renderDiscoveryList);
+$("discoveries-dialog").addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeDiscoveries();
+});
+for (const tab of document.querySelectorAll("[data-discovery-tab]"))
+  tab.addEventListener("click", () => {
+    activeDiscoveryCategory = tab.dataset.discoveryTab;
+    renderDiscoveryList();
+  });
 function info(title, lines, action = null) {
   $("menu-dialog").close();
   $("info-title").textContent = title;
@@ -346,7 +456,7 @@ $("rules").addEventListener("click", () =>
     "🦈 Predação é uma mutação basal do Arqueano. Antes da Locomoção, a captura ocorre por contato e o predador permanece em sua casa. 🦁 Carnívoro exige Predação na própria linhagem, reproduz ao capturar e abandona o uso de casas férteis; 🐻 Onívoro surge depois de Carnívoro e recupera também o uso de recursos férteis. As mutações de tipo de peça entram no pool no Cambriano.",
     "Casas vermelhas oferecem 50% de risco em cada casa atravessada e por rodada de permanência. Voo ignora o risco apenas ao atravessar casas hostis; pousar ou permanecer nelas continua sujeito ao risco normal. Carapaça reduz o risco para 34%. Cavalos testam apenas a casa de chegada. Uma captura deixa a casa em decomposição: ela fica hostil por três rodadas e depois se torna fértil. O capturador recebe uma rodada completa de imunidade ao risco da casa criada pela própria captura.",
     "A evolução ambiental acompanha a maior geração local já alcançada. O habitat muda pela primeira vez na G3 local e depois a cada duas gerações. Eventos ecológicos começam na G4 local e depois a cada seis gerações; duram dez rodadas e são sorteados com pesos próprios do período geológico. Surtos de Patógeno por superpopulação são liberados a partir do Proterozoico.",
-    "Mutações positivas entram no pool conforme o tempo geológico, o Ciclo ativo, a sequência interna do período e dependências específicas. Inovações reservadas para um Ciclo posterior ficam fora do pool até sua abertura. A próxima inovação elegível ainda inédita recebe peso crescente em Ciclos posteriores, sempre por mutação em descendentes. Genes recessivos contam como descoberta quando o fenótipo é expresso.",
+    "Mutações positivas entram no pool conforme o tempo geológico, o Ciclo ativo, uma micro-ordem interna e dependências específicas. Inovações reservadas para um Ciclo posterior ficam fora do pool até sua abertura. Formas de peça também avançam passo a passo, sem saltar ranks. A próxima inovação elegível ainda inédita recebe peso crescente em Ciclos posteriores, sempre por mutação em descendentes. Genes recessivos contam como descoberta quando o fenótipo é expresso.",
     "Na reprodução sexuada, escolha um aliado adjacente fértil. Os descendentes combinam características dos dois progenitores. As novas mutações dessa reprodução são positivas.",
     "Ovíparo e Vivíparo são variantes do mesmo locus de desenvolvimento; Ovos e Esporos pertencem ao locus de dispersão. Cada peça carrega dois alelos por locus. Alelos dominantes se expressam com uma cópia; recessivos podem permanecer ocultos e reaparecer quando herdados em par. Na reprodução sexuada, cada descendente recebe um alelo de cada progenitor em cada locus.",
     "Ovíparos depositam um ovo com a ninhada e ele eclode após três rodadas. Vivíparos carregam a ninhada por três rodadas; se o progenitor morrer antes, a gestação é perdida. Esporos espalham os descendentes em posições distantes. Apenas Ovífagia permite capturar ovos inimigos; a ninhada consumida determina quantos descendentes o ovífago tenta gerar.",
