@@ -31,6 +31,18 @@ export const TRAITS = {
     "☀️",
     "Transforma em fértil uma casa neutra após permanecer nela por uma rodada completa.",
   ],
+  "Construção de Nicho": [
+    "🦫",
+    "Neutraliza a casa hostil de chegada quando a criatura sobrevive.",
+  ],
+  "Polegar Opositor": [
+    "✋",
+    "Permite transferir o terreno fértil ou hostil de chegada para uma casa neutra adjacente.",
+  ],
+  "Neocórtex Desenvolvido": [
+    "🧠",
+    "Permite observar a próxima ação adversária e desfazer ambas uma vez.",
+  ],
   Eusocialidade: [
     "🐜",
     "Indivíduos estéreis aparentados e adjacentes aumentam a ninhada em até dois descendentes.",
