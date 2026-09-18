@@ -1,6 +1,7 @@
 import { has, distance, OWNERS, other } from "./constants.js";
 import { round, random, pick, log, notice } from "./state.js";
 import { pathogenUnlocked } from "./geology.js";
+import { recordDiscovery } from "./discoveries.js";
 export function infect(state, p, disease) {
   if (
     !p ||
@@ -38,6 +39,7 @@ export function startDisease(
     deaths: 0,
   };
   state.diseases.push(disease);
+  recordDiscovery(state, "events", "pathogen");
   infect(state, seed, disease);
   notice(state, "Patógeno Virulento", [
     `Origem: ${source === "population" ? "superpopulação" : "evento ecológico"}.`,
