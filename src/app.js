@@ -1,7 +1,7 @@
 import { createState, createSuccessorState } from "./state.js";
 import { Controller } from "./controller.js";
 import { render } from "./view.js";
-import { movesFor, partnersFor } from "./moves.js";
+import { movesFor, partnersFor, manipulationTargets } from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
 import { TRAITS } from "./constants.js";
@@ -17,6 +17,7 @@ const controller = new Controller(createState(), {
     if (selected && !state.pieces.some((p) => p.id === selected))
       selected = null;
     render(document, state, { selected, busy, mode: controller.mode });
+    $("undo-neocortex").hidden = !controller.canUndoNeocortex();
   },
 });
 try {
@@ -52,6 +53,15 @@ $("board").addEventListener("click", (event) => {
   const r = Number(cell.dataset.r),
     c = Number(cell.dataset.c),
     p = at(state, r, c);
+  if (state.phase === "manipulate") {
+    if (
+      manipulationTargets(state).some(
+        (target) => target.r === r && target.c === c,
+      )
+    )
+      dispatch({ type: "MANIPULATE", r, c });
+    return;
+  }
   if (state.phase === "partner") {
     const parent = state.pieces.find((p) => p.id === state.partner.id);
     if (p && partnersFor(state, parent).some((m) => m.id === p.id))
@@ -86,7 +96,17 @@ $("board").addEventListener("keydown", (event) => {
     )
     ?.focus();
 });
-$("pass").addEventListener("click", () => dispatch({ type: "PASS" }));
+$("pass").addEventListener("click", () =>
+  dispatch(
+    controller.state.phase === "manipulate"
+      ? { type: "SKIP_MANIPULATION" }
+      : { type: "PASS" },
+  ),
+);
+$("undo-neocortex").addEventListener("click", () => {
+  selected = null;
+  if (controller.undoNeocortex()) report("↻ Cenário desfeito.");
+});
 function acknowledge() {
   const n = controller.state.notices[0];
   if (n) dispatch({ type: "ACK_NOTICE", id: n.id });
@@ -240,6 +260,8 @@ $("rules").addEventListener("click", () =>
     "Ovíparos depositam um ovo com a ninhada e ele eclode após três rodadas. Vivíparos carregam a ninhada por três rodadas; se o progenitor morrer antes, a gestação é perdida. Esporos espalham os descendentes em posições distantes. Apenas Ovífagia permite capturar ovos inimigos; a ninhada consumida determina quantos descendentes o ovífago tenta gerar.",
     "Fotossíntese torna fértil uma casa neutra após uma rodada completa sem sair dela. Dormência imobiliza a criatura em casa hostil e evita o risco ambiental enquanto ela permanecer ali, mas não impede capturas. Regeneração evita uma morte não causada por captura uma vez por vida e força descanso na rodada seguinte.",
     "Cuidado Parental protege contra Ovífagia enquanto o progenitor estiver vivo e adjacente ao ovo. Visão Noturna permite capturar Camuflagem à distância. Eusocialidade recebe até +2 descendentes de trabalhadores estéreis aparentados e adjacentes.",
+    "Construção de Nicho neutraliza uma casa hostil estável quando a criatura termina ali e sobrevive. Polegar Opositor pode transferir o terreno fértil ou hostil de chegada para uma casa neutra adjacente; terrenos temporários de eventos e decomposição não podem ser manipulados.",
+    "Neocórtex Desenvolvido permite observar a próxima ação adversária. O botão ↻ restaura o estado anterior à jogada, inclusive RNG, desfazendo sua ação e a resposta observada uma única vez; a nova linha de jogo é definitiva naquele ciclo.",
     ...Object.entries(TRAITS).map(
       ([name, [icon, description]]) => `${icon} ${name}: ${description}`,
     ),
