@@ -84,6 +84,7 @@ export function aestheticGenotypeSignature(source) {
       (name) =>
         `${name}:${genes[name]
           .map((a) => `${a.value}:${a.dominance}`)
+          .sort()
           .join("/")}`,
     )
     .join(";");
@@ -108,14 +109,24 @@ export function mutateAestheticGenes(source, random) {
     candidates = [];
   for (const name of geneNames) {
     const def = AESTHETIC_GENE_DEFS[name];
-    for (let allele = 0; allele < 2; allele++)
-      for (const value of def.mutants)
-        if (value !== genes[name][allele].value)
-          candidates.push({ name, allele, value });
+    for (let allele = 0; allele < 2; allele++) {
+      const current = genes[name][allele].value,
+        values =
+          current === def.normal
+            ? def.mutants
+            : [def.normal, ...def.mutants.filter((value) => value !== current)];
+      for (const value of values) candidates.push({ name, allele, value });
+    }
   }
   if (!candidates.length) return { genes, mutation: null };
   const selected = candidates[Math.floor(random() * candidates.length)],
-    dominance = random() < 0.5 ? "dominant" : "recessive";
+    def = AESTHETIC_GENE_DEFS[selected.name],
+    dominance =
+      selected.value === def.normal
+        ? "neutral"
+        : random() < 0.5
+          ? "dominant"
+          : "recessive";
   genes[selected.name][selected.allele] = {
     value: selected.value,
     dominance,
