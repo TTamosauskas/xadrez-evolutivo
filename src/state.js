@@ -306,7 +306,15 @@ export function assertState(state) {
       !integer(p.mutations) ||
       !integer(p.seeds) ||
       !integer(p.generation) ||
-      ![1, -1].includes(p.pawnDir)
+      ![1, -1].includes(p.pawnDir) ||
+      (p.regenerationUsed !== undefined &&
+        typeof p.regenerationUsed !== "boolean") ||
+      (p.regenerationRestThroughRound !== undefined &&
+        !integer(p.regenerationRestThroughRound)) ||
+      (p.photosynthesisCell !== undefined &&
+        !integer(p.photosynthesisCell, 0, 63)) ||
+      (p.photosynthesisSinceTurn !== undefined &&
+        !integer(p.photosynthesisSinceTurn))
     )
       throw Error("Perfil inválido.");
     ids.add(p.id);
@@ -322,6 +330,7 @@ export function assertState(state) {
       !inside(egg.r, egg.c) ||
       cells.has(cell) ||
       !integer(egg.hatchRound) ||
+      (egg.parentId !== undefined && egg.parentId !== null && !integer(egg.parentId, 1)) ||
       !["local", "eggs", "spores"].includes(egg.dispersal) ||
       !Array.isArray(egg.brood) ||
       !egg.brood.length ||
