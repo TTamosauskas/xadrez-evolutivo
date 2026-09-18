@@ -1,5 +1,6 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
 import { at, eggAt, dominantLineage, round, signature } from "./state.js";
+import { currentGeologicalStage, stageProgress } from "./geology.js";
 import {
   movesFor,
   partnersFor,
@@ -66,11 +67,11 @@ export function render(
       : "Empate"
     : `Vez das ${OWNERS[state.current]}${busy ? " · IA pensando…" : ""}`;
   const currentRound = round(state),
-    period = Math.floor(state.maxGenerationReached / 10) + 1,
+    geological = currentGeologicalStage(state),
     historicalGeneration =
       state.generationOffset + state.maxGenerationReached + 1;
   $("round").textContent =
-    `${state.era}ª Era · ${period}º Período · ${historicalGeneration}ª Geração`;
+    `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${historicalGeneration}ª Geração`;
   const ev = state.event,
     diseases = state.diseases.filter((d) => d.endRound >= currentRound);
   $("event").textContent = [
@@ -258,13 +259,35 @@ export function render(
             : "Nenhuma característica hereditária predominante",
         ),
       );
-      content.append(extinction, lineages, selection, traits);
+      const progress = stageProgress(state),
+        geologicalProgress = make(
+          "p",
+          progress.required.length
+            ? `${geological.period}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) descobertas.`
+            : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
+          "evolutionary-end-lineages",
+        );
+      content.append(
+        extinction,
+        lineages,
+        selection,
+        traits,
+        geologicalProgress,
+      );
       $("game-over-title").textContent = `Vitória das ${OWNERS[winner]}`;
       $("game-over-body").replaceChildren(content);
     } else {
+      const progress = stageProgress(state);
       $("game-over-title").textContent = "Empate";
       $("game-over-body").replaceChildren(
         make("p", state.result.reason || "A partida terminou empatada."),
+        make(
+          "p",
+          progress.required.length
+            ? `${geological.period}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) descobertas.`
+            : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
+          "evolutionary-end-lineages",
+        ),
       );
     }
     if (!gameOverDialog.open) gameOverDialog.showModal();
