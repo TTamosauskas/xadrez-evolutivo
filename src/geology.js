@@ -10,6 +10,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Pré-Cambriano",
     period: "Arqueano",
     required: ["Fotossíntese", "Fertilidade", "Dormência"],
+    cycleRoundLimit: 40,
     habitat: { fertile: 52, hostile: 0, founderFertile: true },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2 },
   },
@@ -25,6 +26,7 @@ export const GEOLOGICAL_STAGES = [
       "Necrófago",
       "Esporos",
     ],
+    cycleRoundLimit: 40,
     habitat: { fertile: 42, hostile: 2, founderFertile: true },
     events: {
       fertilized: 3,
@@ -40,6 +42,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Pré-Cambriano",
     period: "Ediacarano",
     required: ["Locomoção"],
+    cycleRoundLimit: 40,
     habitat: { fertile: 30, hostile: 4, founderFertile: true },
     events: {
       abundance: 3,
@@ -346,6 +349,10 @@ export function priorRequiredInnovations(stageId) {
   return GEOLOGICAL_STAGES.slice(0, stage.index).flatMap(
     (entry) => entry.required,
   );
+}
+
+export function cycleRoundLimit(state) {
+  return currentGeologicalStage(state).cycleRoundLimit ?? null;
 }
 
 export function isNegativeTrait(trait) {
