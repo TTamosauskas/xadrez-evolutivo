@@ -309,9 +309,9 @@ test("generation milestones drive habitat and queue ecological events", () => {
   assert.equal(s.event.startRound, 10);
   assertState(s);
 });
-test("Predador reproduces on capture but not on fertile cells", () => {
+test("Carnívoro reproduces on capture but not on fertile cells", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Predador"] },
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -319,7 +319,7 @@ test("Predador reproduces on capture but not on fertile cells", () => {
   assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
 
   s = fixture([
-    { owner: "blue", r: 4, c: 4, traits: ["Predador"] },
+    { owner: "blue", r: 4, c: 4, traits: ["Carnívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
