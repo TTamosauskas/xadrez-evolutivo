@@ -6,6 +6,7 @@ import {
   load,
   LEGACY_KEY,
   SAVE_KEY,
+  V2_KEY,
 } from "../src/storage.js";
 import { createState, clone } from "../src/state.js";
 import { reproPhenotype } from "../src/reproductive-genetics.js";
@@ -17,6 +18,26 @@ test("round trip saves deterministic state and rejects duplicate occupancy", () 
   bad.pieces[1].c = bad.pieces[0].c;
   assert.throws(() => deserialize(JSON.stringify(bad)), /Ocupação/);
 });
+test("load falls back to v2 key and migrates without overwriting it", () => {
+  const old = createState(7);
+  old.version = 2;
+  old.era = 2;
+  delete old.geologicalStage;
+  delete old.cycle;
+  delete old.totalCycles;
+  delete old.historicalTraits;
+  const raw = JSON.stringify(old),
+    entries = new Map([[V2_KEY, raw]]),
+    storage = {
+      setItem: (k, v) => entries.set(k, v),
+      getItem: (k) => entries.get(k) ?? null,
+    };
+  const migrated = load(storage);
+  assert.equal(migrated.version, 3);
+  assert.equal(entries.get(V2_KEY), raw);
+  assert.ok(migrated.pieces.every((p) => p.traits.includes("Locomoção")));
+});
+
 test("save version uses separate key and preserves original save", () => {
   const entries = new Map([[LEGACY_KEY, "original"]]);
   const storage = {
@@ -65,26 +86,40 @@ test("imports legacy positions, specialization loss, seeds, poison and timers", 
   };
   const s = deserialize(JSON.stringify(old));
   assert.equal(s.pieces[0].seeds, 3);
-  assert.deepEqual(s.pieces[0].traits, ["Coletor"]);
+  assert.ok(s.pieces[0].traits.includes("Coletor"));
+  assert.ok(s.pieces[0].traits.includes("Locomoção"));
+  assert.ok(["silurian", "devonian", "carboniferous", "permian", "triassic", "jurassic", "cretaceous", "paleogene", "neogene", "quaternary"].includes(s.geologicalStage));
   assert.equal(s.turn, 3);
   assert.equal(s.pieces[0].venom.remaining, 2);
 });
-test("v2 saves migrate old Ovos trait into reproductive genes", () => {
+test("v2 saves migrate old locomotion semantics and Ovos genes into v3", () => {
   const old = createState(9);
+  old.version = 2;
+  old.era = 4;
+  delete old.geologicalStage;
+  delete old.cycle;
+  delete old.totalCycles;
+  delete old.historicalTraits;
   delete old.eggs;
   delete old.nextEgg;
   for (const piece of old.pieces) {
     delete piece.reproGenes;
     delete piece.pregnancies;
   }
-  old.pieces[0].traits = ["Ovos"];
+  old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
+  assert.equal(s.version, 3);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "eggs");
   assert.ok(s.pieces[0].traits.includes("Ovos"));
+  assert.ok(s.pieces[0].traits.includes("Locomoção"));
+  assert.ok(s.pieces[0].traits.includes("Locomoção Avançada"));
+  assert.ok(s.pieces.every((p) => p.traits.includes("Locomoção")));
   assert.ok(s.pieces.every((p) => Array.isArray(p.pregnancies)));
+  assert.equal(s.totalCycles, 4);
+  assert.ok(s.historicalTraits.includes("Locomoção"));
 });
 
 test("terrain manipulation phase survives save round trip", () => {
