@@ -115,8 +115,8 @@ function technicalEnd(state) {
 function geologicalCycleEnd(state) {
   comparativeEnd(
     state,
-    "Fim do Ciclo pré-cambriano: a seleção favoreceu a população mais adaptada.",
-    "Fim do Ciclo pré-cambriano em equilíbrio.",
+    "Fim do Ciclo evolutivo: a seleção favoreceu a população mais adaptada.",
+    "Fim do Ciclo evolutivo em equilíbrio.",
   );
 }
 function moveDirection(p) {
