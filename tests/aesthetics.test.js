@@ -50,7 +50,7 @@ test("only three aesthetic differences are expressed at once", () => {
   genes.style = [dominant("bold"), neutral("normal")];
   genes.height = [dominant("high"), neutral("normal")];
   genes.width = [dominant("wide"), neutral("normal")];
-  genes.stroke = [dominant(0.8), neutral(0)];
+  genes.stroke = [dominant(2), neutral(0)];
   genes.pigment = [dominant("violet"), neutral("none")];
   genes.posture = [dominant("right"), neutral("normal")];
 
@@ -67,9 +67,9 @@ test("pigment can remain genetically present while stroke keeps it invisible", (
   genes.pigment = [dominant("violet"), neutral("none")];
   assert.equal(aestheticPhenotype(genes).pigment, "none");
 
-  genes.stroke = [dominant(0.4), neutral(0)];
+  genes.stroke = [dominant(1), neutral(0)];
   const phenotype = aestheticPhenotype(genes);
-  assert.equal(phenotype.stroke, 0.4);
+  assert.equal(phenotype.stroke, 1);
   assert.equal(phenotype.pigment, "violet");
 });
 
