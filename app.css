@@ -120,6 +120,22 @@ main {
 .cell.hostile.dark {
   background: #ad6650;
 }
+.decomposition-mark {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(28px, 6vw, 62px);
+  opacity: 0.18;
+  filter: grayscale(1);
+  pointer-events: none;
+  z-index: 1;
+}
+.cell.decomposition .piece,
+.cell.decomposition .badges {
+  position: relative;
+  z-index: 2;
+}
 .cell.selected {
   box-shadow: inset 0 0 0 4px #ffdf84;
 }
@@ -210,6 +226,11 @@ main {
 .trait small {
   display: block;
   color: var(--muted);
+}
+.decomposition-legend {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #363e32;
 }
 #selected {
   font-size: 14px;
