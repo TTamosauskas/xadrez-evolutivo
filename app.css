@@ -182,6 +182,9 @@ main {
   color: #242623;
   text-shadow: 1px 0 #f7eace77;
 }
+.piece.dysfunctional-resting {
+  opacity: 0.42;
+}
 .badges {
   position: absolute;
   bottom: 2px;
