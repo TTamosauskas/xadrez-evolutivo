@@ -86,7 +86,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     return [];
   if (!ignoreChain && state.chain && state.chain !== p.id) return [];
   const targets = [];
-  function add(r, c, path) {
+  function add(r, c, path, extra = {}) {
     if (!inside(r, c)) return;
     const victim = at(state, r, c),
       egg = eggAt(state, r, c);
@@ -114,6 +114,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       path,
       capture: !!victim,
       eggCapture: egg?.id ?? null,
+      ...extra,
     });
   }
   function ray(directions) {
@@ -133,7 +134,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       }
     }
   }
-  if (has(p, "Locomoção") || has(p, "Locomoção Avançada")) {
+  const mobile = has(p, "Locomoção") || has(p, "Locomoção Avançada");
+  if (mobile) {
   if (p.rank === 0) {
     const dir = p.r === 0 ? 1 : p.r === 7 ? -1 : p.pawnDir,
       r = p.r + dir;
@@ -171,6 +173,15 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     for (const [dr, dc] of [...ORTH, ...DIAG])
       add(p.r + dr, p.c + dc, [[p.r + dr, p.c + dc]]);
   else ray([...ORTH, ...DIAG]);
+  }
+  if (!mobile && has(p, "Predação")) {
+    for (const [dr, dc] of [...ORTH, ...DIAG]) {
+      const r = p.r + dr,
+        c = p.c + dc,
+        victim = at(state, r, c);
+      if (victim?.owner && victim.owner !== p.owner)
+        add(r, c, [], { contactCapture: true });
+    }
   }
   const collector = has(p, "Coletor"),
     canUseFertility = !has(p, "Carnívoro") || has(p, "Onívoro");
