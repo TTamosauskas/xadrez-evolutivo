@@ -1,5 +1,6 @@
 import { transition } from "./engine.js";
-import { assertState } from "./state.js";
+import { assertState, clone } from "./state.js";
+import { has } from "./constants.js";
 import { fallbackAction } from "./ai.js";
 import { legalActions } from "./moves.js";
 /** The sole owner of live state, worker lifecycle and timers. */
@@ -30,6 +31,9 @@ export class Controller {
     this.paused = false;
     this.generation = 0;
     this.job = null;
+    this.neocortexPending = null;
+    this.neocortexWindow = null;
+    this.neocortexLock = null;
   }
   cancel() {
     this.generation++;
@@ -46,8 +50,30 @@ export class Controller {
   replace(state) {
     assertState(state);
     this.cancel();
+    this.neocortexPending = null;
+    this.neocortexWindow = null;
+    this.neocortexLock = null;
     this.state = state;
     this.refresh();
+  }
+  canUndoNeocortex() {
+    return !!this.neocortexWindow;
+  }
+  undoNeocortex() {
+    const window = this.neocortexWindow;
+    if (!window) return false;
+    const restored = clone(window.snapshot);
+    restored.revision = this.state.revision + 1;
+    assertState(restored);
+    this.cancel();
+    this.neocortexPending = null;
+    this.neocortexWindow = null;
+    this.neocortexLock = {
+      releaseTurn: window.originTurn + 2,
+    };
+    this.state = restored;
+    this.refresh();
+    return true;
   }
   configure(mode, difficulty = this.difficulty) {
     this.cancel();
@@ -70,10 +96,77 @@ export class Controller {
     )
       return false;
     try {
+      const isAck = action.type === "ACK_NOTICE";
+      if (
+        this.neocortexLock &&
+        this.state.turn >= this.neocortexLock.releaseTurn
+      )
+        this.neocortexLock = null;
+
+      if (this.neocortexWindow?.responseComplete && !isAck)
+        this.neocortexWindow = null;
+
+      if (
+        !ai &&
+        !isAck &&
+        !this.neocortexPending &&
+        !this.neocortexWindow &&
+        !this.neocortexLock &&
+        action.type === "MOVE" &&
+        this.state.phase === "move"
+      ) {
+        const actor = this.state.pieces.find((p) => p.id === action.id);
+        if (
+          actor?.owner === this.state.current &&
+          has(actor, "Neocórtex Desenvolvido")
+        )
+          this.neocortexPending = {
+            snapshot: clone(this.state),
+            actorId: actor.id,
+            owner: actor.owner,
+            originTurn: this.state.turn,
+          };
+      }
+
       const next = transition(this.state, action);
       if (next === this.state) return false;
       this.cancel();
       this.state = next;
+
+      if (this.neocortexPending) {
+        const pending = this.neocortexPending;
+        if (
+          this.state.turn > pending.originTurn &&
+          this.state.current !== pending.owner
+        ) {
+          const survived = this.state.pieces.some(
+            (piece) => piece.id === pending.actorId,
+          );
+          if (survived && !this.state.result)
+            this.neocortexWindow = {
+              ...pending,
+              responseComplete: false,
+            };
+          this.neocortexPending = null;
+        }
+      }
+
+      if (
+        this.neocortexWindow &&
+        !this.neocortexWindow.responseComplete &&
+        ((this.state.current === this.neocortexWindow.owner &&
+          this.state.turn >= this.neocortexWindow.originTurn + 2) ||
+          (this.state.result &&
+            this.state.turn > this.neocortexWindow.originTurn + 1))
+      )
+        this.neocortexWindow.responseComplete = true;
+
+      if (
+        this.neocortexLock &&
+        this.state.turn >= this.neocortexLock.releaseTurn
+      )
+        this.neocortexLock = null;
+
       this.refresh();
       return true;
     } catch (error) {
