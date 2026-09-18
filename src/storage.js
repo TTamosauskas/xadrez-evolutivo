@@ -1,10 +1,5 @@
 import { createState, newPiece, assertState, round, notice } from "./state.js";
 import { TRAITS, EVENTS, PIECES, square, has } from "./constants.js";
-import {
-  aestheticGenotypeSignature,
-  ancestralAestheticGenes,
-  normalizeAestheticGenes,
-} from "./aesthetics.js";
 export const SAVE_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
 const traitName = (name) => (name === "Predação" ? "Predador" : name);
@@ -54,20 +49,9 @@ export function deserialize(raw) {
   const data = JSON.parse(raw);
   if (data?.version === 2) {
     if (Array.isArray(data.pieces))
-      for (const piece of data.pieces) {
+      for (const piece of data.pieces)
         piece.traits = [...new Set((piece.traits ?? []).map(traitName))];
-        piece.aestheticGenes = normalizeAestheticGenes(piece.aestheticGenes);
-      }
     data.seenMutations = historicalMutations(data);
-    if (!Number.isInteger(data.aestheticMutations) || data.aestheticMutations < 0) {
-      const ancestral = aestheticGenotypeSignature(ancestralAestheticGenes());
-      data.aestheticMutations = (data.pieces ?? []).some(
-        (piece) =>
-          aestheticGenotypeSignature(piece.aestheticGenes) !== ancestral,
-      )
-        ? 1
-        : 0;
-    }
     const liveMax = Array.isArray(data.pieces)
       ? Math.max(0, ...data.pieces.map((p) => p.generation ?? 0))
       : 0;
