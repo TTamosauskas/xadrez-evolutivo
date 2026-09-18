@@ -35,6 +35,8 @@ function tickDecomposition(state) {
     if (state.event?.hazards.includes(site.cell))
       state.event.snapshots[site.cell] = "fertile";
     else state.board[site.cell] = "fertile";
+    state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== site.cell);
+    state.fertileTraces.push({ cell: site.cell, clearAfterTurn: state.turn });
     state.deathSites = state.deathSites.filter((d) => d.cell !== site.cell);
   }
 }
