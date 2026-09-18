@@ -1,5 +1,5 @@
 import { EVENTS, inside, square, has, distance } from "./constants.js";
-import { at, pick, random, shuffle, round, log, notice } from "./state.js";
+import { at, eggAt, pick, random, shuffle, round, log, notice } from "./state.js";
 import { startDisease } from "./disease.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
 const fertile = (state) =>
@@ -231,7 +231,9 @@ function earthquake(ctx) {
       shuffle(
         state,
         allCells().filter(
-          (i) => distance(p, { r: Math.floor(i / 8), c: i % 8 }) === 1,
+          (i) =>
+            distance(p, { r: Math.floor(i / 8), c: i % 8 }) === 1 &&
+            !eggAt(state, Math.floor(i / 8), i % 8),
         ),
       ),
     ]),
@@ -257,7 +259,9 @@ function earthquake(ctx) {
     }
   if (!success) {
     assigned.clear();
-    for (const p of state.pieces) candidates.get(p.id).push(square(p.r, p.c));
+    for (const p of state.pieces)
+      if (!eggAt(state, p.r, p.c))
+        candidates.get(p.id).push(square(p.r, p.c));
     for (const p of state.pieces) assign(p, new Set());
   }
   if (assigned.size !== state.pieces.length)
