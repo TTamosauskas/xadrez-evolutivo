@@ -504,6 +504,11 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   assert.ok(
     next.pieces.every((p) => aestheticPhenotype(p.aestheticGenes).width === "wide"),
   );
+  assert.ok(
+    next.pieces.every((p) =>
+      assert.deepEqual(p.aestheticGenes, inheritedAppearance),
+    ),
+  );
   assertState(next);
 });
 test("stale revisions cannot advance the turn", () => {
