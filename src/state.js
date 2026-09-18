@@ -35,6 +35,8 @@ export const at = (state, r, c) =>
   state.pieces.find((p) => p.r === r && p.c === c);
 export const eggAt = (state, r, c) =>
   state.eggs?.find((egg) => egg.r === r && egg.c === c);
+export const barrierAt = (state, r, c) =>
+  state.barriers?.includes(square(r, c)) ?? false;
 export const terrain = (state, r, c) => state.board[square(r, c)];
 export const round = (state) => Math.floor(state.turn / 2);
 export function log(state, text) {
@@ -162,7 +164,7 @@ function seedHabitat(state) {
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null;
   const state = {
-    version: 3,
+    version: 4,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
@@ -171,6 +173,7 @@ export function createState(seed = Date.now(), options = {}) {
     chain: null,
     partner: null,
     manipulation: null,
+    building: null,
     nextId: 1,
     nextNotice: 1,
     board: Array(64).fill("neutral"),
@@ -197,6 +200,7 @@ export function createState(seed = Date.now(), options = {}) {
     nextDisease: 1,
     nextEgg: 1,
     eggs: [],
+    barriers: [],
     populationLatched: { blue: false, amber: false },
     result: null,
   };
@@ -339,6 +343,9 @@ export function assertState(state) {
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
     !Array.isArray(state.eggs) ||
+    !Array.isArray(state.barriers) ||
+    state.barriers.some((cell) => !integer(cell, 0, 63)) ||
+    new Set(state.barriers).size !== state.barriers.length ||
     state.fertileTraces.some(
       (t) =>
         !integer(t.cell, 0, 63) ||
@@ -366,7 +373,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 3 ||
+    state.version !== 4 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
@@ -379,7 +386,7 @@ export function assertState(state) {
     !Number.isInteger(state.rng)
   )
     throw Error("Turno inválido.");
-  if (!["move", "partner", "manipulate", "over"].includes(state.phase))
+  if (!["move", "partner", "manipulate", "build", "over"].includes(state.phase))
     throw Error("Fase inválida.");
   if (!Array.isArray(state.pieces) || state.pieces.length > 64)
     throw Error("População inválida.");
@@ -444,6 +451,11 @@ export function assertState(state) {
   }
   if (state.nextEgg <= Math.max(0, ...eggIds))
     throw Error("Identificadores de ovos inválidos.");
+  if (
+    state.barriers.some((cell) => cells.has(cell))
+  )
+    throw Error("Barreira sobreposta.");
+
   for (const p of state.pieces)
     for (const pregnancy of p.pregnancies)
       if (
@@ -499,6 +511,19 @@ export function assertState(state) {
     throw Error("Manipulação inválida.");
   if (state.phase !== "manipulate" && state.manipulation)
     throw Error("Manipulação fora de fase.");
+  if (
+    state.phase === "build" &&
+    (!state.building ||
+      !state.pieces.some(
+        (p) => p.id === state.building.id && p.owner === state.current,
+      ) ||
+      typeof state.building.second !== "boolean" ||
+      typeof state.building.locomotion !== "boolean")
+  )
+    throw Error("Construção inválida.");
+  if (state.phase !== "build" && state.building)
+    throw Error("Construção fora de fase.");
+
   if (
     !Array.isArray(state.notices) ||
     !Array.isArray(state.diseases) ||
