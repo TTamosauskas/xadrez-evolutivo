@@ -1,4 +1,4 @@
-import { createState } from "./state.js";
+import { createState, createSuccessorState } from "./state.js";
 import { Controller } from "./controller.js";
 import { render } from "./view.js";
 import { movesFor, partnersFor } from "./moves.js";
@@ -100,7 +100,16 @@ $("game-over-new").addEventListener("click", () => {
   if ($("game-over-dialog").open) $("game-over-dialog").close();
   if ($("notice-dialog").open) $("notice-dialog").close();
   selected = null;
-  controller.replace(createState());
+  $("mass-extinction-dialog").showModal();
+});
+$("mass-extinction-continue").addEventListener("click", () => {
+  const next = createSuccessorState(controller.state);
+  $("mass-extinction-dialog").close();
+  selected = null;
+  controller.replace(next);
+});
+$("mass-extinction-dialog").addEventListener("cancel", (event) => {
+  event.preventDefault();
 });
 $("game-over-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
@@ -221,7 +230,8 @@ $("rules").addEventListener("click", () =>
     "Você começa com dois peões. Selecione uma peça e depois um destino destacado. O objetivo é extinguir a população adversária. Os movimentos seguem o xadrez, sem xeque; os peões invertem a direção nas bordas.",
     "Casas verdes geram descendentes e são consumidas. Você pode reproduzir permanecendo sobre uma casa verde. Peões geram até 4 descendentes; cavalos, 3; bispos e torres, 2; reis e rainhas, 1. Cada nascimento tem 1/3 de chance de mutação, inclusive na primeira reprodução.",
     "Casas vermelhas oferecem 50% de risco em cada casa atravessada e por rodada de permanência. Voo oferece imunidade e Carapaça reduz o risco para 34%. Cavalos testam apenas a casa de chegada. Uma captura deixa a casa em decomposição: ela fica hostil por três rodadas e depois se torna fértil. O atacante ignora o risco apenas dessa casa até o fim do seu próximo turno.",
-    "A evolução ambiental acompanha a maior geração genealógica já alcançada. O habitat muda pela primeira vez na G3 e depois a cada duas gerações. Eventos ecológicos começam na G4 e depois a cada seis gerações; cada evento dura dez rodadas completas, e novos eventos aguardam o anterior terminar. Populações com 17 peças podem disparar um surto de patógeno. Cada surto sorteia mortalidade de 60% a 100%, prazo de 2 a 6 rodadas e transmite por 10 rodadas.",
+    "A evolução ambiental acompanha a maior geração local já alcançada. O habitat muda pela primeira vez na G3 local e depois a cada duas gerações. Eventos ecológicos começam na G4 local e depois a cada seis gerações; cada evento dura dez rodadas completas, e novos eventos aguardam o anterior terminar. Populações com 17 peças podem disparar um surto de patógeno. Cada surto sorteia mortalidade de 60% a 100%, prazo de 2 a 6 rodadas e transmite por 10 rodadas.",
+    "Ao fim de uma partida, Nova partida inicia uma nova Era após uma Extinção em Massa. A linhagem dominante sobrevivente funda os dois lados da Era seguinte. O Período e os gatilhos ecológicos reiniciam localmente, enquanto a numeração histórica das gerações continua avançando.",
     "Na reprodução sexuada, escolha um aliado adjacente fértil. Os descendentes combinam características dos dois progenitores. As novas mutações dessa reprodução são positivas.",
     ...Object.entries(TRAITS).map(
       ([name, [icon, description]]) => `${icon} ${name}: ${description}`,
