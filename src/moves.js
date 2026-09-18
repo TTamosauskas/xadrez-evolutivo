@@ -1,5 +1,5 @@
 import { inside, has, distance } from "./constants.js";
-import { at, eggAt, terrain, round } from "./state.js";
+import { at, eggAt, barrierAt, terrain, round } from "./state.js";
 import { captureUnlocked } from "./geology.js";
 const ORTH = [
     [-1, 0],
@@ -43,6 +43,34 @@ export function manipulationTargets(state) {
     }
   return targets;
 }
+
+export function constructionTargets(state) {
+  const pending = state.building;
+  if (state.phase !== "build" || !pending) return [];
+  const parent = state.pieces.find((piece) => piece.id === pending.id);
+  if (!parent) return [];
+  const decomposition = new Set([
+      ...state.deathSites.map((site) => site.cell),
+      ...state.fertileTraces.map((trace) => trace.cell),
+    ]),
+    targets = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = parent.r + dr,
+        c = parent.c + dc,
+        cell = square(r, c);
+      if (
+        inside(r, c) &&
+        !at(state, r, c) &&
+        !eggAt(state, r, c) &&
+        !barrierAt(state, r, c) &&
+        !decomposition.has(cell)
+      )
+        targets.push({ r, c });
+    }
+  return targets;
+}
 export function movesFor(state, p, { ignoreChain = false } = {}) {
   if (
     !p ||
@@ -59,7 +87,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     const victim = at(state, r, c),
       egg = eggAt(state, r, c);
     if (victim?.owner === p.owner || egg?.owner === p.owner) return;
-    if ((victim || egg) && !captureUnlocked(state)) return;
+    if (victim && !captureUnlocked(state, p)) return;
+    if (barrierAt(state, r, c) && !has(p, "Chifre")) return;
     if (egg) {
       const parent = state.pieces.find((piece) => piece.id === egg.parentId),
         protectedEgg =
@@ -91,7 +120,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           c = p.c + dc * n;
         if (!inside(r, c)) break;
         path.push([r, c]);
-        add(r, c, [...path]);
+        const barrier = barrierAt(state, r, c);
+        if (barrier) {
+          if (has(p, "Chifre")) add(r, c, [...path]);
+          if (!has(p, "Voo") && !has(p, "Chifre")) break;
+        } else add(r, c, [...path]);
         if (at(state, r, c) || eggAt(state, r, c)) break;
       }
     }
@@ -136,7 +169,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   else ray([...ORTH, ...DIAG]);
   }
   const collector = has(p, "Coletor"),
-    canUseFertility = !has(p, "Predador") || has(p, "Onívoro");
+    canUseFertility = !has(p, "Carnívoro") || has(p, "Onívoro");
   if (
     canUseFertility &&
     (terrain(state, p.r, p.c) === "fertile" || (collector && p.seeds > 0)) &&
@@ -165,6 +198,15 @@ export function legalActions(state) {
         c: target.c,
       })),
       { type: "SKIP_MANIPULATION" },
+    ];
+  if (state.phase === "build")
+    return [
+      ...constructionTargets(state).map((target) => ({
+        type: "BUILD",
+        r: target.r,
+        c: target.c,
+      })),
+      { type: "SKIP_BUILD" },
     ];
   if (state.phase === "partner") {
     const p = state.pieces.find((x) => x.id === state.partner.id);
