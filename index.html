@@ -27,20 +27,14 @@
           aria-label="Tabuleiro de xadrez evolutivo"
         ></div>
         <div class="board-footer">
-          <span id="instruction" aria-live="polite">Selecione uma peça.</span
-          ><button id="pass">Passar vez</button>
+          <div class="terrain-key" aria-label="Legenda do terreno">
+            <span>🟩 Casa fértil</span><span>🟥 Casa hostil</span>
+          </div>
+          <button id="pass">Passar vez</button>
         </div>
         <p id="message" role="status"></p>
-        <div class="terrain-key">
-          <span>🟩 Casa fértil</span><span>🟥 Casa hostil</span
-          ><span>● Destino disponível</span>
-        </div>
       </section>
       <aside>
-        <section class="panel">
-          <h2>Populações</h2>
-          <div id="populations"></div>
-        </section>
         <section class="panel">
           <h2>Peça selecionada</h2>
           <div id="selected">
@@ -51,13 +45,8 @@
           <h2>Mutações em jogo</h2>
           <div id="traits"></div>
         </section>
-        <details class="panel">
-          <summary>Registro da partida</summary>
-          <ol id="log"></ol>
-        </details>
       </aside>
     </main>
-    <footer>Dois fundadores. Um ambiente em transformação.</footer>
     <dialog id="notice-dialog" aria-labelledby="notice-title">
       <h2 id="notice-title"></h2>
       <div id="notice-content"></div>
@@ -79,8 +68,6 @@
       >
       <div class="menu-actions">
         <button id="save">Salvar partida</button
-        ><button id="load">Carregar partida</button
-        ><button id="export">Exportar partida</button
         ><button id="import">Importar arquivo</button
         ><button id="rules">Como jogar</button
         ><button id="new">Nova partida</button>
