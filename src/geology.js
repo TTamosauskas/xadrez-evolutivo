@@ -352,7 +352,7 @@ export function priorRequiredInnovations(stageId) {
 }
 
 export function cycleRoundLimit(state) {
-  return currentGeologicalStage(state).cycleRoundLimit ?? null;
+  return currentGeologicalStage(state).cycleRoundLimit ?? 80;
 }
 
 export function isNegativeTrait(trait) {
