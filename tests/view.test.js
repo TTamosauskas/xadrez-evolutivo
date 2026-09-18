@@ -80,6 +80,38 @@ test("selected panel inspects either side and explains only that piece traits", 
   assert.equal(d.querySelectorAll(".cell.legal").length, 0);
   dom.window.close();
 });
+test("renders eggs and carried brood count", () => {
+  const dom = setup(),
+    s = createState(22),
+    parent = s.pieces[0];
+  s.eggs.push({
+    id: 1,
+    owner: "amber",
+    r: 3,
+    c: 3,
+    hatchRound: 3,
+    brood: [{}, {}],
+    dispersal: "local",
+  });
+  parent.pregnancies.push({
+    dueRound: 3,
+    brood: [{}, {}, {}],
+    dispersal: "local",
+  });
+
+  render(dom.window.document, s, { selected: parent.id });
+  const d = dom.window.document;
+  assert.equal(d.querySelectorAll(".egg-mark").length, 1);
+  assert.match(d.querySelector(".egg-mark").parentElement.title, /2 descendente/);
+  assert.match(
+    d.querySelector(`[data-r="${parent.r}"][data-c="${parent.c}"] .badges`)
+      .textContent,
+    /\+3/,
+  );
+  assert.match(d.getElementById("selected").textContent, /🎈 \+3/);
+  dom.window.close();
+});
+
 test("application UI can play, acknowledge reproduction, save, load and reset", async () => {
   const dom = setup(),
     w = dom.window;
