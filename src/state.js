@@ -146,7 +146,10 @@ export function assertState(state) {
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
     state.fertileTraces.some(
-      (t) => !integer(t.cell, 0, 63) || !integer(t.clearAfterTurn),
+      (t) =>
+        !integer(t.cell, 0, 63) ||
+        !integer(t.clearAfterTurn) ||
+        !["neutral", "fertile", "hostile"].includes(t.base),
     ) ||
     state.deathSites.some(
       (d) =>
