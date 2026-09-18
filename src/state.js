@@ -208,7 +208,17 @@ export function summary(state, owner) {
 }
 export function assertState(state) {
   const integer = (n, min = 0, max = Number.MAX_SAFE_INTEGER) =>
-    Number.isSafeInteger(n) && n >= min && n <= max;
+      Number.isSafeInteger(n) && n >= min && n <= max,
+    validBroodProfile = (profile, owner = null) =>
+      !!profile &&
+      (!owner || profile.owner === owner) &&
+      ["blue", "amber"].includes(profile.owner) &&
+      integer(profile.rank, 0, 5) &&
+      Array.isArray(profile.traits) &&
+      profile.traits.every((t) => TRAITS[t]) &&
+      validReproGenes(profile.reproGenes) &&
+      integer(profile.mutations) &&
+      integer(profile.generation);
   if (!state || typeof state !== "object") throw Error("Partida inválida.");
   if (
     !integer(state.revision) ||
@@ -314,7 +324,8 @@ export function assertState(state) {
       !integer(egg.hatchRound) ||
       !["local", "eggs", "spores"].includes(egg.dispersal) ||
       !Array.isArray(egg.brood) ||
-      !egg.brood.length
+      !egg.brood.length ||
+      !egg.brood.every((profile) => validBroodProfile(profile, egg.owner))
     )
       throw Error("Ovo inválido.");
     eggIds.add(egg.id);
@@ -328,14 +339,25 @@ export function assertState(state) {
         !integer(pregnancy.dueRound) ||
         !["local", "eggs", "spores"].includes(pregnancy.dispersal) ||
         !Array.isArray(pregnancy.brood) ||
-        !pregnancy.brood.length
+        !pregnancy.brood.length ||
+        !pregnancy.brood.every((profile) =>
+          validBroodProfile(profile, p.owner),
+        )
       )
         throw Error("Gestação inválida.");
   if (!Number.isInteger(state.nextId) || state.nextId <= Math.max(0, ...ids))
     throw Error("Identificadores inválidos.");
+  const unbornGenerations = [
+    ...state.eggs.flatMap((egg) => egg.brood.map((p) => p.generation)),
+    ...state.pieces.flatMap((p) =>
+      p.pregnancies.flatMap((pregnancy) =>
+        pregnancy.brood.map((child) => child.generation),
+      ),
+    ),
+  ];
   if (
     state.maxGenerationReached <
-    Math.max(0, ...state.pieces.map((p) => p.generation))
+    Math.max(0, ...state.pieces.map((p) => p.generation), ...unbornGenerations)
   )
     throw Error("Geração histórica inválida.");
   if (
