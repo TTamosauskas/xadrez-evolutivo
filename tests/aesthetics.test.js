@@ -99,8 +99,8 @@ test("aesthetic mutation rate unlocks gradually by successful reproductions", ()
   for (let n = 0; n <= 4; n++) assert.equal(aestheticMutationRate(n), 0);
   for (let n = 5; n <= 7; n++) assert.equal(aestheticMutationRate(n), 0.25);
   for (let n = 8; n <= 10; n++) assert.equal(aestheticMutationRate(n), 0.45);
-  assert.equal(aestheticMutationRate(11), 0.45);
-  assert.equal(aestheticMutationRate(100), 0.45);
+  assert.equal(aestheticMutationRate(11), 0.18);
+  assert.equal(aestheticMutationRate(100), 0.18);
 });
 
 test("first aesthetic mutation can be forced to produce a visible phenotype", () => {
