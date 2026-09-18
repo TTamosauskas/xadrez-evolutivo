@@ -4,6 +4,7 @@ import { TRAITS, EVENTS } from "../src/constants.js";
 import {
   GEOLOGICAL_STAGES,
   TRAIT_STAGE,
+  applyTraitMutation,
   captureUnlocked,
   currentGeologicalStage,
   deleteriousMutationUnlocked,
@@ -279,15 +280,27 @@ test("Pawn mutation unlocks only from the second campaign cycle", () => {
   assert.equal(pawnMutationUnlocked(first), true);
 });
 
-test("Fotossíntese and Predação are mutually exclusive within one lineage", () => {
+test("Fotossíntese and Predação switch branches by substitutive mutation", () => {
   const s = createState(111);
   s.historicalTraits = ["Fotossíntese"];
   const ancestral = { traits: [] },
-    photosynthetic = { traits: ["Fotossíntese"] },
-    predatory = { traits: ["Predação"] };
+    photosynthetic = { traits: ["Fotossíntese"] };
   assert.equal(traitUnlocked(s, "Predação", ancestral), true);
-  assert.equal(traitUnlocked(s, "Predação", photosynthetic), false);
-  assert.equal(traitUnlocked(s, "Fotossíntese", predatory), false);
+  assert.equal(traitUnlocked(s, "Predação", photosynthetic), true);
+  assert.deepEqual(
+    applyTraitMutation(photosynthetic.traits, "Predação"),
+    ["Predação"],
+  );
+
+  s.historicalTraits.push("Predação");
+  const predatory = {
+    traits: ["Predação", "Locomoção", "Carnívoro", "Onívoro"],
+  };
+  assert.equal(traitUnlocked(s, "Fotossíntese", predatory), true);
+  assert.deepEqual(
+    applyTraitMutation(predatory.traits, "Fotossíntese"),
+    ["Fotossíntese"],
+  );
   assert.equal(
     innovationWeight(s, "Predação", photosynthetic),
     innovationWeight(s, "Predação", ancestral),
