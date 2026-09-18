@@ -281,6 +281,40 @@ test("generation milestones drive habitat and queue ecological events", () => {
   assert.equal(s.event.startRound, 10);
   assertState(s);
 });
+test("capture creates hostile decomposition, protects attacker and fertilizes after three rounds", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3 },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  const attacker = s.pieces.find((p) => p.id === 1),
+    site = s.deathSites[0];
+  assert.equal(site.cell, 36);
+  assert.equal(site.dueRound, 3);
+  assert.equal(s.board[36], "hostile");
+  assert.equal(attacker.decompositionImmunity.cell, 36);
+  assert.equal(attacker.decompositionImmunity.throughTurn, 2);
+  s.turn = 4;
+  tickEnvironment(context(s));
+  assert.equal(s.board[36], "hostile");
+  assert.equal(s.deathSites.length, 1);
+  s.turn = 6;
+  tickEnvironment(context(s));
+  assert.equal(s.board[36], "fertile");
+  assert.equal(s.deathSites.length, 0);
+  assertState(s);
+});
+test("non-capture deaths do not create decomposition", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 3 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    ctx = context(s);
+  ctx.kill(s.pieces[0].id, "Veneno");
+  assert.equal(s.deathSites.length, 0);
+  assertState(s);
+});
 test("stale revisions cannot advance the turn", () => {
   const s = createState(1);
   assert.equal(transition(s, { type: "PASS", revision: 100 }), s);
