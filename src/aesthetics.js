@@ -218,8 +218,7 @@ export function aestheticPhenotype(source) {
 export function aestheticMutationRate(reproductionCount) {
   if (reproductionCount < 5) return 0;
   if (reproductionCount <= 7) return 0.25;
-  if (reproductionCount <= 10) return 0.45;
-  return 0.18;
+  return 0.45;
 }
 
 export function aestheticDescription(source) {
