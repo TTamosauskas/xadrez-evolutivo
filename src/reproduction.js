@@ -27,6 +27,7 @@ import {
   gainReproAllele,
   inheritSexualReproGenes,
   loseReproAllele,
+  reproGeneSignature,
   reproPhenotype,
   syncReproTraits,
 } from "./reproductive-genetics.js";
@@ -35,6 +36,36 @@ const NEGATIVE = ["Esterilidade", "Mutação Deletéria", "Mutação Disfunciona
 const POSITIVE = Object.keys(TRAITS).filter(
   (t) => !NEGATIVE.includes(t) && !GENETIC_TRAITS.includes(t),
 );
+
+function eusocialLineageKey(piece) {
+  const traits = piece.traits
+    .filter(
+      (t) =>
+        !GENETIC_TRAITS.includes(t) &&
+        t !== "Esterilidade" &&
+        t !== "Eusocialidade",
+    )
+    .sort();
+  return `${piece.rank}|${traits.join("|")}|${reproGeneSignature(
+    piece.reproGenes,
+  )}`;
+}
+
+function eusocialBonus(state, parent) {
+  if (!has(parent, "Eusocialidade")) return 0;
+  const key = eusocialLineageKey(parent);
+  return Math.min(
+    2,
+    state.pieces.filter(
+      (piece) =>
+        piece.id !== parent.id &&
+        piece.owner === parent.owner &&
+        has(piece, "Esterilidade") &&
+        distance(piece, parent) === 1 &&
+        eusocialLineageKey(piece) === key,
+    ).length,
+  );
+}
 
 function mutation(state, p, positiveOnly) {
   const gains = [];
@@ -278,6 +309,7 @@ function layEgg(ctx, parent, brood, dispersal) {
     r: target.r,
     c: target.c,
     hatchRound: round(ctx.state) + 3,
+    parentId: parent.id,
     brood,
     dispersal,
   });
@@ -303,7 +335,8 @@ export function reproduce(
     dispersal = phenotype.dispersal,
     wanted =
       options.forcedCount ??
-      BIRTH_RATES[profile.rank] * (has(profile, "Fertilidade") ? 2 : 1);
+      BIRTH_RATES[profile.rank] * (has(profile, "Fertilidade") ? 2 : 1) +
+        eusocialBonus(state, parent);
 
   let produced = 0;
   if (development === "oviparous") {
