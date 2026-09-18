@@ -77,6 +77,7 @@ export function createState(seed = Date.now()) {
     nextEventGeneration: 4,
     pendingEcologicalEvents: 0,
     deathSites: [],
+    fertileTraces: [],
     diseases: [],
     nextDisease: 1,
     populationLatched: { blue: false, amber: false },
@@ -143,6 +144,10 @@ export function assertState(state) {
     !integer(state.pendingEcologicalEvents) ||
     !Array.isArray(state.seen) ||
     !Array.isArray(state.deathSites) ||
+    !Array.isArray(state.fertileTraces) ||
+    state.fertileTraces.some(
+      (t) => !integer(t.cell, 0, 63) || !integer(t.clearAfterTurn),
+    ) ||
     state.deathSites.some(
       (d) =>
         !integer(d.cell, 0, 63) ||
