@@ -162,7 +162,7 @@ function advanceTurn(ctx) {
   for (const p of [...state.pieces])
     if (p.owner === acting && p.venom && p.venom.infectedTurn < before) {
       p.venom.remaining--;
-      if (p.venom.remaining <= 0) ctx.kill(p.id, "Veneno");
+      if (p.venom.remaining <= 0 && !ctx.kill(p.id, "Veneno")) delete p.venom;
     }
   for (const p of state.pieces) {
     moveDirection(p);
