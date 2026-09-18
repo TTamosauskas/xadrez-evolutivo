@@ -8,6 +8,50 @@ const element = (doc, tag, text, cls) => {
   if (cls) e.className = cls;
   return e;
 };
+function applyAestheticStyle(piece, genes) {
+  const appearance = aestheticPhenotype(genes),
+    pigment =
+      appearance.pigment === "violet"
+        ? "#c084fc"
+        : appearance.pigment === "cyan"
+          ? "#67e8f9"
+          : "currentColor";
+  piece.style.setProperty(
+    "--piece-weight",
+    appearance.style === "bold" ? "800" : "400",
+  );
+  piece.style.setProperty(
+    "--piece-font-style",
+    appearance.style === "italic" ? "italic" : "normal",
+  );
+  piece.style.setProperty(
+    "--piece-scale-x",
+    appearance.width === "wide"
+      ? "1.07"
+      : appearance.width === "narrow"
+        ? "0.93"
+        : "1",
+  );
+  piece.style.setProperty(
+    "--piece-scale-y",
+    appearance.height === "high"
+      ? "1.07"
+      : appearance.height === "low"
+        ? "0.93"
+        : "1",
+  );
+  piece.style.setProperty(
+    "--piece-rotate",
+    appearance.posture === "left"
+      ? "-5deg"
+      : appearance.posture === "right"
+        ? "5deg"
+        : "0deg",
+  );
+  piece.style.setProperty("--piece-stroke-width", `${appearance.stroke}px`);
+  piece.style.setProperty("--piece-stroke-color", pigment);
+  return piece;
+}
 function evolutionarySummary(state, owner) {
   const pieces = state.pieces.filter((p) => p.owner === owner),
     lineages = new Set(pieces.map(signature)),
@@ -19,7 +63,9 @@ function evolutionarySummary(state, owner) {
       : 0,
     traits = (representative?.traits ?? [])
       .slice(0, 3)
-      .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
+      .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" })),
+    aestheticGenes = representative?.aestheticGenes,
+    appearance = aestheticGenes ? aestheticDescription(aestheticGenes) : "";
 
   return {
     lineages: lineages.size,
@@ -27,6 +73,8 @@ function evolutionarySummary(state, owner) {
     pieceSymbol: SYMBOLS[owner][rank],
     piecePercent,
     traits,
+    aestheticGenes,
+    appearance,
   };
 }
 /** Rendering only reads state. No observers, commands, timers or rule callbacks. */
@@ -105,51 +153,10 @@ export function render(
       if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
       if (p) {
-        const piece = make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`),
-          appearance = aestheticPhenotype(p.aestheticGenes),
-          pigment =
-            appearance.pigment === "violet"
-              ? "#c084fc"
-              : appearance.pigment === "cyan"
-                ? "#67e8f9"
-                : "currentColor";
-        piece.style.setProperty(
-          "--piece-weight",
-          appearance.style === "bold" ? "800" : "400",
+        const piece = applyAestheticStyle(
+          make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`),
+          p.aestheticGenes,
         );
-        piece.style.setProperty(
-          "--piece-font-style",
-          appearance.style === "italic" ? "italic" : "normal",
-        );
-        piece.style.setProperty(
-          "--piece-scale-x",
-          appearance.width === "wide"
-            ? "1.07"
-            : appearance.width === "narrow"
-              ? "0.93"
-              : "1",
-        );
-        piece.style.setProperty(
-          "--piece-scale-y",
-          appearance.height === "high"
-            ? "1.07"
-            : appearance.height === "low"
-              ? "0.93"
-              : "1",
-        );
-        piece.style.setProperty(
-          "--piece-rotate",
-          appearance.posture === "left"
-            ? "-5deg"
-            : appearance.posture === "right"
-              ? "5deg"
-              : "0deg",
-        );
-        piece.style.setProperty(
-          "--piece-stroke-width",
-          `${appearance.stroke}px`,
-        );
-        piece.style.setProperty("--piece-stroke-color", pigment);
         cell.append(piece);
         const badges = p.traits.map((t) => TRAITS[t][0]);
         if (p.infection) badges.push("🦠");
@@ -239,14 +246,30 @@ export function render(
       }`;
       const content = make("div", undefined, "evolutionary-end-summary");
       const lineages = make("p", lineageText, "evolutionary-end-lineages");
-      const selection = make("div", undefined, "evolutionary-end-section");
-      selection.append(
-        make("strong", "Seleção natural", "evolutionary-end-heading"),
-        make(
+      const selection = make("div", undefined, "evolutionary-end-section"),
+        selectionPrimary = make(
           "div",
-          `${summary.pieceName} ${summary.pieceSymbol} (${summary.piecePercent}% da população sobrevivente)`,
+          undefined,
           "evolutionary-end-primary",
         ),
+        winnerPiece = applyAestheticStyle(
+          make(
+            "span",
+            summary.pieceSymbol,
+            `piece ${winner} evolutionary-end-piece`,
+          ),
+          summary.aestheticGenes,
+        );
+      selectionPrimary.append(
+        doc.createTextNode(`${summary.pieceName} `),
+        winnerPiece,
+        doc.createTextNode(
+          ` (${summary.piecePercent}% da população sobrevivente)`,
+        ),
+      );
+      selection.append(
+        make("strong", "Seleção natural", "evolutionary-end-heading"),
+        selectionPrimary,
       );
       const traits = make(
         "div",
@@ -268,7 +291,29 @@ export function render(
             : "Nenhuma característica hereditária predominante",
         ),
       );
-      content.append(extinction, lineages, selection, traits);
+      const aesthetics = summary.appearance
+        ? make(
+            "div",
+            undefined,
+            "evolutionary-end-section evolutionary-end-aesthetics",
+          )
+        : null;
+      if (aesthetics)
+        aesthetics.append(
+          make(
+            "strong",
+            "Mutações estéticas:",
+            "evolutionary-end-heading",
+          ),
+          make("div", summary.appearance),
+        );
+      content.append(
+        extinction,
+        lineages,
+        selection,
+        traits,
+        ...(aesthetics ? [aesthetics] : []),
+      );
       $("game-over-title").textContent = `Vitória das ${OWNERS[winner]}`;
       $("game-over-body").replaceChildren(content);
     } else {
