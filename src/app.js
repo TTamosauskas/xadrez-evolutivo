@@ -93,6 +93,19 @@ $("notice-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
   acknowledge();
 });
+$("game-over-board").addEventListener("click", () => {
+  if ($("game-over-dialog").open) $("game-over-dialog").close();
+});
+$("game-over-new").addEventListener("click", () => {
+  if ($("game-over-dialog").open) $("game-over-dialog").close();
+  if ($("notice-dialog").open) $("notice-dialog").close();
+  selected = null;
+  controller.replace(createState());
+});
+$("game-over-dialog").addEventListener("cancel", (event) => {
+  event.preventDefault();
+  $("game-over-dialog").close();
+});
 function openMenu() {
   controller.pause(true);
   $("menu-dialog").showModal();
