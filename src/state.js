@@ -69,6 +69,7 @@ export function createState(seed = Date.now()) {
     reproductions: { blue: 0, amber: 0 },
     notices: [],
     seen: [],
+    seenMutations: [],
     logs: [],
     event: null,
     previousEvent: null,
@@ -143,6 +144,8 @@ export function assertState(state) {
     !integer(state.nextEventGeneration, 4) ||
     !integer(state.pendingEcologicalEvents) ||
     !Array.isArray(state.seen) ||
+    !Array.isArray(state.seenMutations) ||
+    state.seenMutations.some((m) => typeof m !== "string") ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
     state.fertileTraces.some(
