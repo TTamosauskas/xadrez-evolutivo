@@ -96,7 +96,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       }
     }
   }
-  if (has(p, "Locomoção")) {
+  if (has(p, "Locomoção") || has(p, "Locomoção Avançada")) {
   if (p.rank === 0) {
     const dir = p.r === 0 ? 1 : p.r === 7 ? -1 : p.pawnDir,
       r = p.r + dir;
