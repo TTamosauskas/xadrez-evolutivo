@@ -12,7 +12,31 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if (data?.version === 2) return assertState(data);
+  if (data?.version === 2) {
+    const liveMax = Array.isArray(data.pieces)
+      ? Math.max(0, ...data.pieces.map((p) => p.generation ?? 0))
+      : 0;
+    data.maxGenerationReached = Math.max(
+      Number.isInteger(data.maxGenerationReached)
+        ? data.maxGenerationReached
+        : 0,
+      liveMax,
+    );
+    if (!Number.isInteger(data.nextHabitatGeneration)) {
+      data.nextHabitatGeneration = 3;
+      while (data.nextHabitatGeneration <= data.maxGenerationReached)
+        data.nextHabitatGeneration += 2;
+    }
+    if (!Number.isInteger(data.nextEventGeneration)) {
+      data.nextEventGeneration = 4;
+      while (data.nextEventGeneration <= data.maxGenerationReached)
+        data.nextEventGeneration += 6;
+    }
+    if (!Number.isInteger(data.pendingEcologicalEvents))
+      data.pendingEcologicalEvents = 0;
+    delete data.nextEventRound;
+    return assertState(data);
+  }
   if (
     !data ||
     !Array.isArray(data.organisms) ||
@@ -96,8 +120,14 @@ export function deserialize(raw) {
     };
   }
   state.previousEvent = data.ecoCycle?.previousId ?? null;
-  state.nextEventRound =
-    data.ecoCycle?.nextEventRound ?? (Math.floor(round(state) / 10) + 1) * 10;
+  state.maxGenerationReached = Math.max(
+    0,
+    ...state.pieces.map((p) => p.generation),
+  );
+  while (state.nextHabitatGeneration <= state.maxGenerationReached)
+    state.nextHabitatGeneration += 2;
+  while (state.nextEventGeneration <= state.maxGenerationReached)
+    state.nextEventGeneration += 6;
   const diseaseIds = new Map();
   for (const org of data.organisms) {
     const inf = org.ecoSick ?? org.overpopSick;
