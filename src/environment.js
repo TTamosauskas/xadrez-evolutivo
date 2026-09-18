@@ -251,6 +251,7 @@ function endEvent(state) {
     state.board[Number(i)] = t;
   state.previousEvent = state.event.id;
   state.event = null;
+  for (const site of state.deathSites) state.board[site.cell] = "hostile";
 }
 export function startEvent(ctx, id = null) {
   const state = ctx.state;
