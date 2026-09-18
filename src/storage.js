@@ -80,6 +80,7 @@ export function deserialize(raw) {
     data.nextEgg = Number.isInteger(data.nextEgg)
       ? data.nextEgg
       : Math.max(0, ...data.eggs.map((egg) => egg.id ?? 0)) + 1;
+    if (data.manipulation === undefined) data.manipulation = null;
     data.seenMutations = historicalMutations(data);
     const liveMax = Array.isArray(data.pieces)
       ? Math.max(0, ...data.pieces.map((p) => p.generation ?? 0))
