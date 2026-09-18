@@ -291,7 +291,7 @@ export function render(
         geologicalProgress = make(
           "p",
           progress.required.length
-            ? `${geological.period}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) descobertas.`
+            ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
             : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
           "evolutionary-end-lineages",
         );
@@ -312,7 +312,7 @@ export function render(
         make(
           "p",
           progress.required.length
-            ? `${geological.period}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) descobertas.`
+            ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
             : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
           "evolutionary-end-lineages",
         ),
