@@ -240,7 +240,7 @@ export function render(
 
   const dialog = $("notice-dialog"),
     n = state.notices[0];
-  if (n) {
+  if (n && !state.result) {
     $("notice-title").textContent = n.title;
     if (n.title === "Novas mutações") {
       const list = make("ul", undefined, "mutation-list");
