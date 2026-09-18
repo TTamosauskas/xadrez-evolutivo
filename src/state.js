@@ -1,4 +1,10 @@
 import { inside, square, TRAITS, EVENTS } from "./constants.js";
+import {
+  aestheticGenotypeSignature,
+  ancestralAestheticGenes,
+  cloneAestheticGenes,
+  validAestheticGenes,
+} from "./aesthetics.js";
 export const clone = (value) => structuredClone(value);
 export function random(state) {
   state.rng = (Math.imul(state.rng, 1664525) + 1013904223) >>> 0;
@@ -44,6 +50,9 @@ export function newPiece(state, owner, r, c, source = {}) {
     c,
     rank: source.rank ?? 0,
     traits: [...(source.traits ?? [])],
+    aestheticGenes: source.aestheticGenes
+      ? cloneAestheticGenes(source.aestheticGenes)
+      : ancestralAestheticGenes(),
     mutations: source.mutations ?? 0,
     generation: source.generation ?? 0,
     parentId: source.parentId ?? null,
@@ -94,7 +103,13 @@ export function createState(seed = Date.now(), options = {}) {
     for (const c of [3, 4])
       state.pieces.push(
         newPiece(state, owner, r, c, founder
-          ? { rank: founder.rank, traits: founder.traits, mutations: 0, generation: 0 }
+          ? {
+              rank: founder.rank,
+              traits: founder.traits,
+              aestheticGenes: founder.aestheticGenes,
+              mutations: 0,
+              generation: 0,
+            }
           : {}),
       );
   const empty = shuffle(
@@ -127,7 +142,9 @@ export function createState(seed = Date.now(), options = {}) {
   return state;
 }
 export function signature(p) {
-  return `${p.rank}|${[...p.traits].sort().join("|")}`;
+  return `${p.rank}|${[...p.traits].sort().join("|")}|${aestheticGenotypeSignature(
+    p.aestheticGenes,
+  )}`;
 }
 export function dominantLineage(state, owner = null) {
   const pieces = owner
@@ -157,6 +174,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       ? {
           rank: selected.piece.rank,
           traits: selected.piece.traits.filter((t) => !excluded.has(t)),
+          aestheticGenes: cloneAestheticGenes(selected.piece.aestheticGenes),
         }
       : null,
     era = previous.era + 1,
@@ -260,7 +278,8 @@ export function assertState(state) {
       p.rank < 0 ||
       p.rank > 5 ||
       !Array.isArray(p.traits) ||
-      p.traits.some((t) => !TRAITS[t])
+      p.traits.some((t) => !TRAITS[t]) ||
+      !validAestheticGenes(p.aestheticGenes)
     )
       throw Error("Peça inválida.");
     if (
