@@ -435,7 +435,6 @@ function executeMove(ctx, action) {
     }
   if (
     !target.stay &&
-    !contactCapture &&
     terrain(state, target.r, target.c) === "hostile"
   )
     p.hostileRiskRound = round(state) + 1;
