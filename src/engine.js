@@ -9,7 +9,6 @@ import {
   random,
   log,
   notice,
-  summary,
   assertState,
 } from "./state.js";
 import {
@@ -35,7 +34,6 @@ import {
   markDecomposition,
   tickEnvironment,
 } from "./environment.js";
-import { cycleRoundLimit } from "./geology.js";
 export function context(state) {
   const ctx = {
     state,
@@ -97,30 +95,6 @@ function extinction(state) {
     return true;
   }
   return false;
-}
-function comparativeEnd(state, winReason, tieReason) {
-  const a = summary(state, "blue"),
-    b = summary(state, "amber");
-  for (const k of ["pieces", "generations", "mutations", "lineages"])
-    if (a[k] !== b[k]) {
-      finishGame(state, a[k] > b[k] ? "blue" : "amber", winReason);
-      return;
-    }
-  finishGame(state, null, tieReason);
-}
-function technicalEnd(state) {
-  comparativeEnd(
-    state,
-    "Desempate técnico: os dois lados ficaram bloqueados.",
-    "Empate técnico.",
-  );
-}
-function geologicalCycleEnd(state) {
-  comparativeEnd(
-    state,
-    "Fim do Ciclo evolutivo: a seleção favoreceu a população mais adaptada.",
-    "Fim do Ciclo evolutivo em equilíbrio.",
-  );
 }
 function moveDirection(p) {
   if (p.rank === 0) {
@@ -225,9 +199,6 @@ function advanceTurn(ctx) {
   }
   maturePhotosynthesis(state, state.current);
   if (!extinction(state)) checkPopulation(state);
-  const limit = cycleRoundLimit(state);
-  if (!state.result && limit && round(state) >= limit)
-    geologicalCycleEnd(state);
 }
 function settle(ctx) {
   const state = ctx.state;
@@ -238,7 +209,8 @@ function settle(ctx) {
     state.phase === "manipulate"
   )
     return;
-  // At most one automatic pass; the opposing side is checked explicitly.
+  // Auto-pass one blocked side. A second blocked side remains playable via PASS;
+  // the match never ends by comparison or technical tiebreak.
   if (
     legalActions(state).length ||
     canWaitForRest(state, state.current) ||
@@ -248,13 +220,8 @@ function settle(ctx) {
   const blocked = state.current;
   log(state, `${OWNERS[blocked]} passaram automaticamente por bloqueio.`);
   advanceTurn(ctx);
-  if (state.result) return;
-  if (
-    !legalActions(state).length &&
-    !canWaitForRest(state, state.current) &&
-    !canWaitForBirth(state, state.current)
-  )
-    technicalEnd(state);
+  // If both sides are blocked, play continues through passes and
+  // environmental/reproductive effects until an actual extinction occurs.
 }
 function completeMove(ctx, p, second, locomotion) {
   const state = ctx.state;
