@@ -88,6 +88,36 @@ test("aesthetic genes alter only the rendered piece phenotype", () => {
   );
   dom.window.close();
 });
+test("game-over modal shows the winning lineage aesthetic phenotype", () => {
+  const dom = setup(),
+    s = createState(4);
+  s.pieces = s.pieces.filter((p) => p.owner === "blue");
+  for (const p of s.pieces) {
+    p.rank = 3;
+    p.aestheticGenes.style = [
+      { value: "bold", dominance: "dominant" },
+      { value: "normal", dominance: "neutral" },
+    ];
+    p.aestheticGenes.width = [
+      { value: "wide", dominance: "dominant" },
+      { value: "normal", dominance: "neutral" },
+    ];
+  }
+  s.result = { winner: "blue", reason: "Extinção total." };
+  s.phase = "over";
+
+  render(dom.window.document, s);
+  const modal = dom.window.document.getElementById("game-over-dialog"),
+    preview = modal.querySelector(".evolutionary-end-piece"),
+    aesthetics = modal.querySelector(".evolutionary-end-aesthetics");
+  assert.ok(modal.open);
+  assert.ok(preview);
+  assert.equal(preview.style.getPropertyValue("--piece-weight"), "800");
+  assert.equal(preview.style.getPropertyValue("--piece-scale-x"), "1.07");
+  assert.match(aesthetics.textContent, /negrito/);
+  assert.match(aesthetics.textContent, /larga/);
+  dom.window.close();
+});
 test("application UI can play, acknowledge reproduction, save, load and reset", async () => {
   const dom = setup(),
     w = dom.window;
