@@ -1,6 +1,6 @@
 import { legalActions } from "./moves.js";
 import { simulate } from "./engine.js";
-import { has, other, square } from "./constants.js";
+import { has, other, square, distance } from "./constants.js";
 import { eggAt } from "./state.js";
 export function fallbackAction(state) {
   const actions = legalActions(state);
@@ -19,8 +19,24 @@ function priority(state, a) {
     victim = state.pieces.find(
       (p) => p.r === a.r && p.c === a.c && p.owner !== state.current,
     ),
-    egg = eggAt(state, a.r, a.c);
+    egg = eggAt(state, a.r, a.c),
+    enemies = p
+      ? state.pieces.filter((piece) => piece.owner !== p.owner)
+      : [],
+    hunt =
+      p && has(p, "Carnívoro") && enemies.length && Number.isInteger(a.r)
+        ? Math.max(
+            0,
+            8 -
+              Math.min(
+                ...enemies.map((enemy) =>
+                  distance({ r: a.r, c: a.c }, enemy),
+                ),
+              ),
+          ) * 2
+        : 0;
   return (
+    hunt +
     (state.board[square(a.r, a.c)] === "fertile" &&
     (!has(p, "Carnívoro") || has(p, "Onívoro"))
       ? 8
