@@ -1,6 +1,7 @@
 import { legalActions } from "./moves.js";
 import { simulate } from "./engine.js";
 import { has, other, square } from "./constants.js";
+import { eggAt } from "./state.js";
 export function fallbackAction(state) {
   const actions = legalActions(state);
   return (
@@ -15,10 +16,12 @@ function priority(state, a) {
   const p = state.pieces.find((p) => p.id === a.id),
     victim = state.pieces.find(
       (p) => p.r === a.r && p.c === a.c && p.owner !== state.current,
-    );
+    ),
+    egg = eggAt(state, a.r, a.c);
   return (
     (state.board[square(a.r, a.c)] === "fertile" ? 8 : 0) +
-    (victim ? 4 + victim.rank : 0) -
+    (victim ? 4 + victim.rank : 0) +
+    (egg && egg.owner !== state.current ? 4 + egg.brood.length : 0) -
     (state.board[square(a.r, a.c)] === "hostile" && !has(p, "Voo") ? 8 : 0)
   );
 }
@@ -29,17 +32,31 @@ function evaluate(state, owner) {
       : state.result.winner
         ? -100000
         : 0;
-  return state.pieces.reduce(
-    (n, p) =>
-      n +
-      (p.owner === owner ? 1 : -1) *
-        (12 +
-          p.rank * 2 +
-          p.traits.length +
-          (p.infection ? -6 : 0) +
-          Math.min(3, p.seeds)),
-    0,
-  );
+  const pieces = state.pieces.reduce(
+      (n, p) =>
+        n +
+        (p.owner === owner ? 1 : -1) *
+          (12 +
+            p.rank * 2 +
+            p.traits.length +
+            (p.infection ? -6 : 0) +
+            Math.min(3, p.seeds) +
+            Math.min(
+              4,
+              (p.pregnancies ?? []).reduce(
+                (sum, pregnancy) => sum + pregnancy.brood.length,
+                0,
+              ),
+            )),
+      0,
+    ),
+    eggs = state.eggs.reduce(
+      (n, egg) =>
+        n +
+        (egg.owner === owner ? 1 : -1) * (4 + Math.min(4, egg.brood.length)),
+      0,
+    );
+  return pieces + eggs;
 }
 /** Bounded search runs only inside a worker. The UI has its own independent timeout. */
 export function chooseAction(
