@@ -20,9 +20,7 @@ export const regenerationResting = (state, p) =>
   Number.isInteger(p.regenerationRestThroughRound) &&
   round(state) <= p.regenerationRestThroughRound;
 export const dormant = (state, p) =>
-  has(p, "Dormência") &&
-  !has(p, "Voo") &&
-  terrain(state, p.r, p.c) === "hostile";
+  has(p, "Dormência") && terrain(state, p.r, p.c) === "hostile";
 export const resting = (state, p) =>
   dysfunctionalResting(state, p) || regenerationResting(state, p);
 
