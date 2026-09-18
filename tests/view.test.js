@@ -68,7 +68,7 @@ test("aesthetic genes alter only the rendered piece phenotype", () => {
     { value: "normal", dominance: "neutral" },
   ];
   p.aestheticGenes.stroke = [
-    { value: 0.4, dominance: "dominant" },
+    { value: 1, dominance: "dominant" },
     { value: 0, dominance: "neutral" },
   ];
   p.aestheticGenes.pigment = [
@@ -79,8 +79,8 @@ test("aesthetic genes alter only the rendered piece phenotype", () => {
   render(dom.window.document, s);
   const piece = dom.window.document.querySelector(".piece.blue");
   assert.equal(piece.style.getPropertyValue("--piece-weight"), "800");
-  assert.equal(piece.style.getPropertyValue("--piece-scale-x"), "1.07");
-  assert.equal(piece.style.getPropertyValue("--piece-stroke-width"), "0.4px");
+  assert.equal(piece.style.getPropertyValue("--piece-scale-x"), "1.15");
+  assert.equal(piece.style.getPropertyValue("--piece-stroke-width"), "1px");
   assert.equal(piece.style.getPropertyValue("--piece-stroke-color"), "#c084fc");
   assert.equal(
     dom.window.document.querySelector("#notice-dialog[open]"),
@@ -113,7 +113,7 @@ test("game-over modal shows the winning lineage aesthetic phenotype", () => {
   assert.ok(modal.open);
   assert.ok(preview);
   assert.equal(preview.style.getPropertyValue("--piece-weight"), "800");
-  assert.equal(preview.style.getPropertyValue("--piece-scale-x"), "1.07");
+  assert.equal(preview.style.getPropertyValue("--piece-scale-x"), "1.15");
   assert.match(aesthetics.textContent, /negrito/);
   assert.match(aesthetics.textContent, /larga/);
   dom.window.close();
