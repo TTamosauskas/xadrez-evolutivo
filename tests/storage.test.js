@@ -87,6 +87,20 @@ test("v2 saves migrate old Ovos trait into reproductive genes", () => {
   assert.ok(s.pieces.every((p) => Array.isArray(p.pregnancies)));
 });
 
+test("terrain manipulation phase survives save round trip", () => {
+  const s = createState(12),
+    p = s.pieces.find((piece) => piece.owner === "blue");
+  s.phase = "manipulate";
+  s.manipulation = {
+    id: p.id,
+    origin: p.r * 8 + p.c,
+    terrain: "hostile",
+    second: false,
+    locomotion: false,
+  };
+  assert.deepEqual(deserialize(JSON.stringify(s)), s);
+});
+
 test("malformed nested disease and event data are rejected before replacing state", () => {
   const s = createState(1);
   s.diseases = [{ id: 1 }];
