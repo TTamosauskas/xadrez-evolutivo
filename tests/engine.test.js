@@ -631,7 +631,7 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   assert.equal(next.maxGenerationReached, 0);
   assert.equal(next.nextHabitatGeneration, 3);
   assert.equal(next.nextEventGeneration, 4);
-  assert.equal(next.pieces.length, 4);
+  assert.equal(next.pieces.length, 2);
   assert.deepEqual(
     [...new Set(next.pieces.map((p) => p.rank))],
     [3],
@@ -647,8 +647,17 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
         !p.traits.includes("Mutação Deletéria"),
     ),
   );
-  assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 2);
-  assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 2);
+  assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 1);
+  assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 1);
+  assert.deepEqual(
+    next.pieces
+      .map((p) => [p.owner, p.r, p.c])
+      .sort((a, b) => a[0].localeCompare(b[0])),
+    [
+      ["amber", 0, 4],
+      ["blue", 7, 4],
+    ],
+  );
   for (const p of next.pieces)
     assert.deepEqual(p.reproGenes.development, [
       { value: "viviparous", dominance: "recessive" },
