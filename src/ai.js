@@ -68,7 +68,15 @@ export function chooseAction(
     (a, b) => priority(state, b) - priority(state, a),
   );
   if (!actions.length) return { type: "PASS" };
-  if (difficulty === "easy")
+  const cortexAvailable = actions.some(
+    (action) =>
+      action.type === "MOVE" &&
+      has(
+        state.pieces.find((piece) => piece.id === action.id),
+        "Neocórtex Desenvolvido",
+      ),
+  );
+  if (difficulty === "easy" && !cortexAvailable)
     return actions[(state.rng >>> 0) % Math.min(actions.length, 3)];
   const deadline = now() + budget,
     owner = state.current;
@@ -80,7 +88,14 @@ export function chooseAction(
     const next = simulate(state, action);
     nodes++;
     let value = evaluate(next, owner);
-    if (difficulty === "hard" && !next.result) {
+    const actor =
+      action.type === "MOVE"
+        ? state.pieces.find((piece) => piece.id === action.id)
+        : null;
+    if (
+      (difficulty === "hard" || has(actor, "Neocórtex Desenvolvido")) &&
+      !next.result
+    ) {
       const replies = legalActions(next)
         .sort((a, b) => priority(next, b) - priority(next, a))
         .slice(0, 8);
