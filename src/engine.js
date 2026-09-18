@@ -33,6 +33,7 @@ import {
   markDecomposition,
   tickEnvironment,
 } from "./environment.js";
+import { cycleRoundLimit } from "./geology.js";
 export function context(state) {
   const ctx = {
     state,
@@ -94,19 +95,29 @@ function extinction(state) {
   }
   return false;
 }
-function technicalEnd(state) {
+function comparativeEnd(state, winReason, tieReason) {
   const a = summary(state, "blue"),
     b = summary(state, "amber");
   for (const k of ["pieces", "generations", "mutations", "lineages"])
     if (a[k] !== b[k]) {
-      finishGame(
-        state,
-        a[k] > b[k] ? "blue" : "amber",
-        "Desempate técnico: os dois lados ficaram bloqueados.",
-      );
+      finishGame(state, a[k] > b[k] ? "blue" : "amber", winReason);
       return;
     }
-  finishGame(state, null, "Empate técnico.");
+  finishGame(state, null, tieReason);
+}
+function technicalEnd(state) {
+  comparativeEnd(
+    state,
+    "Desempate técnico: os dois lados ficaram bloqueados.",
+    "Empate técnico.",
+  );
+}
+function geologicalCycleEnd(state) {
+  comparativeEnd(
+    state,
+    "Fim do Ciclo pré-cambriano: a seleção favoreceu a população mais adaptada.",
+    "Fim do Ciclo pré-cambriano em equilíbrio.",
+  );
 }
 function moveDirection(p) {
   if (p.rank === 0) {
@@ -210,6 +221,9 @@ function advanceTurn(ctx) {
   }
   maturePhotosynthesis(state, state.current);
   if (!extinction(state)) checkPopulation(state);
+  const limit = cycleRoundLimit(state);
+  if (!state.result && limit && round(state) >= limit)
+    geologicalCycleEnd(state);
 }
 function settle(ctx) {
   const state = ctx.state;
