@@ -1,145 +1,105 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Xadrez Evolutivo</title>
-<link rel="stylesheet" href="styles.css" />
-<link rel="stylesheet" href="corrections.css" />
-<link rel="stylesheet" href="simplify.css" />
-<link rel="stylesheet" href="polish.css" />
-<link rel="stylesheet" href="clean-ui.css" />
-<link rel="stylesheet" href="evolution-v2.css" />
-<link rel="stylesheet" href="evolution-v3.css" />
-<link rel="stylesheet" href="evolution-v4.css" />
-<link rel="stylesheet" href="evolution-v5.css" />
-<link rel="stylesheet" href="evolution-v7.css" />
-<link rel="stylesheet" href="evolution-v8.css" />
-<link rel="stylesheet" href="evolution-v9.css" />
-<link rel="stylesheet" href="evolution-v10.css" />
-<link rel="stylesheet" href="evolution-v12.css" />
-<link rel="stylesheet" href="evolution-v13.css" />
-<link rel="stylesheet" href="evolution-v15.css" />
-<link rel="stylesheet" href="layout-two-columns.css" />
-</head>
-<body>
-<div class="app">
-  <div class="topbar">
-    <div class="brand"><h1>Xadrez Evolutivo</h1></div>
-    <div class="top-actions">
-      <button class="btn" id="modeBtn" aria-pressed="false">Modo: 2 jogadores</button>
-      <button class="btn" id="rulesBtn">Como jogar</button>
-      <button class="btn" id="saveBtn" hidden aria-hidden="true" tabindex="-1">Salvar</button>
-      <button class="btn danger" id="resetBtn" hidden aria-hidden="true" tabindex="-1">Nova partida</button>
-      <button class="btn" id="loadBtn" hidden aria-hidden="true" tabindex="-1">Carregar</button>
-    </div>
-  </div>
-
-  <div class="status-strip">
-    <div class="stat"><div class="label">Turno</div><div class="value" id="turnValue">—</div></div>
-    <div class="stat"><div class="label">Época</div><div class="value" id="epochValue">—</div></div>
-    <div class="stat"><div class="label">Rodada da época</div><div class="value" id="roundValue">—</div></div>
-    <div class="stat"><div class="label">População total</div><div class="value" id="populationValue">—</div></div>
-    <div class="stat"><div class="label">Tendência ambiental</div><div class="value" id="trendValue">Estável</div></div>
-  </div>
-
-  <div class="layout">
-    <div class="side-players">
-      <section class="panel player-panel" id="bluePanel"></section>
-      <section class="panel player-panel" id="amberPanel"></section>
-      <section class="panel left-log-panel">
-        <h3>Registro evolutivo</h3>
-        <div id="log" class="log"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#191c19" />
+    <title>Xadrez Evolutivo</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Xadrez Evolutivo</h1>
+        <p>Sobreviva. Reproduza. Evolua.</p>
+      </div>
+      <button id="menu-button" aria-haspopup="dialog">☰ Menu</button>
+    </header>
+    <main>
+      <section class="play-area" aria-label="Partida">
+        <div class="turn-strip">
+          <strong id="turn" aria-live="polite"></strong><span id="round"></span>
+        </div>
+        <div id="event" class="event"></div>
+        <div
+          id="board"
+          class="board"
+          aria-label="Tabuleiro de xadrez evolutivo"
+        ></div>
+        <div class="board-footer">
+          <span id="instruction" aria-live="polite">Selecione uma peça.</span
+          ><button id="pass">Passar vez</button>
+        </div>
+        <p id="message" role="status"></p>
+        <div class="terrain-key">
+          <span>🟩 Casa fértil</span><span>🟥 Casa hostil</span
+          ><span>● Destino disponível</span>
+        </div>
       </section>
-    </div>
-
-    <main class="center">
-      <div class="board-shell"><div id="board" class="board" aria-label="Tabuleiro ecológico 8 por 8"></div></div>
+      <aside>
+        <section class="panel">
+          <h2>Populações</h2>
+          <div id="populations"></div>
+        </section>
+        <section class="panel">
+          <h2>Peça selecionada</h2>
+          <div id="selected">
+            Selecione uma peça para ver suas características.
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Mutações em jogo</h2>
+          <div id="traits"></div>
+        </section>
+        <details class="panel">
+          <summary>Registro da partida</summary>
+          <ol id="log"></ol>
+        </details>
+      </aside>
     </main>
-
-    <aside class="right-column">
-      <section class="panel controls-panel">
-        <h3>Legenda</h3>
-        <div class="actionbar" aria-hidden="true">
-          <button class="btn active" id="moveBtn">Mover / Capturar</button>
-          <button class="btn" id="reproBtn">Reproduzir</button>
-          <button class="btn" id="feedBtn">Alimentar</button>
-          <button class="btn" id="specialBtn">Interação especial</button>
-          <button class="btn" id="passBtn">Passar</button>
-        </div>
-        <div class="hint" id="hint"></div>
-        <button class="btn pass-turn-btn" id="passTurnBtn">Passar a vez</button>
-        <div class="legend">
-          <span><i class="legend-color biome"></i> casa fértil</span>
-          <span><i class="legend-color biohazard"></i> casa hostil</span>
-        </div>
-      </section>
-      <section class="panel evolution-tree-panel"><h3>Árvores filogenéticas</h3><div id="trees" class="tree"></div></section>
-    </aside>
-  </div>
-
-  <div id="events" hidden></div><div id="environmentSummary" hidden></div>
-</div>
-
-<div class="modal-backdrop" id="rulesModal">
-  <div class="modal">
-    <h2>Como jogar</h2>
-    <p><strong>Objetivo.</strong> A partida termina por extinção total ou por desempate técnico quando o lado da vez não possui movimento legal. O desempate compara, nesta ordem: peças, gerações, mutações e linhagens vivas.</p>
-    <p><strong>Turno.</strong> Cada organismo usa o movimento da peça de xadrez que representa. Peões avançam uma casa para frente e capturam uma casa na diagonal para frente. Locomoção permite uma segunda movimentação no mesmo turno.</p>
-    <p><strong>Casas férteis e reprodução.</strong> Ao avançar sobre uma casa fértil, ela é consumida e a reprodução acontece automaticamente. Casas férteis evoluem por Conway e, se desaparecerem totalmente, um núcleo mínimo de três casas é reintroduzido.</p>
-    <p><strong>Evolução.</strong> Cada descendente herda todas as mutações do progenitor. Em 2/3 dos nascimentos ocorre apenas herança; em 1/3 ocorre uma nova mutação automática. Linhagens vivas correspondem a perfis evolutivos distintos ainda presentes no tabuleiro.</p>
-    <p><strong>Casas ambientais.</strong> Casas verdes e vermelhas evoluem simultaneamente a cada Época pelas quatro regras de Conway. Cada cor conta apenas vizinhas da própria cor e a casa fértil tem prioridade em conflitos. Se uma das duas cores desaparecer totalmente, um núcleo mínimo de três casas é reintroduzido. Casas vermelhas eliminam organismos terrestres; Voo oferece imunidade.</p>
-    <p><strong>Controles.</strong> Use o botão de modo no topo para alternar entre 2 jogadores e 1 jogador. No modo de 1 jogador, você controla as Brancas e o sistema controla as Pretas. Clique numa peça sua e depois numa casa com borda azul; “Passar a vez” encerra seu turno sem movimento.</p>
-    <div class="modal-actions"><button class="btn primary" data-close="rulesModal">Entendi</button></div>
-  </div>
-</div>
-
-<div class="modal-backdrop" id="mutationModal"><div class="modal"><h2>Mutação hereditária</h2><div id="mutationBody"></div><div class="modal-actions" id="mutationActions"></div></div></div>
-<div class="modal-backdrop" id="gameOverModal"><div class="modal"><h2 id="gameOverTitle">Fim da partida</h2><div id="gameOverBody"></div><div class="modal-actions"><button class="btn primary" id="newAfterEnd">Nova partida</button><button class="btn" data-close="gameOverModal">Ver tabuleiro</button></div></div></div>
-
-<script src="core.js"></script>
-<script src="mechanics.js"></script>
-<script src="environment.js"></script>
-<script src="ui.js"></script>
-<script src="corrections.js"></script>
-<script src="simplify.js"></script>
-<script src="polish.js"></script>
-<script src="clean-ui.js"></script>
-<script src="evolution-v2.js"></script>
-<script src="evolution-v3.js"></script>
-<script src="compat-v3.js"></script>
-<script src="evolution-v4.js"></script>
-<script src="evolution-v5.js"></script>
-<script src="evolution-v6.js"></script>
-<script src="evolution-v7.js"></script>
-<script src="evolution-v8.js"></script>
-<script src="evolution-v9.js"></script>
-<script src="evolution-v10.js"></script>
-<script src="evolution-v11.js"></script>
-<script src="evolution-v12.js"></script>
-<script src="evolution-v13.js"></script>
-<script src="evolution-v14.js"></script>
-<script src="evolution-v16.js"></script>
-<script src="evolution-v17.js"></script>
-<script src="evolution-v18.js"></script>
-<script src="pathogen-ui.js"></script>
-<script src="pathogen-disease-timing.js"></script>
-<script src="alluvial-river-event.js"></script>
-<script src="pawn-bounce-fix.js"></script>
-<script src="stationary-move.js"></script>
-<script src="death-mutations.js"></script>
-<script src="deleterious-mutation.js"></script>
-<script src="dysfunctional-mutation.js"></script>
-<script src="ecology-rules-v2.js"></script>
-<script src="carapace-camouflage-welcome.js"></script>
-<script src="population-ui-fixes.js"></script>
-<script src="population-pathogen-threshold.js"></script>
-<script src="selection-ui-polish.js"></script>
-<script src="mutation-summary.js"></script>
-<script src="pathogen-mortality.js"></script>
-<script src="hostile-births.js"></script>
-<script src="collector-mutation.js"></script>
-<script src="ai-turn-recovery.js"></script>
-<script src="concise-descriptions.js"></script>
-</body>
+    <footer>Dois fundadores. Um ambiente em transformação.</footer>
+    <dialog id="notice-dialog" aria-labelledby="notice-title">
+      <h2 id="notice-title"></h2>
+      <div id="notice-content"></div>
+      <button id="notice-ok" autofocus>Continuar</button>
+    </dialog>
+    <dialog id="menu-dialog" aria-labelledby="menu-title">
+      <h2 id="menu-title">Sua partida</h2>
+      <label
+        >Modo<select id="mode">
+          <option value="multi">2 jogadores</option>
+          <option value="single">Contra o computador</option>
+        </select></label
+      ><label
+        >Dificuldade<select id="difficulty">
+          <option value="easy">Fácil</option>
+          <option value="medium">Médio</option>
+          <option value="hard">Difícil</option>
+        </select></label
+      >
+      <div class="menu-actions">
+        <button id="save">Salvar partida</button
+        ><button id="load">Carregar partida</button
+        ><button id="export">Exportar partida</button
+        ><button id="import">Importar arquivo</button
+        ><button id="rules">Como jogar</button
+        ><button id="new">Nova partida</button>
+      </div>
+      <input
+        id="import-file"
+        type="file"
+        accept="application/json,.json"
+        hidden
+      /><button id="menu-close" class="primary">Voltar ao jogo</button>
+    </dialog>
+    <dialog id="info-dialog" aria-labelledby="info-title">
+      <h2 id="info-title"></h2>
+      <div id="info-content"></div>
+      <div class="dialog-actions">
+        <button id="info-cancel" hidden>Cancelar</button
+        ><button id="info-ok">Entendi</button>
+      </div>
+    </dialog>
+    <script type="module" src="src/app.js"></script>
+  </body>
 </html>

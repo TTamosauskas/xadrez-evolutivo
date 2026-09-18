@@ -1,0 +1,362 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  background: #191c19;
+  color: #ebe8de;
+  --muted: #adb3a5;
+  --line: #41483c;
+  --green: #aaca81;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+header,
+main,
+body > footer {
+  max-width: 1160px;
+  margin: auto;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 24px 22px;
+}
+h1 {
+  font-family: Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(25px, 4vw, 38px);
+  margin: 0;
+}
+header p {
+  color: var(--muted);
+  margin: 7px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.07em;
+}
+button,
+select {
+  font: inherit;
+  border: 1px solid var(--line);
+  background: #30382c;
+  color: inherit;
+  padding: 10px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+button:hover {
+  background: #44503c;
+}
+button:focus-visible,
+select:focus-visible {
+  outline: 3px solid #dfbf72;
+  outline-offset: 3px;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+main {
+  display: grid;
+  grid-template-columns: minmax(320px, 720px) minmax(240px, 300px);
+  gap: 25px;
+  padding: 0 24px;
+}
+.turn-strip,
+.board-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+}
+.turn-strip span {
+  font-size: 13px;
+  color: var(--muted);
+}
+.board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  border: 8px solid #67513c;
+  border-radius: 5px;
+  box-shadow: 0 10px 30px #0004;
+  aspect-ratio: 1;
+}
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  aspect-ratio: 1;
+  min-width: 0;
+  background: #c5b595;
+  color: #161713;
+  touch-action: manipulation;
+}
+.cell.dark {
+  background: #877456;
+}
+.cell:hover {
+  background: #d9ca9f;
+}
+.cell.fertile {
+  background: #799552;
+}
+.cell.fertile.dark {
+  background: #637c3f;
+}
+.cell.hostile {
+  background: #ad6650;
+}
+.cell.hostile.dark {
+  background: #8b4c41;
+}
+.cell.selected {
+  box-shadow: inset 0 0 0 4px #ffdf84;
+}
+.cell.legal:after {
+  content: "";
+  position: absolute;
+  width: 17%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #21392199;
+  z-index: 2;
+}
+.cell.occupied.legal:after {
+  width: 85%;
+  border: 3px solid #fff0b0;
+  background: transparent;
+}
+.cell.partner {
+  box-shadow: inset 0 0 0 4px #f7aed2;
+}
+.piece {
+  font-size: clamp(25px, 6vw, 60px);
+  line-height: 1;
+  font-family: "DejaVu Sans", "Segoe UI Symbol", serif;
+  filter: drop-shadow(0 2px 1px #0007);
+}
+.piece.blue {
+  color: #fff8df;
+  text-shadow:
+    1px 0 #403b31,
+    -1px 0 #403b31,
+    0 1px #403b31,
+    0 -1px #403b31;
+}
+.piece.amber {
+  color: #242623;
+  text-shadow: 1px 0 #f7eace77;
+}
+.coordinate {
+  position: absolute;
+  left: 3px;
+  top: 2px;
+  font-size: clamp(8px, 1.3vw, 11px);
+  color: #172213b0;
+}
+.badges {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  left: 2px;
+  font-size: clamp(8px, 1.5vw, 13px);
+  text-align: center;
+  line-height: 1.2;
+  pointer-events: none;
+}
+.event {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 0 0 12px;
+  min-height: 30px;
+}
+.board-footer {
+  font-size: 14px;
+}
+.board-footer button {
+  flex-shrink: 0;
+}
+.terrain-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 12px 0;
+}
+.panel {
+  background: #242a22;
+  border: 1px solid #363e32;
+  border-radius: 9px;
+  padding: 17px;
+  margin: 0 0 14px;
+}
+.panel h2 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #c1c6b5;
+  margin: 0 0 14px;
+}
+.population {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 0;
+}
+.population span {
+  font-size: 13px;
+  color: var(--muted);
+}
+.trait {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 9px 0;
+}
+.trait small {
+  display: block;
+  color: var(--muted);
+}
+#selected {
+  font-size: 14px;
+  line-height: 1.6;
+}
+#message {
+  color: #e7cd8c;
+  font-size: 14px;
+  min-height: 20px;
+  margin: 0;
+}
+#log {
+  padding-left: 20px;
+  max-height: 300px;
+  overflow: auto;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+body > footer {
+  text-align: center;
+  padding: 32px;
+  color: #919983;
+  font-size: 12px;
+}
+dialog {
+  color: inherit;
+  background: #252d23;
+  border: 1px solid #626e55;
+  border-radius: 14px;
+  padding: 26px;
+  width: min(92vw, 520px);
+  max-height: 85vh;
+  overflow: auto;
+  box-shadow: 0 20px 80px #0009;
+}
+dialog::backdrop {
+  background: #070c07ba;
+}
+dialog h2 {
+  margin: 0 0 18px;
+  font-family: Georgia, serif;
+  font-weight: 500;
+  font-size: 27px;
+}
+dialog p {
+  line-height: 1.6;
+  font-size: 14px;
+  color: #d2d8c8;
+}
+dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 16px 0;
+  font-size: 13px;
+  color: #c3ccb8;
+}
+select {
+  width: 100%;
+}
+.menu-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 22px 0;
+}
+.primary,
+#notice-ok,
+#info-ok {
+  background: #a6bd80;
+  color: #182112;
+  border-color: #a6bd80;
+}
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+summary {
+  cursor: pointer;
+  font-size: 14px;
+}
+#notice-content {
+  max-height: 55vh;
+  overflow: auto;
+}
+#traits {
+  max-height: 360px;
+  overflow: auto;
+}
+@media (max-width: 760px) {
+  header {
+    padding: 20px 14px;
+  }
+  main {
+    grid-template-columns: 1fr;
+    padding: 0 12px;
+    gap: 15px;
+  }
+  aside {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  aside .panel {
+    margin: 0;
+  }
+  aside .panel:nth-child(n + 3) {
+    grid-column: 1/-1;
+  }
+  .piece {
+    font-size: clamp(25px, 8vw, 55px);
+  }
+  .badges {
+    font-size: clamp(8px, 2.5vw, 13px);
+  }
+  .board {
+    border-width: 5px;
+  }
+  .panel {
+    padding: 13px;
+  }
+  .turn-strip {
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  button {
+    transition: background 0.1s;
+  }
+}
