@@ -9,6 +9,7 @@ import {
   eventWeights,
   innovationWeight,
   missingInnovations,
+  pawnMutationUnlocked,
   stageComplete,
   traitUnlocked,
 } from "../src/geology.js";
@@ -248,6 +249,15 @@ test("missing innovations gain weight across repeated cycles without becoming au
     "Fertilidade",
     "Dormência",
   ]);
+});
+
+test("Pawn mutation unlocks only from the second campaign cycle", () => {
+  const first = createState(113);
+  assert.equal(first.totalCycles, 1);
+  assert.equal(pawnMutationUnlocked(first), false);
+  first.totalCycles = 2;
+  first.cycle = 1;
+  assert.equal(pawnMutationUnlocked(first), true);
 });
 
 test("Fotossíntese and Predação are mutually exclusive within one lineage", () => {
