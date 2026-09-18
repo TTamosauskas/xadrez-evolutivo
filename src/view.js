@@ -260,10 +260,19 @@ export function render(
       const list = make("ul", undefined, "mutation-list");
       for (const line of n.lines) {
         const lostTrait = line.startsWith("Perda de ")
-          ? line.slice("Perda de ".length)
-          : null;
-        const traitName = TRAITS[line] ? line : lostTrait;
-        const icon = traitName && TRAITS[traitName] ? TRAITS[traitName][0] : "🧬";
+            ? line.slice("Perda de ".length)
+            : null,
+          pieceName = line.startsWith("Mutação de peça: ")
+            ? line.slice("Mutação de peça: ".length)
+            : null,
+          pieceRank = pieceName ? PIECES.indexOf(pieceName) : -1,
+          traitName = TRAITS[line] ? line : lostTrait,
+          icon =
+            pieceRank >= 0
+              ? SYMBOLS.blue[pieceRank]
+              : traitName && TRAITS[traitName]
+                ? TRAITS[traitName][0]
+                : "🧬";
         const item = make("li", undefined, "mutation-item");
         item.append(
           make("span", icon, "mutation-icon"),
