@@ -20,7 +20,9 @@ export function fixture(
   for (const spec of specs) {
     const source = {
         ...spec,
-        traits: [...new Set(["Locomoção", ...(spec.traits ?? [])])],
+        traits: [
+          ...new Set(["Locomoção", "Predação", ...(spec.traits ?? [])]),
+        ],
       },
       p = newPiece(s, source.owner, source.r, source.c, source);
     Object.assign(p, source);
