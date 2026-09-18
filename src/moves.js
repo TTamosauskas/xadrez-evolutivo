@@ -1,5 +1,5 @@
 import { inside, has, distance } from "./constants.js";
-import { at, terrain, round } from "./state.js";
+import { at, eggAt, terrain, round } from "./state.js";
 const ORTH = [
     [-1, 0],
     [1, 0],
@@ -28,10 +28,18 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   const targets = [];
   function add(r, c, path) {
     if (!inside(r, c)) return;
-    const victim = at(state, r, c);
-    if (victim?.owner === p.owner) return;
+    const victim = at(state, r, c),
+      egg = eggAt(state, r, c);
+    if (victim?.owner === p.owner || egg?.owner === p.owner) return;
+    if (egg && !has(p, "Ovífagia")) return;
     if (victim && has(victim, "Camuflagem") && distance(p, victim) > 1) return;
-    targets.push({ r, c, path, capture: !!victim });
+    targets.push({
+      r,
+      c,
+      path,
+      capture: !!victim,
+      eggCapture: egg?.id ?? null,
+    });
   }
   function ray(directions) {
     for (const [dr, dc] of directions) {
@@ -42,21 +50,29 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         if (!inside(r, c)) break;
         path.push([r, c]);
         add(r, c, [...path]);
-        if (at(state, r, c)) break;
+        if (at(state, r, c) || eggAt(state, r, c)) break;
       }
     }
   }
   if (p.rank === 0) {
     const dir = p.r === 0 ? 1 : p.r === 7 ? -1 : p.pawnDir,
       r = p.r + dir;
-    if (inside(r, p.c) && !at(state, r, p.c)) add(r, p.c, [[r, p.c]]);
-    for (const c of [p.c - 1, p.c + 1])
+    if (
+      inside(r, p.c) &&
+      !at(state, r, p.c) &&
+      !eggAt(state, r, p.c)
+    )
+      add(r, p.c, [[r, p.c]]);
+    for (const c of [p.c - 1, p.c + 1]) {
+      const victim = at(state, r, c),
+        egg = eggAt(state, r, c);
       if (
         inside(r, c) &&
-        at(state, r, c)?.owner &&
-        at(state, r, c).owner !== p.owner
+        ((victim?.owner && victim.owner !== p.owner) ||
+          (egg?.owner && egg.owner !== p.owner && has(p, "Ovífagia")))
       )
         add(r, c, [[r, c]]);
+    }
   } else if (p.rank === 1) {
     for (const [dr, dc] of [
       [-2, -1],
@@ -111,4 +127,12 @@ export function legalActions(state) {
 }
 export function canWaitForRest(state, owner) {
   return state.pieces.some((p) => p.owner === owner && resting(state, p));
+}
+export function canWaitForBirth(state, owner) {
+  return (
+    state.eggs.some((egg) => egg.owner === owner) ||
+    state.pieces.some(
+      (p) => p.owner === owner && (p.pregnancies?.length ?? 0) > 0,
+    )
+  );
 }
