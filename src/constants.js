@@ -13,7 +13,8 @@ export const TRAITS = {
     "Permite uma segunda movimentação no mesmo turno.",
   ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
-  Predador: [
+  Predação: ["🦈", "Permite capturar criaturas adversárias."],
+  Carnívoro: [
     "🦁",
     "Reproduz ao eliminar uma peça, mas não usa casas férteis.",
   ],
@@ -22,7 +23,7 @@ export const TRAITS = {
     "Reproduz tanto em casas férteis quanto ao eliminar peças.",
   ],
   Necrófago: [
-    "🐦‍⬛",
+    "🪰",
     "Reproduz consumindo uma casa marcada com ☠️, vermelha ou verde.",
   ],
   Ovos: ["🦎", "Descendentes podem nascer a até duas casas do progenitor."],
@@ -36,8 +37,16 @@ export const TRAITS = {
     "Transforma em fértil uma casa neutra após permanecer nela por uma rodada completa.",
   ],
   "Construção de Nicho": [
-    "🦫",
+    "⬡",
     "Neutraliza a casa hostil de chegada quando a criatura sobrevive.",
+  ],
+  "Construtor Avançado": [
+    "🦫",
+    "Após reproduzir consumindo uma casa fértil, pode construir uma barreira em uma casa adjacente vazia.",
+  ],
+  Chifre: [
+    "🫎",
+    "Ao sofrer uma tentativa de captura, tem 20% de chance de matar o agressor; Carapaça do agressor impede a defesa.",
   ],
   "Polegar Opositor": [
     "✋",
@@ -79,7 +88,7 @@ export const TRAITS = {
   Veneno: ["🐍", "Condena o agressor à morte após dois turnos próprios."],
   "Mutação Deletéria": ["💀", "A peça morre após três rodadas completas."],
   "Mutação Disfuncional": [
-    "🦵",
+    "❌",
     "Depois de se mover, descansa na rodada seguinte.",
   ],
   Coletor: [
