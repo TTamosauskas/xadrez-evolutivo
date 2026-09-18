@@ -18,6 +18,7 @@ import {
   canWaitForRest,
   canWaitForBirth,
   dormant,
+  manipulationTargets,
 } from "./moves.js";
 import {
   reproduce,
@@ -73,6 +74,7 @@ function finishGame(state, winner, reason) {
   state.phase = "over";
   state.chain = null;
   state.partner = null;
+  state.manipulation = null;
   log(state, reason);
 }
 function extinction(state) {
@@ -158,6 +160,7 @@ function advanceTurn(ctx) {
     before = state.turn;
   state.chain = null;
   state.partner = null;
+  state.manipulation = null;
   state.phase = "move";
   for (const p of [...state.pieces])
     if (p.owner === acting && p.venom && p.venom.infectedTurn < before) {
@@ -211,7 +214,12 @@ function advanceTurn(ctx) {
 }
 function settle(ctx) {
   const state = ctx.state;
-  if (extinction(state) || state.phase === "partner") return;
+  if (
+    extinction(state) ||
+    state.phase === "partner" ||
+    state.phase === "manipulate"
+  )
+    return;
   // At most one automatic pass; the opposing side is checked explicitly.
   if (
     legalActions(state).length ||
@@ -247,6 +255,51 @@ function completeMove(ctx, p, second, locomotion) {
   advanceTurn(ctx);
   settle(ctx);
 }
+
+function finishMovement(ctx, p, manipulation, second, locomotion) {
+  const state = ctx.state;
+  if (
+    manipulation &&
+    has(p, "Polegar Opositor") &&
+    state.pieces.some((piece) => piece.id === p.id)
+  ) {
+    state.manipulation = {
+      id: p.id,
+      origin: manipulation.origin,
+      terrain: manipulation.terrain,
+      second,
+      locomotion,
+    };
+    state.phase = "manipulate";
+    state.chain = null;
+    if (manipulationTargets(state).length) return;
+    state.manipulation = null;
+    state.phase = "move";
+  }
+  finishMovement(ctx, p, manipulation, second, locomotion);
+}
+
+function resolveManipulation(ctx, action) {
+  const state = ctx.state,
+    pending = state.manipulation,
+    p = state.pieces.find((piece) => piece.id === pending?.id);
+  if (!pending || !p) throw Error("Manipulação indisponível.");
+  if (action.type === "MANIPULATE") {
+    const target = manipulationTargets(state).find(
+      (cell) => cell.r === action.r && cell.c === action.c,
+    );
+    if (!target) throw Error("Escolha uma casa neutra adjacente.");
+    state.board[pending.origin] = "neutral";
+    state.board[square(target.r, target.c)] = pending.terrain;
+    log(
+      state,
+      `${OWNERS[p.owner]}: ✋ terreno ${pending.terrain === "fertile" ? "fértil" : "hostil"} transferido para ${coord(target.r, target.c)}.`,
+    );
+  }
+  state.manipulation = null;
+  state.phase = "move";
+  completeMove(ctx, p, pending.second, pending.locomotion);
+}
 function executeMove(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -257,7 +310,19 @@ function executeMove(ctx, action) {
   );
   if (!target) throw Error("Escolha um destino disponível.");
   const second = state.chain === p.id,
-    locomotion = has(p, "Locomoção");
+    locomotion = has(p, "Locomoção"),
+    landingCell = square(target.r, target.c),
+    landingTerrain = terrain(state, target.r, target.c),
+    stableLanding =
+      !target.stay &&
+      !state.event?.hazards.includes(landingCell) &&
+      !hasDecomposition(state, landingCell);
+  let manipulation =
+    stableLanding &&
+    ["fertile", "hostile"].includes(landingTerrain) &&
+    has(p, "Polegar Opositor")
+      ? { origin: landingCell, terrain: landingTerrain }
+      : null;
   harvest(state, p, p.r, p.c);
   if (!has(p, "Voo"))
     for (const [r, c] of target.path)
@@ -296,6 +361,7 @@ function executeMove(ctx, action) {
   ctx.reserved.add(square(target.r, target.c));
   if (pieceCapture) {
     ctx.kill(victim.id, "captura", p);
+    manipulation = null;
     const cell = square(target.r, target.c);
     markDecomposition(state, cell);
     p.decompositionImmunity = {
@@ -308,8 +374,20 @@ function executeMove(ctx, action) {
   p.c = target.c;
   moveDirection(p);
   ctx.reserved.delete(square(p.r, p.c));
-  const cell = square(p.r, p.c),
-    scavenging =
+  const cell = square(p.r, p.c);
+  if (
+    !pieceCapture &&
+    stableLanding &&
+    landingTerrain === "hostile" &&
+    has(p, "Construção de Nicho")
+  ) {
+    state.board[cell] = "neutral";
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🦫 Construção de Nicho neutralizou ${coord(p.r, p.c)}.`,
+    );
+  }
+  const scavenging =
       !capture && has(p, "Necrófago") && hasDecomposition(state, cell);
   if (!capture && !scavenging) harvest(state, p, p.r, p.c);
   const collectorStay =
@@ -342,7 +420,14 @@ function executeMove(ctx, action) {
     partnersFor(state, p).length
   ) {
     state.phase = "partner";
-    state.partner = { id: p.id, second, locomotion, collectorStay, predation };
+    state.partner = {
+      id: p.id,
+      second,
+      locomotion,
+      collectorStay,
+      predation,
+      manipulation,
+    };
     state.chain = null;
     return;
   }
@@ -381,7 +466,13 @@ function choosePartner(ctx, id) {
   if (pending.collectorStay && born) p.seeds--;
   state.partner = null;
   state.phase = "move";
-  completeMove(ctx, p, pending.second, pending.locomotion);
+  finishMovement(
+    ctx,
+    p,
+    pending.manipulation ?? null,
+    pending.second,
+    pending.locomotion,
+  );
 }
 /** One atomic command: validate, copy, execute domain rules, verify, commit. No DOM/timers. */
 export function transition(previous, action) {
@@ -401,6 +492,11 @@ export function transition(previous, action) {
     executeMove(ctx, action);
   else if (action.type === "PARTNER" && state.phase === "partner")
     choosePartner(ctx, action.id);
+  else if (
+    ["MANIPULATE", "SKIP_MANIPULATION"].includes(action.type) &&
+    state.phase === "manipulate"
+  )
+    resolveManipulation(ctx, action);
   else if (action.type === "PASS" && state.phase === "move") {
     log(state, `${OWNERS[state.current]} passaram a vez.`);
     advanceTurn(ctx);
