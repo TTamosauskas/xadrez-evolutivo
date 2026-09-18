@@ -318,6 +318,42 @@ test("Onívoro reproduces on both fertile cells and captures", () => {
   assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
   assertState(s);
 });
+test("Necrófago consumes red and green decomposition to reproduce", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago", "Voo"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "hostile";
+  s.deathSites.push({ cell: 36, dueRound: 3, base: "neutral" });
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
+  assert.equal(s.deathSites.length, 0);
+  assert.equal(s.board[36], "neutral");
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  s.fertileTraces.push({ cell: 36, clearAfterTurn: 0, base: "neutral" });
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
+  assert.equal(s.fertileTraces.length, 0);
+  assert.equal(s.board[36], "neutral");
+  assertState(s);
+});
+test("Necrófago cannot consume the carcass created by its own capture immediately", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
+  assert.equal(s.deathSites.length, 1);
+  assert.equal(s.board[36], "hostile");
+  assertState(s);
+});
 test("capture creates hostile decomposition, protects attacker and fertilizes after three rounds", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
