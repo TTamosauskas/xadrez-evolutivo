@@ -126,6 +126,13 @@ function seedHabitat(state) {
         ] = "fertile";
       }
     }
+    const mobileFounder = state.pieces.some(
+      (piece) =>
+        piece.traits.includes("Locomoção") ||
+        piece.traits.includes("Locomoção Avançada"),
+    );
+    if (!mobileFounder)
+      for (const cell of founderCells) state.board[cell] = "fertile";
     return;
   }
 
