@@ -1,4 +1,5 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
+import { aestheticDescription, aestheticPhenotype } from "./aesthetics.js";
 import { at, dominantLineage, round, signature } from "./state.js";
 import { movesFor, partnersFor, resting } from "./moves.js";
 const element = (doc, tag, text, cls) => {
@@ -93,17 +94,63 @@ export function render(
       cell.dataset.r = r;
       cell.dataset.c = c;
       const terrain = {
-        fertile: "casa fértil",
-        hostile: "casa hostil",
-        neutral: "casa neutra",
-      }[state.board[square(r, c)]];
-      const label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
+          fertile: "casa fértil",
+          hostile: "casa hostil",
+          neutral: "casa neutra",
+        }[state.board[square(r, c)]],
+        appearance = p ? aestheticDescription(p.aestheticGenes) : "";
+      const label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${appearance ? ", aparência " + appearance : ""}${p.infection ? ", infectado" : ""}` : ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
       if (p) {
-        cell.append(make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`));
+        const piece = make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`),
+          appearance = aestheticPhenotype(p.aestheticGenes),
+          pigment =
+            appearance.pigment === "violet"
+              ? "#c084fc"
+              : appearance.pigment === "cyan"
+                ? "#67e8f9"
+                : "currentColor";
+        piece.style.setProperty(
+          "--piece-weight",
+          appearance.style === "bold" ? "800" : "400",
+        );
+        piece.style.setProperty(
+          "--piece-font-style",
+          appearance.style === "italic" ? "italic" : "normal",
+        );
+        piece.style.setProperty(
+          "--piece-scale-x",
+          appearance.width === "wide"
+            ? "1.07"
+            : appearance.width === "narrow"
+              ? "0.93"
+              : "1",
+        );
+        piece.style.setProperty(
+          "--piece-scale-y",
+          appearance.height === "high"
+            ? "1.07"
+            : appearance.height === "low"
+              ? "0.93"
+              : "1",
+        );
+        piece.style.setProperty(
+          "--piece-rotate",
+          appearance.posture === "left"
+            ? "-5deg"
+            : appearance.posture === "right"
+              ? "5deg"
+              : "0deg",
+        );
+        piece.style.setProperty(
+          "--piece-stroke-width",
+          `${appearance.stroke}px`,
+        );
+        piece.style.setProperty("--piece-stroke-color", pigment);
+        cell.append(piece);
         const badges = p.traits.map((t) => TRAITS[t][0]);
         if (p.infection) badges.push("🦠");
         if (p.venom) badges.push("☠");
