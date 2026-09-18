@@ -5,6 +5,7 @@ import {
   movesFor,
   partnersFor,
   manipulationTargets,
+  constructionTargets,
   dysfunctionalResting,
 } from "./moves.js";
 const element = (doc, tag, text, cls) => {
@@ -43,7 +44,11 @@ export function render(
   const $ = (id) => doc.getElementById(id),
     make = (...args) => element(doc, ...args);
   const actorId =
-      state.manipulation?.id ?? state.partner?.id ?? state.chain ?? selected,
+      state.manipulation?.id ??
+      state.building?.id ??
+      state.partner?.id ??
+      state.chain ??
+      selected,
     actor = state.pieces.find((p) => p.id === actorId);
   const locked =
     !!state.result ||
@@ -53,7 +58,8 @@ export function render(
     state.phase === "move" && actor && actor.owner === state.current
       ? movesFor(state, actor)
       : [];
-  const manipulation = manipulationTargets(state);
+  const manipulation = manipulationTargets(state),
+    construction = constructionTargets(state);
   const mates =
     state.phase === "partner"
       ? partnersFor(
@@ -93,6 +99,8 @@ export function render(
         egg = eggAt(state, r, c),
         target = targets.some((t) => t.r === r && t.c === c),
         manipulate = manipulation.some((t) => t.r === r && t.c === c),
+        build = construction.some((t) => t.r === r && t.c === c),
+        barrier = state.barriers.includes(square(r, c)),
         partner = mates.some((m) => m.id === p?.id),
         deathSite = state.deathSites.find((d) => d.cell === square(r, c)),
         fertileTrace = state.fertileTraces.some((t) => t.cell === square(r, c)),
@@ -100,7 +108,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${decompositionMark ? " decomposition" : ""}${p || egg ? " occupied" : ""}${egg ? " egg" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${partner ? " partner" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg ? " occupied" : ""}${egg ? " egg" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -113,7 +121,7 @@ export function render(
       const eggLabel = egg
           ? `, ovo das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s)`
           : "",
-        label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : eggLabel || ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${partner ? ", parceiro disponível" : ""}`;
+        label = `${coord(r, c)}, ${terrain}${barrier ? ", barreira" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : eggLabel || barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
@@ -127,16 +135,28 @@ export function render(
             `piece ${p.owner}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
           ),
         );
-        const badges = p.traits.map((t) => TRAITS[t][0]);
-        if (p.infection) badges.push("🦠");
-        if (p.venom) badges.push("☠");
-        if (p.seeds) badges.push(`${p.seeds}🌰`);
+        const badges = p.traits.map((trait) => ({
+          text: TRAITS[trait][0],
+          trait,
+        }));
+        if (p.infection) badges.push({ text: "🦠" });
+        if (p.venom) badges.push({ text: "☠" });
+        if (p.seeds) badges.push({ text: `${p.seeds}🌰` });
         const carried = (p.pregnancies ?? []).reduce(
           (sum, pregnancy) => sum + pregnancy.brood.length,
           0,
         );
-        if (carried) badges.unshift(`+${carried}`);
-        cell.append(make("span", badges.slice(0, 5).join(""), "badges"));
+        if (carried) badges.unshift({ text: `+${carried}` });
+        const badgeRow = make("span", undefined, "badges");
+        for (const badge of badges.slice(0, 5))
+          badgeRow.append(
+            make(
+              "span",
+              badge.text,
+              badge.trait === "Construção de Nicho" ? "niche-icon" : "",
+            ),
+          );
+        cell.append(badgeRow);
       }
       board.append(cell);
     }
@@ -148,10 +168,12 @@ export function render(
       .querySelector(`[data-r="${focusKey[0]}"][data-c="${focusKey[1]}"]`)
       ?.focus({ preventScroll: true });
   $("pass").disabled =
-    locked || !["move", "manipulate"].includes(state.phase);
+    locked || !["move", "manipulate", "build"].includes(state.phase);
   $("pass").textContent =
     state.phase === "manipulate"
       ? "Não transferir"
+      : state.phase === "build"
+        ? "Não construir"
       : state.chain
         ? "Encerrar movimento"
         : "Passar vez";
@@ -169,11 +191,17 @@ export function render(
     );
 
     const details = actor.traits.map((trait) => {
-      const row = make("div", undefined, "trait selected-trait");
-      row.append(
-        make("strong", `${TRAITS[trait][0]} ${trait}`),
-        make("small", TRAITS[trait][1]),
+      const row = make("div", undefined, "trait selected-trait"),
+        title = make("strong");
+      title.append(
+        make(
+          "span",
+          TRAITS[trait][0],
+          trait === "Construção de Nicho" ? "niche-icon" : "",
+        ),
+        doc.createTextNode(` ${trait}`),
       );
+      row.append(title, make("small", TRAITS[trait][1]));
       return row;
     });
     if (!details.length)
