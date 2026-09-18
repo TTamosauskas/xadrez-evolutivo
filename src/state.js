@@ -77,6 +77,7 @@ export function createState(seed = Date.now(), options = {}) {
     phase: "move",
     chain: null,
     partner: null,
+    manipulation: null,
     nextId: 1,
     nextNotice: 1,
     board: Array(64).fill("neutral"),
@@ -277,7 +278,7 @@ export function assertState(state) {
     !Number.isInteger(state.rng)
   )
     throw Error("Turno inválido.");
-  if (!["move", "partner", "over"].includes(state.phase))
+  if (!["move", "partner", "manipulate", "over"].includes(state.phase))
     throw Error("Fase inválida.");
   if (!Array.isArray(state.pieces) || state.pieces.length > 64)
     throw Error("População inválida.");
@@ -382,6 +383,21 @@ export function assertState(state) {
       ))
   )
     throw Error("Parceiro inválido.");
+  if (
+    state.phase === "manipulate" &&
+    (!state.manipulation ||
+      !state.pieces.some(
+        (p) =>
+          p.id === state.manipulation.id && p.owner === state.current,
+      ) ||
+      !integer(state.manipulation.origin, 0, 63) ||
+      !["fertile", "hostile"].includes(state.manipulation.terrain) ||
+      typeof state.manipulation.second !== "boolean" ||
+      typeof state.manipulation.locomotion !== "boolean")
+  )
+    throw Error("Manipulação inválida.");
+  if (state.phase !== "manipulate" && state.manipulation)
+    throw Error("Manipulação fora de fase.");
   if (
     !Array.isArray(state.notices) ||
     !Array.isArray(state.diseases) ||
