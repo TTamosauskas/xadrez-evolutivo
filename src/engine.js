@@ -195,7 +195,6 @@ function advanceTurn(ctx) {
     for (const p of [...state.pieces])
       if (
         terrain(state, p.r, p.c) === "hostile" &&
-        !has(p, "Voo") &&
         !dormant(state, p) &&
         !(
           p.decompositionImmunity &&
@@ -324,32 +323,32 @@ function executeMove(ctx, action) {
       ? { origin: landingCell, terrain: landingTerrain }
       : null;
   harvest(state, p, p.r, p.c);
-  if (!has(p, "Voo"))
-    for (const [r, c] of target.path)
-      if (
-        terrain(state, r, c) === "hostile" &&
-        !(has(p, "Dormência") && r === target.r && c === target.c) &&
-        !(
-          p.decompositionImmunity &&
-          p.decompositionImmunity.cell === square(r, c) &&
-          state.turn <= p.decompositionImmunity.throughTurn
-        )
-      ) {
-        notice(
-          state,
-          "Casas hostis",
-          [
-            "Cada casa hostil atravessada tem 50% de risco; Carapaça reduz para 34%, Voo oferece imunidade e Dormência protege a casa de chegada ao imobilizar a criatura.",
-          ],
-          "hostile",
-        );
-        if (random(state) < (has(p, "Carapaça") ? 0.34 : 0.5)) {
-          ctx.kill(p.id, "deslocamento em casa hostil");
-          advanceTurn(ctx);
-          settle(ctx);
-          return;
-        }
+  for (const [r, c] of target.path)
+    if (
+      terrain(state, r, c) === "hostile" &&
+      !(has(p, "Voo") && (r !== target.r || c !== target.c)) &&
+      !(has(p, "Dormência") && r === target.r && c === target.c) &&
+      !(
+        p.decompositionImmunity &&
+        p.decompositionImmunity.cell === square(r, c) &&
+        state.turn <= p.decompositionImmunity.throughTurn
+      )
+    ) {
+      notice(
+        state,
+        "Casas hostis",
+        [
+          "Cada casa hostil atravessada tem 50% de risco; Carapaça reduz para 34%. Voo ignora apenas casas atravessadas, não a casa de chegada. Dormência protege a chegada ao imobilizar a criatura.",
+        ],
+        "hostile",
+      );
+      if (random(state) < (has(p, "Carapaça") ? 0.34 : 0.5)) {
+        ctx.kill(p.id, "deslocamento em casa hostil");
+        advanceTurn(ctx);
+        settle(ctx);
+        return;
       }
+    }
   if (!target.stay && terrain(state, target.r, target.c) === "hostile")
     p.hostileRiskRound = round(state) + 1;
   if (has(p, "Mutação Disfuncional")) p.lastMoveRound = round(state) + 1;
