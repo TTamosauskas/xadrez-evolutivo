@@ -10,7 +10,7 @@ import {
   round,
 } from "../src/state.js";
 import { context, transition, simulate } from "../src/engine.js";
-import { movesFor } from "../src/moves.js";
+import { movesFor, legalActions } from "../src/moves.js";
 import { startEvent, tickEnvironment } from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
 import { reproduce, tickReproduction } from "../src/reproduction.js";
@@ -738,6 +738,97 @@ test("Cuidado Parental protects adjacent eggs from Ovífagia", () => {
   parent.r = 0;
   parent.c = 0;
   assert.ok(movesFor(s, eater).some((t) => t.r === 4 && t.c === 4));
+  assertState(s);
+});
+
+test("Construção de Nicho neutralizes a stable hostile landing after survival", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Construção de Nicho", "Voo"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "hostile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.board[36], "neutral");
+  assert.equal(s.pieces[0].r, 4);
+  assert.equal(s.pieces[0].c, 4);
+  assertState(s);
+});
+
+test("Polegar Opositor offers adjacent transfer and preserves terrain type", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Polegar Opositor"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.phase, "manipulate");
+  assert.equal(s.manipulation.terrain, "fertile");
+  const action = legalActions(s).find(
+    (a) => a.type === "MANIPULATE" && a.r === 3 && a.c === 3,
+  );
+  assert.ok(action);
+  s = simulate(s, action);
+  assert.equal(s.phase, "move");
+  assert.equal(s.board[36], "neutral");
+  assert.equal(s.board[27], "fertile");
+  assert.equal(s.turn, 1);
+  assertState(s);
+
+  s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Polegar Opositor", "Construção de Nicho", "Voo"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "hostile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.board[36], "neutral");
+  assert.equal(s.manipulation.terrain, "hostile");
+  s = simulate(
+    s,
+    legalActions(s).find((a) => a.type === "MANIPULATE"),
+  );
+  assert.ok(s.board.some((terrain) => terrain === "hostile"));
+  assert.equal(s.board[36], "neutral");
+  assertState(s);
+});
+
+test("Polegar Opositor can decline transfer and ignores temporary decomposition", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Polegar Opositor"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  s = simulate(s, { type: "SKIP_MANIPULATION" });
+  assert.equal(s.phase, "move");
+  assert.equal(s.turn, 1);
+
+  s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Polegar Opositor", "Voo"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "hostile";
+  s.deathSites.push({ cell: 36, dueRound: 3, base: "neutral" });
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.notEqual(s.phase, "manipulate");
+  assert.equal(s.turn, 1);
   assertState(s);
 });
 
