@@ -11,6 +11,7 @@ import {
 import {
   at,
   eggAt,
+  barrierAt,
   random,
   pick,
   shuffle,
@@ -198,7 +199,7 @@ function sexualProfile(state, a, b) {
 }
 
 function occupied(state, r, c) {
-  return at(state, r, c) || eggAt(state, r, c);
+  return at(state, r, c) || eggAt(state, r, c) || barrierAt(state, r, c);
 }
 
 function freeCells(ctx, origin, dispersal) {
