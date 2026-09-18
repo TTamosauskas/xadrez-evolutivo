@@ -348,6 +348,8 @@ select {
   display: inline-block;
   margin: 0 4px;
   font-size: 32px;
+  font-weight: var(--piece-weight, 400);
+  font-style: var(--piece-font-style, normal);
   vertical-align: -4px;
 }
 .evolutionary-end-traits > div {
