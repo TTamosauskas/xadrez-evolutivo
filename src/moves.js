@@ -135,8 +135,10 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       add(p.r + dr, p.c + dc, [[p.r + dr, p.c + dc]]);
   else ray([...ORTH, ...DIAG]);
   }
-  const collector = has(p, "Coletor");
+  const collector = has(p, "Coletor"),
+    canUseFertility = !has(p, "Predador") || has(p, "Onívoro");
   if (
+    canUseFertility &&
     (terrain(state, p.r, p.c) === "fertile" || (collector && p.seeds > 0)) &&
     (!collector || (!has(p, "Esterilidade") && p.seedUsedTurn !== state.turn))
   )
