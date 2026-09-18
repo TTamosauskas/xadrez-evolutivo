@@ -10,7 +10,7 @@ import {
   round,
 } from "../src/state.js";
 import { context, transition, simulate } from "../src/engine.js";
-import { movesFor, legalActions } from "../src/moves.js";
+import { movesFor, legalActions, constructionTargets } from "../src/moves.js";
 import { startEvent, tickEnvironment } from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
 import { reproduce, tickReproduction } from "../src/reproduction.js";
@@ -882,6 +882,98 @@ test("Polegar Opositor can decline transfer and ignores temporary decomposition"
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.notEqual(s.phase, "manipulate");
   assert.equal(s.turn, 1);
+  assertState(s);
+});
+
+
+test("Predação is required for ordinary captures", () => {
+  const s = fixture([
+    { owner: "blue", r: 4, c: 0, rank: 3 },
+    { owner: "amber", r: 4, c: 4 },
+  ]);
+  const attacker = s.pieces[0];
+  attacker.traits = attacker.traits.filter(
+    (trait) => !["Predação", "Carnívoro", "Onívoro"].includes(trait),
+  );
+  assert.ok(!movesFor(s, attacker).some((target) => target.c === 4));
+  attacker.traits.push("Predação");
+  assert.ok(movesFor(s, attacker).some((target) => target.c === 4));
+});
+
+test("Chifre can kill an unarmored aggressor before capture", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3 },
+    { owner: "amber", r: 4, c: 4, traits: ["Chifre"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.rng = 1972;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(!s.pieces.some((piece) => piece.id === 1));
+  assert.ok(s.pieces.some((piece) => piece.id === 2 && piece.r === 4 && piece.c === 4));
+  assert.ok(s.deathSites.some((site) => site.cell === 35));
+  assertState(s);
+});
+
+test("Carapaça prevents Chifre counterattack", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Carapaça"],
+    },
+    { owner: "amber", r: 4, c: 4, traits: ["Chifre"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.rng = 1972;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.some((piece) => piece.id === 1 && piece.r === 4 && piece.c === 4));
+  assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  assertState(s);
+});
+
+test("Construtor Avançado offers an adjacent barrier after fertile reproduction", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Construtor Avançado"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.phase, "build");
+  const targets = constructionTargets(s);
+  assert.ok(targets.length > 0);
+  const target = targets[0];
+  s = simulate(s, { type: "BUILD", r: target.r, c: target.c });
+  assert.ok(s.barriers.includes(target.r * 8 + target.c));
+  assertState(s);
+});
+
+test("barriers block ground movement, Voo crosses them, and Chifre destroys them", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 0, rank: 3 },
+    { owner: "amber", r: 0, c: 7 },
+  ]);
+  s.barriers = [34];
+  assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 1));
+  assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c >= 2));
+
+  s.pieces[0].traits.push("Voo");
+  assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c === 2));
+  assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 3));
+
+  s.pieces[0].traits = s.pieces[0].traits.filter((trait) => trait !== "Voo");
+  s.pieces[0].traits.push("Chifre");
+  assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 2));
+  s = simulate(s, move(s.pieces[0], 4, 3));
+  assert.ok(!s.barriers.includes(34));
+  assert.equal(s.pieces.find((piece) => piece.id === 1).c, 3);
   assertState(s);
 });
 
