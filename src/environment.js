@@ -1,5 +1,6 @@
 import { EVENTS, inside, square, has, distance } from "./constants.js";
 import { at, eggAt, pick, random, shuffle, round, log, notice } from "./state.js";
+import { eventWeights } from "./geology.js";
 import { startDisease } from "./disease.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
 const fertile = (state) =>
@@ -288,10 +289,24 @@ export function startEvent(ctx, id = null) {
   if (state.event) endEvent(state);
   const def = id
     ? EVENTS.find((e) => e.id === id)
-    : pick(
-        state,
-        EVENTS.filter((e) => e.id !== state.previousEvent),
-      );
+    : (() => {
+        const weights = eventWeights(state),
+          candidates = EVENTS.filter(
+            (event) =>
+              event.id !== state.previousEvent && (weights[event.id] ?? 0) > 0,
+          ),
+          total = candidates.reduce(
+            (sum, event) => sum + weights[event.id],
+            0,
+          );
+        if (!candidates.length || total <= 0) return null;
+        let roll = random(state) * total;
+        for (const event of candidates) {
+          roll -= weights[event.id];
+          if (roll < 0) return event;
+        }
+        return candidates.at(-1);
+      })();
   if (!def) throw Error("Evento inválido.");
   const event = {
     ...def,
