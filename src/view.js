@@ -117,7 +117,7 @@ export function render(
           (sum, pregnancy) => sum + pregnancy.brood.length,
           0,
         );
-        if (carried) badges.push(`+${carried}`);
+        if (carried) badges.unshift(`+${carried}`);
         if (resting(state, p)) badges.push("💤");
         cell.append(make("span", badges.slice(0, 5).join(""), "badges"));
       }
