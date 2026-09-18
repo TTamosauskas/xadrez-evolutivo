@@ -69,8 +69,9 @@ export function render(
       : "Empate"
     : `Vez das ${OWNERS[state.current]}${busy ? " · IA pensando…" : ""}`;
   const currentRound = round(state);
-  $("round").textContent =
-    `Geração ${state.maxGenerationReached} · habitat muda na G${state.nextHabitatGeneration}.`;
+  const era = Math.floor(state.maxGenerationReached / 10) + 1,
+    generationInEra = (state.maxGenerationReached % 10) + 1;
+  $("round").textContent = `${era}° Era · ${generationInEra}° Geração`;
   const ev = state.event,
     diseases = state.diseases.filter((d) => d.endRound >= currentRound);
   $("event").textContent = [
