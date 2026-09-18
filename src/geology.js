@@ -305,8 +305,9 @@ export function innovationWeight(state, trait) {
   if (!currentGeologicalStage(state).required.includes(trait)) return 1;
   if ((state.historicalTraits ?? []).includes(trait)) return 1;
   const missing = missingInnovations(state),
-    cycleBoost = Math.min(4, 1 + Math.max(0, (state.cycle ?? 1) - 1) * 0.5);
-  return Math.min(5, cycleBoost + (missing.length === 1 ? 1 : 0));
+    cycle = Math.max(1, state.cycle ?? 1),
+    cycleBoost = Math.min(14, 2 + (cycle - 1) * 3);
+  return Math.min(16, cycleBoost + (missing.length === 1 ? 2 : 0));
 }
 
 export function eventWeights(state) {
