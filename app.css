@@ -247,6 +247,30 @@ main {
   font-size: 14px;
   line-height: 1.6;
 }
+.selected-piece-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 750;
+  color: #ebe8de;
+}
+.selected-piece-symbol {
+  flex: 0 0 auto;
+  font-size: 30px;
+}
+.selected-trait {
+  margin: 13px 0;
+}
+.selected-trait small {
+  margin-top: 2px;
+}
+.selected-ancestral,
+.selected-status {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
 #message {
   color: #e7cd8c;
   font-size: 14px;
