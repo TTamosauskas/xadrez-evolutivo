@@ -346,7 +346,11 @@ export function render(
                 : "🧬";
         const item = make("li", undefined, "mutation-item");
         item.append(
-          make("span", icon, "mutation-icon"),
+          make(
+            "span",
+            icon,
+            `mutation-icon${traitName === "Construção de Nicho" ? " niche-icon" : ""}`,
+          ),
           make("span", line, "mutation-copy"),
         );
         list.append(item);
