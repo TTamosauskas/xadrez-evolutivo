@@ -50,7 +50,7 @@ test("geological event pools contain only valid ecological events and no pathoge
 
 test("Archean starts green and stationary", () => {
   const s = createState(101);
-  assert.equal(s.version, 3);
+  assert.equal(s.version, 4);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 52);
@@ -60,7 +60,7 @@ test("Archean starts green and stationary", () => {
   assert.ok(actions.every((target) => target.stay));
 });
 
-test("Locomoção unlocks movement in Ediacaran while capture waits for Cambrian", () => {
+test("Predação enables capture independently of the Cambrian while locomotion enables movement", () => {
   const history = GEOLOGICAL_STAGES.slice(0, 2).flatMap((stage) => stage.required),
     s = createState(102, {
       geologicalStage: "ediacaran",
@@ -77,9 +77,9 @@ test("Locomoção unlocks movement in Ediacaran while capture waits for Cambrian
   s.pieces.push(blue, amber);
   assert.ok(movesFor(s, blue).some((target) => target.c === 3));
   assert.ok(!movesFor(s, blue).some((target) => target.c === 4));
-  assert.equal(captureUnlocked(s), false);
-  s.geologicalStage = "cambrian";
-  assert.equal(captureUnlocked(s), true);
+  assert.equal(captureUnlocked(s, blue), false);
+  blue.traits.push("Predação");
+  assert.equal(captureUnlocked(s, blue), true);
   assert.ok(movesFor(s, blue).some((target) => target.c === 4));
 });
 
@@ -93,7 +93,7 @@ test("stage advances only after every required phenotype has been observed", () 
 
   s = createState(105);
   const carrier = s.pieces[0];
-  carrier.traits.push("Fotossíntese", "Fertilidade", "Dormência");
+  carrier.traits.push("Fotossíntese", "Fertilidade", "Dormência", "Predação");
   registerDiscoveries(s, carrier);
   assert.equal(stageComplete(s), true);
   s.notices = [];
@@ -120,7 +120,15 @@ test("later innovations obey historical and individual dependencies", () => {
   s.historicalTraits.push("Locomoção");
   assert.equal(traitUnlocked(s, "Locomoção Avançada", p), true);
 
-  s.geologicalStage = "triassic";
+  s.geologicalStage = "proterozoic";
+  s.historicalTraits = s.historicalTraits.filter(
+    (trait) => trait !== "Predação",
+  );
+  assert.equal(traitUnlocked(s, "Carnívoro", p), false);
+  s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Carnívoro", p), true);
+
+    s.geologicalStage = "triassic";
   s.historicalTraits = s.historicalTraits.filter((trait) => trait !== "Ovíparo");
   assert.equal(traitUnlocked(s, "Vivíparo", p), false);
   s.historicalTraits.push("Ovíparo");
@@ -138,6 +146,7 @@ test("missing innovations gain weight across repeated cycles without becoming au
     "Fotossíntese",
     "Fertilidade",
     "Dormência",
+    "Predação",
   ]);
 });
 
