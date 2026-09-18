@@ -68,16 +68,17 @@ export function render(
       ? `${OWNERS[state.result.winner]} venceram`
       : "Empate"
     : `Vez das ${OWNERS[state.current]}${busy ? " · IA pensando…" : ""}`;
-  const currentRound = round(state),
-    era = Math.floor(currentRound / 10) + 1,
-    roundsRemaining = 10 - (currentRound % 10);
-  $("round").textContent = `${era}° Era · ${roundsRemaining} rodadas restantes.`;
+  const currentRound = round(state);
+  $("round").textContent =
+    `Geração ${state.maxGenerationReached} · habitat muda na G${state.nextHabitatGeneration}.`;
   const ev = state.event,
-    diseases = state.diseases.filter((d) => d.endRound >= round(state));
+    diseases = state.diseases.filter((d) => d.endRound >= currentRound);
   $("event").textContent = [
     ev
-      ? `${ev.name} · ${Math.max(0, state.nextEventRound - currentRound)} rodadas restantes`
-      : "",
+      ? `${ev.name} · ${Math.max(0, 10 - (currentRound - ev.startRound))} rodadas restantes`
+      : state.pendingEcologicalEvents > 0
+        ? "Evento ecológico pendente"
+        : "",
     ...diseases.map(
       (d) => `Patógeno: ${d.mortality}% · desfecho em ${d.delay} rodadas`,
     ),
@@ -131,7 +132,7 @@ export function render(
       ? [
           make(
             "strong",
-            `${SYMBOLS[actor.owner][actor.rank]} ${PIECES[actor.rank]} · ${coord(actor.r, actor.c)}`,
+            `${SYMBOLS[actor.owner][actor.rank]} ${PIECES[actor.rank]} · ${coord(actor.r, actor.c)} · G${actor.generation}`,
           ),
           make(
             "p",
