@@ -1,8 +1,42 @@
 import { createState, newPiece, assertState, round, notice } from "./state.js";
-import { TRAITS, EVENTS, square, has } from "./constants.js";
+import { TRAITS, EVENTS, PIECES, square, has } from "./constants.js";
 export const SAVE_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
 const traitName = (name) => (name === "Predação" ? "Predador" : name);
+const mutationLabel = (label) =>
+  label === "Predação"
+    ? "Predador"
+    : label === "Perda de Predação"
+      ? "Perda de Predador"
+      : label;
+function historicalMutations(data) {
+  const valid = new Set([
+      ...Object.keys(TRAITS),
+      ...Object.keys(TRAITS).map((t) => `Perda de ${t}`),
+      ...PIECES.map((p) => `Mutação de peça: ${p}`),
+    ]),
+    seen = new Set(
+      Array.isArray(data.seenMutations)
+        ? data.seenMutations.map(mutationLabel).filter((m) => valid.has(m))
+        : [],
+    );
+  for (const notice of data.notices ?? [])
+    if (notice?.title === "Novas mutações")
+      for (const line of notice.lines ?? []) {
+        const label = mutationLabel(line);
+        if (valid.has(label)) seen.add(label);
+      }
+  for (const entry of data.logs ?? []) {
+    const text = entry?.text ?? entry?.msg;
+    if (typeof text !== "string") continue;
+    const colon = text.indexOf(": "),
+      label = mutationLabel(
+        (colon >= 0 ? text.slice(colon + 2) : text).replace(/\.$/, ""),
+      );
+    if (valid.has(label)) seen.add(label);
+  }
+  return [...seen];
+}
 const terrain = (t) =>
   t === "biohazard"
     ? "hostile"
@@ -17,6 +51,7 @@ export function deserialize(raw) {
     if (Array.isArray(data.pieces))
       for (const piece of data.pieces)
         piece.traits = [...new Set((piece.traits ?? []).map(traitName))];
+    data.seenMutations = historicalMutations(data);
     const liveMax = Array.isArray(data.pieces)
       ? Math.max(0, ...data.pieces.map((p) => p.generation ?? 0))
       : 0;
@@ -185,6 +220,7 @@ export function deserialize(raw) {
   state.logs = (data.logs ?? [])
     .slice(0, 150)
     .map((l) => ({ turn: state.turn, text: l.msg ?? l.text ?? "" }));
+  state.seenMutations = historicalMutations(data);
   notice(state, "Partida importada", [
     "Posições, características e contadores foram convertidos. A jogada atual recomeça na fase de movimento. O arquivo antigo continua preservado.",
   ]);
