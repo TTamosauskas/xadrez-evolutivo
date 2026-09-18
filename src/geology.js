@@ -341,6 +341,13 @@ export function firstCompatibleStage(traits) {
   return GEOLOGICAL_STAGES[max];
 }
 
+export function priorRequiredInnovations(stageId) {
+  const stage = geologicalStage(stageId);
+  return GEOLOGICAL_STAGES.slice(0, stage.index).flatMap(
+    (entry) => entry.required,
+  );
+}
+
 export function isNegativeTrait(trait) {
   return NEGATIVE_TRAITS.has(trait);
 }
