@@ -42,10 +42,10 @@ test("period innovations follow the didactic sequence", () => {
     GEOLOGICAL_STAGES.map((stage) => [stage.id, stage.required]),
   );
   assert.deepEqual(required.archean, [
-    "Fertilidade",
-    "Dormência",
     "Fotossíntese",
     "Predação",
+    "Fertilidade",
+    "Dormência",
   ]);
   assert.deepEqual(required.proterozoic, [
     "Resistência",
@@ -67,20 +67,36 @@ test("period innovations follow the didactic sequence", () => {
   ]);
 });
 
-test("only the next required innovation is eligible inside a period", () => {
+test("Archean innovations are split across the first two cycles", () => {
   const s = createState(110),
     p = s.pieces[0];
-  assert.equal(traitUnlocked(s, "Fertilidade", p), true);
-  assert.equal(traitUnlocked(s, "Dormência", p), false);
-  assert.equal(traitUnlocked(s, "Fotossíntese", p), false);
-  assert.equal(traitUnlocked(s, "Predação", p), false);
-
-  s.historicalTraits.push("Fertilidade");
-  assert.equal(traitUnlocked(s, "Dormência", p), true);
-  s.historicalTraits.push("Dormência");
   assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
+  assert.equal(traitUnlocked(s, "Predação", p), false);
+  assert.equal(traitUnlocked(s, "Fertilidade", p), false);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
+
   s.historicalTraits.push("Fotossíntese");
   assert.equal(traitUnlocked(s, "Predação", p), true);
+  s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Fertilidade", p), false);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
+
+  s.cycle = 2;
+  assert.equal(traitUnlocked(s, "Fertilidade", p), true);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
+  s.historicalTraits.push("Fertilidade");
+  assert.equal(traitUnlocked(s, "Dormência", p), true);
+});
+
+test("Archean keeps the first wave active in later cycles until it is complete", () => {
+  const s = createState(112, { cycle: 2 }),
+    p = s.pieces[0];
+  assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
+  assert.equal(traitUnlocked(s, "Fertilidade", p), false);
+  s.historicalTraits.push("Fotossíntese");
+  assert.equal(traitUnlocked(s, "Predação", p), true);
+  s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Fertilidade", p), true);
 });
 
 test("geological event pools contain only valid ecological events and no pathogen lottery", () => {
@@ -129,26 +145,33 @@ test("Predação enables capture independently of the Cambrian while locomotion 
   assert.ok(movesFor(s, blue).some((target) => target.c === 4));
 });
 
-test("stage advances only after every required phenotype has been observed", () => {
+test("Archean advances only after both innovation cycles are complete", () => {
   let s = createState(103);
-  s.result = { winner: "blue", reason: "teste" };
-  s.phase = "over";
-  let next = createSuccessorState(s, 104);
-  assert.equal(next.geologicalStage, "archean");
-  assert.equal(next.cycle, 2);
-
-  s = createState(105);
   const carrier = s.pieces[0];
-  carrier.traits.push("Fotossíntese", "Fertilidade", "Dormência", "Predação");
+  carrier.traits.push("Fotossíntese", "Predação");
   registerDiscoveries(s, carrier);
-  assert.equal(stageComplete(s), true);
+  assert.equal(stageComplete(s), false);
   s.notices = [];
   s.result = { winner: "blue", reason: "teste" };
   s.phase = "over";
-  next = createSuccessorState(s, 106);
-  assert.equal(next.geologicalStage, "proterozoic");
-  assert.equal(next.cycle, 1);
-  assert.equal(next.totalCycles, 2);
+
+  let next = createSuccessorState(s, 104);
+  assert.equal(next.geologicalStage, "archean");
+  assert.equal(next.cycle, 2);
+  assert.deepEqual(next.historicalTraits, ["Fotossíntese", "Predação"]);
+
+  const secondCarrier = next.pieces[0];
+  secondCarrier.traits.push("Fertilidade", "Dormência");
+  registerDiscoveries(next, secondCarrier);
+  assert.equal(stageComplete(next), true);
+  next.notices = [];
+  next.result = { winner: "blue", reason: "teste" };
+  next.phase = "over";
+
+  const proterozoic = createSuccessorState(next, 105);
+  assert.equal(proterozoic.geologicalStage, "proterozoic");
+  assert.equal(proterozoic.cycle, 1);
+  assert.equal(proterozoic.totalCycles, 3);
 });
 
 test("later innovations obey historical and individual dependencies", () => {
@@ -213,10 +236,10 @@ test("missing innovations gain weight across repeated cycles without becoming au
   assert.ok(later > first);
   assert.ok(later <= 240);
   assert.deepEqual(missingInnovations(s), [
-    "Fertilidade",
-    "Dormência",
     "Fotossíntese",
     "Predação",
+    "Fertilidade",
+    "Dormência",
   ]);
 });
 
