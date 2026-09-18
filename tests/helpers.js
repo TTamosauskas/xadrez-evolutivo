@@ -18,11 +18,13 @@ export function fixture(
   s.nextId = 1;
   s.board.fill("neutral");
   for (const spec of specs) {
-    const source = {
+    const requestedTraits = spec.traits ?? [],
+      baseTraits = requestedTraits.includes("Fotossíntese")
+        ? []
+        : ["Locomoção", "Predação"],
+      source = {
         ...spec,
-        traits: [
-          ...new Set(["Locomoção", "Predação", ...(spec.traits ?? [])]),
-        ],
+        traits: [...new Set([...baseTraits, ...requestedTraits])],
       },
       p = newPiece(s, source.owner, source.r, source.c, source);
     Object.assign(p, source);
