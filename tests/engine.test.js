@@ -13,7 +13,7 @@ import { movesFor } from "../src/moves.js";
 import { startEvent, tickEnvironment } from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
 import { reproduce } from "../src/reproduction.js";
-import { EVENTS } from "../src/constants.js";
+import { EVENTS, TRAITS } from "../src/constants.js";
 
 test("invalid actions roll back the complete state, including random generator", () => {
   const s = createState(1),
@@ -386,6 +386,44 @@ test("non-capture deaths do not create decomposition", () => {
     ctx = context(s);
   ctx.kill(s.pieces[0].id, "Veneno");
   assert.equal(s.deathSites.length, 0);
+  assertState(s);
+});
+test("mutation modal only queues outcomes that have not appeared before", () => {
+  const allLabels = [
+    ...Object.keys(TRAITS),
+    ...Object.keys(TRAITS).map((t) => `Perda de ${t}`),
+    ..."Peão,Cavalo,Bispo,Torre,Rei,Rainha"
+      .split(",")
+      .map((p) => `Mutação de peça: ${p}`),
+  ];
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.event = {
+    ...EVENTS.find((e) => e.id === "solar"),
+    startRound: 0,
+    hazards: [],
+    snapshots: {},
+  };
+  s.seenMutations = [...allLabels];
+  reproduce(context(s), s.pieces[0]);
+  assert.ok(!s.notices.some((n) => n.title === "Novas mutações"));
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.event = {
+    ...EVENTS.find((e) => e.id === "solar"),
+    startRound: 0,
+    hazards: [],
+    snapshots: {},
+  };
+  reproduce(context(s), s.pieces[0]);
+  const notice = s.notices.find((n) => n.title === "Novas mutações");
+  assert.ok(notice?.lines.length);
+  assert.ok(notice.lines.every((line) => s.seenMutations.includes(line)));
   assertState(s);
 });
 test("stale revisions cannot advance the turn", () => {
