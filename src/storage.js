@@ -40,6 +40,12 @@ export function deserialize(raw) {
       data.pendingEcologicalEvents = 0;
     if (!Array.isArray(data.deathSites)) data.deathSites = [];
     if (!Array.isArray(data.fertileTraces)) data.fertileTraces = [];
+    data.fertileTraces = data.fertileTraces.map((trace) => ({
+      ...trace,
+      base: ["neutral", "fertile", "hostile"].includes(trace.base)
+        ? trace.base
+        : "neutral",
+    }));
     delete data.nextEventRound;
     return assertState(data);
   }
