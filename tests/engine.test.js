@@ -892,12 +892,49 @@ test("Predação is required for ordinary captures", () => {
     { owner: "amber", r: 4, c: 4 },
   ]);
   const attacker = s.pieces[0];
-  attacker.traits = attacker.traits.filter(
-    (trait) => !["Predação", "Carnívoro", "Onívoro"].includes(trait),
-  );
+  attacker.traits = ["Locomoção", "Carnívoro"];
   assert.ok(!movesFor(s, attacker).some((target) => target.c === 4));
   attacker.traits.push("Predação");
   assert.ok(movesFor(s, attacker).some((target) => target.c === 4));
+});
+
+test("Predação captures adjacent prey by contact before Locomoção", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3 },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const predator = s.pieces[0];
+  predator.traits = predator.traits.filter((trait) => trait !== "Locomoção");
+
+  const contact = movesFor(s, predator).find(
+    (target) => target.r === 4 && target.c === 4,
+  );
+  assert.equal(contact?.contactCapture, true);
+
+  s = simulate(s, move(predator, 4, 4));
+  const survivor = s.pieces.find((piece) => piece.id === predator.id);
+  assert.deepEqual([survivor.r, survivor.c], [4, 3]);
+  assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  assert.ok(s.deathSites.some((site) => site.cell === 36));
+  assert.equal(survivor.decompositionImmunity, undefined);
+  assert.equal(s.turn, 1);
+  assertState(s);
+});
+
+test("stationary Carnívoro reproduces from contact predation", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const predator = s.pieces[0];
+  predator.traits = predator.traits.filter((trait) => trait !== "Locomoção");
+  s = simulate(s, move(predator, 4, 4));
+  const survivor = s.pieces.find((piece) => piece.id === predator.id);
+  assert.deepEqual([survivor.r, survivor.c], [4, 3]);
+  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
+  assertState(s);
 });
 
 test("Chifre can kill an unarmored aggressor before capture", () => {
