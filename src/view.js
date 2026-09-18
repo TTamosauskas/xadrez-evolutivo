@@ -1,6 +1,11 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
 import { at, eggAt, dominantLineage, round, signature } from "./state.js";
-import { movesFor, partnersFor, dysfunctionalResting } from "./moves.js";
+import {
+  movesFor,
+  partnersFor,
+  manipulationTargets,
+  dysfunctionalResting,
+} from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
   if (text !== undefined) e.textContent = text;
@@ -36,13 +41,18 @@ export function render(
 ) {
   const $ = (id) => doc.getElementById(id),
     make = (...args) => element(doc, ...args);
-  const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
+  const actorId =
+      state.manipulation?.id ?? state.partner?.id ?? state.chain ?? selected,
+    actor = state.pieces.find((p) => p.id === actorId);
   const locked =
     !!state.result ||
     state.notices.length > 0 ||
     (mode === "single" && state.current === "amber");
   const targets =
-    actor && actor.owner === state.current ? movesFor(state, actor) : [];
+    state.phase === "move" && actor && actor.owner === state.current
+      ? movesFor(state, actor)
+      : [];
+  const manipulation = manipulationTargets(state);
   const mates =
     state.phase === "partner"
       ? partnersFor(
@@ -81,6 +91,7 @@ export function render(
       const p = at(state, r, c),
         egg = eggAt(state, r, c),
         target = targets.some((t) => t.r === r && t.c === c),
+        manipulate = manipulation.some((t) => t.r === r && t.c === c),
         partner = mates.some((m) => m.id === p?.id),
         deathSite = state.deathSites.find((d) => d.cell === square(r, c)),
         fertileTrace = state.fertileTraces.some((t) => t.cell === square(r, c)),
@@ -88,7 +99,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${decompositionMark ? " decomposition" : ""}${p || egg ? " occupied" : ""}${egg ? " egg" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${partner ? " partner" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${decompositionMark ? " decomposition" : ""}${p || egg ? " occupied" : ""}${egg ? " egg" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${partner ? " partner" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -101,7 +112,7 @@ export function render(
       const eggLabel = egg
           ? `, ovo das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s)`
           : "",
-        label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : eggLabel || ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
+        label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : eggLabel || ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
@@ -135,8 +146,14 @@ export function render(
     $("board")
       .querySelector(`[data-r="${focusKey[0]}"][data-c="${focusKey[1]}"]`)
       ?.focus({ preventScroll: true });
-  $("pass").disabled = locked || state.phase !== "move";
-  $("pass").textContent = state.chain ? "Encerrar movimento" : "Passar vez";
+  $("pass").disabled =
+    locked || !["move", "manipulate"].includes(state.phase);
+  $("pass").textContent =
+    state.phase === "manipulate"
+      ? "Não transferir"
+      : state.chain
+        ? "Encerrar movimento"
+        : "Passar vez";
   if (actor) {
     const ownerName = actor.owner === "blue" ? "Branco" : "Preto",
       heading = make("div", undefined, "selected-piece-heading"),
