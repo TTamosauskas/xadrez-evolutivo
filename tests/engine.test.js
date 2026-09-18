@@ -56,9 +56,9 @@ test("notices pause actions; acknowledgment is ordered and idempotent", () => {
   const next = transition(s, { type: "ACK_NOTICE", id: first });
   assert.equal(transition(next, { type: "ACK_NOTICE", id: first }), next);
 });
-test("Locomoção has exactly two actions and restricts the second to the same piece", () => {
+test("Locomoção Avançada has exactly two actions and restricts the second to the same piece", () => {
   let s = fixture([
-    { owner: "blue", r: 6, c: 3, traits: ["Locomoção"] },
+    { owner: "blue", r: 6, c: 3, traits: ["Locomoção Avançada"] },
     { owner: "blue", r: 6, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -86,13 +86,13 @@ test("sexual partner is an explicit phase and survives save/restore", () => {
   assert.equal(s.turn, 1);
   assert.ok(s.pieces.filter((p) => p.id > 3).every((p) => p.rank >= 3));
 });
-test("dysfunctional movement rests the following full round and suppresses Locomoção", () => {
+test("dysfunctional movement rests the following full round and suppresses Locomoção Avançada", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 6,
       c: 3,
-      traits: ["Mutação Disfuncional", "Locomoção"],
+      traits: ["Mutação Disfuncional", "Locomoção Avançada"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -106,7 +106,7 @@ test("dysfunctional movement rests the following full round and suppresses Locom
 });
 test("collector gathers once and can spend a seed only once in its turn", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Coletor", "Locomoção"] },
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Coletor", "Locomoção Avançada"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
