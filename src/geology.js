@@ -230,7 +230,10 @@ export const TRAIT_DEPENDENCIES = {
   Onívoro: { historical: ["Carnívoro"] },
   "Polegar Opositor": { historical: ["Construção de Nicho"] },
   Chifre: { historical: ["Predação"] },
-  "Construtor Avançado": { historical: ["Construção de Nicho"] },
+  "Construtor Avançado": {
+    historical: ["Construção de Nicho"],
+    piece: ["Construção de Nicho"],
+  },
   "Neocórtex Desenvolvido": { historical: ["Polegar Opositor"] },
 };
 
