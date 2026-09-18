@@ -13,6 +13,8 @@ export function fallbackAction(state) {
 function priority(state, a) {
   if (a.type === "PARTNER")
     return state.pieces.find((p) => p.id === a.id).rank * 2;
+  if (a.type === "BUILD") return 3;
+  if (a.type === "SKIP_BUILD") return 0;
   const p = state.pieces.find((p) => p.id === a.id),
     victim = state.pieces.find(
       (p) => p.r === a.r && p.c === a.c && p.owner !== state.current,
@@ -20,7 +22,7 @@ function priority(state, a) {
     egg = eggAt(state, a.r, a.c);
   return (
     (state.board[square(a.r, a.c)] === "fertile" &&
-    (!has(p, "Predador") || has(p, "Onívoro"))
+    (!has(p, "Carnívoro") || has(p, "Onívoro"))
       ? 8
       : 0) +
     (victim ? 4 + victim.rank : 0) +
