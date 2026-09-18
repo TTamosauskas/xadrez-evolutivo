@@ -7,20 +7,20 @@ export const SYMBOLS = {
 };
 export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
 export const TRAITS = {
-  Locomoção: ["🐾", "Permite realizar movimentos de xadrez."],
+  Locomoção: ["🐾", "Permite realizar movimentos de xadrez após a origem histórica da Predação."],
   "Locomoção Avançada": [
     "🐪",
     "Permite uma segunda movimentação no mesmo turno.",
   ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
-  Predação: ["🦈", "Permite capturar criaturas adversárias."],
+  Predação: ["🦈", "Permite capturar criaturas adversárias; sem Locomoção, atua por contato nas oito casas adjacentes."],
   Carnívoro: [
     "🦁",
-    "Reproduz ao eliminar uma peça, mas não usa casas férteis.",
+    "Especialização de uma linhagem com Predação: reproduz ao eliminar uma peça e deixa de usar casas férteis.",
   ],
   Onívoro: [
     "🐻",
-    "Reproduz tanto em casas férteis quanto ao eliminar peças.",
+    "Especialização posterior de Carnívoro: reproduz tanto em casas férteis quanto ao eliminar peças.",
   ],
   Necrófago: [
     "🪰",
@@ -34,7 +34,7 @@ export const TRAITS = {
   Fertilidade: ["🧫", "Dobra a quantidade de descendentes."],
   Fotossíntese: [
     "☀️",
-    "Transforma em fértil uma casa neutra após permanecer nela por uma rodada completa.",
+    "Transforma em fértil uma casa neutra após uma rodada completa; sua estratégia energética reduz a chance de surgir Predação na mesma linhagem.",
   ],
   "Construção de Nicho": [
     "⬡",
