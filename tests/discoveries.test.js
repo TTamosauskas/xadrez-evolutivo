@@ -59,7 +59,7 @@ test("catalog covers every geological stage event and named mutation", () => {
     assert.ok(DISCOVERY_CONTENT.events[event.id], event.id);
   for (const trait of Object.keys(TRAITS))
     assert.ok(DISCOVERY_CONTENT.mutations[trait], trait);
-  for (let rank = 1; rank <= 5; rank++)
+  for (let rank = 0; rank <= 5; rank++)
     assert.ok(DISCOVERY_CONTENT.mutations[`rank:${rank}`]);
 });
 
@@ -67,6 +67,6 @@ test("mutation labels map only to encyclopedia-worthy discoveries", () => {
   assert.equal(mutationDiscoveryId("Fotossíntese"), "Fotossíntese");
   assert.equal(mutationDiscoveryId("Mutação de peça: Cavalo"), "rank:1");
   assert.equal(mutationDiscoveryId("Mutação de peça: Rainha"), "rank:5");
-  assert.equal(mutationDiscoveryId("Mutação de peça: Peão"), null);
+  assert.equal(mutationDiscoveryId("Mutação de peça: Peão"), "rank:0");
   assert.equal(mutationDiscoveryId("Perda de Fotossíntese"), null);
 });

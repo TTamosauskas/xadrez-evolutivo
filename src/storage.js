@@ -13,7 +13,8 @@ import {
   isNegativeTrait,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v6";
+export const SAVE_KEY = "xadrez-evolutivo-save-v7";
+export const V6_KEY = "xadrez-evolutivo-save-v6";
 export const V5_KEY = "xadrez-evolutivo-save-v5";
 export const V4_KEY = "xadrez-evolutivo-save-v4";
 export const V3_KEY = "xadrez-evolutivo-save-v3";
@@ -25,7 +26,7 @@ const legacyTraitName = (name) =>
   name === "Predador" || name === "Predação" ? "Carnívoro" : name;
 const v2TraitName = (name) =>
   name === "Locomoção" ? "Locomoção Avançada" : legacyTraitName(name);
-const mutationLabel = (label, version = 6) => {
+const mutationLabel = (label, version = 7) => {
   let mapped = label;
   if (version <= 3) {
     if (mapped === "Predador") mapped = "Carnívoro";
@@ -39,7 +40,7 @@ const mutationLabel = (label, version = 6) => {
   }
   return mapped;
 };
-function historicalMutations(data, version = 6) {
+function historicalMutations(data, version = 7) {
   const valid = new Set([
       ...Object.keys(TRAITS),
       ...Object.keys(TRAITS).map((t) => `Perda de ${t}`),
@@ -80,7 +81,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -124,6 +125,7 @@ export function deserialize(raw) {
       : Math.max(0, ...data.eggs.map((egg) => egg.id ?? 0)) + 1;
     if (data.manipulation === undefined) data.manipulation = null;
     if (data.building === undefined) data.building = null;
+    if (data.origin === undefined) data.origin = null;
     if (!Array.isArray(data.barriers)) data.barriers = [];
     data.seenMutations = historicalMutations(data, sourceVersion);
     const liveMax = Array.isArray(data.pieces)
@@ -214,7 +216,7 @@ export function deserialize(raw) {
         previousEvent: data.previousEvent,
         diseases: data.diseases,
       });
-    data.version = 6;
+    data.version = 7;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -397,6 +399,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V6_KEY) ??
     storage.getItem(V5_KEY) ??
     storage.getItem(V4_KEY) ??
     storage.getItem(V3_KEY) ??

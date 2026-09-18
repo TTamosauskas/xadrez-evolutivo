@@ -1,5 +1,6 @@
 import { has, square, other, OWNERS, coord } from "./constants.js";
 import {
+  activateOrigin,
   clone,
   at,
   eggAt,
@@ -378,12 +379,10 @@ function executeMove(ctx, action) {
   if (!target) throw Error("Escolha um destino disponível.");
   const second = state.chain === p.id,
     locomotion = has(p, "Locomoção Avançada"),
-    contactCapture = !!target.contactCapture,
     landingCell = square(target.r, target.c),
     landingTerrain = terrain(state, target.r, target.c),
     stableLanding =
       !target.stay &&
-      !contactCapture &&
       !state.event?.hazards.includes(landingCell) &&
       !hasDecomposition(state, landingCell);
   let manipulation =
@@ -436,11 +435,10 @@ function executeMove(ctx, action) {
     }
   if (
     !target.stay &&
-    !contactCapture &&
     terrain(state, target.r, target.c) === "hostile"
   )
     p.hostileRiskRound = round(state) + 1;
-  if (!target.stay && !contactCapture && has(p, "Mutação Disfuncional"))
+  if (!target.stay && has(p, "Mutação Disfuncional"))
     p.lastMoveRound = round(state) + 1;
   const victim = at(state, target.r, target.c),
     egg = eggAt(state, target.r, target.c),
@@ -470,23 +468,19 @@ function executeMove(ctx, action) {
     manipulation = null;
     const cell = square(target.r, target.c);
     markDecomposition(state, cell);
-    if (!contactCapture) {
-      p.decompositionImmunity = {
-        cell,
-        throughTurn: state.turn + 2,
-      };
-      log(
-        state,
-        `${OWNERS[p.owner]}: imunidade à decomposição em ${coord(target.r, target.c)} por uma rodada.`,
-      );
-    }
+    p.decompositionImmunity = {
+      cell,
+      throughTurn: state.turn + 3,
+    };
+    log(
+      state,
+      `${OWNERS[p.owner]}: imunidade à decomposição em ${coord(target.r, target.c)} pelos dois turnos seguintes.`,
+    );
   }
   if (eggCapture) state.eggs = state.eggs.filter((x) => x.id !== egg.id);
-  if (!contactCapture) {
-    p.r = target.r;
-    p.c = target.c;
-    moveDirection(p);
-  }
+  p.r = target.r;
+  p.c = target.c;
+  moveDirection(p);
   ctx.reserved.delete(landingCell);
   const cell = square(p.r, p.c);
   if (
@@ -515,9 +509,7 @@ function executeMove(ctx, action) {
     predation = pieceCapture && (carnivore || omnivore);
   log(
     state,
-    contactCapture
-      ? `${OWNERS[p.owner]}: ${coord(p.r, p.c)} · predação de contato em ${coord(target.r, target.c)}.`
-      : `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
+    `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
   );
   if (fertile)
     notice(
@@ -616,7 +608,9 @@ export function transition(previous, action) {
   if (previous.result || previous.notices.length) return previous;
   const state = clone(previous),
     ctx = context(state);
-  if (action.type === "MOVE" && state.phase === "move")
+  if (action.type === "ORIGIN_CLICK" && state.phase === "origin")
+    activateOrigin(state);
+  else if (action.type === "MOVE" && state.phase === "move")
     executeMove(ctx, action);
   else if (action.type === "PARTNER" && state.phase === "partner")
     choosePartner(ctx, action.id);

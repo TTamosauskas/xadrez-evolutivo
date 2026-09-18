@@ -105,7 +105,10 @@ export function registerDiscoveries(state, piece) {
 function seedHabitat(state) {
   const profile = habitatProfile(state);
   state.board.fill("neutral");
-  const founderCells = new Set(state.pieces.map((p) => square(p.r, p.c)));
+  const founderCells = new Set([
+    ...state.pieces.map((p) => square(p.r, p.c)),
+    ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
+  ]);
   if (profile.standard) {
     const empty = shuffle(
       state,
@@ -169,14 +172,17 @@ function seedHabitat(state) {
     state.board[cell] = "hostile";
 }
 export function createState(seed = Date.now(), options = {}) {
-  const founder = options.founder ?? null;
+  const founder = options.founder ?? null,
+    originPrelude = !!options.originPrelude,
+    canonicalPair = !!options.canonicalPair;
   const state = {
-    version: 6,
+    version: 7,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
     current: "blue",
-    phase: "move",
+    phase: originPrelude ? "origin" : "move",
+    origin: null,
     chain: null,
     partner: null,
     manipulation: null,
@@ -212,11 +218,26 @@ export function createState(seed = Date.now(), options = {}) {
     populationLatched: { blue: false, amber: false },
     result: null,
   };
-  for (const [owner, r] of [
-    ["blue", 7],
-    ["amber", 0],
-  ])
-    for (const c of [3, 4])
+  if (originPrelude) {
+    const cell = pick(state, [27, 28, 35, 36]);
+    state.origin = {
+      r: Math.floor(cell / 8),
+      c: cell % 8,
+      selected: false,
+    };
+  } else {
+    const starts = canonicalPair
+      ? [
+          ["blue", 7, 4],
+          ["amber", 0, 4],
+        ]
+      : [
+          ["blue", 7, 3],
+          ["blue", 7, 4],
+          ["amber", 0, 3],
+          ["amber", 0, 4],
+        ];
+    for (const [owner, r, c] of starts)
       state.pieces.push(
         newPiece(state, owner, r, c, founder
           ? {
@@ -228,13 +249,54 @@ export function createState(seed = Date.now(), options = {}) {
             }
           : {}),
       );
+  }
   seedHabitat(state);
   recordDiscovery(state, "geology", state.geologicalStage);
   log(
     state,
-    `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com dois organismos de cada lado.`,
+    originPrelude
+      ? "Origem da campanha: o ancestral comum aguarda a separação das linhagens."
+      : `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com um organismo de cada lado.`,
   );
   return state;
+}
+
+export function createCampaignState(seed = Date.now()) {
+  return createState(seed, { originPrelude: true });
+}
+
+export function activateOrigin(state) {
+  if (state.phase !== "origin" || !state.origin)
+    throw Error("Origem indisponível.");
+  if (!state.origin.selected) {
+    state.origin.selected = true;
+    return false;
+  }
+  const candidates = [];
+  for (let r = 4; r <= 7; r++)
+    for (let c = 0; c < 8; c++) {
+      const opposite = square(7 - r, 7 - c);
+      if (
+        square(r, c) !== square(state.origin.r, state.origin.c) &&
+        opposite !== square(state.origin.r, state.origin.c)
+      )
+        candidates.push({ r, c });
+    }
+  const blue = pick(state, candidates),
+    amber = { r: 7 - blue.r, c: 7 - blue.c };
+  state.pieces.push(
+    newPiece(state, "blue", blue.r, blue.c, { rank: 4 }),
+    newPiece(state, "amber", amber.r, amber.c, { rank: 4 }),
+  );
+  state.board[square(blue.r, blue.c)] = "fertile";
+  state.board[square(amber.r, amber.c)] = "fertile";
+  state.origin = null;
+  state.phase = "move";
+  log(
+    state,
+    `${geologicalLabel(state)} · 1º Ciclo começa com a separação do ancestral comum em dois Reis fundadores.`,
+  );
+  return true;
 }
 export function signature(p) {
   return `${p.rank}|${[...p.traits].sort().join("|")}|${reproGeneSignature(
@@ -285,6 +347,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
   if (
     founder &&
     previous.historicalTraits.includes("Locomoção") &&
+    founder.traits.includes("Predação") &&
     !founder.traits.includes("Locomoção") &&
     !founder.traits.includes("Locomoção Avançada")
   )
@@ -297,6 +360,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
     historicalTraits: previous.historicalTraits,
     discoveries: previous.discoveries,
     founder,
+    canonicalPair: true,
   });
   log(
     state,
@@ -384,7 +448,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 6 ||
+    state.version !== 7 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
@@ -397,8 +461,20 @@ export function assertState(state) {
     !Number.isInteger(state.rng)
   )
     throw Error("Turno inválido.");
-  if (!["move", "partner", "manipulate", "build", "over"].includes(state.phase))
+  if (!["origin", "move", "partner", "manipulate", "build", "over"].includes(state.phase))
     throw Error("Fase inválida.");
+  if (
+    state.origin !== null &&
+    (!state.origin ||
+      !inside(state.origin.r, state.origin.c) ||
+      typeof state.origin.selected !== "boolean")
+  )
+    throw Error("Origem inválida.");
+  if (
+    (state.phase === "origin" && (!state.origin || state.pieces.length)) ||
+    (state.phase !== "origin" && state.origin)
+  )
+    throw Error("Fase de origem inválida.");
   if (!Array.isArray(state.pieces) || state.pieces.length > 64)
     throw Error("População inválida.");
   const ids = new Set(),

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture, move } from "./helpers.js";
 import {
+  createCampaignState,
   createState,
   createSuccessorState,
   clone,
@@ -16,6 +17,30 @@ import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
 import { reproduce, tickReproduction } from "../src/reproduction.js";
 import { cloneReproGenes } from "../src/reproductive-genetics.js";
 import { EVENTS, TRAITS } from "../src/constants.js";
+
+test("ancestral gray King splits into two opposite founder Kings", () => {
+  let s = createCampaignState(301);
+  assert.equal(s.phase, "origin");
+  assert.equal(s.pieces.length, 0);
+  assert.ok([27, 28, 35, 36].includes(s.origin.r * 8 + s.origin.c));
+
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  assert.equal(s.origin.selected, true);
+  assert.equal(s.pieces.length, 0);
+
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  assert.equal(s.phase, "move");
+  assert.equal(s.origin, null);
+  assert.equal(s.pieces.length, 2);
+  assert.ok(s.pieces.every((piece) => piece.rank === 4));
+  const blue = s.pieces.find((piece) => piece.owner === "blue"),
+    amber = s.pieces.find((piece) => piece.owner === "amber");
+  assert.equal(blue.r + amber.r, 7);
+  assert.equal(blue.c + amber.c, 7);
+  assert.equal(s.board[blue.r * 8 + blue.c], "fertile");
+  assert.equal(s.board[amber.r * 8 + amber.c], "fertile");
+  assertState(s);
+});
 
 test("invalid actions roll back the complete state, including random generator", () => {
   const s = createState(1),
@@ -438,7 +463,7 @@ test("capture creates hostile decomposition, protects attacker and fertilizes af
   assert.equal(site.dueRound, 3);
   assert.equal(s.board[36], "hostile");
   assert.equal(attacker.decompositionImmunity.cell, 36);
-  assert.equal(attacker.decompositionImmunity.throughTurn, 2);
+  assert.equal(attacker.decompositionImmunity.throughTurn, 3);
 
   s.rng = 1;
   s = simulate(s, { type: "PASS" });
@@ -476,6 +501,45 @@ test("non-capture deaths do not create decomposition", () => {
   assert.equal(s.deathSites.length, 0);
   assertState(s);
 });
+test("ancestral King offspring can mutate into Pawn in the first cycle", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 3,
+        rank: 4,
+        traits: ["Fertilidade", "Dormência"],
+      },
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Fertilidade", "Dormência"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    mate = s.pieces[1];
+  s.geologicalStage = "archean";
+  s.historicalTraits = ["Fotossíntese", "Predação", "Fertilidade", "Dormência"];
+  s.event = {
+    ...EVENTS.find((event) => event.id === "solar"),
+    startRound: 0,
+    hazards: [],
+    snapshots: {},
+  };
+  const before = s.nextId;
+  assert.equal(
+    reproduce(context(s), parent, mate, "teste", { forcedCount: 1 }),
+    1,
+  );
+  const child = s.pieces.find((piece) => piece.id >= before);
+  assert.equal(child.rank, 0);
+  assert.ok(s.seenMutations.includes("Mutação de peça: Peão"));
+  assertState(s);
+});
+
 test("mutation modal only queues outcomes that have not appeared before", () => {
   const allLabels = [
     ...Object.keys(TRAITS),
@@ -567,7 +631,7 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   assert.equal(next.maxGenerationReached, 0);
   assert.equal(next.nextHabitatGeneration, 3);
   assert.equal(next.nextEventGeneration, 4);
-  assert.equal(next.pieces.length, 4);
+  assert.equal(next.pieces.length, 2);
   assert.deepEqual(
     [...new Set(next.pieces.map((p) => p.rank))],
     [3],
@@ -583,8 +647,17 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
         !p.traits.includes("Mutação Deletéria"),
     ),
   );
-  assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 2);
-  assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 2);
+  assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 1);
+  assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 1);
+  assert.deepEqual(
+    next.pieces
+      .map((p) => [p.owner, p.r, p.c])
+      .sort((a, b) => a[0].localeCompare(b[0])),
+    [
+      ["amber", 0, 4],
+      ["blue", 7, 4],
+    ],
+  );
   for (const p of next.pieces)
     assert.deepEqual(p.reproGenes.development, [
       { value: "viviparous", dominance: "recessive" },
@@ -936,41 +1009,55 @@ test("Predação is required for ordinary captures", () => {
   assert.ok(movesFor(s, attacker).some((target) => target.c === 4));
 });
 
-test("Predação captures adjacent prey by contact before Locomoção", () => {
+test("Predação uses traditional piece capture geometry before Locomoção", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3 },
+    { owner: "blue", r: 4, c: 3, rank: 4 },
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  const predator = s.pieces[0];
-  predator.traits = predator.traits.filter((trait) => trait !== "Locomoção");
-
-  const contact = movesFor(s, predator).find(
-    (target) => target.r === 4 && target.c === 4,
+  const king = s.pieces[0];
+  king.traits = king.traits.filter(
+    (trait) => !["Locomoção", "Locomoção Avançada"].includes(trait),
   );
-  assert.equal(contact?.contactCapture, true);
+  assert.ok(movesFor(s, king).some((target) => target.r === 4 && target.c === 4));
+  assert.ok(!movesFor(s, king).some((target) => target.r === 4 && target.c === 2));
 
-  s = simulate(s, move(predator, 4, 4));
-  const survivor = s.pieces.find((piece) => piece.id === predator.id);
-  assert.deepEqual([survivor.r, survivor.c], [4, 3]);
+  s = simulate(s, move(king, 4, 4));
+  const survivor = s.pieces.find((piece) => piece.id === king.id);
+  assert.deepEqual([survivor.r, survivor.c], [4, 4]);
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
   assert.ok(s.deathSites.some((site) => site.cell === 36));
-  assert.equal(survivor.decompositionImmunity, undefined);
-  assert.equal(s.turn, 1);
+  assert.equal(survivor.decompositionImmunity.cell, 36);
   assertState(s);
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 0 },
+    { owner: "amber", r: 3, c: 3 },
+    { owner: "amber", r: 3, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const pawn = s.pieces[0];
+  pawn.traits = pawn.traits.filter(
+    (trait) => !["Locomoção", "Locomoção Avançada"].includes(trait),
+  );
+  const targets = movesFor(s, pawn);
+  assert.ok(!targets.some((target) => target.r === 3 && target.c === 3));
+  assert.ok(targets.some((target) => target.r === 3 && target.c === 4));
 });
 
-test("stationary Carnívoro reproduces from contact predation", () => {
+test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Carnívoro"] },
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
   const predator = s.pieces[0];
-  predator.traits = predator.traits.filter((trait) => trait !== "Locomoção");
+  predator.traits = predator.traits.filter(
+    (trait) => !["Locomoção", "Locomoção Avançada"].includes(trait),
+  );
   s = simulate(s, move(predator, 4, 4));
   const survivor = s.pieces.find((piece) => piece.id === predator.id);
-  assert.deepEqual([survivor.r, survivor.c], [4, 3]);
+  assert.deepEqual([survivor.r, survivor.c], [4, 4]);
   assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
   assertState(s);
 });

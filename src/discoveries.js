@@ -119,7 +119,7 @@ const mutations = Object.fromEntries(
     ];
   }),
 );
-for (let rank = 1; rank < PIECES.length; rank++) {
+for (let rank = 0; rank < PIECES.length; rank++) {
   const title = PIECES[rank];
   mutations[`rank:${rank}`] = {
     id: `rank:${rank}`,
@@ -201,7 +201,7 @@ export function mutationDiscoveryId(label) {
   const prefix = "Mutação de peça: ";
   if (!label?.startsWith(prefix)) return null;
   const rank = PIECES.indexOf(label.slice(prefix.length));
-  return rank > 0 ? `rank:${rank}` : null;
+  return rank >= 0 ? `rank:${rank}` : null;
 }
 
 export function validDiscoveries(value) {

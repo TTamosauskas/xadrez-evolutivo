@@ -203,6 +203,15 @@ main {
   color: #242623;
   text-shadow: 1px 0 #f7eace77;
 }
+.piece.origin-piece {
+  color: #8f9698;
+  text-shadow:
+    1px 0 #2d3031,
+    -1px 0 #2d3031,
+    0 1px #2d3031,
+    0 -1px #2d3031;
+  filter: drop-shadow(0 3px 2px #0008);
+}
 .piece.dysfunctional-resting {
   opacity: 0.42;
 }
