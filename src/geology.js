@@ -218,7 +218,7 @@ export const TRAIT_STAGE = {
 };
 
 export const TRAIT_DEPENDENCIES = {
-  "Locomoção Avançada": { piece: ["Locomoção"] },
+  "Locomoção Avançada": { historical: ["Locomoção"] },
   Voo: { historical: ["Locomoção"] },
   "Cuidado Parental": { historical: ["Ovíparo"] },
   Vivíparo: { historical: ["Ovíparo"] },
