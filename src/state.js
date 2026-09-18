@@ -72,7 +72,10 @@ export function createState(seed = Date.now()) {
     logs: [],
     event: null,
     previousEvent: null,
-    nextEventRound: 10,
+    maxGenerationReached: 0,
+    nextHabitatGeneration: 3,
+    nextEventGeneration: 4,
+    pendingEcologicalEvent: false,
     diseases: [],
     nextDisease: 1,
     populationLatched: { blue: false, amber: false },
@@ -133,7 +136,10 @@ export function assertState(state) {
     !integer(state.revision) ||
     !integer(state.nextNotice, 1) ||
     !integer(state.nextDisease, 1) ||
-    !integer(state.nextEventRound) ||
+    !integer(state.maxGenerationReached) ||
+    !integer(state.nextHabitatGeneration, 3) ||
+    !integer(state.nextEventGeneration, 4) ||
+    typeof state.pendingEcologicalEvent !== "boolean" ||
     !Array.isArray(state.seen) ||
     state.seen.some((s) => typeof s !== "string")
   )
@@ -197,6 +203,11 @@ export function assertState(state) {
   }
   if (!Number.isInteger(state.nextId) || state.nextId <= Math.max(0, ...ids))
     throw Error("Identificadores inválidos.");
+  if (
+    state.maxGenerationReached <
+    Math.max(0, ...state.pieces.map((p) => p.generation))
+  )
+    throw Error("Geração histórica inválida.");
   if (
     state.chain &&
     !state.pieces.some((p) => p.id === state.chain && p.owner === state.current)
