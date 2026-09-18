@@ -112,7 +112,7 @@ test("geological event pools contain only valid ecological events and no pathoge
 
 test("Archean starts green and stationary", () => {
   const s = createState(101);
-  assert.equal(s.version, 5);
+  assert.equal(s.version, 6);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 52);
@@ -122,7 +122,7 @@ test("Archean starts green and stationary", () => {
   assert.ok(actions.every((target) => target.stay));
 });
 
-test("Predação enables capture independently of the Cambrian while locomotion enables movement", () => {
+test("Predação enables capture and is an individual prerequisite for Locomoção", () => {
   const history = GEOLOGICAL_STAGES.slice(0, 2).flatMap((stage) => stage.required),
     s = createState(102, {
       geologicalStage: "ediacaran",
@@ -133,23 +133,27 @@ test("Predação enables capture independently of the Cambrian while locomotion 
   s.board.fill("neutral");
   const blue = newPiece(s, "blue", 4, 0, {
       rank: 3,
-      traits: ["Locomoção"],
+      traits: ["Predação", "Locomoção"],
     }),
     amber = newPiece(s, "amber", 4, 4, { traits: [] });
   s.pieces.push(blue, amber);
-  assert.ok(movesFor(s, blue).some((target) => target.c === 3));
-  assert.ok(!movesFor(s, blue).some((target) => target.c === 4));
-  assert.equal(captureUnlocked(s, blue), false);
-  blue.traits.push("Predação");
   assert.equal(captureUnlocked(s, blue), true);
   assert.ok(movesFor(s, blue).some((target) => target.c === 4));
+
+  const ancestral = { traits: [] };
+  assert.equal(traitUnlocked(s, "Locomoção", ancestral), false);
+  ancestral.traits.push("Predação");
+  assert.equal(traitUnlocked(s, "Locomoção", ancestral), true);
 });
 
 test("Archean advances only after both innovation cycles are complete", () => {
   let s = createState(103);
-  const carrier = s.pieces[0];
-  carrier.traits.push("Fotossíntese", "Predação");
-  registerDiscoveries(s, carrier);
+  const photosynthetic = s.pieces[0],
+    predatory = s.pieces[1];
+  photosynthetic.traits.push("Fotossíntese");
+  registerDiscoveries(s, photosynthetic);
+  predatory.traits.push("Predação");
+  registerDiscoveries(s, predatory);
   assert.equal(stageComplete(s), false);
   s.notices = [];
   s.result = { winner: "blue", reason: "teste" };
@@ -210,8 +214,11 @@ test("later innovations obey historical and individual dependencies", () => {
   s.historicalTraits = s.historicalTraits.filter(
     (trait) => trait !== "Predação",
   );
+  p.traits = p.traits.filter((trait) => trait !== "Predação");
   assert.equal(traitUnlocked(s, "Locomoção", p), false);
   s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Locomoção", p), false);
+  p.traits.push("Predação");
   assert.equal(traitUnlocked(s, "Locomoção", p), true);
 
   s.geologicalStage = "neogene";
@@ -243,19 +250,19 @@ test("missing innovations gain weight across repeated cycles without becoming au
   ]);
 });
 
-test("Fotossíntese and Predação strongly antagonize mutation weight", () => {
+test("Fotossíntese and Predação are mutually exclusive within one lineage", () => {
   const s = createState(111);
-  s.historicalTraits = ["Fertilidade", "Dormência", "Fotossíntese"];
-  const baseline = innovationWeight(s, "Predação", { traits: [] }),
-    photosynthetic = innovationWeight(s, "Predação", {
-      traits: ["Fotossíntese"],
-    });
-  assert.equal(photosynthetic, baseline * 0.2);
-
-  const predatory = innovationWeight(s, "Fotossíntese", {
-    traits: ["Predação"],
-  });
-  assert.equal(predatory, 0.2);
+  s.historicalTraits = ["Fotossíntese"];
+  const ancestral = { traits: [] },
+    photosynthetic = { traits: ["Fotossíntese"] },
+    predatory = { traits: ["Predação"] };
+  assert.equal(traitUnlocked(s, "Predação", ancestral), true);
+  assert.equal(traitUnlocked(s, "Predação", photosynthetic), false);
+  assert.equal(traitUnlocked(s, "Fotossíntese", predatory), false);
+  assert.equal(
+    innovationWeight(s, "Predação", photosynthetic),
+    innovationWeight(s, "Predação", ancestral),
+  );
 });
 
 test("Paleogene is a one-cycle transition stage", () => {
