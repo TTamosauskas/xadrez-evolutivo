@@ -1,6 +1,6 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
 import { at, eggAt, dominantLineage, round, signature } from "./state.js";
-import { movesFor, partnersFor, resting } from "./moves.js";
+import { movesFor, partnersFor, dysfunctionalResting } from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
   if (text !== undefined) e.textContent = text;
@@ -108,7 +108,13 @@ export function render(
         cell.append(make("span", "☠️", "decomposition-mark"));
       if (egg) cell.append(make("span", "🥚", "egg-mark"));
       if (p) {
-        cell.append(make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`));
+        cell.append(
+          make(
+            "span",
+            SYMBOLS[p.owner][p.rank],
+            `piece ${p.owner}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
+          ),
+        );
         const badges = p.traits.map((t) => TRAITS[t][0]);
         if (p.infection) badges.push("🦠");
         if (p.venom) badges.push("☠");
@@ -118,7 +124,6 @@ export function render(
           0,
         );
         if (carried) badges.unshift(`+${carried}`);
-        if (resting(state, p)) badges.push("💤");
         cell.append(make("span", badges.slice(0, 5).join(""), "badges"));
       }
       board.append(cell);
