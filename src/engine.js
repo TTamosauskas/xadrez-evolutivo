@@ -19,6 +19,7 @@ import {
   canWaitForBirth,
   dormant,
   manipulationTargets,
+  constructionTargets,
 } from "./moves.js";
 import {
   reproduce,
@@ -76,6 +77,7 @@ function finishGame(state, winner, reason) {
   state.chain = null;
   state.partner = null;
   state.manipulation = null;
+  state.building = null;
   log(state, reason);
 }
 function extinction(state) {
@@ -172,6 +174,7 @@ function advanceTurn(ctx) {
   state.chain = null;
   state.partner = null;
   state.manipulation = null;
+  state.building = null;
   state.phase = "move";
   for (const p of [...state.pieces])
     if (p.owner === acting && p.venom && p.venom.infectedTurn < before) {
@@ -270,7 +273,14 @@ function completeMove(ctx, p, second, locomotion) {
   settle(ctx);
 }
 
-function finishMovement(ctx, p, manipulation, second, locomotion) {
+function finishMovement(
+  ctx,
+  p,
+  manipulation,
+  second,
+  locomotion,
+  build = false,
+) {
   const state = ctx.state;
   if (
     manipulation &&
@@ -283,11 +293,24 @@ function finishMovement(ctx, p, manipulation, second, locomotion) {
       terrain: manipulation.terrain,
       second,
       locomotion,
+      build,
     };
     state.phase = "manipulate";
     state.chain = null;
     if (manipulationTargets(state).length) return;
     state.manipulation = null;
+    state.phase = "move";
+  }
+  if (
+    build &&
+    has(p, "Construtor Avançado") &&
+    state.pieces.some((piece) => piece.id === p.id)
+  ) {
+    state.building = { id: p.id, second, locomotion };
+    state.phase = "build";
+    state.chain = null;
+    if (constructionTargets(state).length) return;
+    state.building = null;
     state.phase = "move";
   }
   completeMove(ctx, p, second, locomotion);
@@ -312,8 +335,38 @@ function resolveManipulation(ctx, action) {
   }
   state.manipulation = null;
   state.phase = "move";
+  finishMovement(
+    ctx,
+    p,
+    null,
+    pending.second,
+    pending.locomotion,
+    pending.build ?? false,
+  );
+}
+
+function resolveBuilding(ctx, action) {
+  const state = ctx.state,
+    pending = state.building,
+    p = state.pieces.find((piece) => piece.id === pending?.id);
+  if (!pending || !p) throw Error("Construção indisponível.");
+  if (action.type === "BUILD") {
+    const target = constructionTargets(state).find(
+      (cell) => cell.r === action.r && cell.c === action.c,
+    );
+    if (!target) throw Error("Escolha uma casa vazia adjacente.");
+    const cell = square(target.r, target.c);
+    state.barriers.push(cell);
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🦫 barreira construída em ${coord(target.r, target.c)}.`,
+    );
+  }
+  state.building = null;
+  state.phase = "move";
   completeMove(ctx, p, pending.second, pending.locomotion);
 }
+
 function executeMove(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -338,6 +391,21 @@ function executeMove(ctx, action) {
       ? { origin: landingCell, terrain: landingTerrain }
       : null;
   harvest(state, p, p.r, p.c);
+  if (has(p, "Chifre")) {
+    const destroyed = [];
+    for (const [r, c] of target.path) {
+      const cell = square(r, c);
+      if (state.barriers.includes(cell)) {
+        state.barriers = state.barriers.filter((barrier) => barrier !== cell);
+        destroyed.push(coord(r, c));
+      }
+    }
+    if (destroyed.length)
+      log(
+        state,
+        `${OWNERS[p.owner]}: 🫎 Chifre destruiu barreira(s) em ${destroyed.join(", ")}.`,
+      );
+  }
   for (const [r, c] of target.path)
     if (
       terrain(state, r, c) === "hostile" &&
@@ -372,6 +440,23 @@ function executeMove(ctx, action) {
     pieceCapture = !!victim && victim.id !== p.id,
     eggCapture = !!egg,
     capture = pieceCapture || eggCapture;
+  if (
+    pieceCapture &&
+    has(victim, "Chifre") &&
+    !has(p, "Carapaça") &&
+    random(state) < 1 / 5
+  ) {
+    const origin = square(p.r, p.c);
+    ctx.kill(p.id, "defesa por Chifre", victim);
+    markDecomposition(state, origin);
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 🫎 Chifre matou o agressor antes da captura.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
   ctx.reserved.add(square(target.r, target.c));
   if (pieceCapture) {
     ctx.kill(victim.id, "captura", p);
@@ -402,7 +487,7 @@ function executeMove(ctx, action) {
     state.board[cell] = "neutral";
     log(
       state,
-      `${OWNERS[p.owner]}: 🦫 Construção de Nicho neutralizou ${coord(p.r, p.c)}.`,
+      `${OWNERS[p.owner]}: ⬡ Construção de Nicho neutralizou ${coord(p.r, p.c)}.`,
     );
   }
   const scavenging =
@@ -410,13 +495,13 @@ function executeMove(ctx, action) {
   if (!capture && !scavenging) harvest(state, p, p.r, p.c);
   const collectorStay =
       !scavenging && has(p, "Coletor") && target.stay && p.seeds > 0,
-    predator = has(p, "Predador"),
+    carnivore = has(p, "Carnívoro"),
     omnivore = has(p, "Onívoro"),
     fertileResource =
       !scavenging &&
       ((!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay),
-    fertile = fertileResource && (!predator || omnivore),
-    predation = pieceCapture && (predator || omnivore);
+    fertile = fertileResource && (!carnivore || omnivore),
+    predation = pieceCapture && (carnivore || omnivore);
   log(
     state,
     `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
@@ -445,13 +530,22 @@ function executeMove(ctx, action) {
       collectorStay,
       predation,
       manipulation,
+      buildEligible:
+        !collectorStay &&
+        has(p, "Construtor Avançado") &&
+        terrain(state, p.r, p.c) === "fertile",
     };
     state.chain = null;
     return;
   }
-  if (fertile && !collectorStay) state.board[cell] = "neutral";
+  const consumedFertile =
+    fertile &&
+    !collectorStay &&
+    terrain(state, p.r, p.c) === "fertile";
+  if (consumedFertile) state.board[cell] = "neutral";
+  let born = 0;
   if (eggCapture) {
-    reproduce(ctx, p, null, "ovifagia", {
+    born = reproduce(ctx, p, null, "ovifagia", {
       forcedCount: egg.brood.length,
       immediateDevelopment: true,
     });
@@ -460,10 +554,10 @@ function executeMove(ctx, action) {
       `${OWNERS[p.owner]} consumiram um ovo com ${egg.brood.length} descendente(s).`,
     );
   } else if (scavenging) {
-    const born = reproduce(ctx, p, null, "necrofagia");
+    born = reproduce(ctx, p, null, "necrofagia");
     if (born) consumeDecomposition(state, cell);
   } else if (fertile || predation) {
-    const born = reproduce(
+    born = reproduce(
       ctx,
       p,
       null,
@@ -471,7 +565,9 @@ function executeMove(ctx, action) {
     );
     if (collectorStay && born) p.seeds--;
   }
-  finishMovement(ctx, p, manipulation, second, locomotion);
+  const build =
+    born > 0 && consumedFertile && has(p, "Construtor Avançado");
+  finishMovement(ctx, p, manipulation, second, locomotion, build);
 }
 function choosePartner(ctx, id) {
   const state = ctx.state,
@@ -490,6 +586,7 @@ function choosePartner(ctx, id) {
     pending.manipulation ?? null,
     pending.second,
     pending.locomotion,
+    born > 0 && !!pending.buildEligible,
   );
 }
 /** One atomic command: validate, copy, execute domain rules, verify, commit. No DOM/timers. */
@@ -515,6 +612,11 @@ export function transition(previous, action) {
     state.phase === "manipulate"
   )
     resolveManipulation(ctx, action);
+  else if (
+    ["BUILD", "SKIP_BUILD"].includes(action.type) &&
+    state.phase === "build"
+  )
+    resolveBuilding(ctx, action);
   else if (action.type === "PASS" && state.phase === "move") {
     log(state, `${OWNERS[state.current]} passaram a vez.`);
     advanceTurn(ctx);
