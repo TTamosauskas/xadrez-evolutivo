@@ -10,12 +10,13 @@ const element = (doc, tag, text, cls) => {
 };
 function applyAestheticStyle(piece, genes) {
   const appearance = aestheticPhenotype(genes),
+    neutralStroke = piece.classList.contains("blue") ? "#403b31" : "#f7eace",
     pigment =
       appearance.pigment === "violet"
         ? "#c084fc"
         : appearance.pigment === "cyan"
           ? "#67e8f9"
-          : "currentColor";
+          : neutralStroke;
   piece.style.setProperty(
     "--piece-weight",
     appearance.style === "bold" ? "800" : "400",
@@ -27,17 +28,17 @@ function applyAestheticStyle(piece, genes) {
   piece.style.setProperty(
     "--piece-scale-x",
     appearance.width === "wide"
-      ? "1.07"
+      ? "1.15"
       : appearance.width === "narrow"
-        ? "0.93"
+        ? "0.85"
         : "1",
   );
   piece.style.setProperty(
     "--piece-scale-y",
     appearance.height === "high"
-      ? "1.07"
+      ? "1.15"
       : appearance.height === "low"
-        ? "0.93"
+        ? "0.85"
         : "1",
   );
   piece.style.setProperty(
