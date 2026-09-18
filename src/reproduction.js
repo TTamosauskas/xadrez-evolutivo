@@ -18,6 +18,7 @@ import {
   round,
   log,
   notice,
+  registerDiscoveries,
 } from "./state.js";
 import {
   GENETIC_TRAITS,
@@ -31,11 +32,27 @@ import {
   reproPhenotype,
   syncReproTraits,
 } from "./reproductive-genetics.js";
+import {
+  innovationWeight,
+  rankMutationUnlocked,
+  traitUnlocked,
+} from "./geology.js";
 
 const NEGATIVE = ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"];
 const POSITIVE = Object.keys(TRAITS).filter(
   (t) => !NEGATIVE.includes(t) && !GENETIC_TRAITS.includes(t),
 );
+
+function weightedPick(state, options) {
+  const total = options.reduce((sum, option) => sum + (option.weight ?? 1), 0);
+  if (!total) return null;
+  let roll = random(state) * total;
+  for (const option of options) {
+    roll -= option.weight ?? 1;
+    if (roll < 0) return option;
+  }
+  return options.at(-1) ?? null;
+}
 
 function eusocialLineageKey(piece) {
   const traits = piece.traits
@@ -69,16 +86,15 @@ function eusocialBonus(state, parent) {
 
 function mutation(state, p, positiveOnly) {
   const gains = [];
-  for (let rank = p.rank + 1; rank < 6; rank++) gains.push({ rank });
-  const oviparousPresent =
-    state.eggs.length > 0 || state.pieces.some((piece) => has(piece, "Ovíparo"));
+  if (rankMutationUnlocked(state))
+    for (let rank = p.rank + 1; rank < 6; rank++)
+      gains.push({ rank, weight: 1 });
   for (const trait of POSITIVE)
-    if (
-      !has(p, trait) &&
-      (trait !== "Ovífagia" || oviparousPresent)
-    )
-      gains.push({ gain: trait });
-  for (const trait of geneGainOptions(p.reproGenes)) gains.push({ gene: trait });
+    if (!has(p, trait) && traitUnlocked(state, trait, p))
+      gains.push({ gain: trait, weight: innovationWeight(state, trait) });
+  for (const trait of geneGainOptions(p.reproGenes))
+    if (traitUnlocked(state, trait, p))
+      gains.push({ gene: trait, weight: innovationWeight(state, trait) });
 
   const losses = [];
   if (p.rank > 0) losses.push({ rank: p.rank - 1 });
@@ -94,7 +110,7 @@ function mutation(state, p, positiveOnly) {
     !positiveOnly && random(state) < (p.rank === 0 ? 1 / 5 : 1 / 3);
   let options = negative ? losses : gains;
   if (!options.length) options = positiveOnly ? [] : negative ? gains : losses;
-  const choice = pick(state, options);
+  const choice = negative ? pick(state, options) : weightedPick(state, options);
   if (!choice) return;
 
   let label;
@@ -270,6 +286,7 @@ function spawnChild(state, profile, r, c) {
   if (has(child, "Mutação Deletéria"))
     child.deleteriousDue = round(state) + 3;
   state.pieces.push(child);
+  registerDiscoveries(state, child);
   return child;
 }
 
