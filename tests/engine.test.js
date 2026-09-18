@@ -460,6 +460,13 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
       generation: 9,
     },
   ]);
+  s.pieces[0].reproGenes.development = [
+    { value: "viviparous", dominance: "recessive" },
+    { value: "immediate", dominance: "neutral" },
+  ];
+  s.pieces[1].reproGenes.development = structuredClone(
+    s.pieces[0].reproGenes.development,
+  );
   s.era = 1;
   s.generationOffset = 0;
   s.maxGenerationReached = 9;
@@ -491,6 +498,11 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   );
   assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 2);
   assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 2);
+  for (const p of next.pieces)
+    assert.deepEqual(p.reproGenes.development, [
+      { value: "viviparous", dominance: "recessive" },
+      { value: "immediate", dominance: "neutral" },
+    ]);
   assertState(next);
 });
 test("Ovíparo stores the brood in one egg and hatches after three rounds", () => {
