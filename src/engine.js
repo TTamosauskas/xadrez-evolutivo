@@ -276,7 +276,7 @@ function finishMovement(ctx, p, manipulation, second, locomotion) {
     state.manipulation = null;
     state.phase = "move";
   }
-  finishMovement(ctx, p, manipulation, second, locomotion);
+  completeMove(ctx, p, second, locomotion);
 }
 
 function resolveManipulation(ctx, action) {
@@ -453,7 +453,7 @@ function executeMove(ctx, action) {
     );
     if (collectorStay && born) p.seeds--;
   }
-  completeMove(ctx, p, second, locomotion);
+  finishMovement(ctx, p, manipulation, second, locomotion);
 }
 function choosePartner(ctx, id) {
   const state = ctx.state,
