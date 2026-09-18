@@ -94,12 +94,7 @@ export function createState(seed = Date.now(), options = {}) {
     for (const c of [3, 4])
       state.pieces.push(
         newPiece(state, owner, r, c, founder
-          ? {
-              rank: founder.rank,
-              traits: founder.traits,
-              mutations: 0,
-              generation: 0,
-            }
+          ? { rank: founder.rank, traits: founder.traits, mutations: 0, generation: 0 }
           : {}),
       );
   const empty = shuffle(
