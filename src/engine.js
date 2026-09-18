@@ -18,7 +18,7 @@ import {
 } from "./moves.js";
 import { reproduce, harvest, scatterSeeds } from "./reproduction.js";
 import { checkPopulation, tickDiseases, infect } from "./disease.js";
-import { advanceConway, tickEnvironment } from "./environment.js";
+import { tickEnvironment } from "./environment.js";
 export function context(state) {
   const ctx = {
     state,
@@ -100,8 +100,6 @@ function advanceTurn(ctx) {
   state.turn++;
   state.current = other(acting);
   if (state.turn % 2 === 0) {
-    if (state.turn % 10 === 0) advanceConway(ctx);
-    if (extinction(state)) return;
     tickEnvironment(ctx);
     if (extinction(state)) return;
     tickDiseases(ctx);
