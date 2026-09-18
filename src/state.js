@@ -92,11 +92,13 @@ export function registerDiscoveries(state, piece) {
     ...added.map((trait) => `${TRAITS[trait][0]} ${trait} surgiu pela primeira vez.`),
     `Progresso de ${currentGeologicalStage(state).period}: ${progress.discovered.length} de ${progress.required.length} inovação(ões).`,
   ]);
-  for (const trait of added)
+  for (const trait of added) {
+    recordDiscovery(state, "mutations", trait);
     log(
       state,
       `Marco Evolutivo: ${TRAITS[trait][0]} ${trait} foi descoberto.`,
     );
+  }
   return added;
 }
 
