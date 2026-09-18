@@ -17,6 +17,10 @@ export const TRAITS = {
     "🐻",
     "Reproduz tanto em casas férteis quanto ao eliminar peças.",
   ],
+  Necrófago: [
+    "🐦‍⬛",
+    "Reproduz consumindo uma casa marcada com ☠️, vermelha ou verde.",
+  ],
   Ovos: ["🦎", "Descendentes podem nascer a até duas casas do progenitor."],
   Fertilidade: ["🐇", "Dobra a quantidade de descendentes."],
   Carapaça: ["🐢", "Oferece 66% de sobrevivência por casa hostil."],
