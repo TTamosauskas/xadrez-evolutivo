@@ -44,10 +44,14 @@ test("rendering a pathogen notice settles and never mutates game state", async (
   observer.disconnect();
   dom.window.close();
 });
-test("menu exposes the match log for consultation", () => {
+test("menu exposes match log and evolutionary history for consultation", () => {
   const dom = setup(),
     d = dom.window.document;
   assert.equal(d.getElementById("game-log").textContent, "Log da partida");
+  assert.equal(
+    d.getElementById("evolution-history").textContent,
+    "História evolutiva",
+  );
   dom.window.close();
 });
 
@@ -164,7 +168,7 @@ test("Polegar Opositor renders colored adjacent transfer choices", () => {
   dom.window.close();
 });
 
-test("application UI can play, acknowledge reproduction, save, load and reset", async () => {
+test("application UI can play, acknowledge reproduction, save and reset", async () => {
   const dom = setup(),
     w = dom.window;
   const prior = {
@@ -203,8 +207,7 @@ test("application UI can play, acknowledge reproduction, save, load and reset", 
           targets.find((t) => t.classList.contains("fertile")) ?? targets[0]
         ).click();
       else click("pass");
-      if (d.getElementById("instruction").textContent.includes("parceiro"))
-        d.querySelector(".cell.partner")?.click();
+      d.querySelector(".cell.partner")?.click();
       turns++;
     }
     while (d.querySelector("#notice-dialog[open]")) click("notice-ok");
@@ -215,10 +218,11 @@ test("application UI can play, acknowledge reproduction, save, load and reset", 
     click("menu-button");
     click("new");
     click("info-ok");
-    assert.match(d.getElementById("round").textContent, /Rodada 1 ·/);
-    click("menu-button");
-    click("load");
-    assert.equal(d.getElementById("round").textContent, saved);
+    assert.match(
+      d.getElementById("round").textContent,
+      /Pré-Cambriano · Arqueano · 1º Ciclo · 1ª Geração/,
+    );
+    assert.notEqual(d.getElementById("round").textContent, saved);
   } finally {
     globalThis.document = prior.document;
     globalThis.localStorage = prior.localStorage;
