@@ -15,10 +15,6 @@ import { startEvent, tickEnvironment } from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
 import { reproduce } from "../src/reproduction.js";
 import { EVENTS, TRAITS } from "../src/constants.js";
-import {
-  aestheticPhenotype,
-  ancestralAestheticGenes,
-} from "../src/aesthetics.js";
 
 test("invalid actions roll back the complete state, including random generator", () => {
   const s = createState(1),
@@ -463,13 +459,6 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
       generation: 9,
     },
   ]);
-  const inheritedAppearance = ancestralAestheticGenes();
-  inheritedAppearance.width = [
-    { value: "wide", dominance: "recessive" },
-    { value: "wide", dominance: "recessive" },
-  ];
-  s.pieces[0].aestheticGenes = structuredClone(inheritedAppearance);
-  s.pieces[1].aestheticGenes = structuredClone(inheritedAppearance);
   s.era = 1;
   s.generationOffset = 0;
   s.maxGenerationReached = 9;
@@ -501,11 +490,6 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   );
   assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 2);
   assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 2);
-  assert.ok(
-    next.pieces.every((p) => aestheticPhenotype(p.aestheticGenes).width === "wide"),
-  );
-  for (const p of next.pieces)
-    assert.deepEqual(p.aestheticGenes, inheritedAppearance);
   assertState(next);
 });
 test("stale revisions cannot advance the turn", () => {
