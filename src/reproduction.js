@@ -47,7 +47,10 @@ function mutation(state, p, positiveOnly) {
     label = `Perda de ${choice.loss}`;
   }
   p.mutations++;
-  notice(state, "Novas mutações", [label]);
+  if (!state.seenMutations.includes(label)) {
+    state.seenMutations.push(label);
+    notice(state, "Novas mutações", [label]);
+  }
   log(state, `${OWNERS[p.owner]}: ${label}.`);
 }
 function sexualProfile(state, a, b) {
