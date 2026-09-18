@@ -1,5 +1,6 @@
 import { has, distance, OWNERS, other } from "./constants.js";
 import { round, random, pick, log, notice } from "./state.js";
+import { pathogenUnlocked } from "./geology.js";
 export function infect(state, p, disease) {
   if (
     !p ||
@@ -50,6 +51,7 @@ export function startDisease(
   return disease;
 }
 export function checkPopulation(state) {
+  if (!pathogenUnlocked(state)) return;
   for (const owner of ["blue", "amber"])
     if (state.pieces.filter((p) => p.owner === owner).length < 17)
       state.populationLatched[owner] = false;
