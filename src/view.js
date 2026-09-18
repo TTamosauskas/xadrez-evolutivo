@@ -1,5 +1,4 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
-import { aestheticDescription, aestheticPhenotype } from "./aesthetics.js";
 import { at, dominantLineage, round, signature } from "./state.js";
 import { movesFor, partnersFor, resting } from "./moves.js";
 const element = (doc, tag, text, cls) => {
@@ -8,51 +7,6 @@ const element = (doc, tag, text, cls) => {
   if (cls) e.className = cls;
   return e;
 };
-function applyAestheticStyle(piece, genes) {
-  const appearance = aestheticPhenotype(genes),
-    neutralStroke = piece.classList.contains("blue") ? "#403b31" : "#f7eace",
-    pigment =
-      appearance.pigment === "violet"
-        ? "#c084fc"
-        : appearance.pigment === "cyan"
-          ? "#67e8f9"
-          : neutralStroke;
-  piece.style.setProperty(
-    "--piece-weight",
-    appearance.style === "bold" ? "800" : "400",
-  );
-  piece.style.setProperty(
-    "--piece-font-style",
-    appearance.style === "italic" ? "italic" : "normal",
-  );
-  piece.style.setProperty(
-    "--piece-scale-x",
-    appearance.width === "wide"
-      ? "1.15"
-      : appearance.width === "narrow"
-        ? "0.85"
-        : "1",
-  );
-  piece.style.setProperty(
-    "--piece-scale-y",
-    appearance.height === "high"
-      ? "1.15"
-      : appearance.height === "low"
-        ? "0.85"
-        : "1",
-  );
-  piece.style.setProperty(
-    "--piece-rotate",
-    appearance.posture === "left"
-      ? "-5deg"
-      : appearance.posture === "right"
-        ? "5deg"
-        : "0deg",
-  );
-  piece.style.setProperty("--piece-stroke-width", `${appearance.stroke}px`);
-  piece.style.setProperty("--piece-stroke-color", pigment);
-  return piece;
-}
 function evolutionarySummary(state, owner) {
   const pieces = state.pieces.filter((p) => p.owner === owner),
     lineages = new Set(pieces.map(signature)),
@@ -64,9 +18,7 @@ function evolutionarySummary(state, owner) {
       : 0,
     traits = (representative?.traits ?? [])
       .slice(0, 3)
-      .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" })),
-    aestheticGenes = representative?.aestheticGenes,
-    appearance = aestheticGenes ? aestheticDescription(aestheticGenes) : "";
+      .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
 
   return {
     lineages: lineages.size,
@@ -74,8 +26,6 @@ function evolutionarySummary(state, owner) {
     pieceSymbol: SYMBOLS[owner][rank],
     piecePercent,
     traits,
-    aestheticGenes,
-    appearance,
   };
 }
 /** Rendering only reads state. No observers, commands, timers or rule callbacks. */
@@ -143,22 +93,17 @@ export function render(
       cell.dataset.r = r;
       cell.dataset.c = c;
       const terrain = {
-          fertile: "casa fértil",
-          hostile: "casa hostil",
-          neutral: "casa neutra",
-        }[state.board[square(r, c)]],
-        appearance = p ? aestheticDescription(p.aestheticGenes) : "";
-      const label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${appearance ? ", aparência " + appearance : ""}${p.infection ? ", infectado" : ""}` : ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
+        fertile: "casa fértil",
+        hostile: "casa hostil",
+        neutral: "casa neutra",
+      }[state.board[square(r, c)]];
+      const label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
       if (p) {
-        const piece = applyAestheticStyle(
-          make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`),
-          p.aestheticGenes,
-        );
-        cell.append(piece);
+        cell.append(make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`));
         const badges = p.traits.map((t) => TRAITS[t][0]);
         if (p.infection) badges.push("🦠");
         if (p.venom) badges.push("☠");
@@ -180,13 +125,10 @@ export function render(
   if (actor) {
     const ownerName = actor.owner === "blue" ? "Branco" : "Preto",
       heading = make("div", undefined, "selected-piece-heading"),
-      symbol = applyAestheticStyle(
-        make(
-          "span",
-          SYMBOLS[actor.owner][actor.rank],
-          `piece ${actor.owner} selected-piece-symbol`,
-        ),
-        actor.aestheticGenes,
+      symbol = make(
+        "span",
+        SYMBOLS[actor.owner][actor.rank],
+        `piece ${actor.owner} selected-piece-symbol`,
       );
     heading.append(
       symbol,
@@ -247,30 +189,14 @@ export function render(
       }`;
       const content = make("div", undefined, "evolutionary-end-summary");
       const lineages = make("p", lineageText, "evolutionary-end-lineages");
-      const selection = make("div", undefined, "evolutionary-end-section"),
-        selectionPrimary = make(
-          "div",
-          undefined,
-          "evolutionary-end-primary",
-        ),
-        winnerPiece = applyAestheticStyle(
-          make(
-            "span",
-            summary.pieceSymbol,
-            `piece ${winner} evolutionary-end-piece`,
-          ),
-          summary.aestheticGenes,
-        );
-      selectionPrimary.append(
-        doc.createTextNode(`${summary.pieceName} `),
-        winnerPiece,
-        doc.createTextNode(
-          ` (${summary.piecePercent}% da população sobrevivente)`,
-        ),
-      );
+      const selection = make("div", undefined, "evolutionary-end-section");
       selection.append(
         make("strong", "Seleção natural", "evolutionary-end-heading"),
-        selectionPrimary,
+        make(
+          "div",
+          `${summary.pieceName} ${summary.pieceSymbol} (${summary.piecePercent}% da população sobrevivente)`,
+          "evolutionary-end-primary",
+        ),
       );
       const traits = make(
         "div",
@@ -292,29 +218,7 @@ export function render(
             : "Nenhuma característica hereditária predominante",
         ),
       );
-      const aesthetics = summary.appearance
-        ? make(
-            "div",
-            undefined,
-            "evolutionary-end-section evolutionary-end-aesthetics",
-          )
-        : null;
-      if (aesthetics)
-        aesthetics.append(
-          make(
-            "strong",
-            "Mutações estéticas:",
-            "evolutionary-end-heading",
-          ),
-          make("div", summary.appearance),
-        );
-      content.append(
-        extinction,
-        lineages,
-        selection,
-        traits,
-        ...(aesthetics ? [aesthetics] : []),
-      );
+      content.append(extinction, lineages, selection, traits);
       $("game-over-title").textContent = `Vitória das ${OWNERS[winner]}`;
       $("game-over-body").replaceChildren(content);
     } else {
