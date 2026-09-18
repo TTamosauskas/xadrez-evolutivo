@@ -17,6 +17,7 @@ import {
   legalActions,
   canWaitForRest,
   canWaitForBirth,
+  dormant,
 } from "./moves.js";
 import {
   reproduce,
@@ -37,7 +38,17 @@ export function context(state) {
     reserved: new Set(),
     kill(id, reason, attacker = null) {
       const dead = state.pieces.find((p) => p.id === id);
-      if (!dead) return;
+      if (!dead) return false;
+      if (!attacker && has(dead, "Regeneração") && !dead.regenerationUsed) {
+        dead.regenerationUsed = true;
+        dead.regenerationRestThroughRound = round(state) + 1;
+        if (reason === "Veneno") delete dead.venom;
+        log(
+          state,
+          `${OWNERS[dead.owner]}: ♻️ Regeneração evitou a morte por ${reason}.`,
+        );
+        return false;
+      }
       state.pieces = state.pieces.filter((p) => p.id !== id);
       if (state.chain === id) state.chain = null;
       if (attacker) {
@@ -52,6 +63,7 @@ export function context(state) {
         reproduce(ctx, dead, null, "Ooteca", { immediateDevelopment: true });
       scatterSeeds(state, dead);
       log(state, `${OWNERS[dead.owner]} perderam uma peça por ${reason}.`);
+      return true;
     },
   };
   return ctx;
@@ -100,6 +112,46 @@ function moveDirection(p) {
     else if (p.r === 7) p.pawnDir = -1;
   }
 }
+
+function recordPhotosynthesis(state, owner) {
+  for (const p of state.pieces) {
+    if (p.owner !== owner || !has(p, "Fotossíntese")) continue;
+    const cell = square(p.r, p.c);
+    if (terrain(state, p.r, p.c) !== "neutral") {
+      delete p.photosynthesisCell;
+      delete p.photosynthesisSinceTurn;
+      continue;
+    }
+    if (p.photosynthesisCell !== cell) {
+      p.photosynthesisCell = cell;
+      p.photosynthesisSinceTurn = state.turn;
+    }
+  }
+}
+function maturePhotosynthesis(state, owner) {
+  for (const p of state.pieces) {
+    if (p.owner !== owner || !has(p, "Fotossíntese")) continue;
+    const cell = square(p.r, p.c);
+    if (terrain(state, p.r, p.c) !== "neutral") {
+      delete p.photosynthesisCell;
+      delete p.photosynthesisSinceTurn;
+      continue;
+    }
+    if (
+      p.photosynthesisCell === cell &&
+      Number.isInteger(p.photosynthesisSinceTurn) &&
+      state.turn - p.photosynthesisSinceTurn >= 2
+    ) {
+      state.board[cell] = "fertile";
+      delete p.photosynthesisCell;
+      delete p.photosynthesisSinceTurn;
+      log(
+        state,
+        `${OWNERS[p.owner]}: ☀️ Fotossíntese tornou ${coord(p.r, p.c)} fértil.`,
+      );
+    }
+  }
+}
 function advanceTurn(ctx) {
   const state = ctx.state,
     acting = state.current,
@@ -122,6 +174,7 @@ function advanceTurn(ctx) {
       delete p.decompositionImmunity;
   }
   if (extinction(state)) return;
+  recordPhotosynthesis(state, acting);
   state.turn++;
   state.current = other(acting);
   state.fertileTraces = state.fertileTraces.filter(
@@ -140,6 +193,7 @@ function advanceTurn(ctx) {
       if (
         terrain(state, p.r, p.c) === "hostile" &&
         !has(p, "Voo") &&
+        !dormant(state, p) &&
         !(
           p.decompositionImmunity &&
           p.decompositionImmunity.cell === square(p.r, p.c) &&
@@ -152,6 +206,7 @@ function advanceTurn(ctx) {
           ctx.kill(p.id, "casa hostil");
       }
   }
+  maturePhotosynthesis(state, state.current);
   if (!extinction(state)) checkPopulation(state);
 }
 function settle(ctx) {
