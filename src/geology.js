@@ -9,7 +9,7 @@ export const GEOLOGICAL_STAGES = [
     id: "archean",
     group: "Pré-Cambriano",
     period: "Arqueano",
-    required: ["Fotossíntese", "Fertilidade", "Dormência", "Predação"],
+    required: ["Fertilidade", "Dormência", "Fotossíntese", "Predação"],
     cycleRoundLimit: 40,
     habitat: { fertile: 52, hostile: 0, founderFertile: true },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2 },
@@ -19,11 +19,11 @@ export const GEOLOGICAL_STAGES = [
     group: "Pré-Cambriano",
     period: "Proterozoico",
     required: [
-      "Reprodução Sexuada",
-      "Regeneração",
       "Resistência",
-      "Carnívoro",
+      "Regeneração",
+      "Reprodução Sexuada",
       "Esporos",
+      "Carnívoro",
     ],
     cycleRoundLimit: 40,
     habitat: { fertile: 42, hostile: 2, founderFertile: true },
@@ -40,7 +40,7 @@ export const GEOLOGICAL_STAGES = [
     id: "ediacaran",
     group: "Pré-Cambriano",
     period: "Ediacarano",
-    required: ["Locomoção", "Construção de Nicho", "Necrófago"],
+    required: ["Locomoção", "Necrófago", "Construção de Nicho"],
     cycleRoundLimit: 40,
     habitat: { fertile: 30, hostile: 4, founderFertile: true },
     events: {
@@ -104,7 +104,7 @@ export const GEOLOGICAL_STAGES = [
     id: "carboniferous",
     group: "Paleozoico",
     period: "Carbonífero",
-    required: ["Voo", "Ovíparo", "Ooteca"],
+    required: ["Ovíparo", "Ooteca", "Voo"],
     habitat: { fertile: 14, hostile: 7, standard: true },
     events: {
       "abundant-rains": 4,
@@ -169,7 +169,7 @@ export const GEOLOGICAL_STAGES = [
     id: "neogene",
     group: "Cenozoico",
     period: "Neógeno",
-    required: ["Polegar Opositor", "Chifre", "Construtor Avançado"],
+    required: ["Chifre", "Construtor Avançado", "Polegar Opositor"],
     habitat: { fertile: 14, hostile: 7, standard: true },
     events: { drought: 3, desert: 3, earthquake: 2, ice: 1, "alluvial-river": 1 },
   },
@@ -220,14 +220,15 @@ export const TRAIT_STAGE = {
 };
 
 export const TRAIT_DEPENDENCIES = {
-  Carnívoro: { historical: ["Predação"] },
+  Carnívoro: { historical: ["Predação"], piece: ["Predação"] },
+  Locomoção: { historical: ["Predação"] },
   "Locomoção Avançada": { historical: ["Locomoção"] },
   Voo: { historical: ["Locomoção"] },
   "Cuidado Parental": { historical: ["Ovíparo"] },
   Vivíparo: { historical: ["Ovíparo"] },
   "Visão Noturna": { historical: ["Camuflagem"] },
   Ovífagia: { historical: ["Ovíparo"] },
-  Onívoro: { historical: ["Carnívoro"] },
+  Onívoro: { historical: ["Carnívoro"], piece: ["Carnívoro"] },
   "Polegar Opositor": { historical: ["Construção de Nicho"] },
   Chifre: { historical: ["Predação"] },
   "Construtor Avançado": {
@@ -287,6 +288,13 @@ export function traitUnlocked(state, trait, piece = null) {
   if (current.index < requiredStage.index) return false;
   const deps = TRAIT_DEPENDENCIES[trait],
     history = new Set(state.historicalTraits ?? []);
+  if (
+    current.id === requiredStage.id &&
+    current.required.includes(trait) &&
+    !history.has(trait) &&
+    current.required.find((candidate) => !history.has(candidate)) !== trait
+  )
+    return false;
   if (deps?.historical?.some((dependency) => !history.has(dependency)))
     return false;
   if (
@@ -304,25 +312,31 @@ export function rankMutationUnlocked(state) {
 
 export function captureUnlocked(state, piece = null) {
   if (!piece) return false;
-  return ["Predação", "Carnívoro", "Onívoro"].some((trait) =>
-    piece.traits?.includes(trait),
-  );
+  return piece.traits?.includes("Predação") ?? false;
 }
 
 export function pathogenUnlocked(state) {
   return currentGeologicalStage(state).index >= geologicalStage("proterozoic").index;
 }
 
-export function innovationWeight(state, trait) {
-  if (!currentGeologicalStage(state).required.includes(trait)) return 1;
-  if ((state.historicalTraits ?? []).includes(trait)) return 1;
-  const missing = missingInnovations(state),
-    cycle = Math.max(1, state.cycle ?? 1),
-    cycleBoost = Math.min(200, 3 * 3 ** (cycle - 1));
-  return Math.min(
-    240,
-    cycleBoost * (missing.length === 1 ? 1.5 : 1),
-  );
+export function innovationWeight(state, trait, piece = null) {
+  const stage = currentGeologicalStage(state),
+    history = new Set(state.historicalTraits ?? []);
+  let weight = 1;
+  if (stage.required.includes(trait) && !history.has(trait)) {
+    const missing = missingInnovations(state),
+      cycle = Math.max(1, state.cycle ?? 1),
+      cycleBoost = Math.min(200, 3 * 3 ** (cycle - 1));
+    weight = Math.min(240, cycleBoost * (missing.length === 1 ? 1.5 : 1));
+  }
+  const opposite =
+    trait === "Fotossíntese"
+      ? "Predação"
+      : trait === "Predação"
+        ? "Fotossíntese"
+        : null;
+  if (opposite && piece?.traits?.includes(opposite)) weight *= 0.2;
+  return weight;
 }
 
 export function eventWeights(state) {
