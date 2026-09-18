@@ -9,7 +9,11 @@ export const GEOLOGICAL_STAGES = [
     id: "archean",
     group: "Pré-Cambriano",
     period: "Arqueano",
-    required: ["Fertilidade", "Dormência", "Fotossíntese", "Predação"],
+    required: ["Fotossíntese", "Predação", "Fertilidade", "Dormência"],
+    cycles: [
+      ["Fotossíntese", "Predação"],
+      ["Fertilidade", "Dormência"],
+    ],
     cycleRoundLimit: 40,
     habitat: { fertile: 52, hostile: 0, founderFertile: true },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2 },
@@ -256,6 +260,16 @@ export function geologicalLabel(state) {
   return `${stage.group} · ${stage.period}`;
 }
 
+export function cycleRequiredInnovations(state) {
+  const stage = currentGeologicalStage(state);
+  if (!stage.cycles?.length) return [...stage.required];
+  const cycleIndex = Math.min(
+    Math.max(1, state.cycle ?? 1) - 1,
+    stage.cycles.length - 1,
+  );
+  return [...stage.cycles[cycleIndex]];
+}
+
 export function missingInnovations(state) {
   const stage = currentGeologicalStage(state),
     discovered = new Set(state.historicalTraits ?? []);
@@ -263,20 +277,28 @@ export function missingInnovations(state) {
 }
 
 export function stageProgress(state) {
-  const stage = currentGeologicalStage(state),
-    missing = missingInnovations(state);
-  return {
-    required: [...stage.required],
-    discovered: stage.required.filter((trait) =>
+  const required = cycleRequiredInnovations(state),
+    discovered = required.filter((trait) =>
       (state.historicalTraits ?? []).includes(trait),
     ),
+    missing = required.filter(
+      (trait) => !(state.historicalTraits ?? []).includes(trait),
+    );
+  return {
+    required,
+    discovered,
     missing,
     complete: missing.length === 0,
   };
 }
 
 export function stageComplete(state) {
-  return missingInnovations(state).length === 0;
+  const stage = currentGeologicalStage(state),
+    minimumCycle = stage.cycles?.length ?? 1;
+  return (
+    (state.cycle ?? 1) >= minimumCycle &&
+    missingInnovations(state).length === 0
+  );
 }
 
 export function traitUnlocked(state, trait, piece = null) {
@@ -291,10 +313,15 @@ export function traitUnlocked(state, trait, piece = null) {
   if (
     current.id === requiredStage.id &&
     current.required.includes(trait) &&
-    !history.has(trait) &&
-    current.required.find((candidate) => !history.has(candidate)) !== trait
-  )
-    return false;
+    !history.has(trait)
+  ) {
+    const activeRequired = cycleRequiredInnovations(state);
+    if (!activeRequired.includes(trait)) return false;
+    if (
+      activeRequired.find((candidate) => !history.has(candidate)) !== trait
+    )
+      return false;
+  }
   if (deps?.historical?.some((dependency) => !history.has(dependency)))
     return false;
   if (
@@ -321,10 +348,11 @@ export function pathogenUnlocked(state) {
 
 export function innovationWeight(state, trait, piece = null) {
   const stage = currentGeologicalStage(state),
-    history = new Set(state.historicalTraits ?? []);
+    history = new Set(state.historicalTraits ?? []),
+    activeRequired = cycleRequiredInnovations(state);
   let weight = 1;
-  if (stage.required.includes(trait) && !history.has(trait)) {
-    const missing = missingInnovations(state),
+  if (activeRequired.includes(trait) && !history.has(trait)) {
+    const missing = activeRequired.filter((candidate) => !history.has(candidate)),
       cycle = Math.max(1, state.cycle ?? 1),
       cycleBoost = Math.min(200, 3 * 3 ** (cycle - 1));
     weight = Math.min(240, cycleBoost * (missing.length === 1 ? 1.5 : 1));
