@@ -92,11 +92,13 @@ export function render(
       const p = at(state, r, c),
         target = targets.some((t) => t.r === r && t.c === c),
         partner = mates.some((m) => m.id === p?.id),
-        deathSite = state.deathSites.find((d) => d.cell === square(r, c));
+        deathSite = state.deathSites.find((d) => d.cell === square(r, c)),
+        fertileTrace = state.fertileTraces.some((t) => t.cell === square(r, c)),
+        decompositionMark = deathSite || fertileTrace;
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${deathSite ? " decomposition" : ""}${p ? " occupied" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${partner ? " partner" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${decompositionMark ? " decomposition" : ""}${p ? " occupied" : ""}${actor?.id === p?.id && p ? " selected" : ""}${target ? " legal" : ""}${partner ? " partner" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -109,7 +111,7 @@ export function render(
       const label = `${coord(r, c)}, ${terrain}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : ", vazia"}${target ? ", destino disponível" : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
-      if (deathSite)
+      if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
       if (p) {
         cell.append(make("span", SYMBOLS[p.owner][p.rank], `piece ${p.owner}`));
