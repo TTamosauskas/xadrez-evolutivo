@@ -1342,14 +1342,14 @@ test("Cuidado Parental protects adjacent eggs from Ovífagia", () => {
   assertState(s);
 });
 
-test("Construção de Nicho neutralizes a stable hostile landing after survival", () => {
+test("Construtor de Nicho neutralizes a stable hostile landing after survival", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 4,
       c: 3,
       rank: 3,
-      traits: ["Construção de Nicho", "Voo"],
+      traits: ["Construtor de Nicho", "Voo"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -1388,7 +1388,7 @@ test("Polegar Opositor offers adjacent transfer and preserves terrain type", () 
       r: 4,
       c: 3,
       rank: 3,
-      traits: ["Polegar Opositor", "Construção de Nicho", "Voo"],
+      traits: ["Polegar Opositor", "Construtor de Nicho", "Voo"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
