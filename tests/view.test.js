@@ -145,6 +145,37 @@ test("renders eggs and carried brood count", () => {
   dom.window.close();
 });
 
+test("renders dispersing Gymnosperm seeds on the board", () => {
+  const dom = setup(),
+    s = createState(29),
+    parent = s.pieces[0];
+  s.plantSeeds.push({
+    id: s.nextPlantSeed++,
+    owner: parent.owner,
+    r: 3,
+    c: 3,
+    parentId: parent.id,
+    movesRemaining: 2,
+    profile: {
+      owner: parent.owner,
+      rank: parent.rank,
+      traits: ["Fotossíntese", "Embriófitas", "Traqueófitas", "Gimnospermas"],
+      reproGenes: structuredClone(parent.reproGenes),
+      mutations: 4,
+      generation: 1,
+      parentId: parent.id,
+    },
+  });
+
+  render(dom.window.document, s);
+  const cell = dom.window.document.querySelector('[data-r="3"][data-c="3"]');
+  assert.ok(cell.classList.contains("plant-seed"));
+  assert.match(cell.textContent, /🌰/);
+  assert.match(cell.title, /semente das Brancas/);
+  assert.match(cell.title, /2 rodada/);
+  dom.window.close();
+});
+
 test("renders barriers, build targets and yellow niche-construction icon", () => {
   const dom = setup(),
     s = createState(25),
