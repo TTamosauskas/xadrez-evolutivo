@@ -548,14 +548,16 @@ function executeMove(ctx, action) {
     manipulation = null;
     const cell = square(target.r, target.c);
     markDecomposition(state, cell);
-    p.decompositionImmunity = {
-      cell,
-      throughTurn: state.turn + 3,
-    };
-    log(
-      state,
-      `${OWNERS[p.owner]}: imunidade à decomposição em ${coord(target.r, target.c)} pelos dois turnos seguintes.`,
-    );
+    if (terrain(state, target.r, target.c) === "hostile") {
+      p.decompositionImmunity = {
+        cell,
+        throughTurn: state.turn + 3,
+      };
+      log(
+        state,
+        `${OWNERS[p.owner]}: imunidade à decomposição em ${coord(target.r, target.c)} pelos dois turnos seguintes.`,
+      );
+    }
   }
   if (eggCapture) state.eggs = state.eggs.filter((x) => x.id !== egg.id);
   p.r = target.r;
