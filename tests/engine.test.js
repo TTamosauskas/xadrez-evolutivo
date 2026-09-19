@@ -526,6 +526,51 @@ test("Necrófago cannot consume the carcass created by its own capture immediate
   assert.equal(s.board[36], "hostile");
   assertState(s);
 });
+test("capture on fertile terrain preserves fertility while decomposition remains available", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3 },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  const attacker = s.pieces.find((piece) => piece.id === 1),
+    site = s.deathSites[0];
+  assert.equal(site.cell, 36);
+  assert.equal(site.base, "fertile");
+  assert.equal(site.dueRound, 3);
+  assert.equal(s.board[36], "fertile");
+  assert.equal(attacker.decompositionImmunity, undefined);
+
+  s.turn = 4;
+  tickEnvironment(context(s));
+  assert.equal(s.board[36], "fertile");
+  assert.equal(s.deathSites.length, 1);
+
+  s.turn = 6;
+  tickEnvironment(context(s));
+  assert.equal(s.board[36], "fertile");
+  assert.equal(s.deathSites.length, 0);
+  assert.equal(s.fertileTraces.length, 0);
+  assertState(s);
+});
+
+test("Necrófago consumes fertile decomposition without consuming the fertile terrain", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  s.deathSites.push({ cell: 36, dueRound: 3, base: "fertile" });
+
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
+  assert.equal(s.deathSites.length, 0);
+  assert.equal(s.board[36], "fertile");
+  assertState(s);
+});
+
 test("capture creates hostile decomposition, protects attacker and fertilizes after three rounds", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },

@@ -29,8 +29,13 @@ export function consumeDecomposition(state, cell) {
 }
 export function markDecomposition(state, cell) {
   const existing = deathSiteAt(state, cell),
-    trace = fertileTraceAt(state, cell);
-  const base = existing?.base ?? trace?.base ?? state.board[cell];
+    trace = fertileTraceAt(state, cell),
+    eventHazard = state.event?.hazards.includes(cell),
+    visibleTerrain = state.board[cell],
+    base =
+      !eventHazard && visibleTerrain === "fertile"
+        ? "fertile"
+        : existing?.base ?? trace?.base ?? visibleTerrain;
   const dueRound = round(state) + 3;
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
   if (existing) {
@@ -39,30 +44,32 @@ export function markDecomposition(state, cell) {
   } else {
     state.deathSites.push({ cell, dueRound, base });
   }
-  if (state.event?.hazards.includes(cell)) {
+  if (eventHazard) {
     if (!Object.hasOwn(state.event.snapshots, cell))
       state.event.snapshots[cell] = base;
   } else {
-    state.board[cell] = "hostile";
+    state.board[cell] = base === "fertile" ? "fertile" : "hostile";
   }
 }
 function tickDecomposition(state) {
   const now = round(state);
   for (const site of [...state.deathSites]) {
+    const eventHazard = state.event?.hazards.includes(site.cell),
+      preservedFertility = site.base === "fertile";
     if (now < site.dueRound) {
-      if (!state.event?.hazards.includes(site.cell))
-        state.board[site.cell] = "hostile";
+      if (!eventHazard)
+        state.board[site.cell] = preservedFertility ? "fertile" : "hostile";
       continue;
     }
-    if (state.event?.hazards.includes(site.cell))
-      state.event.snapshots[site.cell] = "fertile";
+    if (eventHazard) state.event.snapshots[site.cell] = "fertile";
     else state.board[site.cell] = "fertile";
     state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== site.cell);
-    state.fertileTraces.push({
-      cell: site.cell,
-      clearAfterTurn: state.turn,
-      base: site.base,
-    });
+    if (!preservedFertility)
+      state.fertileTraces.push({
+        cell: site.cell,
+        clearAfterTurn: state.turn,
+        base: site.base,
+      });
     state.deathSites = state.deathSites.filter((d) => d.cell !== site.cell);
   }
 }
@@ -160,8 +167,9 @@ export function advanceConway(ctx) {
     }
   }
   for (const site of state.deathSites) {
-    site.base = state.board[site.cell];
-    if (!event?.hazards.includes(site.cell)) state.board[site.cell] = "hostile";
+    if (site.base !== "fertile") site.base = state.board[site.cell];
+    if (!event?.hazards.includes(site.cell))
+      state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
   }
   if (event)
     for (const key of Object.keys(event.snapshots)) {
@@ -287,7 +295,8 @@ function endEvent(state) {
     state.board[Number(i)] = t;
   state.previousEvent = state.event.id;
   state.event = null;
-  for (const site of state.deathSites) state.board[site.cell] = "hostile";
+  for (const site of state.deathSites)
+    state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
 }
 export function startEvent(ctx, id = null) {
   const state = ctx.state;
