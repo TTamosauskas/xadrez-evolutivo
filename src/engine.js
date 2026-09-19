@@ -8,6 +8,7 @@ import {
   terrain,
   round,
   random,
+  pick,
   log,
   notice,
   assertState,
