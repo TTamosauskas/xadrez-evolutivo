@@ -1,4 +1,4 @@
-import { has, square, other, OWNERS, coord } from "./constants.js";
+import { has, inside, square, other, OWNERS, coord } from "./constants.js";
 import {
   activateOrigin,
   clone,
@@ -104,11 +104,34 @@ function moveDirection(p) {
   }
 }
 
+function photosynthesisHasSpace(state, p) {
+  let free = 0;
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = p.r + dr,
+        c = p.c + dc;
+      if (
+        inside(r, c) &&
+        !at(state, r, c) &&
+        !eggAt(state, r, c) &&
+        !state.barriers.includes(square(r, c))
+      ) {
+        free++;
+        if (free >= 2) return true;
+      }
+    }
+  return false;
+}
+
 function recordPhotosynthesis(state, owner) {
   for (const p of state.pieces) {
     if (p.owner !== owner || !has(p, "Fotossíntese")) continue;
     const cell = square(p.r, p.c);
-    if (terrain(state, p.r, p.c) !== "neutral") {
+    if (
+      terrain(state, p.r, p.c) !== "neutral" ||
+      !photosynthesisHasSpace(state, p)
+    ) {
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
       continue;
@@ -123,7 +146,10 @@ function maturePhotosynthesis(state, owner) {
   for (const p of state.pieces) {
     if (p.owner !== owner || !has(p, "Fotossíntese")) continue;
     const cell = square(p.r, p.c);
-    if (terrain(state, p.r, p.c) !== "neutral") {
+    if (
+      terrain(state, p.r, p.c) !== "neutral" ||
+      !photosynthesisHasSpace(state, p)
+    ) {
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
       continue;
