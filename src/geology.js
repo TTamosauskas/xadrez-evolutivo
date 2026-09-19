@@ -218,6 +218,7 @@ export const TRAIT_STAGE = {
   "Ovíparos Amniotas": "carboniferous",
   Ooteca: "carboniferous",
   "Cuidado Parental": "permian",
+  Ovovivíparo: "permian",
   Lactação: "triassic",
   Vivíparo: "triassic",
   "Sacos Aéreos": "triassic",
@@ -270,6 +271,10 @@ export const TRAIT_DEPENDENCIES = {
     historical: ["Ovíparo"],
     piece: ["Ovíparo"],
   },
+  Ovovivíparo: {
+    historical: ["Ovíparos Amniotas"],
+    piece: ["Ovíparos Amniotas"],
+  },
   "Cuidado Parental": { historical: ["Ovíparo"] },
   Lactação: {
     historical: ["Cuidado Parental"],
@@ -315,6 +320,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Necrófago",
   "Ovíparo",
   "Ovíparos Amniotas",
+  "Ovovivíparo",
   "Ovífagia",
   "Vivíparo",
   "Cuidado Parental",
@@ -342,12 +348,6 @@ export function traitCombinationValid(traits) {
   if (set.has("Locomoção") && !set.has("Predação")) return false;
   if (set.has("Respiração Cutânea") && !set.has("Locomoção")) return false;
   if (set.has("Sacos Aéreos") && !set.has("Locomoção")) return false;
-  if (
-    set.has("Ovíparos Amniotas") &&
-    !set.has("Ovíparo") &&
-    !set.has("Vivíparo")
-  )
-    return false;
   if (set.has("Carnívoro") && !set.has("Predação")) return false;
   if (set.has("Canibalismo") && !set.has("Carnívoro")) return false;
   if (set.has("Precocidade Sexual") && !set.has("Reprodução Sexuada"))
@@ -442,12 +442,6 @@ export function traitLossAllowed(piece, trait) {
   if (
     trait === "Locomoção" &&
     (traits.has("Respiração Cutânea") || traits.has("Sacos Aéreos"))
-  )
-    return false;
-  if (
-    trait === "Ovíparo" &&
-    traits.has("Ovíparos Amniotas") &&
-    !traits.has("Vivíparo")
   )
     return false;
   if (

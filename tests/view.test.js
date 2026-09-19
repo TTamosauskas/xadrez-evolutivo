@@ -194,6 +194,51 @@ test("renders eggs and carried brood count", () => {
   dom.window.close();
 });
 
+test("renders translucent targets for amniotic and ovoviviparous laying", () => {
+  const dom = setup(),
+    s = createState(71),
+    parent = s.pieces.find((piece) => piece.owner === "blue");
+
+  s.phase = "egg-placement";
+  s.eggPlacement = {
+    kind: "amniote",
+    parentId: parent.id,
+    owner: parent.owner,
+    origin: { r: parent.r, c: parent.c },
+    brood: [{}],
+    dispersal: "local",
+    continuation: null,
+  };
+  render(dom.window.document, s);
+  let d = dom.window.document;
+  assert.ok(d.querySelectorAll(".egg-placement-target").length > 0);
+  assert.ok(
+    [...d.querySelectorAll(".egg-preview")].every(
+      (preview) => preview.textContent === "🥚",
+    ),
+  );
+
+  s.phase = "move";
+  s.eggPlacement = null;
+  parent.pregnancies.push({
+    kind: "ovoviviparous",
+    dueRound: round(s),
+    readyLogged: true,
+    brood: [{}],
+    dispersal: "local",
+  });
+  render(dom.window.document, s, { selected: parent.id });
+  d = dom.window.document;
+  assert.ok(d.querySelectorAll(".ovoviviparous-target").length > 0);
+  assert.ok(
+    [...d.querySelectorAll(".egg-preview")].every(
+      (preview) => preview.textContent === "⚪",
+    ),
+  );
+  assert.match(d.getElementById("selected").textContent, /pronto para postura/);
+  dom.window.close();
+});
+
 test("renders dispersing Gymnosperm seeds on the board", () => {
   const dom = setup(),
     s = createState(29),

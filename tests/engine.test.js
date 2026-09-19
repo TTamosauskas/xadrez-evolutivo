@@ -1001,8 +1001,9 @@ test("only Ovífagia can capture an enemy egg and converts its brood into offspr
     c: 4,
     laidRound: 0,
     hatchRound: 3,
-    expireRound: 6,
+    expireRound: 3,
     mode: "amniote",
+    lifecycle: "fixed",
     brood: [structuredClone(profile), structuredClone(profile)],
     dispersal: "local",
   });
@@ -1315,8 +1316,9 @@ test("Cuidado Parental protects adjacent eggs from Ovífagia", () => {
     c: 4,
     laidRound: 0,
     hatchRound: 3,
-    expireRound: 6,
+    expireRound: 3,
     mode: "amniote",
+    lifecycle: "fixed",
     parentId: parent.id,
     brood: [
       {

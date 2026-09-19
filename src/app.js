@@ -7,6 +7,8 @@ import {
   manipulationTargets,
   constructionTargets,
   nursingTargets,
+  eggPlacementTargets,
+  ovoviviparousPlacementTargets,
 } from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
@@ -108,6 +110,15 @@ $("board").addEventListener("click", (event) => {
       dispatch({ type: "PARTNER", id: p.id });
     return;
   }
+  if (state.phase === "egg-placement") {
+    if (
+      eggPlacementTargets(state).some(
+        (target) => target.r === r && target.c === c,
+      )
+    )
+      dispatch({ type: "PLACE_EGG", r, c });
+    return;
+  }
   const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
   if (
     actor?.owner === state.current &&
@@ -115,6 +126,15 @@ $("board").addEventListener("click", (event) => {
     nursingTargets(state, actor).some((child) => child.id === p.id)
   ) {
     dispatch({ type: "NURSE", id: actor.id, childId: p.id });
+    return;
+  }
+  if (
+    actor?.owner === state.current &&
+    ovoviviparousPlacementTargets(state, actor).some(
+      (target) => target.r === r && target.c === c,
+    )
+  ) {
+    dispatch({ type: "LAY_OVOVIVIPAROUS", id: actor.id, r, c });
     return;
   }
   if (
@@ -477,12 +497,12 @@ $("rules").addEventListener("click", () =>
     "Mutações positivas entram no pool conforme o tempo geológico, o Ciclo ativo, uma micro-ordem interna e dependências específicas. A ordem só controla elegibilidade: cada inovação obrigatória precisa surgir ao menos uma vez para liberar a seguinte, sem receber peso estatístico maior. Enquanto a próxima inovação obrigatória ainda não apareceu, as anteriores daquela sequência não voltam a surgir como novas mutações, embora continuem sendo herdadas normalmente. No 1º Ciclo, os Reis fundadores ainda não geram Peões por mutação; Rei → Peão entra no pool a partir do 2º Ciclo da campanha. Depois, as formas derivadas avançam em sequência Peão → Cavalo → Bispo → Torre → Rainha quando as mutações de forma tardias são liberadas. Genes recessivos contam como descoberta quando o fenótipo é expresso.",
     "Mutações deletérias e perdas de características ficam fora do pool no 1º Ciclo da campanha e passam a poder ocorrer a partir do 2º Ciclo.",
     "Na reprodução sexuada, escolha um aliado adjacente fértil e reprodutivamente apto. Os descendentes combinam características dos dois progenitores e ambos entram no mesmo período de recuperação reprodutiva. As novas mutações dessa reprodução são positivas.",
-    "🪼 Ovíparo e 🔴 Vivíparo são variantes do mesmo locus de desenvolvimento; 🍄 Esporos é a especialização genética de dispersão. Cada peça carrega dois alelos por locus. Alelos dominantes se expressam com uma cópia; recessivos podem permanecer ocultos e reaparecer quando herdados em par. Na reprodução sexuada, cada descendente recebe um alelo de cada progenitor em cada locus.",
-    "🪼 Ovíparos depositam um ovo ⚪ móvel. O ovo se desloca uma casa por rodada em direção a terreno fértil, pode eclodir após três rodadas quando estiver numa casa fértil e se perde ao completar seis rodadas sem encontrar habitat adequado. 🦎 Ovíparos Amniotas surgem no Carbonífero: seus ovos ⚪ também vagam, mas deixam de depender de fertilidade e eclodem quando maduros em uma posição com espaço livre para a prole. 🔴 Vivíparos carregam a ninhada por três rodadas; se o progenitor morrer antes, a gestação é perdida. 🍄 Esporos espalham os descendentes em posições distantes. 🐍 Ovífagia permite capturar ovos inimigos; a ninhada consumida determina quantos descendentes o ovífago tenta gerar. 🐮 Lactação, disponível no Triássico após Cuidado Parental, permite gastar o turno para amadurecer imediatamente uma cria juvenil adjacente da própria peça; ao selecionar o progenitor, essas crias recebem uma borda verde.",
+    "O desenvolvimento reprodutivo ocupa um único locus: imediato, 🪼 Ovíparo, 🦎 Ovíparos Amniotas, 🦂 Ovovivíparo ou 🔴 Vivíparo. A peça expressa apenas uma dessas modalidades por vez, embora alelos recessivos possam permanecer ocultos. 🍄 Esporos continua no locus independente de dispersão. Na reprodução sexuada, cada descendente recebe um alelo de cada progenitor em cada locus.",
+    "🪼 Ovíparos depositam um ovo ⚪ móvel que busca terreno fértil; ele amadurece após três rodadas e se perde ao completar seis sem encontrar habitat adequado. 🦎 Ovíparos Amniotas surgem no Carbonífero: ao reproduzir, casas vazias a até três casas recebem indicação de postura; você escolhe onde colocar um 🥚, que eclode na rodada seguinte. 🦂 Ovovivíparos surgem opcionalmente no Permiano: carregam a prole por três rodadas; quando pronta, selecionar o progenitor mostra casas vazias adjacentes com ⚪ translúcidos, e a postura consome o turno e eclode na rodada seguinte. 🔴 Vivíparos carregam a ninhada por três rodadas e dão à luz diretamente. 🍄 Esporos espalham descendentes em posições distantes. 🐍 Ovífagia permite capturar ovos inimigos; a ninhada consumida determina quantos descendentes o ovífago tenta gerar. 🐮 Lactação amadurece uma cria juvenil adjacente ao custo da ação do turno.",
     "Fotossíntese torna fértil uma casa neutra após três rodadas completas de permanência, desde que existam pelo menos duas casas adjacentes desocupadas. 🟢 Fotossíntese e 🐟 Predação são caminhos evolutivos mutuamente excludentes no mesmo indivíduo, mas a mutação pode trocar de ramo: um descendente fotossintético que adquire Predação perde Fotossíntese; no sentido inverso, adquirir Fotossíntese remove Predação e especializações que exigem esse ramo. A campanha registra ambas como descobertas históricas. Dormência imobiliza a criatura em casa hostil e evita o risco ambiental durante a permanência. Regeneração evita uma morte causada pelo ambiente uma vez por vida e força descanso na rodada seguinte.",
-    "🐸 Respiração Cutânea surge opcionalmente no Devoniano após Locomoção. Uma criatura não fotossintética reprodutivamente apta pode permanecer onde está e consumir uma casa fértil ortogonalmente adjacente para reproduzir. Carnívoros puros não usam esse recurso; 🐻 Onívoro recupera essa possibilidade. 🦕 Sacos Aéreos surgem opcionalmente no Triássico após Locomoção Avançada e favorecem gigantismo: as mutações de forma Peão → Cavalo → Bispo → Torre → Rainha recebem peso três vezes maior, sem depender de Voo.",
+    "🐸 Respiração Cutânea surge opcionalmente no Devoniano após Locomoção. Uma criatura não fotossintética reprodutivamente apta pode permanecer onde está e consumir uma casa fértil ortogonalmente adjacente para reproduzir. Carnívoros puros não usam esse recurso; 🐻 Onívoro recupera essa possibilidade. 🦕 Sacos Aéreos surgem opcionalmente no Triássico após Locomoção Avançada e favorecem gigantismo: qualquer descendente que expresse Sacos Aéreos nasce no mínimo como Cavalo; a característica não depende de Voo.",
     "O ramo fotossintético desenvolve 🌱 Embriófitas no Ordoviciano, que acrescenta uma casa fértil adjacente vazia por ciclo de Fotossíntese; 🌿 Traqueófitas no Siluriano, que permite reproduzir consumindo uma casa fértil adjacente sem se deslocar; 🌵 Espinhos no Devoniano, com 25% de chance de matar o agressor; 🌲 Gimnospermas no Carbonífero, que transforma a prole em sementes móveis por três rodadas; e 🌸 Angiospermas no Cretáceo, que permite que a única casa fértil adicional seja uma casa neutra ocupada por aliado.",
-    "Linhagens com Fotossíntese não adquirem especializações animais como Locomoção, Locomoção Avançada, Respiração Cutânea, Sacos Aéreos, Carnívoro, Canibalismo, Onívoro, Necrófago, Ovíparo, Ovíparos Amniotas, Vivíparo, Ovulação Induzida, Ovífagia, Cuidado Parental, Lactação, Ooteca, Voo, Visão Noturna, Eusocialidade, Chifre, Polegar Opositor, Neocórtex Desenvolvido ou Construtor Avançado. Predação continua sendo uma mutação de troca de ramo: ao surgir, remove Fotossíntese e suas especializações vegetais. Fertilidade, Dormência, Resistência, Regeneração, Reprodução Sexuada, Precocidade Sexual, Esporos, Construção de Nicho, Carapaça, Camuflagem, Veneno, Coletor e mutações negativas continuam compatíveis com plantas.",
+    "Linhagens com Fotossíntese não adquirem especializações animais como Locomoção, Locomoção Avançada, Respiração Cutânea, Sacos Aéreos, Carnívoro, Canibalismo, Onívoro, Necrófago, Ovíparo, Ovíparos Amniotas, Ovovivíparo, Vivíparo, Ovulação Induzida, Ovífagia, Cuidado Parental, Lactação, Ooteca, Voo, Visão Noturna, Eusocialidade, Chifre, Polegar Opositor, Neocórtex Desenvolvido ou Construtor Avançado. Predação continua sendo uma mutação de troca de ramo: ao surgir, remove Fotossíntese e suas especializações vegetais. Fertilidade, Dormência, Resistência, Regeneração, Reprodução Sexuada, Precocidade Sexual, Esporos, Construção de Nicho, Carapaça, Camuflagem, Veneno, Coletor e mutações negativas continuam compatíveis com plantas.",
     "Cuidado Parental protege contra Ovífagia enquanto o progenitor estiver vivo e adjacente ao ovo. Visão Noturna permite capturar Camuflagem à distância. Eusocialidade recebe até +2 descendentes de trabalhadores estéreis aparentados e adjacentes.",
     "🫎 Chifre surge no Neógeno após a origem da Predação. Quando uma criatura com Chifre sofre uma tentativa de captura, há 20% de chance de o agressor morrer imediatamente e a captura falhar. 🐚 Carapaça no agressor neutraliza essa defesa.",
     "⬡ Construção de Nicho neutraliza uma casa hostil estável quando a criatura termina ali e sobrevive. 🦫 Construtor Avançado, liberado no Neógeno após Construção de Nicho, pode erguer uma barreira marrom adjacente depois de uma reprodução bem-sucedida que consumiu uma casa fértil. Barreiras bloqueiam o deslocamento: Voo pode atravessá-las sem destruí-las e Chifre as destrói ao atravessar. Polegar Opositor pode transferir o terreno fértil ou hostil de chegada para uma casa neutra adjacente; terrenos temporários de eventos, decomposição e barreiras não podem ser manipulados.",

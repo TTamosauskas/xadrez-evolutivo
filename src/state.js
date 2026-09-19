@@ -53,6 +53,9 @@ export const reproductionReady = (state, piece) =>
   !!piece &&
   !juvenile(state, piece) &&
   !(piece.traits ?? []).includes("Esterilidade") &&
+  !(piece.pregnancies ?? []).some(
+    (pregnancy) => pregnancy.kind === "ovoviviparous",
+  ) &&
   round(state) >= (piece.nextReproductionRound ?? 0);
 export function log(state, text) {
   state.logs.unshift({ turn: state.turn, text });
@@ -191,6 +194,7 @@ export function createState(seed = Date.now(), options = {}) {
     partner: null,
     manipulation: null,
     building: null,
+    eggPlacement: null,
     nextId: 1,
     nextNotice: 1,
     board: Array(64).fill("neutral"),
@@ -489,6 +493,17 @@ export function assertState(state) {
         !["neutral", "fertile", "hostile"].includes(d.base),
     ) ||
     new Set(state.deathSites.map((d) => d.cell)).size !== state.deathSites.length ||
+    !(
+      state.eggPlacement === null ||
+      (state.eggPlacement &&
+        state.eggPlacement.kind === "amniote" &&
+        integer(state.eggPlacement.parentId, 1) &&
+        ["blue", "amber"].includes(state.eggPlacement.owner) &&
+        inside(state.eggPlacement.origin?.r, state.eggPlacement.origin?.c) &&
+        Array.isArray(state.eggPlacement.brood) &&
+        state.eggPlacement.brood.length > 0 &&
+        ["local", "spores"].includes(state.eggPlacement.dispersal))
+    ) ||
     state.seen.some((s) => typeof s !== "string")
   )
     throw Error("Metadados inválidos.");
@@ -516,7 +531,17 @@ export function assertState(state) {
     !Number.isInteger(state.rng)
   )
     throw Error("Turno inválido.");
-  if (!["origin", "move", "partner", "manipulate", "build", "over"].includes(state.phase))
+  if (
+    ![
+      "origin",
+      "move",
+      "partner",
+      "manipulate",
+      "build",
+      "egg-placement",
+      "over",
+    ].includes(state.phase)
+  )
     throw Error("Fase inválida.");
   if (
     state.origin !== null &&
@@ -530,6 +555,11 @@ export function assertState(state) {
     (state.phase !== "origin" && state.origin)
   )
     throw Error("Fase de origem inválida.");
+  if (
+    (state.phase === "egg-placement" && !state.eggPlacement) ||
+    (state.phase !== "egg-placement" && state.eggPlacement)
+  )
+    throw Error("Fase de postura inválida.");
   if (!Array.isArray(state.pieces) || state.pieces.length > 64)
     throw Error("População inválida.");
   const ids = new Set(),
@@ -584,10 +614,11 @@ export function assertState(state) {
       !inside(egg.r, egg.c) ||
       cells.has(cell) ||
       !integer(egg.laidRound) ||
-      !integer(egg.hatchRound, egg.laidRound + 3) ||
+      !integer(egg.hatchRound, egg.laidRound + 1) ||
       !integer(egg.expireRound, egg.hatchRound) ||
-      egg.expireRound !== egg.laidRound + 6 ||
-      !["basal", "amniote"].includes(egg.mode) ||
+      !["basal", "amniote", "ovoviviparous"].includes(egg.mode) ||
+      (egg.mode === "basal" && egg.expireRound !== egg.laidRound + 6) ||
+      (egg.mode !== "basal" && egg.expireRound !== egg.hatchRound) ||
       (egg.parentId !== undefined && egg.parentId !== null && !integer(egg.parentId, 1)) ||
       !["local", "spores"].includes(egg.dispersal) ||
       !Array.isArray(egg.brood) ||
@@ -629,6 +660,9 @@ export function assertState(state) {
     for (const pregnancy of p.pregnancies)
       if (
         !integer(pregnancy.dueRound) ||
+        ![undefined, "viviparous", "ovoviviparous"].includes(pregnancy.kind) ||
+        (pregnancy.readyLogged !== undefined &&
+          typeof pregnancy.readyLogged !== "boolean") ||
         !["local", "spores"].includes(pregnancy.dispersal) ||
         !Array.isArray(pregnancy.brood) ||
         !pregnancy.brood.length ||

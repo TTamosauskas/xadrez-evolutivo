@@ -329,7 +329,7 @@ test("current saves drop obsolete Ovos history discoveries and alleles", () => {
   assertState(restored);
 });
 
-test("legacy eggs migrate to mobile amniotic eggs with a six-round lifespan", () => {
+test("legacy amniotic eggs migrate to fixed eggs that hatch next round", () => {
   const old = createState(92),
     parent = old.pieces[0];
   old.eggs.push({
@@ -356,9 +356,10 @@ test("legacy eggs migrate to mobile amniotic eggs with a six-round lifespan", ()
   const restored = deserialize(JSON.stringify(old)),
     egg = restored.eggs[0];
   assert.equal(egg.mode, "amniote");
-  assert.equal(egg.laidRound, 2);
-  assert.equal(egg.hatchRound, 5);
-  assert.equal(egg.expireRound, 8);
+  assert.equal(egg.lifecycle, "fixed");
+  assert.equal(egg.laidRound, 0);
+  assert.equal(egg.hatchRound, 1);
+  assert.equal(egg.expireRound, 1);
   assertState(restored);
 });
 

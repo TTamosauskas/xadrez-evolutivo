@@ -286,6 +286,11 @@ test("new life-history traits unlock in their intended optional periods", () => 
   p.traits = ["Predação", "Locomoção", "Ovíparo"];
   assert.equal(traitUnlocked(s, "Ovíparos Amniotas", p), true);
 
+  s.geologicalStage = "permian";
+  s.historicalTraits = historyBefore("permian");
+  p.traits = ["Ovíparos Amniotas"];
+  assert.equal(traitUnlocked(s, "Ovovivíparo", p), true);
+
   s.geologicalStage = "triassic";
   s.historicalTraits = historyBefore("triassic");
   p.traits = ["Predação", "Locomoção"];
@@ -305,6 +310,7 @@ test("new life-history traits unlock in their intended optional periods", () => 
           "Lactação",
           "Respiração Cutânea",
           "Sacos Aéreos",
+          "Ovovivíparo",
           "Ovulação Induzida",
         ].includes(trait),
       ),

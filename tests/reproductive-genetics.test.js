@@ -33,16 +33,25 @@ test("recessive reproductive allele hides in carrier and expresses in pair", () 
 
 test("reproductive loci express one development strategy and spore dispersal", () => {
   const piece = {
-    traits: ["Voo", "Ovíparo", "Vivíparo", "Esporos"],
+    traits: [
+      "Voo",
+      "Ovíparo",
+      "Ovíparos Amniotas",
+      "Ovovivíparo",
+      "Vivíparo",
+      "Esporos",
+    ],
     reproGenes: ancestralReproGenes(),
   };
   piece.reproGenes.development = [
-    dominant("oviparous"),
-    dominant("viviparous"),
+    dominant("amniotic"),
+    dominant("ovoviviparous"),
   ];
   piece.reproGenes.dispersal = [dominant("spores"), neutral("local")];
   syncReproTraits(piece);
-  assert.ok(piece.traits.includes("Ovíparo"));
+  assert.ok(!piece.traits.includes("Ovíparo"));
+  assert.ok(!piece.traits.includes("Ovíparos Amniotas"));
+  assert.ok(piece.traits.includes("Ovovivíparo"));
   assert.ok(!piece.traits.includes("Vivíparo"));
   assert.ok(piece.traits.includes("Esporos"));
   assert.ok(piece.traits.includes("Voo"));
@@ -98,4 +107,36 @@ test("obsolete eggs dispersal alleles migrate to local without erasing spores", 
   assert.ok(!piece.traits.includes("Ovos"));
   assert.ok(piece.traits.includes("Esporos"));
   assert.ok(validReproGenes(piece.reproGenes));
+});
+
+
+test("legacy amniotic phenotype migrates from oviparous genes into the development locus", () => {
+  const genes = ancestralReproGenes();
+  genes.development = [dominant("oviparous"), neutral("immediate")];
+  const piece = {
+    traits: ["Ovíparo", "Ovíparos Amniotas"],
+    reproGenes: genes,
+  };
+  syncReproTraits(piece);
+  assert.equal(reproPhenotype(piece.reproGenes).development, "amniotic");
+  assert.ok(piece.traits.includes("Ovíparos Amniotas"));
+  assert.ok(!piece.traits.includes("Ovíparo"));
+});
+
+test("derived development modes resolve as mutually exclusive phenotypes", () => {
+  const genes = ancestralReproGenes();
+  genes.development = [
+    dominant("amniotic"),
+    dominant("viviparous"),
+  ];
+  assert.deepEqual(reproPhenotype(genes), {
+    development: "viviparous",
+    dispersal: "local",
+    traits: ["Vivíparo"],
+  });
+  genes.development = [
+    dominant("amniotic"),
+    dominant("ovoviviparous"),
+  ];
+  assert.equal(reproPhenotype(genes).development, "ovoviviparous");
 });

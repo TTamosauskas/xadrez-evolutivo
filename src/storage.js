@@ -118,6 +118,14 @@ export function deserialize(raw) {
         piece.pregnancies = Array.isArray(piece.pregnancies)
           ? piece.pregnancies.map((pregnancy) => ({
               ...pregnancy,
+              kind:
+                pregnancy.kind === "ovoviviparous"
+                  ? "ovoviviparous"
+                  : "viviparous",
+              readyLogged:
+                pregnancy.kind === "ovoviviparous"
+                  ? !!pregnancy.readyLogged
+                  : undefined,
               dispersal:
                 pregnancy.dispersal === "spores" ? "spores" : "local",
               brood: (pregnancy.brood ?? []).map(normalizeProfile),
@@ -126,22 +134,51 @@ export function deserialize(raw) {
       }
     data.eggs = Array.isArray(data.eggs)
       ? data.eggs.map((egg) => {
-          const hatchRound = Number.isInteger(egg.hatchRound)
-              ? egg.hatchRound
-              : Math.floor((data.turn ?? 0) / 2) + 3,
-            laidRound = Number.isInteger(egg.laidRound)
-              ? egg.laidRound
-              : Math.max(0, hatchRound - 3);
-          return {
-            ...egg,
-            laidRound,
-            hatchRound,
-            expireRound: Number.isInteger(egg.expireRound)
-              ? egg.expireRound
-              : laidRound + 6,
-            mode: ["basal", "amniote"].includes(egg.mode)
+          const currentRound = Math.floor((data.turn ?? 0) / 2),
+            mode = ["basal", "amniote", "ovoviviparous"].includes(egg.mode)
               ? egg.mode
               : "amniote",
+            mobileBasal = mode === "basal",
+            lifecycle =
+              egg.lifecycle === "fixed" || egg.lifecycle === "mobile-basal"
+                ? egg.lifecycle
+                : mobileBasal
+                  ? "mobile-basal"
+                  : "fixed";
+          if (lifecycle === "mobile-basal") {
+            const hatchRound = Number.isInteger(egg.hatchRound)
+                ? egg.hatchRound
+                : currentRound + 3,
+              laidRound = Number.isInteger(egg.laidRound)
+                ? egg.laidRound
+                : Math.max(0, hatchRound - 3);
+            return {
+              ...egg,
+              mode: "basal",
+              lifecycle,
+              laidRound,
+              hatchRound,
+              expireRound: laidRound + 6,
+              dispersal: egg.dispersal === "spores" ? "spores" : "local",
+              brood: (egg.brood ?? []).map(normalizeProfile),
+            };
+          }
+          const alreadyFixed = egg.lifecycle === "fixed",
+            laidRound =
+              alreadyFixed && Number.isInteger(egg.laidRound)
+                ? egg.laidRound
+                : currentRound,
+            hatchRound =
+              alreadyFixed && Number.isInteger(egg.hatchRound)
+                ? Math.max(egg.hatchRound, laidRound + 1)
+                : currentRound + 1;
+          return {
+            ...egg,
+            mode: mode === "basal" ? "amniote" : mode,
+            lifecycle: "fixed",
+            laidRound,
+            hatchRound,
+            expireRound: hatchRound,
             dispersal: egg.dispersal === "spores" ? "spores" : "local",
             brood: (egg.brood ?? []).map(normalizeProfile),
           };
@@ -164,6 +201,14 @@ export function deserialize(raw) {
       : Math.max(0, ...data.plantSeeds.map((seed) => seed.id ?? 0)) + 1;
     if (data.manipulation === undefined) data.manipulation = null;
     if (data.building === undefined) data.building = null;
+    if (data.eggPlacement === undefined) data.eggPlacement = null;
+    if (data.eggPlacement) {
+      data.eggPlacement.brood = (data.eggPlacement.brood ?? []).map(
+        normalizeProfile,
+      );
+      data.eggPlacement.dispersal =
+        data.eggPlacement.dispersal === "spores" ? "spores" : "local";
+    }
     if (data.origin === undefined) data.origin = null;
     if (!Array.isArray(data.barriers)) data.barriers = [];
     data.seenMutations = historicalMutations(data, sourceVersion);

@@ -8,6 +8,8 @@ import {
   constructionTargets,
   dysfunctionalResting,
   nursingTargets,
+  eggPlacementTargets,
+  ovoviviparousPlacementTargets,
 } from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
@@ -45,6 +47,7 @@ export function render(
   const $ = (id) => doc.getElementById(id),
     make = (...args) => element(doc, ...args);
   const actorId =
+      state.eggPlacement?.parentId ??
       state.manipulation?.id ??
       state.building?.id ??
       state.partner?.id ??
@@ -63,7 +66,11 @@ export function render(
       : [];
   const manipulation = manipulationTargets(state),
     construction = constructionTargets(state),
-    nursing = actor ? nursingTargets(state, actor) : [];
+    nursing = actor ? nursingTargets(state, actor) : [],
+    eggPlacement = eggPlacementTargets(state),
+    ovoviviparousPlacement = actor
+      ? ovoviviparousPlacementTargets(state, actor)
+      : [];
   const mates =
     state.phase === "partner"
       ? partnersFor(
@@ -122,13 +129,19 @@ export function render(
         barrier = state.barriers.includes(square(r, c)),
         partner = mates.some((m) => m.id === p?.id),
         nurse = nursing.some((child) => child.id === p?.id),
+        eggPlacementTarget = eggPlacement.some(
+          (target) => target.r === r && target.c === c,
+        ),
+        ovoviviparousTarget = ovoviviparousPlacement.some(
+          (target) => target.r === r && target.c === c,
+        ),
         deathSite = state.deathSites.find((d) => d.cell === square(r, c)),
         fertileTrace = state.fertileTraces.some((t) => t.cell === square(r, c)),
         decompositionMark = deathSite || fertileTrace;
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -139,19 +152,28 @@ export function render(
         neutral: "casa neutra",
       }[state.board[square(r, c)]];
       const eggLabel = egg
-          ? `, ovo ${egg.mode === "amniote" ? "amniótico" : "aquático"} das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), maturação em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s), ${egg.mode === "amniote" ? "busca espaço livre" : "busca terreno fértil"}, expira em ${Math.max(0, egg.expireRound - currentRound)} rodada(s)`
+          ? egg.mode === "basal"
+            ? `, ovo aquático das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), maturação em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s), busca terreno fértil, expira em ${Math.max(0, egg.expireRound - currentRound)} rodada(s)`
+            : `, ovo ${egg.mode === "amniote" ? "amniótico" : "ovovivíparo"} das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s)`
           : "",
         plantSeedLabel = plantSeed
           ? `, semente das ${OWNERS[plantSeed.owner]}, ${plantSeed.movesRemaining} rodada(s) de dispersão restante(s)`
           : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${barrier ? ", barreira" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}`;
+          : `${coord(r, c)}, ${terrain}${barrier ? ", barreira" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
-      if (egg) cell.append(make("span", "⚪", "egg-mark"));
+      if (egg)
+        cell.append(
+          make("span", egg.mode === "amniote" ? "🥚" : "⚪", "egg-mark"),
+        );
+      if (eggPlacementTarget)
+        cell.append(make("span", "🥚", "egg-preview"));
+      if (ovoviviparousTarget)
+        cell.append(make("span", "⚪", "egg-preview"));
       if (plantSeed) cell.append(make("span", "🌰", "egg-mark"));
       if (originHere)
         cell.append(make("span", "♚", "piece origin-piece"));
@@ -170,11 +192,16 @@ export function render(
         if (p.infection) badges.push({ text: "🦠" });
         if (p.venom) badges.push({ text: "☠" });
         if (p.seeds) badges.push({ text: `${p.seeds}🌰` });
-        const carried = (p.pregnancies ?? []).reduce(
-          (sum, pregnancy) => sum + pregnancy.brood.length,
-          0,
-        );
-        if (carried) badges.unshift({ text: `+${carried}` });
+        const viviparousCarried = (p.pregnancies ?? [])
+            .filter((pregnancy) => pregnancy.kind !== "ovoviviparous")
+            .reduce((sum, pregnancy) => sum + pregnancy.brood.length, 0),
+          ovoviviparousCarried = (p.pregnancies ?? [])
+            .filter((pregnancy) => pregnancy.kind === "ovoviviparous")
+            .reduce((sum, pregnancy) => sum + pregnancy.brood.length, 0);
+        if (viviparousCarried)
+          badges.unshift({ text: `🔴+${viviparousCarried}` });
+        if (ovoviviparousCarried)
+          badges.unshift({ text: `⚪+${ovoviviparousCarried}` });
         const badgeRow = make("span", undefined, "badges");
         for (const badge of badges.slice(0, 5))
           badgeRow.append(
@@ -264,7 +291,11 @@ export function render(
       details.push(
         make(
           "p",
-          `🔴 +${pregnancy.brood.length} · nascimento em ${Math.max(0, pregnancy.dueRound - round(state))} rodada(s).`,
+          pregnancy.kind === "ovoviviparous"
+            ? pregnancy.dueRound <= currentRound
+              ? `⚪ +${pregnancy.brood.length} · pronto para postura adjacente.`
+              : `⚪ +${pregnancy.brood.length} · postura disponível em ${Math.max(0, pregnancy.dueRound - currentRound)} rodada(s).`
+            : `🔴 +${pregnancy.brood.length} · nascimento em ${Math.max(0, pregnancy.dueRound - currentRound)} rodada(s).`,
           "selected-status",
         ),
       );

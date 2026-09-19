@@ -23,12 +23,16 @@ import {
   manipulationTargets,
   constructionTargets,
   nursingTargets,
+  eggPlacementTargets,
+  ovoviviparousPlacementTargets,
 } from "./moves.js";
 import {
   reproduce,
   harvest,
   scatterSeeds,
   tickReproduction,
+  placePendingAmnioticEgg,
+  placeOvoviviparousEgg,
 } from "./reproduction.js";
 import { checkPopulation, tickDiseases, infect } from "./disease.js";
 import {
@@ -82,6 +86,7 @@ function finishGame(state, winner, reason) {
   state.partner = null;
   state.manipulation = null;
   state.building = null;
+  state.eggPlacement = null;
   log(state, reason);
 }
 function extinction(state) {
@@ -316,7 +321,8 @@ function settle(ctx) {
     extinction(state) ||
     state.phase === "partner" ||
     state.phase === "manipulate" ||
-    state.phase === "build"
+    state.phase === "build" ||
+    state.phase === "egg-placement"
   )
     return;
 
@@ -394,6 +400,27 @@ function finishMovement(
   completeMove(ctx, p, second, locomotion);
 }
 
+function deferEggPlacement(
+  state,
+  p,
+  { manipulation = null, second = false, locomotion = false, build = false } = {},
+) {
+  if (
+    state.phase !== "egg-placement" ||
+    !state.eggPlacement ||
+    state.eggPlacement.parentId !== p.id
+  )
+    return false;
+  state.eggPlacement.continuation = {
+    id: p.id,
+    manipulation,
+    second,
+    locomotion,
+    build,
+  };
+  state.chain = null;
+  return true;
+}
 function resolveManipulation(ctx, action) {
   const state = ctx.state,
     pending = state.manipulation,
@@ -469,6 +496,7 @@ function executeMove(ctx, action) {
         `${OWNERS[p.owner]}: 🐸 Respiração Cutânea consumiu ${coord(target.r, target.c)} à distância.`,
       );
     }
+    if (born && deferEggPlacement(state, p)) return;
     completeMove(ctx, p, false, false);
     return;
   }
@@ -481,7 +509,8 @@ function executeMove(ctx, action) {
       state,
       `${OWNERS[p.owner]}: 🌿 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
     );
-    reproduce(ctx, p, null, "Traqueófitas");
+    const born = reproduce(ctx, p, null, "Traqueófitas");
+    if (born && deferEggPlacement(state, p)) return;
     completeMove(ctx, p, false, false);
     return;
   }
@@ -710,6 +739,16 @@ function executeMove(ctx, action) {
   }
   const build =
     born > 0 && consumedFertile && has(p, "Construtor Avançado");
+  if (
+    born > 0 &&
+    deferEggPlacement(state, p, {
+      manipulation,
+      second,
+      locomotion,
+      build,
+    })
+  )
+    return;
   finishMovement(ctx, p, manipulation, second, locomotion, build);
 }
 function resolveNursing(ctx, action) {
@@ -740,6 +779,16 @@ function choosePartner(ctx, id) {
   const born = reproduce(ctx, p, mate, "reprodução sexuada");
   if (pending.collectorStay && born) p.seeds--;
   state.partner = null;
+  if (
+    born > 0 &&
+    deferEggPlacement(state, p, {
+      manipulation: pending.manipulation ?? null,
+      second: pending.second,
+      locomotion: pending.locomotion,
+      build: born > 0 && !!pending.buildEligible,
+    })
+  )
+    return;
   state.phase = "move";
   finishMovement(
     ctx,
@@ -749,6 +798,58 @@ function choosePartner(ctx, id) {
     pending.locomotion,
     born > 0 && !!pending.buildEligible,
   );
+}
+function resolveEggPlacement(ctx, action) {
+  const state = ctx.state,
+    pending = state.eggPlacement,
+    target = eggPlacementTargets(state).find(
+      (cell) => cell.r === action.r && cell.c === action.c,
+    );
+  if (!pending || !target)
+    throw Error("Escolha um local destacado para o ovo.");
+  const continuation = pending.continuation,
+    parent = state.pieces.find((piece) => piece.id === pending.parentId),
+    egg = placePendingAmnioticEgg(state, target.r, target.c);
+  if (!egg) throw Error("Postura amniótica indisponível.");
+  state.eggPlacement = null;
+  state.phase = "move";
+  log(
+    state,
+    `${OWNERS[egg.owner]}: 🥚 ovo amniótico depositado em ${coord(egg.r, egg.c)}; eclosão na próxima rodada.`,
+  );
+  if (parent && continuation)
+    finishMovement(
+      ctx,
+      parent,
+      continuation.manipulation ?? null,
+      continuation.second ?? false,
+      continuation.locomotion ?? false,
+      continuation.build ?? false,
+    );
+  else {
+    advanceTurn(ctx);
+    settle(ctx);
+  }
+}
+
+function resolveOvoviviparousLaying(ctx, action) {
+  const state = ctx.state,
+    parent = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    ),
+    target = ovoviviparousPlacementTargets(state, parent).find(
+      (cell) => cell.r === action.r && cell.c === action.c,
+    );
+  if (!parent || !target)
+    throw Error("Escolha uma casa vazia adjacente para a postura.");
+  const egg = placeOvoviviparousEgg(state, parent, target.r, target.c);
+  if (!egg) throw Error("A prole ovovivípara ainda não está pronta.");
+  log(
+    state,
+    `${OWNERS[parent.owner]}: ⚪ ovo ovovivíparo depositado em ${coord(egg.r, egg.c)}; eclosão na próxima rodada.`,
+  );
+  advanceTurn(ctx);
+  settle(ctx);
 }
 const TERRAIN_LOG_LABEL = {
   neutral: "neutra",
@@ -825,8 +926,18 @@ export function transition(previous, action) {
     executeMove(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
     resolveNursing(ctx, action);
+  else if (
+    action.type === "LAY_OVOVIVIPAROUS" &&
+    state.phase === "move"
+  )
+    resolveOvoviviparousLaying(ctx, action);
   else if (action.type === "PARTNER" && state.phase === "partner")
     choosePartner(ctx, action.id);
+  else if (
+    action.type === "PLACE_EGG" &&
+    state.phase === "egg-placement"
+  )
+    resolveEggPlacement(ctx, action);
   else if (
     ["MANIPULATE", "SKIP_MANIPULATION"].includes(action.type) &&
     state.phase === "manipulate"

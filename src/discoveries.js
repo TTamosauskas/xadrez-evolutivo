@@ -80,6 +80,7 @@ const mutationTopics = {
   "Respiração Cutânea": ["Respiração cutânea", "Respiração cutânea realiza trocas gasosas através da pele e é importante em vários grupos animais, especialmente anfíbios."],
   "Ovíparo": ["Oviparidade", "Oviparidade é uma estratégia reprodutiva em que o desenvolvimento embrionário ocorre em ovos postos no ambiente."],
   "Ovíparos Amniotas": ["Ovo amniótico", "O ovo amniótico reúne membranas extraembrionárias que reduziram a dependência reprodutiva de ambientes aquáticos em amniotas."],
+  "Ovovivíparo": ["Ovoviviparidade", "Na ovoviviparidade, os ovos ficam retidos no corpo do progenitor durante parte ou todo o desenvolvimento embrionário antes da postura ou liberação."],
   "Ooteca": ["Ooteca", "Ootecas são estruturas que envolvem e protegem conjuntos de ovos em alguns grupos de animais."],
   "Voo": ["Voo animal", "Voo ativo permite deslocamento tridimensional e evoluiu independentemente em diferentes linhagens animais."],
   "Cuidado Parental": ["Cuidado parental", "Cuidado parental inclui comportamentos que aumentam a sobrevivência ou o desenvolvimento da prole."],

@@ -1,14 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture, move } from "./helpers.js";
-import { context, simulate } from "../src/engine.js";
-import { movesFor } from "../src/moves.js";
+import { context, simulate, transition } from "../src/engine.js";
 import {
-  formMutationWeight,
+  eggPlacementTargets,
+  movesFor,
+  ovoviviparousPlacementTargets,
+} from "../src/moves.js";
+import {
+  applyAirSacRankFloor,
   reproduce,
   tickReproduction,
 } from "../src/reproduction.js";
-import { assertState } from "../src/state.js";
+import { assertState, round } from "../src/state.js";
 import { square } from "../src/constants.js";
 
 test("basal oviparous eggs move toward fertile terrain and hatch there after three rounds", () => {
@@ -28,7 +32,10 @@ test("basal oviparous eggs move toward fertile terrain and hatch there after thr
   s.turn = 2;
   tickReproduction(ctx);
   assert.equal(s.eggs.length, 1);
-  assert.equal(Math.max(Math.abs(egg.r - target.r), Math.abs(egg.c - target.c)), 1);
+  assert.equal(
+    Math.max(Math.abs(egg.r - target.r), Math.abs(egg.c - target.c)),
+    1,
+  );
 
   s.turn = 4;
   tickReproduction(ctx);
@@ -43,29 +50,49 @@ test("basal oviparous eggs move toward fertile terrain and hatch there after thr
   assertState(s);
 });
 
-test("amniotic oviparous eggs hatch on neutral terrain without fertility", () => {
-  const s = fixture([
-      {
-        owner: "blue",
-        r: 4,
-        c: 4,
-        rank: 5,
-        traits: ["Ovíparo", "Ovíparos Amniotas"],
-      },
-      { owner: "amber", r: 0, c: 0 },
-    ]),
-    ctx = context(s),
-    parent = s.pieces[0];
+test("amniotic oviparity lets the player place a brood egg up to three cells away", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Ovíparo", "Ovíparos Amniotas"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parent = s.pieces[0];
   s.board.fill("neutral");
-  assert.equal(reproduce(ctx, parent, null, "teste", { forcedCount: 1 }), 1);
-  assert.equal(s.eggs[0].mode, "amniote");
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
+    1,
+  );
+  assert.equal(s.phase, "egg-placement");
+  assert.equal(s.eggs.length, 0);
+  const target = eggPlacementTargets(s).find(
+    (cell) => cell.r === parent.r && cell.c === parent.c + 3,
+  );
+  assert.ok(target);
 
-  for (const turn of [2, 4, 6]) {
-    s.turn = turn;
-    tickReproduction(ctx);
-  }
+  s = transition(s, { type: "PLACE_EGG", r: target.r, c: target.c });
+  assert.equal(s.phase, "move");
+  assert.equal(s.eggs.length, 1);
+  assert.equal(s.eggs[0].mode, "amniote");
+  assert.deepEqual([s.eggs[0].r, s.eggs[0].c], [target.r, target.c]);
+  assert.equal(s.eggs[0].hatchRound, round(s) + 1);
+
+  s = simulate(s, { type: "PASS" });
   assert.equal(s.eggs.length, 0);
   assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 2);
+  assert.ok(
+    s.pieces.some(
+      (piece) =>
+        piece.owner === "blue" &&
+        piece.id !== parent.id &&
+        piece.r === target.r &&
+        piece.c === target.c,
+    ),
+  );
   assertState(s);
 });
 
@@ -86,6 +113,58 @@ test("basal eggs expire after six rounds when no fertile habitat exists", () => 
   assert.equal(s.eggs.length, 0);
   assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 1);
   assert.ok(s.logs.some((entry) => entry.text.includes("não encontrou habitat")));
+  assertState(s);
+});
+
+test("Ovovivíparo carries its brood for three rounds before adjacent laying", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Ovíparos Amniotas", "Ovovivíparo"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parentId = s.pieces[0].id;
+  assert.equal(
+    reproduce(context(s), s.pieces[0], null, "teste", { forcedCount: 1 }),
+    1,
+  );
+  let parent = s.pieces.find((piece) => piece.id === parentId);
+  assert.equal(parent.pregnancies.length, 1);
+  assert.equal(parent.pregnancies[0].kind, "ovoviviparous");
+  assert.equal(parent.pregnancies[0].dueRound, 3);
+  assert.equal(ovoviviparousPlacementTargets(s, parent).length, 0);
+
+  s.turn = 6;
+  tickReproduction(context(s));
+  parent = s.pieces.find((piece) => piece.id === parentId);
+  const target = ovoviviparousPlacementTargets(s, parent)[0];
+  assert.ok(target);
+
+  s = transition(s, {
+    type: "LAY_OVOVIVIPAROUS",
+    id: parentId,
+    r: target.r,
+    c: target.c,
+  });
+  assert.equal(s.eggs.length, 1);
+  assert.equal(s.eggs[0].mode, "ovoviviparous");
+  assert.equal(s.pieces.find((piece) => piece.id === parentId).pregnancies.length, 0);
+
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.eggs.length, 0);
+  assert.ok(
+    s.pieces.some(
+      (piece) =>
+        piece.owner === "blue" &&
+        piece.id !== parentId &&
+        piece.r === target.r &&
+        piece.c === target.c,
+    ),
+  );
   assertState(s);
 });
 
@@ -140,7 +219,12 @@ test("pure carnivores cannot use Respiração Cutânea until Onívoro restores f
   assert.ok(movesFor(s, parent).some((target) => target.cutaneous));
 });
 
-test("Sacos Aéreos triples only the forward form-mutation weight", () => {
-  assert.equal(formMutationWeight({ traits: [] }), 1);
-  assert.equal(formMutationWeight({ traits: ["Sacos Aéreos"] }), 3);
+test("Sacos Aéreos impose Knight as the minimum expressed offspring rank", () => {
+  const giant = { rank: 0, traits: ["Sacos Aéreos"] },
+    ordinary = { rank: 0, traits: [] };
+  assert.equal(applyAirSacRankFloor(giant).rank, 1);
+  assert.equal(applyAirSacRankFloor(ordinary).rank, 0);
+
+  const lostTrait = { rank: 0, traits: [] };
+  assert.equal(applyAirSacRankFloor(lostTrait).rank, 0);
 });
