@@ -88,6 +88,9 @@ export function newPiece(state, owner, r, c, source = {}) {
     c,
     rank: source.rank ?? 0,
     traits: [...(source.traits ?? [])],
+    ancestry: [
+      ...new Set([...(source.ancestry ?? []), ...(source.traits ?? [])]),
+    ],
     reproGenes: cloneReproGenes(
       source.reproGenes ?? normalizeReproGenes(null, source.traits ?? []),
     ),
@@ -428,9 +431,8 @@ export function activateOrigin(state) {
   return true;
 }
 export function signature(p) {
-  return `${p.rank}|${[...p.traits].sort().join("|")}|${reproGeneSignature(
-    p.reproGenes,
-  )}`;
+  const ancestry = [...(p.ancestry ?? p.traits ?? [])].sort().join("|");
+  return `${p.rank}|${[...p.traits].sort().join("|")}|${ancestry}|${reproGeneSignature(p.reproGenes)}`;
 }
 export function dominantLineage(state, owner = null, predicate = null) {
   const pieces = state.pieces.filter(
@@ -457,20 +459,15 @@ export function dominantLineage(state, owner = null, predicate = null) {
 }
 function founderProfile(previous, piece) {
   if (!piece) return null;
-  const excluded = new Set(["Esterilidade", "Mutação Deletéria"]),
-    founder = {
-      rank: piece.rank,
-      traits: piece.traits.filter((trait) => !excluded.has(trait)),
-      reproGenes: cloneReproGenes(piece.reproGenes),
-    };
-  if (
-    previous.historicalTraits.includes("Locomoção") &&
-    founder.traits.includes("Predação") &&
-    !founder.traits.includes("Locomoção") &&
-    !founder.traits.includes("Locomoção Avançada")
-  )
-    founder.traits.push("Locomoção");
-  return founder;
+  const excluded = new Set(["Esterilidade", "Mutação Deletéria"]);
+  return {
+    rank: piece.rank,
+    traits: piece.traits.filter((trait) => !excluded.has(trait)),
+    ancestry: [
+      ...new Set([...(piece.ancestry ?? piece.traits ?? []), ...piece.traits]),
+    ],
+    reproGenes: cloneReproGenes(piece.reproGenes),
+  };
 }
 
 export function createSuccessorState(previous, seed = Date.now()) {
@@ -553,6 +550,10 @@ export function assertState(state) {
       integer(profile.rank, 0, 5) &&
       Array.isArray(profile.traits) &&
       profile.traits.every((t) => TRAITS[t]) &&
+      (profile.ancestry === undefined ||
+        (Array.isArray(profile.ancestry) &&
+          profile.ancestry.every((t) => TRAITS[t]) &&
+          new Set(profile.ancestry).size === profile.ancestry.length)) &&
       validReproGenes(profile.reproGenes) &&
       integer(profile.mutations) &&
       integer(profile.generation);
@@ -698,6 +699,9 @@ export function assertState(state) {
       p.rank > 5 ||
       !Array.isArray(p.traits) ||
       p.traits.some((t) => !TRAITS[t]) ||
+      !Array.isArray(p.ancestry) ||
+      p.ancestry.some((t) => !TRAITS[t]) ||
+      new Set(p.ancestry).size !== p.ancestry.length ||
       !validReproGenes(p.reproGenes) ||
       !Array.isArray(p.pregnancies)
     )
