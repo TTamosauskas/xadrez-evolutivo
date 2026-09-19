@@ -469,6 +469,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
   assert.equal(traitUnlocked(s, "Angiospermas", plant), true);
   for (const trait of [
     "Locomoção",
+    "Escalador",
     "Respiração Cutânea",
     "Sacos Aéreos",
     "Necrófago",
@@ -499,6 +500,7 @@ test("switching into Fotossíntese removes animal-only traits", () => {
   const animal = [
     "Predação",
     "Locomoção",
+    "Escalador",
     "Carnívoro",
     "Onívoro",
     "Necrófago",
