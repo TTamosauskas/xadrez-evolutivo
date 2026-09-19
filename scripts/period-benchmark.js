@@ -16,13 +16,14 @@ const stageIndex = (id) => geologicalStage(id).index,
   available = (trait, stage) =>
     stageIndex(TRAIT_STAGE[trait] ?? "archean") <= stage.index;
 
-function plantTraits(stage) {
+function plantTraits(stage, game) {
   return [
     "Fotossíntese",
     ...(available("Embriófitas", stage) ? ["Embriófitas"] : []),
     ...(available("Traqueófitas", stage) ? ["Traqueófitas"] : []),
     ...(available("Espinhos", stage) ? ["Espinhos"] : []),
     ...(available("Gimnospermas", stage) ? ["Gimnospermas"] : []),
+    ...(available("Trepadeira", stage) && game % 2 === 0 ? ["Trepadeira"] : []),
     ...(available("Angiospermas", stage) ? ["Angiospermas"] : []),
   ];
 }
@@ -234,13 +235,13 @@ for (const stage of GEOLOGICAL_STAGES) {
         historicalTraits: [
           ...new Set([
             ...historyThrough(stage),
-            ...plantTraits(stage),
+            ...plantTraits(stage, game),
             ...traits,
           ]),
         ],
         canonicalPair: true,
         founders: {
-          blue: { rank: 0, traits: plantTraits(stage) },
+          blue: { rank: 0, traits: plantTraits(stage, game) },
           amber: { rank: 0, traits },
         },
       }),
