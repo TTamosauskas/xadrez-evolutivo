@@ -22,7 +22,8 @@ jobs:
       - run: npm test
       - run: npm run simulate
         env:
-          GAMES: 50
+          GAMES: 20
+      - run: node tests/period-benchmark.js
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
