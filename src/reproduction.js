@@ -170,13 +170,14 @@ function mutation(state, p, positiveOnly) {
     label = `Perda de ${choice.loss}`;
   }
   p.mutations++;
-  if (!state.seenMutations.includes(label)) {
+  const firstAppearance = !state.seenMutations.includes(label);
+  if (firstAppearance) {
     state.seenMutations.push(label);
     notice(state, "Novas mutações", [label]);
-  }
+    log(state, `🧬 Nova mutação: ${OWNERS[p.owner]} · ${label}.`);
+  } else log(state, `${OWNERS[p.owner]}: ${label}.`);
   const discoveryId = mutationDiscoveryId(label);
   if (discoveryId) recordDiscovery(state, "mutations", discoveryId);
-  log(state, `${OWNERS[p.owner]}: ${label}.`);
 }
 
 function sexualProfile(state, a, b) {
