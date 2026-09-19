@@ -467,7 +467,7 @@ function resolveBuilding(ctx, action) {
     state.barriers.push(cell);
     log(
       state,
-      `${OWNERS[p.owner]}: 🦫 barreira construída em ${coord(target.r, target.c)}.`,
+      `${OWNERS[p.owner]}: 🧔 barreira construída em ${coord(target.r, target.c)}.`,
     );
   }
   state.building = null;
@@ -534,19 +534,25 @@ function executeMove(ctx, action) {
       ? { origin: landingCell, terrain: landingTerrain }
       : null;
   harvest(state, p, p.r, p.c);
-  if (has(p, "Chifre")) {
+  if (has(p, "Escavador")) {
     const destroyed = [];
     for (const [r, c] of target.path) {
-      const cell = square(r, c);
-      if (state.barriers.includes(cell)) {
+      const cell = square(r, c),
+        built = state.barriers.includes(cell),
+        natural = state.naturalBarriers.includes(cell);
+      if (!built && !natural) continue;
+      if (built)
         state.barriers = state.barriers.filter((barrier) => barrier !== cell);
-        destroyed.push(coord(r, c));
-      }
+      if (natural)
+        state.naturalBarriers = state.naturalBarriers.filter(
+          (barrier) => barrier !== cell,
+        );
+      destroyed.push(coord(r, c));
     }
     if (destroyed.length)
       log(
         state,
-        `${OWNERS[p.owner]}: 🫎 Chifre destruiu barreira(s) em ${destroyed.join(", ")}.`,
+        `${OWNERS[p.owner]}: 🦡 Escavador perfurou barreira(s) em ${destroyed.join(", ")}.`,
       );
   }
   for (const [r, c] of target.path)
@@ -649,12 +655,12 @@ function executeMove(ctx, action) {
     !pieceCapture &&
     stableLanding &&
     landingTerrain === "hostile" &&
-    has(p, "Construção de Nicho")
+    has(p, "Construtor de Nicho")
   ) {
     state.board[cell] = "neutral";
     log(
       state,
-      `${OWNERS[p.owner]}: ⬡ Construção de Nicho neutralizou ${coord(p.r, p.c)}.`,
+      `${OWNERS[p.owner]}: 🦫 Construtor de Nicho neutralizou ${coord(p.r, p.c)}.`,
     );
   }
   const scavenging =
