@@ -409,7 +409,8 @@ function fertileCells(state) {
   const cells = [];
   for (let r = 0; r < 8; r++)
     for (let c = 0; c < 8; c++)
-      if (terrain(state, r, c) === "fertile") cells.push({ r, c });
+      if (terrain(state, r, c) === "fertile" && !occupied(state, r, c))
+        cells.push({ r, c });
   return cells;
 }
 
