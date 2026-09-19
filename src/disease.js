@@ -53,7 +53,9 @@ export function startDisease(
   return disease;
 }
 export function populationPathogenChance(gap) {
-  return Math.min(0.45, 0.05 + Math.max(0, gap) * 0.04);
+  return Number(
+    Math.min(0.45, 0.05 + Math.max(0, gap) * 0.04).toFixed(2),
+  );
 }
 
 export function checkPopulation(state) {
