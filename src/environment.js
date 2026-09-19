@@ -821,7 +821,7 @@ function conwayPath(state, start, goal) {
         const edits =
             (state.board[next] === "hostile" ? 1 : 0) +
             (naturalBarrierAt(state, rr, cc) ? 1 : 0),
-          candidate = score[current] + 1 + edits * 100;
+          candidate = score[current] + 100 + edits;
         if (
           candidate < score[next] ||
           (candidate === score[next] &&
