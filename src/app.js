@@ -6,6 +6,7 @@ import {
   partnersFor,
   manipulationTargets,
   constructionTargets,
+  nursingTargets,
 } from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
@@ -108,6 +109,14 @@ $("board").addEventListener("click", (event) => {
     return;
   }
   const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
+  if (
+    actor?.owner === state.current &&
+    p &&
+    nursingTargets(state, actor).some((child) => child.id === p.id)
+  ) {
+    dispatch({ type: "NURSE", id: actor.id, childId: p.id });
+    return;
+  }
   if (
     actor?.owner === state.current &&
     movesFor(state, actor).some((t) => t.r === r && t.c === c)
