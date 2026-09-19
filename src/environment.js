@@ -419,10 +419,9 @@ export function startEvent(ctx, id = null) {
       break;
     }
   }
-  notice(state, "Evento ecológico", [
-    event.name,
+  notice(state, `${event.icon} ${event.name}`, [
+    "Evento ecológico",
     event.description,
-    "Duração: dez rodadas completas.",
   ]);
   log(state, `🌿 Evento ecológico: ${event.name} — ${event.description}`);
 }
