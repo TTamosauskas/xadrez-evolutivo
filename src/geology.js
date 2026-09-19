@@ -363,7 +363,6 @@ export function normalizeEnergyBranch(traits, preferred = null) {
   }
   if (!set.has("Reprodução Sexuada")) set.delete("Precocidade Sexual");
   if (!set.has("Cuidado Parental")) set.delete("Lactação");
-  if (!set.has("Vivíparo")) set.delete("Ovulação Induzida");
   return [...set];
 }
 
