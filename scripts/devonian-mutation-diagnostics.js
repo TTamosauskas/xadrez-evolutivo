@@ -25,6 +25,13 @@ import { square } from "../src/constants.js";
 
 const stage = geologicalStage("devonian"),
   gamesPerScenario = Number(process.env.DEVONIAN_GAMES ?? 16),
+  startGame = Number(process.env.DEVONIAN_START_GAME ?? 1),
+  requestedScenarios = new Set(
+    (process.env.DEVONIAN_SCENARIOS ?? "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  ),
   limit = Number(process.env.DEVONIAN_LIMIT ?? 1200),
   tailRounds = Number(process.env.DEVONIAN_TAIL ?? 100);
 
@@ -155,6 +162,11 @@ const SCENARIOS = [
     id: "parasitism",
     label: "Com Parasitismo",
     animal: (traits) => add(traits, "Parasitismo"),
+  },
+  {
+    id: "venom",
+    label: "Com Veneno",
+    animal: (traits) => add(traits, "Veneno"),
   },
   {
     id: "collector_omnivore",
@@ -628,10 +640,13 @@ function microMechanismTests() {
 microMechanismTests();
 
 const results = [];
-for (const scenario of SCENARIOS) {
+for (const scenario of SCENARIOS.filter(
+  (entry) => !requestedScenarios.size || requestedScenarios.has(entry.id),
+)) {
   const runs = [];
-  for (let game = 1; game <= gamesPerScenario; game++) {
-    const seed = 70000 + game,
+  for (let offset = 0; offset < gamesPerScenario; offset++) {
+    const game = startGame + offset,
+      seed = 70000 + game,
       initial = buildInitial(seed, game, scenario);
     runs.push(runGame(initial, seed));
   }
@@ -674,6 +689,7 @@ console.log(
   JSON.stringify(
     {
       gamesPerScenario,
+      startGame,
       limit,
       tailRounds,
       baseline,
