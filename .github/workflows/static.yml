@@ -26,7 +26,7 @@ jobs:
       - name: Diagnose Devonian mutation interactions
         run: node scripts/devonian-mutation-diagnostics.js
         env:
-          DEVONIAN_GAMES: 16
+          DEVONIAN_GAMES: 8
           DEVONIAN_LIMIT: 1200
           DEVONIAN_TAIL: 100
       - run: npm run build
