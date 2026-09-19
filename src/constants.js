@@ -13,7 +13,7 @@ export const TRAITS = {
     "Permite uma segunda movimentação no mesmo turno.",
   ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
-  Predação: ["👅", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
+  Predação: ["🐟", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
   Carnívoro: [
     "🦁",
     "Especialização de uma linhagem com Predação: reproduz ao eliminar uma peça e deixa de usar casas férteis.",
@@ -30,8 +30,7 @@ export const TRAITS = {
     "🐺",
     "Reproduz consumindo uma casa marcada com ☠️, vermelha ou verde.",
   ],
-  Ovos: ["🦎", "Descendentes podem nascer a até duas casas do progenitor."],
-  Ovíparo: ["🥚", "A reprodução deposita um ovo que eclode após três rodadas."],
+  Ovíparo: ["🦎", "A reprodução deposita um ovo 🥚 que eclode após três rodadas."],
   Ovífagia: ["🦎", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
   Esporos: ["🍄", "Espalha a prole em casas distantes pelo tabuleiro."],
   Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],

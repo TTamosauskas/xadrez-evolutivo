@@ -209,6 +209,31 @@ export function deserialize(raw) {
     if (!Number.isInteger(data.totalCycles) || data.totalCycles < data.cycle)
       data.totalCycles = data.cycle;
     if (!Array.isArray(data.historicalTraits)) data.historicalTraits = [];
+    data.historicalTraits = [
+      ...new Set(data.historicalTraits.filter((trait) => TRAITS[trait])),
+    ];
+    if (data.discoveries) {
+      data.discoveries.mutations = (data.discoveries.mutations ?? []).filter(
+        (id) => id !== "Ovos",
+      );
+      data.discoveries.read = (data.discoveries.read ?? []).filter(
+        (key) => key !== "mutations:Ovos",
+      );
+    }
+    data.notices = (data.notices ?? [])
+      .map((entry) =>
+        entry?.title === "Novas mutações"
+          ? {
+              ...entry,
+              lines: (entry.lines ?? []).filter(
+                (label) => label !== "Ovos" && label !== "Perda de Ovos",
+              ),
+            }
+          : entry,
+      )
+      .filter(
+        (entry) => entry?.title !== "Novas mutações" || entry.lines.length,
+      );
     if (!Number.isInteger(data.generationOffset) || data.generationOffset < 0)
       data.generationOffset = 0;
     if (!Number.isInteger(data.nextHabitatGeneration)) {

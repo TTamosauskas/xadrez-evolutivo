@@ -31,21 +31,20 @@ test("recessive reproductive allele hides in carrier and expresses in pair", () 
   assert.equal(reproPhenotype(genes).development, "oviparous");
 });
 
-test("mutually exclusive loci express one development and one dispersal strategy", () => {
+test("reproductive loci express one development strategy and spore dispersal", () => {
   const piece = {
-    traits: ["Voo", "Ovíparo", "Vivíparo", "Ovos", "Esporos"],
+    traits: ["Voo", "Ovíparo", "Vivíparo", "Esporos"],
     reproGenes: ancestralReproGenes(),
   };
   piece.reproGenes.development = [
     dominant("oviparous"),
     dominant("viviparous"),
   ];
-  piece.reproGenes.dispersal = [dominant("eggs"), dominant("spores")];
+  piece.reproGenes.dispersal = [dominant("spores"), neutral("local")];
   syncReproTraits(piece);
   assert.ok(piece.traits.includes("Ovíparo"));
   assert.ok(!piece.traits.includes("Vivíparo"));
   assert.ok(piece.traits.includes("Esporos"));
-  assert.ok(!piece.traits.includes("Ovos"));
   assert.ok(piece.traits.includes("Voo"));
 });
 
@@ -68,8 +67,8 @@ test("sexual inheritance receives one allele from each parent per locus", () => 
     b = ancestralReproGenes();
   a.development = [dominant("oviparous"), recessive("viviparous")];
   b.development = [recessive("oviparous"), dominant("viviparous")];
-  a.dispersal = [dominant("eggs"), recessive("spores")];
-  b.dispersal = [recessive("eggs"), dominant("spores")];
+  a.dispersal = [dominant("spores"), neutral("local")];
+  b.dispersal = [neutral("local"), dominant("spores")];
   const sequence = [0.1, 0.9, 0.1, 0.9];
   let i = 0;
   const child = inheritSexualReproGenes(a, b, () => sequence[i++]);
@@ -78,7 +77,25 @@ test("sexual inheritance receives one allele from each parent per locus", () => 
     dominant("viviparous"),
   ]);
   assert.deepEqual(child.dispersal, [
-    dominant("eggs"),
+    dominant("spores"),
     dominant("spores"),
   ]);
+});
+
+
+test("obsolete eggs dispersal alleles migrate to local without erasing spores", () => {
+  const genes = ancestralReproGenes();
+  genes.dispersal = [
+    { value: "eggs", dominance: "dominant" },
+    dominant("spores"),
+  ];
+  const piece = { traits: ["Ovos", "Esporos"], reproGenes: genes };
+  syncReproTraits(piece);
+  assert.deepEqual(piece.reproGenes.dispersal, [
+    neutral("local"),
+    dominant("spores"),
+  ]);
+  assert.ok(!piece.traits.includes("Ovos"));
+  assert.ok(piece.traits.includes("Esporos"));
+  assert.ok(validReproGenes(piece.reproGenes));
 });

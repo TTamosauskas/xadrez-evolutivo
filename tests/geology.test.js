@@ -62,7 +62,7 @@ test("period innovations follow the didactic sequence", () => {
     "Necrófago",
     "Construção de Nicho",
   ]);
-  assert.deepEqual(required.ordovician, ["Ovos"]);
+  assert.deepEqual(required.ordovician, []);
   assert.deepEqual(required.silurian, ["Coletor"]);
   assert.deepEqual(required.devonian, ["Locomoção Avançada", "Onívoro"]);
   assert.deepEqual(required.carboniferous, ["Ovíparo", "Ooteca", "Voo"]);
@@ -465,7 +465,6 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
   for (const trait of [
     "Locomoção",
     "Necrófago",
-    "Ovos",
     "Ovíparo",
     "Vivíparo",
     "Voo",

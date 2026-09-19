@@ -260,7 +260,7 @@ function freeCells(ctx, origin, dispersal) {
           cells.push({ r, c });
     return cells;
   }
-  const range = dispersal === "eggs" ? 2 : 1;
+  const range = 1;
   for (let dr = -range; dr <= range; dr++)
     for (let dc = -range; dc <= range; dc++) {
       if (!dr && !dc) continue;
@@ -420,12 +420,7 @@ export function reproduce(
       : plant
         ? "immediate"
         : phenotype.development,
-    dispersal =
-      plant && phenotype.dispersal === "eggs"
-        ? "local"
-        : gymnosperm
-          ? "local"
-          : phenotype.dispersal,
+    dispersal = gymnosperm ? "local" : phenotype.dispersal,
     wanted =
       options.forcedCount ??
       BIRTH_RATES[profile.rank] * (has(profile, "Fertilidade") ? 2 : 1) +

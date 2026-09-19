@@ -74,7 +74,6 @@ const mutationTopics = {
   "Carapaça": ["Carapaça", "Carapaças e estruturas rígidas externas podem oferecer suporte e proteção contra agressões e condições ambientais."],
   "Camuflagem": ["Camuflagem", "Camuflagem reduz a detectabilidade de um organismo por semelhança visual ou outros mecanismos de ocultação."],
   "Veneno": ["Veneno", "Venenos são substâncias tóxicas produzidas por organismos e podem atuar em defesa, competição ou captura de presas."],
-  "Ovos": ["Ovo (biologia)", "O ovo reúne estruturas associadas ao desenvolvimento inicial de um novo organismo e pode favorecer dispersão e proteção do embrião."],
   "Coletor": ["Forrageamento", "Forrageamento reúne comportamentos de busca, obtenção e transporte de recursos necessários à sobrevivência e reprodução."],
   "Locomoção Avançada": ["Locomoção animal", "Formas mais eficientes de locomoção ampliam alcance, velocidade e acesso a recursos e parceiros."],
   "Onívoro": ["Onivoria", "Onivoria combina alimentos de diferentes níveis tróficos e pode ampliar a flexibilidade alimentar."],
