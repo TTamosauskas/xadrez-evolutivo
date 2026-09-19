@@ -70,9 +70,11 @@ function addNaturalBarriers(state, count, near = []) {
   const [, stageMax = 0] = habitatProfile(state).naturalBarriers ?? [0, 0],
     hardMax = Math.min(8, stageMax + 2),
     added = [];
+  let attempts = 0;
   while (
     added.length < count &&
-    state.naturalBarriers.length < hardMax
+    state.naturalBarriers.length < hardMax &&
+    attempts++ < 128
   ) {
     const occupied = new Set([
         ...state.barriers,
@@ -220,7 +222,14 @@ function seedCluster(state, type) {
           [r + dr, c],
           [r, c + dc],
         ];
-        if (cells.every(([rr, cc]) => inside(rr, cc) && !at(state, rr, cc)))
+        if (
+          cells.every(
+            ([rr, cc]) =>
+              inside(rr, cc) &&
+              !at(state, rr, cc) &&
+              !barrierAt(state, rr, cc),
+          )
+        )
           candidates.push(cells.map(([rr, cc]) => square(rr, cc)));
       }
   const score = (cells) =>
@@ -288,7 +297,8 @@ export function advanceConway(ctx) {
               (dr || dc) &&
               inside(r, c) &&
               state.board[square(r, c)] === "neutral" &&
-              !at(state, r, c)
+              !at(state, r, c) &&
+              !barrierAt(state, r, c)
             )
               options.push([i, square(r, c)]);
           }
@@ -345,7 +355,9 @@ function addFertile(state, count) {
   for (let n = 0; n < count; n++) {
     const empty = allCells().filter(
       (i) =>
-        state.board[i] === "neutral" && !at(state, Math.floor(i / 8), i % 8),
+        state.board[i] === "neutral" &&
+        !at(state, Math.floor(i / 8), i % 8) &&
+        !barrierAt(state, Math.floor(i / 8), i % 8),
     );
     if (!empty.length) break;
     const adjacent = empty.filter((i) =>
@@ -553,7 +565,8 @@ export function startEvent(ctx, id = null) {
       const wet = quadrant(Math.floor(random(state) * 4)),
         removed = removeNaturalBarriers(state, wet, 1);
       recordBarrierChange(event, [], removed);
-      for (const i of wet) state.board[i] = "fertile";
+      for (const i of wet)
+        if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
       break;
     }
     case "insularization": {
@@ -584,7 +597,8 @@ export function startEvent(ctx, id = null) {
         ),
         removed = removeNaturalBarriers(state, river, 2);
       recordBarrierChange(event, [], removed);
-      for (const i of river) state.board[i] = "fertile";
+      for (const i of river)
+        if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
       break;
     }
   }
