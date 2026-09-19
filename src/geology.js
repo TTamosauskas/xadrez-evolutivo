@@ -14,7 +14,7 @@ export const GEOLOGICAL_STAGES = [
       ["Fotossíntese", "Predação"],
       ["Fertilidade", "Dormência"],
     ],
-    habitat: { fertile: 52, hostile: 0, founderFertile: true, naturalBarriers: [0, 1] },
+    habitat: { fertile: [48, 56], hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "primordial" },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2, grb: 1 },
   },
   {
@@ -28,7 +28,7 @@ export const GEOLOGICAL_STAGES = [
       "Esporos",
       "Carnívoro",
     ],
-    habitat: { fertile: 42, hostile: 2, founderFertile: true, naturalBarriers: [0, 2] },
+    habitat: { fertile: 42, hostile: [2, 4], hostileCap: 12, founderFertile: true, naturalBarriers: [0, 1], pattern: "primordial-conway" },
     events: {
       fertilized: 3,
       volcano: 2,
@@ -44,7 +44,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Pré-Cambriano",
     period: "Ediacarano",
     required: ["Locomoção", "Escavador", "Construtor de Nicho"],
-    habitat: { fertile: 30, hostile: 4, founderFertile: true, naturalBarriers: [1, 2] },
+    habitat: { fertile: 30, hostile: 4, founderFertile: true, naturalBarriers: [1, 2], pattern: "mosaic" },
     events: {
       abundance: 3,
       fertilized: 3,
@@ -59,7 +59,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Cambriano",
     required: ["Carapaça", "Camuflagem", "Veneno"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3] },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3], pattern: "mosaic" },
     events: {
       sea: 3,
       abundance: 3,
@@ -73,7 +73,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Ordoviciano",
     required: ["Ovíparo"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3] },
+    habitat: { fertile: 12, hostile: 12, standard: true, naturalBarriers: [1, 3], pattern: "islands" },
     events: { ice: 4, grb: 3, sea: 3, blockade: 1, earthquake: 1 },
   },
   {
@@ -81,7 +81,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Siluriano",
     required: ["Coletor"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3] },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3], pattern: "mosaic" },
     events: {
       "alluvial-river": 3,
       "abundant-rains": 3,
@@ -95,7 +95,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Devoniano",
     required: ["Locomoção Avançada", "Onívoro"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 3] },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 3], pattern: "corridors" },
     events: {
       "alluvial-river": 3,
       abundance: 2,
@@ -110,7 +110,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Carbonífero",
     required: ["Ovíparos Amniotas", "Ooteca", "Voo"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
+    habitat: { fertile: 18, hostile: 5, standard: true, naturalBarriers: [3, 6], pattern: "forest" },
     events: {
       "abundant-rains": 4,
       abundance: 3,
@@ -124,7 +124,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Permiano",
     required: ["Cuidado Parental"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 5] },
+    habitat: { fertile: 10, hostile: 12, standard: true, naturalBarriers: [3, 5], pattern: "arid" },
     events: { volcano: 5, warming: 2, drought: 4, desert: 4, blockade: 2, earthquake: 1 },
   },
   {
@@ -132,7 +132,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Mesozoico",
     period: "Triássico",
     required: ["Vivíparo"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
+    habitat: { fertile: 12, hostile: 5, standard: true, naturalBarriers: [1, 2], pattern: "open" },
     events: { drought: 3, desert: 3, volcano: 2, warming: 2, insularization: 2, sea: 1 },
   },
   {
@@ -140,7 +140,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Mesozoico",
     period: "Jurássico",
     required: ["Visão Noturna"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
+    habitat: { fertile: 18, hostile: 5, standard: true, naturalBarriers: [3, 5], pattern: "dense" },
     events: {
       sea: 3,
       insularization: 3,
@@ -156,7 +156,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Mesozoico",
     period: "Cretáceo",
     required: ["Eusocialidade", "Ovífagia"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
+    habitat: { fertile: 18, hostile: 6, standard: true, naturalBarriers: [2, 4], pattern: "clusters" },
     events: { sea: 3, abundance: 2, insularization: 2, meteor: 3, volcano: 1, warming: 2 },
   },
   {
@@ -164,7 +164,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Cenozoico",
     period: "Paleógeno",
     required: [],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 5] },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 5], pattern: "mosaic" },
     events: {
       earthquake: 2,
       "alluvial-river": 2,
@@ -179,7 +179,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Cenozoico",
     period: "Neógeno",
     required: ["Chifre", "Polegar Opositor"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [4, 6] },
+    habitat: { fertile: 12, hostile: 8, standard: true, naturalBarriers: [4, 6], pattern: "fragmented" },
     events: { drought: 3, desert: 3, earthquake: 2, ice: 1, warming: 2, "alluvial-river": 1 },
   },
   {
@@ -187,7 +187,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Cenozoico",
     period: "Quaternário",
     required: ["Neocórtex Desenvolvido", "Antropização"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 6] },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4], pattern: "balanced" },
     events: { ice: 5, warming: 4, drought: 3, desert: 3, earthquake: 2, meteor: 1 },
   },
 ].map((stage, index) => ({ ...stage, index }));
