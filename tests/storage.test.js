@@ -22,6 +22,31 @@ test("round trip saves deterministic state and rejects duplicate occupancy", () 
   bad.pieces[1].c = bad.pieces[0].c;
   assert.throws(() => deserialize(JSON.stringify(bad)), /Ocupação/);
 });
+test("plant seeds survive save round trip", () => {
+  const s = createState(30),
+    parent = s.pieces[0];
+  s.plantSeeds.push({
+    id: s.nextPlantSeed++,
+    owner: parent.owner,
+    r: 3,
+    c: 3,
+    parentId: parent.id,
+    movesRemaining: 2,
+    profile: {
+      owner: parent.owner,
+      rank: parent.rank,
+      traits: ["Fotossíntese", "Embriófitas", "Traqueófitas", "Gimnospermas"],
+      reproGenes: structuredClone(parent.reproGenes),
+      mutations: 4,
+      generation: 1,
+      parentId: parent.id,
+    },
+  });
+  s.maxGenerationReached = 1;
+  assertState(s);
+  assert.deepEqual(deserialize(JSON.stringify(s)), s);
+});
+
 test("loading a save discards obsolete Marco Evolutivo notices", () => {
   const s = createState(18);
   s.notices.push({
