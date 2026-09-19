@@ -1,4 +1,4 @@
-import { transition } from "./engine.js";
+import { transition, mutuallyBlocked } from "./engine.js";
 import { assertState, clone } from "./state.js";
 import { has } from "./constants.js";
 import { fallbackAction } from "./ai.js";
@@ -17,6 +17,7 @@ export class Controller {
       setTimer = (...args) => setTimeout(...args),
       clearTimer = (id) => clearTimeout(id),
       timeout = 2000,
+      conwayDelay = 700,
     } = {},
   ) {
     this.state = assertState(state);
@@ -26,11 +27,13 @@ export class Controller {
     this.setTimer = setTimer;
     this.clearTimer = clearTimer;
     this.timeout = timeout;
+    this.conwayDelay = conwayDelay;
     this.mode = "multi";
     this.difficulty = "medium";
     this.paused = false;
     this.generation = 0;
     this.job = null;
+    this.conwayTimer = null;
     this.neocortexPending = null;
     this.neocortexWindow = null;
     this.neocortexLock = null;
@@ -42,10 +45,42 @@ export class Controller {
       this.job.worker?.terminate();
       this.job = null;
     }
+    if (this.conwayTimer !== null) {
+      this.clearTimer(this.conwayTimer);
+      this.conwayTimer = null;
+    }
   }
   refresh() {
-    this.render(this.state, !!this.job);
-    this.schedule();
+    this.render(this.state, !!this.job || this.conwayTimer !== null);
+    if (!this.scheduleConway()) this.schedule();
+  }
+
+  scheduleConway() {
+    if (
+      this.conwayTimer !== null ||
+      this.job ||
+      this.conwayTimer !== null ||
+      this.paused ||
+      this.state.result ||
+      this.state.notices.length ||
+      !mutuallyBlocked(this.state)
+    )
+      return this.conwayTimer !== null;
+
+    const token = this.generation,
+      revision = this.state.revision;
+    this.conwayTimer = this.setTimer(() => {
+      if (
+        this.paused ||
+        this.generation !== token ||
+        this.state.revision !== revision
+      )
+        return;
+      this.conwayTimer = null;
+      this.dispatch({ type: "CONWAY_STEP", revision }, { ai: true });
+    }, this.conwayDelay);
+    this.render(this.state, true);
+    return true;
   }
   replace(state) {
     assertState(state);
@@ -89,6 +124,7 @@ export class Controller {
   dispatch(action, { ai = false } = {}) {
     if (
       this.paused ||
+      (!ai && this.conwayTimer !== null) ||
       (!ai &&
         this.mode === "single" &&
         this.state.current === "amber" &&
@@ -131,7 +167,10 @@ export class Controller {
 
       const next = transition(this.state, action);
       if (next === this.state) return false;
+      const pendingConway = this.conwayTimer;
+      this.conwayTimer = null;
       this.cancel();
+      if (pendingConway !== null) this.clearTimer(pendingConway);
       this.state = next;
 
       if (this.neocortexPending) {
