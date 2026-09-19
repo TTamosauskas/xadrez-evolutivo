@@ -272,6 +272,51 @@ function habitatSelection(state, candidates, count, pattern, type) {
   return shuffle(state, candidates).slice(0, limited);
 }
 
+function seedStandardHabitat(state, profile, founderCells) {
+  const empty = shuffle(
+    state,
+    Array.from({ length: 64 }, (_, i) => i).filter(
+      (i) => !founderCells.has(i) && !state.naturalBarriers.includes(i),
+    ),
+  );
+  for (const i of empty.slice(0, profile.fertile)) state.board[i] = "fertile";
+  const safe = new Set([3, 4, 11, 12, 51, 52, 59, 60]);
+  for (const i of empty
+    .filter((i) => !safe.has(i) && state.board[i] === "neutral")
+    .slice(0, profile.hostile))
+    state.board[i] = "hostile";
+  for (const c of [3, 4]) {
+    for (let r = 1; r <= 6; r++)
+      if (terrain(state, r, c) === "fertile")
+        state.board[square(r, c)] = "neutral";
+    for (const rows of [
+      [1, 2, 3],
+      [4, 5, 6],
+    ]) {
+      const candidates = rows.filter(
+        (r) =>
+          terrain(state, r, c) === "neutral" &&
+          !naturalBarrierAt(state, r, c),
+      );
+      const fallback = rows.filter(
+        (r) => !naturalBarrierAt(state, r, c),
+      );
+      const chosen = pick(
+        state,
+        candidates.length ? candidates : fallback,
+      );
+      if (chosen !== null) state.board[square(chosen, c)] = "fertile";
+    }
+  }
+  const mobileFounder = state.pieces.some(
+    (piece) =>
+      piece.traits.includes("Locomoção") ||
+      piece.traits.includes("Locomoção Avançada"),
+  );
+  if (!mobileFounder)
+    for (const cell of founderCells) state.board[cell] = "fertile";
+}
+
 function seedHabitat(state) {
   const profile = habitatProfile(state),
     pattern = profile.pattern ?? "mosaic";
@@ -279,8 +324,15 @@ function seedHabitat(state) {
   const founderCells = new Set([
       ...state.pieces.map((p) => square(p.r, p.c)),
       ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
-    ]),
-    mobileFounder = state.pieces.some(
+    ]);
+  if (
+    profile.standard &&
+    (pattern === "mosaic" || pattern === "balanced")
+  ) {
+    seedStandardHabitat(state, profile, founderCells);
+    return;
+  }
+  const mobileFounder = state.pieces.some(
       (piece) =>
         piece.traits.includes("Locomoção") ||
         piece.traits.includes("Locomoção Avançada"),
