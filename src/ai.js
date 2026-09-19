@@ -85,7 +85,8 @@ function priority(state, a) {
       ? 10 +
         victim.rank * 2 +
         (has(victim, "Fotossíntese") ? 8 : 0) +
-        (targetTerrain === "fertile" ? 4 : 0)
+        (targetTerrain === "fertile" ? 4 : 0) +
+        (enemies.length <= 2 ? 30 : 0)
       : 0,
     cannibalValue = alliedVictim
       ? ownPopulation > 12
@@ -135,7 +136,7 @@ function evaluate(state, owner) {
     eggs = state.eggs.reduce(
       (n, egg) =>
         n +
-        (egg.owner === owner ? 1 : -1) * (4 + Math.min(4, egg.brood.length)),
+        (egg.owner === owner ? 1 : -1) * (1 + Math.min(2, egg.brood.length)),
       0,
     );
   const population = {

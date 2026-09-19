@@ -13,6 +13,8 @@ import {
   log,
   notice,
   assertState,
+  fertilityPaused,
+  photosynthesisDelayTurns,
 } from "./state.js";
 import {
   movesFor,
@@ -47,9 +49,9 @@ import {
   advanceConway,
   severeEventActive,
   tickSevereEventTurn,
-  startEvent,
-  startSevereEvent,
   tickEnvironment,
+  checkPopulationClimate,
+  repairConwayStagnation,
 } from "./environment.js";
 export function context(state) {
   const ctx = {
@@ -100,14 +102,8 @@ function finishGame(state, winner, reason) {
   log(state, reason);
 }
 function extinction(state) {
-  const blue =
-      state.pieces.some((p) => p.owner === "blue") ||
-      state.eggs.some((egg) => egg.owner === "blue") ||
-      state.plantSeeds.some((seed) => seed.owner === "blue"),
-    amber =
-      state.pieces.some((p) => p.owner === "amber") ||
-      state.eggs.some((egg) => egg.owner === "amber") ||
-      state.plantSeeds.some((seed) => seed.owner === "amber");
+  const blue = state.pieces.some((p) => p.owner === "blue"),
+    amber = state.pieces.some((p) => p.owner === "amber");
   if (!blue || !amber) {
     finishGame(
       state,
@@ -192,9 +188,11 @@ function maturePhotosynthesis(state, owner) {
   for (const p of state.pieces) {
     if (p.owner !== owner || !has(p, "Fotossíntese")) continue;
     const cell = square(p.r, p.c);
+    const delay = photosynthesisDelayTurns(state);
     if (
       terrain(state, p.r, p.c) !== "neutral" ||
-      !photosynthesisHasSpace(state, p)
+      !photosynthesisHasSpace(state, p) ||
+      delay === null
     ) {
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
@@ -203,7 +201,7 @@ function maturePhotosynthesis(state, owner) {
     if (
       p.photosynthesisCell === cell &&
       Number.isInteger(p.photosynthesisSinceTurn) &&
-      state.turn - p.photosynthesisSinceTurn >= 6
+      state.turn - p.photosynthesisSinceTurn >= delay
     ) {
       state.board[cell] = "fertile";
       const extra = photosynthesisExtraCell(state, p);
@@ -284,6 +282,7 @@ function advanceTurn(ctx) {
         if (random(state) < (has(p, "Carapaça") ? 0.34 : 0.5))
           ctx.kill(p.id, "casa hostil");
       }
+    if (!extinction(state)) checkPopulationClimate(ctx);
   }
   maturePhotosynthesis(state, state.current);
   if (!extinction(state)) checkPopulation(state);
@@ -309,24 +308,31 @@ function resolveConwayStagnation(ctx) {
   const state = ctx.state;
   if (!mutuallyBlocked(state)) {
     state.conwayWatchUntil = null;
+    state.conwayStagnation = null;
     return;
   }
   if (state.event || state.pendingEcologicalEvents > 0) {
     state.conwayWatchUntil = null;
+    state.conwayStagnation = null;
     return;
   }
-  if (state.conwayWatchUntil === null) {
-    state.conwayWatchUntil = state.turn + 10;
+  if (!state.conwayStagnation) {
+    state.conwayStagnation = { startedTurn: state.turn, level: 0 };
+    state.conwayWatchUntil = null;
     return;
   }
-  if (state.turn < state.conwayWatchUntil) return;
-  state.conwayWatchUntil = null;
-  log(
-    state,
-    "🌿 Conway não destravou a partida em 10 turnos; um evento ecológico severo do período foi desencadeado.",
-  );
-  startSevereEvent(ctx);
-  extinction(state);
+  const elapsed = state.turn - state.conwayStagnation.startedTurn,
+    thresholds = [3, 6, 10];
+  while (
+    state.conwayStagnation.level < thresholds.length &&
+    elapsed >= thresholds[state.conwayStagnation.level]
+  ) {
+    const level = state.conwayStagnation.level + 1;
+    repairConwayStagnation(ctx, level);
+    state.conwayStagnation.level = level;
+  }
+  if (state.conwayStagnation.level === thresholds.length)
+    state.conwayStagnation = { startedTurn: state.turn, level: 0 };
 }
 
 function settle(ctx) {
@@ -359,6 +365,7 @@ function settle(ctx) {
 function completeMove(ctx, p, second, locomotion) {
   const state = ctx.state;
   if (extinction(state)) return;
+  checkPopulationClimate(ctx);
   checkPopulation(state);
   if (
     locomotion &&
@@ -840,7 +847,8 @@ function resolveParasitism(ctx, action) {
       (piece) => piece.id === action.id && piece.owner === state.current,
     );
   if (!canParasitize(state, p)) throw Error("Parasitismo indisponível.");
-  state.board[square(p.r, p.c)] = "fertile";
+  const fertilized = !fertilityPaused(state);
+  if (fertilized) state.board[square(p.r, p.c)] = "fertile";
   const affected = [];
   for (const otherPiece of state.pieces)
     if (otherPiece.owner !== p.owner && distance(p, otherPiece) === 1) {
@@ -849,7 +857,7 @@ function resolveParasitism(ctx, action) {
     }
   log(
     state,
-    `${OWNERS[p.owner]}: 🪱 Parasitismo tornou ${coord(p.r, p.c)} fértil${affected.length ? ` e ${affected.join(", ")} hostil(is)` : ""}.`,
+    `${OWNERS[p.owner]}: 🪱 Parasitismo ${fertilized ? `tornou ${coord(p.r, p.c)} fértil` : "manteve a fertilização pausada pela densidade"}${affected.length ? ` e ${affected.join(", ")} hostil(is)` : ""}.`,
   );
   advanceTurn(ctx);
   settle(ctx);

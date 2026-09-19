@@ -9,6 +9,8 @@ import {
   assertState,
   newPiece,
   round,
+  fertilityPaused,
+  photosynthesisDelayTurns,
 } from "../src/state.js";
 import { context, transition, simulate, mutuallyBlocked } from "../src/engine.js";
 import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
@@ -16,6 +18,7 @@ import {
   SEVERE_EVENT_IDS,
   startEvent,
   tickEnvironment,
+  checkPopulationClimate,
 } from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
 import { reproduce, tickReproduction } from "../src/reproduction.js";
@@ -96,7 +99,7 @@ test("mutual blocking advances Conway turn by turn until one side can act", () =
   assertState(s);
 });
 
-test("ten stalled turns after Conway trigger a geological ecological event", () => {
+test("stalled Conway repairs the local habitat in stages without a severe event", () => {
   let s = createState(303);
   s.board.fill("neutral");
   s.pieces = [];
@@ -119,22 +122,23 @@ test("ten stalled turns after Conway trigger a geological ecological event", () 
   s.current = "blue";
 
   s = simulate(s, { type: "CONWAY_STEP" });
-  const deadline = s.conwayWatchUntil;
-  assert.equal(deadline, s.turn + 10);
+  assert.deepEqual(s.conwayStagnation, { startedTurn: s.turn, level: 0 });
   assert.equal(s.event, null);
 
-  while (s.turn < deadline)
+  const targetTurn = s.turn + 10;
+  while (s.turn < targetTurn)
     s = simulate(s, { type: "CONWAY_STEP" });
 
-  assert.equal(s.turn, deadline);
-  assert.ok(s.event);
-  assert.ok(SEVERE_EVENT_IDS.has(s.event.id));
+  assert.equal(s.turn, targetTurn);
+  assert.equal(s.event, null);
   assert.equal(s.conwayWatchUntil, null);
   assert.ok(
     s.logs.some((entry) =>
-      entry.text.includes("Conway não destravou a partida em 10 turnos"),
+      entry.text.includes("Conway: a estagnação"),
     ),
   );
+  assert.ok(s.logs.some((entry) => entry.text.includes("abriu um corredor local")));
+  assert.ok(s.logs.some((entry) => entry.text.includes("reconfigurou uma faixa local")));
   assertState(s);
 });
 
@@ -420,6 +424,64 @@ test("population threshold fires once per crossing and does not enqueue infinite
   assert.equal(s.notices.length, 1);
   assertState(s);
 });
+
+test("population pressure governs fertility, pathogens and severe climate", () => {
+  const state = fixture([]);
+  for (let i = 0; i < 40; i++)
+    state.pieces.push(
+      newPiece(state, i < 20 ? "blue" : "amber", Math.floor(i / 8), i % 8),
+    );
+  assert.equal(photosynthesisDelayTurns(state), null);
+  assert.equal(fertilityPaused(state), true);
+  assert.equal(checkPopulationClimate(context(state)), true);
+  assert.ok(SEVERE_EVENT_IDS.has(state.event.id));
+  assert.equal(state.severePopulationLatched, true);
+  state.event = null;
+  state.pieces = state.pieces.slice(0, 32);
+  assert.equal(checkPopulationClimate(context(state)), false);
+  assert.equal(state.severePopulationLatched, false);
+  state.pieces = state.pieces.slice(0, 23);
+  assert.equal(photosynthesisDelayTurns(state), 10);
+  state.pieces = state.pieces.slice(0, 17);
+  assert.equal(photosynthesisDelayTurns(state), 8);
+  state.pieces = state.pieces.slice(0, 11);
+  assert.equal(photosynthesisDelayTurns(state), 6);
+});
+
+test("eggs and seeds do not prevent extinction of active organisms", () => {
+  const state = fixture([
+      { owner: "blue", r: 6, c: 3, traits: ["Fotossíntese"] },
+      { owner: "amber", r: 1, c: 4 },
+    ]),
+    parent = state.pieces[0],
+    profile = {
+      owner: "blue",
+      rank: parent.rank,
+      traits: [...parent.traits],
+      ancestry: [...parent.ancestry],
+      reproGenes: structuredClone(parent.reproGenes),
+      mutations: parent.mutations,
+      generation: parent.generation + 1,
+      parentId: parent.id,
+    };
+  state.pieces = state.pieces.filter((piece) => piece.owner === "amber");
+  state.eggs.push({
+    id: state.nextEgg++, owner: "blue", r: 3, c: 3, laidRound: 0,
+    hatchRound: 3, expireRound: 3, mode: "amniote", lifecycle: "fixed",
+    brood: [profile], dispersal: "local",
+  });
+  state.plantSeeds.push({
+    id: state.nextPlantSeed++, owner: "blue", r: 2, c: 2,
+    movesRemaining: 3, profile,
+  });
+  state.maxGenerationReached = profile.generation;
+  state.current = "amber";
+  const next = simulate(state, { type: "PASS" });
+  assert.equal(next.result.winner, "amber");
+  assert.equal(next.eggs.length, 1);
+  assert.equal(next.plantSeeds.length, 1);
+  assertState(next);
+});
 test("Ooteca reproduction and hostile births remain bounded by free cells", () => {
   const s = fixture([]);
   for (let r = 0; r < 8; r++)
@@ -618,7 +680,7 @@ test("Necrófago consumes fertile decomposition without consuming the fertile te
   assertState(s);
 });
 
-test("capture creates hostile decomposition, protects attacker and fertilizes after three rounds", () => {
+test("capture creates hostile decomposition, protects attacker and restores neutral terrain after three rounds", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
     { owner: "amber", r: 4, c: 4 },
@@ -662,7 +724,7 @@ test("capture creates hostile decomposition, protects attacker and fertilizes af
   assert.equal(s.deathSites.length, 1);
   s.turn = 6;
   tickEnvironment(context(s));
-  assert.equal(s.board[36], "fertile");
+  assert.equal(s.board[36], "neutral");
   assert.equal(s.deathSites.length, 0);
   assertState(s);
 });

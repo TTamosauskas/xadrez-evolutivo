@@ -55,8 +55,9 @@ export function startDisease(
 export function checkPopulation(state) {
   if (!pathogenUnlocked(state)) return;
   for (const owner of ["blue", "amber"])
-    if (state.pieces.filter((p) => p.owner === owner).length < 17)
+    if (state.pieces.filter((p) => p.owner === owner).length <= 11)
       state.populationLatched[owner] = false;
+  if (round(state) < state.populationDiseaseCooldownUntil) return;
   if (
     state.diseases.some(
       (d) => d.source === "population" && d.endRound > round(state),
@@ -67,23 +68,14 @@ export function checkPopulation(state) {
     blue: state.pieces.filter((p) => p.owner === "blue").length,
     amber: state.pieces.filter((p) => p.owner === "amber").length,
   };
-  const triggers = ["blue", "amber"].filter(
-    (o) => counts[o] >= 17 && !state.populationLatched[o],
-  );
-  if (!triggers.length) return;
-  const trigger = pick(
-    state,
-    triggers.filter(
-      (o) => counts[o] === Math.max(...triggers.map((x) => counts[x])),
-    ),
-  );
-  state.populationLatched[trigger] = true;
   const dominant =
     counts.blue === counts.amber
       ? pick(state, ["blue", "amber"])
       : counts.blue > counts.amber
         ? "blue"
         : "amber";
+  if (counts[dominant] < 17 || state.populationLatched[dominant]) return;
+  state.populationLatched[dominant] = true;
   const enemies = state.pieces.filter((p) => p.owner === other(dominant));
   const candidates = state.pieces.filter(
     (p) => p.owner === dominant && !has(p, "Resistência") && !p.infection,
@@ -95,7 +87,10 @@ export function checkPopulation(state) {
     state,
     candidates.filter((p) => score(p) === max),
   );
-  if (seed) startDisease(state, "population", seed, trigger);
+  if (seed) {
+    const disease = startDisease(state, "population", seed, dominant);
+    state.populationDiseaseCooldownUntil = (disease?.endRound ?? round(state)) + 6;
+  }
 }
 export function tickDiseases(ctx) {
   const state = ctx.state,

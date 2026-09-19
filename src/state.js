@@ -52,6 +52,17 @@ export const barrierAt = (state, r, c) =>
   builtBarrierAt(state, r, c) || naturalBarrierAt(state, r, c);
 export const terrain = (state, r, c) => state.board[square(r, c)];
 export const round = (state) => Math.floor(state.turn / 2);
+// O desfecho e a pressão ecológica consideram apenas organismos já ativos.
+// Ovos e sementes continuam recursos reprodutivos, sem sustentar uma linhagem.
+export const activePopulation = (state) => state.pieces.length;
+export const fertilityPaused = (state) => activePopulation(state) >= 24;
+export function photosynthesisDelayTurns(state) {
+  const population = activePopulation(state);
+  if (population >= 24) return null;
+  if (population <= 11) return 6;
+  if (population <= 17) return 8;
+  return 10;
+}
 export const juvenile = (state, piece) =>
   !!piece &&
   Number.isInteger(piece.maturesRound) &&
@@ -288,7 +299,7 @@ export function createState(seed = Date.now(), options = {}) {
     originPrelude = !!options.originPrelude,
     canonicalPair = !!options.canonicalPair;
   const state = {
-    version: 7,
+    version: 8,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
@@ -324,6 +335,7 @@ export function createState(seed = Date.now(), options = {}) {
     nextEventGeneration: 4,
     pendingEcologicalEvents: 0,
     conwayWatchUntil: null,
+    conwayStagnation: null,
     deathSites: [],
     fertileTraces: [],
     diseases: [],
@@ -335,6 +347,8 @@ export function createState(seed = Date.now(), options = {}) {
     barriers: [],
     naturalBarriers: [],
     populationLatched: { blue: false, amber: false },
+    populationDiseaseCooldownUntil: 0,
+    severePopulationLatched: false,
     result: null,
   };
   if (originPrelude) {
@@ -660,6 +674,13 @@ export function assertState(state) {
       state.conwayWatchUntil === null ||
       integer(state.conwayWatchUntil, state.turn)
     ) ||
+    !(
+      state.conwayStagnation === null ||
+      (integer(state.conwayStagnation?.startedTurn, 0) &&
+        integer(state.conwayStagnation?.level, 0, 2))
+    ) ||
+    !integer(state.populationDiseaseCooldownUntil, 0) ||
+    typeof state.severePopulationLatched !== "boolean" ||
     !Array.isArray(state.seen) ||
     !Array.isArray(state.seenMutations) ||
     state.seenMutations.some((m) => typeof m !== "string") ||
@@ -716,7 +737,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 7 ||
+    state.version !== 8 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))

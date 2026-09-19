@@ -14,7 +14,8 @@ import {
   isNegativeTrait,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v7";
+export const SAVE_KEY = "xadrez-evolutivo-save-v8";
+export const V7_KEY = "xadrez-evolutivo-save-v7";
 export const V6_KEY = "xadrez-evolutivo-save-v6";
 export const V5_KEY = "xadrez-evolutivo-save-v5";
 export const V4_KEY = "xadrez-evolutivo-save-v4";
@@ -99,7 +100,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([7, 6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -377,6 +378,19 @@ export function deserialize(raw) {
     )
       data.conwayWatchUntil = null;
     if (data.conwayWatchUntil === undefined) data.conwayWatchUntil = null;
+    // A antiga vigília por prazo não é mais usada: o novo mecanismo repara
+    // localmente o tabuleiro em etapas, sem convocar um evento severo.
+    data.conwayWatchUntil = null;
+    if (
+      !data.conwayStagnation ||
+      !Number.isInteger(data.conwayStagnation.startedTurn) ||
+      !Number.isInteger(data.conwayStagnation.level)
+    )
+      data.conwayStagnation = null;
+    if (!Number.isInteger(data.populationDiseaseCooldownUntil))
+      data.populationDiseaseCooldownUntil = 0;
+    if (typeof data.severePopulationLatched !== "boolean")
+      data.severePopulationLatched = false;
     if (!Array.isArray(data.deathSites)) data.deathSites = [];
     data.notices = (data.notices ?? []).filter(
       (entry) => entry?.title !== "Marco Evolutivo",
@@ -448,7 +462,7 @@ export function deserialize(raw) {
         );
       }
     }
-    data.version = 7;
+    data.version = 8;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -631,6 +645,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V7_KEY) ??
     storage.getItem(V6_KEY) ??
     storage.getItem(V5_KEY) ??
     storage.getItem(V4_KEY) ??

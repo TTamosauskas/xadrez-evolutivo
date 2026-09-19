@@ -12,6 +12,8 @@ import {
   round,
   log,
   notice,
+  activePopulation,
+  fertilityPaused,
 } from "./state.js";
 import { eventWeights, habitatProfile } from "./geology.js";
 import { recordDiscovery } from "./discoveries.js";
@@ -224,15 +226,9 @@ function tickDecomposition(state) {
         state.board[site.cell] = preservedFertility ? "fertile" : "hostile";
       continue;
     }
-    if (eventHazard) state.event.snapshots[site.cell] = "fertile";
-    else state.board[site.cell] = "fertile";
+    if (eventHazard) state.event.snapshots[site.cell] = preservedFertility ? "fertile" : "neutral";
+    else state.board[site.cell] = preservedFertility ? "fertile" : "neutral";
     state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== site.cell);
-    if (!preservedFertility)
-      state.fertileTraces.push({
-        cell: site.cell,
-        clearAfterTurn: state.turn,
-        base: site.base,
-      });
     state.deathSites = state.deathSites.filter((d) => d.cell !== site.cell);
   }
 }
@@ -403,6 +399,8 @@ function trim(state, count) {
   if (!fertile(state).length) addFertile(state, 1);
 }
 function addFertile(state, count) {
+  if (fertilityPaused(state)) return 0;
+  let added = 0;
   for (let n = 0; n < count; n++) {
     const empty = allCells().filter(
       (i) =>
@@ -421,7 +419,9 @@ function addFertile(state, count) {
       ),
     );
     state.board[pick(state, adjacent.length ? adjacent : empty)] = "fertile";
+    added++;
   }
+  return added;
 }
 function iceCells(event) {
   return allCells().filter((i) => {
@@ -506,7 +506,7 @@ function endEvent(state) {
   for (const site of state.deathSites)
     state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
 }
-export function startEvent(ctx, id = null) {
+export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen = true } = {}) {
   const state = ctx.state;
   if (state.event) endEvent(state);
   const def = id
@@ -515,7 +515,10 @@ export function startEvent(ctx, id = null) {
         const weights = eventWeights(state),
           candidates = EVENTS.filter(
             (event) =>
-              event.id !== state.previousEvent && (weights[event.id] ?? 0) > 0,
+              event.id !== state.previousEvent &&
+              (weights[event.id] ?? 0) > 0 &&
+              (allowSevere || !SEVERE_EVENT_IDS.has(event.id)) &&
+              (allowPathogen || event.id !== "pathogen"),
           );
         return weightedEvent(state, candidates, weights);
       })();
@@ -635,8 +638,9 @@ export function startEvent(ctx, id = null) {
       const wet = quadrant(Math.floor(random(state) * 4)),
         removed = removeNaturalBarriers(state, wet, 1);
       recordBarrierChange(event, [], removed);
-      for (const i of wet)
-        if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
+      if (!fertilityPaused(state))
+        for (const i of wet)
+          if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
       break;
     }
     case "insularization": {
@@ -667,8 +671,9 @@ export function startEvent(ctx, id = null) {
         ),
         removed = removeNaturalBarriers(state, river, 2);
       recordBarrierChange(event, [], removed);
-      for (const i of river)
-        if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
+      if (!fertilityPaused(state))
+        for (const i of river)
+          if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
       break;
     }
   }
@@ -688,6 +693,54 @@ export function startSevereEvent(ctx) {
   if (!event) throw Error("Nenhum evento severo disponível neste período.");
   startEvent(ctx, event.id);
   return event;
+}
+
+export function checkPopulationClimate(ctx) {
+  const state = ctx.state,
+    population = activePopulation(state);
+  if (population <= 32) state.severePopulationLatched = false;
+  if (population < 40 || state.severePopulationLatched || severeEventActive(state))
+    return false;
+  state.severePopulationLatched = true;
+  startSevereEvent(ctx);
+  log(
+    state,
+    `🌡️ Pressão populacional: ${population} organismos ativos desencadearam um evento severo.`,
+  );
+  return true;
+}
+
+export function repairConwayStagnation(ctx, level) {
+  const state = ctx.state;
+  if (level === 1) {
+    const removed = removeNaturalBarriers(state, null, 1).length;
+    log(
+      state,
+      removed
+        ? "🌀 Conway: a estagnação removeu uma barreira natural local."
+        : "🌀 Conway: a estagnação confirmou que não havia barreira natural local para remover.",
+    );
+    return;
+  }
+  const axis = Math.floor(random(state) * 8),
+    horizontal = random(state) < 0.5,
+    cells = allCells().filter((cell) =>
+      horizontal ? Math.floor(cell / 8) === axis : cell % 8 === axis,
+    ),
+    limit = level === 2 ? 3 : 8;
+  let changed = 0;
+  for (const cell of shuffle(state, cells)) {
+    if (changed >= limit) break;
+    if (state.board[cell] !== "hostile") continue;
+    state.board[cell] = "neutral";
+    changed++;
+  }
+  log(
+    state,
+    level === 2
+      ? `🌀 Conway: abriu um corredor local com ${changed} casa(s) neutra(s).`
+      : `🌀 Conway: reconfigurou uma faixa local com ${changed} casa(s) neutra(s).`,
+  );
 }
 
 export function tickEnvironment(ctx) {
@@ -726,7 +779,7 @@ export function tickEnvironment(ctx) {
     for (const i of event.hazards) state.board[i] = "hostile";
   } else if (state.pendingEcologicalEvents > 0) {
     state.pendingEcologicalEvents--;
-    startEvent(ctx);
+    startEvent(ctx, null, { allowSevere: false, allowPathogen: false });
   }
 }
 

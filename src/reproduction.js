@@ -20,6 +20,7 @@ import {
   shuffle,
   newPiece,
   round,
+  fertilityPaused,
   log,
   notice,
   registerDiscoveries,
@@ -903,7 +904,7 @@ export function harvest(state, p, r, c) {
 }
 
 export function scatterSeeds(state, p) {
-  if (!has(p, "Coletor") || !p.seeds) return;
+  if (!has(p, "Coletor") || !p.seeds || fertilityPaused(state)) return;
   const cells = [];
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++)
