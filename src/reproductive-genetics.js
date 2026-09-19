@@ -7,13 +7,13 @@ export const REPRO_LOCI = {
   },
   dispersal: {
     normal: "local",
-    mutants: ["eggs", "spores"],
-    traits: { eggs: "Ovos", spores: "Esporos" },
-    priority: ["spores", "eggs"],
+    mutants: ["spores"],
+    traits: { spores: "Esporos" },
+    priority: ["spores"],
   },
 };
 
-export const GENETIC_TRAITS = ["Ovíparo", "Vivíparo", "Ovos", "Esporos"];
+export const GENETIC_TRAITS = ["Ovíparo", "Vivíparo", "Esporos"];
 
 const locusNames = Object.keys(REPRO_LOCI);
 const cloneAllele = (a) => ({ value: a.value, dominance: a.dominance });
@@ -41,12 +41,17 @@ export function normalizeReproGenes(source, legacyTraits = []) {
   for (const name of locusNames) {
     const def = REPRO_LOCI[name],
       allowed = new Set([def.normal, ...def.mutants]),
-      pair = Array.isArray(source?.[name]) ? source[name] : null;
+      pair = Array.isArray(source?.[name]) ? source[name] : null,
+      migratedPair = pair?.map((allele) =>
+        name === "dispersal" && allele?.value === "eggs"
+          ? neutralAllele(def.normal)
+          : allele,
+      );
     result[name] =
-      pair &&
-      pair.length === 2 &&
-      pair.every((a) => a && allowed.has(a.value))
-        ? pair.map((a) =>
+      migratedPair &&
+      migratedPair.length === 2 &&
+      migratedPair.every((a) => a && allowed.has(a.value))
+        ? migratedPair.map((a) =>
             a.value === def.normal
               ? neutralAllele(def.normal)
               : {
@@ -143,7 +148,7 @@ export function syncReproTraits(piece) {
     gymnosperm = regular.includes("Gimnospermas"),
     expressed = reproPhenotype(piece.reproGenes).traits.filter(
       (trait) =>
-        (!plant || !["Ovíparo", "Vivíparo", "Ovos"].includes(trait)) &&
+        (!plant || !["Ovíparo", "Vivíparo"].includes(trait)) &&
         (!gymnosperm || trait !== "Esporos"),
     );
   if (!expressed.includes("Vivíparo"))
