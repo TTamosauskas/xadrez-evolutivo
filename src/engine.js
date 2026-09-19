@@ -4,6 +4,7 @@ import {
   clone,
   at,
   eggAt,
+  plantSeedAt,
   terrain,
   round,
   random,
@@ -83,10 +84,12 @@ function finishGame(state, winner, reason) {
 function extinction(state) {
   const blue =
       state.pieces.some((p) => p.owner === "blue") ||
-      state.eggs.some((egg) => egg.owner === "blue"),
+      state.eggs.some((egg) => egg.owner === "blue") ||
+      state.plantSeeds.some((seed) => seed.owner === "blue"),
     amber =
       state.pieces.some((p) => p.owner === "amber") ||
-      state.eggs.some((egg) => egg.owner === "amber");
+      state.eggs.some((egg) => egg.owner === "amber") ||
+      state.plantSeeds.some((seed) => seed.owner === "amber");
   if (!blue || !amber) {
     finishGame(
       state,
@@ -115,6 +118,7 @@ function photosynthesisHasSpace(state, p) {
         inside(r, c) &&
         !at(state, r, c) &&
         !eggAt(state, r, c) &&
+        !plantSeedAt(state, r, c) &&
         !state.barriers.includes(square(r, c))
       ) {
         free++;
@@ -122,6 +126,30 @@ function photosynthesisHasSpace(state, p) {
       }
     }
   return false;
+}
+
+function photosynthesisExtraCell(state, p) {
+  if (!has(p, "Embriófitas")) return null;
+  const empty = [],
+    occupied = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = p.r + dr,
+        c = p.c + dc;
+      if (!inside(r, c) || terrain(state, r, c) !== "neutral") continue;
+      const piece = at(state, r, c);
+      if (has(p, "Angiospermas") && piece?.owner === p.owner)
+        occupied.push({ r, c });
+      else if (
+        !piece &&
+        !eggAt(state, r, c) &&
+        !plantSeedAt(state, r, c) &&
+        !state.barriers.includes(square(r, c))
+      )
+        empty.push({ r, c });
+    }
+  return pick(state, occupied.length ? occupied : empty);
 }
 
 function recordPhotosynthesis(state, owner) {
@@ -160,6 +188,16 @@ function maturePhotosynthesis(state, owner) {
       state.turn - p.photosynthesisSinceTurn >= 6
     ) {
       state.board[cell] = "fertile";
+      const extra = photosynthesisExtraCell(state, p);
+      if (extra) {
+        state.board[square(extra.r, extra.c)] = "fertile";
+        log(
+          state,
+          has(p, "Angiospermas") && at(state, extra.r, extra.c)?.owner === p.owner
+            ? `${OWNERS[p.owner]}: 🌸 Angiospermas tornou ${coord(extra.r, extra.c)} fértil.`
+            : `${OWNERS[p.owner]}: 🌱 Embriófitas tornou ${coord(extra.r, extra.c)} fértil.`,
+        );
+      }
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
       log(
@@ -389,6 +427,19 @@ function executeMove(ctx, action) {
     (t) => t.r === action.r && t.c === action.c,
   );
   if (!target) throw Error("Escolha um destino disponível.");
+  if (target.vascular) {
+    const resource = square(target.r, target.c);
+    if (state.board[resource] !== "fertile")
+      throw Error("Escolha uma casa fértil adjacente.");
+    state.board[resource] = "neutral";
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🌿 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
+    );
+    reproduce(ctx, p, null, "Traqueófitas");
+    completeMove(ctx, p, false, false);
+    return;
+  }
   const second = state.chain === p.id,
     locomotion = has(p, "Locomoção Avançada"),
     landingCell = square(target.r, target.c),
@@ -457,6 +508,22 @@ function executeMove(ctx, action) {
     pieceCapture = !!victim && victim.id !== p.id,
     eggCapture = !!egg,
     capture = pieceCapture || eggCapture;
+  if (
+    pieceCapture &&
+    has(victim, "Espinhos") &&
+    random(state) < 1 / 4
+  ) {
+    const origin = square(p.r, p.c);
+    ctx.kill(p.id, "defesa por Espinhos", victim);
+    markDecomposition(state, origin);
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 🌵 Espinhos matou o agressor antes da captura.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
   if (
     pieceCapture &&
     has(victim, "Chifre") &&
