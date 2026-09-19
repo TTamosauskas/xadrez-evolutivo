@@ -12,17 +12,29 @@ export function fallbackAction(state) {
 }
 function priority(state, a) {
   if (a.type === "PARTNER")
-    return state.pieces.find((p) => p.id === a.id).rank * 2;
+    return state.pieces.find((p) => p.id === a.id)?.rank * 2 || 0;
+  if (a.type === "NURSE") {
+    const child = state.pieces.find((piece) => piece.id === a.childId);
+    return 6 + (child?.rank ?? 0);
+  }
   if (a.type === "BUILD") return 3;
   if (a.type === "SKIP_BUILD") return 0;
-  const p = state.pieces.find((p) => p.id === a.id),
+  const p = state.pieces.find((piece) => piece.id === a.id),
     victim = state.pieces.find(
-      (p) => p.r === a.r && p.c === a.c && p.owner !== state.current,
+      (piece) => piece.r === a.r && piece.c === a.c && piece.id !== p?.id,
     ),
+    enemyVictim = victim?.owner !== undefined && victim.owner !== state.current,
+    alliedVictim = victim?.owner === state.current,
     egg = eggAt(state, a.r, a.c),
+    targetCell =
+      Number.isInteger(a.r) && Number.isInteger(a.c) ? square(a.r, a.c) : null,
+    targetTerrain = targetCell === null ? null : state.board[targetCell],
     enemies = p
       ? state.pieces.filter((piece) => piece.owner !== p.owner)
       : [],
+    ownPopulation = state.pieces.filter(
+      (piece) => piece.owner === state.current,
+    ).length,
     hunt =
       p && has(p, "Carnívoro") && enemies.length && Number.isInteger(a.r)
         ? Math.max(
@@ -34,18 +46,31 @@ function priority(state, a) {
                 ),
               ),
           ) * 2
+        : 0,
+    captureValue = enemyVictim
+      ? 10 +
+        victim.rank * 2 +
+        (has(victim, "Fotossíntese") ? 8 : 0) +
+        (targetTerrain === "fertile" ? 4 : 0)
+      : 0,
+    cannibalValue = alliedVictim
+      ? ownPopulation > 12
+        ? 4 + (ownPopulation - 12) * 2 - victim.rank
+        : -8 - victim.rank
+      : 0,
+    fertileValue =
+      !victim &&
+      targetTerrain === "fertile" &&
+      (!has(p, "Carnívoro") || has(p, "Onívoro"))
+        ? 4
         : 0;
   return (
     hunt +
-    (state.board[square(a.r, a.c)] === "fertile" &&
-    (!has(p, "Carnívoro") || has(p, "Onívoro"))
-      ? 8
-      : 0) +
-    (victim ? 4 + victim.rank : 0) +
-    (egg && egg.owner !== state.current ? 4 + egg.brood.length : 0) -
-    (state.board[square(a.r, a.c)] === "hostile" && !has(p, "Dormência")
-      ? 8
-      : 0)
+    captureValue +
+    cannibalValue +
+    fertileValue +
+    (egg && egg.owner !== state.current ? 6 + egg.brood.length : 0) -
+    (targetTerrain === "hostile" && !has(p, "Dormência") ? 8 : 0)
   );
 }
 function evaluate(state, owner) {
@@ -79,7 +104,12 @@ function evaluate(state, owner) {
         (egg.owner === owner ? 1 : -1) * (4 + Math.min(4, egg.brood.length)),
       0,
     );
-  return pieces + eggs;
+  const population = {
+      own: state.pieces.filter((piece) => piece.owner === owner).length,
+      enemy: state.pieces.filter((piece) => piece.owner !== owner).length,
+    },
+    crowding = (count) => (count > 10 ? 3 * (count - 10) ** 2 : 0);
+  return pieces + eggs - crowding(population.own) + crowding(population.enemy);
 }
 /** Bounded search runs only inside a worker. The UI has its own independent timeout. */
 export function chooseAction(
