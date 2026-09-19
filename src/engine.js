@@ -799,6 +799,58 @@ function choosePartner(ctx, id) {
     born > 0 && !!pending.buildEligible,
   );
 }
+function resolveEggPlacement(ctx, action) {
+  const state = ctx.state,
+    pending = state.eggPlacement,
+    target = eggPlacementTargets(state).find(
+      (cell) => cell.r === action.r && cell.c === action.c,
+    );
+  if (!pending || !target)
+    throw Error("Escolha um local destacado para o ovo.");
+  const continuation = pending.continuation,
+    parent = state.pieces.find((piece) => piece.id === pending.parentId),
+    egg = placePendingAmnioticEgg(state, target.r, target.c);
+  if (!egg) throw Error("Postura amniótica indisponível.");
+  state.eggPlacement = null;
+  state.phase = "move";
+  log(
+    state,
+    `${OWNERS[egg.owner]}: 🥚 ovo amniótico depositado em ${coord(egg.r, egg.c)}; eclosão na próxima rodada.`,
+  );
+  if (parent && continuation)
+    finishMovement(
+      ctx,
+      parent,
+      continuation.manipulation ?? null,
+      continuation.second ?? false,
+      continuation.locomotion ?? false,
+      continuation.build ?? false,
+    );
+  else {
+    advanceTurn(ctx);
+    settle(ctx);
+  }
+}
+
+function resolveOvoviviparousLaying(ctx, action) {
+  const state = ctx.state,
+    parent = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    ),
+    target = ovoviviparousPlacementTargets(state, parent).find(
+      (cell) => cell.r === action.r && cell.c === action.c,
+    );
+  if (!parent || !target)
+    throw Error("Escolha uma casa vazia adjacente para a postura.");
+  const egg = placeOvoviviparousEgg(state, parent, target.r, target.c);
+  if (!egg) throw Error("A prole ovovivípara ainda não está pronta.");
+  log(
+    state,
+    `${OWNERS[parent.owner]}: ⚪ ovo ovovivíparo depositado em ${coord(egg.r, egg.c)}; eclosão na próxima rodada.`,
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
 const TERRAIN_LOG_LABEL = {
   neutral: "neutra",
   fertile: "fértil",
@@ -874,8 +926,18 @@ export function transition(previous, action) {
     executeMove(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
     resolveNursing(ctx, action);
+  else if (
+    action.type === "LAY_OVOVIVIPAROUS" &&
+    state.phase === "move"
+  )
+    resolveOvoviviparousLaying(ctx, action);
   else if (action.type === "PARTNER" && state.phase === "partner")
     choosePartner(ctx, action.id);
+  else if (
+    action.type === "PLACE_EGG" &&
+    state.phase === "egg-placement"
+  )
+    resolveEggPlacement(ctx, action);
   else if (
     ["MANIPULATE", "SKIP_MANIPULATION"].includes(action.type) &&
     state.phase === "manipulate"
