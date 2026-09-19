@@ -192,6 +192,7 @@ export const TRAIT_STAGE = {
   Traqueófitas: "silurian",
   Espinhos: "devonian",
   Gimnospermas: "carboniferous",
+  Trepadeira: "carboniferous",
   Angiospermas: "cretaceous",
   Fertilidade: "archean",
   Dormência: "archean",
@@ -246,6 +247,10 @@ export const TRAIT_DEPENDENCIES = {
   Gimnospermas: {
     historical: ["Traqueófitas"],
     piece: ["Fotossíntese", "Traqueófitas"],
+  },
+  Trepadeira: {
+    historical: ["Traqueófitas"],
+    piece: ["Fotossíntese", "Embriófitas", "Traqueófitas"],
   },
   Angiospermas: {
     historical: ["Gimnospermas"],
@@ -310,6 +315,7 @@ export const PLANT_DERIVED_TRAITS = new Set([
   "Traqueófitas",
   "Espinhos",
   "Gimnospermas",
+  "Trepadeira",
   "Angiospermas",
 ]);
 
@@ -353,6 +359,7 @@ export function traitCombinationValid(traits) {
     return false;
   if (set.has("Locomoção") && !set.has("Predação")) return false;
   if (set.has("Escalador") && !set.has("Locomoção")) return false;
+  if (set.has("Trepadeira") && !set.has("Traqueófitas")) return false;
   if (set.has("Respiração Cutânea") && !set.has("Locomoção")) return false;
   if (set.has("Sacos Aéreos") && !set.has("Locomoção")) return false;
   if (set.has("Carnívoro") && !set.has("Predação")) return false;
@@ -386,6 +393,7 @@ export function normalizeEnergyBranch(traits, preferred = null) {
   }
   if (!set.has("Fotossíntese"))
     for (const trait of PLANT_DERIVED_TRAITS) set.delete(trait);
+  if (!set.has("Traqueófitas")) set.delete("Trepadeira");
   if (!set.has("Predação")) {
     set.delete("Locomoção");
     set.delete("Escalador");
@@ -437,6 +445,7 @@ export function traitLossAllowed(piece, trait) {
     trait === "Traqueófitas" &&
     (traits.has("Espinhos") ||
       traits.has("Gimnospermas") ||
+      traits.has("Trepadeira") ||
       traits.has("Angiospermas"))
   )
     return false;
