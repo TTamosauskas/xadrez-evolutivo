@@ -8,6 +8,7 @@ export const SYMBOLS = {
 export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
 export const TRAITS = {
   Locomoção: ["🐾", "Permite realizar movimentos de xadrez apenas em uma linhagem que possui Predação."],
+  Escavador: ["🦡", "Pode perfurar barreiras."],
   "Locomoção Avançada": [
     "🐪",
     "Permite uma segunda movimentação no mesmo turno.",
@@ -87,12 +88,12 @@ export const TRAITS = {
     "🌸",
     "Ao completar Fotossíntese, a casa fértil adicional também pode ser uma casa neutra ocupada por uma criatura aliada.",
   ],
-  "Construção de Nicho": [
-    "⬡",
+  "Construtor de Nicho": [
+    "🦫",
     "Neutraliza a casa hostil de chegada quando a criatura sobrevive.",
   ],
   "Construtor Avançado": [
-    "🦫",
+    "🧔",
     "Após reproduzir consumindo uma casa fértil, pode construir uma barreira em uma casa adjacente vazia.",
   ],
   Chifre: [
