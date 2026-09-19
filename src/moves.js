@@ -193,6 +193,26 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     (!collector || (!has(p, "Esterilidade") && p.seedUsedTurn !== state.turn))
   )
     targets.push({ r: p.r, c: p.c, path: [], stay: true, capture: false });
+  if (
+    canUseFertility &&
+    has(p, "Traqueófitas") &&
+    !has(p, "Esterilidade")
+  )
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = p.r + dr,
+          c = p.c + dc;
+        if (inside(r, c) && terrain(state, r, c) === "fertile")
+          targets.push({
+            r,
+            c,
+            path: [],
+            stay: true,
+            vascular: true,
+            capture: false,
+          });
+      }
   return targets;
 }
 export function partnersFor(state, p) {
@@ -248,6 +268,7 @@ export function canWaitForRest(state, owner) {
 export function canWaitForBirth(state, owner) {
   return (
     state.eggs.some((egg) => egg.owner === owner) ||
+    state.plantSeeds.some((seed) => seed.owner === owner) ||
     state.pieces.some(
       (p) => p.owner === owner && (p.pregnancies?.length ?? 0) > 0,
     )
