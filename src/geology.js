@@ -322,7 +322,12 @@ export function normalizeEnergyBranch(traits, preferred = null) {
     set.has("Fotossíntese") &&
     [...PLANT_INCOMPATIBLE_TRAITS].some((trait) => set.has(trait))
   ) {
-    const animalBranch = preferred === "Predação" || set.has("Predação");
+    const animalBranch =
+      preferred === "Predação" ||
+      (set.has("Predação") &&
+        [...PLANT_INCOMPATIBLE_TRAITS].some(
+          (trait) => trait !== "Predação" && set.has(trait),
+        ));
     if (animalBranch) {
       set.delete("Fotossíntese");
       for (const trait of PLANT_DERIVED_TRAITS) set.delete(trait);
