@@ -210,34 +210,12 @@ function actionCountFor(state, owner) {
   return count;
 }
 
-function mutuallyBlocked(state) {
+export function mutuallyBlocked(state) {
   return (
     state.phase === "move" &&
     actionCountFor(state, "blue") === 0 &&
     actionCountFor(state, "amber") === 0
   );
-}
-
-function advanceConwayUntilAction(ctx) {
-  const state = ctx.state;
-  let steps = 0;
-  while (!state.result && mutuallyBlocked(state)) {
-    log(
-      state,
-      `🌀 Conway: ambos os lados estavam sem ação; o habitat avançou um turno.`,
-    );
-    advanceConway(ctx);
-    if (extinction(state)) return;
-    advanceTurn(ctx);
-    steps++;
-    if (steps >= 256 && mutuallyBlocked(state)) {
-      log(
-        state,
-        "🌀 Conway: bloqueio persistente após 256 avanços ecológicos; controle devolvido à partida.",
-      );
-      return;
-    }
-  }
 }
 
 function settle(ctx) {
@@ -251,10 +229,7 @@ function settle(ctx) {
   )
     return;
 
-  if (mutuallyBlocked(state)) {
-    advanceConwayUntilAction(ctx);
-    if (state.result || extinction(state)) return;
-  }
+  if (mutuallyBlocked(state)) return;
 
   if (
     legalActions(state).length ||
@@ -266,9 +241,6 @@ function settle(ctx) {
   const blocked = state.current;
   log(state, `${OWNERS[blocked]} passaram automaticamente por bloqueio.`);
   advanceTurn(ctx);
-
-  if (!state.result && mutuallyBlocked(state))
-    advanceConwayUntilAction(ctx);
 }
 function completeMove(ctx, p, second, locomotion) {
   const state = ctx.state;
@@ -697,6 +669,16 @@ export function transition(previous, action) {
     log(state, `${OWNERS[state.current]} passaram a vez.`);
     advanceTurn(ctx);
     settle(ctx);
+  } else if (action.type === "CONWAY_STEP" && mutuallyBlocked(state)) {
+    log(
+      state,
+      "🌀 Conway: ambos os lados estavam sem ação; o habitat avançou um turno.",
+    );
+    advanceConway(ctx);
+    if (!extinction(state)) {
+      advanceTurn(ctx);
+      settle(ctx);
+    }
   } else throw Error("Ação incompatível com a fase da partida.");
   logBoardChanges(previous, state);
   state.revision++;
