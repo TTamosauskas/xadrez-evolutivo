@@ -23,14 +23,14 @@ export const TRAITS = {
     "Especialização posterior de Carnívoro: reproduz tanto em casas férteis quanto ao eliminar peças.",
   ],
   Necrófago: [
-    "🪰",
+    "🐺",
     "Reproduz consumindo uma casa marcada com ☠️, vermelha ou verde.",
   ],
   Ovos: ["🦎", "Descendentes podem nascer a até duas casas do progenitor."],
   Ovíparo: ["🥚", "A reprodução deposita um ovo que eclode após três rodadas."],
   Ovífagia: ["🦎", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
   Esporos: ["🍄", "Espalha a prole em casas distantes pelo tabuleiro."],
-  Vivíparo: ["🎈", "A prole é carregada por três rodadas antes de nascer."],
+  Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],
   Fertilidade: ["🧫", "Dobra a quantidade de descendentes."],
   Fotossíntese: [
     "🟢",
@@ -92,7 +92,7 @@ export const TRAITS = {
     "💤",
     "Em casas hostis, fica imobilizada e evita o risco ambiental enquanto permanecer ali.",
   ],
-  Carapaça: ["🐢", "Oferece 66% de sobrevivência por casa hostil."],
+  Carapaça: ["🐚", "Oferece 66% de sobrevivência por casa hostil."],
   Camuflagem: ["👀", "Só pode ser capturada por uma peça adjacente."],
   "Visão Noturna": [
     "👁️",

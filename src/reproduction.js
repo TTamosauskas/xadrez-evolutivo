@@ -542,7 +542,7 @@ export function tickReproduction(ctx) {
       const born = placeBrood(ctx, pregnancy.brood, parent, pregnancy.dispersal);
       log(
         state,
-        `🎈 ${OWNERS[parent.owner]} deram à luz ${born} descendente(s).`,
+        `🔴 ${OWNERS[parent.owner]} deram à luz ${born} descendente(s).`,
       );
     }
   }
