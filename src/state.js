@@ -212,87 +212,120 @@ function seedNaturalBarriers(state) {
   state.naturalBarriers = [...barriers].sort((a, b) => a - b);
 }
 
+function habitatCount(state, value) {
+  if (!Array.isArray(value)) return value ?? 0;
+  const [min = 0, max = min] = value;
+  return min + Math.floor(random(state) * (max - min + 1));
+}
+
+function clusteredSelection(state, candidates, count, groups = 3) {
+  const pool = new Set(candidates),
+    selected = [];
+  for (const seed of shuffle(state, candidates).slice(0, Math.min(groups, count))) {
+    if (!pool.has(seed)) continue;
+    selected.push(seed);
+    pool.delete(seed);
+  }
+  while (selected.length < count && pool.size) {
+    const frontier = [...pool].filter((cell) => {
+      const r = Math.floor(cell / 8),
+        c = cell % 8;
+      return selected.some((other) => {
+        const rr = Math.floor(other / 8),
+          cc = other % 8;
+        return Math.max(Math.abs(r - rr), Math.abs(c - cc)) === 1;
+      });
+    });
+    const cell = pick(state, frontier.length ? frontier : [...pool]);
+    if (cell === null) break;
+    selected.push(cell);
+    pool.delete(cell);
+  }
+  return selected;
+}
+
+function habitatSelection(state, candidates, count, pattern, type) {
+  if (!count || !candidates.length) return [];
+  const limited = Math.min(count, candidates.length);
+  if (pattern === "corridors") {
+    const horizontal = random(state) < 0.5,
+      axes = random(state) < 0.5 ? [2, 5] : [1, 6],
+      score = (cell) => {
+        const r = Math.floor(cell / 8),
+          c = cell % 8,
+          coordinate = horizontal ? r : c,
+          distanceToCorridor = Math.min(...axes.map((axis) => Math.abs(coordinate - axis)));
+        return type === "fertile" ? distanceToCorridor : -distanceToCorridor;
+      };
+    return shuffle(state, candidates)
+      .sort((a, b) => score(a) - score(b))
+      .slice(0, limited);
+  }
+  if (pattern === "islands")
+    return clusteredSelection(state, candidates, limited, type === "fertile" ? 3 : 2);
+  if (pattern === "forest" || pattern === "dense" || pattern === "clusters")
+    return clusteredSelection(state, candidates, limited, type === "fertile" ? 4 : 3);
+  if (pattern === "arid")
+    return clusteredSelection(state, candidates, limited, type === "fertile" ? 2 : 4);
+  if (pattern === "fragmented")
+    return clusteredSelection(state, candidates, limited, 5);
+  return shuffle(state, candidates).slice(0, limited);
+}
+
 function seedHabitat(state) {
-  const profile = habitatProfile(state);
+  const profile = habitatProfile(state),
+    pattern = profile.pattern ?? "mosaic";
   state.board.fill("neutral");
   const founderCells = new Set([
-    ...state.pieces.map((p) => square(p.r, p.c)),
-    ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
-  ]);
-  if (profile.standard) {
-    const empty = shuffle(
-      state,
-      Array.from({ length: 64 }, (_, i) => i).filter(
-        (i) => !founderCells.has(i) && !state.naturalBarriers.includes(i),
-      ),
-    );
-    for (const i of empty.slice(0, profile.fertile)) state.board[i] = "fertile";
-    const safe = new Set([3, 4, 11, 12, 51, 52, 59, 60]);
-    for (const i of empty
-      .filter((i) => !safe.has(i) && state.board[i] === "neutral")
-      .slice(0, profile.hostile))
-      state.board[i] = "hostile";
-    for (const c of [3, 4]) {
-      for (let r = 1; r <= 6; r++)
-        if (terrain(state, r, c) === "fertile")
-          state.board[square(r, c)] = "neutral";
-      for (const rows of [
-        [1, 2, 3],
-        [4, 5, 6],
-      ]) {
-        const candidates = rows.filter(
-          (r) =>
-            terrain(state, r, c) === "neutral" &&
-            !naturalBarrierAt(state, r, c),
-        );
-        const fallback = rows.filter(
-          (r) => !naturalBarrierAt(state, r, c),
-        );
-        const chosen = pick(
-          state,
-          candidates.length ? candidates : fallback,
-        );
-        if (chosen !== null) state.board[square(chosen, c)] = "fertile";
-      }
-    }
-    const mobileFounder = state.pieces.some(
+      ...state.pieces.map((p) => square(p.r, p.c)),
+      ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
+    ]),
+    mobileFounder = state.pieces.some(
       (piece) =>
         piece.traits.includes("Locomoção") ||
         piece.traits.includes("Locomoção Avançada"),
-    );
-    if (!mobileFounder)
-      for (const cell of founderCells) state.board[cell] = "fertile";
-    return;
-  }
+    ),
+    keepFoundersFertile = profile.founderFertile || !mobileFounder;
 
-  if (profile.founderFertile)
+  if (keepFoundersFertile)
     for (const cell of founderCells) state.board[cell] = "fertile";
-  const fertileNeeded = Math.max(
-    0,
-    profile.fertile - state.board.filter((t) => t === "fertile").length,
-  );
-  const fertileCandidates = shuffle(
-    state,
-    Array.from({ length: 64 }, (_, i) => i).filter(
-      (i) =>
-        state.board[i] === "neutral" &&
-        !state.naturalBarriers.includes(i),
+
+  const fertileTarget = habitatCount(state, profile.fertile),
+    fertileNeeded = Math.max(
+      0,
+      fertileTarget - state.board.filter((cell) => cell === "fertile").length,
     ),
-  );
-  for (const cell of fertileCandidates.slice(0, fertileNeeded))
+    fertileCandidates = Array.from({ length: 64 }, (_, cell) => cell).filter(
+      (cell) =>
+        state.board[cell] === "neutral" &&
+        !state.naturalBarriers.includes(cell),
+    );
+  for (const cell of habitatSelection(
+    state,
+    fertileCandidates,
+    fertileNeeded,
+    pattern,
+    "fertile",
+  ))
     state.board[cell] = "fertile";
-  const hostileCandidates = shuffle(
+
+  const hostileTarget = habitatCount(state, profile.hostile),
+    hostileCandidates = Array.from({ length: 64 }, (_, cell) => cell).filter(
+      (cell) =>
+        state.board[cell] === "neutral" &&
+        !founderCells.has(cell) &&
+        !state.naturalBarriers.includes(cell),
+    );
+  for (const cell of habitatSelection(
     state,
-    Array.from({ length: 64 }, (_, i) => i).filter(
-      (i) =>
-        state.board[i] === "neutral" &&
-        !founderCells.has(i) &&
-        !state.naturalBarriers.includes(i),
-    ),
-  );
-  for (const cell of hostileCandidates.slice(0, profile.hostile))
+    hostileCandidates,
+    hostileTarget,
+    pattern,
+    "hostile",
+  ))
     state.board[cell] = "hostile";
 }
+
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null,
     founders = options.founders ?? null,
@@ -336,6 +369,8 @@ export function createState(seed = Date.now(), options = {}) {
     pendingEcologicalEvents: 0,
     conwayWatchUntil: null,
     conwayStagnation: null,
+    lastSuccessfulCaptureRound: 0,
+    offensiveStagnation: null,
     deathSites: [],
     fertileTraces: [],
     diseases: [],
@@ -678,6 +713,16 @@ export function assertState(state) {
       state.conwayStagnation === null ||
       (integer(state.conwayStagnation?.startedTurn, 0) &&
         integer(state.conwayStagnation?.level, 0, 2))
+    ) ||
+    !(
+      state.lastSuccessfulCaptureRound === undefined ||
+      integer(state.lastSuccessfulCaptureRound, 0)
+    ) ||
+    !(
+      state.offensiveStagnation === undefined ||
+      state.offensiveStagnation === null ||
+      (integer(state.offensiveStagnation?.startedRound, 0) &&
+        integer(state.offensiveStagnation?.level, 0, 2))
     ) ||
     !integer(state.populationDiseaseCooldownUntil, 0) ||
     typeof state.severePopulationLatched !== "boolean" ||
