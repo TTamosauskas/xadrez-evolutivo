@@ -134,6 +134,7 @@ test("Predação enables capture and is an individual prerequisite for Locomoç�
     s = createState(102, {
       geologicalStage: "ediacaran",
       historicalTraits: history,
+      naturalBarriers: false,
     });
   s.pieces = [];
   s.nextId = 1;
@@ -430,9 +431,17 @@ test("plant innovations unlock in their geological periods without becoming mand
   s.geologicalStage = "devonian";
   assert.equal(traitUnlocked(s, "Espinhos", plant), true);
   assert.equal(traitUnlocked(s, "Gimnospermas", plant), false);
+  assert.equal(traitUnlocked(s, "Trepadeira", plant), false);
 
   s.geologicalStage = "carboniferous";
   assert.equal(traitUnlocked(s, "Gimnospermas", plant), true);
+  assert.equal(traitUnlocked(s, "Trepadeira", plant), true);
+  assert.equal(
+    traitUnlocked(s, "Trepadeira", {
+      traits: ["Fotossíntese", "Embriófitas"],
+    }),
+    false,
+  );
   plant.traits.push("Gimnospermas");
   s.historicalTraits.push("Gimnospermas");
 
@@ -442,7 +451,7 @@ test("plant innovations unlock in their geological periods without becoming mand
   for (const stage of GEOLOGICAL_STAGES)
     assert.ok(
       !stage.required.some((trait) =>
-        ["Embriófitas", "Traqueófitas", "Espinhos", "Gimnospermas", "Angiospermas"].includes(trait),
+        ["Embriófitas", "Traqueófitas", "Espinhos", "Gimnospermas", "Trepadeira", "Angiospermas"].includes(trait),
       ),
     );
 });
@@ -469,6 +478,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
   assert.equal(traitUnlocked(s, "Angiospermas", plant), true);
   for (const trait of [
     "Locomoção",
+    "Escalador",
     "Respiração Cutânea",
     "Sacos Aéreos",
     "Necrófago",
@@ -488,7 +498,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
   assert.equal(traitUnlocked(s, "Predação", plant), true);
   assert.deepEqual(
     applyTraitMutation(
-      [...plant.traits, "Espinhos", "Angiospermas"],
+      [...plant.traits, "Espinhos", "Trepadeira", "Angiospermas"],
       "Predação",
     ),
     ["Predação"],
@@ -499,6 +509,7 @@ test("switching into Fotossíntese removes animal-only traits", () => {
   const animal = [
     "Predação",
     "Locomoção",
+    "Escalador",
     "Carnívoro",
     "Onívoro",
     "Necrófago",

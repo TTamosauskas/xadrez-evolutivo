@@ -13,9 +13,12 @@ export function fixture(
   const s = createState(seed, {
     geologicalStage: "quaternary",
     historicalTraits: FULL_HISTORY,
+    naturalBarriers: false,
   });
   s.pieces = [];
   s.nextId = 1;
+  s.naturalBarriers = [];
+  s.barriers = [];
   s.board.fill("neutral");
   for (const spec of specs) {
     const requestedTraits = spec.traits ?? [],

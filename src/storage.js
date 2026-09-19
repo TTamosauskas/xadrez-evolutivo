@@ -211,6 +211,18 @@ export function deserialize(raw) {
     }
     if (data.origin === undefined) data.origin = null;
     if (!Array.isArray(data.barriers)) data.barriers = [];
+    if (!Array.isArray(data.naturalBarriers)) data.naturalBarriers = [];
+    data.naturalBarriers = [
+      ...new Set(
+        data.naturalBarriers.filter(
+          (cell) =>
+            Number.isInteger(cell) &&
+            cell >= 0 &&
+            cell < 64 &&
+            !data.barriers.includes(cell),
+        ),
+      ),
+    ];
     data.seenMutations = historicalMutations(data, sourceVersion);
     const liveMax = Math.max(
       0,

@@ -125,6 +125,12 @@ main {
 .cell.barrier:hover {
   background: #704a2d;
 }
+.cell.natural-barrier {
+  box-shadow: inset 0 0 0 2px #4d341f66;
+}
+.cell.built-barrier {
+  box-shadow: inset 0 0 0 2px #a77b4f55;
+}
 .decomposition-mark {
   position: absolute;
   inset: 0;

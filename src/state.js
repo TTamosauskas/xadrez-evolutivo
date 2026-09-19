@@ -41,8 +41,12 @@ export const eggAt = (state, r, c) =>
   state.eggs?.find((egg) => egg.r === r && egg.c === c);
 export const plantSeedAt = (state, r, c) =>
   state.plantSeeds?.find((seed) => seed.r === r && seed.c === c);
-export const barrierAt = (state, r, c) =>
+export const builtBarrierAt = (state, r, c) =>
   state.barriers?.includes(square(r, c)) ?? false;
+export const naturalBarrierAt = (state, r, c) =>
+  state.naturalBarriers?.includes(square(r, c)) ?? false;
+export const barrierAt = (state, r, c) =>
+  builtBarrierAt(state, r, c) || naturalBarrierAt(state, r, c);
 export const terrain = (state, r, c) => state.board[square(r, c)];
 export const round = (state) => Math.floor(state.turn / 2);
 export const juvenile = (state, piece) =>
@@ -108,6 +112,88 @@ export function registerDiscoveries(state, piece) {
   return added;
 }
 
+const ORTHOGONAL = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+];
+
+function connectedOpenFraction(blocked) {
+  const open = Array.from({ length: 64 }, (_, cell) => cell).filter(
+    (cell) => !blocked.has(cell),
+  );
+  if (!open.length) return 0;
+  const seen = new Set([open[0]]),
+    queue = [open[0]];
+  while (queue.length) {
+    const cell = queue.shift(),
+      r = Math.floor(cell / 8),
+      c = cell % 8;
+    for (const [dr, dc] of ORTHOGONAL) {
+      const rr = r + dr,
+        cc = c + dc,
+        next = square(rr, cc);
+      if (
+        inside(rr, cc) &&
+        !blocked.has(next) &&
+        !seen.has(next)
+      ) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return seen.size / open.length;
+}
+
+function seedNaturalBarriers(state) {
+  const [min = 0, max = min] =
+      habitatProfile(state).naturalBarriers ?? [0, 0],
+    target = min + Math.floor(random(state) * (max - min + 1)),
+    protectedCells = new Set(),
+    founders = [
+      ...state.pieces.map((piece) => ({ r: piece.r, c: piece.c })),
+      ...(state.origin ? [{ r: state.origin.r, c: state.origin.c }] : []),
+    ];
+  for (const founder of founders)
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        const r = founder.r + dr,
+          c = founder.c + dc;
+        if (inside(r, c)) protectedCells.add(square(r, c));
+      }
+  const barriers = new Set(),
+    all = Array.from({ length: 64 }, (_, cell) => cell).filter(
+      (cell) => !protectedCells.has(cell),
+    );
+  let attempts = 0;
+  while (barriers.size < target && attempts++ < 256) {
+    const clustered =
+        barriers.size > 0 && random(state) < 0.72
+          ? all.filter((cell) => {
+              const r = Math.floor(cell / 8),
+                c = cell % 8;
+              return [...barriers].some((other) => {
+                const rr = Math.floor(other / 8),
+                  cc = other % 8;
+                return Math.max(Math.abs(r - rr), Math.abs(c - cc)) === 1;
+              });
+            })
+          : [],
+      pool = (clustered.length ? clustered : all).filter(
+        (cell) => !barriers.has(cell),
+      ),
+      cell = pick(state, pool);
+    if (cell === null) break;
+    const proposed = new Set(barriers);
+    proposed.add(cell);
+    if (connectedOpenFraction(proposed) < 0.8) continue;
+    barriers.add(cell);
+  }
+  state.naturalBarriers = [...barriers].sort((a, b) => a - b);
+}
+
 function seedHabitat(state) {
   const profile = habitatProfile(state);
   state.board.fill("neutral");
@@ -119,7 +205,7 @@ function seedHabitat(state) {
     const empty = shuffle(
       state,
       Array.from({ length: 64 }, (_, i) => i).filter(
-        (i) => !founderCells.has(i),
+        (i) => !founderCells.has(i) && !state.naturalBarriers.includes(i),
       ),
     );
     for (const i of empty.slice(0, profile.fertile)) state.board[i] = "fertile";
@@ -137,11 +223,18 @@ function seedHabitat(state) {
         [4, 5, 6],
       ]) {
         const candidates = rows.filter(
-          (r) => terrain(state, r, c) === "neutral",
+          (r) =>
+            terrain(state, r, c) === "neutral" &&
+            !naturalBarrierAt(state, r, c),
         );
-        state.board[
-          square(pick(state, candidates.length ? candidates : rows), c)
-        ] = "fertile";
+        const fallback = rows.filter(
+          (r) => !naturalBarrierAt(state, r, c),
+        );
+        const chosen = pick(
+          state,
+          candidates.length ? candidates : fallback,
+        );
+        if (chosen !== null) state.board[square(chosen, c)] = "fertile";
       }
     }
     const mobileFounder = state.pieces.some(
@@ -163,7 +256,9 @@ function seedHabitat(state) {
   const fertileCandidates = shuffle(
     state,
     Array.from({ length: 64 }, (_, i) => i).filter(
-      (i) => state.board[i] === "neutral",
+      (i) =>
+        state.board[i] === "neutral" &&
+        !state.naturalBarriers.includes(i),
     ),
   );
   for (const cell of fertileCandidates.slice(0, fertileNeeded))
@@ -171,7 +266,10 @@ function seedHabitat(state) {
   const hostileCandidates = shuffle(
     state,
     Array.from({ length: 64 }, (_, i) => i).filter(
-      (i) => state.board[i] === "neutral" && !founderCells.has(i),
+      (i) =>
+        state.board[i] === "neutral" &&
+        !founderCells.has(i) &&
+        !state.naturalBarriers.includes(i),
     ),
   );
   for (const cell of hostileCandidates.slice(0, profile.hostile))
@@ -226,6 +324,7 @@ export function createState(seed = Date.now(), options = {}) {
     nextPlantSeed: 1,
     plantSeeds: [],
     barriers: [],
+    naturalBarriers: [],
     populationLatched: { blue: false, amber: false },
     result: null,
   };
@@ -269,6 +368,7 @@ export function createState(seed = Date.now(), options = {}) {
       );
     }
   }
+  if (options.naturalBarriers !== false) seedNaturalBarriers(state);
   seedHabitat(state);
   recordDiscovery(state, "geology", state.geologicalStage);
   log(
@@ -291,13 +391,23 @@ export function activateOrigin(state) {
     state.origin.selected = true;
     return false;
   }
-  const candidates = [];
+  const clearOfNaturalBarriers = (r, c) =>
+      state.naturalBarriers.every((cell) => {
+        const rr = Math.floor(cell / 8),
+          cc = cell % 8;
+        return Math.max(Math.abs(r - rr), Math.abs(c - cc)) > 1;
+      }),
+    candidates = [];
   for (let r = 4; r <= 7; r++)
     for (let c = 0; c < 8; c++) {
-      const opposite = square(7 - r, 7 - c);
+      const opposite = square(7 - r, 7 - c),
+        oppositeR = 7 - r,
+        oppositeC = 7 - c;
       if (
         square(r, c) !== square(state.origin.r, state.origin.c) &&
-        opposite !== square(state.origin.r, state.origin.c)
+        opposite !== square(state.origin.r, state.origin.c) &&
+        clearOfNaturalBarriers(r, c) &&
+        clearOfNaturalBarriers(oppositeR, oppositeC)
       )
         candidates.push({ r, c });
     }
@@ -480,6 +590,10 @@ export function assertState(state) {
     !Array.isArray(state.barriers) ||
     state.barriers.some((cell) => !integer(cell, 0, 63)) ||
     new Set(state.barriers).size !== state.barriers.length ||
+    !Array.isArray(state.naturalBarriers) ||
+    state.naturalBarriers.some((cell) => !integer(cell, 0, 63)) ||
+    new Set(state.naturalBarriers).size !== state.naturalBarriers.length ||
+    state.naturalBarriers.some((cell) => state.barriers.includes(cell)) ||
     state.fertileTraces.some(
       (t) =>
         !integer(t.cell, 0, 63) ||
@@ -569,7 +683,12 @@ export function assertState(state) {
       !Number.isInteger(p.id) ||
       ids.has(p.id) ||
       !inside(p.r, p.c) ||
-      cells.has(square(p.r, p.c))
+      cells.has(square(p.r, p.c)) ||
+      (state.naturalBarriers.includes(square(p.r, p.c)) &&
+        !p.traits?.includes("Escalador") &&
+        !p.traits?.includes("Trepadeira")) ||
+      (state.barriers.includes(square(p.r, p.c)) &&
+        !p.traits?.includes("Trepadeira"))
     )
       throw Error("Ocupação inválida.");
     if (
@@ -643,7 +762,10 @@ export function assertState(state) {
       !inside(seed.r, seed.c) ||
       !integer(seed.movesRemaining, 0, 3) ||
       !validBroodProfile(seed.profile, seed.owner) ||
-      plantSeedCells.has(cell)
+      plantSeedCells.has(cell) ||
+      ((state.barriers.includes(cell) ||
+        state.naturalBarriers.includes(cell)) &&
+        !seed.profile.traits.includes("Trepadeira"))
     )
       throw Error("Semente vegetal inválida.");
     plantSeedIds.add(seed.id);
@@ -651,8 +773,17 @@ export function assertState(state) {
   }
   if (state.nextPlantSeed <= Math.max(0, ...plantSeedIds))
     throw Error("Identificadores de sementes vegetais inválidos.");
+  const eggCells = new Set(state.eggs.map((egg) => square(egg.r, egg.c)));
   if (
-    state.barriers.some((cell) => cells.has(cell) || plantSeedCells.has(cell))
+    state.barriers.some(
+      (cell) =>
+        state.naturalBarriers.includes(cell) ||
+        eggCells.has(cell),
+    ) ||
+    state.naturalBarriers.some((cell) => eggCells.has(cell)) ||
+    (state.origin &&
+      (state.naturalBarriers.includes(square(state.origin.r, state.origin.c)) ||
+        state.barriers.includes(square(state.origin.r, state.origin.c))))
   )
     throw Error("Barreira sobreposta.");
 

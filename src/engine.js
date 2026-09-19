@@ -5,6 +5,7 @@ import {
   at,
   eggAt,
   plantSeedAt,
+  barrierAt,
   terrain,
   round,
   random,
@@ -127,7 +128,7 @@ function photosynthesisHasSpace(state, p) {
         !at(state, r, c) &&
         !eggAt(state, r, c) &&
         !plantSeedAt(state, r, c) &&
-        !state.barriers.includes(square(r, c))
+        (!barrierAt(state, r, c) || has(p, "Trepadeira"))
       ) {
         free++;
         if (free >= 2) return true;
@@ -153,7 +154,7 @@ function photosynthesisExtraCell(state, p) {
         !piece &&
         !eggAt(state, r, c) &&
         !plantSeedAt(state, r, c) &&
-        !state.barriers.includes(square(r, c))
+        (!barrierAt(state, r, c) || has(p, "Trepadeira"))
       )
         empty.push({ r, c });
     }
@@ -210,7 +211,9 @@ function maturePhotosynthesis(state, owner) {
       delete p.photosynthesisSinceTurn;
       log(
         state,
-        `${OWNERS[p.owner]}: 🟢 Fotossíntese tornou ${coord(p.r, p.c)} fértil.`,
+        barrierAt(state, p.r, p.c) && has(p, "Trepadeira")
+          ? `${OWNERS[p.owner]}: 🌿 Trepadeira fertilizou a barreira em ${coord(p.r, p.c)}.`
+          : `${OWNERS[p.owner]}: 🟢 Fotossíntese tornou ${coord(p.r, p.c)} fértil.`,
       );
     }
   }
@@ -504,12 +507,14 @@ function executeMove(ctx, action) {
     const resource = square(target.r, target.c);
     if (state.board[resource] !== "fertile")
       throw Error("Escolha uma casa fértil adjacente.");
-    state.board[resource] = "neutral";
-    log(
-      state,
-      `${OWNERS[p.owner]}: 🌿 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
-    );
     const born = reproduce(ctx, p, null, "Traqueófitas");
+    if (born) {
+      state.board[resource] = "neutral";
+      log(
+        state,
+        `${OWNERS[p.owner]}: 🍃 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
+      );
+    }
     if (born && deferEggPlacement(state, p)) return;
     completeMove(ctx, p, false, false);
     return;

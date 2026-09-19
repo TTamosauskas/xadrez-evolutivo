@@ -1,11 +1,147 @@
 import { EVENTS, inside, square, has, distance } from "./constants.js";
-import { at, eggAt, barrierAt, pick, random, shuffle, round, log, notice } from "./state.js";
-import { eventWeights } from "./geology.js";
+import {
+  at,
+  eggAt,
+  plantSeedAt,
+  barrierAt,
+  builtBarrierAt,
+  naturalBarrierAt,
+  pick,
+  random,
+  shuffle,
+  round,
+  log,
+  notice,
+} from "./state.js";
+import { eventWeights, habitatProfile } from "./geology.js";
 import { recordDiscovery } from "./discoveries.js";
 import { startDisease } from "./disease.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
 const fertile = (state) =>
   allCells().filter((i) => state.board[i] === "fertile");
+const ORTHOGONAL = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+];
+
+function openFractionWithNaturalBarriers(state, naturalBarriers) {
+  const blocked = new Set([...(state.barriers ?? []), ...naturalBarriers]),
+    open = allCells().filter((cell) => !blocked.has(cell));
+  if (!open.length) return 0;
+  const seen = new Set([open[0]]),
+    queue = [open[0]];
+  while (queue.length) {
+    const cell = queue.shift(),
+      r = Math.floor(cell / 8),
+      c = cell % 8;
+    for (const [dr, dc] of ORTHOGONAL) {
+      const rr = r + dr,
+        cc = c + dc,
+        next = square(rr, cc);
+      if (
+        inside(rr, cc) &&
+        !blocked.has(next) &&
+        !seen.has(next)
+      ) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return seen.size / open.length;
+}
+
+function removeNaturalBarriers(state, cells = null, count = Infinity) {
+  const allowed = cells ? new Set(cells) : null,
+    candidates = shuffle(
+      state,
+      state.naturalBarriers.filter((cell) => !allowed || allowed.has(cell)),
+    ),
+    removed = candidates.slice(0, count);
+  if (!removed.length) return [];
+  const gone = new Set(removed);
+  state.naturalBarriers = state.naturalBarriers.filter(
+    (cell) => !gone.has(cell),
+  );
+  return removed;
+}
+
+function addNaturalBarriers(state, count, near = []) {
+  const [, stageMax = 0] = habitatProfile(state).naturalBarriers ?? [0, 0],
+    hardMax = Math.min(8, stageMax + 2),
+    added = [];
+  let attempts = 0;
+  while (
+    added.length < count &&
+    state.naturalBarriers.length < hardMax &&
+    attempts++ < 128
+  ) {
+    const occupied = new Set([
+        ...state.barriers,
+        ...state.naturalBarriers,
+        ...state.eggs.map((egg) => square(egg.r, egg.c)),
+        ...state.plantSeeds.map((seed) => square(seed.r, seed.c)),
+        ...state.pieces.map((piece) => square(piece.r, piece.c)),
+        ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
+        ...state.deathSites.map((site) => site.cell),
+        ...state.fertileTraces.map((trace) => trace.cell),
+        ...(state.event?.hazards ?? []),
+      ]),
+      candidates = allCells().filter((cell) => !occupied.has(cell)),
+      nearCandidates = near.length
+        ? candidates.filter((cell) => {
+            const point = { r: Math.floor(cell / 8), c: cell % 8 };
+            return near.some(
+              (other) =>
+                distance(point, {
+                  r: Math.floor(other / 8),
+                  c: other % 8,
+                }) <= 2,
+            );
+          })
+        : [],
+      clustered = state.naturalBarriers.length
+        ? candidates.filter((cell) => {
+            const point = { r: Math.floor(cell / 8), c: cell % 8 };
+            return state.naturalBarriers.some(
+              (other) =>
+                distance(point, {
+                  r: Math.floor(other / 8),
+                  c: other % 8,
+                }) === 1,
+            );
+          })
+        : [],
+      pool = nearCandidates.length
+        ? nearCandidates
+        : clustered.length && random(state) < 0.7
+          ? clustered
+          : candidates,
+      cell = pick(state, pool);
+    if (cell === null) break;
+    const proposed = [...state.naturalBarriers, cell];
+    if (openFractionWithNaturalBarriers(state, proposed) < 0.75) {
+      const index = candidates.indexOf(cell);
+      if (index >= 0) candidates.splice(index, 1);
+      if (!candidates.length) break;
+      continue;
+    }
+    state.naturalBarriers.push(cell);
+    state.naturalBarriers.sort((a, b) => a - b);
+    state.board[cell] = "neutral";
+    added.push(cell);
+  }
+  return added;
+}
+
+function recordBarrierChange(event, created = [], removed = []) {
+  event.barrierChanges ??= { created: 0, removed: 0 };
+  event.barrierChanges.created += created.length;
+  event.barrierChanges.removed += removed.length;
+}
+
 function deathSiteAt(state, cell) {
   return state.deathSites.find((d) => d.cell === cell);
 }
@@ -88,7 +224,14 @@ function seedCluster(state, type) {
           [r + dr, c],
           [r, c + dc],
         ];
-        if (cells.every(([rr, cc]) => inside(rr, cc) && !at(state, rr, cc)))
+        if (
+          cells.every(
+            ([rr, cc]) =>
+              inside(rr, cc) &&
+              !at(state, rr, cc) &&
+              !barrierAt(state, rr, cc),
+          )
+        )
           candidates.push(cells.map(([rr, cc]) => square(rr, cc)));
       }
   const score = (cells) =>
@@ -139,6 +282,8 @@ export function advanceConway(ctx) {
         ? "hostile"
         : "neutral",
   );
+  for (const cell of state.naturalBarriers)
+    state.board[cell] = before[cell] === "fertile" ? "fertile" : "neutral";
   for (const type of ["fertile", "hostile"]) {
     if (!state.board.includes(type)) seedCluster(state, type);
     const unchanged =
@@ -155,7 +300,8 @@ export function advanceConway(ctx) {
               (dr || dc) &&
               inside(r, c) &&
               state.board[square(r, c)] === "neutral" &&
-              !at(state, r, c)
+              !at(state, r, c) &&
+              !barrierAt(state, r, c)
             )
               options.push([i, square(r, c)]);
           }
@@ -212,7 +358,9 @@ function addFertile(state, count) {
   for (let n = 0; n < count; n++) {
     const empty = allCells().filter(
       (i) =>
-        state.board[i] === "neutral" && !at(state, Math.floor(i / 8), i % 8),
+        state.board[i] === "neutral" &&
+        !at(state, Math.floor(i / 8), i % 8) &&
+        !barrierAt(state, Math.floor(i / 8), i % 8),
     );
     if (!empty.length) break;
     const adjacent = empty.filter((i) =>
@@ -234,6 +382,13 @@ function iceCells(event) {
     return r < event.rows && c < event.cols;
   });
 }
+function barrierHabitableBy(state, piece, r, c) {
+  if (builtBarrierAt(state, r, c)) return has(piece, "Trepadeira");
+  if (naturalBarrierAt(state, r, c))
+    return has(piece, "Escalador") || has(piece, "Trepadeira");
+  return true;
+}
+
 function earthquake(ctx) {
   const state = ctx.state,
     original = new Map(state.pieces.map((p) => [p.id, { r: p.r, c: p.c }])),
@@ -247,7 +402,12 @@ function earthquake(ctx) {
           (i) =>
             distance(p, { r: Math.floor(i / 8), c: i % 8 }) === 1 &&
             !eggAt(state, Math.floor(i / 8), i % 8) &&
-            !barrierAt(state, Math.floor(i / 8), i % 8),
+            barrierHabitableBy(
+              state,
+              p,
+              Math.floor(i / 8),
+              i % 8,
+            ),
         ),
       ),
     ]),
@@ -274,7 +434,7 @@ function earthquake(ctx) {
   if (!success) {
     assigned.clear();
     for (const p of state.pieces)
-      if (!eggAt(state, p.r, p.c) && !barrierAt(state, p.r, p.c))
+      if (!eggAt(state, p.r, p.c))
         candidates.get(p.id).push(square(p.r, p.c));
     for (const p of state.pieces) assign(p, new Set());
   }
@@ -345,6 +505,9 @@ export function startEvent(ctx, id = null) {
             i % 8 < c + 3,
         ),
       );
+      const removed = removeNaturalBarriers(state, event.hazards),
+        created = addNaturalBarriers(state, 2, event.hazards);
+      recordBarrierChange(event, created, removed);
       break;
     }
     case "ice":
@@ -371,10 +534,20 @@ export function startEvent(ctx, id = null) {
           (i) => i < 8 || i >= 56 || i % 8 === 0 || i % 8 === 7,
         ),
       );
+      recordBarrierChange(
+        event,
+        [],
+        removeNaturalBarriers(state, event.hazards, 2),
+      );
       break;
-    case "meteor":
-      markHazard(state, event, quadrant(Math.floor(random(state) * 4)));
+    case "meteor": {
+      const impact = quadrant(Math.floor(random(state) * 4));
+      markHazard(state, event, impact);
+      const removed = removeNaturalBarriers(state, impact),
+        created = addNaturalBarriers(state, 1, impact);
+      recordBarrierChange(event, created, removed);
       break;
+    }
     case "desert":
       event.initial = Math.max(1, fertile(state).length);
       trim(state, event.initial);
@@ -396,13 +569,21 @@ export function startEvent(ctx, id = null) {
     case "fertilized":
       addFertile(state, 1);
       break;
-    case "earthquake":
+    case "earthquake": {
       earthquake(ctx);
+      const removed = removeNaturalBarriers(state, null, 1),
+        created = addNaturalBarriers(state, 1, removed);
+      recordBarrierChange(event, created, removed);
       break;
-    case "abundant-rains":
-      for (const i of quadrant(Math.floor(random(state) * 4)))
-        state.board[i] = "fertile";
+    }
+    case "abundant-rains": {
+      const wet = quadrant(Math.floor(random(state) * 4)),
+        removed = removeNaturalBarriers(state, wet, 1);
+      recordBarrierChange(event, [], removed);
+      for (const i of wet)
+        if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
       break;
+    }
     case "insularization": {
       const r = 1 + Math.floor(random(state) * 6),
         c = 1 + Math.floor(random(state) * 6);
@@ -411,20 +592,28 @@ export function startEvent(ctx, id = null) {
         event,
         allCells().filter((i) => Math.floor(i / 8) === r || i % 8 === c),
       );
+      recordBarrierChange(
+        event,
+        [],
+        removeNaturalBarriers(state, event.hazards, 2),
+      );
       for (const p of [...state.pieces])
         if (event.hazards.includes(square(p.r, p.c)))
           ctx.kill(p.id, "Insularização");
       break;
     }
     case "alluvial-river": {
-      const anti = random(state) < 0.5;
-      for (const i of allCells())
-        if (
-          Math.abs(
-            (i % 8) - (anti ? 7 - Math.floor(i / 8) : Math.floor(i / 8)),
-          ) <= 1
-        )
-          state.board[i] = "fertile";
+      const anti = random(state) < 0.5,
+        river = allCells().filter(
+          (i) =>
+            Math.abs(
+              (i % 8) - (anti ? 7 - Math.floor(i / 8) : Math.floor(i / 8)),
+            ) <= 1,
+        ),
+        removed = removeNaturalBarriers(state, river, 2);
+      recordBarrierChange(event, [], removed);
+      for (const i of river)
+        if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
       break;
     }
   }
@@ -433,6 +622,11 @@ export function startEvent(ctx, id = null) {
     event.description,
   ]);
   log(state, `🌿 Evento ecológico: ${event.name} — ${event.description}`);
+  if (event.barrierChanges?.created || event.barrierChanges?.removed)
+    log(
+      state,
+      `🟫 Relevo alterado: +${event.barrierChanges.created} / -${event.barrierChanges.removed} barreira(s) natural(is).`,
+    );
 }
 export function tickEnvironment(ctx) {
   const state = ctx.state,
@@ -459,6 +653,8 @@ export function tickEnvironment(ctx) {
         event.rows++;
       else if (event.cols < 8) event.cols++;
       markHazard(state, event, iceCells(event));
+      const removed = removeNaturalBarriers(state, event.hazards, 1);
+      recordBarrierChange(event, [], removed);
     } else if (event.id === "drought") trim(state, event.cap);
     else if (event.id === "desert")
       trim(state, Math.max(1, Math.ceil((event.initial * (10 - age)) / 10)));
