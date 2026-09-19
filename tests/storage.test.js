@@ -276,7 +276,7 @@ test("imports legacy positions, specialization loss, seeds, poison and timers", 
   assert.equal(s.turn, 3);
   assert.equal(s.pieces[0].venom.remaining, 2);
 });
-test("v2 saves migrate old locomotion semantics and Ovos genes into v6", () => {
+test("v2 saves retire obsolete Ovos genes while preserving old locomotion semantics", () => {
   const old = createState(9);
   old.version = 2;
   old.era = 4;
@@ -296,14 +296,37 @@ test("v2 saves migrate old locomotion semantics and Ovos genes into v6", () => {
   assert.equal(s.version, 7);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
-  assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "eggs");
-  assert.ok(s.pieces[0].traits.includes("Ovos"));
+  assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "local");
+  assert.ok(!s.pieces[0].traits.includes("Ovos"));
   assert.ok(s.pieces[0].traits.includes("Locomoção"));
   assert.ok(s.pieces[0].traits.includes("Locomoção Avançada"));
   assert.ok(s.pieces.every((p) => p.traits.includes("Locomoção")));
   assert.ok(s.pieces.every((p) => Array.isArray(p.pregnancies)));
   assert.equal(s.totalCycles, 4);
   assert.ok(s.historicalTraits.includes("Locomoção"));
+});
+
+test("current saves drop obsolete Ovos history discoveries and alleles", () => {
+  const old = createState(91);
+  old.historicalTraits.push("Ovos");
+  old.seenMutations.push("Ovos", "Perda de Ovos");
+  old.discoveries.mutations.push("Ovos");
+  old.discoveries.read.push("mutations:Ovos");
+  old.pieces[0].traits.push("Ovos");
+  old.pieces[0].reproGenes.dispersal = [
+    { value: "eggs", dominance: "dominant" },
+    { value: "spores", dominance: "recessive" },
+  ];
+  const restored = deserialize(JSON.stringify(old));
+  assert.ok(!restored.historicalTraits.includes("Ovos"));
+  assert.ok(!restored.seenMutations.includes("Ovos"));
+  assert.ok(!restored.seenMutations.includes("Perda de Ovos"));
+  assert.ok(!restored.discoveries.mutations.includes("Ovos"));
+  assert.ok(!restored.discoveries.read.includes("mutations:Ovos"));
+  assert.ok(!restored.pieces[0].traits.includes("Ovos"));
+  assert.equal(restored.pieces[0].reproGenes.dispersal[0].value, "local");
+  assert.equal(restored.pieces[0].reproGenes.dispersal[1].value, "spores");
+  assertState(restored);
 });
 
 test("barriers and construction phase survive save round trip", () => {
