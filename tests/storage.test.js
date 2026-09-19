@@ -22,6 +22,21 @@ test("round trip saves deterministic state and rejects duplicate occupancy", () 
   bad.pieces[1].c = bad.pieces[0].c;
   assert.throws(() => deserialize(JSON.stringify(bad)), /Ocupação/);
 });
+test("older v7 saves restore existing pieces as mature and off cooldown", () => {
+  const s = createState(44);
+  s.turn = 12;
+  for (const piece of s.pieces) {
+    delete piece.maturesRound;
+    delete piece.nextReproductionRound;
+  }
+  const restored = deserialize(JSON.stringify(s));
+  for (const piece of restored.pieces) {
+    assert.equal(piece.maturesRound, 6);
+    assert.equal(piece.nextReproductionRound, 6);
+  }
+  assertState(restored);
+});
+
 test("older v7 saves default the Conway stagnation watch to inactive", () => {
   const s = createState(31);
   delete s.conwayWatchUntil;
