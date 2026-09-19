@@ -1570,10 +1570,10 @@ test("Escavador destroys built barriers while Chifre remains purely defensive", 
   assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c === 2));
   assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 3));
 
-  s.pieces[0].traits = ["Chifre"];
+  s.pieces[0].traits = ["Predação", "Locomoção", "Chifre"];
   assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c >= 2));
 
-  s.pieces[0].traits = ["Escavador"];
+  s.pieces[0].traits = ["Predação", "Locomoção", "Escavador"];
   assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 2));
   s = simulate(s, move(s.pieces[0], 4, 3));
   assert.ok(!s.barriers.includes(34));
