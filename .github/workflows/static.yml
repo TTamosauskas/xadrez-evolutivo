@@ -23,6 +23,11 @@ jobs:
       - run: npm run simulate
         env:
           GAMES: 50
+      - name: Benchmark all geological periods
+        run: npm run benchmark:periods
+        env:
+          GAMES_PER_STAGE: 6
+          LIMIT: 1200
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
