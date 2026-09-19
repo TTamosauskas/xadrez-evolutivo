@@ -2,6 +2,7 @@ import { inside, has, distance, square } from "./constants.js";
 import {
   at,
   eggAt,
+  plantSeedAt,
   barrierAt,
   terrain,
   round,
@@ -215,6 +216,44 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     (!collector || (!has(p, "Esterilidade") && p.seedUsedTurn !== state.turn))
   )
     targets.push({ r: p.r, c: p.c, path: [], stay: true, capture: false });
+  if (
+    canReproduce &&
+    canUseFertility &&
+    has(p, "Respiração Cutânea") &&
+    !has(p, "Fotossíntese")
+  )
+    for (const [dr, dc] of ORTH) {
+      const r = p.r + dr,
+        c = p.c + dc;
+      if (
+        inside(r, c) &&
+        terrain(state, r, c) === "fertile" &&
+        !at(state, r, c) &&
+        !eggAt(state, r, c) &&
+        !plantSeedAt(state, r, c) &&
+        !barrierAt(state, r, c)
+      ) {
+        const existing = targets.find(
+          (target) => target.r === r && target.c === c,
+        );
+        if (existing)
+          Object.assign(existing, {
+            path: [],
+            stay: true,
+            cutaneous: true,
+            capture: false,
+          });
+        else
+          targets.push({
+            r,
+            c,
+            path: [],
+            stay: true,
+            cutaneous: true,
+            capture: false,
+          });
+      }
+    }
   if (
     canReproduce &&
     canUseFertility &&

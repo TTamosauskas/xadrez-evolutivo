@@ -70,7 +70,7 @@ export const GEOLOGICAL_STAGES = [
     id: "ordovician",
     group: "Paleozoico",
     period: "Ordoviciano",
-    required: [],
+    required: ["Ovíparo"],
     habitat: { fertile: 14, hostile: 7, standard: true },
     events: { ice: 4, sea: 3, blockade: 1, earthquake: 1 },
   },
@@ -105,7 +105,7 @@ export const GEOLOGICAL_STAGES = [
     id: "carboniferous",
     group: "Paleozoico",
     period: "Carbonífero",
-    required: ["Ovíparo", "Ooteca", "Voo"],
+    required: ["Ovíparos Amniotas", "Ooteca", "Voo"],
     habitat: { fertile: 14, hostile: 7, standard: true },
     events: {
       "abundant-rains": 4,
@@ -212,12 +212,15 @@ export const TRAIT_STAGE = {
   Coletor: "silurian",
   "Locomoção Avançada": "devonian",
   Onívoro: "devonian",
+  "Respiração Cutânea": "devonian",
   Voo: "carboniferous",
-  Ovíparo: "carboniferous",
+  Ovíparo: "ordovician",
+  "Ovíparos Amniotas": "carboniferous",
   Ooteca: "carboniferous",
   "Cuidado Parental": "permian",
   Lactação: "triassic",
   Vivíparo: "triassic",
+  "Sacos Aéreos": "triassic",
   "Ovulação Induzida": "paleogene",
   "Visão Noturna": "jurassic",
   Eusocialidade: "cretaceous",
@@ -254,13 +257,28 @@ export const TRAIT_DEPENDENCIES = {
   },
   Locomoção: { historical: ["Predação"], piece: ["Predação"] },
   "Locomoção Avançada": { historical: ["Locomoção"] },
+  "Respiração Cutânea": {
+    historical: ["Locomoção"],
+    piece: ["Locomoção"],
+  },
+  "Sacos Aéreos": {
+    historical: ["Locomoção Avançada"],
+    piece: ["Locomoção"],
+  },
   Voo: { historical: ["Locomoção"] },
+  "Ovíparos Amniotas": {
+    historical: ["Ovíparo"],
+    piece: ["Ovíparo"],
+  },
   "Cuidado Parental": { historical: ["Ovíparo"] },
   Lactação: {
     historical: ["Cuidado Parental"],
     piece: ["Cuidado Parental"],
   },
-  Vivíparo: { historical: ["Ovíparo"] },
+  Vivíparo: {
+    historical: ["Ovíparos Amniotas"],
+    piece: ["Ovíparos Amniotas"],
+  },
   "Ovulação Induzida": {
     historical: ["Vivíparo"],
     piece: ["Vivíparo"],
@@ -289,11 +307,14 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Predação",
   "Locomoção",
   "Locomoção Avançada",
+  "Respiração Cutânea",
+  "Sacos Aéreos",
   "Carnívoro",
   "Canibalismo",
   "Onívoro",
   "Necrófago",
   "Ovíparo",
+  "Ovíparos Amniotas",
   "Ovífagia",
   "Vivíparo",
   "Cuidado Parental",
@@ -319,6 +340,14 @@ export function traitCombinationValid(traits) {
   if ([...PLANT_DERIVED_TRAITS].some((trait) => set.has(trait)) && !set.has("Fotossíntese"))
     return false;
   if (set.has("Locomoção") && !set.has("Predação")) return false;
+  if (set.has("Respiração Cutânea") && !set.has("Locomoção")) return false;
+  if (set.has("Sacos Aéreos") && !set.has("Locomoção")) return false;
+  if (
+    set.has("Ovíparos Amniotas") &&
+    !set.has("Ovíparo") &&
+    !set.has("Vivíparo")
+  )
+    return false;
   if (set.has("Carnívoro") && !set.has("Predação")) return false;
   if (set.has("Canibalismo") && !set.has("Carnívoro")) return false;
   if (set.has("Precocidade Sexual") && !set.has("Reprodução Sexuada"))
@@ -352,8 +381,14 @@ export function normalizeEnergyBranch(traits, preferred = null) {
     for (const trait of PLANT_DERIVED_TRAITS) set.delete(trait);
   if (!set.has("Predação")) {
     set.delete("Locomoção");
+    set.delete("Respiração Cutânea");
+    set.delete("Sacos Aéreos");
     set.delete("Carnívoro");
     set.delete("Onívoro");
+  }
+  if (!set.has("Locomoção")) {
+    set.delete("Respiração Cutânea");
+    set.delete("Sacos Aéreos");
   }
   if (!set.has("Carnívoro")) {
     set.delete("Onívoro");
@@ -399,7 +434,20 @@ export function traitLossAllowed(piece, trait) {
   if (trait === "Gimnospermas" && traits.has("Angiospermas")) return false;
   if (
     trait === "Predação" &&
-    (traits.has("Locomoção") || traits.has("Carnívoro") || traits.has("Onívoro"))
+    (traits.has("Locomoção") ||
+      traits.has("Carnívoro") ||
+      traits.has("Onívoro"))
+  )
+    return false;
+  if (
+    trait === "Locomoção" &&
+    (traits.has("Respiração Cutânea") || traits.has("Sacos Aéreos"))
+  )
+    return false;
+  if (
+    trait === "Ovíparo" &&
+    traits.has("Ovíparos Amniotas") &&
+    !traits.has("Vivíparo")
   )
     return false;
   if (

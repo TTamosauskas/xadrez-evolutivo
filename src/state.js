@@ -583,9 +583,13 @@ export function assertState(state) {
       !["blue", "amber"].includes(egg.owner) ||
       !inside(egg.r, egg.c) ||
       cells.has(cell) ||
-      !integer(egg.hatchRound) ||
+      !integer(egg.laidRound) ||
+      !integer(egg.hatchRound, egg.laidRound + 3) ||
+      !integer(egg.expireRound, egg.hatchRound) ||
+      egg.expireRound !== egg.laidRound + 6 ||
+      !["basal", "amniote"].includes(egg.mode) ||
       (egg.parentId !== undefined && egg.parentId !== null && !integer(egg.parentId, 1)) ||
-      !["local", "eggs", "spores"].includes(egg.dispersal) ||
+      !["local", "spores"].includes(egg.dispersal) ||
       !Array.isArray(egg.brood) ||
       !egg.brood.length ||
       !egg.brood.every((profile) => validBroodProfile(profile, egg.owner))
@@ -625,7 +629,7 @@ export function assertState(state) {
     for (const pregnancy of p.pregnancies)
       if (
         !integer(pregnancy.dueRound) ||
-        !["local", "eggs", "spores"].includes(pregnancy.dispersal) ||
+        !["local", "spores"].includes(pregnancy.dispersal) ||
         !Array.isArray(pregnancy.brood) ||
         !pregnancy.brood.length ||
         !pregnancy.brood.every((profile) =>

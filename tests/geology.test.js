@@ -62,10 +62,10 @@ test("period innovations follow the didactic sequence", () => {
     "Necrófago",
     "Construção de Nicho",
   ]);
-  assert.deepEqual(required.ordovician, []);
+  assert.deepEqual(required.ordovician, ["Ovíparo"]);
   assert.deepEqual(required.silurian, ["Coletor"]);
   assert.deepEqual(required.devonian, ["Locomoção Avançada", "Onívoro"]);
-  assert.deepEqual(required.carboniferous, ["Ovíparo", "Ooteca", "Voo"]);
+  assert.deepEqual(required.carboniferous, ["Ovíparos Amniotas", "Ooteca", "Voo"]);
   assert.deepEqual(required.cretaceous, ["Eusocialidade", "Ovífagia"]);
   assert.deepEqual(required.neogene, [
     "Chifre",
@@ -327,9 +327,14 @@ test("later innovations obey historical and individual dependencies", () => {
   assert.equal(traitUnlocked(s, "Construtor Avançado", p), true);
 
   s.geologicalStage = "triassic";
-  s.historicalTraits = s.historicalTraits.filter((trait) => trait !== "Ovíparo");
+  s.historicalTraits = s.historicalTraits.filter(
+    (trait) => trait !== "Ovíparos Amniotas",
+  );
+  p.traits = p.traits.filter((trait) => trait !== "Ovíparos Amniotas");
   assert.equal(traitUnlocked(s, "Vivíparo", p), false);
-  s.historicalTraits.push("Ovíparo");
+  s.historicalTraits.push("Ovíparos Amniotas");
+  assert.equal(traitUnlocked(s, "Vivíparo", p), false);
+  p.traits.push("Ovíparos Amniotas");
   assert.equal(traitUnlocked(s, "Vivíparo", p), true);
 });
 
@@ -464,8 +469,11 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
   assert.equal(traitUnlocked(s, "Angiospermas", plant), true);
   for (const trait of [
     "Locomoção",
+    "Respiração Cutânea",
+    "Sacos Aéreos",
     "Necrófago",
     "Ovíparo",
+    "Ovíparos Amniotas",
     "Vivíparo",
     "Voo",
     "Visão Noturna",

@@ -271,6 +271,26 @@ test("new life-history traits unlock in their intended optional periods", () => 
   p.traits = ["Cuidado Parental"];
   assert.equal(traitUnlocked(s, "Lactação", p), true);
 
+  s.geologicalStage = "ordovician";
+  s.historicalTraits = historyBefore("ordovician");
+  p.traits = ["Predação", "Locomoção"];
+  assert.equal(traitUnlocked(s, "Ovíparo", p), true);
+
+  s.geologicalStage = "devonian";
+  s.historicalTraits = historyBefore("devonian");
+  p.traits = ["Predação", "Locomoção"];
+  assert.equal(traitUnlocked(s, "Respiração Cutânea", p), true);
+
+  s.geologicalStage = "carboniferous";
+  s.historicalTraits = historyBefore("carboniferous");
+  p.traits = ["Predação", "Locomoção", "Ovíparo"];
+  assert.equal(traitUnlocked(s, "Ovíparos Amniotas", p), true);
+
+  s.geologicalStage = "triassic";
+  s.historicalTraits = historyBefore("triassic");
+  p.traits = ["Predação", "Locomoção"];
+  assert.equal(traitUnlocked(s, "Sacos Aéreos", p), true);
+
   s.geologicalStage = "paleogene";
   s.historicalTraits = historyBefore("paleogene");
   p.traits = ["Vivíparo"];
@@ -283,6 +303,8 @@ test("new life-history traits unlock in their intended optional periods", () => 
           "Precocidade Sexual",
           "Canibalismo",
           "Lactação",
+          "Respiração Cutânea",
+          "Sacos Aéreos",
           "Ovulação Induzida",
         ].includes(trait),
       ),

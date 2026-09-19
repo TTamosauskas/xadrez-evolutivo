@@ -139,7 +139,7 @@ export function render(
         neutral: "casa neutra",
       }[state.board[square(r, c)]];
       const eggLabel = egg
-          ? `, ovo das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s)`
+          ? `, ovo ${egg.mode === "amniote" ? "amniótico" : "aquático"} das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), maturação em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s), ${egg.mode === "amniote" ? "busca espaço livre" : "busca terreno fértil"}, expira em ${Math.max(0, egg.expireRound - currentRound)} rodada(s)`
           : "",
         plantSeedLabel = plantSeed
           ? `, semente das ${OWNERS[plantSeed.owner]}, ${plantSeed.movesRemaining} rodada(s) de dispersão restante(s)`
@@ -151,7 +151,7 @@ export function render(
       cell.title = label;
       if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
-      if (egg) cell.append(make("span", "🥚", "egg-mark"));
+      if (egg) cell.append(make("span", "⚪", "egg-mark"));
       if (plantSeed) cell.append(make("span", "🌰", "egg-mark"));
       if (originHere)
         cell.append(make("span", "♚", "piece origin-piece"));

@@ -329,6 +329,39 @@ test("current saves drop obsolete Ovos history discoveries and alleles", () => {
   assertState(restored);
 });
 
+test("legacy eggs migrate to mobile amniotic eggs with a six-round lifespan", () => {
+  const old = createState(92),
+    parent = old.pieces[0];
+  old.eggs.push({
+    id: old.nextEgg++,
+    owner: parent.owner,
+    r: 3,
+    c: 3,
+    hatchRound: 5,
+    parentId: parent.id,
+    brood: [
+      {
+        owner: parent.owner,
+        rank: parent.rank,
+        traits: [...parent.traits],
+        reproGenes: structuredClone(parent.reproGenes),
+        mutations: 0,
+        generation: 1,
+        parentId: parent.id,
+      },
+    ],
+    dispersal: "local",
+  });
+  old.maxGenerationReached = 1;
+  const restored = deserialize(JSON.stringify(old)),
+    egg = restored.eggs[0];
+  assert.equal(egg.mode, "amniote");
+  assert.equal(egg.laidRound, 2);
+  assert.equal(egg.hatchRound, 5);
+  assert.equal(egg.expireRound, 8);
+  assertState(restored);
+});
+
 test("barriers and construction phase survive save round trip", () => {
   const s = createState(13),
     p = s.pieces.find((piece) => piece.owner === "blue");

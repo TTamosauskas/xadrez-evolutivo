@@ -898,7 +898,7 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
     ]);
   assertState(next);
 });
-test("Ovíparo stores the brood in one egg and hatches after three rounds", () => {
+test("Ovíparo stores the brood in one mobile egg and hatches on fertile terrain after three rounds", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ovíparo"] },
       { owner: "amber", r: 0, c: 0 },
@@ -910,7 +910,11 @@ test("Ovíparo stores the brood in one egg and hatches after three rounds", () =
   assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
   assert.equal(s.eggs.length, 1);
   assert.equal(s.eggs[0].brood.length, 1);
+  assert.equal(s.eggs[0].mode, "basal");
+  assert.equal(s.eggs[0].laidRound, 0);
   assert.equal(s.eggs[0].hatchRound, 3);
+  assert.equal(s.eggs[0].expireRound, 6);
+  s.board[s.eggs[0].r * 8 + s.eggs[0].c] = "fertile";
 
   s.turn = 4;
   tickReproduction(ctx);
@@ -995,7 +999,10 @@ test("only Ovífagia can capture an enemy egg and converts its brood into offspr
     owner: "amber",
     r: 4,
     c: 4,
+    laidRound: 0,
     hatchRound: 3,
+    expireRound: 6,
+    mode: "amniote",
     brood: [structuredClone(profile), structuredClone(profile)],
     dispersal: "local",
   });
@@ -1306,7 +1313,10 @@ test("Cuidado Parental protects adjacent eggs from Ovífagia", () => {
     owner: "amber",
     r: 4,
     c: 4,
+    laidRound: 0,
     hatchRound: 3,
+    expireRound: 6,
+    mode: "amniote",
     parentId: parent.id,
     brood: [
       {
