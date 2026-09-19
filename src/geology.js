@@ -446,6 +446,7 @@ export function traitUnlocked(state, trait, piece = null) {
   if (NEGATIVE_TRAITS.has(trait)) return true;
   if (
     piece?.traits?.includes("Fotossíntese") &&
+    trait !== "Predação" &&
     PLANT_INCOMPATIBLE_TRAITS.has(trait)
   )
     return false;
