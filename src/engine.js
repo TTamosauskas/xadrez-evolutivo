@@ -450,10 +450,28 @@ function executeMove(ctx, action) {
     p = state.pieces.find(
       (x) => x.id === action.id && x.owner === state.current,
     );
-  const target = movesFor(state, p).find(
-    (t) => t.r === action.r && t.c === action.c,
-  );
+  const matchingTargets = movesFor(state, p).filter(
+      (t) => t.r === action.r && t.c === action.c,
+    ),
+    target =
+      matchingTargets.find((t) => t.cutaneous || t.vascular) ??
+      matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
+  if (target.cutaneous) {
+    const resource = square(target.r, target.c);
+    if (state.board[resource] !== "fertile")
+      throw Error("Escolha uma casa fértil ortogonalmente adjacente.");
+    const born = reproduce(ctx, p, null, "Respiração Cutânea");
+    if (born) {
+      state.board[resource] = "neutral";
+      log(
+        state,
+        `${OWNERS[p.owner]}: 🐸 Respiração Cutânea consumiu ${coord(target.r, target.c)} à distância.`,
+      );
+    }
+    completeMove(ctx, p, false, false);
+    return;
+  }
   if (target.vascular) {
     const resource = square(target.r, target.c);
     if (state.board[resource] !== "fertile")
