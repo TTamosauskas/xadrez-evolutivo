@@ -368,7 +368,7 @@ export function createState(seed = Date.now(), options = {}) {
       );
     }
   }
-  seedNaturalBarriers(state);
+  if (options.naturalBarriers !== false) seedNaturalBarriers(state);
   seedHabitat(state);
   recordDiscovery(state, "geology", state.geologicalStage);
   log(
