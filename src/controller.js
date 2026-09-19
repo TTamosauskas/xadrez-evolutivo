@@ -51,7 +51,10 @@ export class Controller {
     }
   }
   refresh() {
-    this.render(this.state, !!this.job || this.conwayTimer !== null);
+    this.render(
+      this.state,
+      this.conwayTimer !== null ? "conway" : !!this.job,
+    );
     if (!this.scheduleConway()) this.schedule();
   }
 
@@ -79,7 +82,7 @@ export class Controller {
       this.conwayTimer = null;
       this.dispatch({ type: "CONWAY_STEP", revision }, { ai: true });
     }, this.conwayDelay);
-    this.render(this.state, true);
+    this.render(this.state, "conway");
     return true;
   }
   replace(state) {
