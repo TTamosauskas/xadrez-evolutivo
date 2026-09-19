@@ -274,7 +274,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         if (!dr && !dc) continue;
         const r = p.r + dr,
           c = p.c + dc;
-        if (inside(r, c) && terrain(state, r, c) === "fertile")
+        if (
+          inside(r, c) &&
+          terrain(state, r, c) === "fertile" &&
+          (!barrierAt(state, r, c) || has(p, "Trepadeira"))
+        )
           targets.push({
             r,
             c,
