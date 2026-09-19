@@ -74,6 +74,26 @@ test("menu exposes match log and evolutionary history for consultation", () => {
     d.getElementById("evolution-history").textContent,
     "História evolutiva",
   );
+  assert.equal(
+    d.querySelector('#mode option[value="auto"]').textContent,
+    "Computador × computador",
+  );
+  dom.window.close();
+});
+
+test("status counter includes turns and historical generation", () => {
+  const dom = setup(),
+    s = createState(32);
+  s.turn = 22;
+  s.maxGenerationReached = 13;
+
+  render(dom.window.document, s, { mode: "auto" });
+  const d = dom.window.document;
+  assert.equal(
+    d.getElementById("round").textContent,
+    "Pré-Cambriano · Arqueano · 1º Ciclo · 22 Turnos · 14ª Geração",
+  );
+  assert.equal(d.getElementById("pass").disabled, true);
   dom.window.close();
 });
 

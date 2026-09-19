@@ -37,13 +37,16 @@ const controller = new Controller(createCampaignState(), {
     if (selected && !state.pieces.some((p) => p.id === selected))
       selected = null;
     render(document, state, { selected, busy, mode: controller.mode });
-    $("undo-neocortex").hidden = !controller.canUndoNeocortex();
+    $("undo-neocortex").hidden =
+      controller.mode === "auto" || !controller.canUndoNeocortex();
     renderDiscoveryBadges();
   },
 });
 try {
-  controller.mode =
-    localStorage.getItem("xe_game_mode") === "single" ? "single" : "multi";
+  const savedMode = localStorage.getItem("xe_game_mode");
+  controller.mode = ["multi", "single", "auto"].includes(savedMode)
+    ? savedMode
+    : "multi";
   const difficulty = localStorage.getItem("xe_ai_difficulty");
   if (["easy", "medium", "hard"].includes(difficulty))
     controller.difficulty = difficulty;
@@ -68,6 +71,7 @@ $("board").addEventListener("click", (event) => {
   if (
     state.result ||
     state.notices.length ||
+    controller.mode === "auto" ||
     (controller.mode === "single" && state.current === "amber")
   )
     return;
@@ -477,6 +481,7 @@ $("rules").addEventListener("click", () =>
       ([name, [icon, description]]) => `${icon} ${name}: ${description}`,
     ),
     "Se apenas um lado fica bloqueado, ele passa a vez normalmente. Se os dois lados ficam sem qualquer ação legal, o habitat avança automaticamente pela rotina de Conway, um turno por vez. Se Conway não devolver uma ação legal a nenhum dos lados nos 10 turnos seguintes, uma perturbação ecológica do período geológico atual é disparada. Se já houver um evento ecológico ativo ou pendente, o jogo espera essa perturbação em vez de empilhar outra.",
+    "No modo Computador × computador, as duas linhagens são controladas pela IA na dificuldade selecionada. A origem da campanha e avisos intermediários avançam automaticamente; ao fim de cada Ciclo, a tela de extinção continua disponível para você inspecionar o resultado antes de iniciar o próximo.",
   ]),
 );
 controller.refresh();

@@ -54,6 +54,7 @@ export function render(
   const locked =
     !!state.result ||
     state.notices.length > 0 ||
+    mode === "auto" ||
     (mode === "single" && state.current === "amber");
   const targets =
     state.phase === "move" && actor && actor.owner === state.current
@@ -91,7 +92,7 @@ export function render(
   $("round").textContent =
     state.phase === "origin"
       ? "Origem da campanha · antes do 1º Ciclo"
-      : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${historicalGeneration}ª Geração`;
+      : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
   const ev = state.event,
     diseases = state.diseases.filter((d) => d.endRound >= currentRound);
   $("event").textContent = [

@@ -131,8 +131,8 @@ export class Controller {
       this.paused ||
       (!ai && this.conwayTimer !== null) ||
       (!ai &&
-        this.mode === "single" &&
-        this.state.current === "amber" &&
+        ((this.mode === "single" && this.state.current === "amber") ||
+          this.mode === "auto") &&
         action.type !== "ACK_NOTICE")
     )
       return false;
@@ -218,18 +218,55 @@ export class Controller {
       return false;
     }
   }
+  scheduleAutomaticAction(action, delay = this.aiDelay) {
+    const state = this.state,
+      token = ++this.generation,
+      revision = state.revision;
+    this.job = {
+      token,
+      worker: null,
+      timer: null,
+      delayTimer: null,
+      ready: true,
+      action,
+    };
+    this.job.timer = this.setTimer(() => {
+      if (
+        this.job?.token !== token ||
+        this.generation !== token ||
+        this.state.revision !== revision
+      )
+        return;
+      this.cancel();
+      this.dispatch({ ...action, revision }, { ai: true });
+    }, delay);
+    this.render(this.state, true);
+  }
   schedule() {
     const state = this.state;
     if (
       this.job ||
       this.conwayTimer !== null ||
       this.paused ||
-      this.mode !== "single" ||
-      state.current !== "amber" ||
-      state.result ||
-      state.notices.length
+      state.result
     )
       return;
+    if (this.mode === "auto" && state.notices.length) {
+      this.scheduleAutomaticAction({
+        type: "ACK_NOTICE",
+        id: state.notices[0].id,
+      });
+      return;
+    }
+    if (state.notices.length) return;
+    if (this.mode === "auto" && state.phase === "origin") {
+      this.scheduleAutomaticAction({ type: "ORIGIN_CLICK" });
+      return;
+    }
+    const aiTurn =
+      this.mode === "auto" ||
+      (this.mode === "single" && state.current === "amber");
+    if (!aiTurn) return;
     const token = ++this.generation,
       revision = state.revision;
     const commit = (action) => {
