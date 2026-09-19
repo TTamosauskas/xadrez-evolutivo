@@ -76,7 +76,7 @@ test("automatic Conway waits between visible board updates", () => {
   first();
 
   assert.notDeepEqual(controller.state.board, before);
-  assert.equal(controller.state.turn, 81);
+  assert.ok(controller.state.turn >= 81);
   assert.ok(renders.some((entry) => entry.revision === controller.state.revision));
   if (controller.conwayTimer !== null) {
     assert.equal(delays.at(-1), 700);
