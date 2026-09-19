@@ -68,8 +68,12 @@ export const TRAITS = {
     "Ao completar Fotossíntese, pode tornar fértil também uma casa neutra adjacente desocupada.",
   ],
   Traqueófitas: [
-    "🌿",
+    "🍃",
     "Pode reproduzir sem se deslocar consumindo uma casa fértil adjacente.",
+  ],
+  Trepadeira: [
+    "🌿",
+    "Forma vegetal trepadora capaz de ocupar barreiras, fertilizá-las por Fotossíntese e usar barreiras como suporte para a reprodução.",
   ],
   Espinhos: [
     "🌵",
