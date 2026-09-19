@@ -45,11 +45,12 @@ test("ancestral gray King splits into two opposite founder Kings", () => {
 test("mutual blocking advances Conway turn by turn until one side can act", () => {
   let s = createState(302);
   s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
   s.pieces = [
     newPiece(s, "blue", 4, 4, { rank: 4, traits: [] }),
     newPiece(s, "amber", 0, 0, { rank: 4, traits: [] }),
   ];
-  s.nextId = 3;
   for (const cell of [27, 28, 29]) s.board[cell] = "fertile";
   s.turn = 79;
   s.current = "blue";
