@@ -1,9 +1,14 @@
 export const REPRO_LOCI = {
   development: {
     normal: "immediate",
-    mutants: ["oviparous", "viviparous"],
-    traits: { oviparous: "Ovíparo", viviparous: "Vivíparo" },
-    priority: ["oviparous", "viviparous"],
+    mutants: ["oviparous", "amniotic", "ovoviviparous", "viviparous"],
+    traits: {
+      oviparous: "Ovíparo",
+      amniotic: "Ovíparos Amniotas",
+      ovoviviparous: "Ovovivíparo",
+      viviparous: "Vivíparo",
+    },
+    priority: ["viviparous", "ovoviviparous", "amniotic", "oviparous"],
   },
   dispersal: {
     normal: "local",
@@ -13,7 +18,13 @@ export const REPRO_LOCI = {
   },
 };
 
-export const GENETIC_TRAITS = ["Ovíparo", "Vivíparo", "Esporos"];
+export const GENETIC_TRAITS = [
+  "Ovíparo",
+  "Ovíparos Amniotas",
+  "Ovovivíparo",
+  "Vivíparo",
+  "Esporos",
+];
 
 const locusNames = Object.keys(REPRO_LOCI);
 const cloneAllele = (a) => ({ value: a.value, dominance: a.dominance });
@@ -42,11 +53,17 @@ export function normalizeReproGenes(source, legacyTraits = []) {
     const def = REPRO_LOCI[name],
       allowed = new Set([def.normal, ...def.mutants]),
       pair = Array.isArray(source?.[name]) ? source[name] : null,
-      migratedPair = pair?.map((allele) =>
-        name === "dispersal" && allele?.value === "eggs"
-          ? neutralAllele(def.normal)
-          : allele,
-      );
+      migratedPair = pair?.map((allele) => {
+        if (name === "dispersal" && allele?.value === "eggs")
+          return neutralAllele(def.normal);
+        if (
+          name === "development" &&
+          legacyTraits.includes("Ovíparos Amniotas") &&
+          allele?.value === "oviparous"
+        )
+          return { ...allele, value: "amniotic" };
+        return allele;
+      });
     result[name] =
       migratedPair &&
       migratedPair.length === 2 &&
@@ -150,11 +167,15 @@ export function syncReproTraits(piece) {
     gymnosperm = regular.includes("Gimnospermas"),
     expressed = reproPhenotype(piece.reproGenes).traits.filter(
       (trait) =>
-        (!plant || !["Ovíparo", "Vivíparo"].includes(trait)) &&
+        (!plant ||
+          ![
+            "Ovíparo",
+            "Ovíparos Amniotas",
+            "Ovovivíparo",
+            "Vivíparo",
+          ].includes(trait)) &&
         (!gymnosperm || trait !== "Esporos"),
     );
-  if (!expressed.includes("Ovíparo") && !expressed.includes("Vivíparo"))
-    regular = regular.filter((trait) => trait !== "Ovíparos Amniotas");
   if (!expressed.includes("Vivíparo"))
     regular = regular.filter((trait) => trait !== "Ovulação Induzida");
   piece.traits = [...regular, ...expressed];
