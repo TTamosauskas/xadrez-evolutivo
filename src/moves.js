@@ -4,6 +4,8 @@ import {
   eggAt,
   plantSeedAt,
   barrierAt,
+  builtBarrierAt,
+  naturalBarrierAt,
   terrain,
   round,
   juvenile,
@@ -99,6 +101,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     if (!inside(r, c)) return;
     const victim = at(state, r, c),
       egg = eggAt(state, r, c),
+      builtBarrier = builtBarrierAt(state, r, c),
+      naturalBarrier = naturalBarrierAt(state, r, c),
       cannibal =
         victim?.owner === p.owner &&
         victim.id !== p.id &&
@@ -108,7 +112,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       return;
     if (victim && victim.owner !== p.owner && !captureUnlocked(state, p))
       return;
-    if (barrierAt(state, r, c) && !has(p, "Chifre")) return;
+    if (builtBarrier && !has(p, "Chifre")) return;
+    if (naturalBarrier && !has(p, "Escalador")) return;
     if (egg) {
       const parent = state.pieces.find((piece) => piece.id === egg.parentId),
         protectedEgg =
@@ -143,11 +148,15 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           c = p.c + dc * n;
         if (!inside(r, c)) break;
         path.push([r, c]);
-        const barrier = barrierAt(state, r, c),
+        const builtBarrier = builtBarrierAt(state, r, c),
+          naturalBarrier = naturalBarrierAt(state, r, c),
           occupied = occupiedTarget(r, c);
-        if (barrier) {
+        if (builtBarrier) {
           if (!captureOnly && has(p, "Chifre")) add(r, c, [...path]);
           if (!has(p, "Voo") && !has(p, "Chifre")) break;
+        } else if (naturalBarrier) {
+          if (!captureOnly && has(p, "Escalador")) add(r, c, [...path]);
+          if (!has(p, "Voo") && !has(p, "Escalador")) break;
         } else if (!captureOnly || occupied) add(r, c, [...path]);
         if (occupied) break;
       }
