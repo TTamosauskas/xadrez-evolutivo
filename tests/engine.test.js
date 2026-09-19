@@ -421,7 +421,7 @@ test("Ooteca reproduction and hostile births remain bounded by free cells", () =
     for (let c = 0; c < 8; c++)
       s.pieces.push(newPiece(s, r < 4 ? "amber" : "blue", r, c));
   const p = s.pieces[0];
-  p.traits = ["Ooteca", "Fertilidade", "Ovos"];
+  p.traits = ["Ooteca", "Fertilidade"];
   assert.equal(reproduce(context(s), p), 0);
   context(s).kill(p.id, "teste");
   assert.equal(s.pieces.length, 63);
