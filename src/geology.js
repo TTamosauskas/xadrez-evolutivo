@@ -120,7 +120,7 @@ export const GEOLOGICAL_STAGES = [
     period: "Permiano",
     required: ["Cuidado Parental"],
     habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 5] },
-    events: { volcano: 5, drought: 4, desert: 4, blockade: 2, earthquake: 1 },
+    events: { volcano: 5, warming: 2, drought: 4, desert: 4, blockade: 2, earthquake: 1 },
   },
   {
     id: "triassic",
@@ -128,7 +128,7 @@ export const GEOLOGICAL_STAGES = [
     period: "Triássico",
     required: ["Vivíparo"],
     habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
-    events: { drought: 3, desert: 3, volcano: 2, insularization: 2, sea: 1 },
+    events: { drought: 3, desert: 3, volcano: 2, warming: 2, insularization: 2, sea: 1 },
   },
   {
     id: "jurassic",
@@ -150,7 +150,7 @@ export const GEOLOGICAL_STAGES = [
     period: "Cretáceo",
     required: ["Eusocialidade", "Ovífagia"],
     habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
-    events: { sea: 3, abundance: 2, insularization: 2, meteor: 1, volcano: 1 },
+    events: { sea: 3, abundance: 2, insularization: 2, meteor: 3, volcano: 1, warming: 2 },
   },
   {
     id: "paleogene",
@@ -164,6 +164,7 @@ export const GEOLOGICAL_STAGES = [
       "abundant-rains": 2,
       insularization: 2,
       abundance: 1,
+      warming: 2,
     },
   },
   {
@@ -172,7 +173,7 @@ export const GEOLOGICAL_STAGES = [
     period: "Neógeno",
     required: ["Chifre", "Polegar Opositor"],
     habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [4, 6] },
-    events: { drought: 3, desert: 3, earthquake: 2, ice: 1, "alluvial-river": 1 },
+    events: { drought: 3, desert: 3, earthquake: 2, ice: 1, warming: 2, "alluvial-river": 1 },
   },
   {
     id: "quaternary",
@@ -180,7 +181,7 @@ export const GEOLOGICAL_STAGES = [
     period: "Quaternário",
     required: ["Neocórtex Desenvolvido", "Antropização"],
     habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 6] },
-    events: { ice: 5, drought: 3, desert: 3, earthquake: 2, meteor: 1 },
+    events: { ice: 5, warming: 4, drought: 3, desert: 3, earthquake: 2, meteor: 1 },
   },
 ].map((stage, index) => ({ ...stage, index }));
 

@@ -181,13 +181,14 @@ export const TRAITS = {
   ],
 };
 export const EVENTS = [
-  ["volcano", "🌋", "Erupção Vulcânica", "Uma área de 3 × 3 casas permanece hostil durante 10 rodadas."],
-  ["ice", "❄️", "Era Glacial", "A zona hostil avança a partir de um canto durante 10 rodadas."],
+  ["volcano", "🌋", "Erupção Vulcânica", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, e Conway fica suspenso."],
+  ["ice", "❄️", "Era Glacial", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, e Conway fica suspenso."],
   ["pathogen", "🦠", "Patógeno Virulento", "Um foco transmite a doença durante 10 rodadas."],
   ["solar", "🌄", "Tempestade Solar", "Todo nascimento sofre mutação durante 10 rodadas."],
   ["drought", "🏜️", "Seca Severa", "A quantidade de casas férteis fica limitada à metade durante 10 rodadas."],
   ["sea", "🌊", "Elevação do Mar", "As bordas do tabuleiro permanecem hostis durante 10 rodadas."],
-  ["meteor", "☄️", "Meteoro", "Um quadrante inteiro permanece hostil durante 10 rodadas."],
+  ["meteor", "☄️", "Meteoro", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, e Conway fica suspenso."],
+  ["warming", "🌡️", "Aquecimento Global", "Evento severo: casas hostis são espalhadas pelo tabuleiro até ocupar 90% dele durante 5 turnos, e Conway fica suspenso."],
   ["desert", "🌵", "Desertificação", "As casas férteis diminuem gradualmente durante 10 rodadas, até restar uma."],
   ["blockade", "🚧", "Bloqueio Geográfico", "Uma diagonal hostil corta o tabuleiro durante 10 rodadas."],
   ["abundance", "🌱", "Superabundância de Recursos", "A quantidade de casas férteis é dobrada no início do evento, que dura 10 rodadas."],

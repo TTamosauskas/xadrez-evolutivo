@@ -643,3 +643,19 @@ test("Parasitismo becomes available in the Cambrian only outside the photosynthe
   assert.equal(traitUnlocked(s, "Parasitismo", animal), true);
   assert.equal(traitUnlocked(s, "Parasitismo", plant), false);
 });
+
+
+test("severe events are distributed across geologically appropriate periods", () => {
+  const byStage = Object.fromEntries(
+    GEOLOGICAL_STAGES.map((stage) => [stage.id, stage.events]),
+  );
+  assert.ok(byStage.archean.volcano > 0);
+  assert.ok(byStage.ordovician.ice > 0);
+  assert.ok(byStage.cretaceous.meteor > 0);
+  assert.ok(byStage.permian.warming > 0);
+  assert.ok(byStage.triassic.warming > 0);
+  assert.ok(byStage.cretaceous.warming > 0);
+  assert.ok(byStage.paleogene.warming > 0);
+  assert.ok(byStage.neogene.warming > 0);
+  assert.ok(byStage.quaternary.warming > 0);
+});

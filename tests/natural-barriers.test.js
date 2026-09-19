@@ -312,3 +312,32 @@ test("volcanoes, meteors and earthquakes can reshape natural barriers", () => {
     assertState(s);
   }
 });
+
+
+test("severe ecological events make exactly 58 cells hostile and last five turns", () => {
+  for (const [id, seed] of [
+    ["ice", 501],
+    ["volcano", 502],
+    ["meteor", 503],
+    ["warming", 504],
+  ]) {
+    const s = fixture(
+      [
+        { owner: "blue", r: 7, c: 7, traits: ["Dormência"] },
+        { owner: "amber", r: 0, c: 0, traits: ["Dormência"] },
+      ],
+      seed,
+    );
+    s.board.fill("neutral");
+    startEvent(context(s), id);
+    assert.equal(s.event.id, id);
+    assert.equal(s.event.hazards.length, 58, id);
+    assert.equal(
+      s.board.filter((cell) => cell === "hostile").length,
+      58,
+      id,
+    );
+    assert.equal(s.event.startTurn, s.turn);
+    assertState(s);
+  }
+});

@@ -45,6 +45,8 @@ import {
   hasDecomposition,
   markDecomposition,
   advanceConway,
+  severeEventActive,
+  tickSevereEventTurn,
   startEvent,
   tickEnvironment,
 } from "./environment.js";
@@ -253,6 +255,7 @@ function advanceTurn(ctx) {
   recordPhotosynthesis(state, acting);
   state.turn++;
   state.current = other(acting);
+  tickSevereEventTurn(state);
   state.fertileTraces = state.fertileTraces.filter(
     (t) => state.turn <= t.clearAfterTurn,
   );
@@ -1128,15 +1131,22 @@ export function transition(previous, action) {
     advanceTurn(ctx);
     settle(ctx);
   } else if (action.type === "CONWAY_STEP" && mutuallyBlocked(state)) {
-    log(
-      state,
-      "🌀 Conway: ambos os lados estavam sem ação; o habitat avançou um turno.",
-    );
-    advanceConway(ctx);
+    if (severeEventActive(state))
+      log(
+        state,
+        "⛔ Evento severo: Conway permanece suspenso; o turno avança sem alterar o habitat.",
+      );
+    else {
+      log(
+        state,
+        "🌀 Conway: ambos os lados estavam sem ação; o habitat avançou um turno.",
+      );
+      advanceConway(ctx);
+    }
     if (!extinction(state)) {
       advanceTurn(ctx);
       settle(ctx);
-      if (!state.result) resolveConwayStagnation(ctx);
+      if (!state.result && !severeEventActive(state)) resolveConwayStagnation(ctx);
     }
   } else throw Error("Ação incompatível com a fase da partida.");
   logBoardChanges(previous, state);

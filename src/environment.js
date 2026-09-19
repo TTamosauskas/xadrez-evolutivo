@@ -17,6 +17,10 @@ import { eventWeights, habitatProfile } from "./geology.js";
 import { recordDiscovery } from "./discoveries.js";
 import { startDisease } from "./disease.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
+export const SEVERE_EVENT_IDS = new Set(["ice", "volcano", "meteor", "warming"]);
+const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.9);
+export const severeEventActive = (state) =>
+  !!state.event && SEVERE_EVENT_IDS.has(state.event.id);
 const fertile = (state) =>
   allCells().filter((i) => state.board[i] === "fertile");
 const ORTHOGONAL = [
@@ -349,6 +353,27 @@ function quadrant(q) {
     (i) => (Math.floor(i / 8) < 4 ? 0 : 2) + (i % 8 < 4 ? 0 : 1) === q,
   );
 }
+function severeCells(state, preferred = []) {
+  const chosen = [...new Set(preferred)].slice(0, SEVERE_HAZARD_COUNT);
+  if (chosen.length < SEVERE_HAZARD_COUNT) {
+    const selected = new Set(chosen),
+      rest = shuffle(
+        state,
+        allCells().filter((cell) => !selected.has(cell)),
+      );
+    chosen.push(...rest.slice(0, SEVERE_HAZARD_COUNT - chosen.length));
+  }
+  return chosen;
+}
+function cornerOrderedCells(event) {
+  return allCells().sort((a, b) => {
+    const ar = event.bottom ? 7 - Math.floor(a / 8) : Math.floor(a / 8),
+      ac = event.right ? 7 - (a % 8) : a % 8,
+      br = event.bottom ? 7 - Math.floor(b / 8) : Math.floor(b / 8),
+      bc = event.right ? 7 - (b % 8) : b % 8;
+    return ar + ac - (br + bc) || Math.max(ar, ac) - Math.max(br, bc);
+  });
+}
 function trim(state, count) {
   for (const i of shuffle(state, fertile(state)).slice(Math.max(1, count)))
     state.board[i] = "neutral";
@@ -485,6 +510,7 @@ export function startEvent(ctx, id = null) {
   const event = {
     ...def,
     startRound: round(state),
+    startTurn: state.turn,
     hazards: [],
     snapshots: {},
   };
@@ -493,18 +519,15 @@ export function startEvent(ctx, id = null) {
   switch (event.id) {
     case "volcano": {
       const r = Math.floor(random(state) * 6),
-        c = Math.floor(random(state) * 6);
-      markHazard(
-        state,
-        event,
-        allCells().filter(
+        c = Math.floor(random(state) * 6),
+        core = allCells().filter(
           (i) =>
             Math.floor(i / 8) >= r &&
             Math.floor(i / 8) < r + 3 &&
             i % 8 >= c &&
             i % 8 < c + 3,
-        ),
-      );
+        );
+      markHazard(state, event, severeCells(state, core));
       const removed = removeNaturalBarriers(state, event.hazards),
         created = addNaturalBarriers(state, 2, event.hazards);
       recordBarrierChange(event, created, removed);
@@ -514,10 +537,17 @@ export function startEvent(ctx, id = null) {
       Object.assign(event, {
         bottom: random(state) < 0.5,
         right: random(state) < 0.5,
-        rows: 1,
-        cols: 1,
       });
-      markHazard(state, event, iceCells(event));
+      markHazard(
+        state,
+        event,
+        cornerOrderedCells(event).slice(0, SEVERE_HAZARD_COUNT),
+      );
+      recordBarrierChange(
+        event,
+        [],
+        removeNaturalBarriers(state, event.hazards),
+      );
       break;
     case "pathogen":
       startDisease(state);
@@ -541,13 +571,22 @@ export function startEvent(ctx, id = null) {
       );
       break;
     case "meteor": {
-      const impact = quadrant(Math.floor(random(state) * 4));
-      markHazard(state, event, impact);
-      const removed = removeNaturalBarriers(state, impact),
-        created = addNaturalBarriers(state, 1, impact);
+      const impact = quadrant(Math.floor(random(state) * 4)),
+        blast = severeCells(state, impact);
+      markHazard(state, event, blast);
+      const removed = removeNaturalBarriers(state, blast),
+        created = addNaturalBarriers(state, 1, blast);
       recordBarrierChange(event, created, removed);
       break;
     }
+    case "warming":
+      markHazard(state, event, severeCells(state));
+      recordBarrierChange(
+        event,
+        [],
+        removeNaturalBarriers(state, event.hazards),
+      );
+      break;
     case "desert":
       event.initial = Math.max(1, fertile(state).length);
       trim(state, event.initial);
@@ -634,7 +673,10 @@ export function tickEnvironment(ctx) {
 
   tickDecomposition(state);
 
-  while (state.maxGenerationReached >= state.nextHabitatGeneration) {
+  while (
+    !severeEventActive(state) &&
+    state.maxGenerationReached >= state.nextHabitatGeneration
+  ) {
     advanceConway(ctx);
     state.nextHabitatGeneration += 2;
   }
@@ -643,19 +685,17 @@ export function tickEnvironment(ctx) {
     state.nextEventGeneration += 6;
   }
 
-  if (state.event && now - state.event.startRound >= 10) endEvent(state);
+  if (
+    state.event &&
+    !SEVERE_EVENT_IDS.has(state.event.id) &&
+    now - state.event.startRound >= 10
+  )
+    endEvent(state);
 
   const event = state.event;
   if (event) {
     const age = now - event.startRound;
-    if (event.id === "ice") {
-      if (event.rows < 8 && (event.cols === 8 || random(state) < 0.5))
-        event.rows++;
-      else if (event.cols < 8) event.cols++;
-      markHazard(state, event, iceCells(event));
-      const removed = removeNaturalBarriers(state, event.hazards, 1);
-      recordBarrierChange(event, [], removed);
-    } else if (event.id === "drought") trim(state, event.cap);
+    if (event.id === "drought") trim(state, event.cap);
     else if (event.id === "desert")
       trim(state, Math.max(1, Math.ceil((event.initial * (10 - age)) / 10)));
     else if (event.id === "fertilized") addFertile(state, 1);
@@ -664,4 +704,13 @@ export function tickEnvironment(ctx) {
     state.pendingEcologicalEvents--;
     startEvent(ctx);
   }
+}
+
+
+export function tickSevereEventTurn(state) {
+  if (
+    severeEventActive(state) &&
+    state.turn - (state.event.startTurn ?? state.turn) >= 5
+  )
+    endEvent(state);
 }

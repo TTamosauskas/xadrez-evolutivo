@@ -10,7 +10,7 @@ import {
   newPiece,
   round,
 } from "../src/state.js";
-import { context, transition, simulate } from "../src/engine.js";
+import { context, transition, simulate, mutuallyBlocked } from "../src/engine.js";
 import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
 import { startEvent, tickEnvironment } from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
@@ -1765,4 +1765,36 @@ test("successor cycle gives both sides the same photosynthetic and non-photosynt
     );
   }
   assertState(next);
+});
+
+
+test("severe events suspend Conway for five turns while blocked turns still advance", () => {
+  let s = createState(505, { naturalBarriers: false });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces = [
+    newPiece(s, "blue", 7, 7, { rank: 4, traits: ["Dormência"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Dormência"] }),
+  ];
+  startEvent(context(s), "warming");
+  s.notices = [];
+  const frozen = [...s.board],
+    startTurn = s.turn;
+  for (let i = 0; i < 4; i++) {
+    assert.equal(mutuallyBlocked(s), true);
+    s = simulate(s, { type: "CONWAY_STEP" });
+    assert.deepEqual(s.board, frozen);
+    assert.ok(s.event);
+  }
+  assert.equal(s.turn, startTurn + 4);
+  s = simulate(s, { type: "CONWAY_STEP" });
+  assert.equal(s.turn, startTurn + 5);
+  assert.equal(s.event, null);
+  assert.ok(
+    s.logs.some((entry) =>
+      entry.text.includes("Conway permanece suspenso"),
+    ),
+  );
+  assertState(s);
 });
