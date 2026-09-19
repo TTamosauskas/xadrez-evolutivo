@@ -87,7 +87,49 @@ test("mutual blocking advances Conway turn by turn until one side can act", () =
     ),
   );
   assert.ok(blueActions > 0 || amberActions > 0);
+  assert.equal(s.conwayWatchUntil, null);
   assert.equal(s.pieces.length, 2);
+  assertState(s);
+});
+
+test("ten stalled turns after Conway trigger a geological ecological event", () => {
+  let s = createState(303);
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces = [
+    newPiece(s, "blue", 7, 7, {
+      rank: 4,
+      traits: ["Carnívoro", "Voo"],
+    }),
+    newPiece(s, "amber", 0, 0, {
+      rank: 4,
+      traits: ["Carnívoro", "Voo"],
+    }),
+  ];
+  s.notices = [];
+
+  assert.equal(legalActions(s).length, 0);
+  s.current = "amber";
+  assert.equal(legalActions(s).length, 0);
+  s.current = "blue";
+
+  s = simulate(s, { type: "CONWAY_STEP" });
+  const deadline = s.conwayWatchUntil;
+  assert.equal(deadline, s.turn + 10);
+  assert.equal(s.event, null);
+
+  while (s.turn < deadline)
+    s = simulate(s, { type: "CONWAY_STEP" });
+
+  assert.equal(s.turn, deadline);
+  assert.ok(s.event);
+  assert.equal(s.conwayWatchUntil, null);
+  assert.ok(
+    s.logs.some((entry) =>
+      entry.text.includes("Conway não destravou a partida em 10 turnos"),
+    ),
+  );
   assertState(s);
 });
 
