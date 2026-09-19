@@ -131,7 +131,7 @@ function maturePhotosynthesis(state, owner) {
     if (
       p.photosynthesisCell === cell &&
       Number.isInteger(p.photosynthesisSinceTurn) &&
-      state.turn - p.photosynthesisSinceTurn >= 2
+      state.turn - p.photosynthesisSinceTurn >= 4
     ) {
       state.board[cell] = "fertile";
       delete p.photosynthesisCell;
