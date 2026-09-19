@@ -194,6 +194,88 @@ test("Archean advances only after both innovation cycles are complete", () => {
   assert.equal(proterozoic.totalCycles, 3);
 });
 
+test("successor pairs the winner's dominant lineage with the most successful photosynthetic lineage", () => {
+  const s = createState(119);
+  s.pieces = [];
+  s.nextId = 1;
+  const add = (owner, r, c, traits, generation = 0) =>
+    s.pieces.push(newPiece(s, owner, r, c, { rank: 4, traits, generation }));
+
+  add("amber", 0, 0, ["Predação"]);
+  add("amber", 0, 1, ["Predação"]);
+  add("amber", 0, 2, []);
+  add("blue", 7, 0, ["Fotossíntese"]);
+  add("blue", 7, 1, ["Fotossíntese"]);
+  add("blue", 7, 2, ["Fotossíntese", "Dormência"]);
+  s.result = { winner: "amber", reason: "teste" };
+  s.phase = "over";
+
+  const next = createSuccessorState(s, 120),
+    blue = next.pieces.find((piece) => piece.owner === "blue"),
+    amber = next.pieces.find((piece) => piece.owner === "amber");
+
+  assert.equal(next.totalCycles, 2);
+  assert.deepEqual(amber.traits, ["Predação"]);
+  assert.deepEqual(blue.traits, ["Fotossíntese"]);
+  assert.ok(
+    next.logs.some((entry) =>
+      entry.text.includes("🪸 linhagem fotossintética mais bem-sucedida"),
+    ),
+  );
+});
+
+test("a photosynthetic overall winner is paired with the strongest non-photosynthetic lineage", () => {
+  const s = createState(121);
+  s.pieces = [];
+  s.nextId = 1;
+  const add = (owner, r, c, traits) =>
+    s.pieces.push(newPiece(s, owner, r, c, { rank: 4, traits }));
+
+  add("blue", 7, 0, ["Fotossíntese"]);
+  add("blue", 7, 1, ["Fotossíntese"]);
+  add("blue", 7, 2, ["Fotossíntese"]);
+  add("amber", 0, 0, ["Predação"]);
+  add("amber", 0, 1, ["Predação"]);
+  add("amber", 0, 2, []);
+  s.result = { winner: "blue", reason: "teste" };
+  s.phase = "over";
+
+  const next = createSuccessorState(s, 122),
+    blue = next.pieces.find((piece) => piece.owner === "blue"),
+    amber = next.pieces.find((piece) => piece.owner === "amber");
+
+  assert.deepEqual(blue.traits, ["Fotossíntese"]);
+  assert.deepEqual(amber.traits, ["Predação"]);
+  assert.ok(
+    next.logs.some((entry) =>
+      entry.text.includes("linhagem não fotossintética mais bem-sucedida"),
+    ),
+  );
+});
+
+test("without a distinct ecological counterpart the dominant founder still seeds both sides", () => {
+  const s = createState(123);
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces.push(
+    newPiece(s, "blue", 7, 0, { rank: 4, traits: ["Predação"] }),
+    newPiece(s, "blue", 7, 1, { rank: 4, traits: ["Predação"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: [] }),
+  );
+  s.result = { winner: "blue", reason: "teste" };
+  s.phase = "over";
+
+  const next = createSuccessorState(s, 124);
+  assert.ok(
+    next.pieces.every(
+      (piece) =>
+        piece.rank === 4 &&
+        piece.traits.length === 1 &&
+        piece.traits[0] === "Predação",
+    ),
+  );
+});
+
 test("later innovations obey historical and individual dependencies", () => {
   const s = createState(107, {
     geologicalStage: "devonian",

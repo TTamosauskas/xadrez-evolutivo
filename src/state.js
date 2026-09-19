@@ -164,6 +164,7 @@ function seedHabitat(state) {
 }
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null,
+    founders = options.founders ?? null,
     originPrelude = !!options.originPrelude,
     canonicalPair = !!options.canonicalPair;
   const state = {
@@ -230,18 +231,26 @@ export function createState(seed = Date.now(), options = {}) {
           ["amber", 0, 3],
           ["amber", 0, 4],
         ];
-    for (const [owner, r, c] of starts)
+    for (const [owner, r, c] of starts) {
+      const source = founders?.[owner] ?? founder;
       state.pieces.push(
-        newPiece(state, owner, r, c, founder
-          ? {
-              rank: founder.rank,
-              traits: founder.traits,
-              reproGenes: founder.reproGenes,
-              mutations: 0,
-              generation: 0,
-            }
-          : {}),
+        newPiece(
+          state,
+          owner,
+          r,
+          c,
+          source
+            ? {
+                rank: source.rank,
+                traits: source.traits,
+                reproGenes: source.reproGenes,
+                mutations: 0,
+                generation: 0,
+              }
+            : {},
+        ),
       );
+    }
   }
   seedHabitat(state);
   recordDiscovery(state, "geology", state.geologicalStage);
@@ -296,10 +305,12 @@ export function signature(p) {
     p.reproGenes,
   )}`;
 }
-export function dominantLineage(state, owner = null) {
-  const pieces = owner
-      ? state.pieces.filter((p) => p.owner === owner)
-      : state.pieces,
+export function dominantLineage(state, owner = null, predicate = null) {
+  const pieces = state.pieces.filter(
+      (piece) =>
+        (!owner || piece.owner === owner) &&
+        (!predicate || predicate(piece)),
+    ),
     groups = new Map();
   for (const piece of pieces) {
     const key = signature(piece),
@@ -317,16 +328,48 @@ export function dominantLineage(state, owner = null) {
     ? { ...selected, total: pieces.length }
     : { piece: null, count: 0, total: pieces.length };
 }
+function founderProfile(previous, piece) {
+  if (!piece) return null;
+  const excluded = new Set(["Esterilidade", "Mutação Deletéria"]),
+    founder = {
+      rank: piece.rank,
+      traits: piece.traits.filter((trait) => !excluded.has(trait)),
+      reproGenes: cloneReproGenes(piece.reproGenes),
+    };
+  if (
+    previous.historicalTraits.includes("Locomoção") &&
+    founder.traits.includes("Predação") &&
+    !founder.traits.includes("Locomoção") &&
+    !founder.traits.includes("Locomoção Avançada")
+  )
+    founder.traits.push("Locomoção");
+  return founder;
+}
+
 export function createSuccessorState(previous, seed = Date.now()) {
-  const selected = dominantLineage(previous, previous.result?.winner ?? null),
-    excluded = new Set(["Esterilidade", "Mutação Deletéria"]),
-    founder = selected.piece
-      ? {
-          rank: selected.piece.rank,
-          traits: selected.piece.traits.filter((t) => !excluded.has(t)),
-          reproGenes: cloneReproGenes(selected.piece.reproGenes),
-        }
-      : null,
+  const winner = previous.result?.winner ?? null,
+    selected = dominantLineage(previous, winner),
+    founder = founderProfile(previous, selected.piece),
+    founderIsPhotosynthetic = founder?.traits.includes("Fotossíntese") ?? false,
+    counterpart = dominantLineage(
+      previous,
+      null,
+      founderIsPhotosynthetic
+        ? (piece) => !piece.traits.includes("Fotossíntese")
+        : (piece) => piece.traits.includes("Fotossíntese"),
+    ),
+    companion =
+      counterpart.piece &&
+      (!selected.piece ||
+        signature(counterpart.piece) !== signature(selected.piece))
+        ? founderProfile(previous, counterpart.piece)
+        : null,
+    primaryOwner = ["blue", "amber"].includes(winner) ? winner : "blue",
+    companionOwner = primaryOwner === "blue" ? "amber" : "blue",
+    founders =
+      founder && companion
+        ? { [primaryOwner]: founder, [companionOwner]: companion }
+        : null,
     priorStage = currentGeologicalStage(previous),
     candidate = stageComplete(previous)
       ? nextGeologicalStage(priorStage.id)
@@ -337,14 +380,6 @@ export function createSuccessorState(previous, seed = Date.now()) {
     totalCycles = previous.totalCycles + 1,
     generationOffset =
       previous.generationOffset + previous.maxGenerationReached + 1;
-  if (
-    founder &&
-    previous.historicalTraits.includes("Locomoção") &&
-    founder.traits.includes("Predação") &&
-    !founder.traits.includes("Locomoção") &&
-    !founder.traits.includes("Locomoção Avançada")
-  )
-    founder.traits.push("Locomoção");
   const state = createState(seed, {
     geologicalStage,
     cycle,
@@ -353,8 +388,16 @@ export function createSuccessorState(previous, seed = Date.now()) {
     historicalTraits: previous.historicalTraits,
     discoveries: previous.discoveries,
     founder,
+    founders,
     canonicalPair: true,
   });
+  if (companion)
+    log(
+      state,
+      founderIsPhotosynthetic
+        ? "Dupla fundadora: 🏆🪸 a linhagem dominante fotossintética segue adiante junto da linhagem não fotossintética mais bem-sucedida."
+        : "Dupla fundadora: 🏆 a linhagem dominante segue adiante junto da 🪸 linhagem fotossintética mais bem-sucedida.",
+    );
   log(
     state,
     advanced
