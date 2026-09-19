@@ -62,7 +62,6 @@ export class Controller {
     if (
       this.conwayTimer !== null ||
       this.job ||
-      this.conwayTimer !== null ||
       this.paused ||
       this.state.result ||
       this.state.notices.length ||
@@ -220,6 +219,7 @@ export class Controller {
     const state = this.state;
     if (
       this.job ||
+      this.conwayTimer !== null ||
       this.paused ||
       this.mode !== "single" ||
       state.current !== "amber" ||
