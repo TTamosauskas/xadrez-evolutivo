@@ -178,6 +178,9 @@ function mutation(state, p, positiveOnly) {
     p.traits = p.traits.filter((t) => t !== choice.loss);
     label = `Perda de ${choice.loss}`;
   }
+  p.ancestry = [
+    ...new Set([...(p.ancestry ?? []), ...(p.traits ?? [])]),
+  ];
   p.mutations++;
   const firstAppearance = !state.seenMutations.includes(label);
   if (firstAppearance) {
@@ -234,6 +237,14 @@ function sexualProfile(state, a, b) {
     profile = {
       rank: Math.max(a.rank, b.rank),
       traits: normalizedTraits,
+      ancestry: [
+        ...new Set([
+          ...(a.ancestry ?? a.traits ?? []),
+          ...(b.ancestry ?? b.traits ?? []),
+          ...a.traits,
+          ...b.traits,
+        ]),
+      ],
       reproGenes: inheritSexualReproGenes(
         a.reproGenes,
         b.reproGenes,
@@ -311,6 +322,14 @@ function makeChildProfile(state, parent, mate, profile) {
     owner: parent.owner,
     rank: profile.rank,
     traits: [...profile.traits],
+    ancestry: [
+      ...new Set([
+        ...(parent.ancestry ?? parent.traits ?? []),
+        ...(mate?.ancestry ?? mate?.traits ?? []),
+        ...(profile.ancestry ?? profile.traits ?? []),
+        ...profile.traits,
+      ]),
+    ],
     reproGenes: cloneReproGenes(profile.reproGenes ?? parent.reproGenes),
     mutations: profile.mutations,
     generation: Math.max(parent.generation, mate?.generation ?? 0) + 1,

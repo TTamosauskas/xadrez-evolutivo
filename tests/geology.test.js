@@ -59,18 +59,18 @@ test("period innovations follow the didactic sequence", () => {
   ]);
   assert.deepEqual(required.ediacaran, [
     "Locomoção",
-    "Necrófago",
-    "Construção de Nicho",
+    "Escavador",
+    "Construtor de Nicho",
   ]);
   assert.deepEqual(required.ordovician, ["Ovíparo"]);
   assert.deepEqual(required.silurian, ["Coletor"]);
   assert.deepEqual(required.devonian, ["Locomoção Avançada", "Onívoro"]);
   assert.deepEqual(required.carboniferous, ["Ovíparos Amniotas", "Ooteca", "Voo"]);
   assert.deepEqual(required.cretaceous, ["Eusocialidade", "Ovífagia"]);
-  assert.deepEqual(required.neogene, [
-    "Chifre",
+  assert.deepEqual(required.neogene, ["Chifre", "Polegar Opositor"]);
+  assert.deepEqual(required.quaternary, [
+    "Neocórtex Desenvolvido",
     "Construtor Avançado",
-    "Polegar Opositor",
   ]);
 });
 
@@ -277,66 +277,74 @@ test("without a distinct ecological counterpart the dominant founder still seeds
   );
 });
 
-test("later innovations obey historical and individual dependencies", () => {
+test("evolutionary dependencies follow lineage ancestry without cumulative traits", () => {
   const s = createState(107, {
-    geologicalStage: "devonian",
-    historicalTraits: GEOLOGICAL_STAGES.slice(0, 6).flatMap(
-      (stage) => stage.required,
-    ),
-  });
-  const p = s.pieces[0];
-  s.historicalTraits = s.historicalTraits.filter(
-    (trait) => trait !== "Locomoção",
-  );
-  assert.equal(traitUnlocked(s, "Locomoção Avançada", p), false);
-  s.historicalTraits.push("Locomoção");
-  assert.equal(traitUnlocked(s, "Locomoção Avançada", p), true);
+      geologicalStage: "ediacaran",
+      historicalTraits: [
+        ...GEOLOGICAL_STAGES.slice(0, 2).flatMap((stage) => stage.required),
+        "Locomoção",
+      ],
+    }),
+    p = s.pieces[0],
+    unrelated = { traits: [], ancestry: [] };
 
-  s.geologicalStage = "proterozoic";
-  s.historicalTraits = s.historicalTraits.filter(
-    (trait) => trait !== "Predação",
-  );
-  assert.equal(traitUnlocked(s, "Carnívoro", p), false);
-  s.historicalTraits.push("Predação");
-  assert.equal(traitUnlocked(s, "Carnívoro", p), false);
-  p.traits.push("Predação");
-  assert.equal(traitUnlocked(s, "Carnívoro", p), true);
+  p.ancestry = ["Predação", "Locomoção"];
+  p.traits = [];
+  assert.equal(traitUnlocked(s, "Escavador", p), true);
+  assert.equal(traitUnlocked(s, "Escavador", unrelated), false);
+
+  s.historicalTraits.push("Escavador");
+  p.ancestry.push("Escavador");
+  assert.equal(traitUnlocked(s, "Construtor de Nicho", p), true);
+  assert.equal(traitUnlocked(s, "Construtor de Nicho", unrelated), false);
 
   s.geologicalStage = "devonian";
+  s.historicalTraits = [
+    ...new Set([
+      ...GEOLOGICAL_STAGES.slice(0, 6).flatMap((stage) => stage.required),
+    ]),
+  ];
+  p.ancestry.push("Construtor de Nicho");
+  assert.equal(traitUnlocked(s, "Locomoção Avançada", p), true);
   s.historicalTraits.push("Locomoção Avançada");
-  p.traits = p.traits.filter((trait) => trait !== "Carnívoro");
-  assert.equal(traitUnlocked(s, "Onívoro", p), false);
-  p.traits.push("Carnívoro");
+  p.ancestry.push("Carnívoro");
   assert.equal(traitUnlocked(s, "Onívoro", p), true);
 
-  s.geologicalStage = "ediacaran";
-  s.historicalTraits = s.historicalTraits.filter(
-    (trait) => trait !== "Predação",
-  );
-  p.traits = p.traits.filter((trait) => trait !== "Predação");
-  assert.equal(traitUnlocked(s, "Locomoção", p), false);
-  s.historicalTraits.push("Predação");
-  assert.equal(traitUnlocked(s, "Locomoção", p), false);
-  p.traits.push("Predação");
-  assert.equal(traitUnlocked(s, "Locomoção", p), true);
-
-  s.geologicalStage = "neogene";
-  s.historicalTraits.push("Chifre", "Construção de Nicho");
-  p.traits = p.traits.filter((trait) => trait !== "Construção de Nicho");
-  assert.equal(traitUnlocked(s, "Construtor Avançado", p), false);
-  p.traits.push("Construção de Nicho");
-  assert.equal(traitUnlocked(s, "Construtor Avançado", p), true);
-
   s.geologicalStage = "triassic";
-  s.historicalTraits = s.historicalTraits.filter(
-    (trait) => trait !== "Ovíparos Amniotas",
-  );
-  p.traits = p.traits.filter((trait) => trait !== "Ovíparos Amniotas");
-  assert.equal(traitUnlocked(s, "Vivíparo", p), false);
-  s.historicalTraits.push("Ovíparos Amniotas");
-  assert.equal(traitUnlocked(s, "Vivíparo", p), false);
-  p.traits.push("Ovíparos Amniotas");
+  p.ancestry.push("Ovíparos Amniotas");
   assert.equal(traitUnlocked(s, "Vivíparo", p), true);
+
+  s.geologicalStage = "quaternary";
+  s.historicalTraits = [
+    ...new Set([
+      ...GEOLOGICAL_STAGES.slice(0, 14).flatMap((stage) => stage.required),
+    ]),
+  ];
+  p.ancestry.push("Polegar Opositor");
+  assert.equal(traitUnlocked(s, "Construtor Avançado", p), false);
+  s.historicalTraits.push("Neocórtex Desenvolvido");
+  assert.equal(traitUnlocked(s, "Construtor Avançado", p), true);
+  assert.equal(traitUnlocked(s, "Construtor Avançado", unrelated), false);
+});
+
+test("campaign history from another lineage does not satisfy ancestry prerequisites", () => {
+  const s = createState(121, {
+      geologicalStage: "proterozoic",
+      historicalTraits: [
+        "Fotossíntese",
+        "Predação",
+        "Fertilidade",
+        "Dormência",
+        "Resistência",
+        "Regeneração",
+        "Reprodução Sexuada",
+        "Esporos",
+      ],
+    }),
+    descendant = { traits: [], ancestry: ["Predação"] },
+    outsider = { traits: [], ancestry: [] };
+  assert.equal(traitUnlocked(s, "Carnívoro", descendant), true);
+  assert.equal(traitUnlocked(s, "Carnívoro", outsider), false);
 });
 
 test("evolutionary precedence changes eligibility but never mutation weight", () => {
@@ -478,6 +486,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
   assert.equal(traitUnlocked(s, "Angiospermas", plant), true);
   for (const trait of [
     "Locomoção",
+    "Escavador",
     "Escalador",
     "Respiração Cutânea",
     "Sacos Aéreos",
@@ -489,6 +498,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     "Visão Noturna",
     "Eusocialidade",
     "Chifre",
+    "Construtor de Nicho",
     "Polegar Opositor",
     "Neocórtex Desenvolvido",
     "Construtor Avançado",
@@ -509,12 +519,14 @@ test("switching into Fotossíntese removes animal-only traits", () => {
   const animal = [
     "Predação",
     "Locomoção",
+    "Escavador",
     "Escalador",
     "Carnívoro",
     "Onívoro",
     "Necrófago",
     "Voo",
     "Chifre",
+    "Construtor de Nicho",
     "Polegar Opositor",
     "Neocórtex Desenvolvido",
   ];

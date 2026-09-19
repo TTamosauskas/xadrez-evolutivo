@@ -32,6 +32,7 @@ function animalTraits(stage, game) {
   const traits = ["Predação"];
   if (available("Carnívoro", stage)) traits.push("Carnívoro");
   if (available("Locomoção", stage)) traits.push("Locomoção");
+  if (available("Escavador", stage) && game % 2 === 1) traits.push("Escavador");
   if (available("Respiração Cutânea", stage)) traits.push("Respiração Cutânea");
   if (available("Onívoro", stage)) traits.push("Onívoro");
   if (available("Escalador", stage) && game % 2 === 0) traits.push("Escalador");

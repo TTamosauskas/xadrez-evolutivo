@@ -20,14 +20,21 @@ export const V4_KEY = "xadrez-evolutivo-save-v4";
 export const V3_KEY = "xadrez-evolutivo-save-v3";
 export const V2_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
-const currentTraitName = (name) => name;
-const v3TraitName = (name) => (name === "Predador" ? "Carnívoro" : name);
+const currentTraitName = (name) =>
+  name === "Construção de Nicho" ? "Construtor de Nicho" : name;
+const v3TraitName = (name) =>
+  currentTraitName(name === "Predador" ? "Carnívoro" : name);
 const legacyTraitName = (name) =>
-  name === "Predador" || name === "Predação" ? "Carnívoro" : name;
+  currentTraitName(
+    name === "Predador" || name === "Predação" ? "Carnívoro" : name,
+  );
 const v2TraitName = (name) =>
   name === "Locomoção" ? "Locomoção Avançada" : legacyTraitName(name);
 const mutationLabel = (label, version = 7) => {
   let mapped = label;
+  if (mapped === "Construção de Nicho") mapped = "Construtor de Nicho";
+  if (mapped === "Perda de Construção de Nicho")
+    mapped = "Perda de Construtor de Nicho";
   if (version <= 3) {
     if (mapped === "Predador") mapped = "Carnívoro";
     if (mapped === "Perda de Predador") mapped = "Perda de Carnívoro";
@@ -97,8 +104,13 @@ export function deserialize(raw) {
           traits = new Set((profile.traits ?? []).map(mapper));
         if (legacyV2) traits.add("Locomoção");
         if (sourceVersion < 4) traits.add("Predação");
-        const validTraits = [...traits].filter((trait) => TRAITS[trait]);
+        const validTraits = [...traits].filter((trait) => TRAITS[trait]),
+          ancestry = new Set(
+            (profile.ancestry ?? []).map(mapper).filter((trait) => TRAITS[trait]),
+          );
+        for (const trait of validTraits) ancestry.add(trait);
         profile.traits = normalizeEnergyBranch(validTraits);
+        profile.ancestry = [...ancestry];
         profile.reproGenes = normalizeReproGenes(
           profile.reproGenes,
           profile.traits,
@@ -286,24 +298,42 @@ export function deserialize(raw) {
       data.totalCycles = data.cycle;
     if (!Array.isArray(data.historicalTraits)) data.historicalTraits = [];
     data.historicalTraits = [
-      ...new Set(data.historicalTraits.filter((trait) => TRAITS[trait])),
+      ...new Set(
+        data.historicalTraits
+          .map(currentTraitName)
+          .filter((trait) => TRAITS[trait]),
+      ),
     ];
     if (data.discoveries) {
-      data.discoveries.mutations = (data.discoveries.mutations ?? []).filter(
-        (id) => id !== "Ovos",
-      );
-      data.discoveries.read = (data.discoveries.read ?? []).filter(
-        (key) => key !== "mutations:Ovos",
-      );
+      data.discoveries.mutations = [
+        ...new Set(
+          (data.discoveries.mutations ?? [])
+            .map(currentTraitName)
+            .filter((id) => id !== "Ovos"),
+        ),
+      ];
+      data.discoveries.read = [
+        ...new Set(
+          (data.discoveries.read ?? [])
+            .map((key) =>
+              key === "mutations:Construção de Nicho"
+                ? "mutations:Construtor de Nicho"
+                : key,
+            )
+            .filter((key) => key !== "mutations:Ovos"),
+        ),
+      ];
     }
     data.notices = (data.notices ?? [])
       .map((entry) =>
         entry?.title === "Novas mutações"
           ? {
               ...entry,
-              lines: (entry.lines ?? []).filter(
-                (label) => label !== "Ovos" && label !== "Perda de Ovos",
-              ),
+              lines: (entry.lines ?? [])
+                .map((label) => mutationLabel(label, sourceVersion))
+                .filter(
+                  (label) => label !== "Ovos" && label !== "Perda de Ovos",
+                ),
             }
           : entry,
       )

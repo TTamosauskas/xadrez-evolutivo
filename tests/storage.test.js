@@ -28,11 +28,13 @@ test("older v7 saves restore existing pieces as mature and off cooldown", () => 
   for (const piece of s.pieces) {
     delete piece.maturesRound;
     delete piece.nextReproductionRound;
+    delete piece.ancestry;
   }
   const restored = deserialize(JSON.stringify(s));
   for (const piece of restored.pieces) {
     assert.equal(piece.maturesRound, 6);
     assert.equal(piece.nextReproductionRound, 6);
+    assert.deepEqual(piece.ancestry, piece.traits);
   }
   assertState(restored);
 });
@@ -59,6 +61,7 @@ test("plant seeds survive save round trip", () => {
       owner: parent.owner,
       rank: parent.rank,
       traits: ["Fotossíntese", "Embriófitas", "Traqueófitas", "Gimnospermas"],
+      ancestry: ["Fotossíntese", "Embriófitas", "Traqueófitas", "Gimnospermas"],
       reproGenes: structuredClone(parent.reproGenes),
       mutations: 4,
       generation: 1,
@@ -326,6 +329,30 @@ test("current saves drop obsolete Ovos history discoveries and alleles", () => {
   assert.ok(!restored.pieces[0].traits.includes("Ovos"));
   assert.equal(restored.pieces[0].reproGenes.dispersal[0].value, "local");
   assert.equal(restored.pieces[0].reproGenes.dispersal[1].value, "spores");
+  assertState(restored);
+});
+
+test("v7 saves rename Construção de Nicho and preserve it as lineage ancestry", () => {
+  const old = createState(122),
+    piece = old.pieces[0];
+  old.totalCycles = 2;
+  old.cycle = 2;
+  piece.traits = ["Construção de Nicho"];
+  delete piece.ancestry;
+  old.historicalTraits = ["Construção de Nicho"];
+  old.seenMutations = ["Construção de Nicho", "Perda de Construção de Nicho"];
+  old.discoveries.mutations = ["Construção de Nicho"];
+  old.discoveries.read = ["mutations:Construção de Nicho"];
+
+  const restored = deserialize(JSON.stringify(old)),
+    migrated = restored.pieces[0];
+  assert.deepEqual(migrated.traits, ["Construtor de Nicho"]);
+  assert.deepEqual(migrated.ancestry, ["Construtor de Nicho"]);
+  assert.deepEqual(restored.historicalTraits, ["Construtor de Nicho"]);
+  assert.ok(restored.seenMutations.includes("Construtor de Nicho"));
+  assert.ok(restored.seenMutations.includes("Perda de Construtor de Nicho"));
+  assert.ok(restored.discoveries.mutations.includes("Construtor de Nicho"));
+  assert.ok(restored.discoveries.read.includes("mutations:Construtor de Nicho"));
   assertState(restored);
 });
 

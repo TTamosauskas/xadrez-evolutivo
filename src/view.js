@@ -210,7 +210,7 @@ export function render(
             make(
               "span",
               badge.text,
-              badge.trait === "Construção de Nicho" ? "niche-icon" : "",
+              "",
             ),
           );
         cell.append(badgeRow);
@@ -256,7 +256,7 @@ export function render(
         make(
           "span",
           TRAITS[trait][0],
-          trait === "Construção de Nicho" ? "niche-icon" : "",
+          "",
         ),
         doc.createTextNode(` ${trait}`),
       );
@@ -447,7 +447,7 @@ export function render(
           make(
             "span",
             icon,
-            `mutation-icon${traitName === "Construção de Nicho" ? " niche-icon" : ""}`,
+            "mutation-icon",
           ),
           make("span", line, "mutation-copy"),
         );

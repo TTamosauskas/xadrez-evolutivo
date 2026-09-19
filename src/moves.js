@@ -112,8 +112,13 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       return;
     if (victim && victim.owner !== p.owner && !captureUnlocked(state, p))
       return;
-    if (builtBarrier && !has(p, "Chifre")) return;
-    if (naturalBarrier && !has(p, "Escalador")) return;
+    if (builtBarrier && !has(p, "Escavador")) return;
+    if (
+      naturalBarrier &&
+      !has(p, "Escavador") &&
+      !has(p, "Escalador")
+    )
+      return;
     if (egg) {
       const parent = state.pieces.find((piece) => piece.id === egg.parentId),
         protectedEgg =
@@ -152,11 +157,20 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           naturalBarrier = naturalBarrierAt(state, r, c),
           occupied = occupiedTarget(r, c);
         if (builtBarrier) {
-          if (!captureOnly && has(p, "Chifre")) add(r, c, [...path]);
-          if (!has(p, "Voo") && !has(p, "Chifre")) break;
+          if (!captureOnly && has(p, "Escavador")) add(r, c, [...path]);
+          if (!has(p, "Voo") && !has(p, "Escavador")) break;
         } else if (naturalBarrier) {
-          if (!captureOnly && has(p, "Escalador")) add(r, c, [...path]);
-          if (!has(p, "Voo") && !has(p, "Escalador")) break;
+          if (
+            !captureOnly &&
+            (has(p, "Escavador") || has(p, "Escalador"))
+          )
+            add(r, c, [...path]);
+          if (
+            !has(p, "Voo") &&
+            !has(p, "Escavador") &&
+            !has(p, "Escalador")
+          )
+            break;
         } else if (!captureOnly || occupied) add(r, c, [...path]);
         if (occupied) break;
       }
