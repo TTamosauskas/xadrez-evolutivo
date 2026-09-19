@@ -164,7 +164,7 @@ function maturePhotosynthesis(state, owner) {
       delete p.photosynthesisSinceTurn;
       log(
         state,
-        `${OWNERS[p.owner]}: ☀️ Fotossíntese tornou ${coord(p.r, p.c)} fértil.`,
+        `${OWNERS[p.owner]}: 🪸 Fotossíntese tornou ${coord(p.r, p.c)} fértil.`,
       );
     }
   }
