@@ -2,6 +2,7 @@ import { inside, has, distance, square } from "./constants.js";
 import {
   at,
   eggAt,
+  plantSeedAt,
   barrierAt,
   terrain,
   round,
@@ -224,7 +225,14 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     for (const [dr, dc] of ORTH) {
       const r = p.r + dr,
         c = p.c + dc;
-      if (inside(r, c) && terrain(state, r, c) === "fertile")
+      if (
+        inside(r, c) &&
+        terrain(state, r, c) === "fertile" &&
+        !at(state, r, c) &&
+        !eggAt(state, r, c) &&
+        !plantSeedAt(state, r, c) &&
+        !barrierAt(state, r, c)
+      )
         targets.push({
           r,
           c,
