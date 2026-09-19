@@ -7,7 +7,6 @@ import {
   habitatProfile,
   recordHistoricalTraits,
   stageComplete,
-  stageProgress,
 } from "./geology.js";
 import {
   cloneDiscoveries,
@@ -87,18 +86,8 @@ export function newPiece(state, owner, r, c, source = {}) {
 export function registerDiscoveries(state, piece) {
   const added = recordHistoricalTraits(state, piece);
   if (!added.length) return added;
-  const progress = stageProgress(state);
-  notice(state, "Marco Evolutivo", [
-    ...added.map((trait) => `${TRAITS[trait][0]} ${trait} surgiu pela primeira vez.`),
-    `Progresso de ${currentGeologicalStage(state).period}: ${progress.discovered.length} de ${progress.required.length} inovação(ões).`,
-  ]);
-  for (const trait of added) {
+  for (const trait of added)
     recordDiscovery(state, "mutations", trait);
-    log(
-      state,
-      `Marco Evolutivo: ${TRAITS[trait][0]} ${trait} foi descoberto.`,
-    );
-  }
   return added;
 }
 
