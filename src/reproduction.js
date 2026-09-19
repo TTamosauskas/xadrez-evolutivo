@@ -7,10 +7,12 @@ import {
   square,
   distance,
   OWNERS,
+  coord,
 } from "./constants.js";
 import {
   at,
   eggAt,
+  plantSeedAt,
   barrierAt,
   random,
   pick,
@@ -236,7 +238,12 @@ function sexualProfile(state, a, b) {
 }
 
 function occupied(state, r, c) {
-  return at(state, r, c) || eggAt(state, r, c) || barrierAt(state, r, c);
+  return (
+    at(state, r, c) ||
+    eggAt(state, r, c) ||
+    plantSeedAt(state, r, c) ||
+    barrierAt(state, r, c)
+  );
 }
 
 function freeCells(ctx, origin, dispersal) {
@@ -372,6 +379,24 @@ function layEgg(ctx, parent, brood, dispersal) {
   return brood.length;
 }
 
+function layPlantSeeds(ctx, parent, brood) {
+  const cells = freeCells(ctx, parent, "local"),
+    targets = shuffle(ctx.state, cells).slice(0, Math.min(brood.length, cells.length));
+  for (let i = 0; i < targets.length; i++) {
+    const target = targets[i];
+    ctx.state.plantSeeds.push({
+      id: ctx.state.nextPlantSeed++,
+      owner: parent.owner,
+      r: target.r,
+      c: target.c,
+      parentId: parent.id,
+      profile: brood[i],
+      movesRemaining: 3,
+    });
+  }
+  return targets.length;
+}
+
 export function reproduce(
   ctx,
   parent,
@@ -385,17 +410,32 @@ export function reproduce(
 
   const profile = mate ? sexualProfile(state, parent, mate) : parent,
     phenotype = reproPhenotype(parent.reproGenes),
+    plant = has(profile, "Fotossíntese"),
+    gymnosperm = has(profile, "Gimnospermas"),
     development = options.immediateDevelopment
       ? "immediate"
-      : phenotype.development,
-    dispersal = phenotype.dispersal,
+      : plant
+        ? "immediate"
+        : phenotype.development,
+    dispersal =
+      plant && phenotype.dispersal === "eggs"
+        ? "local"
+        : gymnosperm
+          ? "local"
+          : phenotype.dispersal,
     wanted =
       options.forcedCount ??
       BIRTH_RATES[profile.rank] * (has(profile, "Fertilidade") ? 2 : 1) +
         eusocialBonus(state, parent);
 
   let produced = 0;
-  if (development === "oviparous") {
+  if (gymnosperm && !options.immediateDevelopment) {
+    const capacity = freeCells(ctx, parent, "local").length,
+      count = Math.min(wanted, capacity);
+    if (!count) return 0;
+    const brood = makeBrood(state, parent, mate, profile, count);
+    produced = layPlantSeeds(ctx, parent, brood);
+  } else if (development === "oviparous") {
     const possibleEgg = [];
     for (let dr = -1; dr <= 1; dr++)
       for (let dc = -1; dc <= 1; dc++)
