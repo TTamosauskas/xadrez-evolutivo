@@ -17,6 +17,7 @@ export class Controller {
       setTimer = (...args) => setTimeout(...args),
       clearTimer = (id) => clearTimeout(id),
       timeout = 2000,
+      aiDelay = 850,
       conwayDelay = 700,
     } = {},
   ) {
@@ -27,6 +28,7 @@ export class Controller {
     this.setTimer = setTimer;
     this.clearTimer = clearTimer;
     this.timeout = timeout;
+    this.aiDelay = aiDelay;
     this.conwayDelay = conwayDelay;
     this.mode = "multi";
     this.difficulty = "medium";
@@ -42,6 +44,7 @@ export class Controller {
     this.generation++;
     if (this.job) {
       this.clearTimer(this.job.timer);
+      if (this.job.delayTimer !== null) this.clearTimer(this.job.delayTimer);
       this.job.worker?.terminate();
       this.job = null;
     }
@@ -229,7 +232,7 @@ export class Controller {
       return;
     const token = ++this.generation,
       revision = state.revision;
-    const finish = (action) => {
+    const commit = (action) => {
       if (
         this.job?.token !== token ||
         this.generation !== token ||
@@ -250,8 +253,35 @@ export class Controller {
       const chosen = valid ? action : fallbackAction(this.state);
       this.dispatch({ ...chosen, revision }, { ai: true });
     };
-    this.job = { token, worker: null, timer: null };
-    this.job.timer = this.setTimer(() => finish(null), this.timeout);
+    const finish = (action, force = false) => {
+      if (
+        this.job?.token !== token ||
+        this.generation !== token ||
+        this.state.revision !== revision
+      )
+        return;
+      this.job.action = action;
+      if (force || this.job.ready) commit(action);
+    };
+    this.job = {
+      token,
+      worker: null,
+      timer: null,
+      delayTimer: null,
+      ready: false,
+      action: undefined,
+    };
+    this.job.timer = this.setTimer(() => finish(null, true), this.timeout);
+    this.job.delayTimer = this.setTimer(() => {
+      if (
+        this.job?.token !== token ||
+        this.generation !== token ||
+        this.state.revision !== revision
+      )
+        return;
+      this.job.ready = true;
+      if (this.job.action !== undefined) commit(this.job.action);
+    }, this.aiDelay);
     try {
       const worker = this.workerFactory();
       this.job.worker = worker;

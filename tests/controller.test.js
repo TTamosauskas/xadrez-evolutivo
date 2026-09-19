@@ -5,7 +5,8 @@ import { createState, clone, newPiece } from "../src/state.js";
 import { fallbackAction, chooseAction } from "../src/ai.js";
 function setup() {
   const workers = [],
-    timers = new Map();
+    timers = new Map(),
+    timerDelays = new Map();
   let n = 0;
   const s = createState(2);
   s.turn = 1;
@@ -23,13 +24,18 @@ function setup() {
       workers.push(w);
       return w;
     },
-    setTimer: (fn) => {
-      timers.set(++n, fn);
-      return n;
+    setTimer: (fn, delay) => {
+      const id = ++n;
+      timers.set(id, fn);
+      timerDelays.set(id, delay);
+      return id;
     },
-    clearTimer: (id) => timers.delete(id),
+    clearTimer: (id) => {
+      timers.delete(id);
+      timerDelays.delete(id);
+    },
   });
-  return { c, workers, timers };
+  return { c, workers, timers, timerDelays };
 }
 test("automatic Conway waits between visible board updates", () => {
   const s = createState(302);
@@ -85,6 +91,28 @@ test("automatic Conway waits between visible board updates", () => {
   controller.dispose();
 });
 
+test("AI waits for a visible human-paced delay before committing its move", () => {
+  const { c, workers, timers, timerDelays } = setup();
+  c.configure("single");
+  const w = workers[0],
+    action = fallbackAction(w.request.state);
+  w.onmessage({
+    data: {
+      token: w.request.token,
+      revision: w.request.state.revision,
+      action,
+    },
+  });
+  assert.equal(c.state.current, "amber");
+  assert.equal(c.state.revision, w.request.state.revision);
+  const delayEntry = [...timerDelays.entries()].find(([, delay]) => delay === 850);
+  assert.ok(delayEntry);
+  timers.get(delayEntry[0])();
+  assert.equal(c.state.current, "blue");
+  assert.ok(c.state.revision > w.request.state.revision);
+  c.dispose();
+});
+
 test("worker response after reset is ignored", () => {
   const { c, workers } = setup();
   c.configure("single");
@@ -115,7 +143,7 @@ test("watchdog terminates stuck worker and advances using a legal fallback", () 
   c.dispose();
 });
 test("duplicate and malformed replies cannot double-play", () => {
-  const { c, workers } = setup();
+  const { c, workers, timers, timerDelays } = setup();
   c.configure("single");
   const w = workers[0],
     data = {
@@ -124,6 +152,9 @@ test("duplicate and malformed replies cannot double-play", () => {
       action: { type: "MOVE", id: 999, r: 0, c: 0 },
     };
   w.onmessage({ data });
+  assert.equal(c.state.current, "amber");
+  const delayId = [...timerDelays.entries()].find(([, delay]) => delay === 850)[0];
+  timers.get(delayId)();
   const revision = c.state.revision;
   w.onmessage({ data });
   assert.equal(c.state.revision, revision);
@@ -146,17 +177,26 @@ test("pausing cancels work; notices prevent automatic play until acknowledgment"
   c.dispose();
 });
 test("worker errors and unavailable workers recover", () => {
-  const { c, workers } = setup();
+  const first = setup(),
+    { c, workers, timers, timerDelays } = first;
   c.configure("single");
   workers[0].onerror();
+  assert.equal(c.state.current, "amber");
+  const delayId = [...timerDelays.entries()].find(([, delay]) => delay === 850)[0];
+  timers.get(delayId)();
   assert.equal(c.state.current, "blue");
   c.dispose();
+
   const x = setup();
   x.c.workerFactory = () => {
     throw Error("CSP");
   };
   x.c.configure("single");
-  [...x.timers.values()][0]();
+  const fallbackId = [...x.timerDelays.entries()].find(([, delay]) => delay === 120)[0];
+  x.timers.get(fallbackId)();
+  assert.equal(x.c.state.current, "amber");
+  const xDelayId = [...x.timerDelays.entries()].find(([, delay]) => delay === 850)[0];
+  x.timers.get(xDelayId)();
   assert.equal(x.c.state.current, "blue");
   x.c.dispose();
 });
