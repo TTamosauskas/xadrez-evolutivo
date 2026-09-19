@@ -14,7 +14,7 @@ export const GEOLOGICAL_STAGES = [
       ["Fotossíntese", "Predação"],
       ["Fertilidade", "Dormência"],
     ],
-    habitat: { fertile: 52, hostile: 0, founderFertile: true },
+    habitat: { fertile: 52, hostile: 0, founderFertile: true, naturalBarriers: [0, 1] },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2 },
   },
   {
@@ -28,7 +28,7 @@ export const GEOLOGICAL_STAGES = [
       "Esporos",
       "Carnívoro",
     ],
-    habitat: { fertile: 42, hostile: 2, founderFertile: true },
+    habitat: { fertile: 42, hostile: 2, founderFertile: true, naturalBarriers: [0, 2] },
     events: {
       fertilized: 3,
       volcano: 2,
@@ -43,7 +43,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Pré-Cambriano",
     period: "Ediacarano",
     required: ["Locomoção", "Necrófago", "Construção de Nicho"],
-    habitat: { fertile: 30, hostile: 4, founderFertile: true },
+    habitat: { fertile: 30, hostile: 4, founderFertile: true, naturalBarriers: [1, 2] },
     events: {
       abundance: 3,
       fertilized: 3,
@@ -57,7 +57,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Cambriano",
     required: ["Carapaça", "Camuflagem", "Veneno"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3] },
     events: {
       sea: 3,
       abundance: 3,
@@ -71,7 +71,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Ordoviciano",
     required: ["Ovíparo"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3] },
     events: { ice: 4, sea: 3, blockade: 1, earthquake: 1 },
   },
   {
@@ -79,7 +79,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Siluriano",
     required: ["Coletor"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3] },
     events: {
       "alluvial-river": 3,
       "abundant-rains": 3,
@@ -92,7 +92,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Devoniano",
     required: ["Locomoção Avançada", "Onívoro"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 3] },
     events: {
       "alluvial-river": 3,
       abundance: 2,
@@ -106,7 +106,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Carbonífero",
     required: ["Ovíparos Amniotas", "Ooteca", "Voo"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
     events: {
       "abundant-rains": 4,
       abundance: 3,
@@ -119,7 +119,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Permiano",
     required: ["Cuidado Parental"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 5] },
     events: { volcano: 5, drought: 4, desert: 4, blockade: 2, earthquake: 1 },
   },
   {
@@ -127,7 +127,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Mesozoico",
     period: "Triássico",
     required: ["Vivíparo"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
     events: { drought: 3, desert: 3, volcano: 2, insularization: 2, sea: 1 },
   },
   {
@@ -135,7 +135,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Mesozoico",
     period: "Jurássico",
     required: ["Visão Noturna"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
     events: {
       sea: 3,
       insularization: 3,
@@ -149,7 +149,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Mesozoico",
     period: "Cretáceo",
     required: ["Eusocialidade", "Ovífagia"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 4] },
     events: { sea: 3, abundance: 2, insularization: 2, meteor: 1, volcano: 1 },
   },
   {
@@ -157,7 +157,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Cenozoico",
     period: "Paleógeno",
     required: [],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 5] },
     events: {
       earthquake: 2,
       "alluvial-river": 2,
@@ -171,7 +171,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Cenozoico",
     period: "Neógeno",
     required: ["Chifre", "Construtor Avançado", "Polegar Opositor"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [4, 6] },
     events: { drought: 3, desert: 3, earthquake: 2, ice: 1, "alluvial-river": 1 },
   },
   {
@@ -179,7 +179,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Cenozoico",
     period: "Quaternário",
     required: ["Neocórtex Desenvolvido"],
-    habitat: { fertile: 14, hostile: 7, standard: true },
+    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 6] },
     events: { ice: 5, drought: 3, desert: 3, earthquake: 2, meteor: 1 },
   },
 ].map((stage, index) => ({ ...stage, index }));
@@ -211,6 +211,7 @@ export const TRAIT_STAGE = {
   Veneno: "cambrian",
   Coletor: "silurian",
   "Locomoção Avançada": "devonian",
+  Escalador: "devonian",
   Onívoro: "devonian",
   "Respiração Cutânea": "devonian",
   Voo: "carboniferous",
@@ -258,6 +259,10 @@ export const TRAIT_DEPENDENCIES = {
   },
   Locomoção: { historical: ["Predação"], piece: ["Predação"] },
   "Locomoção Avançada": { historical: ["Locomoção"] },
+  Escalador: {
+    historical: ["Locomoção"],
+    piece: ["Locomoção"],
+  },
   "Respiração Cutânea": {
     historical: ["Locomoção"],
     piece: ["Locomoção"],
@@ -312,6 +317,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Predação",
   "Locomoção",
   "Locomoção Avançada",
+  "Escalador",
   "Respiração Cutânea",
   "Sacos Aéreos",
   "Carnívoro",
@@ -346,6 +352,7 @@ export function traitCombinationValid(traits) {
   if ([...PLANT_DERIVED_TRAITS].some((trait) => set.has(trait)) && !set.has("Fotossíntese"))
     return false;
   if (set.has("Locomoção") && !set.has("Predação")) return false;
+  if (set.has("Escalador") && !set.has("Locomoção")) return false;
   if (set.has("Respiração Cutânea") && !set.has("Locomoção")) return false;
   if (set.has("Sacos Aéreos") && !set.has("Locomoção")) return false;
   if (set.has("Carnívoro") && !set.has("Predação")) return false;
@@ -381,12 +388,14 @@ export function normalizeEnergyBranch(traits, preferred = null) {
     for (const trait of PLANT_DERIVED_TRAITS) set.delete(trait);
   if (!set.has("Predação")) {
     set.delete("Locomoção");
+    set.delete("Escalador");
     set.delete("Respiração Cutânea");
     set.delete("Sacos Aéreos");
     set.delete("Carnívoro");
     set.delete("Onívoro");
   }
   if (!set.has("Locomoção")) {
+    set.delete("Escalador");
     set.delete("Respiração Cutânea");
     set.delete("Sacos Aéreos");
   }
@@ -441,7 +450,9 @@ export function traitLossAllowed(piece, trait) {
     return false;
   if (
     trait === "Locomoção" &&
-    (traits.has("Respiração Cutânea") || traits.has("Sacos Aéreos"))
+    (traits.has("Escalador") ||
+      traits.has("Respiração Cutânea") ||
+      traits.has("Sacos Aéreos"))
   )
     return false;
   if (
