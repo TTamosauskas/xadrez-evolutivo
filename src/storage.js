@@ -123,10 +123,27 @@ export function deserialize(raw) {
           : [];
       }
     data.eggs = Array.isArray(data.eggs)
-      ? data.eggs.map((egg) => ({
-          ...egg,
-          brood: (egg.brood ?? []).map(normalizeProfile),
-        }))
+      ? data.eggs.map((egg) => {
+          const hatchRound = Number.isInteger(egg.hatchRound)
+              ? egg.hatchRound
+              : Math.floor((data.turn ?? 0) / 2) + 3,
+            laidRound = Number.isInteger(egg.laidRound)
+              ? egg.laidRound
+              : Math.max(0, hatchRound - 3);
+          return {
+            ...egg,
+            laidRound,
+            hatchRound,
+            expireRound: Number.isInteger(egg.expireRound)
+              ? egg.expireRound
+              : laidRound + 6,
+            mode: ["basal", "amniote"].includes(egg.mode)
+              ? egg.mode
+              : "amniote",
+            dispersal: egg.dispersal === "spores" ? "spores" : "local",
+            brood: (egg.brood ?? []).map(normalizeProfile),
+          };
+        })
       : [];
     data.nextEgg = Number.isInteger(data.nextEgg)
       ? data.nextEgg
