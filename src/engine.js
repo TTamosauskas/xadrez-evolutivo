@@ -5,6 +5,7 @@ import {
   at,
   eggAt,
   plantSeedAt,
+  barrierAt,
   terrain,
   round,
   random,
@@ -127,7 +128,7 @@ function photosynthesisHasSpace(state, p) {
         !at(state, r, c) &&
         !eggAt(state, r, c) &&
         !plantSeedAt(state, r, c) &&
-        !state.barriers.includes(square(r, c))
+        !barrierAt(state, r, c)
       ) {
         free++;
         if (free >= 2) return true;
@@ -153,7 +154,7 @@ function photosynthesisExtraCell(state, p) {
         !piece &&
         !eggAt(state, r, c) &&
         !plantSeedAt(state, r, c) &&
-        !state.barriers.includes(square(r, c))
+        !barrierAt(state, r, c)
       )
         empty.push({ r, c });
     }
