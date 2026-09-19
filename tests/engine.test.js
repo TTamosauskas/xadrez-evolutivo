@@ -23,6 +23,7 @@ import {
   applyPopulationAttrition,
   fertilityDepletionRate,
   populationAttritionChance,
+  offensiveActionCount,
 } from "../src/environment.js";
 import {
   startDisease,
@@ -30,9 +31,70 @@ import {
   checkPopulation,
   populationPathogenChance,
 } from "../src/disease.js";
-import { reproduce, tickReproduction } from "../src/reproduction.js";
+import {
+  reproduce,
+  tickReproduction,
+  populationReproductionLimit,
+  populationReproductionCooldown,
+  predationBirthLimit,
+} from "../src/reproduction.js";
+import { crowdingPenalty } from "../src/ai.js";
+import { habitatProfile } from "../src/geology.js";
 import { cloneReproGenes } from "../src/reproductive-genetics.js";
 import { EVENTS, TRAITS } from "../src/constants.js";
+
+test("period habitat profiles encode the new ecological progression", () => {
+  const archean = habitatProfile("archean"),
+    proterozoic = habitatProfile("proterozoic"),
+    ordovician = habitatProfile("ordovician"),
+    devonian = habitatProfile("devonian"),
+    carboniferous = habitatProfile("carboniferous"),
+    permian = habitatProfile("permian"),
+    triassic = habitatProfile("triassic"),
+    cretaceous = habitatProfile("cretaceous"),
+    neogene = habitatProfile("neogene");
+
+  assert.deepEqual(archean.fertile, [48, 56]);
+  assert.deepEqual(archean.naturalBarriers, [0, 0]);
+  assert.equal(archean.pattern, "primordial");
+  assert.deepEqual(proterozoic.hostile, [2, 4]);
+  assert.equal(proterozoic.hostileCap, 12);
+  assert.equal(proterozoic.pattern, "primordial-conway");
+  assert.equal(ordovician.pattern, "islands");
+  assert.equal(devonian.pattern, "corridors");
+  assert.deepEqual(carboniferous.naturalBarriers, [3, 6]);
+  assert.equal(permian.hostile, 12);
+  assert.equal(triassic.pattern, "open");
+  assert.equal(cretaceous.fertile, 18);
+  assert.equal(neogene.pattern, "fragmented");
+});
+
+test("Archean is almost entirely fertile and Proterozoic seeds bounded hostile Conway", () => {
+  const archean = createState(811, {
+    geologicalStage: "archean",
+    naturalBarriers: true,
+  });
+  const fertile = archean.board.filter((cell) => cell === "fertile").length;
+  assert.ok(fertile >= 48 && fertile <= 56);
+  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 0);
+  assert.equal(archean.naturalBarriers.length, 0);
+
+  const proterozoic = createState(812, {
+    geologicalStage: "proterozoic",
+    naturalBarriers: true,
+  });
+  const initialHostile = proterozoic.board.filter(
+    (cell) => cell === "hostile",
+  ).length;
+  assert.ok(initialHostile >= 2 && initialHostile <= 4);
+  proterozoic.maxGenerationReached = 3;
+  tickEnvironment(context(proterozoic));
+  assert.ok(
+    proterozoic.board.filter((cell) => cell === "hostile").length <= 12,
+  );
+  assertState(archean);
+  assertState(proterozoic);
+});
 
 test("ancestral gray King splits into two opposite founder Kings", () => {
   let s = createCampaignState(301);
@@ -505,6 +567,69 @@ test("gradual population pressure scales from fertility exhaustion to attrition"
   assertState(s);
 });
 
+test("reproduction pressure closes the 24-31 population plateau", () => {
+  assert.equal(populationReproductionLimit(23), Infinity);
+  assert.equal(populationReproductionLimit(24), 2);
+  assert.equal(populationReproductionLimit(27), 2);
+  assert.equal(populationReproductionLimit(28), 1);
+  assert.equal(populationReproductionLimit(31), 1);
+  assert.equal(populationReproductionCooldown(23), 0);
+  assert.equal(populationReproductionCooldown(24), 1);
+  assert.equal(populationReproductionCooldown(28), 2);
+  assert.equal(populationReproductionCooldown(32), 3);
+  assert.equal(predationBirthLimit(23), 1);
+  assert.equal(predationBirthLimit(24), 0);
+});
+
+test("predation creates at most one descendant and none once population pressure starts", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const lowBlue = s.pieces.filter((piece) => piece.owner === "blue").length;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    lowBlue + 1,
+  );
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const occupied = new Set(s.pieces.map((piece) => piece.r * 8 + piece.c));
+  for (let cell = 0; s.pieces.length < 25 && cell < 64; cell++) {
+    if (occupied.has(cell)) continue;
+    occupied.add(cell);
+    s.pieces.push(
+      newPiece(
+        s,
+        s.pieces.length % 2 ? "blue" : "amber",
+        Math.floor(cell / 8),
+        cell % 8,
+        { traits: ["Locomoção", "Predação"] },
+      ),
+    );
+  }
+  const highBlue = s.pieces.filter((piece) => piece.owner === "blue").length;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    highBlue,
+  );
+  assertState(s);
+});
+
+test("AI crowding penalty stays bounded instead of overwhelming material", () => {
+  assert.equal(crowdingPenalty(12), 0);
+  assert.equal(crowdingPenalty(20), 16);
+  assert.equal(crowdingPenalty(40), 36);
+  assert.equal(crowdingPenalty(64), 36);
+});
+
+
 test("population attrition targets the densest organisms and uses normal death effects", () => {
   const s = fixture([]);
   for (let i = 0; i < 32; i++)
@@ -520,31 +645,48 @@ test("population attrition targets the densest organisms and uses normal death e
   assertState(s);
 });
 
-test("final Conway repair opens a shortest route between nearby opposing organisms", () => {
+test("final Conway repair creates an offensive option instead of accepting zero-edit contact", () => {
   const s = fixture([
-    { owner: "blue", r: 7, c: 0 },
-    { owner: "amber", r: 7, c: 4 },
+    { owner: "blue", r: 4, c: 4, rank: 0 },
+    { owner: "amber", r: 3, c: 4, rank: 0 },
   ]);
-  const corridorCells = [];
-  for (let r = 5; r <= 7; r++)
-    for (let col = 1; col <= 3; col++) {
-      const cell = r * 8 + col;
-      s.board[cell] = "hostile";
-      corridorCells.push(cell);
-    }
-  s.barriers = [50];
-  s.naturalBarriers = corridorCells.filter((cell) => cell !== 50);
+  assert.equal(offensiveActionCount(s), 0);
 
   repairConwayStagnation(context(s), 3);
 
-  assert.ok(s.barriers.includes(50));
+  assert.ok(offensiveActionCount(s) > 0);
   assert.ok(
-    corridorCells.some((cell) => s.board[cell] === "neutral"),
+    s.logs.some(
+      (entry) =>
+        entry.text.includes("mobilidade ofensiva") ||
+        entry.text.includes("deslocou um organismo") ||
+        entry.text.includes("corredor ofensivo"),
+    ),
   );
-  assert.ok(s.naturalBarriers.length < corridorCells.length - 1);
+  assertState(s);
+});
+
+test("prolonged combat drought triggers an offensive repair even when moves exist", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 0 },
+    { owner: "amber", r: 3, c: 4, rank: 0 },
+  ]);
+  s.turn = 47;
+  s.current = "blue";
+  s.lastSuccessfulCaptureRound = 0;
+  s.offensiveStagnation = { startedRound: 0, level: 0 };
+  assert.equal(offensiveActionCount(s), 0);
+  assert.ok(legalActions(s).length > 0);
+
+  s = simulate(s, { type: "PASS" });
+
+  assert.ok(offensiveActionCount(s) > 0);
   assert.ok(
-    s.logs.some((entry) =>
-      entry.text.includes("abriu caminho entre organismos adversários próximos"),
+    s.logs.some(
+      (entry) =>
+        entry.text.includes("mobilidade ofensiva") ||
+        entry.text.includes("deslocou um organismo") ||
+        entry.text.includes("corredor ofensivo"),
     ),
   );
   assertState(s);
