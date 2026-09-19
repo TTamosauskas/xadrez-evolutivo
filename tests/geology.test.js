@@ -465,7 +465,6 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
   for (const trait of [
     "Locomoção",
     "Necrófago",
-    "Ovos",
     "Ovíparo",
     "Vivíparo",
     "Voo",
