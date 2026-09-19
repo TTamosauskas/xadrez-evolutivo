@@ -23,12 +23,16 @@ import {
   manipulationTargets,
   constructionTargets,
   nursingTargets,
+  eggPlacementTargets,
+  ovoviviparousPlacementTargets,
 } from "./moves.js";
 import {
   reproduce,
   harvest,
   scatterSeeds,
   tickReproduction,
+  placePendingAmnioticEgg,
+  placeOvoviviparousEgg,
 } from "./reproduction.js";
 import { checkPopulation, tickDiseases, infect } from "./disease.js";
 import {
@@ -82,6 +86,7 @@ function finishGame(state, winner, reason) {
   state.partner = null;
   state.manipulation = null;
   state.building = null;
+  state.eggPlacement = null;
   log(state, reason);
 }
 function extinction(state) {
@@ -316,7 +321,8 @@ function settle(ctx) {
     extinction(state) ||
     state.phase === "partner" ||
     state.phase === "manipulate" ||
-    state.phase === "build"
+    state.phase === "build" ||
+    state.phase === "egg-placement"
   )
     return;
 
@@ -394,6 +400,27 @@ function finishMovement(
   completeMove(ctx, p, second, locomotion);
 }
 
+function deferEggPlacement(
+  state,
+  p,
+  { manipulation = null, second = false, locomotion = false, build = false } = {},
+) {
+  if (
+    state.phase !== "egg-placement" ||
+    !state.eggPlacement ||
+    state.eggPlacement.parentId !== p.id
+  )
+    return false;
+  state.eggPlacement.continuation = {
+    id: p.id,
+    manipulation,
+    second,
+    locomotion,
+    build,
+  };
+  state.chain = null;
+  return true;
+}
 function resolveManipulation(ctx, action) {
   const state = ctx.state,
     pending = state.manipulation,
