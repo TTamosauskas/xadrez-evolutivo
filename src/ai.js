@@ -1,7 +1,7 @@
 import { legalActions } from "./moves.js";
 import { simulate } from "./engine.js";
 import { has, other, square, distance } from "./constants.js";
-import { eggAt } from "./state.js";
+import { eggAt, barrierAt } from "./state.js";
 export function fallbackAction(state) {
   const actions = legalActions(state);
   return (
@@ -32,7 +32,7 @@ function priority(state, a) {
           !state.pieces.some((piece) => piece.r === r && piece.c === c) &&
           !state.eggs.some((egg) => egg.r === r && egg.c === c) &&
           !state.plantSeeds.some((seed) => seed.r === r && seed.c === c) &&
-          !state.barriers.includes(square(r, c))
+          !barrierAt(state, r, c)
         )
           free++;
       }
