@@ -77,7 +77,13 @@ export function render(
         ? state.result.winner
           ? `${OWNERS[state.result.winner]} venceram`
           : "Empate"
-        : `Vez das ${OWNERS[state.current]}${busy ? " · IA pensando…" : ""}`;
+        : `Vez das ${OWNERS[state.current]}${
+            busy === "conway"
+              ? " · habitat evoluindo…"
+              : busy
+                ? " · IA pensando…"
+                : ""
+          }`;
   const currentRound = round(state),
     geological = currentGeologicalStage(state),
     historicalGeneration =

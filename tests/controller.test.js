@@ -31,6 +31,60 @@ function setup() {
   });
   return { c, workers, timers };
 }
+test("automatic Conway waits between visible board updates", () => {
+  const s = createState(302);
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces.push(
+    newPiece(s, "blue", 4, 4, { rank: 4, traits: [] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: [] }),
+  );
+  for (const cell of [27, 28, 29]) s.board[cell] = "fertile";
+  s.turn = 80;
+  s.current = "blue";
+  s.notices = [];
+
+  const timers = new Map(),
+    delays = [],
+    renders = [];
+  let nextTimer = 0;
+  const controller = new Controller(s, {
+    conwayDelay: 700,
+    render: (state, busy) =>
+      renders.push({
+        revision: state.revision,
+        board: [...state.board],
+        busy,
+      }),
+    setTimer: (fn, delay) => {
+      const id = ++nextTimer;
+      timers.set(id, fn);
+      delays.push(delay);
+      return id;
+    },
+    clearTimer: (id) => timers.delete(id),
+  });
+
+  controller.refresh();
+  assert.equal(delays[0], 700);
+  assert.equal(renders.at(-1).busy, "conway");
+  const before = [...controller.state.board];
+
+  const first = [...timers.values()][0];
+  timers.clear();
+  first();
+
+  assert.notDeepEqual(controller.state.board, before);
+  assert.ok(controller.state.turn >= 81);
+  assert.ok(renders.some((entry) => entry.revision === controller.state.revision));
+  if (controller.conwayTimer !== null) {
+    assert.equal(delays.at(-1), 700);
+    assert.equal(renders.at(-1).busy, "conway");
+  }
+  controller.dispose();
+});
+
 test("worker response after reset is ignored", () => {
   const { c, workers } = setup();
   c.configure("single");
