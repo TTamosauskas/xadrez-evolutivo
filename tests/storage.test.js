@@ -335,6 +335,8 @@ test("current saves drop obsolete Ovos history discoveries and alleles", () => {
 test("v7 saves rename Construção de Nicho and preserve it as lineage ancestry", () => {
   const old = createState(122),
     piece = old.pieces[0];
+  old.totalCycles = 2;
+  old.cycle = 2;
   piece.traits = ["Construção de Nicho"];
   delete piece.ancestry;
   old.historicalTraits = ["Construção de Nicho"];
