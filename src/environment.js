@@ -424,7 +424,7 @@ export function startEvent(ctx, id = null) {
     event.description,
     "Duração: dez rodadas completas.",
   ]);
-  log(state, `${event.name}: ${event.description}`);
+  log(state, `🌿 Evento ecológico: ${event.name} — ${event.description}`);
 }
 export function tickEnvironment(ctx) {
   const state = ctx.state,

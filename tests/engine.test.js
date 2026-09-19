@@ -367,6 +367,19 @@ test("genealogical clock advances from births and never depends on living fronti
   assert.equal(s.maxGenerationReached, 3);
   assertState(s);
 });
+test("ecological events are marked in the match log", () => {
+  const s = fixture();
+  startEvent(context(s), "volcano");
+  assert.ok(
+    s.logs.some(
+      (entry) =>
+        entry.text.startsWith("🌿 Evento ecológico:") &&
+        entry.text.includes("Erupção Vulcânica"),
+    ),
+  );
+  assertState(s);
+});
+
 test("generation milestones drive habitat and queue ecological events", () => {
   const s = createState(2),
     ctx = context(s);
@@ -481,6 +494,13 @@ test("capture creates hostile decomposition, protects attacker and fertilizes af
   assert.equal(s.board[36], "hostile");
   assert.equal(attacker.decompositionImmunity.cell, 36);
   assert.equal(attacker.decompositionImmunity.throughTurn, 3);
+  assert.ok(
+    s.logs.some(
+      (entry) =>
+        entry.text.startsWith("🗺️ Tabuleiro:") &&
+        entry.text.includes("decomposição"),
+    ),
+  );
 
   s.rng = 1;
   s = simulate(s, { type: "PASS" });
@@ -573,6 +593,13 @@ test("photosynthetic offspring can mutate into Predação by losing Fotossíntes
   assert.ok(child.traits.includes("Predação"));
   assert.ok(!child.traits.includes("Fotossíntese"));
   assert.ok(s.historicalTraits.includes("Predação"));
+  assert.ok(
+    s.logs.some(
+      (entry) =>
+        entry.text.startsWith("🧬 Nova mutação:") &&
+        entry.text.includes("Predação"),
+    ),
+  );
   assertState(s);
 });
 
