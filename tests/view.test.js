@@ -165,7 +165,10 @@ test("renders eggs and carried brood count", () => {
     owner: "amber",
     r: 3,
     c: 3,
+    laidRound: 0,
     hatchRound: 3,
+    expireRound: 6,
+    mode: "basal",
     brood: [{}, {}],
     dispersal: "local",
   });
@@ -178,6 +181,9 @@ test("renders eggs and carried brood count", () => {
   render(dom.window.document, s, { selected: parent.id });
   const d = dom.window.document;
   assert.equal(d.querySelectorAll(".egg-mark").length, 1);
+  assert.equal(d.querySelector(".egg-mark").textContent, "⚪");
+  assert.match(d.querySelector(".egg-mark").parentElement.title, /ovo aquático/);
+  assert.match(d.querySelector(".egg-mark").parentElement.title, /busca terreno fértil/);
   assert.match(d.querySelector(".egg-mark").parentElement.title, /2 descendente/);
   assert.match(
     d.querySelector(`[data-r="${parent.r}"][data-c="${parent.c}"] .badges`)
