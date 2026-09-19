@@ -176,7 +176,7 @@ test("Trepadeira fertilizes and reproduces while occupying natural and built bar
 
     const before = s.pieces.length;
     s = simulate(s, move(parent, 4, 4));
-    assert.equal(s.pieces.length, before + 1, kind);
+    assert.equal(s.pieces.length, before + 2, kind);
     assert.equal(s.board[cell], "neutral", kind);
     assert.ok(
       (kind === "natural" ? s.naturalBarriers : s.barriers).includes(cell),

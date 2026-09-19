@@ -671,6 +671,7 @@ export function tickEnvironment(ctx) {
   const state = ctx.state,
     now = round(state);
 
+  tickSevereEventTurn(state);
   tickDecomposition(state);
 
   while (

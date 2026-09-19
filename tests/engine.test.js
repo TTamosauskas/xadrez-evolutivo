@@ -1163,7 +1163,7 @@ test("Traqueófitas reproduces by consuming an adjacent fertile square without m
   const survivor = s.pieces.find((piece) => piece.id === parent.id);
   assert.deepEqual([survivor.r, survivor.c], [4, 4]);
   assert.equal(s.board[37], "neutral");
-  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 2);
+  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 3);
   assertState(s);
 });
 
@@ -1186,21 +1186,21 @@ test("Gimnospermas turns offspring into seeds that disperse for three rounds bef
     ctx = context(s),
     parent = s.pieces[0];
 
-  assert.equal(reproduce(ctx, parent), 1);
-  assert.equal(s.plantSeeds.length, 1);
+  assert.equal(reproduce(ctx, parent), 2);
+  assert.equal(s.plantSeeds.length, 2);
   assert.equal(s.plantSeeds[0].movesRemaining, 3);
   assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 1);
 
   s.turn = 2;
   tickReproduction(ctx);
-  assert.equal(s.plantSeeds[0].movesRemaining, 2);
+  assert.ok(s.plantSeeds.every((seed) => seed.movesRemaining === 2));
   s.turn = 4;
   tickReproduction(ctx);
-  assert.equal(s.plantSeeds[0].movesRemaining, 1);
+  assert.ok(s.plantSeeds.every((seed) => seed.movesRemaining === 1));
   s.turn = 6;
   tickReproduction(ctx);
   assert.equal(s.plantSeeds.length, 0);
-  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 2);
+  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 3);
   assertState(s);
 });
 
