@@ -9,6 +9,7 @@ import {
 import { movesFor } from "../src/moves.js";
 import { context, simulate } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
+import { reproduce, tickReproduction } from "../src/reproduction.js";
 import { fixture, move } from "./helpers.js";
 import { square } from "../src/constants.js";
 
@@ -135,6 +136,153 @@ test("Chifre does not destroy natural relief, while Escalador can stand on it", 
   const climber = s.pieces.find((piece) => piece.owner === "blue");
   assert.deepEqual([climber.r, climber.c], [4, 2]);
   assert.equal(naturalBarrierAt(s, 4, 2), true);
+  assertState(s);
+});
+
+test("Trepadeira fertilizes and reproduces while occupying natural and built barriers", () => {
+  for (const kind of ["natural", "built"]) {
+    let s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: [
+          "Fotossíntese",
+          "Embriófitas",
+          "Traqueófitas",
+          "Trepadeira",
+        ],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]);
+    const cell = square(4, 4);
+    if (kind === "natural") s.naturalBarriers = [cell];
+    else s.barriers = [cell];
+    s.board[cell] = "neutral";
+    s.pieces[0].photosynthesisCell = cell;
+    s.pieces[0].photosynthesisSinceTurn = 0;
+    s.turn = 6;
+    s.current = "amber";
+    assertState(s);
+
+    s = simulate(s, { type: "PASS" });
+    assert.equal(s.board[cell], "fertile", kind);
+    const parent = s.pieces.find((piece) => piece.owner === "blue"),
+      stay = movesFor(s, parent).find(
+        (target) => target.stay && target.r === 4 && target.c === 4,
+      );
+    assert.ok(stay, kind);
+
+    const before = s.pieces.length;
+    s = simulate(s, move(parent, 4, 4));
+    assert.equal(s.pieces.length, before + 1, kind);
+    assert.equal(s.board[cell], "neutral", kind);
+    assert.ok(
+      (kind === "natural" ? s.naturalBarriers : s.barriers).includes(cell),
+      kind,
+    );
+    assertState(s);
+  }
+});
+
+test("Trepadeira offspring can colonize a barrier when it is the only adjacent support", () => {
+  const blockers = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if ((!dr && !dc) || (dr === 0 && dc === 1)) continue;
+      blockers.push({
+        owner: "blue",
+        r: 4 + dr,
+        c: 4 + dc,
+        traits: ["Fotossíntese"],
+      });
+    }
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: [
+          "Fotossíntese",
+          "Embriófitas",
+          "Traqueófitas",
+          "Trepadeira",
+        ],
+      },
+      ...blockers,
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    barrier = square(4, 5);
+  s.naturalBarriers = [barrier];
+  s.rng = 0x80000000;
+
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
+    1,
+  );
+  const child = s.pieces.find(
+    (piece) => piece.parentId === parent.id && piece.r === 4 && piece.c === 5,
+  );
+  assert.ok(child);
+  assert.ok(child.traits.includes("Trepadeira"));
+  assertState(s);
+});
+
+test("Gymnosperm Trepadeira seeds can settle and germinate on barriers", () => {
+  const blockers = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if ((!dr && !dc) || (dr === 0 && dc === 1)) continue;
+      blockers.push({
+        owner: "blue",
+        r: 4 + dr,
+        c: 4 + dc,
+        traits: ["Fotossíntese"],
+      });
+    }
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: [
+          "Fotossíntese",
+          "Embriófitas",
+          "Traqueófitas",
+          "Gimnospermas",
+          "Trepadeira",
+        ],
+      },
+      ...blockers,
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    barrier = square(4, 5);
+  s.barriers = [barrier];
+  s.rng = 0x80000000;
+
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
+    1,
+  );
+  assert.equal(s.plantSeeds.length, 1);
+  assert.deepEqual([s.plantSeeds[0].r, s.plantSeeds[0].c], [4, 5]);
+  s.plantSeeds[0].movesRemaining = 0;
+  tickReproduction(context(s));
+  assert.equal(s.plantSeeds.length, 0);
+  assert.ok(
+    s.pieces.some(
+      (piece) =>
+        piece.parentId === parent.id &&
+        piece.r === 4 &&
+        piece.c === 5 &&
+        piece.traits.includes("Trepadeira"),
+    ),
+  );
   assertState(s);
 });
 
