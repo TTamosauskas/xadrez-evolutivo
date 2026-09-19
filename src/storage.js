@@ -118,6 +118,8 @@ export function deserialize(raw) {
         piece.pregnancies = Array.isArray(piece.pregnancies)
           ? piece.pregnancies.map((pregnancy) => ({
               ...pregnancy,
+              dispersal:
+                pregnancy.dispersal === "spores" ? "spores" : "local",
               brood: (pregnancy.brood ?? []).map(normalizeProfile),
             }))
           : [];
