@@ -15,7 +15,7 @@ export const GEOLOGICAL_STAGES = [
       ["Fertilidade", "Dormência"],
     ],
     habitat: { fertile: 52, hostile: 0, founderFertile: true, naturalBarriers: [0, 1] },
-    events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2 },
+    events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2, grb: 1 },
   },
   {
     id: "proterozoic",
@@ -36,6 +36,7 @@ export const GEOLOGICAL_STAGES = [
       "abundant-rains": 2,
       solar: 1,
       earthquake: 1,
+      grb: 1,
     },
   },
   {
@@ -73,7 +74,7 @@ export const GEOLOGICAL_STAGES = [
     period: "Ordoviciano",
     required: ["Ovíparo"],
     habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3] },
-    events: { ice: 4, sea: 3, blockade: 1, earthquake: 1 },
+    events: { ice: 4, grb: 3, sea: 3, blockade: 1, earthquake: 1 },
   },
   {
     id: "silurian",

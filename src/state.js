@@ -1059,7 +1059,7 @@ export function assertState(state) {
     )
       throw Error("Evento inválido.");
     if (
-      (["ice", "volcano", "meteor", "warming"].includes(e.id) &&
+      (["ice", "volcano", "meteor", "grb", "warming"].includes(e.id) &&
         !integer(e.startTurn)) ||
       (e.id === "drought" && !integer(e.cap, 1, 64)) ||
       (e.id === "desert" && !integer(e.initial, 1, 64))

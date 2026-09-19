@@ -17,7 +17,7 @@ import { eventWeights, habitatProfile } from "./geology.js";
 import { recordDiscovery } from "./discoveries.js";
 import { startDisease } from "./disease.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
-export const SEVERE_EVENT_IDS = new Set(["ice", "volcano", "meteor", "warming"]);
+export const SEVERE_EVENT_IDS = new Set(["ice", "volcano", "meteor", "grb", "warming"]);
 const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.9);
 export const severeEventActive = (state) =>
   !!state.event && SEVERE_EVENT_IDS.has(state.event.id);
@@ -592,6 +592,9 @@ export function startEvent(ctx, id = null) {
       recordBarrierChange(event, created, removed);
       break;
     }
+    case "grb":
+      markHazard(state, event, severeCells(state));
+      break;
     case "warming":
       markHazard(state, event, severeCells(state));
       recordBarrierChange(

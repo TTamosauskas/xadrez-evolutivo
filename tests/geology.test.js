@@ -659,3 +659,15 @@ test("severe events are distributed across geologically appropriate periods", ()
   assert.ok(byStage.neogene.warming > 0);
   assert.ok(byStage.quaternary.warming > 0);
 });
+
+
+test("gamma-ray bursts are concentrated in early Earth history and the Ordovician", () => {
+  const events = Object.fromEntries(
+    GEOLOGICAL_STAGES.map((stage) => [stage.id, stage.events]),
+  );
+  assert.ok(events.archean.grb > 0);
+  assert.ok(events.proterozoic.grb > 0);
+  assert.ok(events.ordovician.grb > 0);
+  assert.equal(events.cretaceous.grb, undefined);
+  assert.equal(events.quaternary.grb, undefined);
+});

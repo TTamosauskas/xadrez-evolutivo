@@ -41,6 +41,7 @@ const eventRows = [
   ["drought", "Seca Severa", "Secas são períodos prolongados de disponibilidade hídrica abaixo do normal e exercem forte pressão sobre ecossistemas.", "Seca"],
   ["sea", "Elevação do Mar", "Mudanças no nível do mar inundam ou expõem áreas costeiras e reorganizam ambientes rasos e conexões entre populações.", "Nível do mar"],
   ["meteor", "Meteoro", "Impactos de grandes corpos extraterrestres podem produzir efeitos locais e globais, incluindo incêndios, poeira e mudanças climáticas.", "Evento de impacto"],
+  ["grb", "Explosões de raios gama (GRBs)", "Explosões de raios gama são pulsos extremamente energéticos. Um GRB suficientemente próximo poderia ionizar a atmosfera, reduzir a camada de ozônio e aumentar intensamente a radiação ultravioleta que alcança a superfície.", "Explosão de raios gama"],
   ["warming", "Aquecimento Global", "Aquecimento global é a elevação persistente da temperatura média do sistema climático, capaz de reorganizar habitats, disponibilidade hídrica e distribuição das espécies.", "Aquecimento global"],
   ["desert", "Desertificação", "Desertificação é a degradação de terras secas por combinações de fatores climáticos e uso do solo.", "Desertificação"],
   ["blockade", "Bloqueio Geográfico", "Barreiras geográficas reduzem o fluxo gênico e podem separar populações, favorecendo divergência evolutiva.", "Especiação alopátrica"],

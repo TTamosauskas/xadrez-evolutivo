@@ -320,6 +320,7 @@ test("severe ecological events make exactly 58 cells hostile and last five turns
     ["volcano", 502],
     ["meteor", 503],
     ["warming", 504],
+    ["grb", 505],
   ]) {
     const s = fixture(
       [

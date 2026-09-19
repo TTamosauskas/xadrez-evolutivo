@@ -118,7 +118,7 @@ test("every geological period offers at least one severe stagnation event", asyn
     const s = createPeriodState(stage.id, 500 + index),
       event = severeEventForStage(s);
     assert.ok(event, stage.id);
-    assert.ok(["ice", "volcano", "meteor", "warming"].includes(event.id), stage.id);
+    assert.ok(["ice", "volcano", "meteor", "grb", "warming"].includes(event.id), stage.id);
     assert.ok((stage.events[event.id] ?? 0) > 0, stage.id);
   }
 });
