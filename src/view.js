@@ -396,6 +396,13 @@ export function render(
         list.append(item);
       }
       $("notice-content").replaceChildren(list);
+    } else if (n.lines[0] === "Evento ecológico") {
+      const subtitle = make("p", undefined, "event-notice-subtitle");
+      subtitle.append(make("em", "Evento ecológico"));
+      $("notice-content").replaceChildren(
+        subtitle,
+        ...n.lines.slice(1).map((line) => make("p", line)),
+      );
     } else {
       $("notice-content").replaceChildren(...n.lines.map((l) => make("p", l)));
     }
