@@ -328,8 +328,8 @@ function runGame(initial, seed) {
       action = actions[pseudo % actions.length] ?? { type: "PASS" };
     } else {
       action = chooseAction(state, policy, {
-        budget: 5,
-        maxNodes: 30,
+        budget: 2,
+        maxNodes: 15,
       });
     }
 
