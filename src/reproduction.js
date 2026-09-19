@@ -21,6 +21,7 @@ import {
   newPiece,
   round,
   fertilityPaused,
+  activePopulation,
   log,
   notice,
   registerDiscoveries,
@@ -679,6 +680,23 @@ export function reproductiveOutput(profile) {
   return Math.min(4, base + (has(profile, "Fertilidade") ? 1 : 0));
 }
 
+export function populationReproductionLimit(population) {
+  if (population < 24) return Infinity;
+  if (population < 28) return 2;
+  return 1;
+}
+
+export function populationReproductionCooldown(population) {
+  if (population < 24) return 0;
+  if (population < 28) return 1;
+  if (population < 32) return 2;
+  return 3;
+}
+
+export function predationBirthLimit(population) {
+  return population >= 24 ? 0 : 1;
+}
+
 export function reproduce(
   ctx,
   parent,
@@ -705,9 +723,17 @@ export function reproduce(
         ? "immediate"
         : phenotype.development,
     dispersal = gymnosperm ? "local" : phenotype.dispersal,
-    wanted =
+    population = activePopulation(state),
+    baseWanted =
       options.forcedCount ??
-      reproductiveOutput(profile) + eusocialBonus(state, parent);
+      reproductiveOutput(profile) + eusocialBonus(state, parent),
+    pressureLimit =
+      reason === "predação"
+        ? predationBirthLimit(population)
+        : populationReproductionLimit(population),
+    wanted = Math.min(baseWanted, pressureLimit);
+
+  if (wanted <= 0) return 0;
 
   let produced = 0;
   if (domesticated) {
@@ -763,7 +789,9 @@ export function reproduce(
 
   if (produced) {
     const cooldown = (piece) =>
-      round(state) + (has(piece, "Ovulação Induzida") ? 2 : 3);
+      round(state) +
+      (has(piece, "Ovulação Induzida") ? 2 : 3) +
+      populationReproductionCooldown(activePopulation(state));
     parent.nextReproductionRound = cooldown(parent);
     if (mate) mate.nextReproductionRound = cooldown(mate);
     state.reproductions[parent.owner]++;
