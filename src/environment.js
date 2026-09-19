@@ -26,12 +26,16 @@ export const severeEventActive = (state) =>
 
 export function fertilityDepletionRate(population) {
   if (population < 24) return 0;
-  return Math.min(0.3, 0.05 + (population - 24) * 0.0125);
+  return Number(
+    Math.min(0.3, 0.05 + (population - 24) * 0.0125).toFixed(2),
+  );
 }
 
 export function populationAttritionChance(population) {
   if (population < 32) return 0;
-  return Math.min(0.45, 0.1 + (population - 32) * 0.05);
+  return Number(
+    Math.min(0.45, 0.1 + (population - 32) * 0.05).toFixed(2),
+  );
 }
 
 function depletePausedFertility(state) {
