@@ -62,9 +62,12 @@ function historicalMutations(data, version = 7) {
   for (const entry of data.logs ?? []) {
     const text = entry?.text ?? entry?.msg;
     if (typeof text !== "string") continue;
-    const colon = text.indexOf(": "),
+    const marked = text.startsWith("🧬 Nova mutação:")
+        ? text.split(" · ").at(-1)
+        : null,
+      colon = text.indexOf(": "),
       label = mutationLabel(
-        (colon >= 0 ? text.slice(colon + 2) : text).replace(/\.$/, ""),
+        (marked ?? (colon >= 0 ? text.slice(colon + 2) : text)).replace(/\.$/, ""),
         version,
       );
     if (valid.has(label)) seen.add(label);
@@ -199,6 +202,9 @@ export function deserialize(raw) {
     if (!Number.isInteger(data.pendingEcologicalEvents))
       data.pendingEcologicalEvents = 0;
     if (!Array.isArray(data.deathSites)) data.deathSites = [];
+    data.notices = (data.notices ?? []).filter(
+      (entry) => entry?.title !== "Marco Evolutivo",
+    );
     if (!Array.isArray(data.fertileTraces)) data.fertileTraces = [];
     data.fertileTraces = data.fertileTraces.map((trace) => ({
       ...trace,
