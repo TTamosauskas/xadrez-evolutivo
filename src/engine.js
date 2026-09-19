@@ -561,6 +561,61 @@ function choosePartner(ctx, id) {
     born > 0 && !!pending.buildEligible,
   );
 }
+const TERRAIN_LOG_LABEL = {
+  neutral: "neutra",
+  fertile: "fértil",
+  hostile: "hostil",
+};
+
+function logBoardChanges(previous, state) {
+  const beforeDeath = new Set((previous.deathSites ?? []).map((site) => site.cell)),
+    afterDeath = new Set((state.deathSites ?? []).map((site) => site.cell)),
+    beforeBarriers = new Set(previous.barriers ?? []),
+    afterBarriers = new Set(state.barriers ?? []),
+    changes = [],
+    changedCells = new Set();
+
+  for (let cell = 0; cell < 64; cell++) {
+    if (previous.board[cell] === state.board[cell]) continue;
+    changedCells.add(cell);
+    const r = Math.floor(cell / 8),
+      c = cell % 8,
+      decomposition = afterDeath.has(cell) ? " · decomposição" : "";
+    changes.push(
+      `${coord(r, c)} ${TERRAIN_LOG_LABEL[previous.board[cell]]}→${TERRAIN_LOG_LABEL[state.board[cell]]}${decomposition}`,
+    );
+  }
+
+  for (const cell of afterDeath)
+    if (!beforeDeath.has(cell) && !changedCells.has(cell))
+      changes.push(
+        `${coord(Math.floor(cell / 8), cell % 8)} · decomposição iniciada`,
+      );
+  for (const cell of beforeDeath)
+    if (!afterDeath.has(cell) && !changedCells.has(cell))
+      changes.push(
+        `${coord(Math.floor(cell / 8), cell % 8)} · decomposição encerrada`,
+      );
+  for (const cell of afterBarriers)
+    if (!beforeBarriers.has(cell))
+      changes.push(
+        `${coord(Math.floor(cell / 8), cell % 8)} · barreira criada`,
+      );
+  for (const cell of beforeBarriers)
+    if (!afterBarriers.has(cell))
+      changes.push(
+        `${coord(Math.floor(cell / 8), cell % 8)} · barreira removida`,
+      );
+
+  if (!changes.length) return;
+  const visible = changes.slice(0, 8),
+    remaining = changes.length - visible.length;
+  log(
+    state,
+    `🗺️ Tabuleiro: ${visible.join("; ")}${remaining ? `; +${remaining} mudança(s)` : ""}.`,
+  );
+}
+
 /** One atomic command: validate, copy, execute domain rules, verify, commit. No DOM/timers. */
 export function transition(previous, action) {
   if (action.revision !== undefined && action.revision !== previous.revision)
@@ -596,6 +651,7 @@ export function transition(previous, action) {
     advanceTurn(ctx);
     settle(ctx);
   } else throw Error("Ação incompatível com a fase da partida.");
+  logBoardChanges(previous, state);
   state.revision++;
   return assertState(state);
 }
