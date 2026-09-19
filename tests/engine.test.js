@@ -982,6 +982,28 @@ test("Fotossíntese stops in the saturated colony interior with fewer than two a
   assertState(s);
 });
 
+test("Fotossíntese counts any adjacent piece as occupied space", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
+    { owner: "blue", r: 3, c: 3, traits: ["Predação"] },
+    { owner: "amber", r: 3, c: 4, traits: ["Predação"] },
+    { owner: "blue", r: 3, c: 5, traits: ["Predação"] },
+    { owner: "amber", r: 4, c: 3, traits: ["Predação"] },
+    { owner: "blue", r: 4, c: 5, traits: ["Predação"] },
+    { owner: "amber", r: 5, c: 3, traits: ["Predação"] },
+    { owner: "blue", r: 5, c: 4, traits: ["Predação"] },
+    { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
+  ]);
+  for (let turn = 1; turn <= 8; turn++)
+    s = simulate(s, { type: "PASS" });
+  assert.equal(s.board[36], "neutral");
+  const photosynthetic = s.pieces.find(
+    (piece) => piece.r === 4 && piece.c === 4,
+  );
+  assert.equal(photosynthetic.photosynthesisSinceTurn, undefined);
+  assertState(s);
+});
+
 test("Eusocialidade gains up to two offspring from adjacent sterile kin", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 4, traits: ["Eusocialidade"] },
