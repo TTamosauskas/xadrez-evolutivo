@@ -374,7 +374,7 @@ test("ecological events are marked in the match log", () => {
     s.logs.some(
       (entry) =>
         entry.text.startsWith("🌿 Evento ecológico:") &&
-        entry.text.includes("Vulcanismo"),
+        entry.text.includes("Erupção Vulcânica"),
     ),
   );
   assertState(s);
