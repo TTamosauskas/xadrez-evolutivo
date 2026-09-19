@@ -200,6 +200,7 @@ export function createState(seed = Date.now(), options = {}) {
     nextHabitatGeneration: 3,
     nextEventGeneration: 4,
     pendingEcologicalEvents: 0,
+    conwayWatchUntil: null,
     deathSites: [],
     fertileTraces: [],
     diseases: [],
@@ -445,6 +446,10 @@ export function assertState(state) {
     !integer(state.nextHabitatGeneration, 3) ||
     !integer(state.nextEventGeneration, 4) ||
     !integer(state.pendingEcologicalEvents) ||
+    !(
+      state.conwayWatchUntil === null ||
+      integer(state.conwayWatchUntil, state.turn)
+    ) ||
     !Array.isArray(state.seen) ||
     !Array.isArray(state.seenMutations) ||
     state.seenMutations.some((m) => typeof m !== "string") ||
