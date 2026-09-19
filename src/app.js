@@ -474,7 +474,7 @@ $("rules").addEventListener("click", () =>
     ...Object.entries(TRAITS).map(
       ([name, [icon, description]]) => `${icon} ${name}: ${description}`,
     ),
-    "Se um lado fica bloqueado, ele passa a vez. Mesmo que ambos fiquem temporariamente sem jogadas, a partida continua por passes e efeitos ambientais até ocorrer uma extinção.",
+    "Se apenas um lado fica bloqueado, ele passa a vez normalmente. Se os dois lados ficam sem qualquer ação legal, o habitat avança automaticamente pela rotina de Conway, um turno por vez, até pelo menos um dos lados voltar a ter uma ação disponível ou ocorrer uma extinção.",
   ]),
 );
 controller.refresh();

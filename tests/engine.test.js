@@ -42,19 +42,49 @@ test("ancestral gray King splits into two opposite founder Kings", () => {
   assertState(s);
 });
 
-test("round limits and mutual blocking never end a match without extinction", () => {
+test("mutual blocking advances Conway turn by turn until one side can act", () => {
   let s = createState(302);
   s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
   s.pieces = [
-    newPiece(s, "blue", 7, 4, { rank: 4 }),
-    newPiece(s, "amber", 0, 4, { rank: 4 }),
+    newPiece(s, "blue", 4, 4, { rank: 4, traits: [] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: [] }),
   ];
+  for (const cell of [27, 28, 29]) s.board[cell] = "fertile";
   s.turn = 79;
   s.current = "blue";
   s.notices = [];
+
+  assert.equal(legalActions(s).length, 0);
+  s.current = "amber";
+  assert.equal(legalActions(s).length, 0);
+  s.current = "blue";
+
   s = simulate(s, { type: "PASS" });
+
   assert.equal(s.result, null);
-  assert.ok(s.turn >= 80);
+  assert.ok(s.turn >= 81);
+  assert.ok(
+    s.logs.some((entry) =>
+      entry.text.startsWith("🌀 Conway: ambos os lados estavam sem ação"),
+    ),
+  );
+  const blueActions = (() => {
+    const current = s.current;
+    s.current = "blue";
+    const count = legalActions(s).length;
+    s.current = current;
+    return count;
+  })();
+  const amberActions = (() => {
+    const current = s.current;
+    s.current = "amber";
+    const count = legalActions(s).length;
+    s.current = current;
+    return count;
+  })();
+  assert.ok(blueActions > 0 || amberActions > 0);
   assert.equal(s.pieces.length, 2);
   assertState(s);
 });
