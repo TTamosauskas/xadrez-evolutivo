@@ -391,15 +391,23 @@ export function activateOrigin(state) {
     state.origin.selected = true;
     return false;
   }
-  const candidates = [];
+  const clearOfNaturalBarriers = (r, c) =>
+      state.naturalBarriers.every((cell) => {
+        const rr = Math.floor(cell / 8),
+          cc = cell % 8;
+        return Math.max(Math.abs(r - rr), Math.abs(c - cc)) > 1;
+      }),
+    candidates = [];
   for (let r = 4; r <= 7; r++)
     for (let c = 0; c < 8; c++) {
-      const opposite = square(7 - r, 7 - c);
+      const opposite = square(7 - r, 7 - c),
+        oppositeR = 7 - r,
+        oppositeC = 7 - c;
       if (
         square(r, c) !== square(state.origin.r, state.origin.c) &&
         opposite !== square(state.origin.r, state.origin.c) &&
-        !state.naturalBarriers.includes(square(r, c)) &&
-        !state.naturalBarriers.includes(opposite)
+        clearOfNaturalBarriers(r, c) &&
+        clearOfNaturalBarriers(oppositeR, oppositeC)
       )
         candidates.push({ r, c });
     }
