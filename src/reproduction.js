@@ -244,23 +244,23 @@ function sexualProfile(state, a, b) {
   return syncReproTraits(profile);
 }
 
-function occupied(state, r, c) {
+function occupied(state, r, c, profile = null) {
   return (
     at(state, r, c) ||
     eggAt(state, r, c) ||
     plantSeedAt(state, r, c) ||
-    barrierAt(state, r, c)
+    (barrierAt(state, r, c) && !has(profile, "Trepadeira"))
   );
 }
 
-function freeCells(ctx, origin, dispersal) {
+function freeCells(ctx, origin, dispersal, profile = null) {
   const state = ctx.state,
     cells = [];
   if (dispersal === "spores") {
     for (let r = 0; r < 8; r++)
       for (let c = 0; c < 8; c++)
         if (
-          !occupied(state, r, c) &&
+          !occupied(state, r, c, profile) &&
           !ctx.reserved.has(square(r, c))
         )
           cells.push({ r, c });
@@ -274,7 +274,7 @@ function freeCells(ctx, origin, dispersal) {
         c = origin.c + dc;
       if (
         inside(r, c) &&
-        !occupied(state, r, c) &&
+        !occupied(state, r, c, profile) &&
         !ctx.reserved.has(square(r, c))
       )
         cells.push({ r, c });
@@ -347,17 +347,40 @@ function spawnChild(state, profile, r, c) {
 }
 
 function placeBrood(ctx, brood, origin, dispersal) {
-  const cells = freeCells(ctx, origin, dispersal),
-    targets = chooseCells(
-      ctx.state,
-      cells,
-      origin,
-      Math.min(brood.length, cells.length),
-      dispersal,
-    );
-  for (let i = 0; i < targets.length; i++)
-    spawnChild(ctx.state, brood[i], targets[i].r, targets[i].c);
-  return targets.length;
+  const ordinary = brood.filter((profile) => !has(profile, "Trepadeira")),
+    climbers = brood.filter((profile) => has(profile, "Trepadeira"));
+  let born = 0;
+
+  if (ordinary.length) {
+    const cells = freeCells(ctx, origin, dispersal),
+      targets = chooseCells(
+        ctx.state,
+        cells,
+        origin,
+        Math.min(ordinary.length, cells.length),
+        dispersal,
+      );
+    for (let i = 0; i < targets.length; i++) {
+      spawnChild(ctx.state, ordinary[i], targets[i].r, targets[i].c);
+      born++;
+    }
+  }
+
+  if (climbers.length) {
+    const cells = freeCells(ctx, origin, dispersal, climbers[0]),
+      targets = chooseCells(
+        ctx.state,
+        cells,
+        origin,
+        Math.min(climbers.length, cells.length),
+        dispersal,
+      );
+    for (let i = 0; i < targets.length; i++) {
+      spawnChild(ctx.state, climbers[i], targets[i].r, targets[i].c);
+      born++;
+    }
+  }
+  return born;
 }
 
 function adjacentEggCells(ctx, parent) {
@@ -542,21 +565,40 @@ function hatchEgg(ctx, egg) {
 }
 
 function layPlantSeeds(ctx, parent, brood) {
-  const cells = freeCells(ctx, parent, "local"),
-    targets = shuffle(ctx.state, cells).slice(0, Math.min(brood.length, cells.length));
-  for (let i = 0; i < targets.length; i++) {
-    const target = targets[i];
-    ctx.state.plantSeeds.push({
-      id: ctx.state.nextPlantSeed++,
-      owner: parent.owner,
-      r: target.r,
-      c: target.c,
-      parentId: parent.id,
-      profile: brood[i],
-      movesRemaining: 3,
-    });
-  }
-  return targets.length;
+  const ordinary = brood.filter((profile) => !has(profile, "Trepadeira")),
+    climbers = brood.filter((profile) => has(profile, "Trepadeira"));
+  let laid = 0;
+
+  const placeGroup = (profiles, allowBarriers) => {
+    if (!profiles.length) return;
+    const cells = freeCells(
+        ctx,
+        parent,
+        "local",
+        allowBarriers ? profiles[0] : null,
+      ),
+      targets = shuffle(ctx.state, cells).slice(
+        0,
+        Math.min(profiles.length, cells.length),
+      );
+    for (let i = 0; i < targets.length; i++) {
+      const target = targets[i];
+      ctx.state.plantSeeds.push({
+        id: ctx.state.nextPlantSeed++,
+        owner: parent.owner,
+        r: target.r,
+        c: target.c,
+        parentId: parent.id,
+        profile: profiles[i],
+        movesRemaining: 3,
+      });
+      laid++;
+    }
+  };
+
+  placeGroup(ordinary, false);
+  placeGroup(climbers, true);
+  return laid;
 }
 
 export function reproduce(
@@ -587,7 +629,7 @@ export function reproduce(
 
   let produced = 0;
   if (gymnosperm && !options.immediateDevelopment) {
-    const capacity = freeCells(ctx, parent, "local").length,
+    const capacity = freeCells(ctx, parent, "local", profile).length,
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
@@ -624,7 +666,7 @@ export function reproduce(
     });
     produced = brood.length;
   } else {
-    const capacity = freeCells(ctx, parent, dispersal).length,
+    const capacity = freeCells(ctx, parent, dispersal, profile).length,
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
@@ -667,7 +709,7 @@ export function tickReproduction(ctx) {
           if (!dr && !dc) continue;
           const r = seed.r + dr,
             c = seed.c + dc;
-          if (inside(r, c) && !occupied(state, r, c))
+          if (inside(r, c) && !occupied(state, r, c, seed.profile))
             candidates.push({ r, c });
         }
       const target = pick(state, candidates);
@@ -681,7 +723,8 @@ export function tickReproduction(ctx) {
     if (
       at(state, seed.r, seed.c) ||
       eggAt(state, seed.r, seed.c) ||
-      barrierAt(state, seed.r, seed.c)
+      (barrierAt(state, seed.r, seed.c) &&
+        !has(seed.profile, "Trepadeira"))
     )
       continue;
     state.plantSeeds = state.plantSeeds.filter((item) => item.id !== seed.id);
