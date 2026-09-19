@@ -51,6 +51,7 @@ import {
   tickSevereEventTurn,
   tickEnvironment,
   checkPopulationClimate,
+  applyPopulationAttrition,
   repairConwayStagnation,
 } from "./environment.js";
 export function context(state) {
@@ -282,6 +283,7 @@ function advanceTurn(ctx) {
         if (random(state) < (has(p, "Carapaça") ? 0.34 : 0.5))
           ctx.kill(p.id, "casa hostil");
       }
+    if (!extinction(state)) applyPopulationAttrition(ctx);
     if (!extinction(state)) checkPopulationClimate(ctx);
   }
   maturePhotosynthesis(state, state.current);
