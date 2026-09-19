@@ -219,7 +219,7 @@ test("successor pairs the winner's dominant lineage with the most successful pho
   assert.deepEqual(blue.traits, ["Fotossíntese"]);
   assert.ok(
     next.logs.some((entry) =>
-      entry.text.includes("🪸 linhagem fotossintética mais bem-sucedida"),
+      entry.text.includes("🟢 linhagem fotossintética mais bem-sucedida"),
     ),
   );
 });

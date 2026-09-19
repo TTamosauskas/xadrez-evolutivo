@@ -13,7 +13,7 @@ export const TRAITS = {
     "Permite uma segunda movimentação no mesmo turno.",
   ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
-  Predação: ["🦑", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
+  Predação: ["👅", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
   Carnívoro: [
     "🦁",
     "Especialização de uma linhagem com Predação: reproduz ao eliminar uma peça e deixa de usar casas férteis.",
@@ -33,7 +33,7 @@ export const TRAITS = {
   Vivíparo: ["🎈", "A prole é carregada por três rodadas antes de nascer."],
   Fertilidade: ["🧫", "Dobra a quantidade de descendentes."],
   Fotossíntese: [
-    "🪸",
+    "🟢",
     "Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas, independentemente das características das peças vizinhas; é incompatível com Predação na mesma linhagem.",
   ],
   Embriófitas: [

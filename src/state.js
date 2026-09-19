@@ -395,8 +395,8 @@ export function createSuccessorState(previous, seed = Date.now()) {
     log(
       state,
       founderIsPhotosynthetic
-        ? "Dupla fundadora: 🏆🪸 a linhagem dominante fotossintética segue adiante junto da linhagem não fotossintética mais bem-sucedida."
-        : "Dupla fundadora: 🏆 a linhagem dominante segue adiante junto da 🪸 linhagem fotossintética mais bem-sucedida.",
+        ? "Dupla fundadora: 🏆🟢 a linhagem dominante fotossintética segue adiante junto da linhagem não fotossintética mais bem-sucedida."
+        : "Dupla fundadora: 🏆 a linhagem dominante segue adiante junto da 🟢 linhagem fotossintética mais bem-sucedida.",
     );
   log(
     state,
