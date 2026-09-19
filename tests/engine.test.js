@@ -927,14 +927,14 @@ test("only Ovífagia can capture an enemy egg and converts its brood into offspr
   assertState(next);
 });
 
-test("Fotossíntese fertilizes a neutral square after two full rounds without moving", () => {
+test("Fotossíntese fertilizes a neutral square after three full rounds without moving", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
     { owner: "blue", r: 7, c: 7, traits: ["Predação", "Locomoção"] },
     { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
   ]);
   assert.equal(s.board[36], "neutral");
-  for (let turn = 1; turn <= 3; turn++) {
+  for (let turn = 1; turn <= 5; turn++) {
     s = simulate(s, { type: "PASS" });
     assert.equal(s.board[36], "neutral");
   }
