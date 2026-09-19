@@ -62,7 +62,24 @@ test("period innovations follow the didactic sequence", () => {
     "Necrófago",
     "Construção de Nicho",
   ]);
-  assert.deepEqual(required.carboniferous, ["Ovíparo", "Ooteca", "Voo"]);
+  assert.deepEqual(required.ordovician, ["Ovos", "Embriófitas"]);
+  assert.deepEqual(required.silurian, ["Coletor", "Traqueófitas"]);
+  assert.deepEqual(required.devonian, [
+    "Locomoção Avançada",
+    "Onívoro",
+    "Espinhos",
+  ]);
+  assert.deepEqual(required.carboniferous, [
+    "Ovíparo",
+    "Ooteca",
+    "Voo",
+    "Gimnospermas",
+  ]);
+  assert.deepEqual(required.cretaceous, [
+    "Eusocialidade",
+    "Ovífagia",
+    "Angiospermas",
+  ]);
   assert.deepEqual(required.neogene, [
     "Chifre",
     "Construtor Avançado",
@@ -314,6 +331,66 @@ test("Fotossíntese and Predação switch branches by substitutive mutation", ()
     innovationWeight(s, "Predação", photosynthetic),
     innovationWeight(s, "Predação", ancestral),
   );
+});
+
+test("plant innovations require the photosynthetic lineage and exclude animal specializations", () => {
+  const s = createState(117, {
+      geologicalStage: "cretaceous",
+      historicalTraits: GEOLOGICAL_STAGES.slice(0, 11).flatMap(
+        (stage) => stage.required,
+      ),
+    }),
+    plant = {
+      traits: [
+        "Fotossíntese",
+        "Embriófitas",
+        "Traqueófitas",
+        "Gimnospermas",
+      ],
+    };
+
+  assert.equal(traitUnlocked(s, "Angiospermas", plant), true);
+  for (const trait of [
+    "Locomoção",
+    "Necrófago",
+    "Ovos",
+    "Ovíparo",
+    "Vivíparo",
+    "Voo",
+    "Visão Noturna",
+    "Eusocialidade",
+    "Chifre",
+    "Polegar Opositor",
+    "Neocórtex Desenvolvido",
+    "Construtor Avançado",
+  ])
+    assert.equal(traitUnlocked(s, trait, plant), false, trait);
+
+  assert.equal(traitUnlocked(s, "Predação", plant), true);
+  assert.deepEqual(
+    applyTraitMutation(
+      [...plant.traits, "Espinhos", "Angiospermas"],
+      "Predação",
+    ),
+    ["Predação"],
+  );
+});
+
+test("switching into Fotossíntese removes animal-only traits", () => {
+  const animal = [
+    "Predação",
+    "Locomoção",
+    "Carnívoro",
+    "Onívoro",
+    "Necrófago",
+    "Voo",
+    "Chifre",
+    "Polegar Opositor",
+    "Neocórtex Desenvolvido",
+  ];
+  assert.deepEqual(applyTraitMutation(animal, "Fotossíntese"), [
+    "Fotossíntese",
+  ]);
 });
 
 test("Paleogene is a one-cycle transition stage", () => {
