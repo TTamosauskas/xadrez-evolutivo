@@ -1,5 +1,5 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
-import { at, eggAt, dominantLineage, round, signature } from "./state.js";
+import { at, eggAt, plantSeedAt, dominantLineage, round, signature } from "./state.js";
 import { currentGeologicalStage, stageProgress } from "./geology.js";
 import {
   movesFor,
@@ -111,6 +111,7 @@ export function render(
     for (let c = 0; c < 8; c++) {
       const p = at(state, r, c),
         egg = eggAt(state, r, c),
+        plantSeed = plantSeedAt(state, r, c),
         originHere = !!origin && origin.r === r && origin.c === c,
         target = targets.some((t) => t.r === r && t.c === c),
         manipulate = manipulation.some((t) => t.r === r && t.c === c),
@@ -123,7 +124,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || originHere ? " occupied" : ""}${egg ? " egg" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -136,14 +137,18 @@ export function render(
       const eggLabel = egg
           ? `, ovo das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s)`
           : "",
+        plantSeedLabel = plantSeed
+          ? `, semente das ${OWNERS[plantSeed.owner]}, ${plantSeed.movesRemaining} rodada(s) de dispersão restante(s)`
+          : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${barrier ? ", barreira" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}`;
+          : `${coord(r, c)}, ${terrain}${barrier ? ", barreira" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
       if (egg) cell.append(make("span", "🥚", "egg-mark"));
+      if (plantSeed) cell.append(make("span", "🌰", "egg-mark"));
       if (originHere)
         cell.append(make("span", "♚", "piece origin-piece"));
       if (p) {
