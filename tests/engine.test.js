@@ -19,8 +19,17 @@ import {
   startEvent,
   tickEnvironment,
   checkPopulationClimate,
+  repairConwayStagnation,
+  applyPopulationAttrition,
+  fertilityDepletionRate,
+  populationAttritionChance,
 } from "../src/environment.js";
-import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
+import {
+  startDisease,
+  tickDiseases,
+  checkPopulation,
+  populationPathogenChance,
+} from "../src/disease.js";
 import { reproduce, tickReproduction } from "../src/reproduction.js";
 import { cloneReproGenes } from "../src/reproductive-genetics.js";
 import { EVENTS, TRAITS } from "../src/constants.js";
@@ -138,7 +147,11 @@ test("stalled Conway repairs the local habitat in stages without a severe event"
     ),
   );
   assert.ok(s.logs.some((entry) => entry.text.includes("abriu um corredor local")));
-  assert.ok(s.logs.some((entry) => entry.text.includes("reconfigurou uma faixa local")));
+  assert.ok(
+    s.logs.some((entry) =>
+      entry.text.includes("abriu caminho entre organismos adversários próximos"),
+    ),
+  );
   assertState(s);
 });
 
@@ -414,12 +427,30 @@ test("disease transmits one hop per round, resistance blocks it, survivors stay 
   assert.ok(s.pieces.some((p) => p.id === 4));
   assertState(s);
 });
-test("population threshold fires once per crossing and does not enqueue infinite notices", () => {
+test("population pathogen incidence grows with imbalance and respects active-outbreak cooldown", () => {
+  assert.equal(populationPathogenChance(0), 0.05);
+  assert.equal(populationPathogenChance(3), 0.17);
+  assert.equal(populationPathogenChance(5), 0.25);
+  assert.equal(populationPathogenChance(8), 0.37);
+  assert.equal(populationPathogenChance(10), 0.45);
+  assert.equal(populationPathogenChance(30), 0.45);
+
   const s = fixture([]);
-  for (let i = 0; i < 17; i++)
+  for (let i = 0; i < 18; i++)
     s.pieces.push(newPiece(s, "blue", Math.floor(i / 8) + 4, i % 8));
   s.pieces.push(newPiece(s, "amber", 0, 0));
-  for (let i = 0; i < 100; i++) checkPopulation(s);
+  s.pieces.push(newPiece(s, "amber", 0, 1));
+  s.turn = 2;
+  s.rng = 1972;
+  checkPopulation(s);
+  assert.equal(s.diseases.length, 1);
+  assert.equal(s.diseases[0].source, "population");
+  assert.ok(
+    s.logs.some((entry) =>
+      entry.text.includes("Pressão demográfica: diferença 16"),
+    ),
+  );
+  for (let i = 0; i < 20; i++) checkPopulation(s);
   assert.equal(s.diseases.length, 1);
   assert.equal(s.notices.length, 1);
   assertState(s);
@@ -446,6 +477,77 @@ test("population pressure governs fertility, pathogens and severe climate", () =
   assert.equal(photosynthesisDelayTurns(state), 8);
   state.pieces = state.pieces.slice(0, 11);
   assert.equal(photosynthesisDelayTurns(state), 6);
+});
+
+test("gradual population pressure scales from fertility exhaustion to attrition", () => {
+  assert.equal(fertilityDepletionRate(23), 0);
+  assert.equal(fertilityDepletionRate(24), 0.05);
+  assert.equal(fertilityDepletionRate(32), 0.15);
+  assert.equal(fertilityDepletionRate(40), 0.25);
+  assert.equal(fertilityDepletionRate(44), 0.3);
+  assert.equal(populationAttritionChance(31), 0);
+  assert.equal(populationAttritionChance(32), 0.1);
+  assert.equal(populationAttritionChance(36), 0.3);
+  assert.equal(populationAttritionChance(39), 0.45);
+  assert.equal(populationAttritionChance(50), 0.45);
+
+  const s = fixture([]);
+  for (let i = 0; i < 24; i++)
+    s.pieces.push(
+      newPiece(s, i < 12 ? "blue" : "amber", Math.floor(i / 8), i % 8),
+    );
+  for (let i = 32; i < 52; i++) s.board[i] = "fertile";
+  tickEnvironment(context(s));
+  assert.equal(s.board.filter((cell) => cell === "fertile").length, 19);
+  assert.ok(
+    s.logs.some((entry) => entry.text.includes("Superpopulação esgotou 1")),
+  );
+  assertState(s);
+});
+
+test("population attrition targets the densest organisms and uses normal death effects", () => {
+  const s = fixture([]);
+  for (let i = 0; i < 32; i++)
+    s.pieces.push(
+      newPiece(s, i < 16 ? "blue" : "amber", Math.floor(i / 8), i % 8),
+    );
+  s.rng = 1972;
+  assert.equal(applyPopulationAttrition(context(s)), true);
+  assert.equal(s.pieces.length, 31);
+  assert.ok(
+    s.logs.some((entry) => entry.text.includes("atrito populacional")),
+  );
+  assertState(s);
+});
+
+test("final Conway repair opens a shortest route between nearby opposing organisms", () => {
+  const s = fixture([
+    { owner: "blue", r: 7, c: 0 },
+    { owner: "amber", r: 7, c: 4 },
+  ]);
+  const corridorCells = [];
+  for (let r = 5; r <= 7; r++)
+    for (let col = 1; col <= 3; col++) {
+      const cell = r * 8 + col;
+      s.board[cell] = "hostile";
+      corridorCells.push(cell);
+    }
+  s.barriers = [50];
+  s.naturalBarriers = corridorCells.filter((cell) => cell !== 50);
+
+  repairConwayStagnation(context(s), 3);
+
+  assert.ok(s.barriers.includes(50));
+  assert.ok(
+    corridorCells.some((cell) => s.board[cell] === "neutral"),
+  );
+  assert.ok(s.naturalBarriers.length < corridorCells.length - 1);
+  assert.ok(
+    s.logs.some((entry) =>
+      entry.text.includes("abriu caminho entre organismos adversários próximos"),
+    ),
+  );
+  assertState(s);
 });
 
 test("eggs and seeds do not prevent extinction of active organisms", () => {
