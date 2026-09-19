@@ -34,6 +34,12 @@ jobs:
           DIAGNOSTIC_GAMES: 24
           DIAGNOSTIC_LIMIT: 1200
           DIAGNOSTIC_TAIL: 100
+      - name: Diagnose Devonian mutation interactions
+        run: node scripts/devonian-mutation-diagnostics.js
+        env:
+          DEVONIAN_GAMES: 16
+          DEVONIAN_LIMIT: 1200
+          DEVONIAN_TAIL: 100
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
