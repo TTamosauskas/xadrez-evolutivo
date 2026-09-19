@@ -143,7 +143,9 @@ export function reproPhenotype(source) {
 
 export function syncReproTraits(piece) {
   piece.reproGenes = normalizeReproGenes(piece.reproGenes, piece.traits);
-  let regular = piece.traits.filter((t) => !GENETIC_TRAITS.includes(t));
+  let regular = piece.traits.filter(
+    (t) => !GENETIC_TRAITS.includes(t) && t !== "Ovos",
+  );
   const plant = regular.includes("Fotossíntese"),
     gymnosperm = regular.includes("Gimnospermas"),
     expressed = reproPhenotype(piece.reproGenes).traits.filter(
