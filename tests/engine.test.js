@@ -1557,7 +1557,7 @@ test("Construtor Avançado offers an adjacent barrier after fertile reproduction
   assertState(s);
 });
 
-test("barriers block ground movement, Voo crosses them, and Chifre destroys them", () => {
+test("Escavador destroys built barriers while Chifre remains purely defensive", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 0, rank: 3 },
     { owner: "amber", r: 0, c: 7 },
@@ -1570,12 +1570,36 @@ test("barriers block ground movement, Voo crosses them, and Chifre destroys them
   assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c === 2));
   assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 3));
 
-  s.pieces[0].traits = s.pieces[0].traits.filter((trait) => trait !== "Voo");
-  s.pieces[0].traits.push("Chifre");
+  s.pieces[0].traits = ["Chifre"];
+  assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c >= 2));
+
+  s.pieces[0].traits = ["Escavador"];
   assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 2));
   s = simulate(s, move(s.pieces[0], 4, 3));
   assert.ok(!s.barriers.includes(34));
   assert.equal(s.pieces.find((piece) => piece.id === 1).c, 3);
+  assertState(s);
+});
+
+test("Escavador destroys natural barriers even when Voo and Escalador could preserve them", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 0,
+      rank: 3,
+      traits: ["Escavador", "Escalador", "Voo"],
+    },
+    { owner: "amber", r: 0, c: 7 },
+  ]);
+  s.naturalBarriers = [34];
+  assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 3));
+  s = simulate(s, move(s.pieces[0], 4, 3));
+  assert.ok(!s.naturalBarriers.includes(34));
+  assert.equal(s.pieces.find((piece) => piece.id === 1).c, 3);
+  assert.ok(
+    s.logs.some((entry) => entry.text.includes("🦡 Escavador perfurou")),
+  );
   assertState(s);
 });
 
