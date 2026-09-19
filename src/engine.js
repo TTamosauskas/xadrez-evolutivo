@@ -496,6 +496,7 @@ function executeMove(ctx, action) {
         `${OWNERS[p.owner]}: 🐸 Respiração Cutânea consumiu ${coord(target.r, target.c)} à distância.`,
       );
     }
+    if (born && deferEggPlacement(state, p)) return;
     completeMove(ctx, p, false, false);
     return;
   }
@@ -508,7 +509,8 @@ function executeMove(ctx, action) {
       state,
       `${OWNERS[p.owner]}: 🌿 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
     );
-    reproduce(ctx, p, null, "Traqueófitas");
+    const born = reproduce(ctx, p, null, "Traqueófitas");
+    if (born && deferEggPlacement(state, p)) return;
     completeMove(ctx, p, false, false);
     return;
   }
@@ -737,6 +739,16 @@ function executeMove(ctx, action) {
   }
   const build =
     born > 0 && consumedFertile && has(p, "Construtor Avançado");
+  if (
+    born > 0 &&
+    deferEggPlacement(state, p, {
+      manipulation,
+      second,
+      locomotion,
+      build,
+    })
+  )
+    return;
   finishMovement(ctx, p, manipulation, second, locomotion, build);
 }
 function resolveNursing(ctx, action) {
@@ -767,6 +779,16 @@ function choosePartner(ctx, id) {
   const born = reproduce(ctx, p, mate, "reprodução sexuada");
   if (pending.collectorStay && born) p.seeds--;
   state.partner = null;
+  if (
+    born > 0 &&
+    deferEggPlacement(state, p, {
+      manipulation: pending.manipulation ?? null,
+      second: pending.second,
+      locomotion: pending.locomotion,
+      build: born > 0 && !!pending.buildEligible,
+    })
+  )
+    return;
   state.phase = "move";
   finishMovement(
     ctx,
