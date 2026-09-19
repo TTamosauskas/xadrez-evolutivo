@@ -1004,6 +1004,137 @@ test("Fotossíntese counts any adjacent piece as occupied space", () => {
   assertState(s);
 });
 
+test("Embriófitas adds at most one fertile empty neighbor when photosynthesis matures", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: ["Fotossíntese", "Embriófitas"],
+    },
+    { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
+  ]);
+  for (let turn = 1; turn <= 6; turn++)
+    s = simulate(s, { type: "PASS" });
+  assert.equal(s.board[36], "fertile");
+  assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 2);
+  assertState(s);
+});
+
+test("Angiospermas prefers fertilizing a neutral square occupied by an ally", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: [
+        "Fotossíntese",
+        "Embriófitas",
+        "Traqueófitas",
+        "Gimnospermas",
+        "Angiospermas",
+      ],
+    },
+    { owner: "blue", r: 4, c: 5, traits: ["Fotossíntese"] },
+    { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
+  ]);
+  for (let turn = 1; turn <= 6; turn++)
+    s = simulate(s, { type: "PASS" });
+  assert.equal(s.board[36], "fertile");
+  assert.equal(s.board[37], "fertile");
+  assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 2);
+  assertState(s);
+});
+
+test("Traqueófitas reproduces by consuming an adjacent fertile square without moving", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Fotossíntese", "Embriófitas", "Traqueófitas"],
+    },
+    { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
+  ]);
+  s.board[37] = "fertile";
+  const parent = s.pieces[0],
+    target = movesFor(s, parent).find(
+      (candidate) => candidate.r === 4 && candidate.c === 5,
+    );
+  assert.equal(target?.vascular, true);
+
+  s = simulate(s, move(parent, 4, 5));
+  const survivor = s.pieces.find((piece) => piece.id === parent.id);
+  assert.deepEqual([survivor.r, survivor.c], [4, 4]);
+  assert.equal(s.board[37], "neutral");
+  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 2);
+  assertState(s);
+});
+
+test("Gimnospermas turns offspring into seeds that disperse for three rounds before germinating", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: [
+          "Fotossíntese",
+          "Embriófitas",
+          "Traqueófitas",
+          "Gimnospermas",
+        ],
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
+    ]),
+    ctx = context(s),
+    parent = s.pieces[0];
+
+  assert.equal(reproduce(ctx, parent), 1);
+  assert.equal(s.plantSeeds.length, 1);
+  assert.equal(s.plantSeeds[0].movesRemaining, 3);
+  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 1);
+
+  s.turn = 2;
+  tickReproduction(ctx);
+  assert.equal(s.plantSeeds[0].movesRemaining, 2);
+  s.turn = 4;
+  tickReproduction(ctx);
+  assert.equal(s.plantSeeds[0].movesRemaining, 1);
+  s.turn = 6;
+  tickReproduction(ctx);
+  assert.equal(s.plantSeeds.length, 0);
+  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 2);
+  assertState(s);
+});
+
+test("Espinhos has a one-in-four chance to kill the aggressor before capture", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4 },
+    {
+      owner: "amber",
+      r: 4,
+      c: 4,
+      traits: [
+        "Fotossíntese",
+        "Embriófitas",
+        "Traqueófitas",
+        "Espinhos",
+      ],
+    },
+    { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
+  ]);
+  s.rng = 0;
+  const attacker = s.pieces[0],
+    defender = s.pieces[1];
+  s = simulate(s, move(attacker, 4, 4));
+  assert.ok(!s.pieces.some((piece) => piece.id === attacker.id));
+  assert.ok(s.pieces.some((piece) => piece.id === defender.id));
+  assert.ok(s.deathSites.some((site) => site.cell === 35));
+  assertState(s);
+});
+
 test("Eusocialidade gains up to two offspring from adjacent sterile kin", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 4, traits: ["Eusocialidade"] },
