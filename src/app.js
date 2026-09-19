@@ -7,6 +7,8 @@ import {
   manipulationTargets,
   constructionTargets,
   nursingTargets,
+  eggPlacementTargets,
+  ovoviviparousPlacementTargets,
 } from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
@@ -108,6 +110,15 @@ $("board").addEventListener("click", (event) => {
       dispatch({ type: "PARTNER", id: p.id });
     return;
   }
+  if (state.phase === "egg-placement") {
+    if (
+      eggPlacementTargets(state).some(
+        (target) => target.r === r && target.c === c,
+      )
+    )
+      dispatch({ type: "PLACE_EGG", r, c });
+    return;
+  }
   const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
   if (
     actor?.owner === state.current &&
@@ -115,6 +126,15 @@ $("board").addEventListener("click", (event) => {
     nursingTargets(state, actor).some((child) => child.id === p.id)
   ) {
     dispatch({ type: "NURSE", id: actor.id, childId: p.id });
+    return;
+  }
+  if (
+    actor?.owner === state.current &&
+    ovoviviparousPlacementTargets(state, actor).some(
+      (target) => target.r === r && target.c === c,
+    )
+  ) {
+    dispatch({ type: "LAY_OVOVIVIPAROUS", id: actor.id, r, c });
     return;
   }
   if (
