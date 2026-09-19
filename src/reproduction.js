@@ -22,6 +22,7 @@ import {
   log,
   notice,
   registerDiscoveries,
+  reproductionReady,
 } from "./state.js";
 import {
   GENETIC_TRAITS,
@@ -329,6 +330,8 @@ function makeBrood(state, parent, mate, profile, count) {
 
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
+  child.maturesRound =
+    round(state) + (has(child, "Precocidade Sexual") ? 1 : 2);
   if (has(child, "Mutação Deletéria"))
     child.deleteriousDue = round(state) + 3;
   state.pieces.push(child);
@@ -405,7 +408,7 @@ export function reproduce(
   options = {},
 ) {
   const state = ctx.state;
-  if (has(parent, "Esterilidade") || (mate && has(mate, "Esterilidade")))
+  if (!reproductionReady(state, parent) || (mate && !reproductionReady(state, mate)))
     return 0;
 
   const profile = mate ? sexualProfile(state, parent, mate) : parent,
@@ -468,6 +471,10 @@ export function reproduce(
   }
 
   if (produced) {
+    const cooldown = (piece) =>
+      round(state) + (has(piece, "Ovulação Induzida") ? 2 : 3);
+    parent.nextReproductionRound = cooldown(parent);
+    if (mate) mate.nextReproductionRound = cooldown(mate);
     state.reproductions[parent.owner]++;
     log(
       state,
