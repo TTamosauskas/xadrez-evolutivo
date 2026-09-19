@@ -685,7 +685,10 @@ export function assertState(state) {
       !inside(p.r, p.c) ||
       cells.has(square(p.r, p.c)) ||
       (state.naturalBarriers.includes(square(p.r, p.c)) &&
-        !p.traits?.includes("Escalador"))
+        !p.traits?.includes("Escalador") &&
+        !p.traits?.includes("Trepadeira")) ||
+      (state.barriers.includes(square(p.r, p.c)) &&
+        !p.traits?.includes("Trepadeira"))
     )
       throw Error("Ocupação inválida.");
     if (
@@ -759,7 +762,10 @@ export function assertState(state) {
       !inside(seed.r, seed.c) ||
       !integer(seed.movesRemaining, 0, 3) ||
       !validBroodProfile(seed.profile, seed.owner) ||
-      plantSeedCells.has(cell)
+      plantSeedCells.has(cell) ||
+      ((state.barriers.includes(cell) ||
+        state.naturalBarriers.includes(cell)) &&
+        !seed.profile.traits.includes("Trepadeira"))
     )
       throw Error("Semente vegetal inválida.");
     plantSeedIds.add(seed.id);
@@ -767,21 +773,17 @@ export function assertState(state) {
   }
   if (state.nextPlantSeed <= Math.max(0, ...plantSeedIds))
     throw Error("Identificadores de sementes vegetais inválidos.");
+  const eggCells = new Set(state.eggs.map((egg) => square(egg.r, egg.c)));
   if (
     state.barriers.some(
       (cell) =>
-        cells.has(cell) ||
-        plantSeedCells.has(cell) ||
-        state.naturalBarriers.includes(cell),
+        state.naturalBarriers.includes(cell) ||
+        eggCells.has(cell),
     ) ||
-    state.naturalBarriers.some(
-      (cell) =>
-        eggIds.size &&
-        state.eggs.some((egg) => square(egg.r, egg.c) === cell),
-    ) ||
-    state.naturalBarriers.some((cell) => plantSeedCells.has(cell)) ||
+    state.naturalBarriers.some((cell) => eggCells.has(cell)) ||
     (state.origin &&
-      state.naturalBarriers.includes(square(state.origin.r, state.origin.c)))
+      (state.naturalBarriers.includes(square(state.origin.r, state.origin.c)) ||
+        state.barriers.includes(square(state.origin.r, state.origin.c))))
   )
     throw Error("Barreira sobreposta.");
 
