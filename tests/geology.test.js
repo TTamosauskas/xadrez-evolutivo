@@ -203,7 +203,7 @@ test("successor pairs the winner's dominant lineage with the most successful pho
 
   add("amber", 0, 0, ["Predação"]);
   add("amber", 0, 1, ["Predação"]);
-  add("amber", 0, 2, ["Fotossíntese", "Dormência"]);
+  add("amber", 0, 2, []);
   add("blue", 7, 0, ["Fotossíntese"]);
   add("blue", 7, 1, ["Fotossíntese"]);
   add("blue", 7, 2, ["Fotossíntese", "Dormência"]);
