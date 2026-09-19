@@ -17,6 +17,40 @@ function priority(state, a) {
     const child = state.pieces.find((piece) => piece.id === a.childId);
     return 6 + (child?.rank ?? 0);
   }
+  if (a.type === "PLACE_EGG" || a.type === "LAY_OVOVIVIPAROUS") {
+    let free = 0;
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = a.r + dr,
+          c = a.c + dc;
+        if (
+          r >= 0 &&
+          r < 8 &&
+          c >= 0 &&
+          c < 8 &&
+          !state.pieces.some((piece) => piece.r === r && piece.c === c) &&
+          !state.eggs.some((egg) => egg.r === r && egg.c === c) &&
+          !state.plantSeeds.some((seed) => seed.r === r && seed.c === c) &&
+          !state.barriers.includes(square(r, c))
+        )
+          free++;
+      }
+    const enemies = state.pieces.filter(
+        (piece) => piece.owner !== state.current,
+      ),
+      safety = enemies.length
+        ? Math.min(
+            6,
+            Math.min(
+              ...enemies.map((enemy) =>
+                distance({ r: a.r, c: a.c }, enemy),
+              ),
+            ),
+          )
+        : 3;
+    return 6 + free * 2 + safety;
+  }
   if (a.type === "BUILD") return 3;
   if (a.type === "SKIP_BUILD") return 0;
   const p = state.pieces.find((piece) => piece.id === a.id),
