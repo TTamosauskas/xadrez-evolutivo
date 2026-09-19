@@ -36,6 +36,26 @@ export const TRAITS = {
     "🪸",
     "Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas, independentemente das características das peças vizinhas; é incompatível com Predação na mesma linhagem.",
   ],
+  Embriófitas: [
+    "🌱",
+    "Ao completar Fotossíntese, pode tornar fértil também uma casa neutra adjacente desocupada.",
+  ],
+  Traqueófitas: [
+    "🌿",
+    "Pode reproduzir sem se deslocar consumindo uma casa fértil adjacente.",
+  ],
+  Espinhos: [
+    "🌵",
+    "Ao sofrer uma tentativa de captura, tem 25% de chance de matar o agressor e impedir a captura.",
+  ],
+  Gimnospermas: [
+    "🌲",
+    "A reprodução gera sementes que se dispersam por três rodadas antes de germinar.",
+  ],
+  Angiospermas: [
+    "🌸",
+    "Ao completar Fotossíntese, a casa fértil adicional também pode ser uma casa neutra ocupada por uma criatura aliada.",
+  ],
   "Construção de Nicho": [
     "⬡",
     "Neutraliza a casa hostil de chegada quando a criatura sobrevive.",
