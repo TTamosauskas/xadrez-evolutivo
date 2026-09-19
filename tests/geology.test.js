@@ -134,6 +134,7 @@ test("Predação enables capture and is an individual prerequisite for Locomoç�
     s = createState(102, {
       geologicalStage: "ediacaran",
       historicalTraits: history,
+      naturalBarriers: false,
     });
   s.pieces = [];
   s.nextId = 1;
