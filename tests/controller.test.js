@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Controller } from "../src/controller.js";
-import { createState, clone, newPiece } from "../src/state.js";
+import { createCampaignState, createState, clone, newPiece } from "../src/state.js";
 import { fallbackAction, chooseAction } from "../src/ai.js";
 function setup() {
   const workers = [],
@@ -110,6 +110,88 @@ test("AI waits for a visible human-paced delay before committing its move", () =
   timers.get(delayEntry[0])();
   assert.equal(c.state.current, "blue");
   assert.ok(c.state.revision > w.request.state.revision);
+  c.dispose();
+});
+
+test("computer versus computer mode schedules AI for both colors", () => {
+  const { c, workers, timers, timerDelays } = setup();
+  c.configure("auto");
+
+  const playCurrentWorker = (index) => {
+    const worker = workers[index],
+      action = fallbackAction(worker.request.state);
+    worker.onmessage({
+      data: {
+        token: worker.request.token,
+        revision: worker.request.state.revision,
+        action,
+      },
+    });
+    const delayId = [...timerDelays.entries()].find(
+      ([id, delay]) => delay === 850 && timers.has(id),
+    )?.[0];
+    assert.ok(delayId);
+    timers.get(delayId)();
+  };
+
+  assert.equal(c.state.current, "amber");
+  assert.equal(workers.length, 1);
+  playCurrentWorker(0);
+  assert.equal(c.state.current, "blue");
+  assert.equal(workers.length, 2);
+
+  playCurrentWorker(1);
+  assert.equal(c.state.current, "amber");
+  assert.equal(workers.length, 3);
+  c.dispose();
+});
+
+test("computer versus computer mode advances origin and notices automatically", () => {
+  const timers = new Map(),
+    workers = [];
+  let nextTimer = 0;
+  const c = new Controller(createCampaignState(55), {
+    workerFactory: () => {
+      const worker = {
+        terminate() {},
+        postMessage(data) {
+          this.request = data;
+        },
+      };
+      workers.push(worker);
+      return worker;
+    },
+    setTimer: (fn) => {
+      const id = ++nextTimer;
+      timers.set(id, fn);
+      return id;
+    },
+    clearTimer: (id) => timers.delete(id),
+  });
+  const runNextTimer = () => {
+    const [id, fn] = timers.entries().next().value;
+    timers.delete(id);
+    fn();
+  };
+
+  c.configure("auto");
+  assert.equal(c.state.phase, "origin");
+  runNextTimer();
+  assert.equal(c.state.origin.selected, true);
+  runNextTimer();
+  assert.equal(c.state.phase, "move");
+  assert.equal(workers.length, 1);
+
+  c.cancel();
+  c.state.notices.push({
+    id: c.state.nextNotice++,
+    title: "Teste",
+    lines: ["Aviso"],
+  });
+  c.refresh();
+  assert.equal(c.state.notices.length, 1);
+  runNextTimer();
+  assert.equal(c.state.notices.length, 0);
   c.dispose();
 });
 
