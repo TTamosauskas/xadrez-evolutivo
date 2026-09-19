@@ -195,7 +195,7 @@ test("Archean advances only after both innovation cycles are complete", () => {
   assert.equal(proterozoic.totalCycles, 3);
 });
 
-test("successor pairs the winner's dominant lineage with the most successful photosynthetic lineage", () => {
+test("successor gives both sides the winner's dominant lineage and its photosynthetic counterpart", () => {
   const s = createState(119);
   s.pieces = [];
   s.nextId = 1;
@@ -211,21 +211,29 @@ test("successor pairs the winner's dominant lineage with the most successful pho
   s.result = { winner: "amber", reason: "teste" };
   s.phase = "over";
 
-  const next = createSuccessorState(s, 120),
-    blue = next.pieces.find((piece) => piece.owner === "blue"),
-    amber = next.pieces.find((piece) => piece.owner === "amber");
-
+  const next = createSuccessorState(s, 120);
   assert.equal(next.totalCycles, 2);
-  assert.deepEqual(amber.traits, ["Predação"]);
-  assert.deepEqual(blue.traits, ["Fotossíntese"]);
+  assert.equal(next.pieces.length, 4);
+  for (const owner of ["blue", "amber"]) {
+    const founders = next.pieces.filter((piece) => piece.owner === owner);
+    assert.equal(founders.length, 2);
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Predação")).length,
+      1,
+    );
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Fotossíntese")).length,
+      1,
+    );
+  }
   assert.ok(
     next.logs.some((entry) =>
-      entry.text.includes("🟢 linhagem fotossintética mais bem-sucedida"),
+      entry.text.includes("Dupla fundadora simétrica"),
     ),
   );
 });
 
-test("a photosynthetic overall winner is paired with the strongest non-photosynthetic lineage", () => {
+test("a photosynthetic winner also gives both sides the strongest non-photosynthetic counterpart", () => {
   const s = createState(121);
   s.pieces = [];
   s.nextId = 1;
@@ -241,15 +249,22 @@ test("a photosynthetic overall winner is paired with the strongest non-photosynt
   s.result = { winner: "blue", reason: "teste" };
   s.phase = "over";
 
-  const next = createSuccessorState(s, 122),
-    blue = next.pieces.find((piece) => piece.owner === "blue"),
-    amber = next.pieces.find((piece) => piece.owner === "amber");
-
-  assert.deepEqual(blue.traits, ["Fotossíntese"]);
-  assert.deepEqual(amber.traits, ["Predação"]);
+  const next = createSuccessorState(s, 122);
+  assert.equal(next.pieces.length, 4);
+  for (const owner of ["blue", "amber"]) {
+    const founders = next.pieces.filter((piece) => piece.owner === owner);
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Fotossíntese")).length,
+      1,
+    );
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Predação")).length,
+      1,
+    );
+  }
   assert.ok(
     next.logs.some((entry) =>
-      entry.text.includes("linhagem não fotossintética mais bem-sucedida"),
+      entry.text.includes("Dupla fundadora simétrica"),
     ),
   );
 });
