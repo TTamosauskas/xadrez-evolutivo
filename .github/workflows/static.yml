@@ -28,6 +28,12 @@ jobs:
         env:
           GAMES_PER_STAGE: 6
           LIMIT: 1200
+      - name: Diagnose Ediacaran Silurian Devonian stalls
+        run: node scripts/stall-diagnostics.js
+        env:
+          DIAGNOSTIC_GAMES: 24
+          DIAGNOSTIC_LIMIT: 1200
+          DIAGNOSTIC_TAIL: 100
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
