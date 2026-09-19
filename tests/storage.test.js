@@ -22,6 +22,14 @@ test("round trip saves deterministic state and rejects duplicate occupancy", () 
   bad.pieces[1].c = bad.pieces[0].c;
   assert.throws(() => deserialize(JSON.stringify(bad)), /Ocupação/);
 });
+test("older v7 saves default the Conway stagnation watch to inactive", () => {
+  const s = createState(31);
+  delete s.conwayWatchUntil;
+  const restored = deserialize(JSON.stringify(s));
+  assert.equal(restored.conwayWatchUntil, null);
+  assertState(restored);
+});
+
 test("plant seeds survive save round trip", () => {
   const s = createState(30),
     parent = s.pieces[0];
