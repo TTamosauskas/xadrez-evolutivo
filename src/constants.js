@@ -34,7 +34,7 @@ export const TRAITS = {
   Fertilidade: ["🧫", "Dobra a quantidade de descendentes."],
   Fotossíntese: [
     "☀️",
-    "Transforma em fértil uma casa neutra após uma rodada completa; é incompatível com Predação na mesma linhagem.",
+    "Transforma em fértil uma casa neutra após duas rodadas completas de permanência; é incompatível com Predação na mesma linhagem.",
   ],
   "Construção de Nicho": [
     "⬡",
