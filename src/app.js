@@ -270,7 +270,7 @@ $("menu-dialog").addEventListener("cancel", (event) => {
 
 let activeDiscoveryCategory = "geology";
 const editorDiscoveries = () =>
-  window.location.hash.toLowerCase() === "#editor";
+  globalThis.location?.hash?.toLowerCase() === "#editor";
 
 function setUnreadBadge(element, count) {
   if (!element) return;
@@ -385,7 +385,7 @@ $("discovery-play").addEventListener("click", () => {
   controller.pause(false);
   report(`Iniciado o 1º Ciclo de ${currentGeologicalStage(next).period}.`);
 });
-window.addEventListener("hashchange", () => {
+globalThis.addEventListener?.("hashchange", () => {
   renderDiscoveryBadges();
   if ($("discoveries-dialog").open) renderDiscoveryList();
 });
