@@ -15,7 +15,12 @@ import {
   activePopulation,
   fertilityPaused,
 } from "./state.js";
-import { eventWeights, habitatProfile } from "./geology.js";
+import {
+  eventWeights,
+  habitatProfile,
+  currentGeologicalStage,
+} from "./geology.js";
+import { movesFor } from "./moves.js";
 import { recordDiscovery } from "./discoveries.js";
 import { startDisease } from "./disease.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
@@ -343,9 +348,86 @@ function seedCluster(state, type) {
     );
   for (const i of chosen ?? []) state.board[i] = type;
 }
+function advancePrimordialConway(ctx) {
+  const state = ctx.state,
+    event = state.event,
+    profile = habitatProfile(state);
+  if (event)
+    for (const [i, base] of Object.entries(event.snapshots))
+      state.board[Number(i)] = base;
+  const deathBases = new Map();
+  for (const site of state.deathSites) {
+    deathBases.set(site.cell, state.board[site.cell]);
+    state.board[site.cell] = site.base;
+  }
+
+  const before = [...state.board],
+    hostileNeighbors = (cell) => {
+      const r = Math.floor(cell / 8),
+        c = cell % 8;
+      let count = 0;
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++)
+          if (
+            (dr || dc) &&
+            inside(r + dr, c + dc) &&
+            before[square(r + dr, c + dc)] === "hostile"
+          )
+            count++;
+      return count;
+    },
+    nextHostile = allCells().filter((cell) => {
+      const r = Math.floor(cell / 8),
+        col = cell % 8;
+      if (barrierAt(state, r, col)) return false;
+      const neighbors = hostileNeighbors(cell);
+      return neighbors === 3 || (before[cell] === "hostile" && neighbors === 2);
+    }),
+    cap = profile.hostileCap ?? 12,
+    kept = new Set(shuffle(state, nextHostile).slice(0, cap));
+
+  for (let cell = 0; cell < 64; cell++) {
+    if (before[cell] === "hostile" && !kept.has(cell)) state.board[cell] = "neutral";
+    else if (kept.has(cell)) state.board[cell] = "hostile";
+    else state.board[cell] = before[cell];
+  }
+  if (!state.board.includes("hostile")) seedCluster(state, "hostile");
+  const hostile = allCells().filter((cell) => state.board[cell] === "hostile");
+  if (hostile.length > cap)
+    for (const cell of shuffle(state, hostile).slice(cap))
+      state.board[cell] = "neutral";
+
+  for (const site of state.deathSites) {
+    if (site.base !== "fertile") site.base = state.board[site.cell];
+    if (!event?.hazards.includes(site.cell))
+      state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
+  }
+  if (event)
+    for (const key of Object.keys(event.snapshots)) {
+      const cell = Number(key);
+      event.snapshots[cell] = state.board[cell];
+      state.board[cell] = "hostile";
+    }
+
+  const doomed = state.pieces
+    .filter((piece) => {
+      const cell = square(piece.r, piece.c);
+      return (
+        state.board[cell] === "hostile" &&
+        !hasDecomposition(state, cell) &&
+        !has(piece, "Voo") &&
+        !event?.hazards.includes(cell)
+      );
+    })
+    .map((piece) => piece.id);
+  for (const id of doomed) ctx.kill(id, "mudança do habitat por Conway");
+}
+
 export function advanceConway(ctx) {
   const state = ctx.state,
     event = state.event;
+  if (currentGeologicalStage(state).id === "proterozoic")
+    return advancePrimordialConway(ctx);
   // Evolve the underlying habitat, then reapply the temporary event overlay.
   if (event)
     for (const [i, base] of Object.entries(event.snapshots))
@@ -846,7 +928,19 @@ function conwayPath(state, start, goal) {
   return path.at(-1) === startCell ? path.reverse() : null;
 }
 
-function nearestPopulationCorridor(state) {
+function pathEditCount(state, path) {
+  return path.slice(1, -1).reduce((count, cell) => {
+    const r = Math.floor(cell / 8),
+      c = cell % 8;
+    return (
+      count +
+      (state.board[cell] === "hostile" ? 1 : 0) +
+      (naturalBarrierAt(state, r, c) ? 1 : 0)
+    );
+  }, 0);
+}
+
+function nearestPopulationCorridor(state, { requireEdit = false } = {}) {
   const pairs = [];
   for (const blue of state.pieces.filter((piece) => piece.owner === "blue"))
     for (const amber of state.pieces.filter((piece) => piece.owner === "amber"))
@@ -863,9 +957,110 @@ function nearestPopulationCorridor(state) {
   );
   for (const pair of pairs) {
     const path = conwayPath(state, pair.a, pair.b);
-    if (path) return { ...pair, path };
+    if (!path) continue;
+    const edits = pathEditCount(state, path);
+    if (!requireEdit || edits > 0) return { ...pair, path, edits };
   }
   return null;
+}
+
+export function offensiveActionCount(state) {
+  let count = 0;
+  for (const piece of state.pieces)
+    for (const target of movesFor(state, piece, { ignoreChain: true })) {
+      if (!target.capture) continue;
+      const victim = at(state, target.r, target.c);
+      if (victim && victim.owner !== piece.owner) count++;
+    }
+  return count;
+}
+
+function offensiveTerrainRepair(state) {
+  const baseline = offensiveActionCount(state),
+    candidates = allCells().filter((cell) => {
+      const r = Math.floor(cell / 8),
+        c = cell % 8;
+      return (
+        !builtBarrierAt(state, r, c) &&
+        (state.board[cell] === "hostile" || naturalBarrierAt(state, r, c))
+      );
+    });
+  let best = null;
+  for (const cell of candidates) {
+    const r = Math.floor(cell / 8),
+      c = cell % 8,
+      beforeTerrain = state.board[cell],
+      beforeNatural = state.naturalBarriers.includes(cell);
+    if (beforeTerrain === "hostile") state.board[cell] = "neutral";
+    if (beforeNatural)
+      state.naturalBarriers = state.naturalBarriers.filter(
+        (barrier) => barrier !== cell,
+      );
+    const options = offensiveActionCount(state);
+    state.board[cell] = beforeTerrain;
+    if (beforeNatural)
+      state.naturalBarriers = [...state.naturalBarriers, cell].sort(
+        (a, b) => a - b,
+      );
+    if (
+      options > baseline &&
+      (!best || options > best.options || (options === best.options && cell < best.cell))
+    )
+      best = { cell, options, beforeTerrain, beforeNatural };
+  }
+  if (!best) return null;
+  if (best.beforeTerrain === "hostile") state.board[best.cell] = "neutral";
+  if (best.beforeNatural)
+    state.naturalBarriers = state.naturalBarriers.filter(
+      (barrier) => barrier !== best.cell,
+    );
+  return {
+    cell: best.cell,
+    hostile: best.beforeTerrain === "hostile" ? 1 : 0,
+    barrier: best.beforeNatural ? 1 : 0,
+    options: best.options,
+  };
+}
+
+function offensiveRelocation(state) {
+  const baseline = offensiveActionCount(state);
+  let best = null;
+  for (const piece of state.pieces) {
+    const origin = { r: piece.r, c: piece.c };
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = origin.r + dr,
+          c = origin.c + dc;
+        if (
+          !inside(r, c) ||
+          at(state, r, c) ||
+          eggAt(state, r, c) ||
+          plantSeedAt(state, r, c) ||
+          barrierAt(state, r, c) ||
+          state.board[square(r, c)] === "hostile"
+        )
+          continue;
+        piece.r = r;
+        piece.c = c;
+        const options = offensiveActionCount(state);
+        piece.r = origin.r;
+        piece.c = origin.c;
+        if (
+          options > baseline &&
+          (!best ||
+            options > best.options ||
+            (options === best.options &&
+              (piece.id < best.piece.id ||
+                (piece.id === best.piece.id && square(r, c) < best.cell))))
+        )
+          best = { piece, r, c, cell: square(r, c), options };
+      }
+  }
+  if (!best) return null;
+  best.piece.r = best.r;
+  best.piece.c = best.c;
+  return best;
 }
 
 export function repairConwayStagnation(ctx, level) {
@@ -900,11 +1095,29 @@ export function repairConwayStagnation(ctx, level) {
     return;
   }
 
-  const corridor = nearestPopulationCorridor(state);
+  const terrainRepair = offensiveTerrainRepair(state);
+  if (terrainRepair) {
+    log(
+      state,
+      `🌀 Conway: criou mobilidade ofensiva em ${terrainRepair.cell}, alterando ${terrainRepair.hostile + terrainRepair.barrier} obstáculo(s) e abrindo ${terrainRepair.options} captura(s) possível(is).`,
+    );
+    return;
+  }
+
+  const relocation = offensiveRelocation(state);
+  if (relocation) {
+    log(
+      state,
+      `🌀 Conway: deslocou um organismo para criar ${relocation.options} captura(s) possível(is).`,
+    );
+    return;
+  }
+
+  const corridor = nearestPopulationCorridor(state, { requireEdit: true });
   if (!corridor) {
     log(
       state,
-      "🌀 Conway: o reparo final encontrou populações sem rota disponível.",
+      "🌀 Conway: o reparo final não encontrou alteração capaz de aumentar o contato ofensivo.",
     );
     return;
   }
@@ -925,7 +1138,7 @@ export function repairConwayStagnation(ctx, level) {
   }
   log(
     state,
-    `🌀 Conway: abriu caminho entre organismos adversários próximos, alterando ${changed + barriers} casa(s) (${changed} hostil(is), ${barriers} barreira(s) natural(is)).`,
+    `🌀 Conway: abriu corredor ofensivo entre populações, alterando ${changed + barriers} casa(s) (${changed} hostil(is), ${barriers} barreira(s) natural(is)).`,
   );
 }
 
