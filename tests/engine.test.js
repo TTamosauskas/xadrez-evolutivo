@@ -62,28 +62,30 @@ test("mutual blocking advances Conway turn by turn until one side can act", () =
   s.current = "blue";
 
   s = simulate(s, { type: "PASS" });
-
+  const afterPassTurn = s.turn;
   assert.equal(s.result, null);
-  assert.ok(s.turn >= 81);
+
+  let conwaySteps = 0,
+    blueActions = 0,
+    amberActions = 0;
+  while (!blueActions && !amberActions && conwaySteps < 8) {
+    s = simulate(s, { type: "CONWAY_STEP" });
+    conwaySteps++;
+    const current = s.current;
+    s.current = "blue";
+    blueActions = legalActions(s).length;
+    s.current = "amber";
+    amberActions = legalActions(s).length;
+    s.current = current;
+  }
+
+  assert.ok(conwaySteps >= 1);
+  assert.equal(s.turn, afterPassTurn + conwaySteps);
   assert.ok(
     s.logs.some((entry) =>
       entry.text.startsWith("🌀 Conway: ambos os lados estavam sem ação"),
     ),
   );
-  const blueActions = (() => {
-    const current = s.current;
-    s.current = "blue";
-    const count = legalActions(s).length;
-    s.current = current;
-    return count;
-  })();
-  const amberActions = (() => {
-    const current = s.current;
-    s.current = "amber";
-    const count = legalActions(s).length;
-    s.current = current;
-    return count;
-  })();
   assert.ok(blueActions > 0 || amberActions > 0);
   assert.equal(s.pieces.length, 2);
   assertState(s);
