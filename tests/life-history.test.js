@@ -293,7 +293,8 @@ test("new life-history traits unlock in their intended optional periods", () => 
 
   s.geologicalStage = "triassic";
   s.historicalTraits = historyBefore("triassic");
-  p.traits = ["Predação", "Locomoção"];
+  p.traits = ["Predação"];
+  p.ancestry = ["Predação", "Locomoção", "Locomoção Avançada"];
   assert.equal(traitUnlocked(s, "Sacos Aéreos", p), true);
 
   s.geologicalStage = "paleogene";
