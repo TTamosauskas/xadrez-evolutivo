@@ -217,6 +217,12 @@ export function deserialize(raw) {
     }
     if (!Number.isInteger(data.pendingEcologicalEvents))
       data.pendingEcologicalEvents = 0;
+    if (
+      data.conwayWatchUntil !== null &&
+      !Number.isInteger(data.conwayWatchUntil)
+    )
+      data.conwayWatchUntil = null;
+    if (data.conwayWatchUntil === undefined) data.conwayWatchUntil = null;
     if (!Array.isArray(data.deathSites)) data.deathSites = [];
     data.notices = (data.notices ?? []).filter(
       (entry) => entry?.title !== "Marco Evolutivo",

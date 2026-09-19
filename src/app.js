@@ -476,7 +476,7 @@ $("rules").addEventListener("click", () =>
     ...Object.entries(TRAITS).map(
       ([name, [icon, description]]) => `${icon} ${name}: ${description}`,
     ),
-    "Se apenas um lado fica bloqueado, ele passa a vez normalmente. Se os dois lados ficam sem qualquer ação legal, o habitat avança automaticamente pela rotina de Conway, um turno por vez, até pelo menos um dos lados voltar a ter uma ação disponível ou ocorrer uma extinção.",
+    "Se apenas um lado fica bloqueado, ele passa a vez normalmente. Se os dois lados ficam sem qualquer ação legal, o habitat avança automaticamente pela rotina de Conway, um turno por vez. Se Conway não devolver uma ação legal a nenhum dos lados nos 10 turnos seguintes, uma perturbação ecológica do período geológico atual é disparada. Se já houver um evento ecológico ativo ou pendente, o jogo espera essa perturbação em vez de empilhar outra.",
   ]),
 );
 controller.refresh();

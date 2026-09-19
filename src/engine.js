@@ -35,6 +35,7 @@ import {
   hasDecomposition,
   markDecomposition,
   advanceConway,
+  startEvent,
   tickEnvironment,
 } from "./environment.js";
 export function context(state) {
@@ -281,6 +282,30 @@ export function mutuallyBlocked(state) {
     actionCountFor(state, "blue") === 0 &&
     actionCountFor(state, "amber") === 0
   );
+}
+
+function resolveConwayStagnation(ctx) {
+  const state = ctx.state;
+  if (!mutuallyBlocked(state)) {
+    state.conwayWatchUntil = null;
+    return;
+  }
+  if (state.event || state.pendingEcologicalEvents > 0) {
+    state.conwayWatchUntil = null;
+    return;
+  }
+  if (state.conwayWatchUntil === null) {
+    state.conwayWatchUntil = state.turn + 10;
+    return;
+  }
+  if (state.turn < state.conwayWatchUntil) return;
+  state.conwayWatchUntil = null;
+  log(
+    state,
+    "🌿 Conway não destravou a partida em 10 turnos; uma perturbação ecológica foi desencadeada.",
+  );
+  startEvent(ctx);
+  extinction(state);
 }
 
 function settle(ctx) {
@@ -774,6 +799,7 @@ export function transition(previous, action) {
     if (!extinction(state)) {
       advanceTurn(ctx);
       settle(ctx);
+      if (!state.result) resolveConwayStagnation(ctx);
     }
   } else throw Error("Ação incompatível com a fase da partida.");
   logBoardChanges(previous, state);
