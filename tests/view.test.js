@@ -270,11 +270,11 @@ test("renders dispersing Gymnosperm seeds on the board", () => {
   dom.window.close();
 });
 
-test("renders barriers, build targets and yellow niche-construction icon", () => {
+test("renders barriers, build targets and construction emoji icons", () => {
   const dom = setup(),
     s = createState(25),
     p = s.pieces[0];
-  p.traits = ["Construção de Nicho", "Construtor Avançado"];
+  p.traits = ["Construtor de Nicho", "Construtor Avançado"];
   s.barriers = [18];
   s.phase = "build";
   s.building = { id: p.id, second: false, locomotion: false };
@@ -283,7 +283,8 @@ test("renders barriers, build targets and yellow niche-construction icon", () =>
   const d = dom.window.document;
   assert.ok(d.querySelector('[data-r="2"][data-c="2"]').classList.contains("barrier"));
   assert.ok(d.querySelectorAll(".cell.build-target").length > 0);
-  assert.ok(d.querySelector("#selected .niche-icon"));
+  assert.match(d.getElementById("selected").textContent, /🦫/);
+  assert.match(d.getElementById("selected").textContent, /🧔/);
   assert.equal(d.getElementById("pass").textContent, "Não construir");
   dom.window.close();
 });
