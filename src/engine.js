@@ -368,7 +368,6 @@ function completeMove(ctx, p, second, locomotion) {
   const state = ctx.state;
   if (extinction(state)) return;
   checkPopulationClimate(ctx);
-  checkPopulation(state);
   if (
     locomotion &&
     !second &&
