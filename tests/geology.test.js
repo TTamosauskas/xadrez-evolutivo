@@ -149,6 +149,15 @@ test("Predação enables capture and is an individual prerequisite for Locomoç�
   assert.equal(traitUnlocked(s, "Locomoção", ancestral), true);
 });
 
+test("registering a new evolutionary discovery does not open a Marco Evolutivo modal", () => {
+  const s = createState(116),
+    p = s.pieces[0];
+  p.traits.push("Fotossíntese");
+  registerDiscoveries(s, p);
+  assert.ok(s.historicalTraits.includes("Fotossíntese"));
+  assert.ok(!s.notices.some((notice) => notice.title === "Marco Evolutivo"));
+});
+
 test("Archean advances only after both innovation cycles are complete", () => {
   let s = createState(103);
   const photosynthetic = s.pieces[0],
