@@ -112,7 +112,8 @@ export const EVENTS = [
   ["abundant-rains", "🌧️", "Chuvas Abundantes", "Um quadrante inteiro torna-se fértil no início do evento, que dura 10 rodadas."],
   ["insularization", "🏝️", "Insularização", "Uma linha e uma coluna hostis dividem o tabuleiro durante 10 rodadas."],
   ["alluvial-river", "🏞️", "Rio Aluvial", "Uma faixa diagonal larga torna-se fértil no início do evento, que dura 10 rodadas."],
-].map(([id, icon, name, description]) => ({ id, icon, name, description }));export const other = (owner) => (owner === "blue" ? "amber" : "blue");
+].map(([id, icon, name, description]) => ({ id, icon, name, description }));
+export const other = (owner) => (owner === "blue" ? "amber" : "blue");
 export const inside = (r, c) =>
   Number.isInteger(r) &&
   Number.isInteger(c) &&
