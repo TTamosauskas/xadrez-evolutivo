@@ -33,7 +33,7 @@ export const TRAITS = {
   Vivíparo: ["🎈", "A prole é carregada por três rodadas antes de nascer."],
   Fertilidade: ["🧫", "Dobra a quantidade de descendentes."],
   Fotossíntese: [
-    "☀️",
+    "🪸",
     "Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas, independentemente das características das peças vizinhas; é incompatível com Predação na mesma linhagem.",
   ],
   "Construção de Nicho": [
