@@ -31,8 +31,13 @@ export const dysfunctionalResting = (state, p) =>
 export const regenerationResting = (state, p) =>
   Number.isInteger(p.regenerationRestThroughRound) &&
   round(state) <= p.regenerationRestThroughRound;
+export const decompositionImmune = (state, p) =>
+  p?.decompositionImmunity?.cell === square(p.r, p.c) &&
+  state.turn <= p.decompositionImmunity.throughTurn;
 export const dormant = (state, p) =>
-  has(p, "Dormência") && terrain(state, p.r, p.c) === "hostile";
+  has(p, "Dormência") &&
+  terrain(state, p.r, p.c) === "hostile" &&
+  !decompositionImmune(state, p);
 export const resting = (state, p) =>
   dysfunctionalResting(state, p) || regenerationResting(state, p);
 
