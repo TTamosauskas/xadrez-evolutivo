@@ -15,7 +15,7 @@ export const TRAITS = {
   Voo: ["🐦", "Permite atravessar casas hostis."],
   "Sacos Aéreos": [
     "🦕",
-    "Favorece gigantismo: mutações que avançam a forma Peão → Cavalo → Bispo → Torre → Rainha recebem peso três vezes maior.",
+    "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
   Predação: ["🐟", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
   Carnívoro: [
@@ -41,7 +41,11 @@ export const TRAITS = {
   Ovíparo: ["🪼", "A reprodução deposita um ovo ⚪ móvel que busca terreno fértil para eclodir após pelo menos três rodadas."],
   "Ovíparos Amniotas": [
     "🦎",
-    "Especialização de Ovíparo: ovos ⚪ móveis deixam de depender de terreno fértil e procuram espaço livre para eclodir.",
+    "Especialização amniótica: ao reproduzir, escolhe uma casa vazia a até três casas para depositar um ovo 🥚, que eclode na rodada seguinte.",
+  ],
+  Ovovivíparo: [
+    "🦂",
+    "Mantém a prole internamente por três rodadas; depois o progenitor pode gastar um turno para depositar um ovo ⚪ adjacente, que eclode na rodada seguinte.",
   ],
   Ovífagia: ["🐍", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
   Esporos: ["🍄", "Espalha a prole em casas distantes pelo tabuleiro."],
