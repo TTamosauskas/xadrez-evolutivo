@@ -153,6 +153,8 @@ export function syncReproTraits(piece) {
         (!plant || !["Ovíparo", "Vivíparo"].includes(trait)) &&
         (!gymnosperm || trait !== "Esporos"),
     );
+  if (!expressed.includes("Ovíparo") && !expressed.includes("Vivíparo"))
+    regular = regular.filter((trait) => trait !== "Ovíparos Amniotas");
   if (!expressed.includes("Vivíparo"))
     regular = regular.filter((trait) => trait !== "Ovulação Induzida");
   piece.traits = [...regular, ...expressed];
