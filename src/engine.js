@@ -22,6 +22,7 @@ import {
   dormant,
   manipulationTargets,
   constructionTargets,
+  nursingTargets,
 } from "./moves.js";
 import {
   reproduce,
@@ -532,6 +533,8 @@ function executeMove(ctx, action) {
   const victim = at(state, target.r, target.c),
     egg = eggAt(state, target.r, target.c),
     pieceCapture = !!victim && victim.id !== p.id,
+    cannibalism =
+      pieceCapture && victim.owner === p.owner && has(p, "Canibalismo"),
     eggCapture = !!egg,
     capture = pieceCapture || eggCapture;
   if (
@@ -569,7 +572,7 @@ function executeMove(ctx, action) {
   }
   ctx.reserved.add(square(target.r, target.c));
   if (pieceCapture) {
-    ctx.kill(victim.id, "captura", p);
+    ctx.kill(victim.id, cannibalism ? "canibalismo" : "captura", p);
     manipulation = null;
     const cell = square(target.r, target.c);
     markDecomposition(state, cell);
@@ -613,7 +616,10 @@ function executeMove(ctx, action) {
       !scavenging &&
       ((!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay),
     fertile = fertileResource && (!carnivore || omnivore),
-    predation = pieceCapture && (carnivore || omnivore);
+    predation =
+      pieceCapture &&
+      victim.owner !== p.owner &&
+      (carnivore || omnivore);
   log(
     state,
     `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
@@ -668,6 +674,13 @@ function executeMove(ctx, action) {
   } else if (scavenging) {
     born = reproduce(ctx, p, null, "necrofagia");
     if (born) consumeDecomposition(state, cell);
+  } else if (cannibalism) {
+    born = reproduce(ctx, p, null, "canibalismo", { forcedCount: 1 });
+    if (born)
+      log(
+        state,
+        `${OWNERS[p.owner]}: 🦈 Canibalismo converteu a morte de um aliado em um descendente.`,
+      );
   } else if (fertile || predation) {
     born = reproduce(
       ctx,
@@ -681,6 +694,24 @@ function executeMove(ctx, action) {
     born > 0 && consumedFertile && has(p, "Construtor Avançado");
   finishMovement(ctx, p, manipulation, second, locomotion, build);
 }
+function resolveNursing(ctx, action) {
+  const state = ctx.state,
+    parent = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    ),
+    child = nursingTargets(state, parent).find(
+      (candidate) => candidate.id === action.childId,
+    );
+  if (!parent || !child) throw Error("Escolha uma cria juvenil adjacente.");
+  child.maturesRound = round(state);
+  log(
+    state,
+    `${OWNERS[parent.owner]}: 🐮 Lactação amadureceu a cria em ${coord(child.r, child.c)}.`,
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function choosePartner(ctx, id) {
   const state = ctx.state,
     pending = state.partner,
@@ -774,6 +805,8 @@ export function transition(previous, action) {
     activateOrigin(state);
   else if (action.type === "MOVE" && state.phase === "move")
     executeMove(ctx, action);
+  else if (action.type === "NURSE" && state.phase === "move")
+    resolveNursing(ctx, action);
   else if (action.type === "PARTNER" && state.phase === "partner")
     choosePartner(ctx, action.id);
   else if (
