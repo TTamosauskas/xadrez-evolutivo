@@ -27,6 +27,8 @@ jobs:
         run: node scripts/devonian-mutation-diagnostics.js
         env:
           DEVONIAN_GAMES: 8
+          DEVONIAN_START_GAME: 9
+          DEVONIAN_SCENARIOS: baseline,no_omnivore,no_cutaneous,parasitism,regeneration,resistance_regeneration,cannibalism,scavenger,venom,camouflage_carapace
           DEVONIAN_LIMIT: 600
           DEVONIAN_TAIL: 100
       - run: npm run build
