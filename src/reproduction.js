@@ -66,6 +66,9 @@ const DERIVED_FORM_PREVIOUS = new Map([
   [5, 3],
 ]);
 
+export const formMutationWeight = (piece) =>
+  has(piece, "Sacos Aéreos") ? 3 : 1;
+
 function weightedPick(state, options) {
   const total = options.reduce((sum, option) => sum + (option.weight ?? 1), 0);
   if (!total) return null;
@@ -114,7 +117,7 @@ function mutation(state, p, positiveOnly) {
   else if (rankMutationUnlocked(state) && DERIVED_FORM_NEXT.has(p.rank))
     gains.push({
       rank: DERIVED_FORM_NEXT.get(p.rank),
-      weight: has(p, "Sacos Aéreos") ? 3 : 1,
+      weight: formMutationWeight(p),
     });
   for (const trait of POSITIVE)
     if (!has(p, trait) && traitUnlocked(state, trait, p))
