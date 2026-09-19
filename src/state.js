@@ -45,6 +45,15 @@ export const barrierAt = (state, r, c) =>
   state.barriers?.includes(square(r, c)) ?? false;
 export const terrain = (state, r, c) => state.board[square(r, c)];
 export const round = (state) => Math.floor(state.turn / 2);
+export const juvenile = (state, piece) =>
+  !!piece &&
+  Number.isInteger(piece.maturesRound) &&
+  round(state) < piece.maturesRound;
+export const reproductionReady = (state, piece) =>
+  !!piece &&
+  !juvenile(state, piece) &&
+  !(piece.traits ?? []).includes("Esterilidade") &&
+  round(state) >= (piece.nextReproductionRound ?? 0);
 export function log(state, text) {
   state.logs.unshift({ turn: state.turn, text });
   state.logs.length = Math.min(state.logs.length, 160);
@@ -64,7 +73,8 @@ export function notice(state, title, lines, key = null) {
     });
 }
 export function newPiece(state, owner, r, c, source = {}) {
-  const piece = {
+  const bornRound = round(state),
+    piece = {
     id: state.nextId++,
     owner,
     r,
@@ -80,7 +90,9 @@ export function newPiece(state, owner, r, c, source = {}) {
     pawnDir: owner === "blue" ? -1 : 1,
     seeds: 0,
     pregnancies: [],
-    bornRound: round(state),
+    bornRound: source.bornRound ?? bornRound,
+    maturesRound: source.maturesRound ?? bornRound,
+    nextReproductionRound: source.nextReproductionRound ?? bornRound,
   };
   return syncReproTraits(piece);
 }
@@ -545,6 +557,9 @@ export function assertState(state) {
       !integer(p.mutations) ||
       !integer(p.seeds) ||
       !integer(p.generation) ||
+      !integer(p.bornRound) ||
+      !integer(p.maturesRound) ||
+      !integer(p.nextReproductionRound) ||
       ![1, -1].includes(p.pawnDir) ||
       (p.regenerationUsed !== undefined &&
         typeof p.regenerationUsed !== "boolean") ||

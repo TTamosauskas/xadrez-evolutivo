@@ -138,14 +138,16 @@ export function reproPhenotype(source) {
 
 export function syncReproTraits(piece) {
   piece.reproGenes = normalizeReproGenes(piece.reproGenes, piece.traits);
-  const regular = piece.traits.filter((t) => !GENETIC_TRAITS.includes(t)),
-    plant = regular.includes("Fotossíntese"),
+  let regular = piece.traits.filter((t) => !GENETIC_TRAITS.includes(t));
+  const plant = regular.includes("Fotossíntese"),
     gymnosperm = regular.includes("Gimnospermas"),
     expressed = reproPhenotype(piece.reproGenes).traits.filter(
       (trait) =>
         (!plant || !["Ovíparo", "Vivíparo", "Ovos"].includes(trait)) &&
         (!gymnosperm || trait !== "Esporos"),
     );
+  if (!expressed.includes("Vivíparo"))
+    regular = regular.filter((trait) => trait !== "Ovulação Induzida");
   piece.traits = [...regular, ...expressed];
   return piece;
 }

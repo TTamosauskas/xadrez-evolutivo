@@ -18,6 +18,10 @@ export const TRAITS = {
     "🦁",
     "Especialização de uma linhagem com Predação: reproduz ao eliminar uma peça e deixa de usar casas férteis.",
   ],
+  Canibalismo: [
+    "🦈",
+    "Especialização de Carnívoro: permite capturar uma peça aliada segundo a geometria da peça e converter a morte em exatamente um descendente.",
+  ],
   Onívoro: [
     "🐻",
     "Especialização posterior de Carnívoro: reproduz tanto em casas férteis quanto ao eliminar peças.",
@@ -31,6 +35,10 @@ export const TRAITS = {
   Ovífagia: ["🦎", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
   Esporos: ["🍄", "Espalha a prole em casas distantes pelo tabuleiro."],
   Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],
+  "Ovulação Induzida": [
+    "🐇",
+    "Reduz de três para duas rodadas o intervalo mínimo entre reproduções bem-sucedidas.",
+  ],
   Fertilidade: ["🧫", "Dobra a quantidade de descendentes."],
   Fotossíntese: [
     "🟢",
@@ -88,6 +96,10 @@ export const TRAITS = {
     "🪺",
     "Ovos adjacentes ao progenitor ficam protegidos contra Ovífagia.",
   ],
+  Lactação: [
+    "🐮",
+    "Permite gastar a ação do turno para amadurecer imediatamente uma cria juvenil adjacente da própria peça.",
+  ],
   Dormência: [
     "💤",
     "Em casas hostis, fica imobilizada e evita o risco ambiental enquanto permanecer ali.",
@@ -100,6 +112,10 @@ export const TRAITS = {
   ],
   Resistência: ["🧬", "Impede novas infecções pelo Patógeno Virulento."],
   "Reprodução Sexuada": ["❤️", "Combina características de dois progenitores."],
+  "Precocidade Sexual": [
+    "🪰",
+    "Reduz de duas para uma rodada o tempo natural até a maturidade reprodutiva de um descendente.",
+  ],
   Esterilidade: ["🚫", "Impede a reprodução."],
   Ooteca: [
     "🕷",

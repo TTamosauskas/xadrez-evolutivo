@@ -196,10 +196,12 @@ export const TRAIT_STAGE = {
   Fertilidade: "archean",
   Dormência: "archean",
   "Reprodução Sexuada": "proterozoic",
+  "Precocidade Sexual": "ediacaran",
   Regeneração: "proterozoic",
   Resistência: "proterozoic",
   Predação: "archean",
   Carnívoro: "proterozoic",
+  Canibalismo: "cambrian",
   Esporos: "proterozoic",
   Locomoção: "ediacaran",
   "Construção de Nicho": "ediacaran",
@@ -215,7 +217,9 @@ export const TRAIT_STAGE = {
   Ovíparo: "carboniferous",
   Ooteca: "carboniferous",
   "Cuidado Parental": "permian",
+  Lactação: "triassic",
   Vivíparo: "triassic",
+  "Ovulação Induzida": "paleogene",
   "Visão Noturna": "jurassic",
   Eusocialidade: "cretaceous",
   Ovífagia: "cretaceous",
@@ -244,11 +248,24 @@ export const TRAIT_DEPENDENCIES = {
     piece: ["Fotossíntese", "Embriófitas", "Gimnospermas"],
   },
   Carnívoro: { historical: ["Predação"], piece: ["Predação"] },
+  Canibalismo: { historical: ["Carnívoro"], piece: ["Carnívoro"] },
+  "Precocidade Sexual": {
+    historical: ["Reprodução Sexuada"],
+    piece: ["Reprodução Sexuada"],
+  },
   Locomoção: { historical: ["Predação"], piece: ["Predação"] },
   "Locomoção Avançada": { historical: ["Locomoção"] },
   Voo: { historical: ["Locomoção"] },
   "Cuidado Parental": { historical: ["Ovíparo"] },
+  Lactação: {
+    historical: ["Cuidado Parental"],
+    piece: ["Cuidado Parental"],
+  },
   Vivíparo: { historical: ["Ovíparo"] },
+  "Ovulação Induzida": {
+    historical: ["Vivíparo"],
+    piece: ["Vivíparo"],
+  },
   "Visão Noturna": { historical: ["Camuflagem"] },
   Ovífagia: { historical: ["Ovíparo"] },
   Onívoro: { historical: ["Carnívoro"], piece: ["Carnívoro"] },
@@ -274,6 +291,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Locomoção",
   "Locomoção Avançada",
   "Carnívoro",
+  "Canibalismo",
   "Onívoro",
   "Necrófago",
   "Ovos",
@@ -281,6 +299,8 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Ovífagia",
   "Vivíparo",
   "Cuidado Parental",
+  "Lactação",
+  "Ovulação Induzida",
   "Ooteca",
   "Voo",
   "Visão Noturna",
@@ -302,6 +322,11 @@ export function traitCombinationValid(traits) {
     return false;
   if (set.has("Locomoção") && !set.has("Predação")) return false;
   if (set.has("Carnívoro") && !set.has("Predação")) return false;
+  if (set.has("Canibalismo") && !set.has("Carnívoro")) return false;
+  if (set.has("Precocidade Sexual") && !set.has("Reprodução Sexuada"))
+    return false;
+  if (set.has("Lactação") && !set.has("Cuidado Parental")) return false;
+  if (set.has("Ovulação Induzida") && !set.has("Vivíparo")) return false;
   if (set.has("Onívoro") && !set.has("Carnívoro")) return false;
   return true;
 }
@@ -332,7 +357,12 @@ export function normalizeEnergyBranch(traits, preferred = null) {
     set.delete("Carnívoro");
     set.delete("Onívoro");
   }
-  if (!set.has("Carnívoro")) set.delete("Onívoro");
+  if (!set.has("Carnívoro")) {
+    set.delete("Onívoro");
+    set.delete("Canibalismo");
+  }
+  if (!set.has("Reprodução Sexuada")) set.delete("Precocidade Sexual");
+  if (!set.has("Cuidado Parental")) set.delete("Lactação");
   return [...set];
 }
 
@@ -374,7 +404,15 @@ export function traitLossAllowed(piece, trait) {
     (traits.has("Locomoção") || traits.has("Carnívoro") || traits.has("Onívoro"))
   )
     return false;
-  if (trait === "Carnívoro" && traits.has("Onívoro")) return false;
+  if (
+    trait === "Carnívoro" &&
+    (traits.has("Onívoro") || traits.has("Canibalismo"))
+  )
+    return false;
+  if (trait === "Reprodução Sexuada" && traits.has("Precocidade Sexual"))
+    return false;
+  if (trait === "Cuidado Parental" && traits.has("Lactação")) return false;
+  if (trait === "Vivíparo" && traits.has("Ovulação Induzida")) return false;
   return true;
 }
 

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
-import { createState, clone } from "../src/state.js";
+import { createState, clone, newPiece, round } from "../src/state.js";
 import { render } from "../src/view.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
@@ -133,6 +133,29 @@ test("selected panel inspects either side and explains only that piece traits", 
   assert.equal(d.querySelectorAll(".cell.legal").length, 0);
   dom.window.close();
 });
+test("juveniles render smaller and Lactação highlights eligible children", () => {
+  const dom = setup(),
+    s = createState(41),
+    parent = s.pieces.find((piece) => piece.owner === "blue");
+  parent.traits = [...new Set([...parent.traits, "Cuidado Parental", "Lactação"])];
+  const child = newPiece(s, "blue", parent.r - 1, parent.c, {
+    parentId: parent.id,
+  });
+  child.maturesRound = round(s) + 2;
+  s.pieces.push(child);
+
+  render(dom.window.document, s, { selected: parent.id });
+  const d = dom.window.document,
+    childCell = d.querySelector(
+      `[data-r="${child.r}"][data-c="${child.c}"]`,
+    );
+  assert.ok(childCell.classList.contains("nurse-target"));
+  assert.ok(childCell.querySelector(".piece").classList.contains("juvenile"));
+  assert.match(childCell.title, /juvenil/);
+  assert.match(childCell.title, /cria disponível para Lactação/);
+  dom.window.close();
+});
+
 test("renders eggs and carried brood count", () => {
   const dom = setup(),
     s = createState(22),
@@ -161,7 +184,7 @@ test("renders eggs and carried brood count", () => {
       .textContent,
     /\+3/,
   );
-  assert.match(d.getElementById("selected").textContent, /🎈 \+3/);
+  assert.match(d.getElementById("selected").textContent, /🔴 \+3/);
   dom.window.close();
 });
 

@@ -1,5 +1,13 @@
 import { inside, has, distance, square } from "./constants.js";
-import { at, eggAt, barrierAt, terrain, round } from "./state.js";
+import {
+  at,
+  eggAt,
+  barrierAt,
+  terrain,
+  round,
+  juvenile,
+  reproductionReady,
+} from "./state.js";
 import { captureUnlocked } from "./geology.js";
 const ORTH = [
     [-1, 0],
@@ -89,9 +97,16 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   function add(r, c, path, extra = {}) {
     if (!inside(r, c)) return;
     const victim = at(state, r, c),
-      egg = eggAt(state, r, c);
-    if (victim?.owner === p.owner || egg?.owner === p.owner) return;
-    if (victim && !captureUnlocked(state, p)) return;
+      egg = eggAt(state, r, c),
+      cannibal =
+        victim?.owner === p.owner &&
+        victim.id !== p.id &&
+        has(p, "Canibalismo") &&
+        reproductionReady(state, p);
+    if ((victim?.owner === p.owner && !cannibal) || egg?.owner === p.owner)
+      return;
+    if (victim && victim.owner !== p.owner && !captureUnlocked(state, p))
+      return;
     if (barrierAt(state, r, c) && !has(p, "Chifre")) return;
     if (egg) {
       const parent = state.pieces.find((piece) => piece.id === egg.parentId),
@@ -113,6 +128,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       c,
       path,
       capture: !!victim,
+      cannibal,
       eggCapture: egg?.id ?? null,
       ...extra,
     });
@@ -152,7 +168,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           egg = eggAt(state, r, c);
         if (
           inside(r, c) &&
-          ((victim?.owner && victim.owner !== p.owner) ||
+          ((victim?.owner &&
+            (victim.owner !== p.owner ||
+              (victim.id !== p.id &&
+                has(p, "Canibalismo") &&
+                reproductionReady(state, p)))) ||
             (egg?.owner && egg.owner !== p.owner && has(p, "Ovífagia")))
         )
           add(r, c, [[r, c]]);
@@ -186,14 +206,17 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   if (mobile) chessTargets(false);
   else if (has(p, "Predação")) chessTargets(true);
   const collector = has(p, "Coletor"),
-    canUseFertility = !has(p, "Carnívoro") || has(p, "Onívoro");
+    canUseFertility = !has(p, "Carnívoro") || has(p, "Onívoro"),
+    canReproduce = reproductionReady(state, p);
   if (
+    canReproduce &&
     canUseFertility &&
     (terrain(state, p.r, p.c) === "fertile" || (collector && p.seeds > 0)) &&
     (!collector || (!has(p, "Esterilidade") && p.seedUsedTurn !== state.turn))
   )
     targets.push({ r: p.r, c: p.c, path: [], stay: true, capture: false });
   if (
+    canReproduce &&
     canUseFertility &&
     has(p, "Traqueófitas") &&
     !has(p, "Esterilidade")
@@ -216,13 +239,35 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   return targets;
 }
 export function partnersFor(state, p) {
+  if (!reproductionReady(state, p)) return [];
   return state.pieces.filter(
     (x) =>
       x.id !== p.id &&
       x.owner === p.owner &&
-      !has(x, "Esterilidade") &&
+      reproductionReady(state, x) &&
       !dormant(state, x) &&
       distance(p, x) === 1,
+  );
+}
+
+export function nursingTargets(state, p) {
+  if (
+    state.phase !== "move" ||
+    state.chain ||
+    !p ||
+    p.owner !== state.current ||
+    !has(p, "Lactação") ||
+    resting(state, p) ||
+    dormant(state, p)
+  )
+    return [];
+  return state.pieces.filter(
+    (child) =>
+      child.id !== p.id &&
+      child.owner === p.owner &&
+      child.parentId === p.id &&
+      juvenile(state, child) &&
+      distance(p, child) === 1,
   );
 }
 export function legalActions(state) {
@@ -251,14 +296,19 @@ export function legalActions(state) {
   }
   return state.pieces
     .filter((p) => p.owner === state.current)
-    .flatMap((p) =>
-      movesFor(state, p).map((t) => ({
+    .flatMap((p) => [
+      ...movesFor(state, p).map((t) => ({
         type: "MOVE",
         id: p.id,
         r: t.r,
         c: t.c,
       })),
-    );
+      ...nursingTargets(state, p).map((child) => ({
+        type: "NURSE",
+        id: p.id,
+        childId: child.id,
+      })),
+    ]);
 }
 export function canWaitForRest(state, owner) {
   return state.pieces.some(

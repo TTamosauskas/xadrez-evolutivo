@@ -1,5 +1,5 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
-import { at, eggAt, plantSeedAt, dominantLineage, round, signature } from "./state.js";
+import { at, eggAt, plantSeedAt, dominantLineage, round, signature, juvenile } from "./state.js";
 import { currentGeologicalStage, stageProgress } from "./geology.js";
 import {
   movesFor,
@@ -7,6 +7,7 @@ import {
   manipulationTargets,
   constructionTargets,
   dysfunctionalResting,
+  nursingTargets,
 } from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
@@ -61,7 +62,8 @@ export function render(
       ? movesFor(state, actor)
       : [];
   const manipulation = manipulationTargets(state),
-    construction = constructionTargets(state);
+    construction = constructionTargets(state),
+    nursing = actor ? nursingTargets(state, actor) : [];
   const mates =
     state.phase === "partner"
       ? partnersFor(
@@ -119,13 +121,14 @@ export function render(
         build = construction.some((t) => t.r === r && t.c === c),
         barrier = state.barriers.includes(square(r, c)),
         partner = mates.some((m) => m.id === p?.id),
+        nurse = nursing.some((child) => child.id === p?.id),
         deathSite = state.deathSites.find((d) => d.cell === square(r, c)),
         fertileTrace = state.fertileTraces.some((t) => t.cell === square(r, c)),
         decompositionMark = deathSite || fertileTrace;
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -143,7 +146,7 @@ export function render(
           : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${barrier ? ", barreira" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}`;
+          : `${coord(r, c)}, ${terrain}${barrier ? ", barreira" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
@@ -157,7 +160,7 @@ export function render(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
+            `piece ${p.owner}${juvenile(state, p) ? " juvenile" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
           ),
         );
         const badges = p.traits.map((trait) => ({
@@ -233,6 +236,22 @@ export function render(
     });
     if (!details.length)
       details.push(make("p", "🧬 Perfil ancestral", "selected-ancestral"));
+    if (juvenile(state, actor))
+      details.unshift(
+        make(
+          "p",
+          `Juvenil · maturidade em ${Math.max(0, actor.maturesRound - currentRound)} rodada(s).`,
+          "selected-status",
+        ),
+      );
+    else if ((actor.nextReproductionRound ?? 0) > currentRound)
+      details.unshift(
+        make(
+          "p",
+          `Recuperação reprodutiva · ${actor.nextReproductionRound - currentRound} rodada(s) restante(s).`,
+          "selected-status",
+        ),
+      );
     if (actor.infection)
       details.push(
         make(
@@ -245,7 +264,7 @@ export function render(
       details.push(
         make(
           "p",
-          `🎈 +${pregnancy.brood.length} · nascimento em ${Math.max(0, pregnancy.dueRound - round(state))} rodada(s).`,
+          `🔴 +${pregnancy.brood.length} · nascimento em ${Math.max(0, pregnancy.dueRound - round(state))} rodada(s).`,
           "selected-status",
         ),
       );
