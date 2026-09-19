@@ -12,7 +12,11 @@ import {
 } from "../src/state.js";
 import { context, transition, simulate, mutuallyBlocked } from "../src/engine.js";
 import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
-import { startEvent, tickEnvironment } from "../src/environment.js";
+import {
+  SEVERE_EVENT_IDS,
+  startEvent,
+  tickEnvironment,
+} from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
 import { reproduce, tickReproduction } from "../src/reproduction.js";
 import { cloneReproGenes } from "../src/reproductive-genetics.js";
@@ -124,6 +128,7 @@ test("ten stalled turns after Conway trigger a geological ecological event", () 
 
   assert.equal(s.turn, deadline);
   assert.ok(s.event);
+  assert.ok(SEVERE_EVENT_IDS.has(s.event.id));
   assert.equal(s.conwayWatchUntil, null);
   assert.ok(
     s.logs.some((entry) =>

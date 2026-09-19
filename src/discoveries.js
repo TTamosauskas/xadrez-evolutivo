@@ -211,8 +211,11 @@ export function unreadDiscoveries(state, category = null) {
   );
 }
 
-export function discoveredContent(state, category) {
-  return (state.discoveries?.[category] ?? [])
+export function discoveredContent(state, category, revealAll = false) {
+  const ids = revealAll
+    ? Object.keys(DISCOVERY_CONTENT[category] ?? {})
+    : state.discoveries?.[category] ?? [];
+  return ids
     .map((id) => DISCOVERY_CONTENT[category]?.[id])
     .filter(Boolean)
     .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title, "pt-BR"));

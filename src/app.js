@@ -1,4 +1,8 @@
-import { createCampaignState, createSuccessorState } from "./state.js";
+import {
+  createCampaignState,
+  createPeriodState,
+  createSuccessorState,
+} from "./state.js";
 import { Controller } from "./controller.js";
 import { render } from "./view.js";
 import {
@@ -265,6 +269,8 @@ $("menu-dialog").addEventListener("cancel", (event) => {
 });
 
 let activeDiscoveryCategory = "geology";
+const editorDiscoveries = () =>
+  window.location.hash.toLowerCase() === "#editor";
 
 function setUnreadBadge(element, count) {
   if (!element) return;
@@ -274,6 +280,12 @@ function setUnreadBadge(element, count) {
 
 function renderDiscoveryBadges() {
   if (!controller?.state?.discoveries) return;
+  if (editorDiscoveries()) {
+    setUnreadBadge($("discoveries-badge"), 0);
+    for (const [category] of DISCOVERY_CATEGORIES)
+      setUnreadBadge($(`discoveries-${category}-badge`), 0);
+    return;
+  }
   setUnreadBadge($("discoveries-badge"), unreadDiscoveries(controller.state));
   for (const [category] of DISCOVERY_CATEGORIES)
     setUnreadBadge(
@@ -293,7 +305,11 @@ function renderDiscoveryList() {
     button.classList.toggle("active", active);
     button.setAttribute("aria-selected", active ? "true" : "false");
   }
-  const entries = discoveredContent(controller.state, activeDiscoveryCategory);
+  const entries = discoveredContent(
+    controller.state,
+    activeDiscoveryCategory,
+    editorDiscoveries(),
+  );
   if (!entries.length) {
     const empty = document.createElement("p");
     empty.className = "discovery-empty";
@@ -336,6 +352,9 @@ function openDiscovery(category, id) {
   $("discovery-detail-image").alt = `Ilustração de ${entry.title}`;
   $("discovery-detail-text").textContent = entry.text;
   $("discovery-wikipedia").href = entry.wikipedia;
+  const play = $("discovery-play");
+  play.hidden = category !== "geology";
+  play.dataset.stage = category === "geology" ? id : "";
 }
 
 function openDiscoveries() {
@@ -355,6 +374,21 @@ function closeDiscoveries() {
 $("discoveries").addEventListener("click", openDiscoveries);
 $("discoveries-close").addEventListener("click", closeDiscoveries);
 $("discovery-back").addEventListener("click", renderDiscoveryList);
+$("discovery-play").addEventListener("click", () => {
+  const stage = $("discovery-play").dataset.stage;
+  if (!stage) return;
+  const next = createPeriodState(stage, Date.now(), controller.state.discoveries);
+  if ($("discoveries-dialog").open) $("discoveries-dialog").close();
+  if ($("menu-dialog").open) $("menu-dialog").close();
+  selected = null;
+  controller.replace(next);
+  controller.pause(false);
+  report(`Iniciado o 1º Ciclo de ${currentGeologicalStage(next).period}.`);
+});
+window.addEventListener("hashchange", () => {
+  renderDiscoveryBadges();
+  if ($("discoveries-dialog").open) renderDiscoveryList();
+});
 $("discoveries-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
   closeDiscoveries();

@@ -50,6 +50,7 @@ export const GEOLOGICAL_STAGES = [
       "abundant-rains": 2,
       sea: 1,
       earthquake: 1,
+      volcano: 1,
     },
   },
   {
@@ -85,6 +86,7 @@ export const GEOLOGICAL_STAGES = [
       "abundant-rains": 3,
       sea: 2,
       fertilized: 1,
+      volcano: 1,
     },
   },
   {
@@ -99,6 +101,7 @@ export const GEOLOGICAL_STAGES = [
       drought: 2,
       desert: 1,
       sea: 1,
+      warming: 1,
     },
   },
   {
@@ -112,6 +115,7 @@ export const GEOLOGICAL_STAGES = [
       abundance: 3,
       fertilized: 2,
       sea: 1,
+      ice: 2,
     },
   },
   {
@@ -142,6 +146,8 @@ export const GEOLOGICAL_STAGES = [
       "abundant-rains": 2,
       "alluvial-river": 2,
       earthquake: 1,
+      warming: 1,
+      volcano: 1,
     },
   },
   {

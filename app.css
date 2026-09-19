@@ -460,13 +460,15 @@ select {
 .discovery-back {
   padding: 7px 10px;
 }
-.discovery-attribution {
-  font-size: 12px !important;
-  color: var(--muted) !important;
+.discovery-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 20px;
 }
 .wikipedia-link {
   display: inline-block;
-  margin: 4px 0 20px;
+  margin: 0;
   padding: 10px 14px;
   border: 1px solid #a6bd80;
   border-radius: 7px;

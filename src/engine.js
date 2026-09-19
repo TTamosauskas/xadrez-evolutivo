@@ -48,6 +48,7 @@ import {
   severeEventActive,
   tickSevereEventTurn,
   startEvent,
+  startSevereEvent,
   tickEnvironment,
 } from "./environment.js";
 export function context(state) {
@@ -322,9 +323,9 @@ function resolveConwayStagnation(ctx) {
   state.conwayWatchUntil = null;
   log(
     state,
-    "🌿 Conway não destravou a partida em 10 turnos; uma perturbação ecológica foi desencadeada.",
+    "🌿 Conway não destravou a partida em 10 turnos; um evento ecológico severo do período foi desencadeado.",
   );
-  startEvent(ctx);
+  startSevereEvent(ctx);
   extinction(state);
 }
 

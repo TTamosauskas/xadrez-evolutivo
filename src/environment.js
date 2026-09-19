@@ -21,6 +21,29 @@ export const SEVERE_EVENT_IDS = new Set(["ice", "volcano", "meteor", "warming"])
 const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.9);
 export const severeEventActive = (state) =>
   !!state.event && SEVERE_EVENT_IDS.has(state.event.id);
+
+function weightedEvent(state, candidates, weights) {
+  const total = candidates.reduce(
+    (sum, event) => sum + (weights[event.id] ?? 0),
+    0,
+  );
+  if (!candidates.length || total <= 0) return null;
+  let roll = random(state) * total;
+  for (const event of candidates) {
+    roll -= weights[event.id] ?? 0;
+    if (roll < 0) return event;
+  }
+  return candidates.at(-1) ?? null;
+}
+
+export function severeEventForStage(state) {
+  const weights = eventWeights(state),
+    severe = EVENTS.filter(
+      (event) => SEVERE_EVENT_IDS.has(event.id) && (weights[event.id] ?? 0) > 0,
+    ),
+    fresh = severe.filter((event) => event.id !== state.previousEvent);
+  return weightedEvent(state, fresh.length ? fresh : severe, weights);
+}
 const fertile = (state) =>
   allCells().filter((i) => state.board[i] === "fertile");
 const ORTHOGONAL = [
@@ -493,18 +516,8 @@ export function startEvent(ctx, id = null) {
           candidates = EVENTS.filter(
             (event) =>
               event.id !== state.previousEvent && (weights[event.id] ?? 0) > 0,
-          ),
-          total = candidates.reduce(
-            (sum, event) => sum + weights[event.id],
-            0,
           );
-        if (!candidates.length || total <= 0) return null;
-        let roll = random(state) * total;
-        for (const event of candidates) {
-          roll -= weights[event.id];
-          if (roll < 0) return event;
-        }
-        return candidates.at(-1);
+        return weightedEvent(state, candidates, weights);
       })();
   if (!def) throw Error("Evento inválido.");
   const event = {
@@ -667,6 +680,13 @@ export function startEvent(ctx, id = null) {
       `🟫 Relevo alterado: +${event.barrierChanges.created} / -${event.barrierChanges.removed} barreira(s) natural(is).`,
     );
 }
+export function startSevereEvent(ctx) {
+  const event = severeEventForStage(ctx.state);
+  if (!event) throw Error("Nenhum evento severo disponível neste período.");
+  startEvent(ctx, event.id);
+  return event;
+}
+
 export function tickEnvironment(ctx) {
   const state = ctx.state,
     now = round(state);

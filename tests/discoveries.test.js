@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { EVENTS, TRAITS } from "../src/constants.js";
 import { GEOLOGICAL_STAGES } from "../src/geology.js";
 import {
+  DISCOVERY_CATEGORIES,
   DISCOVERY_CONTENT,
   discoveredContent,
   isDiscoveryUnread,
@@ -11,7 +12,12 @@ import {
   recordDiscovery,
   unreadDiscoveries,
 } from "../src/discoveries.js";
-import { createState, createSuccessorState } from "../src/state.js";
+import {
+  assertState,
+  createPeriodState,
+  createState,
+  createSuccessorState,
+} from "../src/state.js";
 
 test("new campaigns start with an unread Archean discovery", () => {
   const state = createState(201);
@@ -69,4 +75,50 @@ test("mutation labels map only to encyclopedia-worthy discoveries", () => {
   assert.equal(mutationDiscoveryId("Mutação de peça: Rainha"), "rank:5");
   assert.equal(mutationDiscoveryId("Mutação de peça: Peão"), "rank:0");
   assert.equal(mutationDiscoveryId("Perda de Fotossíntese"), null);
+});
+
+
+test("editor discovery mode can reveal the complete catalog without mutating progress", () => {
+  const state = createState(205),
+    before = structuredClone(state.discoveries);
+  for (const [category] of DISCOVERY_CATEGORIES) {
+    const entries = discoveredContent(state, category, true);
+    assert.equal(entries.length, Object.keys(DISCOVERY_CONTENT[category]).length, category);
+  }
+  assert.deepEqual(state.discoveries, before);
+});
+
+test("each geological discovery can launch the first cycle with prior winners represented", () => {
+  for (const [index, stage] of GEOLOGICAL_STAGES.entries()) {
+    const s = createPeriodState(stage.id, 300 + index);
+    assert.equal(s.geologicalStage, stage.id);
+    assert.equal(s.cycle, 1);
+    if (index === 0) {
+      assert.equal(s.phase, "origin");
+      assert.equal(s.pieces.length, 0);
+    } else {
+      assert.equal(s.phase, "move");
+      assert.equal(s.pieces.length, 4);
+      for (const owner of ["blue", "amber"]) {
+        const founders = s.pieces.filter((piece) => piece.owner === owner);
+        assert.equal(founders.length, 2);
+        assert.equal(founders.filter((piece) => piece.traits.includes("Fotossíntese")).length, 1);
+        assert.equal(founders.filter((piece) => !piece.traits.includes("Fotossíntese")).length, 1);
+      }
+      const priorRequired = GEOLOGICAL_STAGES.slice(0, index).flatMap((prior) => prior.required);
+      assert.deepEqual([...s.historicalTraits].sort(), [...new Set(priorRequired)].sort());
+    }
+    assertState(s);
+  }
+});
+
+test("every geological period offers at least one severe stagnation event", async () => {
+  const { severeEventForStage } = await import("../src/environment.js");
+  for (const [index, stage] of GEOLOGICAL_STAGES.entries()) {
+    const s = createPeriodState(stage.id, 500 + index),
+      event = severeEventForStage(s);
+    assert.ok(event, stage.id);
+    assert.ok(["ice", "volcano", "meteor", "warming"].includes(event.id), stage.id);
+    assert.ok((stage.events[event.id] ?? 0) > 0, stage.id);
+  }
 });

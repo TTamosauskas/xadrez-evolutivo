@@ -6,6 +6,8 @@ import {
   geologicalLabel,
   habitatProfile,
   normalizePhotosyntheticRank,
+  PLANT_DERIVED_TRAITS,
+  PLANT_INCOMPATIBLE_TRAITS,
   recordHistoricalTraits,
   stageComplete,
 } from "./geology.js";
@@ -401,6 +403,75 @@ export function createState(seed = Date.now(), options = {}) {
 
 export function createCampaignState(seed = Date.now()) {
   return createState(seed, { originPrelude: true });
+}
+
+function previewFounderProfiles(stageIndex) {
+  const historicalTraits = GEOLOGICAL_STAGES.slice(0, stageIndex).flatMap(
+      (stage) => stage.required,
+    ),
+    plantTraits = [
+      "Fotossíntese",
+      ...historicalTraits.filter(
+        (trait) =>
+          trait !== "Predação" && !PLANT_INCOMPATIBLE_TRAITS.has(trait),
+      ),
+    ],
+    animalTraits = historicalTraits.filter(
+      (trait) =>
+        trait !== "Fotossíntese" && !PLANT_DERIVED_TRAITS.has(trait),
+    );
+  if (!animalTraits.includes("Predação")) animalTraits.unshift("Predação");
+  const derivedRanks = [1, 2, 3, 5],
+    animalRank =
+      stageIndex <= 3
+        ? 0
+        : derivedRanks[Math.min(derivedRanks.length - 1, stageIndex - 4)];
+  return {
+    historicalTraits: [...new Set(historicalTraits)],
+    primary: {
+      rank: 0,
+      traits: [...new Set(plantTraits)],
+      ancestry: [...new Set(plantTraits)],
+    },
+    companion: {
+      rank: animalRank,
+      traits: [...new Set(animalTraits)],
+      ancestry: [...new Set(animalTraits)],
+    },
+  };
+}
+
+export function createPeriodState(
+  geologicalStage,
+  seed = Date.now(),
+  discoveries = null,
+) {
+  const stageIndex = GEOLOGICAL_STAGES.findIndex(
+    (stage) => stage.id === geologicalStage,
+  );
+  if (stageIndex < 0) throw Error("Período geológico inválido.");
+  if (stageIndex === 0)
+    return createState(seed, {
+      originPrelude: true,
+      geologicalStage,
+      cycle: 1,
+      totalCycles: 1,
+      discoveries,
+    });
+  const preview = previewFounderProfiles(stageIndex),
+    completedCycles = GEOLOGICAL_STAGES.slice(0, stageIndex).reduce(
+      (sum, stage) => sum + (stage.cycles?.length ?? 1),
+      0,
+    );
+  return createState(seed, {
+    geologicalStage,
+    cycle: 1,
+    totalCycles: completedCycles + 1,
+    historicalTraits: preview.historicalTraits,
+    discoveries,
+    founders: { primary: preview.primary, companion: preview.companion },
+    canonicalPair: true,
+  });
 }
 
 export function activateOrigin(state) {
