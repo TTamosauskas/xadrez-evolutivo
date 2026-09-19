@@ -31,6 +31,10 @@ export const TRAITS = {
     "🦈",
     "Especialização de Carnívoro: permite capturar uma peça aliada segundo a geometria da peça e converter a morte em exatamente um descendente.",
   ],
+  Parasitismo: [
+    "🪱",
+    "Ao ser ativado sobre si mesmo, torna fértil a própria casa e hostis as casas adjacentes ocupadas por oponentes.",
+  ],
   Onívoro: [
     "🐻",
     "Especialização posterior de Carnívoro: reproduz tanto em casas férteis quanto ao eliminar peças.",
@@ -67,6 +71,10 @@ export const TRAITS = {
   Embriófitas: [
     "🌱",
     "Ao completar Fotossíntese, pode tornar fértil também uma casa neutra adjacente desocupada.",
+  ],
+  Haustório: [
+    "🍁",
+    "Permite capturar peças inimigas adjacentes sem abandonar a linhagem fotossintética.",
   ],
   Traqueófitas: [
     "🍃",

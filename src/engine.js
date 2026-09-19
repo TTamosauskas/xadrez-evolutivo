@@ -28,6 +28,7 @@ import {
   domesticPlacementTargets,
   socialDefenseTargets,
   ovoviviparousPlacementTargets,
+  canParasitize,
 } from "./moves.js";
 import {
   reproduce,
@@ -829,6 +830,27 @@ function executeMove(ctx, action) {
     return;
   finishMovement(ctx, p, manipulation, second, locomotion, build);
 }
+function resolveParasitism(ctx, action) {
+  const state = ctx.state,
+    p = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    );
+  if (!canParasitize(state, p)) throw Error("Parasitismo indisponível.");
+  state.board[square(p.r, p.c)] = "fertile";
+  const affected = [];
+  for (const otherPiece of state.pieces)
+    if (otherPiece.owner !== p.owner && distance(p, otherPiece) === 1) {
+      state.board[square(otherPiece.r, otherPiece.c)] = "hostile";
+      affected.push(coord(otherPiece.r, otherPiece.c));
+    }
+  log(
+    state,
+    `${OWNERS[p.owner]}: 🪱 Parasitismo tornou ${coord(p.r, p.c)} fértil${affected.length ? ` e ${affected.join(", ")} hostil(is)` : ""}.`,
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveNursing(ctx, action) {
   const state = ctx.state,
     parent = state.pieces.find(
@@ -1067,6 +1089,8 @@ export function transition(previous, action) {
     executeMove(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
     resolveNursing(ctx, action);
+  else if (action.type === "PARASITIZE" && state.phase === "move")
+    resolveParasitism(ctx, action);
   else if (
     action.type === "LAY_OVOVIVIPAROUS" &&
     state.phase === "move"

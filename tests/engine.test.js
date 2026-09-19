@@ -11,7 +11,7 @@ import {
   round,
 } from "../src/state.js";
 import { context, transition, simulate } from "../src/engine.js";
-import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets } from "../src/moves.js";
+import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
 import { startEvent, tickEnvironment } from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
 import { reproduce, tickReproduction } from "../src/reproduction.js";
@@ -1683,4 +1683,86 @@ test("Mimetismo can redirect capture damage to an adjacent piece", () => {
   assert.ok(result);
   assert.ok(result.pieces.some((piece) => piece.id === 2));
   assertState(result);
+});
+
+
+test("Haustório lets a photosynthetic piece capture any adjacent enemy without Predação", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 3,
+      traits: ["Fotossíntese", "Embriófitas", "Haustório"],
+    },
+    { owner: "amber", r: 3, c: 3 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const plant = s.pieces[0];
+  assert.ok(!plant.traits.includes("Predação"));
+  assert.ok(
+    movesFor(s, plant).some(
+      (target) => target.r === 3 && target.c === 3 && target.capture,
+    ),
+  );
+  s = simulate(s, move(plant, 3, 3));
+  assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  assert.ok(s.pieces.some((piece) => piece.id === 1 && piece.r === 3 && piece.c === 3));
+  assertState(s);
+});
+
+test("Parasitismo self-action fertilizes its square and makes adjacent opponent squares hostile", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
+    { owner: "amber", r: 3, c: 4 },
+    { owner: "amber", r: 4, c: 5 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parasite = s.pieces[0];
+  assert.equal(canParasitize(s, parasite), true);
+  s = simulate(s, { type: "PARASITIZE", id: parasite.id });
+  assert.equal(s.board[4 * 8 + 4], "fertile");
+  assert.equal(s.board[3 * 8 + 4], "hostile");
+  assert.equal(s.board[4 * 8 + 5], "hostile");
+  assert.equal(s.current, "amber");
+  assertState(s);
+});
+
+test("successor cycle gives both sides the same photosynthetic and non-photosynthetic founder pair", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 4,
+      traits: ["Fotossíntese", "Embriófitas"],
+      generation: 5,
+    },
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 3,
+      traits: ["Predação", "Locomoção"],
+      generation: 6,
+    },
+    { owner: "amber", r: 0, c: 0, rank: 4 },
+  ]);
+  s.result = { winner: "blue", reason: "Extinção total." };
+  s.phase = "over";
+  const next = createSuccessorState(s, 143);
+  assert.equal(next.pieces.length, 4);
+  for (const owner of ["blue", "amber"]) {
+    const founders = next.pieces.filter((piece) => piece.owner === owner);
+    assert.equal(founders.length, 2);
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Fotossíntese")).length,
+      1,
+    );
+    assert.equal(
+      founders.filter((piece) => !piece.traits.includes("Fotossíntese")).length,
+      1,
+    );
+  }
+  assertState(next);
 });

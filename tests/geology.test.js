@@ -323,6 +323,7 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
   p.ancestry.push("Polegar Opositor");
   assert.equal(traitUnlocked(s, "Antropização", p), false);
   s.historicalTraits.push("Neocórtex Desenvolvido");
+  p.ancestry.push("Neocórtex Desenvolvido");
   assert.equal(traitUnlocked(s, "Antropização", p), true);
   assert.equal(traitUnlocked(s, "Antropização", unrelated), false);
 });
@@ -593,4 +594,37 @@ test("new social, mimicry and domestication mutations unlock in the intended per
     }),
     false,
   );
+});
+
+
+test("Haustório is a Cretaceous photosynthetic innovation after Embriófitas", () => {
+  const s = createState(141, {
+      geologicalStage: "cretaceous",
+      historicalTraits: GEOLOGICAL_STAGES.slice(0, 12).flatMap(
+        (stage) => stage.required,
+      ),
+    }),
+    plant = {
+      traits: ["Fotossíntese"],
+      ancestry: ["Fotossíntese", "Embriófitas"],
+    },
+    exPlant = {
+      traits: ["Predação"],
+      ancestry: ["Fotossíntese", "Embriófitas", "Predação"],
+    };
+  assert.equal(traitUnlocked(s, "Haustório", plant), true);
+  assert.equal(traitUnlocked(s, "Haustório", exPlant), false);
+});
+
+test("Parasitismo becomes available in the Cambrian only outside the photosynthetic branch", () => {
+  const s = createState(142, {
+      geologicalStage: "cambrian",
+      historicalTraits: GEOLOGICAL_STAGES.slice(0, 4).flatMap(
+        (stage) => stage.required,
+      ),
+    }),
+    animal = { traits: ["Predação"], ancestry: ["Predação"] },
+    plant = { traits: ["Fotossíntese"], ancestry: ["Fotossíntese"] };
+  assert.equal(traitUnlocked(s, "Parasitismo", animal), true);
+  assert.equal(traitUnlocked(s, "Parasitismo", plant), false);
 });

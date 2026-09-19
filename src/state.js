@@ -341,19 +341,30 @@ export function createState(seed = Date.now(), options = {}) {
       selected: false,
     };
   } else {
-    const starts = canonicalPair
-      ? [
-          ["blue", 7, 4],
-          ["amber", 0, 4],
-        ]
-      : [
-          ["blue", 7, 3],
-          ["blue", 7, 4],
-          ["amber", 0, 3],
-          ["amber", 0, 4],
-        ];
-    for (const [owner, r, c] of starts) {
-      const source = founders?.[owner] ?? founder;
+    const balancedPair =
+        canonicalPair && founders?.primary && founders?.companion,
+      starts = balancedPair
+        ? [
+            ["blue", 7, 3, "primary"],
+            ["blue", 7, 4, "companion"],
+            ["amber", 0, 3, "primary"],
+            ["amber", 0, 4, "companion"],
+          ]
+        : canonicalPair
+          ? [
+              ["blue", 7, 4, null],
+              ["amber", 0, 4, null],
+            ]
+          : [
+              ["blue", 7, 3, null],
+              ["blue", 7, 4, null],
+              ["amber", 0, 3, null],
+              ["amber", 0, 4, null],
+            ];
+    for (const [owner, r, c, slot] of starts) {
+      const source = balancedPair
+        ? founders[slot]
+        : founders?.[owner] ?? founder;
       state.pieces.push(
         newPiece(
           state,
@@ -491,11 +502,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
         signature(counterpart.piece) !== signature(selected.piece))
         ? founderProfile(previous, counterpart.piece)
         : null,
-    primaryOwner = ["blue", "amber"].includes(winner) ? winner : "blue",
-    companionOwner = primaryOwner === "blue" ? "amber" : "blue",
     founders =
       founder && companion
-        ? { [primaryOwner]: founder, [companionOwner]: companion }
+        ? { primary: founder, companion }
         : null,
     priorStage = currentGeologicalStage(previous),
     candidate = stageComplete(previous)
@@ -521,9 +530,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
   if (companion)
     log(
       state,
-      founderIsPhotosynthetic
-        ? "Dupla fundadora: 🏆🟢 a linhagem dominante fotossintética segue adiante junto da linhagem não fotossintética mais bem-sucedida."
-        : "Dupla fundadora: 🏆 a linhagem dominante segue adiante junto da 🟢 linhagem fotossintética mais bem-sucedida.",
+      "Dupla fundadora simétrica: ambos os lados começam com uma linhagem fotossintética e uma não fotossintética, preservando a dominante e sua contraparte evolutiva.",
     );
   log(
     state,

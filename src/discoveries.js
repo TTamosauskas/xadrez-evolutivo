@@ -54,6 +54,7 @@ const eventRows = [
 const mutationTopics = {
   "Fotossíntese": ["Fotossíntese", "Fotossíntese converte energia luminosa em energia química e sustenta grande parte das cadeias alimentares da biosfera."],
   "Embriófitas": ["Embryophyta", "Embriófitas são plantas terrestres que protegem o embrião multicelular e representam uma etapa central da colonização dos ambientes continentais."],
+  "Haustório": ["Haustório", "Haustórios são estruturas especializadas usadas por plantas parasitas para penetrar tecidos do hospedeiro e retirar água ou nutrientes."],
   "Traqueófitas": ["Tracheophyta", "Traqueófitas possuem tecidos vasculares especializados no transporte interno de água, minerais e compostos orgânicos."],
   "Trepadeira": ["Planta trepadeira", "Plantas trepadeiras usam outras estruturas como suporte para elevar seus ramos; o hábito trepador evoluiu repetidamente em diferentes linhagens vegetais."],
   "Espinhos": ["Espinho", "Espinhos e outras estruturas pontiagudas podem reduzir herbivoria e proteger tecidos vegetais contra danos."],
@@ -69,6 +70,7 @@ const mutationTopics = {
   "Esporos": ["Esporo", "Esporos são unidades reprodutivas ou de dispersão capazes de originar novos indivíduos em diversos grupos de organismos."],
   "Carnívoro": ["Carnivoria", "Carnivoria é uma estratégia alimentar baseada predominantemente no consumo de outros animais."],
   "Canibalismo": ["Canibalismo", "Canibalismo é o consumo de indivíduos da mesma espécie e pode influenciar competição, densidade populacional e seleção."],
+  "Parasitismo": ["Parasitismo", "Parasitismo é uma interação em que um organismo obtém recursos de um hospedeiro e pode reduzir sua aptidão sem depender de uma morte imediata."],
   "Locomoção": ["Locomoção animal", "Locomoção é a capacidade de alterar ativamente a posição do organismo no ambiente."],
   "Escavador": ["Escavação animal", "Escavações e galerias produzidas por animais já aparecem no registro fóssil do Ediacarano tardio e alteram fisicamente o substrato."],
   "Necrófago": ["Necrofagia", "Necrofagia é o consumo de matéria animal morta e integra a reciclagem de matéria nos ecossistemas."],

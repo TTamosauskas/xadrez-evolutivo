@@ -194,6 +194,7 @@ export const TRAIT_STAGE = {
   Gimnospermas: "carboniferous",
   Trepadeira: "carboniferous",
   Angiospermas: "cretaceous",
+  Haustório: "cretaceous",
   Fertilidade: "archean",
   Dormência: "archean",
   "Reprodução Sexuada": "proterozoic",
@@ -203,6 +204,7 @@ export const TRAIT_STAGE = {
   Predação: "archean",
   Carnívoro: "proterozoic",
   Canibalismo: "cambrian",
+  Parasitismo: "cambrian",
   Esporos: "proterozoic",
   Locomoção: "ediacaran",
   Escavador: "ediacaran",
@@ -241,6 +243,7 @@ export const TRAIT_STAGE = {
 
 export const TRAIT_DEPENDENCIES = {
   Embriófitas: { lineage: ["Fotossíntese"] },
+  Haustório: { lineage: ["Embriófitas"] },
   Traqueófitas: { lineage: ["Embriófitas"] },
   Espinhos: { lineage: ["Traqueófitas"] },
   Gimnospermas: { lineage: ["Traqueófitas"] },
@@ -282,6 +285,7 @@ export const PLANT_DERIVED_TRAITS = new Set([
   "Gimnospermas",
   "Trepadeira",
   "Angiospermas",
+  "Haustório",
   "Plantas Domesticadas",
 ]);
 
@@ -295,6 +299,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Sacos Aéreos",
   "Carnívoro",
   "Canibalismo",
+  "Parasitismo",
   "Onívoro",
   "Necrófago",
   "Ovíparo",
@@ -439,7 +444,7 @@ export function traitUnlocked(state, trait, piece = null) {
   )
     return false;
   if (
-    trait === "Plantas Domesticadas" &&
+    ["Plantas Domesticadas", "Haustório"].includes(trait) &&
     !piece?.traits?.includes("Fotossíntese")
   )
     return false;

@@ -110,7 +110,12 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         reproductionReady(state, p);
     if ((victim?.owner === p.owner && !cannibal) || egg?.owner === p.owner)
       return;
-    if (victim && victim.owner !== p.owner && !captureUnlocked(state, p))
+    if (
+      victim &&
+      victim.owner !== p.owner &&
+      !captureUnlocked(state, p) &&
+      !(has(p, "Haustório") && distance(p, victim) === 1)
+    )
       return;
     if (builtBarrier && !has(p, "Escavador")) return;
     if (
@@ -229,6 +234,16 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   const mobile = has(p, "Locomoção") || has(p, "Locomoção Avançada");
   if (mobile) chessTargets(false);
   else if (has(p, "Predação")) chessTargets(true);
+  if (has(p, "Haustório") && has(p, "Fotossíntese"))
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = p.r + dr,
+          c = p.c + dc,
+          victim = at(state, r, c);
+        if (victim && victim.owner !== p.owner)
+          add(r, c, [[r, c]], { haustorium: true });
+      }
   const collector = has(p, "Coletor"),
     canUseFertility = !has(p, "Carnívoro") || has(p, "Onívoro"),
     canReproduce = reproductionReady(state, p);
@@ -415,6 +430,18 @@ export function ovoviviparousPlacementTargets(state, p) {
   return cells;
 }
 
+export function canParasitize(state, p) {
+  return (
+    state.phase === "move" &&
+    !state.chain &&
+    !!p &&
+    p.owner === state.current &&
+    has(p, "Parasitismo") &&
+    !resting(state, p) &&
+    !dormant(state, p)
+  );
+}
+
 export function legalActions(state) {
   if (state.result) return [];
   if (state.phase === "manipulate")
@@ -476,6 +503,9 @@ export function legalActions(state) {
         r: target.r,
         c: target.c,
       })),
+      ...(canParasitize(state, p)
+        ? [{ type: "PARASITIZE", id: p.id }]
+        : []),
     ]);
 }
 export function canWaitForRest(state, owner) {
