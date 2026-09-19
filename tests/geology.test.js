@@ -434,6 +434,7 @@ test("plant innovations unlock in their geological periods without becoming mand
 
   s.geologicalStage = "carboniferous";
   assert.equal(traitUnlocked(s, "Gimnospermas", plant), true);
+  assert.equal(traitUnlocked(s, "Trepadeira", plant), true);
   plant.traits.push("Gimnospermas");
   s.historicalTraits.push("Gimnospermas");
 
@@ -443,7 +444,7 @@ test("plant innovations unlock in their geological periods without becoming mand
   for (const stage of GEOLOGICAL_STAGES)
     assert.ok(
       !stage.required.some((trait) =>
-        ["Embriófitas", "Traqueófitas", "Espinhos", "Gimnospermas", "Angiospermas"].includes(trait),
+        ["Embriófitas", "Traqueófitas", "Espinhos", "Gimnospermas", "Trepadeira", "Angiospermas"].includes(trait),
       ),
     );
 });
