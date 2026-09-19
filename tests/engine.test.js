@@ -412,6 +412,20 @@ test("ecological events are marked in the match log", () => {
   assertState(s);
 });
 
+test("solar event notice follows the compact ecological modal model", () => {
+  const s = fixture();
+  startEvent(context(s), "solar");
+  assert.deepEqual(s.notices.at(-1), {
+    id: s.notices.at(-1).id,
+    title: "🌄 Tempestade Solar",
+    lines: [
+      "Evento ecológico",
+      "Todo nascimento sofre mutação durante 10 rodadas.",
+    ],
+  });
+  assertState(s);
+});
+
 test("generation milestones drive habitat and queue ecological events", () => {
   const s = createState(2),
     ctx = context(s);

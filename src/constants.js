@@ -97,54 +97,22 @@ export const TRAITS = {
   ],
 };
 export const EVENTS = [
-  ["volcano", "Erupção Vulcânica", "Uma área de 3 × 3 casas torna-se hostil."],
-  ["ice", "Era Glacial", "A zona hostil avança a partir de um canto."],
-  [
-    "pathogen",
-    "Patógeno Virulento",
-    "Um foco transmite a doença por dez rodadas.",
-  ],
-  [
-    "solar",
-    "Tempestade Solar",
-    "Todo nascimento sofre mutação durante o evento.",
-  ],
-  [
-    "drought",
-    "Seca Severa",
-    "A quantidade de casas férteis fica limitada à metade.",
-  ],
-  ["sea", "Elevação do Mar", "As bordas do tabuleiro tornam-se hostis."],
-  ["meteor", "Meteoro", "Um quadrante inteiro torna-se hostil."],
-  ["desert", "Desertificação", "As casas férteis diminuem até restar uma."],
-  ["blockade", "Bloqueio Geográfico", "Uma diagonal hostil corta o tabuleiro."],
-  [
-    "abundance",
-    "Superabundância de Recursos",
-    "A quantidade de casas férteis é dobrada.",
-  ],
-  [
-    "fertilized",
-    "Ambiente Fertilizado",
-    "Uma casa fértil é adicionada por rodada.",
-  ],
-  ["earthquake", "Terremoto", "As peças são deslocadas para casas adjacentes."],
-  [
-    "abundant-rains",
-    "Chuvas Abundantes",
-    "Um quadrante inteiro torna-se fértil.",
-  ],
-  [
-    "insularization",
-    "Insularização",
-    "Uma linha e uma coluna hostis dividem o tabuleiro.",
-  ],
-  [
-    "alluvial-river",
-    "Rio Aluvial",
-    "Uma faixa diagonal larga torna-se fértil.",
-  ],
-].map(([id, name, description]) => ({ id, name, description }));
+  ["volcano", "🌋", "Erupção Vulcânica", "Uma área de 3 × 3 casas permanece hostil durante 10 rodadas."],
+  ["ice", "❄️", "Era Glacial", "A zona hostil avança a partir de um canto durante 10 rodadas."],
+  ["pathogen", "🦠", "Patógeno Virulento", "Um foco transmite a doença durante 10 rodadas."],
+  ["solar", "🌄", "Tempestade Solar", "Todo nascimento sofre mutação durante 10 rodadas."],
+  ["drought", "🏜️", "Seca Severa", "A quantidade de casas férteis fica limitada à metade durante 10 rodadas."],
+  ["sea", "🌊", "Elevação do Mar", "As bordas do tabuleiro permanecem hostis durante 10 rodadas."],
+  ["meteor", "☄️", "Meteoro", "Um quadrante inteiro permanece hostil durante 10 rodadas."],
+  ["desert", "🌵", "Desertificação", "As casas férteis diminuem gradualmente durante 10 rodadas, até restar uma."],
+  ["blockade", "🚧", "Bloqueio Geográfico", "Uma diagonal hostil corta o tabuleiro durante 10 rodadas."],
+  ["abundance", "🌱", "Superabundância de Recursos", "A quantidade de casas férteis é dobrada no início do evento, que dura 10 rodadas."],
+  ["fertilized", "🌿", "Ambiente Fertilizado", "Uma casa fértil é adicionada a cada rodada durante 10 rodadas."],
+  ["earthquake", "🌎", "Terremoto", "As peças são deslocadas para casas adjacentes no início do evento, que dura 10 rodadas."],
+  ["abundant-rains", "🌧️", "Chuvas Abundantes", "Um quadrante inteiro torna-se fértil no início do evento, que dura 10 rodadas."],
+  ["insularization", "🏝️", "Insularização", "Uma linha e uma coluna hostis dividem o tabuleiro durante 10 rodadas."],
+  ["alluvial-river", "🏞️", "Rio Aluvial", "Uma faixa diagonal larga torna-se fértil no início do evento, que dura 10 rodadas."],
+].map(([id, icon, name, description]) => ({ id, icon, name, description }));
 export const other = (owner) => (owner === "blue" ? "amber" : "blue");
 export const inside = (r, c) =>
   Number.isInteger(r) &&
