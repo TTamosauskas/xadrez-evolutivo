@@ -14,6 +14,7 @@ import {
   eggAt,
   plantSeedAt,
   barrierAt,
+  terrain,
   random,
   pick,
   shuffle,
@@ -111,7 +112,10 @@ function mutation(state, p, positiveOnly) {
   if (p.rank === 4 && pawnMutationUnlocked(state))
     gains.push({ rank: 0, weight: 1 });
   else if (rankMutationUnlocked(state) && DERIVED_FORM_NEXT.has(p.rank))
-    gains.push({ rank: DERIVED_FORM_NEXT.get(p.rank), weight: 1 });
+    gains.push({
+      rank: DERIVED_FORM_NEXT.get(p.rank),
+      weight: has(p, "Sacos Aéreos") ? 3 : 1,
+    });
   for (const trait of POSITIVE)
     if (!has(p, trait) && traitUnlocked(state, trait, p))
       gains.push({ gain: trait, weight: innovationWeight(state, trait, p) });
@@ -353,7 +357,7 @@ function placeBrood(ctx, brood, origin, dispersal) {
   return targets.length;
 }
 
-function layEgg(ctx, parent, brood, dispersal) {
+function layEgg(ctx, parent, brood, dispersal, mode = "basal") {
   const cells = [];
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++) {
@@ -369,17 +373,77 @@ function layEgg(ctx, parent, brood, dispersal) {
     }
   const target = pick(ctx.state, cells);
   if (!target) return 0;
+  const laidRound = round(ctx.state);
   ctx.state.eggs.push({
     id: ctx.state.nextEgg++,
     owner: parent.owner,
     r: target.r,
     c: target.c,
-    hatchRound: round(ctx.state) + 3,
+    laidRound,
+    hatchRound: laidRound + 3,
+    expireRound: laidRound + 6,
+    mode,
     parentId: parent.id,
     brood,
     dispersal,
   });
   return brood.length;
+}
+
+function freeEggSteps(state, egg) {
+  const cells = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = egg.r + dr,
+        c = egg.c + dc;
+      if (inside(r, c) && !occupied(state, r, c)) cells.push({ r, c });
+    }
+  return cells;
+}
+
+function fertileCells(state) {
+  const cells = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (terrain(state, r, c) === "fertile") cells.push({ r, c });
+  return cells;
+}
+
+function moveEgg(state, egg) {
+  const candidates = freeEggSteps(state, egg);
+  if (!candidates.length) return false;
+  let choices = candidates;
+  if (egg.mode === "basal") {
+    const fertile = fertileCells(state);
+    if (fertile.length) {
+      const score = (cell) =>
+        Math.min(...fertile.map((target) => distance(cell, target)));
+      const best = Math.min(...candidates.map(score));
+      choices = candidates.filter((cell) => score(cell) === best);
+    }
+  }
+  const target = pick(state, choices);
+  egg.r = target.r;
+  egg.c = target.c;
+  return true;
+}
+
+function eggCanHatch(ctx, egg) {
+  if (round(ctx.state) < egg.hatchRound) return false;
+  if (egg.mode === "basal" && terrain(ctx.state, egg.r, egg.c) !== "fertile")
+    return false;
+  return freeCells(ctx, egg, egg.dispersal).length > 0;
+}
+
+function hatchEgg(ctx, egg) {
+  ctx.state.eggs = ctx.state.eggs.filter((item) => item.id !== egg.id);
+  const born = placeBrood(ctx, egg.brood, egg, egg.dispersal);
+  log(
+    ctx.state,
+    `⚪ Ovo das ${OWNERS[egg.owner]} eclodiu com ${born} descendente(s).`,
+  );
+  return born;
 }
 
 function layPlantSeeds(ctx, parent, brood) {
@@ -446,7 +510,13 @@ export function reproduce(
           possibleEgg.push(1);
     if (!possibleEgg.length) return 0;
     const brood = makeBrood(state, parent, mate, profile, wanted);
-    produced = layEgg(ctx, parent, brood, dispersal);
+    produced = layEgg(
+      ctx,
+      parent,
+      brood,
+      dispersal,
+      has(profile, "Ovíparos Amniotas") ? "amniote" : "basal",
+    );
   } else if (development === "viviparous") {
     const brood = makeBrood(state, parent, mate, profile, wanted);
     if (!brood.length) return 0;
@@ -476,7 +546,7 @@ export function reproduce(
       gymnosperm && !options.immediateDevelopment
         ? `${OWNERS[parent.owner]} produziram ${produced} semente(s) de Gimnospermas por ${reason}.`
         : development === "oviparous"
-          ? `${OWNERS[parent.owner]} depositaram um ovo com ${produced} descendente(s) por ${reason}.`
+          ? `${OWNERS[parent.owner]} depositaram um ovo ⚪ ${has(profile, "Ovíparos Amniotas") ? "amniótico" : "aquático"} com ${produced} descendente(s) por ${reason}.`
           : development === "viviparous"
             ? `${OWNERS[parent.owner]} iniciaram gestação de ${produced} descendente(s) por ${reason}.`
             : `${OWNERS[parent.owner]} geraram ${produced} descendente(s) por ${reason}.`,
@@ -523,13 +593,24 @@ export function tickReproduction(ctx) {
   }
 
   for (const egg of [...state.eggs]) {
-    if (egg.hatchRound > now) continue;
-    state.eggs = state.eggs.filter((x) => x.id !== egg.id);
-    const born = placeBrood(ctx, egg.brood, egg, egg.dispersal);
-    log(
-      state,
-      `🥚 Ovo das ${OWNERS[egg.owner]} eclodiu com ${born} descendente(s).`,
-    );
+    const basalOnFertile =
+      egg.mode === "basal" && terrain(state, egg.r, egg.c) === "fertile";
+    if (eggCanHatch(ctx, egg)) {
+      hatchEgg(ctx, egg);
+      continue;
+    }
+    if (!basalOnFertile) moveEgg(state, egg);
+    if (eggCanHatch(ctx, egg)) {
+      hatchEgg(ctx, egg);
+      continue;
+    }
+    if (now >= egg.expireRound) {
+      state.eggs = state.eggs.filter((item) => item.id !== egg.id);
+      log(
+        state,
+        `⚪ Ovo das ${OWNERS[egg.owner]} não encontrou habitat adequado e se perdeu.`,
+      );
+    }
   }
 
   for (const parent of [...state.pieces]) {
