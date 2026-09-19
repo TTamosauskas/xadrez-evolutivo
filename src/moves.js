@@ -232,15 +232,27 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         !eggAt(state, r, c) &&
         !plantSeedAt(state, r, c) &&
         !barrierAt(state, r, c)
-      )
-        targets.push({
-          r,
-          c,
-          path: [],
-          stay: true,
-          cutaneous: true,
-          capture: false,
-        });
+      ) {
+        const existing = targets.find(
+          (target) => target.r === r && target.c === c,
+        );
+        if (existing)
+          Object.assign(existing, {
+            path: [],
+            stay: true,
+            cutaneous: true,
+            capture: false,
+          });
+        else
+          targets.push({
+            r,
+            c,
+            path: [],
+            stay: true,
+            cutaneous: true,
+            capture: false,
+          });
+      }
     }
   if (
     canReproduce &&
