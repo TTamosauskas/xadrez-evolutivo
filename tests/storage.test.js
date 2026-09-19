@@ -22,6 +22,18 @@ test("round trip saves deterministic state and rejects duplicate occupancy", () 
   bad.pieces[1].c = bad.pieces[0].c;
   assert.throws(() => deserialize(JSON.stringify(bad)), /Ocupação/);
 });
+test("loading a save discards obsolete Marco Evolutivo notices", () => {
+  const s = createState(18);
+  s.notices.push({
+    id: s.nextNotice++,
+    title: "Marco Evolutivo",
+    lines: ["Fotossíntese surgiu pela primeira vez."],
+  });
+  const restored = deserialize(JSON.stringify(s));
+  assert.ok(!restored.notices.some((notice) => notice.title === "Marco Evolutivo"));
+  assertState(restored);
+});
+
 test("load falls back to v2 key and migrates without overwriting it", () => {
   const old = createState(7);
   old.version = 2;
