@@ -309,6 +309,61 @@ export function nursingTargets(state, p) {
       distance(p, child) === 1,
   );
 }
+
+function emptyEggTarget(state, r, c) {
+  return (
+    inside(r, c) &&
+    !at(state, r, c) &&
+    !eggAt(state, r, c) &&
+    !plantSeedAt(state, r, c) &&
+    !barrierAt(state, r, c)
+  );
+}
+
+export function eggPlacementTargets(state) {
+  const pending = state.eggPlacement;
+  if (state.phase !== "egg-placement" || !pending) return [];
+  const cells = [];
+  for (let dr = -3; dr <= 3; dr++)
+    for (let dc = -3; dc <= 3; dc++) {
+      if (!dr && !dc) continue;
+      const r = pending.origin.r + dr,
+        c = pending.origin.c + dc;
+      if (
+        distance(pending.origin, { r, c }) <= 3 &&
+        emptyEggTarget(state, r, c)
+      )
+        cells.push({ r, c });
+    }
+  return cells;
+}
+
+export function ovoviviparousPlacementTargets(state, p) {
+  if (
+    state.phase !== "move" ||
+    state.chain ||
+    !p ||
+    p.owner !== state.current ||
+    resting(state, p) ||
+    dormant(state, p) ||
+    !(p.pregnancies ?? []).some(
+      (pregnancy) =>
+        pregnancy.kind === "ovoviviparous" &&
+        pregnancy.dueRound <= round(state),
+    )
+  )
+    return [];
+  const cells = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = p.r + dr,
+        c = p.c + dc;
+      if (emptyEggTarget(state, r, c)) cells.push({ r, c });
+    }
+  return cells;
+}
+
 export function legalActions(state) {
   if (state.result) return [];
   if (state.phase === "manipulate")
@@ -333,6 +388,12 @@ export function legalActions(state) {
     const p = state.pieces.find((x) => x.id === state.partner.id);
     return partnersFor(state, p).map((m) => ({ type: "PARTNER", id: m.id }));
   }
+  if (state.phase === "egg-placement")
+    return eggPlacementTargets(state).map((target) => ({
+      type: "PLACE_EGG",
+      r: target.r,
+      c: target.c,
+    }));
   return state.pieces
     .filter((p) => p.owner === state.current)
     .flatMap((p) => [
@@ -346,6 +407,12 @@ export function legalActions(state) {
         type: "NURSE",
         id: p.id,
         childId: child.id,
+      })),
+      ...ovoviviparousPlacementTargets(state, p).map((target) => ({
+        type: "LAY_OVOVIVIPAROUS",
+        id: p.id,
+        r: target.r,
+        c: target.c,
       })),
     ]);
 }
