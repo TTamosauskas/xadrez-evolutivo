@@ -10,7 +10,8 @@ import { chooseAction } from "../src/ai.js";
 import { legalActions } from "../src/moves.js";
 
 const gamesPerStage = Number(process.env.GAMES_PER_STAGE ?? 6),
-  limit = Number(process.env.LIMIT ?? 1200);
+  limit = Number(process.env.LIMIT ?? 1200),
+  goalRounds = Number(process.env.GOAL_ROUNDS ?? 200);
 
 const stageIndex = (id) => geologicalStage(id).index,
   available = (trait, stage) =>
@@ -69,11 +70,16 @@ function percentile(values, q) {
 
 function summarize(runs) {
   const finished = runs.filter((run) => run.finished),
+    decisive = finished.filter((run) => run.winner),
     turns = finished.map((run) => run.turns),
+    rounds = finished.map((run) => run.rounds),
+    goalMet = decisive.filter((run) => run.rounds <= goalRounds),
     commands = finished.map((run) => run.commands);
   return {
     games: runs.length,
     finished: finished.length,
+    decisive: decisive.length,
+    draws: finished.length - decisive.length,
     capped: runs.length - finished.length,
     finishRate: Number((finished.length / runs.length).toFixed(3)),
     turns: {
@@ -86,11 +92,24 @@ function summarize(runs) {
         ? Number((turns.reduce((a, b) => a + b, 0) / turns.length).toFixed(1))
         : null,
     },
+    rounds: {
+      min: rounds.length ? Math.min(...rounds) : null,
+      p25: percentile(rounds, 0.25),
+      median: percentile(rounds, 0.5),
+      p75: percentile(rounds, 0.75),
+      max: rounds.length ? Math.max(...rounds) : null,
+      mean: rounds.length
+        ? Number((rounds.reduce((a, b) => a + b, 0) / rounds.length).toFixed(1))
+        : null,
+    },
+    goal: {
+      rounds: goalRounds,
+      met: goalMet.length,
+      rate: Number((goalMet.length / runs.length).toFixed(3)),
+    },
     commandsMean: commands.length
       ? Number(
-          (
-            commands.reduce((a, b) => a + b, 0) / commands.length
-          ).toFixed(1),
+          (commands.reduce((a, b) => a + b, 0) / commands.length).toFixed(1),
         )
       : null,
     finishedWithin: {
@@ -111,9 +130,9 @@ function summarize(runs) {
         ).toFixed(1),
       ),
       passMean: Number(
-        (
-          runs.reduce((sum, run) => sum + run.passes, 0) / runs.length
-        ).toFixed(1),
+        (runs.reduce((sum, run) => sum + run.passes, 0) / runs.length).toFixed(
+          1,
+        ),
       ),
       autoBlockedMean: Number(
         (
@@ -194,15 +213,14 @@ function runGame(initial, seed) {
     s = next;
     commands++;
     maxPopulation = Math.max(maxPopulation, s.pieces.length);
-    maxNaturalBarriers = Math.max(
-      maxNaturalBarriers,
-      s.naturalBarriers.length,
-    );
+    maxNaturalBarriers = Math.max(maxNaturalBarriers, s.naturalBarriers.length);
   }
 
   return {
     finished: !!s.result,
+    winner: s.result?.winner ?? null,
     turns: s.turn,
+    rounds: Math.ceil(s.turn / 2),
     commands,
     notices,
     mutualBlocks,
@@ -221,6 +239,7 @@ const report = {
   gamesPerStage,
   paired: true,
   capCommands: limit,
+  goalRounds,
   stages: [],
 };
 const started = performance.now();
