@@ -12,6 +12,10 @@ export const TRAITS = {
     "🐪",
     "Permite uma segunda movimentação no mesmo turno.",
   ],
+  Escalador: [
+    "🐐",
+    "Permite ocupar e atravessar barreiras naturais marrons sem destruí-las.",
+  ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
   "Sacos Aéreos": [
     "🦕",
