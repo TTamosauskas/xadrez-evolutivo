@@ -47,6 +47,7 @@ export function render(
   const $ = (id) => doc.getElementById(id),
     make = (...args) => element(doc, ...args);
   const actorId =
+      state.eggPlacement?.parentId ??
       state.manipulation?.id ??
       state.building?.id ??
       state.partner?.id ??
