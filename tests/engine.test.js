@@ -98,7 +98,7 @@ test("invalid actions roll back the complete state, including random generator",
 test("stationary reproduction keeps its parent and unique occupancy with Ooteca", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Ooteca"] },
-    { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
+    { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
   s = simulate(s, move(s.pieces[0], 4, 4));
