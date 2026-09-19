@@ -13,6 +13,10 @@ export const TRAITS = {
     "Permite uma segunda movimentação no mesmo turno.",
   ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
+  "Sacos Aéreos": [
+    "🦕",
+    "Favorece gigantismo: mutações que avançam a forma Peão → Cavalo → Bispo → Torre → Rainha recebem peso três vezes maior.",
+  ],
   Predação: ["🐟", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
   Carnívoro: [
     "🦁",
@@ -26,12 +30,20 @@ export const TRAITS = {
     "🐻",
     "Especialização posterior de Carnívoro: reproduz tanto em casas férteis quanto ao eliminar peças.",
   ],
+  "Respiração Cutânea": [
+    "🐸",
+    "Permite a um animal reprodutivamente apto consumir uma casa fértil ortogonalmente adjacente para reproduzir sem se deslocar.",
+  ],
   Necrófago: [
     "🐺",
     "Reproduz consumindo uma casa marcada com ☠️, vermelha ou verde.",
   ],
-  Ovíparo: ["🦎", "A reprodução deposita um ovo 🥚 que eclode após três rodadas."],
-  Ovífagia: ["🦎", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
+  Ovíparo: ["🪼", "A reprodução deposita um ovo ⚪ móvel que busca terreno fértil para eclodir após pelo menos três rodadas."],
+  "Ovíparos Amniotas": [
+    "🦎",
+    "Especialização de Ovíparo: ovos ⚪ móveis deixam de depender de terreno fértil e procuram espaço livre para eclodir.",
+  ],
+  Ovífagia: ["🐍", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
   Esporos: ["🍄", "Espalha a prole em casas distantes pelo tabuleiro."],
   Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],
   "Ovulação Induzida": [
@@ -120,7 +132,7 @@ export const TRAITS = {
     "🕷",
     "Ao morrer, a peça libera uma prole nas casas livres ao redor.",
   ],
-  Veneno: ["🐍", "Condena o agressor à morte após dois turnos próprios."],
+  Veneno: ["🫟", "Condena o agressor à morte após dois turnos próprios."],
   "Mutação Deletéria": ["💀", "A peça morre após três rodadas completas."],
   "Mutação Disfuncional": [
     "❌",
