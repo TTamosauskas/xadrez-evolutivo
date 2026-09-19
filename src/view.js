@@ -8,6 +8,8 @@ import {
   constructionTargets,
   dysfunctionalResting,
   nursingTargets,
+  eggPlacementTargets,
+  ovoviviparousPlacementTargets,
 } from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
@@ -63,7 +65,11 @@ export function render(
       : [];
   const manipulation = manipulationTargets(state),
     construction = constructionTargets(state),
-    nursing = actor ? nursingTargets(state, actor) : [];
+    nursing = actor ? nursingTargets(state, actor) : [],
+    eggPlacement = eggPlacementTargets(state),
+    ovoviviparousPlacement = actor
+      ? ovoviviparousPlacementTargets(state, actor)
+      : [];
   const mates =
     state.phase === "partner"
       ? partnersFor(
@@ -122,13 +128,19 @@ export function render(
         barrier = state.barriers.includes(square(r, c)),
         partner = mates.some((m) => m.id === p?.id),
         nurse = nursing.some((child) => child.id === p?.id),
+        eggPlacementTarget = eggPlacement.some(
+          (target) => target.r === r && target.c === c,
+        ),
+        ovoviviparousTarget = ovoviviparousPlacement.some(
+          (target) => target.r === r && target.c === c,
+        ),
         deathSite = state.deathSites.find((d) => d.cell === square(r, c)),
         fertileTrace = state.fertileTraces.some((t) => t.cell === square(r, c)),
         decompositionMark = deathSite || fertileTrace;
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
