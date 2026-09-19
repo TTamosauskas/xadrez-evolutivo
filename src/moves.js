@@ -218,6 +218,25 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   if (
     canReproduce &&
     canUseFertility &&
+    has(p, "Respiração Cutânea") &&
+    !has(p, "Fotossíntese")
+  )
+    for (const [dr, dc] of ORTH) {
+      const r = p.r + dr,
+        c = p.c + dc;
+      if (inside(r, c) && terrain(state, r, c) === "fertile")
+        targets.push({
+          r,
+          c,
+          path: [],
+          stay: true,
+          cutaneous: true,
+          capture: false,
+        });
+    }
+  if (
+    canReproduce &&
+    canUseFertility &&
     has(p, "Traqueófitas") &&
     !has(p, "Esterilidade")
   )
