@@ -471,11 +471,13 @@ export function reproduce(
     state.reproductions[parent.owner]++;
     log(
       state,
-      development === "oviparous"
-        ? `${OWNERS[parent.owner]} depositaram um ovo com ${produced} descendente(s) por ${reason}.`
-        : development === "viviparous"
-          ? `${OWNERS[parent.owner]} iniciaram gestação de ${produced} descendente(s) por ${reason}.`
-          : `${OWNERS[parent.owner]} geraram ${produced} descendente(s) por ${reason}.`,
+      gymnosperm && !options.immediateDevelopment
+        ? `${OWNERS[parent.owner]} produziram ${produced} semente(s) de Gimnospermas por ${reason}.`
+        : development === "oviparous"
+          ? `${OWNERS[parent.owner]} depositaram um ovo com ${produced} descendente(s) por ${reason}.`
+          : development === "viviparous"
+            ? `${OWNERS[parent.owner]} iniciaram gestação de ${produced} descendente(s) por ${reason}.`
+            : `${OWNERS[parent.owner]} geraram ${produced} descendente(s) por ${reason}.`,
     );
   }
   return produced;
@@ -484,6 +486,39 @@ export function reproduce(
 export function tickReproduction(ctx) {
   const state = ctx.state,
     now = round(state);
+
+  for (const seed of [...state.plantSeeds]) {
+    if (seed.movesRemaining > 0) {
+      const candidates = [];
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const r = seed.r + dr,
+            c = seed.c + dc;
+          if (inside(r, c) && !occupied(state, r, c))
+            candidates.push({ r, c });
+        }
+      const target = pick(state, candidates);
+      if (target) {
+        seed.r = target.r;
+        seed.c = target.c;
+      }
+      seed.movesRemaining--;
+    }
+    if (seed.movesRemaining > 0) continue;
+    if (
+      at(state, seed.r, seed.c) ||
+      eggAt(state, seed.r, seed.c) ||
+      barrierAt(state, seed.r, seed.c)
+    )
+      continue;
+    state.plantSeeds = state.plantSeeds.filter((item) => item.id !== seed.id);
+    spawnChild(state, seed.profile, seed.r, seed.c);
+    log(
+      state,
+      `🌰 Semente das ${OWNERS[seed.owner]} germinou em ${coord(seed.r, seed.c)}.`,
+    );
+  }
 
   for (const egg of [...state.eggs]) {
     if (egg.hatchRound > now) continue;
