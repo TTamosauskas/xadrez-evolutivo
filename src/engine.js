@@ -32,6 +32,7 @@ import {
   consumeDecomposition,
   hasDecomposition,
   markDecomposition,
+  advanceConway,
   tickEnvironment,
 } from "./environment.js";
 export function context(state) {
@@ -200,28 +201,74 @@ function advanceTurn(ctx) {
   maturePhotosynthesis(state, state.current);
   if (!extinction(state)) checkPopulation(state);
 }
+function actionCountFor(state, owner) {
+  if (state.phase !== "move") return owner === state.current ? legalActions(state).length : 0;
+  const current = state.current;
+  state.current = owner;
+  const count = legalActions(state).length;
+  state.current = current;
+  return count;
+}
+
+function mutuallyBlocked(state) {
+  return (
+    state.phase === "move" &&
+    actionCountFor(state, "blue") === 0 &&
+    actionCountFor(state, "amber") === 0
+  );
+}
+
+function advanceConwayUntilAction(ctx) {
+  const state = ctx.state;
+  let steps = 0;
+  while (!state.result && mutuallyBlocked(state)) {
+    log(
+      state,
+      `🌀 Conway: ambos os lados estavam sem ação; o habitat avançou um turno.`,
+    );
+    advanceConway(ctx);
+    if (extinction(state)) return;
+    advanceTurn(ctx);
+    steps++;
+    if (steps >= 256 && mutuallyBlocked(state)) {
+      log(
+        state,
+        "🌀 Conway: bloqueio persistente após 256 avanços ecológicos; controle devolvido à partida.",
+      );
+      return;
+    }
+  }
+}
+
 function settle(ctx) {
   const state = ctx.state;
   if (
     state.result ||
     extinction(state) ||
     state.phase === "partner" ||
-    state.phase === "manipulate"
+    state.phase === "manipulate" ||
+    state.phase === "build"
   )
     return;
-  // Auto-pass one blocked side. A second blocked side remains playable via PASS;
-  // the match never ends by comparison or technical tiebreak.
+
+  if (mutuallyBlocked(state)) {
+    advanceConwayUntilAction(ctx);
+    if (state.result || extinction(state)) return;
+  }
+
   if (
     legalActions(state).length ||
     canWaitForRest(state, state.current) ||
     canWaitForBirth(state, state.current)
   )
     return;
+
   const blocked = state.current;
   log(state, `${OWNERS[blocked]} passaram automaticamente por bloqueio.`);
   advanceTurn(ctx);
-  // If both sides are blocked, play continues through passes and
-  // environmental/reproductive effects until an actual extinction occurs.
+
+  if (!state.result && mutuallyBlocked(state))
+    advanceConwayUntilAction(ctx);
 }
 function completeMove(ctx, p, second, locomotion) {
   const state = ctx.state;
