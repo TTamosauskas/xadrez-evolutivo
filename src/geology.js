@@ -188,6 +188,11 @@ const byId = new Map(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
 
 export const TRAIT_STAGE = {
   Fotossíntese: "archean",
+  Embriófitas: "ordovician",
+  Traqueófitas: "silurian",
+  Espinhos: "devonian",
+  Gimnospermas: "carboniferous",
+  Angiospermas: "cretaceous",
   Fertilidade: "archean",
   Dormência: "archean",
   "Reprodução Sexuada": "proterozoic",
@@ -221,6 +226,23 @@ export const TRAIT_STAGE = {
 };
 
 export const TRAIT_DEPENDENCIES = {
+  Embriófitas: { historical: ["Fotossíntese"], piece: ["Fotossíntese"] },
+  Traqueófitas: {
+    historical: ["Embriófitas"],
+    piece: ["Fotossíntese", "Embriófitas"],
+  },
+  Espinhos: {
+    historical: ["Traqueófitas"],
+    piece: ["Fotossíntese", "Traqueófitas"],
+  },
+  Gimnospermas: {
+    historical: ["Traqueófitas"],
+    piece: ["Fotossíntese", "Traqueófitas"],
+  },
+  Angiospermas: {
+    historical: ["Gimnospermas"],
+    piece: ["Fotossíntese", "Embriófitas", "Gimnospermas"],
+  },
   Carnívoro: { historical: ["Predação"], piece: ["Predação"] },
   Locomoção: { historical: ["Predação"], piece: ["Predação"] },
   "Locomoção Avançada": { historical: ["Locomoção"] },
@@ -239,9 +261,45 @@ export const TRAIT_DEPENDENCIES = {
   "Neocórtex Desenvolvido": { historical: ["Polegar Opositor"] },
 };
 
+export const PLANT_DERIVED_TRAITS = new Set([
+  "Embriófitas",
+  "Traqueófitas",
+  "Espinhos",
+  "Gimnospermas",
+  "Angiospermas",
+]);
+
+export const PLANT_INCOMPATIBLE_TRAITS = new Set([
+  "Predação",
+  "Locomoção",
+  "Locomoção Avançada",
+  "Carnívoro",
+  "Onívoro",
+  "Necrófago",
+  "Ovos",
+  "Ovíparo",
+  "Ovífagia",
+  "Vivíparo",
+  "Cuidado Parental",
+  "Ooteca",
+  "Voo",
+  "Visão Noturna",
+  "Eusocialidade",
+  "Chifre",
+  "Polegar Opositor",
+  "Neocórtex Desenvolvido",
+  "Construtor Avançado",
+]);
+
 export function traitCombinationValid(traits) {
   const set = new Set(traits ?? []);
-  if (set.has("Fotossíntese") && set.has("Predação")) return false;
+  if (
+    set.has("Fotossíntese") &&
+    [...PLANT_INCOMPATIBLE_TRAITS].some((trait) => set.has(trait))
+  )
+    return false;
+  if ([...PLANT_DERIVED_TRAITS].some((trait) => set.has(trait)) && !set.has("Fotossíntese"))
+    return false;
   if (set.has("Locomoção") && !set.has("Predação")) return false;
   if (set.has("Carnívoro") && !set.has("Predação")) return false;
   if (set.has("Onívoro") && !set.has("Carnívoro")) return false;
@@ -250,13 +308,25 @@ export function traitCombinationValid(traits) {
 
 export function normalizeEnergyBranch(traits, preferred = null) {
   const set = new Set(traits ?? []);
-  if (set.has("Fotossíntese") && set.has("Predação")) {
-    const requiresPredation =
-      set.has("Locomoção") || set.has("Carnívoro") || set.has("Onívoro");
-    if (requiresPredation || preferred === "Predação")
+  if (
+    set.has("Fotossíntese") &&
+    [...PLANT_INCOMPATIBLE_TRAITS].some((trait) => set.has(trait))
+  ) {
+    const requiresAnimalBranch =
+      set.has("Predação") &&
+      (set.has("Locomoção") ||
+        set.has("Carnívoro") ||
+        set.has("Onívoro") ||
+        preferred === "Predação");
+    if (requiresAnimalBranch) {
       set.delete("Fotossíntese");
-    else set.delete("Predação");
+      for (const trait of PLANT_DERIVED_TRAITS) set.delete(trait);
+    } else {
+      for (const trait of PLANT_INCOMPATIBLE_TRAITS) set.delete(trait);
+    }
   }
+  if (!set.has("Fotossíntese"))
+    for (const trait of PLANT_DERIVED_TRAITS) set.delete(trait);
   if (!set.has("Predação")) {
     set.delete("Locomoção");
     set.delete("Carnívoro");
@@ -270,19 +340,35 @@ export function applyTraitMutation(traits, trait) {
   const set = new Set(traits ?? []);
   if (trait === "Predação") {
     set.delete("Fotossíntese");
+    for (const plantTrait of PLANT_DERIVED_TRAITS) set.delete(plantTrait);
     set.add("Predação");
   } else if (trait === "Fotossíntese") {
-    set.delete("Predação");
-    set.delete("Locomoção");
-    set.delete("Carnívoro");
-    set.delete("Onívoro");
+    for (const animalTrait of PLANT_INCOMPATIBLE_TRAITS) set.delete(animalTrait);
     set.add("Fotossíntese");
   } else set.add(trait);
-  return [...set];
+  return normalizeEnergyBranch([...set]);
 }
 
 export function traitLossAllowed(piece, trait) {
   const traits = new Set(piece?.traits ?? []);
+  if (
+    trait === "Fotossíntese" &&
+    [...PLANT_DERIVED_TRAITS].some((plantTrait) => traits.has(plantTrait))
+  )
+    return false;
+  if (
+    trait === "Embriófitas" &&
+    (traits.has("Traqueófitas") || traits.has("Angiospermas"))
+  )
+    return false;
+  if (
+    trait === "Traqueófitas" &&
+    (traits.has("Espinhos") ||
+      traits.has("Gimnospermas") ||
+      traits.has("Angiospermas"))
+  )
+    return false;
+  if (trait === "Gimnospermas" && traits.has("Angiospermas")) return false;
   if (
     trait === "Predação" &&
     (traits.has("Locomoção") || traits.has("Carnívoro") || traits.has("Onívoro"))
@@ -358,6 +444,12 @@ export function stageComplete(state) {
 
 export function traitUnlocked(state, trait, piece = null) {
   if (NEGATIVE_TRAITS.has(trait)) return true;
+  if (
+    piece?.traits?.includes("Fotossíntese") &&
+    trait !== "Predação" &&
+    PLANT_INCOMPATIBLE_TRAITS.has(trait)
+  )
+    return false;
   const stageId = TRAIT_STAGE[trait];
   if (!stageId) return true;
   const current = currentGeologicalStage(state),

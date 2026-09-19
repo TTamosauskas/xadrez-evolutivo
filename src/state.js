@@ -39,6 +39,8 @@ export const at = (state, r, c) =>
   state.pieces.find((p) => p.r === r && p.c === c);
 export const eggAt = (state, r, c) =>
   state.eggs?.find((egg) => egg.r === r && egg.c === c);
+export const plantSeedAt = (state, r, c) =>
+  state.plantSeeds?.find((seed) => seed.r === r && seed.c === c);
 export const barrierAt = (state, r, c) =>
   state.barriers?.includes(square(r, c)) ?? false;
 export const terrain = (state, r, c) => state.board[square(r, c)];
@@ -203,6 +205,8 @@ export function createState(seed = Date.now(), options = {}) {
     nextDisease: 1,
     nextEgg: 1,
     eggs: [],
+    nextPlantSeed: 1,
+    plantSeeds: [],
     barriers: [],
     populationLatched: { blue: false, amber: false },
     result: null,
@@ -388,6 +392,7 @@ export function assertState(state) {
     !integer(state.nextNotice, 1) ||
     !integer(state.nextDisease, 1) ||
     !integer(state.nextEgg, 1) ||
+    !integer(state.nextPlantSeed, 1) ||
     !GEOLOGICAL_STAGES.some((stage) => stage.id === state.geologicalStage) ||
     !integer(state.cycle, 1) ||
     !integer(state.totalCycles, 1) ||
@@ -407,6 +412,7 @@ export function assertState(state) {
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
     !Array.isArray(state.eggs) ||
+    !Array.isArray(state.plantSeeds) ||
     !Array.isArray(state.barriers) ||
     state.barriers.some((cell) => !integer(cell, 0, 63)) ||
     new Set(state.barriers).size !== state.barriers.length ||
@@ -527,8 +533,28 @@ export function assertState(state) {
   }
   if (state.nextEgg <= Math.max(0, ...eggIds))
     throw Error("Identificadores de ovos inválidos.");
+
+  const plantSeedIds = new Set(),
+    plantSeedCells = new Set();
+  for (const seed of state.plantSeeds) {
+    const cell = square(seed.r, seed.c);
+    if (
+      !integer(seed.id, 1) ||
+      plantSeedIds.has(seed.id) ||
+      !["blue", "amber"].includes(seed.owner) ||
+      !inside(seed.r, seed.c) ||
+      !integer(seed.movesRemaining, 0, 3) ||
+      !validBroodProfile(seed.profile, seed.owner) ||
+      plantSeedCells.has(cell)
+    )
+      throw Error("Semente vegetal inválida.");
+    plantSeedIds.add(seed.id);
+    plantSeedCells.add(cell);
+  }
+  if (state.nextPlantSeed <= Math.max(0, ...plantSeedIds))
+    throw Error("Identificadores de sementes vegetais inválidos.");
   if (
-    state.barriers.some((cell) => cells.has(cell))
+    state.barriers.some((cell) => cells.has(cell) || plantSeedCells.has(cell))
   )
     throw Error("Barreira sobreposta.");
 
@@ -548,6 +574,7 @@ export function assertState(state) {
     throw Error("Identificadores inválidos.");
   const unbornGenerations = [
     ...state.eggs.flatMap((egg) => egg.brood.map((p) => p.generation)),
+    ...state.plantSeeds.map((seed) => seed.profile.generation),
     ...state.pieces.flatMap((p) =>
       p.pregnancies.flatMap((pregnancy) =>
         pregnancy.brood.map((child) => child.generation),

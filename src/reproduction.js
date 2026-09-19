@@ -7,10 +7,12 @@ import {
   square,
   distance,
   OWNERS,
+  coord,
 } from "./constants.js";
 import {
   at,
   eggAt,
+  plantSeedAt,
   barrierAt,
   random,
   pick,
@@ -236,7 +238,12 @@ function sexualProfile(state, a, b) {
 }
 
 function occupied(state, r, c) {
-  return at(state, r, c) || eggAt(state, r, c) || barrierAt(state, r, c);
+  return (
+    at(state, r, c) ||
+    eggAt(state, r, c) ||
+    plantSeedAt(state, r, c) ||
+    barrierAt(state, r, c)
+  );
 }
 
 function freeCells(ctx, origin, dispersal) {
@@ -372,6 +379,24 @@ function layEgg(ctx, parent, brood, dispersal) {
   return brood.length;
 }
 
+function layPlantSeeds(ctx, parent, brood) {
+  const cells = freeCells(ctx, parent, "local"),
+    targets = shuffle(ctx.state, cells).slice(0, Math.min(brood.length, cells.length));
+  for (let i = 0; i < targets.length; i++) {
+    const target = targets[i];
+    ctx.state.plantSeeds.push({
+      id: ctx.state.nextPlantSeed++,
+      owner: parent.owner,
+      r: target.r,
+      c: target.c,
+      parentId: parent.id,
+      profile: brood[i],
+      movesRemaining: 3,
+    });
+  }
+  return targets.length;
+}
+
 export function reproduce(
   ctx,
   parent,
@@ -385,17 +410,32 @@ export function reproduce(
 
   const profile = mate ? sexualProfile(state, parent, mate) : parent,
     phenotype = reproPhenotype(parent.reproGenes),
+    plant = has(profile, "Fotossíntese"),
+    gymnosperm = has(profile, "Gimnospermas"),
     development = options.immediateDevelopment
       ? "immediate"
-      : phenotype.development,
-    dispersal = phenotype.dispersal,
+      : plant
+        ? "immediate"
+        : phenotype.development,
+    dispersal =
+      plant && phenotype.dispersal === "eggs"
+        ? "local"
+        : gymnosperm
+          ? "local"
+          : phenotype.dispersal,
     wanted =
       options.forcedCount ??
       BIRTH_RATES[profile.rank] * (has(profile, "Fertilidade") ? 2 : 1) +
         eusocialBonus(state, parent);
 
   let produced = 0;
-  if (development === "oviparous") {
+  if (gymnosperm && !options.immediateDevelopment) {
+    const capacity = freeCells(ctx, parent, "local").length,
+      count = Math.min(wanted, capacity);
+    if (!count) return 0;
+    const brood = makeBrood(state, parent, mate, profile, count);
+    produced = layPlantSeeds(ctx, parent, brood);
+  } else if (development === "oviparous") {
     const possibleEgg = [];
     for (let dr = -1; dr <= 1; dr++)
       for (let dc = -1; dc <= 1; dc++)
@@ -431,11 +471,13 @@ export function reproduce(
     state.reproductions[parent.owner]++;
     log(
       state,
-      development === "oviparous"
-        ? `${OWNERS[parent.owner]} depositaram um ovo com ${produced} descendente(s) por ${reason}.`
-        : development === "viviparous"
-          ? `${OWNERS[parent.owner]} iniciaram gestação de ${produced} descendente(s) por ${reason}.`
-          : `${OWNERS[parent.owner]} geraram ${produced} descendente(s) por ${reason}.`,
+      gymnosperm && !options.immediateDevelopment
+        ? `${OWNERS[parent.owner]} produziram ${produced} semente(s) de Gimnospermas por ${reason}.`
+        : development === "oviparous"
+          ? `${OWNERS[parent.owner]} depositaram um ovo com ${produced} descendente(s) por ${reason}.`
+          : development === "viviparous"
+            ? `${OWNERS[parent.owner]} iniciaram gestação de ${produced} descendente(s) por ${reason}.`
+            : `${OWNERS[parent.owner]} geraram ${produced} descendente(s) por ${reason}.`,
     );
   }
   return produced;
@@ -444,6 +486,39 @@ export function reproduce(
 export function tickReproduction(ctx) {
   const state = ctx.state,
     now = round(state);
+
+  for (const seed of [...state.plantSeeds]) {
+    if (seed.movesRemaining > 0) {
+      const candidates = [];
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const r = seed.r + dr,
+            c = seed.c + dc;
+          if (inside(r, c) && !occupied(state, r, c))
+            candidates.push({ r, c });
+        }
+      const target = pick(state, candidates);
+      if (target) {
+        seed.r = target.r;
+        seed.c = target.c;
+      }
+      seed.movesRemaining--;
+    }
+    if (seed.movesRemaining > 0) continue;
+    if (
+      at(state, seed.r, seed.c) ||
+      eggAt(state, seed.r, seed.c) ||
+      barrierAt(state, seed.r, seed.c)
+    )
+      continue;
+    state.plantSeeds = state.plantSeeds.filter((item) => item.id !== seed.id);
+    spawnChild(state, seed.profile, seed.r, seed.c);
+    log(
+      state,
+      `🌰 Semente das ${OWNERS[seed.owner]} germinou em ${coord(seed.r, seed.c)}.`,
+    );
+  }
 
   for (const egg of [...state.eggs]) {
     if (egg.hatchRound > now) continue;

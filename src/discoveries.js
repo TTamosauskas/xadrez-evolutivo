@@ -53,6 +53,11 @@ const eventRows = [
 
 const mutationTopics = {
   "Fotossíntese": ["Fotossíntese", "Fotossíntese converte energia luminosa em energia química e sustenta grande parte das cadeias alimentares da biosfera."],
+  "Embriófitas": ["Embryophyta", "Embriófitas são plantas terrestres que protegem o embrião multicelular e representam uma etapa central da colonização dos ambientes continentais."],
+  "Traqueófitas": ["Tracheophyta", "Traqueófitas possuem tecidos vasculares especializados no transporte interno de água, minerais e compostos orgânicos."],
+  "Espinhos": ["Espinho", "Espinhos e outras estruturas pontiagudas podem reduzir herbivoria e proteger tecidos vegetais contra danos."],
+  "Gimnospermas": ["Gymnospermae", "Gimnospermas são plantas com sementes não encerradas em frutos, uma inovação importante para reprodução e dispersão em ambientes terrestres."],
+  "Angiospermas": ["Angiospermae", "Angiospermas são plantas com flores e sementes encerradas em frutos e tornaram-se extremamente diversas nos ecossistemas terrestres."],
   "Predação": ["Predação", "Predação é uma interação ecológica em que um organismo captura e consome outro, influenciando populações e adaptações de defesa."],
   "Fertilidade": ["Fertilidade", "Fertilidade descreve a capacidade de produzir descendentes e depende de fatores genéticos, fisiológicos e ambientais."],
   "Dormência": ["Dormência", "Dormência reduz temporariamente a atividade e permite atravessar condições ambientais desfavoráveis."],

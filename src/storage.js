@@ -98,8 +98,7 @@ export function deserialize(raw) {
         if (legacyV2) traits.add("Locomoção");
         if (sourceVersion < 4) traits.add("Predação");
         const validTraits = [...traits].filter((trait) => TRAITS[trait]);
-        profile.traits =
-          sourceVersion < 6 ? normalizeEnergyBranch(validTraits) : validTraits;
+        profile.traits = normalizeEnergyBranch(validTraits);
         profile.reproGenes = normalizeReproGenes(
           profile.reproGenes,
           profile.traits,
@@ -126,14 +125,30 @@ export function deserialize(raw) {
     data.nextEgg = Number.isInteger(data.nextEgg)
       ? data.nextEgg
       : Math.max(0, ...data.eggs.map((egg) => egg.id ?? 0)) + 1;
+    data.plantSeeds = Array.isArray(data.plantSeeds)
+      ? data.plantSeeds.map((seed) => ({
+          ...seed,
+          profile: normalizeProfile(seed.profile ?? {}),
+          movesRemaining: Number.isInteger(seed.movesRemaining)
+            ? Math.max(0, Math.min(3, seed.movesRemaining))
+            : 3,
+        }))
+      : [];
+    data.nextPlantSeed = Number.isInteger(data.nextPlantSeed)
+      ? data.nextPlantSeed
+      : Math.max(0, ...data.plantSeeds.map((seed) => seed.id ?? 0)) + 1;
     if (data.manipulation === undefined) data.manipulation = null;
     if (data.building === undefined) data.building = null;
     if (data.origin === undefined) data.origin = null;
     if (!Array.isArray(data.barriers)) data.barriers = [];
     data.seenMutations = historicalMutations(data, sourceVersion);
-    const liveMax = Array.isArray(data.pieces)
-      ? Math.max(0, ...data.pieces.map((p) => p.generation ?? 0))
-      : 0;
+    const liveMax = Math.max(
+      0,
+      ...(Array.isArray(data.pieces)
+        ? data.pieces.map((p) => p.generation ?? 0)
+        : []),
+      ...data.plantSeeds.map((seed) => seed.profile?.generation ?? 0),
+    );
     data.maxGenerationReached = Math.max(
       Number.isInteger(data.maxGenerationReached)
         ? data.maxGenerationReached
@@ -144,6 +159,7 @@ export function deserialize(raw) {
       const profiles = [
           ...(data.pieces ?? []),
           ...(data.eggs ?? []).flatMap((egg) => egg.brood ?? []),
+          ...(data.plantSeeds ?? []).map((seed) => seed.profile),
           ...(data.pieces ?? []).flatMap((piece) =>
             (piece.pregnancies ?? []).flatMap(
               (pregnancy) => pregnancy.brood ?? [],
@@ -234,6 +250,7 @@ export function deserialize(raw) {
         profiles = [
           ...(data.pieces ?? []),
           ...(data.eggs ?? []).flatMap((egg) => egg.brood ?? []),
+          ...(data.plantSeeds ?? []).map((seed) => seed.profile),
           ...(data.pieces ?? []).flatMap((piece) =>
             (piece.pregnancies ?? []).flatMap(
               (pregnancy) => pregnancy.brood ?? [],
