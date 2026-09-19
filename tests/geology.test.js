@@ -363,9 +363,12 @@ test("plant innovations unlock in their geological periods without becoming mand
 test("plant innovations require the photosynthetic lineage and exclude animal specializations", () => {
   const s = createState(117, {
       geologicalStage: "cretaceous",
-      historicalTraits: GEOLOGICAL_STAGES.slice(0, 11).flatMap(
-        (stage) => stage.required,
-      ),
+      historicalTraits: [
+        ...GEOLOGICAL_STAGES.slice(0, 11).flatMap((stage) => stage.required),
+        "Embriófitas",
+        "Traqueófitas",
+        "Gimnospermas",
+      ],
     }),
     plant = {
       traits: [
