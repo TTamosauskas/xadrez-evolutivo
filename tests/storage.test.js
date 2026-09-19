@@ -432,3 +432,20 @@ test("malformed nested disease and event data are rejected before replacing stat
   };
   assert.throws(() => deserialize(JSON.stringify(b)));
 });
+
+
+test("v7 saves migrate Construtor Avançado to Antropização and initialize new phases", () => {
+  const old = createState(132);
+  old.pieces[0].traits = ["Construtor Avançado"];
+  old.pieces[0].ancestry = ["Construtor Avançado"];
+  old.historicalTraits = ["Construtor Avançado"];
+  delete old.domesticPlacement;
+  delete old.socialDefense;
+  const restored = deserialize(JSON.stringify(old));
+  assert.deepEqual(restored.pieces[0].traits, ["Antropização"]);
+  assert.deepEqual(restored.pieces[0].ancestry, ["Antropização"]);
+  assert.deepEqual(restored.historicalTraits, ["Antropização"]);
+  assert.equal(restored.domesticPlacement, null);
+  assert.equal(restored.socialDefense, null);
+  assertState(restored);
+});

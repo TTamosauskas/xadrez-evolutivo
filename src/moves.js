@@ -347,6 +347,30 @@ function emptyEggTarget(state, r, c) {
   );
 }
 
+export function domesticPlacementTargets(state) {
+  const pending = state.domesticPlacement;
+  if (state.phase !== "domestic-placement" || !pending) return [];
+  const cells = [];
+  for (let dr = -2; dr <= 2; dr++)
+    for (let dc = -2; dc <= 2; dc++) {
+      if (!dr && !dc) continue;
+      const r = pending.origin.r + dr,
+        c = pending.origin.c + dc;
+      if (
+        distance(pending.origin, { r, c }) <= 2 &&
+        emptyEggTarget(state, r, c)
+      )
+        cells.push({ r, c });
+    }
+  return cells;
+}
+
+export function socialDefenseTargets(state) {
+  if (state.phase !== "social-defense" || !state.socialDefense) return [];
+  const ids = new Set(state.socialDefense.memberIds ?? []);
+  return state.pieces.filter((piece) => ids.has(piece.id));
+}
+
 export function eggPlacementTargets(state) {
   const pending = state.eggPlacement;
   if (state.phase !== "egg-placement" || !pending) return [];
@@ -420,6 +444,17 @@ export function legalActions(state) {
       type: "PLACE_EGG",
       r: target.r,
       c: target.c,
+    }));
+  if (state.phase === "domestic-placement")
+    return domesticPlacementTargets(state).map((target) => ({
+      type: "PLACE_DOMESTIC",
+      r: target.r,
+      c: target.c,
+    }));
+  if (state.phase === "social-defense")
+    return socialDefenseTargets(state).map((piece) => ({
+      type: "SOCIAL_SACRIFICE",
+      id: piece.id,
     }));
   return state.pieces
     .filter((p) => p.owner === state.current)

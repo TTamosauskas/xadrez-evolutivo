@@ -11,7 +11,7 @@ import {
   round,
 } from "../src/state.js";
 import { context, transition, simulate } from "../src/engine.js";
-import { movesFor, legalActions, constructionTargets } from "../src/moves.js";
+import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets } from "../src/moves.js";
 import { startEvent, tickEnvironment } from "../src/environment.js";
 import { startDisease, tickDiseases, checkPopulation } from "../src/disease.js";
 import { reproduce, tickReproduction } from "../src/reproduction.js";
@@ -1535,14 +1535,14 @@ test("Carapaça prevents Chifre counterattack", () => {
   assertState(s);
 });
 
-test("Construtor Avançado offers an adjacent barrier after fertile reproduction", () => {
+test("Antropização offers an adjacent barrier after fertile reproduction", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Construtor Avançado"],
+      traits: ["Antropização"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -1606,4 +1606,81 @@ test("Escavador destroys natural barriers even when Voo and Escalador could pres
 test("stale revisions cannot advance the turn", () => {
   const s = createState(1);
   assert.equal(transition(s, { type: "PASS", revision: 100 }), s);
+});
+
+
+test("domesticated offspring enter manual placement up to distance two", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Animais Domésticos"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.phase, "domestic-placement");
+  const targets = domesticPlacementTargets(s);
+  assert.ok(targets.some((cell) => Math.max(Math.abs(cell.r - 4), Math.abs(cell.c - 4)) === 2));
+  const target = targets.find((cell) => Math.max(Math.abs(cell.r - 4), Math.abs(cell.c - 4)) === 2) ?? targets[0];
+  s = simulate(s, { type: "PLACE_DOMESTIC", r: target.r, c: target.c });
+  assert.ok(
+    s.pieces.some(
+      (piece) =>
+        piece.owner === "blue" &&
+        piece.parentId === 1 &&
+        piece.r === target.r &&
+        piece.c === target.c,
+    ),
+  );
+  assertState(s);
+});
+
+test("Sociabilidade lets a connected group of four choose a sacrifice", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 2, rank: 3 },
+    { owner: "amber", r: 4, c: 4, traits: ["Sociabilidade"] },
+    { owner: "amber", r: 3, c: 4, traits: ["Sociabilidade"] },
+    { owner: "amber", r: 3, c: 5, traits: ["Sociabilidade"] },
+    { owner: "amber", r: 4, c: 5, traits: ["Sociabilidade"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.phase, "social-defense");
+  assert.equal(s.current, "amber");
+  const choices = socialDefenseTargets(s);
+  assert.equal(choices.length, 4);
+  const sacrifice = choices.find((piece) => piece.r === 3 && piece.c === 5);
+  const attackerId = s.socialDefense.attackerId,
+    victimId = s.socialDefense.victimId;
+  s = simulate(s, { type: "SOCIAL_SACRIFICE", id: sacrifice.id });
+  assert.ok(!s.pieces.some((piece) => piece.id === sacrifice.id));
+  assert.ok(s.pieces.some((piece) => piece.id === victimId));
+  const attacker = s.pieces.find((piece) => piece.id === attackerId);
+  assert.deepEqual([attacker.r, attacker.c], [4, 2]);
+  assert.equal(s.phase, "move");
+  assertState(s);
+});
+
+test("Mimetismo can redirect capture damage to an adjacent piece", () => {
+  const base = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3 },
+    { owner: "amber", r: 4, c: 4, traits: ["Mimetismo"] },
+    { owner: "amber", r: 3, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  let result = null;
+  for (let seed = 1; seed < 10000 && !result; seed++) {
+    const probe = structuredClone(base);
+    probe.rng = seed;
+    const next = simulate(probe, move(probe.pieces[0], 4, 4));
+    if (next.logs.some((entry) => entry.text.includes("🐙 Mimetismo desviou")))
+      result = next;
+  }
+  assert.ok(result);
+  assert.ok(result.pieces.some((piece) => piece.id === 2));
+  assertState(result);
 });

@@ -70,7 +70,7 @@ test("period innovations follow the didactic sequence", () => {
   assert.deepEqual(required.neogene, ["Chifre", "Polegar Opositor"]);
   assert.deepEqual(required.quaternary, [
     "Neocórtex Desenvolvido",
-    "Construtor Avançado",
+    "Antropização",
   ]);
 });
 
@@ -321,10 +321,10 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
     ]),
   ];
   p.ancestry.push("Polegar Opositor");
-  assert.equal(traitUnlocked(s, "Construtor Avançado", p), false);
+  assert.equal(traitUnlocked(s, "Antropização", p), false);
   s.historicalTraits.push("Neocórtex Desenvolvido");
-  assert.equal(traitUnlocked(s, "Construtor Avançado", p), true);
-  assert.equal(traitUnlocked(s, "Construtor Avançado", unrelated), false);
+  assert.equal(traitUnlocked(s, "Antropização", p), true);
+  assert.equal(traitUnlocked(s, "Antropização", unrelated), false);
 });
 
 test("campaign history from another lineage does not satisfy ancestry prerequisites", () => {
@@ -501,7 +501,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     "Construtor de Nicho",
     "Polegar Opositor",
     "Neocórtex Desenvolvido",
-    "Construtor Avançado",
+    "Antropização",
   ])
     assert.equal(traitUnlocked(s, trait, plant), false, trait);
 
@@ -547,4 +547,50 @@ test("Paleogene is a one-cycle transition stage", () => {
   assert.equal(currentGeologicalStage(s).period, "Paleógeno");
   assert.equal(stageComplete(s), true);
   assert.deepEqual(eventWeights(s), currentGeologicalStage(s).events);
+});
+
+
+test("new social, mimicry and domestication mutations unlock in the intended periods", () => {
+  const historyThrough = (id) => {
+      const index = GEOLOGICAL_STAGES.findIndex((stage) => stage.id === id);
+      return GEOLOGICAL_STAGES.slice(0, index + 1).flatMap(
+        (stage) => stage.required,
+      );
+    },
+    s = createState(130, {
+      geologicalStage: "permian",
+      historicalTraits: historyThrough("permian"),
+    }),
+    animal = { traits: ["Predação"], ancestry: ["Cuidado Parental"] },
+    plant = { traits: ["Fotossíntese"], ancestry: ["Fotossíntese"] };
+
+  assert.equal(traitUnlocked(s, "Mimetismo", animal), true);
+  assert.equal(traitUnlocked(s, "Sociabilidade", animal), false);
+
+  s.geologicalStage = "jurassic";
+  s.historicalTraits = historyThrough("jurassic");
+  assert.equal(traitUnlocked(s, "Sociabilidade", animal), true);
+
+  s.geologicalStage = "quaternary";
+  s.historicalTraits = historyThrough("neogene");
+  assert.equal(traitUnlocked(s, "Plantas Domesticadas", plant), false);
+  assert.equal(traitUnlocked(s, "Animais Domésticos", animal), false);
+  s.historicalTraits.push("Neocórtex Desenvolvido");
+  assert.equal(traitUnlocked(s, "Plantas Domesticadas", plant), true);
+  assert.equal(traitUnlocked(s, "Animais Domésticos", animal), true);
+  assert.equal(traitUnlocked(s, "Plantas Domesticadas", animal), false);
+  assert.equal(traitUnlocked(s, "Animais Domésticos", plant), false);
+
+  const anthropic = {
+    traits: [],
+    ancestry: ["Neocórtex Desenvolvido"],
+  };
+  assert.equal(traitUnlocked(s, "Antropização", anthropic), true);
+  assert.equal(
+    traitUnlocked(s, "Antropização", {
+      traits: [],
+      ancestry: ["Construtor de Nicho"],
+    }),
+    false,
+  );
 });

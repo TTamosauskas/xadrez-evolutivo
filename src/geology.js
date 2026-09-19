@@ -178,7 +178,7 @@ export const GEOLOGICAL_STAGES = [
     id: "quaternary",
     group: "Cenozoico",
     period: "Quaternário",
-    required: ["Neocórtex Desenvolvido", "Construtor Avançado"],
+    required: ["Neocórtex Desenvolvido", "Antropização"],
     habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [3, 6] },
     events: { ice: 5, drought: 3, desert: 3, earthquake: 2, meteor: 1 },
   },
@@ -226,12 +226,16 @@ export const TRAIT_STAGE = {
   Vivíparo: "triassic",
   "Sacos Aéreos": "triassic",
   "Ovulação Induzida": "paleogene",
+  Mimetismo: "permian",
+  Sociabilidade: "jurassic",
   "Visão Noturna": "jurassic",
   Eusocialidade: "cretaceous",
   Ovífagia: "cretaceous",
   "Polegar Opositor": "neogene",
   Chifre: "neogene",
-  "Construtor Avançado": "quaternary",
+  "Antropização": "quaternary",
+  "Plantas Domesticadas": "quaternary",
+  "Animais Domésticos": "quaternary",
   "Neocórtex Desenvolvido": "quaternary",
 };
 
@@ -264,8 +268,11 @@ export const TRAIT_DEPENDENCIES = {
   "Construtor de Nicho": { lineage: ["Escavador"] },
   "Polegar Opositor": { lineage: ["Construtor de Nicho"] },
   Chifre: { lineage: ["Predação"] },
-  "Construtor Avançado": { lineage: ["Construtor de Nicho"] },
+  "Antropização": { lineage: ["Neocórtex Desenvolvido"] },
   "Neocórtex Desenvolvido": { lineage: ["Polegar Opositor"] },
+  Sociabilidade: { lineage: ["Cuidado Parental"] },
+  "Plantas Domesticadas": { historical: ["Neocórtex Desenvolvido"] },
+  "Animais Domésticos": { historical: ["Neocórtex Desenvolvido"] },
 };
 
 export const PLANT_DERIVED_TRAITS = new Set([
@@ -275,6 +282,7 @@ export const PLANT_DERIVED_TRAITS = new Set([
   "Gimnospermas",
   "Trepadeira",
   "Angiospermas",
+  "Plantas Domesticadas",
 ]);
 
 export const PLANT_INCOMPATIBLE_TRAITS = new Set([
@@ -305,7 +313,10 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Construtor de Nicho",
   "Polegar Opositor",
   "Neocórtex Desenvolvido",
-  "Construtor Avançado",
+  "Antropização",
+  "Animais Domésticos",
+  Sociabilidade,
+  Mimetismo,
 ]);
 
 export function traitCombinationValid(traits) {
@@ -427,6 +438,11 @@ export function traitUnlocked(state, trait, piece = null) {
     PLANT_INCOMPATIBLE_TRAITS.has(trait)
   )
     return false;
+  if (
+    trait === "Plantas Domesticadas" &&
+    !piece?.traits?.includes("Fotossíntese")
+  )
+    return false;
   const stageId = TRAIT_STAGE[trait];
   if (!stageId) return true;
   const current = currentGeologicalStage(state),
@@ -451,6 +467,8 @@ export function traitUnlocked(state, trait, piece = null) {
     ...(piece?.ancestry ?? piece?.traits ?? []),
     ...(piece?.traits ?? []),
   ]);
+  if (deps?.historical?.some((dependency) => !history.has(dependency)))
+    return false;
   if (deps?.lineage?.some((dependency) => !lineage.has(dependency)))
     return false;
   return true;

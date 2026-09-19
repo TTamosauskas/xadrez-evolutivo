@@ -1,4 +1,4 @@
-import { has, inside, square, other, OWNERS, coord } from "./constants.js";
+import { has, inside, square, other, OWNERS, coord, distance } from "./constants.js";
 import {
   activateOrigin,
   clone,
@@ -25,6 +25,8 @@ import {
   constructionTargets,
   nursingTargets,
   eggPlacementTargets,
+  domesticPlacementTargets,
+  socialDefenseTargets,
   ovoviviparousPlacementTargets,
 } from "./moves.js";
 import {
@@ -33,6 +35,7 @@ import {
   scatterSeeds,
   tickReproduction,
   placePendingAmnioticEgg,
+  placePendingDomesticChild,
   placeOvoviviparousEgg,
 } from "./reproduction.js";
 import { checkPopulation, tickDiseases, infect } from "./disease.js";
@@ -48,10 +51,10 @@ export function context(state) {
   const ctx = {
     state,
     reserved: new Set(),
-    kill(id, reason, attacker = null) {
+    kill(id, reason, attacker = null, force = false) {
       const dead = state.pieces.find((p) => p.id === id);
       if (!dead) return false;
-      if (!attacker && has(dead, "Regeneração") && !dead.regenerationUsed) {
+      if (!force && !attacker && has(dead, "Regeneração") && !dead.regenerationUsed) {
         dead.regenerationUsed = true;
         dead.regenerationRestThroughRound = round(state) + 1;
         if (reason === "Veneno") delete dead.venom;
@@ -88,6 +91,8 @@ function finishGame(state, winner, reason) {
   state.manipulation = null;
   state.building = null;
   state.eggPlacement = null;
+  state.domesticPlacement = null;
+  state.socialDefense = null;
   log(state, reason);
 }
 function extinction(state) {
@@ -226,6 +231,8 @@ function advanceTurn(ctx) {
   state.partner = null;
   state.manipulation = null;
   state.building = null;
+  state.domesticPlacement = null;
+  state.socialDefense = null;
   state.phase = "move";
   for (const p of [...state.pieces])
     if (p.owner === acting && p.venom && p.venom.infectedTurn < before) {
@@ -325,7 +332,9 @@ function settle(ctx) {
     state.phase === "partner" ||
     state.phase === "manipulate" ||
     state.phase === "build" ||
-    state.phase === "egg-placement"
+    state.phase === "egg-placement" ||
+    state.phase === "domestic-placement" ||
+    state.phase === "social-defense"
   )
     return;
 
@@ -390,7 +399,7 @@ function finishMovement(
   }
   if (
     build &&
-    has(p, "Construtor Avançado") &&
+    has(p, "Antropização") &&
     state.pieces.some((piece) => piece.id === p.id)
   ) {
     state.building = { id: p.id, second, locomotion };
@@ -403,18 +412,19 @@ function finishMovement(
   completeMove(ctx, p, second, locomotion);
 }
 
-function deferEggPlacement(
+function deferReproductionPlacement(
   state,
   p,
   { manipulation = null, second = false, locomotion = false, build = false } = {},
 ) {
-  if (
-    state.phase !== "egg-placement" ||
-    !state.eggPlacement ||
-    state.eggPlacement.parentId !== p.id
-  )
-    return false;
-  state.eggPlacement.continuation = {
+  const pending =
+    state.phase === "domestic-placement"
+      ? state.domesticPlacement
+      : state.phase === "egg-placement"
+        ? state.eggPlacement
+        : null;
+  if (!pending || pending.parentId !== p.id) return false;
+  pending.continuation = {
     id: p.id,
     manipulation,
     second,
@@ -475,6 +485,26 @@ function resolveBuilding(ctx, action) {
   completeMove(ctx, p, pending.second, pending.locomotion);
 }
 
+function sociableGroup(state, victim) {
+  if (!victim || !has(victim, "Sociabilidade")) return [];
+  const eligible = state.pieces.filter(
+      (piece) =>
+        piece.owner === victim.owner && has(piece, "Sociabilidade"),
+    ),
+    byId = new Map(eligible.map((piece) => [piece.id, piece])),
+    seen = new Set([victim.id]),
+    queue = [victim];
+  while (queue.length) {
+    const current = queue.shift();
+    for (const piece of eligible)
+      if (!seen.has(piece.id) && distance(current, piece) === 1) {
+        seen.add(piece.id);
+        queue.push(piece);
+      }
+  }
+  return [...seen].map((id) => byId.get(id)).filter(Boolean);
+}
+
 function executeMove(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -499,7 +529,7 @@ function executeMove(ctx, action) {
         `${OWNERS[p.owner]}: 🐸 Respiração Cutânea consumiu ${coord(target.r, target.c)} à distância.`,
       );
     }
-    if (born && deferEggPlacement(state, p)) return;
+    if (born && deferReproductionPlacement(state, p)) return;
     completeMove(ctx, p, false, false);
     return;
   }
@@ -515,7 +545,7 @@ function executeMove(ctx, action) {
         `${OWNERS[p.owner]}: 🍃 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
       );
     }
-    if (born && deferEggPlacement(state, p)) return;
+    if (born && deferReproductionPlacement(state, p)) return;
     completeMove(ctx, p, false, false);
     return;
   }
@@ -595,6 +625,43 @@ function executeMove(ctx, action) {
       pieceCapture && victim.owner === p.owner && has(p, "Canibalismo"),
     eggCapture = !!egg,
     capture = pieceCapture || eggCapture;
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Mimetismo")
+  ) {
+    const adjacent = state.pieces.filter(
+      (piece) => piece.id !== victim.id && distance(piece, victim) === 1,
+    );
+    if (adjacent.length && random(state) < 1 / adjacent.length) {
+      const redirected = pick(state, adjacent),
+        redirectedCell = square(redirected.r, redirected.c);
+      ctx.kill(redirected.id, "Mimetismo", null, true);
+      markDecomposition(state, redirectedCell);
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 🐙 Mimetismo desviou o ataque para ${coord(redirected.r, redirected.c)}.`,
+      );
+      advanceTurn(ctx);
+      settle(ctx);
+      return;
+    }
+  }
+  if (pieceCapture && victim.owner !== p.owner) {
+    const group = sociableGroup(state, victim);
+    if (group.length >= 4) {
+      state.socialDefense = {
+        attackerId: p.id,
+        victimId: victim.id,
+        attackerOwner: p.owner,
+        memberIds: group.map((piece) => piece.id),
+      };
+      state.current = victim.owner;
+      state.phase = "social-defense";
+      state.chain = null;
+      return;
+    }
+  }
   if (
     pieceCapture &&
     has(victim, "Espinhos") &&
@@ -708,7 +775,7 @@ function executeMove(ctx, action) {
       manipulation,
       buildEligible:
         !collectorStay &&
-        has(p, "Construtor Avançado") &&
+        has(p, "Antropização") &&
         terrain(state, p.r, p.c) === "fertile",
     };
     state.chain = null;
@@ -749,10 +816,10 @@ function executeMove(ctx, action) {
     if (collectorStay && born) p.seeds--;
   }
   const build =
-    born > 0 && consumedFertile && has(p, "Construtor Avançado");
+    born > 0 && consumedFertile && has(p, "Antropização");
   if (
     born > 0 &&
-    deferEggPlacement(state, p, {
+    deferReproductionPlacement(state, p, {
       manipulation,
       second,
       locomotion,
@@ -792,7 +859,7 @@ function choosePartner(ctx, id) {
   state.partner = null;
   if (
     born > 0 &&
-    deferEggPlacement(state, p, {
+    deferReproductionPlacement(state, p, {
       manipulation: pending.manipulation ?? null,
       second: pending.second,
       locomotion: pending.locomotion,
@@ -810,6 +877,69 @@ function choosePartner(ctx, id) {
     born > 0 && !!pending.buildEligible,
   );
 }
+function resolveDomesticPlacement(ctx, action) {
+  const state = ctx.state,
+    pending = state.domesticPlacement,
+    target = domesticPlacementTargets(state).find(
+      (cell) => cell.r === action.r && cell.c === action.c,
+    );
+  if (!pending || !target)
+    throw Error("Escolha uma casa vazia destacada para o descendente.");
+  const continuation = pending.continuation,
+    parent = state.pieces.find((piece) => piece.id === pending.parentId),
+    placed = placePendingDomesticChild(state, target.r, target.c);
+  if (!placed) throw Error("Posicionamento domesticado indisponível.");
+  log(
+    state,
+    `${OWNERS[placed.child.owner]}: ${has(placed.child, "Plantas Domesticadas") ? "🌾" : "🐖"} descendente domesticado posicionado em ${coord(placed.child.r, placed.child.c)}.`,
+  );
+  if (placed.remaining && domesticPlacementTargets(state).length) return;
+  if (placed.remaining)
+    log(
+      state,
+      `${OWNERS[pending.owner]}: ${placed.remaining} descendente(s) domesticado(s) não encontraram casa vazia a até duas casas e foram perdidos.`,
+    );
+  state.domesticPlacement = null;
+  state.phase = "move";
+  if (parent && continuation)
+    finishMovement(
+      ctx,
+      parent,
+      continuation.manipulation ?? null,
+      continuation.second ?? false,
+      continuation.locomotion ?? false,
+      continuation.build ?? false,
+    );
+  else {
+    advanceTurn(ctx);
+    settle(ctx);
+  }
+}
+
+function resolveSocialDefense(ctx, action) {
+  const state = ctx.state,
+    pending = state.socialDefense,
+    sacrifice = socialDefenseTargets(state).find(
+      (piece) => piece.id === action.id,
+    ),
+    attacker = state.pieces.find((piece) => piece.id === pending?.attackerId);
+  if (!pending || !sacrifice || !attacker)
+    throw Error("Escolha uma peça destacada do grupo sociável.");
+  const cell = square(sacrifice.r, sacrifice.c),
+    defender = sacrifice.owner;
+  state.current = pending.attackerOwner;
+  state.socialDefense = null;
+  state.phase = "move";
+  ctx.kill(sacrifice.id, "sacrifício por Sociabilidade", null, true);
+  markDecomposition(state, cell);
+  log(
+    state,
+    `${OWNERS[defender]}: 🐜 Sociabilidade sacrificou uma peça em ${coord(sacrifice.r, sacrifice.c)} e impediu a captura original.`,
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveEggPlacement(ctx, action) {
   const state = ctx.state,
     pending = state.eggPlacement,
@@ -949,6 +1079,16 @@ export function transition(previous, action) {
     state.phase === "egg-placement"
   )
     resolveEggPlacement(ctx, action);
+  else if (
+    action.type === "PLACE_DOMESTIC" &&
+    state.phase === "domestic-placement"
+  )
+    resolveDomesticPlacement(ctx, action);
+  else if (
+    action.type === "SOCIAL_SACRIFICE" &&
+    state.phase === "social-defense"
+  )
+    resolveSocialDefense(ctx, action);
   else if (
     ["MANIPULATE", "SKIP_MANIPULATION"].includes(action.type) &&
     state.phase === "manipulate"

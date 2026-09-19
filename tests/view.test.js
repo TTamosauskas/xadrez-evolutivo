@@ -274,7 +274,7 @@ test("renders barriers, build targets and construction emoji icons", () => {
   const dom = setup(),
     s = createState(25),
     p = s.pieces[0];
-  p.traits = ["Construtor de Nicho", "Construtor Avançado"];
+  p.traits = ["Construtor de Nicho", "Antropização"];
   s.barriers = [18];
   s.phase = "build";
   s.building = { id: p.id, second: false, locomotion: false };
@@ -399,4 +399,57 @@ test("application UI can play, acknowledge reproduction, save and reset", async 
     globalThis.localStorage = prior.localStorage;
     dom.window.close();
   }
+});
+
+
+test("renders domestic placement and Sociabilidade sacrifice targets", () => {
+  const dom = setup(),
+    s = createState(131),
+    parent = s.pieces[0];
+  s.phase = "domestic-placement";
+  s.domesticPlacement = {
+    parentId: parent.id,
+    owner: parent.owner,
+    origin: { r: parent.r, c: parent.c },
+    brood: [{
+      owner: parent.owner,
+      rank: parent.rank,
+      traits: ["Animais Domésticos"],
+      ancestry: ["Animais Domésticos"],
+      reproGenes: structuredClone(parent.reproGenes),
+      mutations: 1,
+      generation: 1,
+      parentId: parent.id,
+    }],
+    continuation: null,
+  };
+  s.maxGenerationReached = 1;
+  render(dom.window.document, s);
+  assert.ok(
+    dom.window.document.querySelectorAll(".domestic-placement-target").length > 0,
+  );
+
+  s.domesticPlacement = null;
+  s.phase = "move";
+  const defenders = [
+    newPiece(s, "amber", 3, 3, { traits: ["Sociabilidade"] }),
+    newPiece(s, "amber", 3, 4, { traits: ["Sociabilidade"] }),
+    newPiece(s, "amber", 4, 3, { traits: ["Sociabilidade"] }),
+    newPiece(s, "amber", 4, 4, { traits: ["Sociabilidade"] }),
+  ];
+  s.pieces.push(...defenders);
+  s.phase = "social-defense";
+  s.socialDefense = {
+    attackerId: parent.id,
+    victimId: defenders[0].id,
+    attackerOwner: parent.owner,
+    memberIds: defenders.map((piece) => piece.id),
+  };
+  s.current = "amber";
+  render(dom.window.document, s);
+  assert.equal(
+    dom.window.document.querySelectorAll(".social-sacrifice-target").length,
+    4,
+  );
+  dom.window.close();
 });

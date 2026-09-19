@@ -296,6 +296,8 @@ export function createState(seed = Date.now(), options = {}) {
     manipulation: null,
     building: null,
     eggPlacement: null,
+    domesticPlacement: null,
+    socialDefense: null,
     nextId: 1,
     nextNotice: 1,
     board: Array(64).fill("neutral"),
@@ -362,6 +364,7 @@ export function createState(seed = Date.now(), options = {}) {
             ? {
                 rank: source.rank,
                 traits: source.traits,
+                ancestry: source.ancestry,
                 reproGenes: source.reproGenes,
                 mutations: 0,
                 generation: 0,
@@ -654,6 +657,8 @@ export function assertState(state) {
       "manipulate",
       "build",
       "egg-placement",
+      "domestic-placement",
+      "social-defense",
       "over",
     ].includes(state.phase)
   )
@@ -675,6 +680,41 @@ export function assertState(state) {
     (state.phase !== "egg-placement" && state.eggPlacement)
   )
     throw Error("Fase de postura inválida.");
+  if (
+    (state.phase === "domestic-placement" && !state.domesticPlacement) ||
+    (state.phase !== "domestic-placement" && state.domesticPlacement)
+  )
+    throw Error("Fase de domesticação inválida.");
+  if (
+    state.domesticPlacement &&
+    (!integer(state.domesticPlacement.parentId, 1) ||
+      !["blue", "amber"].includes(state.domesticPlacement.owner) ||
+      !inside(
+        state.domesticPlacement.origin?.r,
+        state.domesticPlacement.origin?.c,
+      ) ||
+      !Array.isArray(state.domesticPlacement.brood) ||
+      !state.domesticPlacement.brood.length ||
+      !state.domesticPlacement.brood.every((profile) =>
+        validBroodProfile(profile, state.domesticPlacement.owner),
+      ))
+  )
+    throw Error("Domesticação inválida.");
+  if (
+    (state.phase === "social-defense" && !state.socialDefense) ||
+    (state.phase !== "social-defense" && state.socialDefense)
+  )
+    throw Error("Fase de Sociabilidade inválida.");
+  if (
+    state.socialDefense &&
+    (!integer(state.socialDefense.attackerId, 1) ||
+      !integer(state.socialDefense.victimId, 1) ||
+      !["blue", "amber"].includes(state.socialDefense.attackerOwner) ||
+      !Array.isArray(state.socialDefense.memberIds) ||
+      state.socialDefense.memberIds.length < 4 ||
+      state.socialDefense.memberIds.some((id) => !integer(id, 1)))
+  )
+    throw Error("Sociabilidade inválida.");
   if (!Array.isArray(state.pieces) || state.pieces.length > 64)
     throw Error("População inválida.");
   const ids = new Set(),
@@ -811,6 +851,7 @@ export function assertState(state) {
   const unbornGenerations = [
     ...state.eggs.flatMap((egg) => egg.brood.map((p) => p.generation)),
     ...state.plantSeeds.map((seed) => seed.profile.generation),
+    ...(state.domesticPlacement?.brood ?? []).map((p) => p.generation),
     ...state.pieces.flatMap((p) =>
       p.pregnancies.flatMap((pregnancy) =>
         pregnancy.brood.map((child) => child.generation),

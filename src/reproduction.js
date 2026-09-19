@@ -419,6 +419,46 @@ function adjacentEggCells(ctx, parent) {
   return cells;
 }
 
+function domesticPlacementCells(ctx, parent) {
+  const cells = [];
+  for (let dr = -2; dr <= 2; dr++)
+    for (let dc = -2; dc <= 2; dc++) {
+      if (!dr && !dc) continue;
+      const r = parent.r + dr,
+        c = parent.c + dc;
+      if (
+        inside(r, c) &&
+        distance(parent, { r, c }) <= 2 &&
+        !occupied(ctx.state, r, c) &&
+        !ctx.reserved.has(square(r, c))
+      )
+        cells.push({ r, c });
+    }
+  return cells;
+}
+
+function startDomesticPlacement(ctx, parent, brood) {
+  if (!brood.length || !domesticPlacementCells(ctx, parent).length) return 0;
+  ctx.state.domesticPlacement = {
+    parentId: parent.id,
+    owner: parent.owner,
+    origin: { r: parent.r, c: parent.c },
+    brood,
+    continuation: null,
+  };
+  ctx.state.phase = "domestic-placement";
+  ctx.state.chain = null;
+  return brood.length;
+}
+
+export function placePendingDomesticChild(state, r, c) {
+  const pending = state.domesticPlacement;
+  if (!pending?.brood?.length) return null;
+  const profile = pending.brood.shift(),
+    child = spawnChild(state, profile, r, c);
+  return { child, remaining: pending.brood.length };
+}
+
 function amnioticPlacementCells(ctx, parent) {
   const cells = [];
   for (let dr = -3; dr <= 3; dr++)
@@ -635,6 +675,11 @@ export function reproduce(
     phenotype = reproPhenotype(parent.reproGenes),
     plant = has(profile, "Fotossíntese"),
     gymnosperm = has(profile, "Gimnospermas"),
+    domesticated =
+      !options.immediateDevelopment &&
+      (plant
+        ? has(profile, "Plantas Domesticadas")
+        : has(profile, "Animais Domésticos")),
     development = options.immediateDevelopment
       ? "immediate"
       : plant
@@ -647,7 +692,13 @@ export function reproduce(
         eusocialBonus(state, parent);
 
   let produced = 0;
-  if (gymnosperm && !options.immediateDevelopment) {
+  if (domesticated) {
+    const capacity = domesticPlacementCells(ctx, parent).length,
+      count = Math.min(wanted, capacity);
+    if (!count) return 0;
+    const brood = makeBrood(state, parent, mate, profile, count);
+    produced = startDomesticPlacement(ctx, parent, brood);
+  } else if (gymnosperm && !options.immediateDevelopment) {
     const capacity = freeCells(ctx, parent, "local", profile).length,
       count = Math.min(wanted, capacity);
     if (!count) return 0;
@@ -700,8 +751,10 @@ export function reproduce(
     state.reproductions[parent.owner]++;
     log(
       state,
-      gymnosperm && !options.immediateDevelopment
-        ? `${OWNERS[parent.owner]} produziram ${produced} semente(s) de Gimnospermas por ${reason}.`
+      domesticated
+        ? `${OWNERS[parent.owner]} geraram ${produced} descendente(s) domesticado(s) por ${reason}; escolha as posições.`
+        : gymnosperm && !options.immediateDevelopment
+          ? `${OWNERS[parent.owner]} produziram ${produced} semente(s) de Gimnospermas por ${reason}.`
         : development === "oviparous"
           ? `${OWNERS[parent.owner]} depositaram um ovo ⚪ aquático com ${produced} descendente(s) por ${reason}.`
           : development === "amniotic"

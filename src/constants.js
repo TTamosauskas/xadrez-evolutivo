@@ -92,9 +92,25 @@ export const TRAITS = {
     "🦫",
     "Neutraliza a casa hostil de chegada quando a criatura sobrevive.",
   ],
-  "Construtor Avançado": [
+  "Antropização": [
     "🧔",
     "Após reproduzir consumindo uma casa fértil, pode construir uma barreira em uma casa adjacente vazia.",
+  ],
+  "Plantas Domesticadas": [
+    "🌾",
+    "Permite posicionar descendentes fotossintéticos em casas vazias a até duas casas de distância.",
+  ],
+  "Animais Domésticos": [
+    "🐖",
+    "Permite posicionar descendentes não fotossintéticos em casas vazias a até duas casas de distância.",
+  ],
+  Sociabilidade: [
+    "🐜",
+    "Grupos conectados de quatro ou mais indivíduos podem sacrificar qualquer membro para absorver um ataque.",
+  ],
+  Mimetismo: [
+    "🐙",
+    "Confunde captores imitando outros seres.",
   ],
   Chifre: [
     "🫎",
@@ -109,7 +125,7 @@ export const TRAITS = {
     "Permite observar a próxima ação adversária e desfazer ambas uma vez.",
   ],
   Eusocialidade: [
-    "🐜",
+    "🐝",
     "Indivíduos estéreis aparentados e adjacentes aumentam a ninhada em até dois descendentes.",
   ],
   Regeneração: [

@@ -8,6 +8,8 @@ import {
   constructionTargets,
   nursingTargets,
   eggPlacementTargets,
+  domesticPlacementTargets,
+  socialDefenseTargets,
   ovoviviparousPlacementTargets,
 } from "./moves.js";
 import { at } from "./state.js";
@@ -117,6 +119,20 @@ $("board").addEventListener("click", (event) => {
       )
     )
       dispatch({ type: "PLACE_EGG", r, c });
+    return;
+  }
+  if (state.phase === "domestic-placement") {
+    if (
+      domesticPlacementTargets(state).some(
+        (target) => target.r === r && target.c === c,
+      )
+    )
+      dispatch({ type: "PLACE_DOMESTIC", r, c });
+    return;
+  }
+  if (state.phase === "social-defense") {
+    if (p && socialDefenseTargets(state).some((piece) => piece.id === p.id))
+      dispatch({ type: "SOCIAL_SACRIFICE", id: p.id });
     return;
   }
   const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
@@ -499,12 +515,14 @@ $("rules").addEventListener("click", () =>
     "Fotossíntese torna fértil uma casa neutra após três rodadas completas de permanência, desde que existam pelo menos duas casas adjacentes desocupadas. 🟢 Fotossíntese e 🐟 Predação são caminhos evolutivos mutuamente excludentes no mesmo indivíduo, mas a mutação pode trocar de ramo: um descendente fotossintético que adquire Predação perde Fotossíntese; no sentido inverso, adquirir Fotossíntese remove Predação e especializações que exigem esse ramo. A campanha registra ambas como descobertas históricas. Dormência imobiliza a criatura em casa hostil e evita o risco ambiental durante a permanência. Regeneração evita uma morte causada pelo ambiente uma vez por vida e força descanso na rodada seguinte.",
     "🐸 Respiração Cutânea surge opcionalmente no Devoniano após Locomoção. Uma criatura não fotossintética reprodutivamente apta pode permanecer onde está e consumir uma casa fértil ortogonalmente adjacente para reproduzir. Carnívoros puros não usam esse recurso; 🐻 Onívoro recupera essa possibilidade. 🦕 Sacos Aéreos surgem opcionalmente no Triássico após Locomoção Avançada e favorecem gigantismo: qualquer descendente que expresse Sacos Aéreos nasce no mínimo como Cavalo; a característica não depende de Voo.",
     "O ramo fotossintético desenvolve 🌱 Embriófitas no Ordoviciano, que acrescenta uma casa fértil adjacente vazia por ciclo de Fotossíntese; 🍃 Traqueófitas no Siluriano, que permite reproduzir consumindo uma casa fértil adjacente sem se deslocar; 🌵 Espinhos no Devoniano, com 25% de chance de matar o agressor; 🌲 Gimnospermas e, opcionalmente, 🌿 Trepadeira no Carbonífero. Trepadeira exige Fotossíntese, Embriófitas e Traqueófitas, pode ocupar barreiras naturais ou construídas, fertilizá-las por Fotossíntese e colonizar barreiras com descendentes ou sementes. 🌸 Angiospermas surge no Cretáceo e permite que a única casa fértil adicional seja uma casa neutra ocupada por aliado.",
-    "Linhagens com Fotossíntese não adquirem especializações animais como Locomoção, Locomoção Avançada, Escavador, Escalador, Respiração Cutânea, Sacos Aéreos, Carnívoro, Canibalismo, Onívoro, Necrófago, Ovíparo, Ovíparos Amniotas, Ovovivíparo, Vivíparo, Ovulação Induzida, Ovífagia, Cuidado Parental, Lactação, Ooteca, Voo, Visão Noturna, Eusocialidade, Chifre, Construtor de Nicho, Polegar Opositor, Neocórtex Desenvolvido ou Construtor Avançado. Predação continua sendo uma mutação de troca de ramo: ao surgir, remove Fotossíntese e suas especializações vegetais. Fertilidade, Dormência, Resistência, Regeneração, Reprodução Sexuada, Precocidade Sexual, Esporos, Carapaça, Camuflagem, Veneno, Coletor e mutações negativas continuam compatíveis com plantas.",
+    "Linhagens com Fotossíntese não adquirem especializações animais como Locomoção, Locomoção Avançada, Escavador, Escalador, Respiração Cutânea, Sacos Aéreos, Carnívoro, Canibalismo, Onívoro, Necrófago, Ovíparo, Ovíparos Amniotas, Ovovivíparo, Vivíparo, Ovulação Induzida, Ovífagia, Cuidado Parental, Lactação, Ooteca, Voo, Visão Noturna, Eusocialidade, Chifre, Construtor de Nicho, Polegar Opositor, Neocórtex Desenvolvido ou Antropização. Predação continua sendo uma mutação de troca de ramo: ao surgir, remove Fotossíntese e suas especializações vegetais. Fertilidade, Dormência, Resistência, Regeneração, Reprodução Sexuada, Precocidade Sexual, Esporos, Carapaça, Camuflagem, Veneno, Coletor e mutações negativas continuam compatíveis com plantas.",
     "Cuidado Parental protege contra Ovífagia enquanto o progenitor estiver vivo e adjacente ao ovo. Visão Noturna permite capturar Camuflagem à distância. Eusocialidade recebe até +2 descendentes de trabalhadores estéreis aparentados e adjacentes.",
     "🫎 Chifre surge no Neógeno após a origem da Predação. Quando uma criatura com Chifre sofre uma tentativa de captura, há 20% de chance de o agressor morrer imediatamente e a captura falhar. 🐚 Carapaça no agressor neutraliza essa defesa.",
     "O relevo natural também faz parte do tabuleiro: quadrados marrons surgem em pequenas cadeias ou afloramentos, com quantidade parcialmente aleatória e própria de cada período geológico. Eles evitam a vizinhança imediata dos fundadores e a geração rejeita configurações que fragmentem excessivamente o mapa. 🦡 Escavador surge no Ediacarano depois de Locomoção e pode perfurar barreiras naturais ou construídas, destruindo cada bloco atravessado mesmo quando a criatura também possui Voo ou Escalador. 🐐 Escalador surge opcionalmente no Devoniano e permite ocupar e atravessar barreiras naturais preservando-as; 🐦 Voo pode atravessar barreiras preservando-as quando a criatura não é Escavadora. 🌿 Trepadeira surge opcionalmente no Carbonífero no ramo vegetal e usa tanto barreiras naturais quanto construídas como suporte vivo. Meteoros, vulcanismo, terremotos, mares, gelo, rios e chuvas podem criar, derrubar ou erodir parte desse relevo.",
-    "🦫 Construtor de Nicho surge no Ediacarano depois de Escavador e neutraliza uma casa hostil estável quando a criatura termina ali e sobrevive. 🧔 Construtor Avançado pertence ao Quaternário: só entra no pool depois que 🧠 Neocórtex Desenvolvido já foi liberado e exige uma linhagem que tenha passado por Construtor de Nicho; após uma reprodução bem-sucedida que consumiu uma casa fértil, pode erguer uma barreira marrom adjacente. 🫎 Chifre fica exclusivamente defensivo e não altera barreiras. 🌿 Trepadeira pode ocupar, fertilizar e reproduzir sobre barreiras naturais ou construídas sem removê-las. Polegar Opositor pode transferir o terreno fértil ou hostil de chegada para uma casa neutra adjacente; terrenos temporários de eventos, decomposição e barreiras não podem ser manipulados.",
-    "🧠 Neocórtex Desenvolvido permite observar a próxima ação adversária. O botão ↻ restaura o estado anterior à jogada, inclusive RNG, desfazendo sua ação e a resposta observada uma única vez; a nova linha de jogo é definitiva naquele ciclo. A liberação de 🧠 é também o marco cronológico que abre a possibilidade de surgir 🧔 Construtor Avançado.",
+    "🦫 Construtor de Nicho surge no Ediacarano depois de Escavador e neutraliza uma casa hostil estável quando a criatura termina ali e sobrevive. 🧔 Antropização pertence ao Quaternário: só entra no pool depois que 🧠 Neocórtex Desenvolvido já foi liberado e exige uma linhagem que tenha passado por Construtor de Nicho; após uma reprodução bem-sucedida que consumiu uma casa fértil, pode erguer uma barreira marrom adjacente. 🫎 Chifre fica exclusivamente defensivo e não altera barreiras. 🌿 Trepadeira pode ocupar, fertilizar e reproduzir sobre barreiras naturais ou construídas sem removê-las. Polegar Opositor pode transferir o terreno fértil ou hostil de chegada para uma casa neutra adjacente; terrenos temporários de eventos, decomposição e barreiras não podem ser manipulados.",
+    "🧠 Neocórtex Desenvolvido permite observar a próxima ação adversária. O botão ↻ restaura o estado anterior à jogada, inclusive RNG, desfazendo sua ação e a resposta observada uma única vez; a nova linha de jogo é definitiva naquele ciclo. 🧔 Antropização só surge em linhagens que já passaram por 🧠. Depois que 🧠 aparece pela primeira vez na campanha, 🌾 Plantas Domesticadas entram no ramo fotossintético e 🐖 Animais Domésticos no ramo não fotossintético; ao reproduzir, esses organismos permitem posicionar manualmente os descendentes em casas vazias a até duas casas de distância.",
+    "🐙 Mimetismo surge a partir do Permiano. Ao ser atacada, a criatura tem chance de 1/x de desviar o dano, onde x é o número de casas adjacentes ocupadas; quando funciona, uma dessas peças adjacentes recebe o dano, independentemente do lado.",
+    "🐜 Sociabilidade surge a partir do Jurássico em linhagens que já passaram por Cuidado Parental. Quando uma criatura pertence a um bloco conectado de quatro ou mais peças com Sociabilidade e é atacada, o defensor escolhe qualquer membro desse bloco para ser sacrificado e impedir a captura.",
     ...Object.entries(TRAITS).map(
       ([name, [icon, description]]) => `${icon} ${name}: ${description}`,
     ),

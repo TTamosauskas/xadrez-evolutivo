@@ -21,7 +21,11 @@ export const V3_KEY = "xadrez-evolutivo-save-v3";
 export const V2_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
 const currentTraitName = (name) =>
-  name === "Construção de Nicho" ? "Construtor de Nicho" : name;
+  name === "Construção de Nicho"
+    ? "Construtor de Nicho"
+    : name === "Construtor Avançado"
+      ? "Antropização"
+      : name;
 const v3TraitName = (name) =>
   currentTraitName(name === "Predador" ? "Carnívoro" : name);
 const legacyTraitName = (name) =>
@@ -35,6 +39,9 @@ const mutationLabel = (label, version = 7) => {
   if (mapped === "Construção de Nicho") mapped = "Construtor de Nicho";
   if (mapped === "Perda de Construção de Nicho")
     mapped = "Perda de Construtor de Nicho";
+  if (mapped === "Construtor Avançado") mapped = "Antropização";
+  if (mapped === "Perda de Construtor Avançado")
+    mapped = "Perda de Antropização";
   if (version <= 3) {
     if (mapped === "Predador") mapped = "Carnívoro";
     if (mapped === "Perda de Predador") mapped = "Perda de Carnívoro";
@@ -214,6 +221,8 @@ export function deserialize(raw) {
     if (data.manipulation === undefined) data.manipulation = null;
     if (data.building === undefined) data.building = null;
     if (data.eggPlacement === undefined) data.eggPlacement = null;
+    if (data.domesticPlacement === undefined) data.domesticPlacement = null;
+    if (data.socialDefense === undefined) data.socialDefense = null;
     if (data.eggPlacement) {
       data.eggPlacement.brood = (data.eggPlacement.brood ?? []).map(
         normalizeProfile,
@@ -221,6 +230,10 @@ export function deserialize(raw) {
       data.eggPlacement.dispersal =
         data.eggPlacement.dispersal === "spores" ? "spores" : "local";
     }
+    if (data.domesticPlacement)
+      data.domesticPlacement.brood = (
+        data.domesticPlacement.brood ?? []
+      ).map(normalizeProfile);
     if (data.origin === undefined) data.origin = null;
     if (!Array.isArray(data.barriers)) data.barriers = [];
     if (!Array.isArray(data.naturalBarriers)) data.naturalBarriers = [];
@@ -318,7 +331,9 @@ export function deserialize(raw) {
             .map((key) =>
               key === "mutations:Construção de Nicho"
                 ? "mutations:Construtor de Nicho"
-                : key,
+                : key === "mutations:Construtor Avançado"
+                  ? "mutations:Antropização"
+                  : key,
             )
             .filter((key) => key !== "mutations:Ovos"),
         ),
