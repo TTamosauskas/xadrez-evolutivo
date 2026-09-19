@@ -917,7 +917,7 @@ test("Fotossíntese fertilizes a neutral square after two full rounds without mo
     { owner: "amber", r: 0, c: 0 },
   ]);
   assert.equal(s.board[36], "neutral");
-  for (let turn = 1; turn <= 3; turn++) {
+  for (let turn = 1; turn <= 4; turn++) {
     s = simulate(s, { type: "PASS" });
     assert.equal(s.board[36], "neutral");
   }
