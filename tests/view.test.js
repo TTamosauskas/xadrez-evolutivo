@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { createState, clone } from "../src/state.js";
 import { render } from "../src/view.js";
+import { context } from "../src/engine.js";
+import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
 function setup() {
   const dom = new JSDOM(
@@ -44,6 +46,26 @@ test("rendering a pathogen notice settles and never mutates game state", async (
   observer.disconnect();
   dom.window.close();
 });
+test("ecological event modal uses icon title, italic subtitle and integrated duration", () => {
+  const dom = setup(),
+    s = createState(7);
+  startEvent(context(s), "solar");
+  render(dom.window.document, s);
+
+  const d = dom.window.document,
+    title = d.getElementById("notice-title"),
+    content = d.getElementById("notice-content");
+
+  assert.equal(title.textContent, "🌄 Tempestade Solar");
+  assert.equal(content.querySelector("em")?.textContent, "Evento ecológico");
+  assert.match(
+    content.textContent,
+    /Todo nascimento sofre mutação durante 10 rodadas\./,
+  );
+  assert.doesNotMatch(content.textContent, /Duração:/);
+  dom.window.close();
+});
+
 test("menu exposes match log and evolutionary history for consultation", () => {
   const dom = setup(),
     d = dom.window.document;
