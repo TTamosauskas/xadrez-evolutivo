@@ -44,6 +44,7 @@ import {
   normalizeEnergyBranch,
   pawnMutationUnlocked,
   rankMutationUnlocked,
+  normalizePhotosyntheticRank,
   traitLossAllowed,
   traitUnlocked,
 } from "./geology.js";
@@ -116,7 +117,11 @@ function mutation(state, p, positiveOnly) {
   const gains = [];
   if (p.rank === 4 && pawnMutationUnlocked(state))
     gains.push({ rank: 0, weight: 1 });
-  else if (rankMutationUnlocked(state) && DERIVED_FORM_NEXT.has(p.rank))
+  else if (
+    !has(p, "Fotossíntese") &&
+    rankMutationUnlocked(state) &&
+    DERIVED_FORM_NEXT.has(p.rank)
+  )
     gains.push({ rank: DERIVED_FORM_NEXT.get(p.rank), weight: 1 });
   for (const trait of POSITIVE)
     if (!has(p, trait) && traitUnlocked(state, trait, p))
@@ -178,6 +183,7 @@ function mutation(state, p, positiveOnly) {
     p.traits = p.traits.filter((t) => t !== choice.loss);
     label = `Perda de ${choice.loss}`;
   }
+  normalizePhotosyntheticRank(p);
   p.ancestry = [
     ...new Set([...(p.ancestry ?? []), ...(p.traits ?? [])]),
   ];
@@ -252,7 +258,8 @@ function sexualProfile(state, a, b) {
       ),
       mutations: Math.max(a.mutations, b.mutations),
     };
-  return syncReproTraits(profile);
+  syncReproTraits(profile);
+  return normalizePhotosyntheticRank(profile);
 }
 
 function occupied(state, r, c, profile = null) {
@@ -339,6 +346,7 @@ function makeChildProfile(state, parent, mate, profile) {
   if (random(state) < (state.event?.id === "solar" ? 1 : 1 / 3))
     mutation(state, child, !!mate);
   applyAirSacRankFloor(child);
+  normalizePhotosyntheticRank(child);
   return child;
 }
 
@@ -660,6 +668,16 @@ function layPlantSeeds(ctx, parent, brood) {
   return laid;
 }
 
+export function reproductiveOutput(profile) {
+  if (!has(profile, "Fotossíntese"))
+    return BIRTH_RATES[profile.rank] * (has(profile, "Fertilidade") ? 2 : 1);
+  const advanced = ["Traqueófitas", "Gimnospermas", "Angiospermas"].some(
+      (trait) => has(profile, trait),
+    ),
+    base = profile.rank === 4 ? 1 : advanced ? 2 : 3;
+  return Math.min(4, base + (has(profile, "Fertilidade") ? 1 : 0));
+}
+
 export function reproduce(
   ctx,
   parent,
@@ -688,8 +706,7 @@ export function reproduce(
     dispersal = gymnosperm ? "local" : phenotype.dispersal,
     wanted =
       options.forcedCount ??
-      BIRTH_RATES[profile.rank] * (has(profile, "Fertilidade") ? 2 : 1) +
-        eusocialBonus(state, parent);
+      reproductiveOutput(profile) + eusocialBonus(state, parent);
 
   let produced = 0;
   if (domesticated) {

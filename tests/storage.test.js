@@ -449,3 +449,15 @@ test("v7 saves migrate Construtor Avançado to Antropização and initialize new
   assert.equal(restored.socialDefense, null);
   assertState(restored);
 });
+
+
+test("current saves normalize derived photosynthetic forms back to Pawn", () => {
+  const s = createState(150);
+  s.pieces[0].rank = 5;
+  s.pieces[0].traits = ["Fotossíntese"];
+  s.pieces[0].ancestry = ["Fotossíntese"];
+  const restored = deserialize(JSON.stringify(s));
+  assert.equal(restored.pieces[0].rank, 0);
+  assert.deepEqual(restored.pieces[0].traits, ["Fotossíntese"]);
+  assertState(restored);
+});

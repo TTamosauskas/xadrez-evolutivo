@@ -5,6 +5,7 @@ import {
   nextGeologicalStage,
   geologicalLabel,
   habitatProfile,
+  normalizePhotosyntheticRank,
   recordHistoricalTraits,
   stageComplete,
 } from "./geology.js";
@@ -104,7 +105,8 @@ export function newPiece(state, owner, r, c, source = {}) {
     maturesRound: source.maturesRound ?? bornRound,
     nextReproductionRound: source.nextReproductionRound ?? bornRound,
   };
-  return syncReproTraits(piece);
+  syncReproTraits(piece);
+  return normalizePhotosyntheticRank(piece);
 }
 
 export function registerDiscoveries(state, piece) {

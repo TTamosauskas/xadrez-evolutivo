@@ -491,6 +491,15 @@ export function rankMutationUnlocked(state) {
   return currentGeologicalStage(state).index >= geologicalStage("cambrian").index;
 }
 
+export function normalizePhotosyntheticRank(profile) {
+  if (
+    profile?.traits?.includes("Fotossíntese") &&
+    ![0, 4].includes(profile.rank)
+  )
+    profile.rank = 0;
+  return profile;
+}
+
 export function captureUnlocked(state, piece = null) {
   if (!piece) return false;
   return piece.traits?.includes("Predação") ?? false;

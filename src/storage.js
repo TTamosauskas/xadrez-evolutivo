@@ -9,6 +9,7 @@ import {
   firstCompatibleStage,
   geologicalStage,
   normalizeEnergyBranch,
+  normalizePhotosyntheticRank,
   priorRequiredInnovations,
   isNegativeTrait,
 } from "./geology.js";
@@ -123,6 +124,7 @@ export function deserialize(raw) {
           profile.traits,
         );
         syncReproTraits(profile);
+        normalizePhotosyntheticRank(profile);
         return profile;
       };
     if (Array.isArray(data.pieces))

@@ -9,11 +9,13 @@ import {
 } from "../src/moves.js";
 import {
   applyAirSacRankFloor,
+  reproductiveOutput,
   reproduce,
   tickReproduction,
 } from "../src/reproduction.js";
 import { assertState, round } from "../src/state.js";
 import { square } from "../src/constants.js";
+import { normalizePhotosyntheticRank } from "../src/geology.js";
 
 test("basal oviparous eggs move toward fertile terrain and hatch there after three rounds", () => {
   const s = fixture([
@@ -227,4 +229,61 @@ test("Sacos Aéreos impose Knight as the minimum expressed offspring rank", () =
 
   const lostTrait = { rank: 0, traits: [] };
   assert.equal(applyAirSacRankFloor(lostTrait).rank, 0);
+});
+
+
+test("photosynthetic lineages are restricted to King and Pawn forms", () => {
+  const king = { rank: 4, traits: ["Fotossíntese"] },
+    pawn = { rank: 0, traits: ["Fotossíntese"] },
+    knightPlant = { rank: 1, traits: ["Fotossíntese"] },
+    queenPlant = { rank: 5, traits: ["Fotossíntese"] },
+    animal = { rank: 1, traits: ["Predação"] };
+  assert.equal(normalizePhotosyntheticRank(king).rank, 4);
+  assert.equal(normalizePhotosyntheticRank(pawn).rank, 0);
+  assert.equal(normalizePhotosyntheticRank(knightPlant).rank, 0);
+  assert.equal(normalizePhotosyntheticRank(queenPlant).rank, 0);
+  assert.equal(normalizePhotosyntheticRank(animal).rank, 1);
+});
+
+test("photosynthetic fecundity uses the calibrated 3 to 2 curve and Fertilidade adds one", () => {
+  assert.equal(
+    reproductiveOutput({ rank: 4, traits: ["Fotossíntese"] }),
+    1,
+  );
+  assert.equal(
+    reproductiveOutput({ rank: 0, traits: ["Fotossíntese"] }),
+    3,
+  );
+  assert.equal(
+    reproductiveOutput({
+      rank: 0,
+      traits: ["Fotossíntese", "Embriófitas"],
+    }),
+    3,
+  );
+  assert.equal(
+    reproductiveOutput({
+      rank: 0,
+      traits: ["Fotossíntese", "Traqueófitas"],
+    }),
+    2,
+  );
+  assert.equal(
+    reproductiveOutput({
+      rank: 0,
+      traits: ["Fotossíntese", "Gimnospermas", "Fertilidade"],
+    }),
+    3,
+  );
+  assert.equal(
+    reproductiveOutput({
+      rank: 0,
+      traits: ["Fotossíntese", "Fertilidade"],
+    }),
+    4,
+  );
+  assert.equal(
+    reproductiveOutput({ rank: 0, traits: ["Predação", "Fertilidade"] }),
+    8,
+  );
 });
