@@ -118,31 +118,41 @@ test("computer versus computer mode schedules AI for both colors", () => {
   c.configure("auto");
 
   const playCurrentWorker = (index) => {
-    const worker = workers[index],
-      action = fallbackAction(worker.request.state);
-    worker.onmessage({
-      data: {
-        token: worker.request.token,
-        revision: worker.request.state.revision,
-        action,
-      },
-    });
-    const delayId = [...timerDelays.entries()].find(
-      ([id, delay]) => delay === 850 && timers.has(id),
-    )?.[0];
-    assert.ok(delayId);
-    timers.get(delayId)();
-  };
+      const worker = workers[index],
+        action = fallbackAction(worker.request.state);
+      worker.onmessage({
+        data: {
+          token: worker.request.token,
+          revision: worker.request.state.revision,
+          action,
+        },
+      });
+      const delayId = [...timerDelays.entries()].find(
+        ([id, delay]) => delay === 850 && timers.has(id),
+      )?.[0];
+      assert.ok(delayId);
+      timers.get(delayId)();
+    },
+    advanceNoticesUntilWorker = (expectedWorkers) => {
+      let guard = 10;
+      while (workers.length < expectedWorkers && guard-- > 0) {
+        assert.ok(timers.size);
+        const [id, fn] = timers.entries().next().value;
+        timers.delete(id);
+        fn();
+      }
+      assert.equal(workers.length, expectedWorkers);
+    };
 
   assert.equal(c.state.current, "amber");
   assert.equal(workers.length, 1);
   playCurrentWorker(0);
   assert.equal(c.state.current, "blue");
-  assert.equal(workers.length, 2);
+  advanceNoticesUntilWorker(2);
 
   playCurrentWorker(1);
   assert.equal(c.state.current, "amber");
-  assert.equal(workers.length, 3);
+  advanceNoticesUntilWorker(3);
   c.dispose();
 });
 
