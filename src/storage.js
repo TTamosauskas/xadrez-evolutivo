@@ -109,6 +109,12 @@ export function deserialize(raw) {
     if (Array.isArray(data.pieces))
       for (const piece of data.pieces) {
         normalizeProfile(piece);
+        const currentRound = Math.floor((data.turn ?? 0) / 2);
+        if (!Number.isInteger(piece.bornRound)) piece.bornRound = currentRound;
+        if (!Number.isInteger(piece.maturesRound))
+          piece.maturesRound = currentRound;
+        if (!Number.isInteger(piece.nextReproductionRound))
+          piece.nextReproductionRound = currentRound;
         piece.pregnancies = Array.isArray(piece.pregnancies)
           ? piece.pregnancies.map((pregnancy) => ({
               ...pregnancy,
