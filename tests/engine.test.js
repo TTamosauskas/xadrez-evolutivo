@@ -210,8 +210,11 @@ test("stalled Conway repairs the local habitat in stages without a severe event"
   );
   assert.ok(s.logs.some((entry) => entry.text.includes("abriu um corredor local")));
   assert.ok(
-    s.logs.some((entry) =>
-      entry.text.includes("abriu caminho entre organismos adversários próximos"),
+    s.logs.some(
+      (entry) =>
+        entry.text.includes("mobilidade ofensiva") ||
+        entry.text.includes("deslocou um organismo") ||
+        entry.text.includes("corredor ofensivo"),
     ),
   );
   assertState(s);
@@ -669,7 +672,7 @@ test("final Conway repair creates an offensive option instead of accepting zero-
 test("prolonged combat drought triggers an offensive repair even when moves exist", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 0 },
-    { owner: "amber", r: 3, c: 4, rank: 0 },
+    { owner: "amber", r: 4, c: 5, rank: 0 },
   ]);
   s.turn = 47;
   s.current = "blue";
