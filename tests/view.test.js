@@ -184,7 +184,7 @@ test("renders eggs and carried brood count", () => {
       .textContent,
     /\+3/,
   );
-  assert.match(d.getElementById("selected").textContent, /🎈 \+3/);
+  assert.match(d.getElementById("selected").textContent, /🔴 \+3/);
   dom.window.close();
 });
 
