@@ -943,6 +943,45 @@ test("Fotossíntese fertilizes a neutral square after three full rounds without 
   assertState(s);
 });
 
+test("Fotossíntese keeps working on the colony frontier with two adjacent free cells", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
+    { owner: "blue", r: 3, c: 3 },
+    { owner: "blue", r: 3, c: 4 },
+    { owner: "blue", r: 3, c: 5 },
+    { owner: "blue", r: 4, c: 3 },
+    { owner: "blue", r: 5, c: 3 },
+    { owner: "blue", r: 5, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  for (let turn = 1; turn <= 6; turn++)
+    s = simulate(s, { type: "PASS" });
+  assert.equal(s.board[36], "fertile");
+  assertState(s);
+});
+
+test("Fotossíntese stops in the saturated colony interior with fewer than two adjacent free cells", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
+    { owner: "blue", r: 3, c: 3 },
+    { owner: "blue", r: 3, c: 4 },
+    { owner: "blue", r: 3, c: 5 },
+    { owner: "blue", r: 4, c: 3 },
+    { owner: "blue", r: 4, c: 5 },
+    { owner: "blue", r: 5, c: 3 },
+    { owner: "blue", r: 5, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  for (let turn = 1; turn <= 8; turn++)
+    s = simulate(s, { type: "PASS" });
+  assert.equal(s.board[36], "neutral");
+  const photosynthetic = s.pieces.find(
+    (piece) => piece.r === 4 && piece.c === 4,
+  );
+  assert.equal(photosynthetic.photosynthesisSinceTurn, undefined);
+  assertState(s);
+});
+
 test("Eusocialidade gains up to two offspring from adjacent sterile kin", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 4, traits: ["Eusocialidade"] },
