@@ -76,6 +76,7 @@ const mutationTopics = {
   "Veneno": ["Veneno", "Venenos são substâncias tóxicas produzidas por organismos e podem atuar em defesa, competição ou captura de presas."],
   "Coletor": ["Forrageamento", "Forrageamento reúne comportamentos de busca, obtenção e transporte de recursos necessários à sobrevivência e reprodução."],
   "Locomoção Avançada": ["Locomoção animal", "Formas mais eficientes de locomoção ampliam alcance, velocidade e acesso a recursos e parceiros."],
+  "Escalador": ["Escalada animal", "Muitos animais desenvolveram adaptações de aderência, equilíbrio e força que permitem ocupar encostas, rochas e outros relevos íngremes."],
   "Onívoro": ["Onivoria", "Onivoria combina alimentos de diferentes níveis tróficos e pode ampliar a flexibilidade alimentar."],
   "Respiração Cutânea": ["Respiração cutânea", "Respiração cutânea realiza trocas gasosas através da pele e é importante em vários grupos animais, especialmente anfíbios."],
   "Ovíparo": ["Oviparidade", "Oviparidade é uma estratégia reprodutiva em que o desenvolvimento embrionário ocorre em ovos postos no ambiente."],
