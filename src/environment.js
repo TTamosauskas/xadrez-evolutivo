@@ -4,6 +4,8 @@ import {
   eggAt,
   plantSeedAt,
   barrierAt,
+  builtBarrierAt,
+  naturalBarrierAt,
   pick,
   random,
   shuffle,
@@ -280,7 +282,8 @@ export function advanceConway(ctx) {
         ? "hostile"
         : "neutral",
   );
-  for (const cell of state.naturalBarriers) state.board[cell] = "neutral";
+  for (const cell of state.naturalBarriers)
+    state.board[cell] = before[cell] === "fertile" ? "fertile" : "neutral";
   for (const type of ["fertile", "hostile"]) {
     if (!state.board.includes(type)) seedCluster(state, type);
     const unchanged =
@@ -379,6 +382,13 @@ function iceCells(event) {
     return r < event.rows && c < event.cols;
   });
 }
+function barrierHabitableBy(state, piece, r, c) {
+  if (builtBarrierAt(state, r, c)) return has(piece, "Trepadeira");
+  if (naturalBarrierAt(state, r, c))
+    return has(piece, "Escalador") || has(piece, "Trepadeira");
+  return true;
+}
+
 function earthquake(ctx) {
   const state = ctx.state,
     original = new Map(state.pieces.map((p) => [p.id, { r: p.r, c: p.c }])),
@@ -392,7 +402,12 @@ function earthquake(ctx) {
           (i) =>
             distance(p, { r: Math.floor(i / 8), c: i % 8 }) === 1 &&
             !eggAt(state, Math.floor(i / 8), i % 8) &&
-            !barrierAt(state, Math.floor(i / 8), i % 8),
+            barrierHabitableBy(
+              state,
+              p,
+              Math.floor(i / 8),
+              i % 8,
+            ),
         ),
       ),
     ]),
@@ -419,7 +434,7 @@ function earthquake(ctx) {
   if (!success) {
     assigned.clear();
     for (const p of state.pieces)
-      if (!eggAt(state, p.r, p.c) && !barrierAt(state, p.r, p.c))
+      if (!eggAt(state, p.r, p.c))
         candidates.get(p.id).push(square(p.r, p.c));
     for (const p of state.pieces) assign(p, new Set());
   }
