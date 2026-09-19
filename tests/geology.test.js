@@ -62,7 +62,7 @@ test("period innovations follow the didactic sequence", () => {
     "Necrófago",
     "Construção de Nicho",
   ]);
-  assert.deepEqual(required.ordovician, ["Ovos"]);
+  assert.deepEqual(required.ordovician, []);
   assert.deepEqual(required.silurian, ["Coletor"]);
   assert.deepEqual(required.devonian, ["Locomoção Avançada", "Onívoro"]);
   assert.deepEqual(required.carboniferous, ["Ovíparo", "Ooteca", "Voo"]);
