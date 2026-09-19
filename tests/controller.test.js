@@ -282,7 +282,7 @@ test("native browser timers are called without binding the controller as their r
   globalThis.setTimeout = function () {
     assert.ok(!(this instanceof Controller), "Illegal invocation");
     scheduled++;
-    return 1;
+    return scheduled;
   };
   globalThis.clearTimeout = function () {
     assert.ok(!(this instanceof Controller), "Illegal invocation");
@@ -296,9 +296,9 @@ test("native browser timers are called without binding the controller as their r
       workerFactory: () => ({ postMessage() {}, terminate() {} }),
     });
     c.configure("single");
-    assert.equal(scheduled, 1);
+    assert.equal(scheduled, 2);
     c.dispose();
-    assert.equal(cleared, 1);
+    assert.equal(cleared, 2);
   } finally {
     globalThis.setTimeout = originalSet;
     globalThis.clearTimeout = originalClear;
