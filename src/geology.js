@@ -315,8 +315,8 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Neocórtex Desenvolvido",
   "Antropização",
   "Animais Domésticos",
-  Sociabilidade,
-  Mimetismo,
+  "Sociabilidade",
+  "Mimetismo",
 ]);
 
 export function traitCombinationValid(traits) {
