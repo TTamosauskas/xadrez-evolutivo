@@ -140,6 +140,7 @@ test("juveniles render smaller and Lactação highlights eligible children", () 
   parent.traits = [...new Set([...parent.traits, "Cuidado Parental", "Lactação"])];
   const child = newPiece(s, "blue", parent.r - 1, parent.c, {
     parentId: parent.id,
+    traits: ["Multicelularismo"],
   });
   child.maturesRound = round(s) + 2;
   s.pieces.push(child);
@@ -153,6 +154,29 @@ test("juveniles render smaller and Lactação highlights eligible children", () 
   assert.ok(childCell.querySelector(".piece").classList.contains("juvenile"));
   assert.match(childCell.title, /juvenil/);
   assert.match(childCell.title, /cria disponível para Lactação/);
+  dom.window.close();
+});
+
+test("senescent pieces render italic lifecycle styling and age status", () => {
+  const dom = setup(),
+    s = createState(42),
+    elder = s.pieces[0];
+  elder.traits = ["Multicelularismo"];
+  elder.bornRound = 0;
+  elder.maturesRound = 2;
+  s.turn = 50;
+
+  render(dom.window.document, s, { selected: elder.id });
+  const d = dom.window.document,
+    piece = d.querySelector(
+      `[data-r="${elder.r}"][data-c="${elder.c}"] .piece`,
+    ),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+  assert.ok(piece.classList.contains("senescent"));
+  assert.match(piece.parentElement.title, /senescente, idade 25/);
+  assert.match(piece.parentElement.querySelector(".badges").textContent, /⌛/);
+  assert.match(d.getElementById("selected").textContent, /Senescente · idade 25/);
+  assert.match(css, /\.piece\.senescent[\s\S]*font-style:\s*italic/);
   dom.window.close();
 });
 
