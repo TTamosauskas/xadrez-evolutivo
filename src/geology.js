@@ -280,6 +280,8 @@ export const TRAIT_STAGE = {
   "Neocórtex Desenvolvido": "quaternary",
 };
 
+export const ENERGY_BRANCH_TRAITS = new Set(["Fotossíntese", "Predação"]);
+
 export const ACTIVE_TRAIT_FAMILIES = [
   {
     id: "respiration",
@@ -645,7 +647,11 @@ export function applyTraitLoss(traits, ancestry, trait) {
 }
 
 export function traitLossAllowed(piece, trait) {
-  if (trait === "Respiração anaeróbia" || BODY_PLAN_TRAITS.has(trait))
+  if (
+    trait === "Respiração anaeróbia" ||
+    BODY_PLAN_TRAITS.has(trait) ||
+    ENERGY_BRANCH_TRAITS.has(trait)
+  )
     return false;
   if (trait !== "Multicelularismo") return true;
   return !(piece?.traits ?? []).some(
@@ -720,6 +726,14 @@ export function stageComplete(state) {
 
 export function traitUnlocked(state, trait, piece = null) {
   if (NEGATIVE_TRAITS.has(trait)) return true;
+  if (
+    piece &&
+    ENERGY_BRANCH_TRAITS.has(trait) &&
+    [...ENERGY_BRANCH_TRAITS].some(
+      (candidate) => candidate !== trait && piece.traits?.includes(candidate),
+    )
+  )
+    return false;
   if (
     piece &&
     BODY_PLAN_TRAITS.has(trait) &&
