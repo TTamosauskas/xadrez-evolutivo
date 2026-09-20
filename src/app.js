@@ -441,7 +441,10 @@ function info(title, lines, action = null) {
   confirmAction = action;
   $("info-cancel").hidden = !action;
   $("info-ok").textContent = action ? "Iniciar nova partida" : "Entendi";
-  $("info-dialog").showModal();
+  const dialog = $("info-dialog");
+  dialog.showModal();
+  dialog.focus({ preventScroll: true });
+  dialog.scrollTop = 0;
 }
 function closeInfo(run) {
   const action = confirmAction;
