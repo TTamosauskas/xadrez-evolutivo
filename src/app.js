@@ -827,6 +827,18 @@ $("evolution-history").addEventListener("click", () => {
   }
   const current = currentGeologicalStage(state),
     progress = stageProgress(state),
+    fossils = (state.fossilRecord ?? []).map((entry) => {
+      const stage =
+          GEOLOGICAL_STAGES.find(
+            (candidate) => candidate.id === entry.geologicalStage,
+          ) ?? current,
+        owner = arenaOwnerName(entry.owner),
+        traits = entry.traits
+          .slice(0, 4)
+          .map((trait) => `${TRAITS[trait]?.[0] ?? "🧬"} ${trait}`)
+          .join(" · ");
+      return `${entry.winner ? "★" : "·"} ${stage.period} · ${entry.cycle}º Ciclo · ${owner}: ${traits || "perfil basal"}`;
+    }),
     lines = [
       `${current.group} · ${current.period}`,
       `${state.cycle}º Ciclo · ${historicalGeneration}ª Geração histórica`,
@@ -840,6 +852,9 @@ $("evolution-history").addEventListener("click", () => {
           mark = discovered ? "✓" : next ? "→" : "○";
         return `${mark} ${index + 1}. ${TRAITS[trait][0]} ${trait}${next ? " · próxima inovação elegível" : ""}`;
       }),
+      ...(fossils.length
+        ? ["", "Registro fóssil da partida:", ...fossils]
+        : []),
       "",
       "Linha do tempo:",
       ...GEOLOGICAL_STAGES.map((stage) => {
