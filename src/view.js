@@ -13,7 +13,7 @@ import {
   reproductionReady,
 } from "./state.js";
 import { currentGeologicalStage, stageProgress } from "./geology.js";
-import { hiddenRecessiveTraits } from "./reproductive-genetics.js";
+import { hiddenRecessiveTraits } from "./genetics.js";
 import {
   movesFor,
   partnersFor,
