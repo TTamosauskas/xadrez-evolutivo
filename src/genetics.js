@@ -97,19 +97,63 @@ function importLegacyReproGenes(genome, reproGenes, activeTraits) {
       setActivePair(genome, trait);
 }
 
+function completeGeneticScaffold(activeTraits, hidden) {
+  const set = new Set(
+    (activeTraits ?? []).filter(
+      (trait) => TRAITS[trait] && !hidden.has(trait),
+    ),
+  );
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const trait of [...set]) {
+      if (
+        MULTICELLULAR_DEPENDENT_TRAITS.has(trait) &&
+        trait !== "Multicelularismo" &&
+        !set.has("Multicelularismo")
+      ) {
+        set.add("Multicelularismo");
+        changed = true;
+      }
+      if (PLANT_DERIVED_TRAITS.has(trait) && !set.has("Fotossíntese")) {
+        set.add("Fotossíntese");
+        changed = true;
+      }
+      const deps = TRAIT_DEPENDENCIES[trait];
+      for (const dependency of deps?.lineage ?? [])
+        if (!set.has(dependency) && !hidden.has(dependency)) {
+          set.add(dependency);
+          changed = true;
+        }
+      if (
+        deps?.lineageAny?.length &&
+        !deps.lineageAny.some((dependency) => set.has(dependency))
+      ) {
+        const dependency = deps.lineageAny.find(
+          (candidate) => !hidden.has(candidate),
+        );
+        if (dependency) {
+          set.add(dependency);
+          changed = true;
+        }
+      }
+    }
+  }
+  return [...set];
+}
+
 export function genomeFromTraits(
   activeTraits = [],
   hiddenRecessives = [],
   legacyReproGenes = null,
 ) {
   const genome = ancestralGenome(),
-    active = [...new Set(activeTraits)].filter((trait) => TRAITS[trait]),
     hidden = new Set(
       (hiddenRecessives ?? []).filter((trait) => TRAITS[trait]),
-    );
+    ),
+    active = completeGeneticScaffold(activeTraits, hidden);
 
-  for (const trait of active)
-    if (!hidden.has(trait)) setActivePair(genome, trait);
+  for (const trait of active) setActivePair(genome, trait);
   importLegacyReproGenes(genome, legacyReproGenes, active);
   for (const trait of hidden) {
     const pair = genome[trait];
@@ -196,17 +240,17 @@ export function genomeCarriedTraits(source) {
   );
 }
 
-function sameActiveFamily(a, b) {
-  const fa = activeTraitFamily(a),
-    fb = activeTraitFamily(b);
-  return !!fa && !!fb && fa.id === fb.id;
-}
-
 function dependencySatisfied(trait, dependency, active, carried) {
   if (dependency === BASAL_GENETIC_TRAIT)
     return active.has(BASAL_GENETIC_TRAIT) || carried.has(BASAL_GENETIC_TRAIT);
-  if (sameActiveFamily(trait, dependency)) return carried.has(dependency);
-  return active.has(dependency);
+  if (active.has(dependency)) return true;
+  if (!carried.has(dependency)) return false;
+  const family = activeTraitFamily(dependency);
+  if (!family) return false;
+  const dependencyIndex = family.traits.indexOf(dependency);
+  return family.traits.some(
+    (candidate, index) => index >= dependencyIndex && active.has(candidate),
+  );
 }
 
 export function expressGenome(
