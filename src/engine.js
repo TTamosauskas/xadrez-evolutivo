@@ -15,6 +15,8 @@ import {
   assertState,
   fertilityPaused,
   photosynthesisDelayTurns,
+  naturalDeathChance,
+  pieceAge,
 } from "./state.js";
 import {
   movesFor,
@@ -51,7 +53,6 @@ import {
   tickSevereEventTurn,
   tickEnvironment,
   checkPopulationClimate,
-  applyPopulationAttrition,
   repairConwayStagnation,
   offensiveActionCount,
 } from "./environment.js";
@@ -91,6 +92,30 @@ export function context(state) {
   };
   return ctx;
 }
+
+export function applyNaturalDeaths(ctx) {
+  const state = ctx.state;
+  let deaths = 0;
+  for (const piece of [...state.pieces]) {
+    const chance = naturalDeathChance(state, piece);
+    if (!chance || (chance < 1 && random(state) >= chance)) continue;
+    const cell = square(piece.r, piece.c),
+      age = pieceAge(state, piece);
+    if (
+      ctx.kill(
+        piece.id,
+        `morte natural aos ${age} rodada(s) de vida`,
+        null,
+        true,
+      )
+    ) {
+      markDecomposition(state, cell);
+      deaths++;
+    }
+  }
+  return deaths;
+}
+
 function finishGame(state, winner, reason) {
   state.result = { winner, reason };
   state.phase = "over";
@@ -284,7 +309,7 @@ function advanceTurn(ctx) {
         if (random(state) < (has(p, "Carapaça") ? 0.34 : 0.5))
           ctx.kill(p.id, "casa hostil");
       }
-    if (!extinction(state)) applyPopulationAttrition(ctx);
+    if (!extinction(state)) applyNaturalDeaths(ctx);
     if (!extinction(state)) checkPopulationClimate(ctx);
     if (!extinction(state)) resolveOffensiveStagnation(ctx);
   }
