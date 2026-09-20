@@ -23,6 +23,7 @@ import {
 import { movesFor } from "./moves.js";
 import { recordDiscovery } from "./discoveries.js";
 import { startDisease } from "./disease.js";
+import { immediateEventRepeatAllowed } from "./scenarios.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
 export const SEVERE_EVENT_IDS = new Set(["ice", "volcano", "meteor", "grb", "warming"]);
 const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.9);
@@ -95,7 +96,9 @@ export function severeEventForStage(state) {
     severe = EVENTS.filter(
       (event) => SEVERE_EVENT_IDS.has(event.id) && (weights[event.id] ?? 0) > 0,
     ),
-    fresh = severe.filter((event) => event.id !== state.previousEvent);
+    fresh = immediateEventRepeatAllowed(state)
+      ? severe
+      : severe.filter((event) => event.id !== state.previousEvent);
   return weightedEvent(state, fresh.length ? fresh : severe, weights);
 }
 const fertile = (state) =>
@@ -814,7 +817,8 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
         const weights = eventWeights(state),
           candidates = EVENTS.filter(
             (event) =>
-              event.id !== state.previousEvent &&
+              (immediateEventRepeatAllowed(state) ||
+                event.id !== state.previousEvent) &&
               (weights[event.id] ?? 0) > 0 &&
               (allowSevere || !SEVERE_EVENT_IDS.has(event.id)) &&
               (allowPathogen || event.id !== "pathogen"),
