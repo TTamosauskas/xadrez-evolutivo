@@ -40,10 +40,11 @@ import {
   syncReproTraits,
 } from "./reproductive-genetics.js";
 import {
+  applyTraitLoss,
   applyTraitMutation,
   deleteriousMutationUnlocked,
   innovationWeight,
-  normalizeEnergyBranch,
+  normalizeActiveTraits,
   normalizeMulticellularTraits,
   pawnMutationUnlocked,
   rankMutationUnlocked,
@@ -183,7 +184,7 @@ function mutation(state, p, positiveOnly) {
     p.traits = applyTraitMutation(p.traits, choice.gain);
     label = choice.gain;
   } else {
-    p.traits = p.traits.filter((t) => t !== choice.loss);
+    p.traits = applyTraitLoss(p.traits, p.ancestry, choice.loss);
     label = `Perda de ${choice.loss}`;
   }
   normalizePhotosyntheticRank(p);
@@ -249,7 +250,7 @@ function sexualProfile(state, a, b) {
   const hasEnergyConflict =
       traits.includes("Fotossíntese") && traits.includes("Predação"),
     normalizedTraits = normalizeMulticellularTraits(
-      normalizeEnergyBranch(
+      normalizeActiveTraits(
         traits,
         hasEnergyConflict && random(state) < 0.5 ? "Predação" : null,
       ),
@@ -728,7 +729,8 @@ export function reproduce(
   const profile = mate ? sexualProfile(state, parent, mate) : parent,
     phenotype = reproPhenotype(parent.reproGenes),
     plant = has(profile, "Fotossíntese"),
-    gymnosperm = has(profile, "Gimnospermas"),
+    seedPlant =
+      has(profile, "Gimnospermas") || has(profile, "Angiospermas"),
     domesticated =
       !options.immediateDevelopment &&
       (plant
@@ -739,7 +741,7 @@ export function reproduce(
       : plant
         ? "immediate"
         : phenotype.development,
-    dispersal = gymnosperm ? "local" : phenotype.dispersal,
+    dispersal = seedPlant ? "local" : phenotype.dispersal,
     population = activePopulation(state),
     baseWanted =
       options.forcedCount ??
@@ -759,7 +761,7 @@ export function reproduce(
     if (!count) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
     produced = startDomesticPlacement(ctx, parent, brood);
-  } else if (gymnosperm && !options.immediateDevelopment) {
+  } else if (seedPlant && !options.immediateDevelopment) {
     const capacity = freeCells(ctx, parent, "local", profile).length,
       count = Math.min(wanted, capacity);
     if (!count) return 0;
@@ -818,8 +820,8 @@ export function reproduce(
       state,
       domesticated
         ? `${OWNERS[parent.owner]} geraram ${produced} descendente(s) domesticado(s) por ${reason}; escolha as posições.`
-        : gymnosperm && !options.immediateDevelopment
-          ? `${OWNERS[parent.owner]} produziram ${produced} semente(s) de Gimnospermas por ${reason}.`
+        : seedPlant && !options.immediateDevelopment
+          ? `${OWNERS[parent.owner]} produziram ${produced} semente(s) por ${reason}.`
         : development === "oviparous"
           ? `${OWNERS[parent.owner]} depositaram um ovo ⚪ aquático com ${produced} descendente(s) por ${reason}.`
           : development === "amniotic"
