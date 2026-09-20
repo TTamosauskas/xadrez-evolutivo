@@ -1,4 +1,4 @@
-import { TRAITS } from "./constants.js";
+import { TRAITS, has } from "./constants.js";
 import {
   MULTICELLULAR_DEPENDENT_TRAITS,
   PLANT_DERIVED_TRAITS,
@@ -11,6 +11,10 @@ import {
   ARENA_ENGINEERING_CHANGES,
   ARENA_TRAIT_BUDGET,
 } from "./scenarios.js";
+import {
+  GENETIC_TRAITS,
+  reproGenesFromTraits,
+} from "./reproductive-genetics.js";
 
 const NEGATIVE = new Set([
   "Esterilidade",
@@ -18,6 +22,7 @@ const NEGATIVE = new Set([
   "Mutação Disfuncional",
 ]);
 const BASAL = "Respiração anaeróbia";
+export const ARENA_RECESSIVE_COUNT = 2;
 const order = new Map(Object.keys(TRAITS).map((trait, index) => [trait, index]));
 
 export const ARENA_ARCHETYPES = [
@@ -123,17 +128,93 @@ export function arenaGenomeValid(genome, budget = null) {
   return traitCombinationValid(traits);
 }
 
-export function arenaProfile(genome, rank = 4) {
-  const completed = completeArenaGenome(genome);
-  const preferred = completed.includes("Fotossíntese")
-    ? "Fotossíntese"
-    : completed.includes("Predação")
-      ? "Predação"
-      : null;
+function phenotypeSupportsGenome(active) {
+  const profile = { traits: [BASAL, ...active] };
+  for (const trait of active) {
+    if (
+      MULTICELLULAR_DEPENDENT_TRAITS.has(trait) &&
+      trait !== "Multicelularismo" &&
+      !has(profile, "Multicelularismo")
+    )
+      return false;
+    const deps = TRAIT_DEPENDENCIES[trait];
+    if (
+      deps?.lineage?.some(
+        (dependency) => dependency !== BASAL && !has(profile, dependency),
+      )
+    )
+      return false;
+    if (
+      deps?.lineageAny?.length &&
+      !deps.lineageAny.some(
+        (dependency) => dependency === BASAL || has(profile, dependency),
+      )
+    )
+      return false;
+    if (PLANT_DERIVED_TRAITS.has(trait) && !has(profile, "Fotossíntese"))
+      return false;
+  }
+  return traitCombinationValid(normalizeActiveTraits(profile.traits));
+}
+
+export function arenaRecessivePairs(genome) {
+  const completed = completeArenaGenome(genome),
+    pairs = [];
+  for (let i = 0; i < completed.length; i++)
+    for (let j = i + 1; j < completed.length; j++) {
+      const hidden = [completed[i], completed[j]],
+        hiddenSet = new Set(hidden),
+        active = completed.filter((trait) => !hiddenSet.has(trait));
+      if (phenotypeSupportsGenome(active)) pairs.push(hidden);
+    }
+  return pairs;
+}
+
+export function chooseArenaRecessives(
+  genome,
+  seed = Date.now(),
+  preferred = [],
+) {
+  const pairs = arenaRecessivePairs(genome);
+  if (!pairs.length) return [];
+  const wanted = new Set(preferred ?? []),
+    preferredPairs = pairs.filter((pair) =>
+      pair.every((trait) => wanted.has(trait)),
+    ),
+    partialPairs = pairs
+      .map((pair) => ({
+        pair,
+        kept: pair.filter((trait) => wanted.has(trait)).length,
+      }))
+      .sort((a, b) => b.kept - a.kept),
+    bestKept = partialPairs[0]?.kept ?? 0,
+    candidates = preferredPairs.length
+      ? preferredPairs
+      : partialPairs
+          .filter((entry) => entry.kept === bestKept)
+          .map((entry) => entry.pair),
+    random = lcg(seed);
+  return [...candidates[Math.floor(random() * candidates.length)]];
+}
+
+export function arenaProfile(genome, rank = 4, recessiveTraits = []) {
+  const completed = completeArenaGenome(genome),
+    hidden = new Set(recessiveTraits),
+    active = completed.filter((trait) => !hidden.has(trait)),
+    preferred = active.includes("Fotossíntese")
+      ? "Fotossíntese"
+      : active.includes("Predação")
+        ? "Predação"
+        : null,
+    genericRecessives = [...hidden].filter(
+      (trait) => !GENETIC_TRAITS.includes(trait),
+    );
   return {
     rank,
-    traits: normalizeActiveTraits([BASAL, ...completed], preferred),
+    traits: normalizeActiveTraits([BASAL, ...active], preferred),
     ancestry: [BASAL, ...completed],
+    recessiveTraits: genericRecessives,
+    reproGenes: reproGenesFromTraits(active, [...hidden]),
   };
 }
 
