@@ -1,3 +1,10 @@
+import {
+  earthTraitWindowAllows,
+  scenarioEventWeights,
+  scenarioHabitatProfile,
+  scenarioInnovationWeight,
+} from "./scenarios.js";
+
 const NEGATIVE_TRAITS = new Set([
   "Esterilidade",
   "Mutação Deletéria",
@@ -702,22 +709,25 @@ export function traitUnlocked(state, trait, piece = null) {
   const stageId = TRAIT_STAGE[trait];
   if (!stageId) return true;
   const current = currentGeologicalStage(state),
-    requiredStage = geologicalStage(stageId);
-  if (current.index < requiredStage.index) return false;
-  const deps = TRAIT_DEPENDENCIES[trait],
+    requiredStage = geologicalStage(stageId),
+    deps = TRAIT_DEPENDENCIES[trait],
     history = new Set(state.historicalTraits ?? []);
-  if (current.id === requiredStage.id && current.required.includes(trait)) {
-    const activeRequired = cycleRequiredInnovations(state),
-      nextRequired = activeRequired.find((candidate) => !history.has(candidate));
-    if (!history.has(trait)) {
-      if (!activeRequired.includes(trait)) return false;
-      if (nextRequired !== trait) return false;
-    } else if (
-      nextRequired &&
-      activeRequired.includes(trait) &&
-      activeRequired.indexOf(trait) < activeRequired.indexOf(nextRequired)
-    )
-      return false;
+  if (state.scenario !== "arena") {
+    if (current.index < requiredStage.index) return false;
+    if (!earthTraitWindowAllows(state, current.id, requiredStage.id)) return false;
+    if (current.id === requiredStage.id && current.required.includes(trait)) {
+      const activeRequired = cycleRequiredInnovations(state),
+        nextRequired = activeRequired.find((candidate) => !history.has(candidate));
+      if (!history.has(trait)) {
+        if (!activeRequired.includes(trait)) return false;
+        if (nextRequired !== trait) return false;
+      } else if (
+        nextRequired &&
+        activeRequired.includes(trait) &&
+        activeRequired.indexOf(trait) < activeRequired.indexOf(nextRequired)
+      )
+        return false;
+    }
   }
   const lineage = new Set([
     ...(piece?.ancestry ?? piece?.traits ?? []),
@@ -770,12 +780,24 @@ export function pathogenUnlocked(state) {
   return currentGeologicalStage(state).index >= geologicalStage("proterozoic").index;
 }
 
-export function innovationWeight() {
-  return 1;
+export function innovationWeight(state, trait, piece = null) {
+  const current = currentGeologicalStage(state),
+    deps = TRAIT_DEPENDENCIES[trait],
+    lineage = new Set([
+      ...(piece?.ancestry ?? piece?.traits ?? []),
+      ...(piece?.traits ?? []),
+    ]),
+    dependencyMatched =
+      !!deps?.lineage?.length &&
+      deps.lineage.every((dependency) => lineage.has(dependency));
+  return scenarioInnovationWeight(state, trait, piece, {
+    required: current.required.includes(trait),
+    dependencyMatched,
+  });
 }
 
 export function eventWeights(state) {
-  return { ...currentGeologicalStage(state).events };
+  return scenarioEventWeights(state, currentGeologicalStage(state).events);
 }
 
 export function habitatProfile(stateOrStage) {
@@ -783,7 +805,9 @@ export function habitatProfile(stateOrStage) {
     typeof stateOrStage === "string"
       ? geologicalStage(stateOrStage)
       : currentGeologicalStage(stateOrStage);
-  return { ...stage.habitat };
+  return typeof stateOrStage === "string"
+    ? { ...stage.habitat }
+    : scenarioHabitatProfile(stateOrStage, stage.habitat);
 }
 
 export function recordHistoricalTraits(state, piece) {
