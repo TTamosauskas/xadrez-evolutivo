@@ -69,6 +69,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Carnívoro",
       "Carapaça",
@@ -80,12 +81,14 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Reprodução Sexuada",
     ],
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Ovíparo",
       "Herbívoro",
@@ -96,12 +99,14 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Traqueófitas",
     ],
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Ovíparo",
       "Herbívoro",
@@ -113,6 +118,7 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Traqueófitas",
       "Madeira",
@@ -120,6 +126,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Locomoção Avançada",
       "Onívoro",
@@ -132,6 +139,7 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Traqueófitas",
       "Gimnospermas",
@@ -139,6 +147,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
@@ -152,6 +161,7 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Traqueófitas",
       "Gimnospermas",
@@ -160,6 +170,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
@@ -174,6 +185,7 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Traqueófitas",
       "Gimnospermas",
@@ -182,6 +194,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
@@ -197,6 +210,7 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Traqueófitas",
       "Gimnospermas",
@@ -205,6 +219,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
@@ -221,6 +236,7 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Traqueófitas",
       "Gimnospermas",
@@ -230,6 +246,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
@@ -244,6 +261,7 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Traqueófitas",
       "Gimnospermas",
@@ -253,6 +271,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
@@ -267,6 +286,7 @@ export const EARTH_FOUNDER_GENOMES = {
     plant: [
       "Fotossíntese",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Embriófitas",
       "Traqueófitas",
       "Gimnospermas",
@@ -275,6 +295,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Respiração aeróbia",
       "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
