@@ -8,6 +8,7 @@ import {
   distance,
   OWNERS,
   coord,
+  energyBranch,
 } from "./constants.js";
 import {
   at,
@@ -227,19 +228,14 @@ function mutation(state, p, positiveOnly) {
 }
 
 function sexualProfile(state, a, b) {
-  const branchA = has(a, "Fotossíntese")
-      ? "Fotossíntese"
-      : has(a, "Predação")
-        ? "Predação"
-        : null,
-    branchB = has(b, "Fotossíntese")
-      ? "Fotossíntese"
-      : has(b, "Predação")
-        ? "Predação"
-        : null;
-  if (!branchA || branchA !== branchB)
+  const branchA = energyBranch(a),
+    branchB = energyBranch(b),
+    crossBranch = branchA && branchB && branchA !== branchB,
+    crossAllowed =
+      crossBranch && has(a, "Mixotrofia") && has(b, "Mixotrofia");
+  if (!branchA || !branchB || (crossBranch && !crossAllowed))
     throw Error("Ramos energéticos incompatíveis para reprodução sexuada.");
-  const preferredEnergy = branchA,
+  const preferredEnergy = branchA === branchB ? branchA : null,
     profile = {
     rank: Math.max(a.rank, b.rank),
     traits: [],
@@ -703,17 +699,20 @@ export function reproduce(
 ) {
   const state = ctx.state;
   if (mate) {
-    const branchParent = has(parent, "Fotossíntese")
-        ? "Fotossíntese"
-        : has(parent, "Predação")
-          ? "Predação"
-          : null,
-      branchMate = has(mate, "Fotossíntese")
-        ? "Fotossíntese"
-        : has(mate, "Predação")
-          ? "Predação"
-          : null;
-    if (!branchParent || branchParent !== branchMate) return 0;
+    const branchParent = energyBranch(parent),
+      branchMate = energyBranch(mate),
+      crossBranch =
+        branchParent && branchMate && branchParent !== branchMate,
+      crossAllowed =
+        crossBranch &&
+        has(parent, "Mixotrofia") &&
+        has(mate, "Mixotrofia");
+    if (
+      !branchParent ||
+      !branchMate ||
+      (crossBranch && !crossAllowed)
+    )
+      return 0;
   }
   if (
     !options.ignoreReadiness &&
