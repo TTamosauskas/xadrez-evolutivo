@@ -451,7 +451,7 @@ function chooseHabitatCell(state, cells, type, mode, pattern) {
       if (mode === "remove") {
         if (pattern === "fragmented") return bs - as;
         if (pattern === "corridors")
-          return Math.abs(as - 2) - Math.abs(bs - 2);
+          return Math.abs(bs - 2) - Math.abs(as - 2);
         return as - bs;
       }
       if (pattern === "fragmented")
