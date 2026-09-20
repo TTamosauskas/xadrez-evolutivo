@@ -175,7 +175,7 @@ test("Archean is almost entirely fertile and Proterozoic seeds bounded hostile C
   assertState(proterozoic);
 });
 
-test("ancestral gray King splits into adjacent founders on opposite random sides", () => {
+test("ancestral gray King splits into paired photosynthetic and predatory founders", () => {
   let s = createCampaignState(301);
   assert.equal(s.phase, "origin");
   assert.equal(s.pieces.length, 0);
@@ -189,21 +189,41 @@ test("ancestral gray King splits into adjacent founders on opposite random sides
   s = transition(s, { type: "ORIGIN_CLICK" });
   assert.equal(s.phase, "move");
   assert.equal(s.origin, null);
-  assert.equal(s.pieces.length, 2);
+  assert.equal(s.pieces.length, 4);
   assert.ok(s.pieces.every((piece) => piece.rank === 4));
   assert.ok(
     s.pieces.every((piece) => piece.traits.includes("Respiração anaeróbia")),
   );
-  const blue = s.pieces.find((piece) => piece.owner === "blue"),
-    amber = s.pieces.find((piece) => piece.owner === "amber"),
-    blueVector = [blue.r - origin.r, blue.c - origin.c],
-    amberVector = [amber.r - origin.r, amber.c - origin.c];
-  assert.equal(Math.max(Math.abs(blueVector[0]), Math.abs(blueVector[1])), 1);
-  assert.equal(Math.max(Math.abs(amberVector[0]), Math.abs(amberVector[1])), 1);
-  assert.equal(amberVector[0] + blueVector[0], 0);
-  assert.equal(amberVector[1] + blueVector[1], 0);
-  assert.equal(s.board[blue.r * 8 + blue.c], "fertile");
-  assert.equal(s.board[amber.r * 8 + amber.c], "fertile");
+
+  for (const owner of ["blue", "amber"]) {
+    const founders = s.pieces.filter((piece) => piece.owner === owner);
+    assert.equal(founders.length, 2);
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Fotossíntese")).length,
+      1,
+    );
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Predação")).length,
+      1,
+    );
+    for (const piece of founders) {
+      const vector = [piece.r - origin.r, piece.c - origin.c];
+      assert.equal(Math.max(Math.abs(vector[0]), Math.abs(vector[1])), 1);
+      assert.equal(s.board[piece.r * 8 + piece.c], "fertile");
+    }
+  }
+
+  const blue = s.pieces.filter((piece) => piece.owner === "blue"),
+    amber = s.pieces.filter((piece) => piece.owner === "amber");
+  for (const piece of blue) {
+    assert.ok(
+      amber.some(
+        (opposite) =>
+          opposite.r - origin.r === -(piece.r - origin.r) &&
+          opposite.c - origin.c === -(piece.c - origin.c),
+      ),
+    );
+  }
   assertState(s);
 });
 
