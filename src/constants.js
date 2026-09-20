@@ -45,7 +45,7 @@ export const TRAITS = {
     "🦕",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
-  Predação: ["👾", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção Primitiva, apenas capturas são permitidas."],
+  Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Permite capturar criaturas adversárias segundo a geometria tradicional da peça; descendentes permanecem neste ramo e, sem Locomoção Primitiva, apenas capturas são permitidas."],
   Carnívoro: [
     "🦁",
     "Especialização de uma linhagem com Predação: obtém reprodução predatória ao capturar criaturas não fotossintéticas e deixa de usar casas férteis.",
@@ -101,7 +101,7 @@ export const TRAITS = {
   ],
   Fotossíntese: [
     "🟢",
-    "Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas, independentemente das características das peças vizinhas; é incompatível com Predação na mesma linhagem.",
+    "Define um ramo energético hereditário incompatível com Predação. Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas; descendentes permanecem neste ramo.",
   ],
   Embriófitas: [
     "🌱",
