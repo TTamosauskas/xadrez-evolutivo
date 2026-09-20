@@ -1,4 +1,4 @@
-import { TRAITS, energyBranch } from "./constants.js";
+import { TRAITS } from "./constants.js";
 import {
   BODY_PLAN_TRAITS,
   ENERGY_BRANCH_TRAITS,
