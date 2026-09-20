@@ -151,6 +151,82 @@ function moveDirection(p) {
   }
 }
 
+function underlyingTerrain(state, cell) {
+  if (state.event?.hazards.includes(cell))
+    return state.event.snapshots[cell] ?? "neutral";
+  return state.board[cell];
+}
+
+function setUnderlyingTerrain(state, cell, value) {
+  if (state.event?.hazards.includes(cell)) state.event.snapshots[cell] = value;
+  else state.board[cell] = value;
+}
+
+function restoreExtremophyteFertility(state) {
+  const active = [];
+  for (const entry of state.extremophyteFertility ?? []) {
+    if (underlyingTerrain(state, entry.cell) === "fertile") {
+      active.push(entry);
+      continue;
+    }
+    setUnderlyingTerrain(state, entry.cell, "hostile");
+  }
+  state.extremophyteFertility = active;
+}
+
+function recordExtremophyteAdaptation(state, owner = null) {
+  const active = new Set(
+    (state.extremophyteFertility ?? []).map((entry) => entry.cell),
+  );
+  for (const p of state.pieces) {
+    if (owner && p.owner !== owner) continue;
+    const cell = square(p.r, p.c),
+      eligible =
+        has(p, "Extremófitas") &&
+        !active.has(cell) &&
+        !state.event?.hazards.includes(cell) &&
+        underlyingTerrain(state, cell) === "hostile";
+    if (!eligible) {
+      delete p.extremophyteCell;
+      delete p.extremophyteSinceRound;
+      continue;
+    }
+    if (p.extremophyteCell !== cell) {
+      p.extremophyteCell = cell;
+      p.extremophyteSinceRound = round(state);
+    }
+  }
+}
+
+function matureExtremophytes(state) {
+  const active = new Set(
+      (state.extremophyteFertility ?? []).map((entry) => entry.cell),
+    ),
+    now = round(state);
+  for (const p of state.pieces) {
+    const cell = square(p.r, p.c);
+    if (
+      !has(p, "Extremófitas") ||
+      active.has(cell) ||
+      p.extremophyteCell !== cell ||
+      !Number.isInteger(p.extremophyteSinceRound) ||
+      p.extremophyteSinceRound >= now ||
+      state.event?.hazards.includes(cell) ||
+      underlyingTerrain(state, cell) !== "hostile"
+    )
+      continue;
+    setUnderlyingTerrain(state, cell, "fertile");
+    state.extremophyteFertility.push({ cell, base: "hostile" });
+    active.add(cell);
+    delete p.extremophyteCell;
+    delete p.extremophyteSinceRound;
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🌴 Extremófitas tornou ${coord(p.r, p.c)} temporariamente fértil.`,
+    );
+  }
+}
+
 function photosynthesisHasSpace(state, p) {
   let free = 0;
   for (let dr = -1; dr <= 1; dr++)
@@ -259,6 +335,7 @@ function advanceTurn(ctx) {
   const state = ctx.state,
     acting = state.current,
     before = state.turn;
+  restoreExtremophyteFertility(state);
   state.chain = null;
   state.partner = null;
   state.manipulation = null;
@@ -282,6 +359,7 @@ function advanceTurn(ctx) {
   }
   if (extinction(state)) return;
   recordPhotosynthesis(state, acting);
+  recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
   tickSevereEventTurn(state);
@@ -313,10 +391,12 @@ function advanceTurn(ctx) {
           ctx.kill(p.id, "casa hostil");
       }
     if (!extinction(state)) applyNaturalDeaths(ctx);
+    if (!extinction(state)) matureExtremophytes(state);
     if (!extinction(state)) checkPopulationClimate(ctx);
     if (!extinction(state)) resolveOffensiveStagnation(ctx);
   }
   maturePhotosynthesis(state, state.current);
+  recordExtremophyteAdaptation(state);
   if (!extinction(state)) checkPopulation(state);
 }
 function actionCountFor(state, owner) {
