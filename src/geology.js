@@ -230,7 +230,7 @@ export const TRAIT_STAGE = {
   Parasitismo: "cambrian",
   "Vetor Patógeno": "cretaceous",
   Esporos: "proterozoic",
-  Locomoção: "ediacaran",
+  "Locomoção Articulada": "ediacaran",
   Escavador: "ediacaran",
   "Construtor de Nicho": "ediacaran",
   Necrófago: "ediacaran",
