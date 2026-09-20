@@ -202,7 +202,9 @@ export function chooseAction(
       ),
   );
   if (difficulty === "easy" && !cortexAvailable)
-    return actions[(state.rng >>> 0) % Math.min(actions.length, 3)];
+    return state.scenario === "arena"
+      ? actions[(state.rng >>> 0) % actions.length]
+      : actions[(state.rng >>> 0) % Math.min(actions.length, 3)];
   const deadline = now() + budget,
     owner = state.current;
   let best = actions[0],
