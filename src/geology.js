@@ -213,6 +213,7 @@ export const TRAIT_STAGE = {
   Resistência: "proterozoic",
   Predação: "archean",
   Carnívoro: "proterozoic",
+  Herbívoro: "ordovician",
   Canibalismo: "cambrian",
   Parasitismo: "cambrian",
   Esporos: "proterozoic",
@@ -260,6 +261,7 @@ export const TRAIT_DEPENDENCIES = {
   Trepadeira: { lineage: ["Traqueófitas"] },
   Angiospermas: { lineage: ["Gimnospermas"] },
   Carnívoro: { lineage: ["Predação"] },
+  Herbívoro: { lineage: ["Predação"] },
   Canibalismo: { lineage: ["Carnívoro"] },
   "Precocidade Sexual": { lineage: ["Reprodução Sexuada"] },
   Locomoção: { lineage: ["Predação"] },
@@ -277,7 +279,7 @@ export const TRAIT_DEPENDENCIES = {
   "Ovulação Induzida": { lineage: ["Vivíparo"] },
   "Visão Noturna": { lineage: ["Camuflagem"] },
   Ovífagia: { lineage: ["Ovíparo"] },
-  Onívoro: { lineage: ["Carnívoro"] },
+  Onívoro: { lineageAny: ["Carnívoro", "Herbívoro"] },
   "Construtor de Nicho": { lineage: ["Escavador"] },
   "Polegar Opositor": { lineage: ["Construtor de Nicho"] },
   Chifre: { lineage: ["Predação"] },
@@ -302,6 +304,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Coletor",
   "Locomoção Avançada",
   "Escalador",
+  "Herbívoro",
   "Onívoro",
   "Respiração Cutânea",
   "Voo",
@@ -363,6 +366,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Respiração Cutânea",
   "Sacos Aéreos",
   "Carnívoro",
+  "Herbívoro",
   "Canibalismo",
   "Parasitismo",
   "Onívoro",
@@ -549,6 +553,16 @@ export function traitUnlocked(state, trait, piece = null) {
   if (deps?.historical?.some((dependency) => !history.has(dependency)))
     return false;
   if (deps?.lineage?.some((dependency) => !lineage.has(dependency)))
+    return false;
+  if (
+    deps?.lineageAny?.length &&
+    !deps.lineageAny.some((dependency) => lineage.has(dependency))
+  )
+    return false;
+  if (
+    (trait === "Carnívoro" && piece?.traits?.includes("Herbívoro")) ||
+    (trait === "Herbívoro" && piece?.traits?.includes("Carnívoro"))
+  )
     return false;
   return true;
 }
