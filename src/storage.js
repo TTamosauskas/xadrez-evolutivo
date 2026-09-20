@@ -50,11 +50,30 @@ const legacyTraitName = (name) =>
   );
 const v2TraitName = (name) =>
   name === "Locomoção" ? "Locomoção Avançada" : legacyTraitName(name);
+const legacyDominantPair = () => [
+  { value: "derived", dominance: "dominant" },
+  { value: "ancestral", dominance: "neutral" },
+];
 const currentGenome = (genome) => {
   if (!genome || typeof genome !== "object") return genome;
   const migrated = { ...genome };
   if (migrated["Locomoção"] && !migrated["Locomoção Articulada"])
     migrated["Locomoção Articulada"] = migrated["Locomoção"];
+  const articulated =
+      migrated["Locomoção Articulada"]?.some(
+        (allele) => allele?.value === "derived",
+      ) ?? false,
+    vertebrate =
+      migrated.Vertebrado?.some((allele) => allele?.value === "derived") ??
+      false,
+    arthropod =
+      migrated["Artrópode"]?.some((allele) => allele?.value === "derived") ??
+      false;
+  if (articulated) {
+    if (!migrated["Locomoção Primitiva"])
+      migrated["Locomoção Primitiva"] = legacyDominantPair();
+    if (!vertebrate && !arthropod) migrated.Vertebrado = legacyDominantPair();
+  }
   delete migrated["Locomoção"];
   delete migrated.Fertilidade;
   return migrated;
@@ -143,6 +162,15 @@ export function deserialize(raw) {
         if (legacyV2) traits.add("Locomoção Articulada");
         if (sourceVersion < 4) traits.add("Predação");
         const validTraits = [...traits].filter((trait) => TRAITS[trait]);
+        if (validTraits.includes("Locomoção Articulada")) {
+          if (!validTraits.includes("Locomoção Primitiva"))
+            validTraits.push("Locomoção Primitiva");
+          if (
+            !validTraits.includes("Vertebrado") &&
+            !validTraits.includes("Artrópode")
+          )
+            validTraits.push("Vertebrado");
+        }
         if (
           sourceVersion < 9 &&
           validTraits.some((trait) => MULTICELLULAR_DEPENDENT_TRAITS.has(trait)) &&
@@ -403,6 +431,15 @@ export function deserialize(raw) {
           .filter((trait) => TRAITS[trait]),
       ),
     ];
+    if (data.historicalTraits.includes("Locomoção Articulada")) {
+      if (!data.historicalTraits.includes("Locomoção Primitiva"))
+        data.historicalTraits.push("Locomoção Primitiva");
+      if (
+        !data.historicalTraits.includes("Vertebrado") &&
+        !data.historicalTraits.includes("Artrópode")
+      )
+        data.historicalTraits.push("Vertebrado");
+    }
     if (!data.historicalTraits.includes("Respiração anaeróbia"))
       data.historicalTraits.unshift("Respiração anaeróbia");
     const migratedMulticellularHistory =
