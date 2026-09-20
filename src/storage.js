@@ -145,12 +145,14 @@ export function deserialize(raw) {
       data.scenario = "alternative";
       data.arenaPhase = 0;
       data.arenaFounders = null;
+      data.fossilRecord = [];
     } else {
       if (!["earth", "alternative", "arena"].includes(data.scenario))
         data.scenario = "alternative";
       if (!Number.isInteger(data.arenaPhase) || data.arenaPhase < 0)
         data.arenaPhase = 0;
       if (data.arenaFounders === undefined) data.arenaFounders = null;
+      if (!Array.isArray(data.fossilRecord)) data.fossilRecord = [];
     }
     if (Array.isArray(data.pieces))
       for (const piece of data.pieces) {
