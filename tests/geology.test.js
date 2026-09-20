@@ -580,6 +580,26 @@ test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either 
   assert.equal(traitUnlocked(s, "Onívoro", carnivore), true);
 });
 
+test("Vetor Patógeno is a Cretaceous specialization of Parasitismo", () => {
+  let s = createState(171, {
+    geologicalStage: "jurassic",
+    historicalTraits: GEOLOGICAL_STAGES.slice(0, 11).flatMap(
+      (stage) => stage.required,
+    ),
+  });
+  const p = newPiece(s, "blue", 4, 4, {
+    traits: ["Multicelularismo", "Predação", "Parasitismo"],
+    ancestry: ["Multicelularismo", "Predação", "Parasitismo"],
+  });
+  assert.equal(traitUnlocked(s, "Vetor Patógeno", p), false);
+
+  s.geologicalStage = "cretaceous";
+  assert.equal(traitUnlocked(s, "Vetor Patógeno", p), true);
+  const active = applyTraitMutation(p.traits, "Vetor Patógeno");
+  assert.ok(active.includes("Vetor Patógeno"));
+  assert.equal(active.includes("Parasitismo"), false);
+});
+
 test("plant innovations unlock in their geological periods without becoming mandatory stage gates", () => {
   const s = createState(118, {
       geologicalStage: "ordovician",
