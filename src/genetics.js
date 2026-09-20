@@ -1,4 +1,4 @@
-import { TRAITS } from "./constants.js";
+import { TRAITS, energyBranch } from "./constants.js";
 import {
   BODY_PLAN_TRAITS,
   ENERGY_BRANCH_TRAITS,
@@ -380,8 +380,16 @@ export function inheritSexualGenome(a, b, random) {
       [...ENERGY_BRANCH_TRAITS].find((trait) => locusExpressed(genome[trait])) ??
       null,
     energyA = energyOf(ga),
-    energyB = energyOf(gb);
-  if (energyA && energyB && energyA !== energyB)
+    energyB = energyOf(gb),
+    crossBranch =
+      energyA &&
+      energyB &&
+      energyA !== energyB,
+    crossAllowed =
+      crossBranch &&
+      a?.traits?.includes("Mixotrofia") &&
+      b?.traits?.includes("Mixotrofia");
+  if (crossBranch && !crossAllowed)
     throw Error("Ramos energéticos incompatíveis para reprodução sexuada.");
   const child = Object.fromEntries(
       GENETIC_TRAITS.map((trait) => [
@@ -408,7 +416,10 @@ export function inheritSexualGenome(a, b, random) {
     for (const trait of expressedPlans)
       if (trait !== keep) child[trait] = ancestralPair();
   }
-  const energy = energyA ?? energyB;
+  const energy =
+    crossAllowed
+      ? (random() < 0.5 ? energyA : energyB)
+      : energyA ?? energyB;
   if (energy) {
     for (const trait of ENERGY_BRANCH_TRAITS)
       child[trait] =
