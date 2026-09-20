@@ -3,17 +3,23 @@ import { round, random, pick, log, notice } from "./state.js";
 import { pathogenUnlocked } from "./geology.js";
 import { recordDiscovery } from "./discoveries.js";
 export const POPULATION_RESISTANCE_MORTALITY_FACTOR = 0.25;
+export const VECTOR_PATHOGEN_TRANSMISSION_CHANCE = 0.25;
+export const VECTOR_PATHOGEN_MORTALITY = 20;
+export const VECTOR_RESISTANCE_MORTALITY_FACTOR = 0.5;
 export function pathogenMortalityChance(piece, disease) {
   const base = disease.mortality / 100;
-  return disease.source === "population" && has(piece, "Resistência")
-    ? base * POPULATION_RESISTANCE_MORTALITY_FACTOR
-    : base;
+  if (!has(piece, "Resistência")) return base;
+  if (disease.source === "population")
+    return base * POPULATION_RESISTANCE_MORTALITY_FACTOR;
+  if (disease.source === "vector")
+    return base * VECTOR_RESISTANCE_MORTALITY_FACTOR;
+  return base;
 }
 
 export function infect(state, p, disease) {
   if (
     !p ||
-    (has(p, "Resistência") && disease.source !== "population") ||
+    (has(p, "Resistência") && !["population", "vector"].includes(disease.source)) ||
     p.infection ||
     disease.survivors.includes(p.id)
   )
@@ -31,7 +37,7 @@ export function startDisease(
   const candidates = state.pieces.filter(
     (p) =>
       !p.infection &&
-      (source === "population" || !has(p, "Resistência")),
+      (["population", "vector"].includes(source) || !has(p, "Resistência")),
   );
   seed ??= pick(state, candidates);
   if (!seed) return null;
@@ -39,11 +45,17 @@ export function startDisease(
     id: state.nextDisease++,
     source,
     triggerOwner,
-    mode: pick(state, ["diagonal", "orthogonal", "omnidirectional"]),
+    mode:
+      source === "vector"
+        ? "omnidirectional"
+        : pick(state, ["diagonal", "orthogonal", "omnidirectional"]),
     startRound: round(state),
-    endRound: round(state) + 10,
-    delay: 2 + Math.floor(random(state) * 5),
-    mortality: 60 + Math.floor(random(state) * 41),
+    endRound: round(state) + (source === "vector" ? 6 : 10),
+    delay: source === "vector" ? 3 : 2 + Math.floor(random(state) * 5),
+    mortality:
+      source === "vector"
+        ? VECTOR_PATHOGEN_MORTALITY
+        : 60 + Math.floor(random(state) * 41),
     infected: [],
     survivors: [],
     deaths: 0,
@@ -51,17 +63,40 @@ export function startDisease(
   state.diseases.push(disease);
   recordDiscovery(state, "events", "pathogen");
   infect(state, seed, disease);
-  notice(state, "Patógeno Virulento", [
-    `Origem: ${source === "population" ? "pressão populacional" : "evento ecológico"}.`,
-    `Mortalidade: ${disease.mortality}%. Desfecho após ${disease.delay} rodadas de infecção.`,
-    `Contágio ${disease.mode === "diagonal" ? "diagonal" : disease.mode === "orthogonal" ? "ortogonal" : "omnidirecional"} durante dez rodadas.`,
-  ]);
+  if (source !== "vector")
+    notice(state, "Patógeno Virulento", [
+      `Origem: ${source === "population" ? "pressão populacional" : "evento ecológico"}.`,
+      `Mortalidade: ${disease.mortality}%. Desfecho após ${disease.delay} rodadas de infecção.`,
+      `Contágio ${disease.mode === "diagonal" ? "diagonal" : disease.mode === "orthogonal" ? "ortogonal" : "omnidirecional"} durante dez rodadas.`,
+    ]);
   log(
     state,
-    `Patógeno Virulento: mortalidade ${disease.mortality}%, prazo ${disease.delay} rodadas.`,
+    source === "vector"
+      ? `🦟 Patógeno vetorial: mortalidade ${disease.mortality}%, prazo ${disease.delay} rodadas.`
+      : `Patógeno Virulento: mortalidade ${disease.mortality}%, prazo ${disease.delay} rodadas.`,
   );
   return disease;
 }
+export function tryVectorPathogen(state, vector) {
+  if (!has(vector, "Vetor Patógeno")) return null;
+  const targets = state.pieces.filter(
+    (piece) =>
+      piece.owner !== vector.owner &&
+      !piece.infection &&
+      distance(piece, vector) === 1,
+  );
+  if (!targets.length || random(state) >= VECTOR_PATHOGEN_TRANSMISSION_CHANCE)
+    return null;
+  const target = pick(state, targets),
+    disease = startDisease(state, "vector", target, vector.owner);
+  if (disease)
+    log(
+      state,
+      `${OWNERS[vector.owner]}: 🦟 Vetor Patógeno contaminou uma peça adversária adjacente.`,
+    );
+  return disease;
+}
+
 export function populationPathogenChance(gap) {
   return Number(
     Math.min(0.45, 0.05 + Math.max(0, gap) * 0.04).toFixed(2),
@@ -149,7 +184,7 @@ export function tickDiseases(ctx) {
       (p) => p.infection?.disease === disease.id && p.infection.due <= now,
     );
     for (const p of due) {
-      if (disease.source === "population") {
+      if (["population", "vector"].includes(disease.source)) {
         const mortality = pathogenMortalityChance(p, disease);
         if (random(state) < mortality) {
           if (ctx.kill(p.id, "Patógeno Virulento")) disease.deaths++;
@@ -167,7 +202,7 @@ export function tickDiseases(ctx) {
           log(
             state,
             has(p, "Resistência")
-              ? `${OWNERS[p.owner]}: 🧬 Resistência reduziu a severidade do patógeno populacional.`
+              ? `${OWNERS[p.owner]}: 🧬 Resistência reduziu a severidade do patógeno ${disease.source === "vector" ? "vetorial" : "populacional"}.`
               : `${OWNERS[p.owner]}: uma peça sobreviveu ao patógeno.`,
           );
         }
