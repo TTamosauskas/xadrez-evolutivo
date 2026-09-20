@@ -103,6 +103,10 @@ export const TRAITS = {
     "🟢",
     "Define um ramo energético hereditário incompatível com Predação. Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas; descendentes permanecem neste ramo.",
   ],
+  Mixotrofia: [
+    "☯",
+    "Quando expressa, combina as funções energéticas básicas de Fotossíntese e Predação sem apagar o ramo ancestral nem liberar automaticamente as especializações do outro ramo.",
+  ],
   Embriófitas: [
     "🌱",
     "Ao completar Fotossíntese, pode tornar fértil também uma casa neutra adjacente desocupada.",
@@ -299,5 +303,13 @@ export const has = (piece, trait) =>
   !!piece?.traits?.some((active) =>
     TRAIT_CAPABILITY_IMPLICATIONS[active]?.includes(trait),
   );
+export const energyBranch = (piece) =>
+  piece?.traits?.includes("Fotossíntese")
+    ? "Fotossíntese"
+    : piece?.traits?.includes("Predação")
+      ? "Predação"
+      : null;
+export const canPhotosynthesize = (piece) =>
+  has(piece, "Fotossíntese") || has(piece, "Mixotrofia");
 export const distance = (a, b) =>
   Math.max(Math.abs(a.r - b.r), Math.abs(a.c - b.c));
