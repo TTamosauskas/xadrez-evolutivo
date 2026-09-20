@@ -169,6 +169,8 @@ export function newPiece(state, owner, r, c, source = {}) {
       ? "Fotossíntese"
       : null;
   syncGenomePhenotype(piece, preferredEnergy);
+  if (has(piece, "Artrópode") && ![0, 1, 2, 4].includes(piece.rank))
+    piece.rank = 2;
   return normalizePhotosyntheticRank(piece);
 }
 
