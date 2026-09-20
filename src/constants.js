@@ -27,6 +27,10 @@ export const TRAITS = {
     "🦵",
     "Especialização locomotora de Vertebrados ou Artrópodes; habilita as formas derivadas permitidas pelo plano corporal e é pré-requisito de Locomoção Avançada.",
   ],
+  "Percepção Espacial": [
+    "꩜",
+    "Permite direcionar capturas além da primeira casa da trajetória oficial da peça. Para Cavalos, o destino do salto conta como a primeira e única casa da trajetória.",
+  ],
   Escavador: ["🦡", "Pode perfurar barreiras."],
   "Locomoção Avançada": [
     "🐎",
