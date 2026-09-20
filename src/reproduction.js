@@ -801,6 +801,8 @@ export function reproduce(
   }
 
   if (produced) {
+    if (has(parent, "Ooteca") && options.fertileReproduction)
+      parent.oothecaPrimed = true;
     const cooldown = (piece) =>
       round(state) +
       (has(piece, "Ovulação Induzida") ? 2 : 3) +
