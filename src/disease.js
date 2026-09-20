@@ -2,10 +2,18 @@ import { has, distance, OWNERS, other } from "./constants.js";
 import { round, random, pick, log, notice } from "./state.js";
 import { pathogenUnlocked } from "./geology.js";
 import { recordDiscovery } from "./discoveries.js";
+export const POPULATION_RESISTANCE_MORTALITY_FACTOR = 0.25;
+export function pathogenMortalityChance(piece, disease) {
+  const base = disease.mortality / 100;
+  return disease.source === "population" && has(piece, "Resistência")
+    ? base * POPULATION_RESISTANCE_MORTALITY_FACTOR
+    : base;
+}
+
 export function infect(state, p, disease) {
   if (
     !p ||
-    has(p, "Resistência") ||
+    (has(p, "Resistência") && disease.source !== "population") ||
     p.infection ||
     disease.survivors.includes(p.id)
   )
@@ -21,7 +29,9 @@ export function startDisease(
   triggerOwner = null,
 ) {
   const candidates = state.pieces.filter(
-    (p) => !has(p, "Resistência") && !p.infection,
+    (p) =>
+      !p.infection &&
+      (source === "population" || !has(p, "Resistência")),
   );
   seed ??= pick(state, candidates);
   if (!seed) return null;
@@ -42,7 +52,7 @@ export function startDisease(
   recordDiscovery(state, "events", "pathogen");
   infect(state, seed, disease);
   notice(state, "Patógeno Virulento", [
-    `Origem: ${source === "population" ? "superpopulação" : "evento ecológico"}.`,
+    `Origem: ${source === "population" ? "pressão populacional" : "evento ecológico"}.`,
     `Mortalidade: ${disease.mortality}%. Desfecho após ${disease.delay} rodadas de infecção.`,
     `Contágio ${disease.mode === "diagonal" ? "diagonal" : disease.mode === "orthogonal" ? "ortogonal" : "omnidirecional"} durante dez rodadas.`,
   ]);
@@ -89,7 +99,7 @@ export function checkPopulation(state) {
 
   const enemies = state.pieces.filter((p) => p.owner === other(dominant)),
     candidates = state.pieces.filter(
-      (p) => p.owner === dominant && !has(p, "Resistência") && !p.infection,
+      (p) => p.owner === dominant && !p.infection,
     );
   if (!candidates.length) return;
 
@@ -139,6 +149,30 @@ export function tickDiseases(ctx) {
       (p) => p.infection?.disease === disease.id && p.infection.due <= now,
     );
     for (const p of due) {
+      if (disease.source === "population") {
+        const mortality = pathogenMortalityChance(p, disease);
+        if (random(state) < mortality) {
+          if (ctx.kill(p.id, "Patógeno Virulento")) disease.deaths++;
+          else {
+            disease.survivors.push(p.id);
+            delete p.infection;
+            log(
+              state,
+              `${OWNERS[p.owner]}: uma peça regenerou e sobreviveu ao patógeno.`,
+            );
+          }
+        } else {
+          disease.survivors.push(p.id);
+          delete p.infection;
+          log(
+            state,
+            has(p, "Resistência")
+              ? `${OWNERS[p.owner]}: 🧬 Resistência reduziu a severidade do patógeno populacional.`
+              : `${OWNERS[p.owner]}: uma peça sobreviveu ao patógeno.`,
+          );
+        }
+        continue;
+      }
       const quota = Math.ceil(
         (disease.infected.length * disease.mortality) / 100,
       );

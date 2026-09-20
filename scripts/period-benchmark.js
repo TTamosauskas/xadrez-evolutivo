@@ -35,11 +35,12 @@ function animalTraits(stage, game) {
     "Predação",
     ...(available("Multicelularismo", stage) ? ["Multicelularismo"] : []),
   ];
-  if (available("Carnívoro", stage)) traits.push("Carnívoro");
+  if (available("Onívoro", stage)) traits.push("Carnívoro", "Onívoro");
+  else if (available("Herbívoro", stage) && game % 2 === 0) traits.push("Herbívoro");
+  else if (available("Carnívoro", stage)) traits.push("Carnívoro");
   if (available("Locomoção", stage)) traits.push("Locomoção");
   if (available("Escavador", stage) && game % 2 === 1) traits.push("Escavador");
   if (available("Respiração Cutânea", stage)) traits.push("Respiração Cutânea");
-  if (available("Onívoro", stage)) traits.push("Onívoro");
   if (available("Escalador", stage) && game % 2 === 0) traits.push("Escalador");
   if (available("Carapaça", stage)) traits.push("Carapaça");
   if (available("Ovíparo", stage) && !available("Ovíparos Amniotas", stage))

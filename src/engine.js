@@ -812,15 +812,19 @@ function executeMove(ctx, action) {
   const collectorStay =
       !scavenging && has(p, "Coletor") && target.stay && p.seeds > 0,
     carnivore = has(p, "Carnívoro"),
+    herbivore = has(p, "Herbívoro"),
     omnivore = has(p, "Onívoro"),
     fertileResource =
       !scavenging &&
       ((!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay),
     fertile = fertileResource && (!carnivore || omnivore),
+    photosyntheticPrey = pieceCapture && has(victim, "Fotossíntese"),
     predation =
       pieceCapture &&
       victim.owner !== p.owner &&
-      (carnivore || omnivore);
+      (omnivore ||
+        (carnivore && !photosyntheticPrey) ||
+        (herbivore && photosyntheticPrey));
   log(
     state,
     `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
@@ -911,17 +915,22 @@ function resolveParasitism(ctx, action) {
       (piece) => piece.id === action.id && piece.owner === state.current,
     );
   if (!canParasitize(state, p)) throw Error("Parasitismo indisponível.");
-  const fertilized = !fertilityPaused(state);
+  const fertilized =
+    !fertilityPaused(state) && terrain(state, p.r, p.c) !== "fertile";
   if (fertilized) state.board[square(p.r, p.c)] = "fertile";
   const affected = [];
   for (const otherPiece of state.pieces)
-    if (otherPiece.owner !== p.owner && distance(p, otherPiece) === 1) {
+    if (
+      otherPiece.owner !== p.owner &&
+      distance(p, otherPiece) === 1 &&
+      terrain(state, otherPiece.r, otherPiece.c) !== "hostile"
+    ) {
       state.board[square(otherPiece.r, otherPiece.c)] = "hostile";
       affected.push(coord(otherPiece.r, otherPiece.c));
     }
   log(
     state,
-    `${OWNERS[p.owner]}: 🪱 Parasitismo ${fertilized ? `tornou ${coord(p.r, p.c)} fértil` : "manteve a fertilização pausada pela densidade"}${affected.length ? ` e ${affected.join(", ")} hostil(is)` : ""}.`,
+    `${OWNERS[p.owner]}: 🪱 Parasitismo ${fertilized ? `tornou ${coord(p.r, p.c)} fértil` : ""}${fertilized && affected.length ? " e " : ""}${affected.length ? `${affected.join(", ")} hostil(is)` : ""}.`,
   );
   advanceTurn(ctx);
   settle(ctx);

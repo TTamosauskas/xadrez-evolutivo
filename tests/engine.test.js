@@ -38,6 +38,8 @@ import {
   tickDiseases,
   checkPopulation,
   populationPathogenChance,
+  pathogenMortalityChance,
+  POPULATION_RESISTANCE_MORTALITY_FACTOR,
 } from "../src/disease.js";
 import {
   reproduce,
@@ -514,6 +516,29 @@ test("disease transmits one hop per round, resistance blocks it, survivors stay 
   assert.ok(s.pieces.some((p) => p.id === 4));
   assertState(s);
 });
+test("Resistência blocks ecological pathogens but reduces population-pathogen mortality by 75%", () => {
+  const resistant = { traits: ["Resistência"] },
+    ordinary = { traits: [] },
+    populationDisease = { source: "population", mortality: 100 },
+    ecoDisease = { source: "eco", mortality: 100 };
+
+  assert.equal(POPULATION_RESISTANCE_MORTALITY_FACTOR, 0.25);
+  assert.equal(pathogenMortalityChance(ordinary, populationDisease), 1);
+  assert.equal(pathogenMortalityChance(resistant, populationDisease), 0.25);
+  assert.equal(pathogenMortalityChance(resistant, ecoDisease), 1);
+
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Resistência"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    d = startDisease(s, "eco", s.pieces[1]);
+  assert.equal(
+    d ? s.pieces[0].infection : undefined,
+    undefined,
+  );
+  assertState(s);
+});
+
 test("population pathogen incidence grows with imbalance and respects active-outbreak cooldown", () => {
   assert.equal(populationPathogenChance(0), 0.05);
   assert.equal(populationPathogenChance(3), 0.17);
@@ -860,14 +885,54 @@ test("generation milestones drive habitat and queue ecological events", () => {
   assert.equal(s.event.startRound, 10);
   assertState(s);
 });
-test("Carnívoro reproduces on capture but not on fertile cells", () => {
+test("diet controls predatory reproduction without blocking capture", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
+  const carnivoreId = s.pieces[0].id;
   s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 2);
+  assert.ok(s.pieces.some((p) => p.parentId === carnivoreId));
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Fotossíntese"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const plantVictim = s.pieces[1].id;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(!s.pieces.some((p) => p.id === plantVictim));
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Herbívoro"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Fotossíntese"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const herbivoreId = s.pieces[0].id;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.some((p) => p.parentId === herbivoreId));
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Herbívoro"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const animalVictim = s.pieces[1].id;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(!s.pieces.some((p) => p.id === animalVictim));
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Onívoro"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Fotossíntese"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const omnivoreId = s.pieces[0].id;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.some((p) => p.parentId === omnivoreId));
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Carnívoro"] },
@@ -879,11 +944,10 @@ test("Carnívoro reproduces on capture but not on fertile cells", () => {
       (target) => target.r === 4 && target.c === 4 && target.stay,
     ),
   );
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
-  assert.equal(s.board[36], "fertile");
   assertState(s);
 });
-test("Onívoro reproduces on both fertile cells and captures", () => {
+
+test("Onívoro uses fertile cells and gains predatory reproduction from either prey branch", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Onívoro"] },
     { owner: "amber", r: 0, c: 0 },
@@ -892,13 +956,16 @@ test("Onívoro reproduces on both fertile cells and captures", () => {
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
 
-  s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Onívoro"] },
-    { owner: "amber", r: 4, c: 4 },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
+  for (const preyTraits of [[], ["Fotossíntese"]]) {
+    s = fixture([
+      { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Onívoro"] },
+      { owner: "amber", r: 4, c: 4, traits: preyTraits },
+      { owner: "amber", r: 0, c: 0 },
+    ]);
+    const parentId = s.pieces[0].id;
+    s = simulate(s, move(s.pieces[0], 4, 4));
+    assert.ok(s.pieces.some((p) => p.parentId === parentId));
+  }
   assertState(s);
 });
 test("Necrófago consumes red and green decomposition to reproduce", () => {
@@ -2081,7 +2148,7 @@ test("Haustório lets a photosynthetic piece capture any adjacent enemy without 
   assertState(s);
 });
 
-test("Parasitismo self-action fertilizes its square and makes adjacent opponent squares hostile", () => {
+test("Parasitismo is offered only when it can change fertility or enemy habitat", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
     { owner: "amber", r: 3, c: 4 },
@@ -2094,7 +2161,49 @@ test("Parasitismo self-action fertilizes its square and makes adjacent opponent 
   assert.equal(s.board[4 * 8 + 4], "fertile");
   assert.equal(s.board[3 * 8 + 4], "hostile");
   assert.equal(s.board[4 * 8 + 5], "hostile");
-  assert.equal(s.current, "amber");
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  assert.equal(canParasitize(s, s.pieces[0]), false);
+  assert.ok(
+    !legalActions(s).some(
+      (action) => action.type === "PARASITIZE" && action.id === s.pieces[0].id,
+    ),
+  );
+
+  for (let cell = 0; s.pieces.length < 24 && cell < 64; cell++) {
+    const r = Math.floor(cell / 8),
+      col = cell % 8;
+    if (s.pieces.some((piece) => piece.r === r && piece.c === col)) continue;
+    s.pieces.push(newPiece(s, cell % 2 ? "blue" : "amber", r, col));
+  }
+  assert.equal(fertilityPaused(s), true);
+  const seededEnemy = s.pieces.find(
+    (piece) => piece.owner !== s.pieces[0].owner && piece.id !== 2,
+  );
+  seededEnemy.r = 4;
+  seededEnemy.c = 3;
+  const adjacentEnemies = s.pieces.filter(
+    (piece) =>
+      piece.owner !== s.pieces[0].owner &&
+      Math.max(
+        Math.abs(piece.r - s.pieces[0].r),
+        Math.abs(piece.c - s.pieces[0].c),
+      ) === 1,
+  );
+  assert.ok(adjacentEnemies.length > 0);
+  for (const enemy of adjacentEnemies)
+    s.board[enemy.r * 8 + enemy.c] = "hostile";
+  assert.equal(canParasitize(s, s.pieces[0]), false);
+
+  const neighbor = adjacentEnemies[0];
+  s.board[neighbor.r * 8 + neighbor.c] = "neutral";
+  assert.equal(canParasitize(s, s.pieces[0]), true);
+  s.board[neighbor.r * 8 + neighbor.c] = "hostile";
+  assert.equal(canParasitize(s, s.pieces[0]), false);
   assertState(s);
 });
 

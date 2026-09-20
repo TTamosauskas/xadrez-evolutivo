@@ -11,7 +11,7 @@ export const TRAITS = {
     "🫧",
     "Introduz um ciclo de vida individual: descendentes passam pela infância, adultos entram em senescência a partir de 25 rodadas e a morte natural é certa aos 48. Também habilita características multicelulares complexas.",
   ],
-  Locomoção: ["🐾", "Permite realizar movimentos de xadrez apenas em uma linhagem que possui Predação."],
+  Locomoção: ["🐟", "Permite realizar movimentos de xadrez apenas em uma linhagem que possui Predação."],
   Escavador: ["🦡", "Pode perfurar barreiras."],
   "Locomoção Avançada": [
     "🐪",
@@ -26,10 +26,14 @@ export const TRAITS = {
     "🦕",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
-  Predação: ["🐟", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
+  Predação: ["👾", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
   Carnívoro: [
     "🦁",
-    "Especialização de uma linhagem com Predação: reproduz ao eliminar uma peça e deixa de usar casas férteis.",
+    "Especialização de uma linhagem com Predação: obtém reprodução predatória ao capturar criaturas não fotossintéticas e deixa de usar casas férteis.",
+  ],
+  Herbívoro: [
+    "🐊",
+    "Especialização de uma linhagem com Predação: pode capturar qualquer criatura, mas só obtém reprodução predatória ao capturar seres do ramo fotossintético.",
   ],
   Canibalismo: [
     "🦈",
@@ -41,7 +45,7 @@ export const TRAITS = {
   ],
   Onívoro: [
     "🐻",
-    "Especialização posterior de Carnívoro: reproduz tanto em casas férteis quanto ao eliminar peças.",
+    "Especialização posterior de Carnívoro ou Herbívoro: usa casas férteis e obtém reprodução predatória contra criaturas fotossintéticas ou não fotossintéticas.",
   ],
   "Respiração Cutânea": [
     "🐸",
@@ -162,7 +166,7 @@ export const TRAITS = {
     "👁️",
     "Permite detectar e capturar criaturas com Camuflagem à distância.",
   ],
-  Resistência: ["🧬", "Impede novas infecções pelo Patógeno Virulento."],
+  Resistência: ["🧬", "Impede infecções por patógenos ecológicos e reduz em 75% a mortalidade individual causada por patógenos de pressão populacional."],
   "Reprodução Sexuada": ["❤️", "Combina características de dois progenitores."],
   "Precocidade Sexual": [
     "🪰",
