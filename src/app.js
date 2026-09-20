@@ -193,6 +193,17 @@ $("board").addEventListener("keydown", (event) => {
     )
     ?.focus();
 });
+$("piece-actions").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-piece-action]");
+  if (!button) return;
+  const id = Number(button.dataset.pieceId),
+    piece = controller.state.pieces.find((candidate) => candidate.id === id);
+  if (!piece) return;
+  if (button.dataset.pieceAction === "reproduce")
+    dispatch({ type: "MOVE", id: piece.id, r: piece.r, c: piece.c });
+  else if (button.dataset.pieceAction === "parasitize")
+    dispatch({ type: "PARASITIZE", id: piece.id });
+});
 $("pass").addEventListener("click", () =>
   dispatch(
     controller.state.phase === "manipulate"
