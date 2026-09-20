@@ -1156,7 +1156,12 @@ export function assertState(state) {
       !integer(d.startRound) ||
       !integer(d.endRound) ||
       !integer(d.delay, 2, 6) ||
-      !integer(d.mortality, 60, 100) ||
+      !["eco", "population", "vector"].includes(d.source) ||
+      !integer(
+        d.mortality,
+        d.source === "vector" ? 20 : 60,
+        d.source === "vector" ? 20 : 100,
+      ) ||
       !integer(d.deaths) ||
       !["diagonal", "orthogonal", "omnidirectional"].includes(d.mode) ||
       !Array.isArray(d.infected) ||
