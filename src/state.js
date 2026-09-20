@@ -614,24 +614,48 @@ export function activateOrigin(state) {
     return false;
   }
   const directions = [
-      [-1, -1], [-1, 0], [-1, 1],
-      [0, -1],           [0, 1],
-      [1, -1],  [1, 0],  [1, 1],
+      [-1, -1],
+      [-1, 0],
+      [-1, 1],
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [1, -1],
+      [0, -1],
     ],
-    [dr, dc] = pick(state, directions),
-    blue = { r: state.origin.r + dr, c: state.origin.c + dc },
-    amber = { r: state.origin.r - dr, c: state.origin.c - dc };
-  state.pieces.push(
-    newPiece(state, "blue", blue.r, blue.c, { rank: 4 }),
-    newPiece(state, "amber", amber.r, amber.c, { rank: 4 }),
-  );
-  state.board[square(blue.r, blue.c)] = "fertile";
-  state.board[square(amber.r, amber.c)] = "fertile";
+    primaryIndex = Math.floor(random(state) * directions.length),
+    companionIndex = (primaryIndex + 1) % directions.length,
+    oppositePrimaryIndex = (primaryIndex + 4) % directions.length,
+    oppositeCompanionIndex = (companionIndex + 4) % directions.length,
+    position = (index) => ({
+      r: state.origin.r + directions[index][0],
+      c: state.origin.c + directions[index][1],
+    }),
+    bluePlant = position(primaryIndex),
+    bluePredator = position(companionIndex),
+    amberPlant = position(oppositePrimaryIndex),
+    amberPredator = position(oppositeCompanionIndex),
+    founders = [
+      ["blue", bluePlant, "Fotossíntese"],
+      ["blue", bluePredator, "Predação"],
+      ["amber", amberPlant, "Fotossíntese"],
+      ["amber", amberPredator, "Predação"],
+    ];
+  for (const [owner, cell, trait] of founders) {
+    state.pieces.push(
+      newPiece(state, owner, cell.r, cell.c, {
+        rank: 4,
+        traits: [trait],
+        ancestry: [trait],
+      }),
+    );
+    state.board[square(cell.r, cell.c)] = "fertile";
+  }
   state.origin = null;
   state.phase = "move";
   log(
     state,
-    `${geologicalLabel(state)} · 1º Ciclo começa com a separação do ancestral comum em dois Reis fundadores.`,
+    `${geologicalLabel(state)} · 1º Ciclo começa com a separação do ancestral comum; cada lado recebe dois Reis primordiais, um fotossintético e um predatório.`,
   );
   return true;
 }
