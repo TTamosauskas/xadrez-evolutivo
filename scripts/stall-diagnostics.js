@@ -12,7 +12,11 @@ import { distance, square } from "../src/constants.js";
 
 const TARGETS = new Set(["ediacaran", "silurian", "devonian"]),
   gamesPerStage = Number(process.env.DIAGNOSTIC_GAMES ?? 24),
-  limit = Number(process.env.DIAGNOSTIC_LIMIT ?? 1200),
+  goalTurns = Number(process.env.GOAL_TURNS ?? 200),
+  turnLimit = Number(process.env.DIAGNOSTIC_TURN_LIMIT ?? 300),
+  commandLimit = Number(
+    process.env.DIAGNOSTIC_COMMAND_LIMIT ?? turnLimit * 4,
+  ),
   tailRounds = Number(process.env.DIAGNOSTIC_TAIL ?? 100);
 
 const stageIndex = (id) => geologicalStage(id).index,
@@ -242,7 +246,11 @@ function runGame(initial, seed) {
   };
   collect();
 
-  while (!state.result && commands < limit) {
+  while (
+    !state.result &&
+    state.turn < turnLimit &&
+    commands < commandLimit
+  ) {
     if (state.notices.length) {
       state = transition(state, {
         type: "ACK_NOTICE",
@@ -317,8 +325,11 @@ function runGame(initial, seed) {
       seed,
       policy,
       finished: !!state.result,
+      stalled: !state.result && state.turn >= turnLimit,
+      technicalCapped: !state.result && commands >= commandLimit,
       winner: state.result?.winner ?? null,
       commands,
+      turns: state.turn,
       rounds: finalRound,
       notices,
       conwaySteps,
@@ -343,6 +354,8 @@ function runGame(initial, seed) {
 function aggregate(runs) {
   const capped = runs.filter((run) => !run.finished),
     finished = runs.filter((run) => run.finished),
+    stalled = capped.filter((run) => run.stalled),
+    technicalCapped = capped.filter((run) => run.technicalCapped),
     byPolicy = Object.fromEntries(
       ["random", "easy", "medium", "hard"].map((policy) => {
         const group = runs.filter((run) => run.policy === policy);
@@ -351,14 +364,16 @@ function aggregate(runs) {
           {
             games: group.length,
             capped: group.filter((run) => !run.finished).length,
+            stalled: group.filter((run) => run.stalled).length,
+            technicalCapped: group.filter((run) => run.technicalCapped).length,
             cappedRate: pct(
               group.filter((run) => !run.finished).length,
               group.length,
             ),
-            medianFinishedRounds: (() => {
+            medianFinishedTurns: (() => {
               const values = group
                 .filter((run) => run.finished)
-                .map((run) => run.rounds)
+                .map((run) => run.turns)
                 .sort((a, b) => a - b);
               return values.length ? values[Math.floor(values.length / 2)] : null;
             })(),
@@ -375,9 +390,14 @@ function aggregate(runs) {
     games: runs.length,
     decisive: finished.length,
     capped: capped.length,
+    stalled: stalled.length,
+    technicalCapped: technicalCapped.length,
     cappedRate: pct(capped.length, runs.length),
-    decisiveWithin200: finished.filter((run) => run.rounds <= 200).length,
+    decisiveWithinGoalTurns: finished.filter(
+      (run) => run.turns <= goalTurns,
+    ).length,
     naturalDeaths: sum("naturalDeaths", runs),
+    cappedFinalTurns: mean(capped.map((run) => run.turns)),
     cappedFinalRounds: mean(capped.map((run) => run.rounds)),
     loops,
     byPolicy,
@@ -431,6 +451,7 @@ function aggregate(runs) {
     cappedRuns: capped.map((run) => ({
       seed: run.seed,
       policy: run.policy,
+      turns: run.turns,
       rounds: run.rounds,
       loop: run.loop,
       births: run.births,
@@ -451,7 +472,9 @@ function aggregate(runs) {
 
 const report = {
   gamesPerStage,
-  limit,
+  goalTurns,
+  turnLimit,
+  commandLimit,
   tailRounds,
   stages: [],
 };
@@ -500,3 +523,23 @@ report.elapsedSeconds = Number(
 );
 console.log("STALL_DIAGNOSTIC_REPORT");
 console.log(JSON.stringify(report, null, 2));
+
+const stalledGames = report.stages.reduce(
+    (sum, stage) =>
+      sum + stage.withBarriers.stalled + stage.withoutBarriers.stalled,
+    0,
+  ),
+  technicalCappedGames = report.stages.reduce(
+    (sum, stage) =>
+      sum +
+      stage.withBarriers.technicalCapped +
+      stage.withoutBarriers.technicalCapped,
+    0,
+  );
+
+if (stalledGames || technicalCappedGames) {
+  console.error(
+    `Stall diagnostic envelope failed: ${stalledGames} game(s) reached ${turnLimit} turns and ${technicalCappedGames} hit the technical command cap.`,
+  );
+  process.exitCode = 1;
+}
