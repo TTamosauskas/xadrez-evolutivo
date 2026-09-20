@@ -185,8 +185,8 @@ export const TRAITS = {
     "💤",
     "Em casas hostis, fica imobilizada e evita o risco ambiental enquanto permanecer ali.",
   ],
-  Carapaça: ["🐚", "Oferece 66% de sobrevivência por casa hostil."],
-  Camuflagem: ["👀", "Só pode ser capturada por uma peça adjacente."],
+  Carapaça: ["🐚", "Tem 25% de chance de bloquear o risco de uma casa hostil; quando a proteção falha, aplica-se o risco ambiental normal."],
+  Camuflagem: ["😶‍🌫️", "Só pode ser capturada por uma peça adjacente."],
   "Visão Noturna": [
     "👁️",
     "Permite detectar e capturar criaturas com Camuflagem à distância.",
