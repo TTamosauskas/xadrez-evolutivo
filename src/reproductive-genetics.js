@@ -164,7 +164,8 @@ export function syncReproTraits(piece) {
     (t) => !GENETIC_TRAITS.includes(t) && t !== "Ovos",
   );
   const plant = regular.includes("Fotossíntese"),
-    gymnosperm = regular.includes("Gimnospermas"),
+    seedPlant =
+      regular.includes("Gimnospermas") || regular.includes("Angiospermas"),
     expressed = reproPhenotype(piece.reproGenes).traits.filter(
       (trait) =>
         (!plant ||
@@ -174,7 +175,7 @@ export function syncReproTraits(piece) {
             "Ovovivíparo",
             "Vivíparo",
           ].includes(trait)) &&
-        (!gymnosperm || trait !== "Esporos"),
+        (!seedPlant || trait !== "Esporos"),
     );
   if (!expressed.includes("Vivíparo"))
     regular = regular.filter((trait) => trait !== "Ovulação Induzida");
