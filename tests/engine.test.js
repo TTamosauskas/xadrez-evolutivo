@@ -1211,6 +1211,42 @@ test("Necrófago consumes fertile decomposition without consuming the fertile te
   assertState(s);
 });
 
+test("capture on hostile terrain resolves the victim before hostile landing risk", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Predação", "Locomoção"],
+    },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const attackerId = s.pieces[0].id,
+    victimId = s.pieces[1].id;
+  s.board[36] = "hostile";
+  s.rng = 1;
+
+  s = simulate(s, move(s.pieces[0], 4, 4));
+
+  assert.ok(!s.pieces.some((piece) => piece.id === victimId));
+  assert.ok(!s.pieces.some((piece) => piece.id === attackerId));
+  assert.ok(
+    s.logs.some(
+      (entry) =>
+        entry.text.includes("Pretas perderam uma peça por captura"),
+    ),
+  );
+  assert.ok(
+    s.logs.some(
+      (entry) =>
+        entry.text.includes("Brancas perderam uma peça por casa hostil após captura"),
+    ),
+  );
+  assertState(s);
+});
+
 test("capture creates hostile decomposition, protects attacker and restores neutral terrain after three rounds", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
