@@ -733,7 +733,10 @@ export function traitUnlocked(state, trait, piece = null) {
     ...(piece?.ancestry ?? piece?.traits ?? []),
     ...(piece?.traits ?? []),
   ]);
-  if (deps?.historical?.some((dependency) => !history.has(dependency)))
+  if (
+    state.scenario !== "arena" &&
+    deps?.historical?.some((dependency) => !history.has(dependency))
+  )
     return false;
   if (deps?.lineage?.some((dependency) => !lineage.has(dependency)))
     return false;
@@ -751,11 +754,11 @@ export function traitUnlocked(state, trait, piece = null) {
 }
 
 export function pawnMutationUnlocked(state) {
-  return (state.totalCycles ?? 1) >= 2;
+  return state.scenario === "arena" || (state.totalCycles ?? 1) >= 2;
 }
 
 export function deleteriousMutationUnlocked(state) {
-  return (state.totalCycles ?? 1) >= 2;
+  return state.scenario === "arena" || (state.totalCycles ?? 1) >= 2;
 }
 
 export function rankMutationUnlocked(state) {
