@@ -29,8 +29,14 @@ export function fixture(
         ...spec,
         traits: [...new Set([...baseTraits, ...requestedTraits])],
       },
-      p = newPiece(s, source.owner, source.r, source.c, source);
-    Object.assign(p, source);
+      p = newPiece(s, source.owner, source.r, source.c, source),
+      {
+        traits: _traits,
+        ancestry: _ancestry,
+        reproGenes: _reproGenes,
+        ...overrides
+      } = source;
+    Object.assign(p, overrides);
     s.pieces.push(p);
   }
   return s;
