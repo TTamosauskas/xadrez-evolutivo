@@ -196,6 +196,8 @@ export const GEOLOGICAL_STAGES = [
 const byId = new Map(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
 
 export const TRAIT_STAGE = {
+  "Respiração anaeróbia": "archean",
+  "Respiração aeróbia": "proterozoic",
   Fotossíntese: "archean",
   Embriófitas: "ordovician",
   Traqueófitas: "silurian",
@@ -255,6 +257,10 @@ export const TRAIT_STAGE = {
 
 export const ACTIVE_TRAIT_FAMILIES = [
   {
+    id: "respiration",
+    traits: ["Respiração anaeróbia", "Respiração aeróbia"],
+  },
+  {
     id: "energy",
     traits: ["Fotossíntese", "Predação"],
   },
@@ -298,6 +304,15 @@ export function activeTraitFamily(trait) {
 }
 
 export const TRAIT_DEPENDENCIES = {
+  "Respiração aeróbia": {
+    lineage: ["Respiração anaeróbia"],
+    historical: ["Fotossíntese"],
+  },
+  Fotossíntese: { lineage: ["Respiração anaeróbia"] },
+  Predação: {
+    lineage: ["Respiração anaeróbia"],
+    historical: ["Fotossíntese"],
+  },
   Embriófitas: { lineage: ["Fotossíntese"] },
   Haustório: { lineage: ["Embriófitas"] },
   Traqueófitas: { lineage: ["Embriófitas"] },
@@ -557,6 +572,7 @@ export function applyTraitLoss(traits, ancestry, trait) {
 }
 
 export function traitLossAllowed(piece, trait) {
+  if (trait === "Respiração anaeróbia") return false;
   if (trait !== "Multicelularismo") return true;
   return !(piece?.traits ?? []).some(
     (candidate) =>
