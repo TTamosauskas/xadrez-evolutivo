@@ -39,9 +39,11 @@ import {
   unreadDiscoveries,
 } from "./discoveries.js";
 import {
+  ARENA_RECESSIVE_COUNT,
   ARENA_TRAIT_BUDGET,
   arenaAISide,
   arenaGenomeValid,
+  arenaRecessivePairs,
   arenaInterventionCount,
   arenaSelectableTraits,
   completeArenaGenome,
@@ -259,8 +261,10 @@ const arenaOwnerName = (owner) => (owner === "blue" ? "Brancas" : "Pretas");
 function arenaValidCurrent() {
   if (!arenaFlow) return false;
   if (arenaFlow.kind === "setup")
-    return arenaFlow.current.every((genome) =>
-      arenaGenomeValid(genome, ARENA_TRAIT_BUDGET),
+    return arenaFlow.current.every(
+      (genome) =>
+        arenaGenomeValid(genome, ARENA_TRAIT_BUDGET) &&
+        arenaRecessivePairs(genome).length > 0,
     );
   return arenaInterventionCount(arenaFlow.baseline, arenaFlow.current).valid;
 }
@@ -269,9 +273,16 @@ function arenaStatusText() {
   if (!arenaFlow) return "";
   if (arenaFlow.kind === "setup") {
     const [a, b] = arenaFlow.current.map((genome) => genome.length);
-    return a === ARENA_TRAIT_BUDGET && b === ARENA_TRAIT_BUDGET
-      ? "Genomas válidos. Cada linhagem começa com seis mutações."
-      : `Escolha exatamente ${ARENA_TRAIT_BUDGET} mutações por linhagem. Dependências são incluídas automaticamente.`;
+    const complete =
+      a === ARENA_TRAIT_BUDGET && b === ARENA_TRAIT_BUDGET,
+      recessiveReady = arenaFlow.current.every(
+        (genome) => arenaRecessivePairs(genome).length > 0,
+      );
+    return complete && recessiveReady
+      ? `Genomas válidos. Ao iniciar, ${ARENA_RECESSIVE_COUNT} das ${ARENA_TRAIT_BUDGET} características de cada linhagem serão sorteadas como recessivas.`
+      : complete
+        ? `A combinação precisa permitir ${ARENA_RECESSIVE_COUNT} características recessivas sem quebrar dependências do fenótipo.`
+        : `Escolha exatamente ${ARENA_TRAIT_BUDGET} mutações por linhagem. Dependências são incluídas automaticamente.`;
   }
   const changes = arenaInterventionCount(
     arenaFlow.baseline,
@@ -291,7 +302,7 @@ function renderArenaDesigner() {
       : `Engenharia Genética · ${arenaOwnerName(owner)}`;
   $("arena-copy").textContent =
     arenaFlow.kind === "setup"
-      ? "Monte duas linhagens. Respiração anaeróbia é basal e gratuita; Multicelularismo e demais pré-requisitos consomem o orçamento."
+      ? "Monte duas linhagens. Respiração anaeróbia é basal e gratuita; Multicelularismo e demais pré-requisitos consomem o orçamento. Duas das seis características serão sorteadas como genes recessivos ocultos."
       : "As linhagens sobreviventes seguem adiante. Você pode fazer até duas substituições genéticas entre as duas linhagens.";
   $("arena-status").textContent = arenaStatusText();
 
