@@ -63,6 +63,7 @@ const mutationTopics = {
     "Respiração aeróbia usa oxigênio como aceptor final de elétrons e permite extração de energia mais eficiente em muitos organismos.",
   ],
   "Fotossíntese": ["Fotossíntese", "Fotossíntese converte energia luminosa em energia química e sustenta grande parte das cadeias alimentares da biosfera."],
+  Mixotrofia: ["Mixotrofia", "Mixotrofia combina mais de uma estratégia de obtenção de energia ou carbono; no jogo, integra as funções energéticas básicas de Fotossíntese e Predação sem apagar a identidade ancestral da linhagem."],
   "Embriófitas": ["Embryophyta", "Embriófitas são plantas terrestres que protegem o embrião multicelular e representam uma etapa central da colonização dos ambientes continentais."],
   "Haustório": ["Haustório", "Haustórios são estruturas especializadas usadas por plantas parasitas para penetrar tecidos do hospedeiro e retirar água ou nutrientes; no jogo, essa relação é abstraída como consumo de outra linhagem fotossintética."],
   "Perfume Floral": ["Perfume floral", "Compostos voláteis produzidos por flores participam da atração de polinizadores e de outras interações planta-animal; no jogo, esse mutualismo orienta a dispersão de sementes para refúgios próximos a aliados heterotróficos."],
