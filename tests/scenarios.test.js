@@ -25,6 +25,11 @@ import {
 } from "../src/state.js";
 import { deserialize } from "../src/storage.js";
 import { hiddenRecessiveTraits } from "../src/reproductive-genetics.js";
+import {
+  genomeFromTraits,
+  genomeSignature,
+  syncGenomePhenotype,
+} from "../src/genetics.js";
 
 test("new campaigns default to Vida na Terra while low-level legacy states stay alternative", () => {
   assert.equal(createCampaignState(1).scenario, "earth");
@@ -80,6 +85,54 @@ test("all built-in Arena archetypes respect the six-mutation budget and admit tw
       ),
     );
   }
+});
+
+test("Vida na Terra seeds post-sexual founders with historical recessive variation", () => {
+  const state = createPeriodState("ediacaran", 51, null, "earth");
+  assert.ok(state.pieces.every((piece) => piece.genome));
+  assert.ok(
+    state.pieces.some((piece) => hiddenRecessiveTraits(piece).length > 0),
+  );
+  assert.ok(
+    state.pieces.every(
+      (piece) => hiddenRecessiveTraits(piece).length <= 2,
+    ),
+  );
+  for (const piece of state.pieces)
+    assert.ok(
+      hiddenRecessiveTraits(piece).every(
+        (trait) => !piece.traits.includes(trait),
+      ),
+    );
+});
+
+test("Cenários Alternativos preserve the survivor genome between cycles", () => {
+  const state = createState(52, { scenario: "alternative" });
+  const blue = state.pieces.filter((piece) => piece.owner === "blue");
+  for (const piece of blue) {
+    piece.genome = genomeFromTraits(
+      ["Respiração anaeróbia", "Multicelularismo", "Predação"],
+      ["Camuflagem"],
+    );
+    syncGenomePhenotype(piece, "Predação");
+    piece.ancestry = [
+      "Respiração anaeróbia",
+      "Multicelularismo",
+      "Predação",
+      "Camuflagem",
+    ];
+  }
+  state.result = { winner: "blue", reason: "Extinção total." };
+  state.phase = "over";
+  const expected = genomeSignature(blue[0].genome),
+    next = createSuccessorState(state, 53);
+  assert.ok(
+    next.pieces.some(
+      (piece) =>
+        genomeSignature(piece.genome) === expected &&
+        hiddenRecessiveTraits(piece).includes("Camuflagem"),
+    ),
+  );
 });
 
 test("Arena starts with four engineered founders and ignores geological chronology for later mutations", () => {
