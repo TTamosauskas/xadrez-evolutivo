@@ -74,6 +74,9 @@ test("period innovations follow the didactic sequence", () => {
   assert.deepEqual(required.silurian, ["Coletor"]);
   assert.deepEqual(required.devonian, ["Locomoção Avançada", "Onívoro"]);
   assert.deepEqual(required.carboniferous, ["Ovíparos Amniotas", "Ooteca", "Voo"]);
+  assert.deepEqual(required.permian, ["Cuidado Parental"]);
+  assert.deepEqual(required.triassic, ["Vivíparo", "Notívago"]);
+  assert.deepEqual(required.jurassic, ["Visão Noturna"]);
   assert.deepEqual(required.cretaceous, ["Eusocialidade", "Ovífagia"]);
   assert.deepEqual(required.neogene, ["Chifre", "Polegar Opositor"]);
   assert.deepEqual(required.quaternary, [
@@ -628,6 +631,64 @@ test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either 
     };
   assert.equal(traitUnlocked(s, "Onívoro", herbivore), true);
   assert.equal(traitUnlocked(s, "Onívoro", carnivore), true);
+});
+
+test("new combat specializations unlock in the intended periods and lineages", () => {
+  const historyBefore = (id) => {
+      const index = GEOLOGICAL_STAGES.findIndex((stage) => stage.id === id);
+      return GEOLOGICAL_STAGES.slice(0, index).flatMap((stage) => stage.required);
+    },
+    predator = {
+      traits: ["Multicelularismo", "Predação", "Locomoção Avançada"],
+      ancestry: ["Predação", "Locomoção", "Locomoção Avançada"],
+    },
+    herbivore = {
+      traits: ["Multicelularismo", "Predação", "Herbívoro", "Locomoção"],
+      ancestry: ["Predação", "Herbívoro", "Locomoção"],
+    },
+    carnivore = {
+      traits: ["Multicelularismo", "Predação", "Carnívoro", "Locomoção"],
+      ancestry: ["Predação", "Carnívoro", "Locomoção"],
+    };
+
+  const devonian = createState(181, {
+    geologicalStage: "devonian",
+    historicalTraits: historyBefore("devonian"),
+  });
+  assert.equal(traitUnlocked(devonian, "Visão Binocular", predator), true);
+  assert.equal(traitUnlocked(devonian, "Velocidade", predator), false);
+
+  const carboniferous = createState(182, {
+    geologicalStage: "carboniferous",
+    historicalTraits: historyBefore("carboniferous"),
+  });
+  assert.equal(traitUnlocked(carboniferous, "Velocidade", predator), true);
+
+  const permian = createState(183, {
+    geologicalStage: "permian",
+    historicalTraits: historyBefore("permian"),
+  });
+  assert.equal(traitUnlocked(permian, "Pele grossa", herbivore), true);
+  assert.equal(traitUnlocked(permian, "Garras", carnivore), true);
+  assert.equal(traitUnlocked(permian, "Pele grossa", carnivore), false);
+  assert.equal(traitUnlocked(permian, "Garras", herbivore), false);
+
+  const triassic = createState(184, {
+    geologicalStage: "triassic",
+    historicalTraits: [...historyBefore("triassic"), "Vivíparo"],
+  });
+  assert.equal(traitUnlocked(triassic, "Notívago", herbivore), true);
+
+  const jurassic = createState(185, {
+    geologicalStage: "jurassic",
+    historicalTraits: historyBefore("jurassic"),
+  });
+  const nocturnal = {
+    traits: ["Multicelularismo", "Predação", "Locomoção", "Notívago"],
+    ancestry: ["Predação", "Locomoção", "Notívago"],
+  };
+  assert.equal(traitUnlocked(jurassic, "Visão Noturna", nocturnal), true);
+  assert.equal(traitUnlocked(jurassic, "Visão Noturna", predator), false);
 });
 
 test("Vetor Patógeno is a Cretaceous specialization of Parasitismo", () => {
