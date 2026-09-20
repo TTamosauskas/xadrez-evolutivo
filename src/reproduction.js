@@ -810,10 +810,21 @@ export function reproduce(
   if (produced) {
     if (has(parent, "Ooteca") && options.fertileReproduction)
       parent.oothecaPrimed = true;
-    const cooldown = (piece) =>
-      round(state) +
-      (has(piece, "Ovulação Induzida") ? 2 : 3) +
-      populationReproductionCooldown(activePopulation(state));
+    const cooldown = (piece) => {
+      const base =
+        has(piece, "Ovulação Induzida")
+          ? 2
+          : options.fertileReproduction
+            ? has(piece, "Respiração aeróbia")
+              ? 3
+              : 4
+            : 3;
+      return (
+        round(state) +
+        base +
+        populationReproductionCooldown(activePopulation(state))
+      );
+    };
     parent.nextReproductionRound = cooldown(parent);
     if (mate) mate.nextReproductionRound = cooldown(mate);
     state.reproductions[parent.owner]++;
