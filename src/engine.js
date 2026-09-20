@@ -84,7 +84,10 @@ export function context(state) {
         if (disease) infect(state, attacker, disease);
       }
       if (has(dead, "Ooteca") && dead.oothecaPrimed)
-        reproduce(ctx, dead, null, "Ooteca", { immediateDevelopment: true });
+        reproduce(ctx, dead, null, "Ooteca", {
+          immediateDevelopment: true,
+          ignoreReadiness: true,
+        });
       scatterSeeds(state, dead);
       log(state, `${OWNERS[dead.owner]} perderam uma peça por ${reason}.`);
       return true;
