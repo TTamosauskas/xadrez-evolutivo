@@ -19,13 +19,16 @@ import {
   validDiscoveries,
 } from "./discoveries.js";
 import {
-  cloneReproGenes,
+  cloneGenome,
+  genomeCarriedTraits,
+  genomeFromLegacyProfile,
+  genomeSignature,
   hiddenRecessiveTraits,
-  normalizeReproGenes,
-  reproGeneSignature,
-  syncReproTraits,
-  validReproGenes,
-} from "./reproductive-genetics.js";
+  phenotypeMatchesGenome,
+  syncGenomePhenotype,
+  validGenome,
+  withoutGenomeTraits,
+} from "./genetics.js";
 import {
   DEFAULT_SCENARIO,
   EARTH_FOUNDER_GENOMES,
@@ -129,42 +132,44 @@ export function notice(state, title, lines, key = null) {
 export function newPiece(state, owner, r, c, source = {}) {
   const bornRound = round(state),
     basalTraits = ["Respiração anaeróbia", ...(source.traits ?? [])],
+    legacyProfile = {
+      ...source,
+      traits: basalTraits,
+    },
     piece = {
-    id: state.nextId++,
-    owner,
-    r,
-    c,
-    rank: source.rank ?? 0,
-    traits: normalizeActiveTraits(basalTraits),
-    ancestry: [
-      ...new Set([
-        "Respiração anaeróbia",
-        ...(source.ancestry ?? []),
-        ...(source.traits ?? []),
-      ]),
-    ],
-    reproGenes: cloneReproGenes(
-      source.reproGenes ?? normalizeReproGenes(null, source.traits ?? []),
-    ),
-    recessiveTraits: [
-      ...new Set(
-        (source.recessiveTraits ?? []).filter(
-          (trait) => TRAITS[trait] && !(source.traits ?? []).includes(trait),
-        ),
-      ),
-    ],
-    mutations: source.mutations ?? 0,
-    generation: source.generation ?? 0,
-    parentId: source.parentId ?? null,
-    pawnDir: owner === "blue" ? -1 : 1,
-    seeds: 0,
-    pregnancies: [],
-    bornRound: source.bornRound ?? bornRound,
-    maturesRound: source.maturesRound ?? bornRound,
-    nextReproductionRound: source.nextReproductionRound ?? bornRound,
-    oothecaPrimed: source.oothecaPrimed ?? false,
-  };
-  syncReproTraits(piece);
+      id: state.nextId++,
+      owner,
+      r,
+      c,
+      rank: source.rank ?? 0,
+      traits: normalizeActiveTraits(basalTraits),
+      ancestry: [
+        ...new Set([
+          "Respiração anaeróbia",
+          ...(source.ancestry ?? []),
+          ...(source.traits ?? []),
+        ]),
+      ],
+      genome: source.genome
+        ? cloneGenome(source.genome)
+        : genomeFromLegacyProfile(legacyProfile),
+      mutations: source.mutations ?? 0,
+      generation: source.generation ?? 0,
+      parentId: source.parentId ?? null,
+      pawnDir: owner === "blue" ? -1 : 1,
+      seeds: 0,
+      pregnancies: [],
+      bornRound: source.bornRound ?? bornRound,
+      maturesRound: source.maturesRound ?? bornRound,
+      nextReproductionRound: source.nextReproductionRound ?? bornRound,
+      oothecaPrimed: source.oothecaPrimed ?? false,
+    };
+  const preferredEnergy = source.traits?.includes("Predação")
+    ? "Predação"
+    : source.traits?.includes("Fotossíntese")
+      ? "Fotossíntese"
+      : null;
+  syncGenomePhenotype(piece, preferredEnergy);
   return normalizePhotosyntheticRank(piece);
 }
 
@@ -432,7 +437,7 @@ export function createState(seed = Date.now(), options = {}) {
     canonicalPair = !!options.canonicalPair,
     scenario = options.scenario ?? "alternative";
   const state = {
-    version: 12,
+    version: 13,
     scenario,
     arenaPhase: options.arenaPhase ?? 0,
     arenaFounders: options.arenaFounders ?? null,
@@ -543,6 +548,7 @@ export function createState(seed = Date.now(), options = {}) {
                 rank: source.rank,
                 traits: source.traits,
                 ancestry: source.ancestry,
+                genome: source.genome,
                 reproGenes: source.reproGenes,
                 recessiveTraits: source.recessiveTraits,
                 mutations: 0,
@@ -727,9 +733,8 @@ export function activateOrigin(state) {
   return true;
 }
 export function signature(p) {
-  const ancestry = [...(p.ancestry ?? p.traits ?? [])].sort().join("|"),
-    recessives = [...(p.recessiveTraits ?? [])].sort().join("|");
-  return `${p.rank}|${[...p.traits].sort().join("|")}|${ancestry}|${recessives}|${reproGeneSignature(p.reproGenes)}`;
+  const ancestry = [...(p.ancestry ?? p.traits ?? [])].sort().join("|");
+  return `${p.rank}|${[...p.traits].sort().join("|")}|${ancestry}|${genomeSignature(p.genome)}`;
 }
 export function dominantLineage(state, owner = null, predicate = null) {
   const pieces = state.pieces.filter(
@@ -766,6 +771,7 @@ function fossilEntries(previous) {
       rank: selected.piece.rank,
       traits: [...selected.piece.traits],
       ancestry: [...new Set(selected.piece.ancestry ?? selected.piece.traits)],
+      genome: cloneGenome(selected.piece.genome),
       count: selected.count,
       total: selected.total,
     }];
@@ -774,16 +780,17 @@ function fossilEntries(previous) {
 
 function founderProfile(previous, piece) {
   if (!piece) return null;
-  const excluded = new Set(["Esterilidade", "Mutação Deletéria"]);
-  return {
-    rank: piece.rank,
-    traits: piece.traits.filter((trait) => !excluded.has(trait)),
-    ancestry: [
-      ...new Set([...(piece.ancestry ?? piece.traits ?? []), ...piece.traits]),
-    ],
-    reproGenes: cloneReproGenes(piece.reproGenes),
-    recessiveTraits: [...(piece.recessiveTraits ?? [])],
-  };
+  const excluded = new Set(["Esterilidade", "Mutação Deletéria"]),
+    genome = withoutGenomeTraits(piece.genome, [...excluded]),
+    profile = {
+      rank: piece.rank,
+      traits: piece.traits.filter((trait) => !excluded.has(trait)),
+      ancestry: [
+        ...new Set([...(piece.ancestry ?? piece.traits ?? []), ...piece.traits]),
+      ],
+      genome,
+    };
+  return syncGenomePhenotype(profile);
 }
 
 function cleanArenaGenome(piece) {
@@ -799,7 +806,7 @@ function cleanArenaGenome(piece) {
       ? "Predação"
       : null;
   return completeArenaGenome(
-    (piece?.ancestry ?? piece?.traits ?? []).filter(
+    genomeCarriedTraits(piece?.genome).filter(
       (trait) => !excluded.has(trait),
     ),
     preferred,
@@ -1083,14 +1090,8 @@ export function assertState(state) {
         (Array.isArray(profile.ancestry) &&
           profile.ancestry.every((t) => TRAITS[t]) &&
           new Set(profile.ancestry).size === profile.ancestry.length)) &&
-      (profile.recessiveTraits === undefined ||
-        (Array.isArray(profile.recessiveTraits) &&
-          profile.recessiveTraits.every(
-            (trait) => TRAITS[trait] && !profile.traits.includes(trait),
-          ) &&
-          new Set(profile.recessiveTraits).size ===
-            profile.recessiveTraits.length)) &&
-      validReproGenes(profile.reproGenes) &&
+      validGenome(profile.genome) &&
+      phenotypeMatchesGenome(profile) &&
       integer(profile.mutations) &&
       integer(profile.generation);
   if (!state || typeof state !== "object") throw Error("Partida inválida.");
@@ -1212,7 +1213,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 12 ||
+    state.version !== 13 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
@@ -1319,13 +1320,8 @@ export function assertState(state) {
       !Array.isArray(p.ancestry) ||
       p.ancestry.some((t) => !TRAITS[t]) ||
       new Set(p.ancestry).size !== p.ancestry.length ||
-      (p.recessiveTraits !== undefined &&
-        (!Array.isArray(p.recessiveTraits) ||
-          p.recessiveTraits.some(
-            (trait) => !TRAITS[trait] || p.traits.includes(trait),
-          ) ||
-          new Set(p.recessiveTraits).size !== p.recessiveTraits.length)) ||
-      !validReproGenes(p.reproGenes) ||
+      !validGenome(p.genome) ||
+      !phenotypeMatchesGenome(p) ||
       !Array.isArray(p.pregnancies)
     )
       throw Error("Peça inválida.");
