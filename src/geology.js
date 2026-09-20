@@ -416,7 +416,7 @@ export function normalizeEnergyBranch(traits, preferred = null) {
       for (const trait of PLANT_INCOMPATIBLE_TRAITS) set.delete(trait);
     }
   }
-  return normalizeMulticellularTraits([...set]);
+  return [...set];
 }
 
 export function applyTraitMutation(traits, trait) {
