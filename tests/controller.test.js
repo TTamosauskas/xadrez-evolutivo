@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { Controller } from "../src/controller.js";
 import { createCampaignState, createState, clone, newPiece } from "../src/state.js";
 import { fallbackAction, chooseAction } from "../src/ai.js";
+import { fixture } from "./helpers.js";
 function setup() {
   const workers = [],
     timers = new Map(),
@@ -308,16 +309,24 @@ test("AI respects node/time budgets, never mutates live state, always returns le
 });
 
 test("Neocórtex rollback survives the opponent response and restores deterministic state", () => {
-  const s = createState(31);
-  s.pieces = [];
-  s.nextId = 1;
-  s.board.fill("neutral");
-  s.pieces.push(
-    newPiece(s, "blue", 4, 0, {
-      rank: 3,
-      traits: ["Predação", "Locomoção", "Neocórtex Desenvolvido"],
-    }),
-    newPiece(s, "amber", 0, 7, { rank: 3, traits: ["Predação", "Locomoção"] }),
+  const s = fixture(
+    [
+      {
+        owner: "blue",
+        r: 4,
+        c: 0,
+        rank: 3,
+        traits: ["Multicelularismo", "Neocórtex Desenvolvido"],
+      },
+      {
+        owner: "amber",
+        r: 0,
+        c: 7,
+        rank: 3,
+        traits: ["Multicelularismo"],
+      },
+    ],
+    31,
   );
   const c = new Controller(s, { render: () => {} }),
     before = clone(c.state);
