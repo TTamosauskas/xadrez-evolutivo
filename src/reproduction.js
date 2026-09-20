@@ -33,6 +33,7 @@ import {
   cloneGenome,
   developmentMode,
   dispersalMode,
+  forceGenomeTrait,
   gainGenomeAllele,
   genomeCarriedTraits,
   genomeGainOptions,
@@ -49,6 +50,8 @@ import {
   pawnMutationUnlocked,
   rankMutationUnlocked,
   normalizePhotosyntheticRank,
+  PLANT_DERIVED_TRAITS,
+  PLANT_INCOMPATIBLE_TRAITS,
   traitLossAllowed,
   traitUnlocked,
 } from "./geology.js";
@@ -157,12 +160,27 @@ function mutation(state, p, positiveOnly) {
     p.rank = choice.rank;
     label = `Mutação de peça: ${PIECES[p.rank]}`;
   } else if (choice.geneGain) {
-    p.genome = gainGenomeAllele(
-      p.genome,
-      choice.geneGain,
-      () => random(state),
-    );
-    syncGenomePhenotype(p);
+    if (choice.geneGain === "Predação") {
+      p.genome = withoutGenomeTraits(p.genome, [
+        "Fotossíntese",
+        ...PLANT_DERIVED_TRAITS,
+      ]);
+      p.genome = forceGenomeTrait(p.genome, "Predação", "dominant");
+      syncGenomePhenotype(p, "Predação");
+    } else if (choice.geneGain === "Fotossíntese") {
+      p.genome = withoutGenomeTraits(p.genome, [
+        ...PLANT_INCOMPATIBLE_TRAITS,
+      ]);
+      p.genome = forceGenomeTrait(p.genome, "Fotossíntese", "dominant");
+      syncGenomePhenotype(p, "Fotossíntese");
+    } else {
+      p.genome = gainGenomeAllele(
+        p.genome,
+        choice.geneGain,
+        () => random(state),
+      );
+      syncGenomePhenotype(p);
+    }
     p.ancestry = [
       ...new Set([
         ...(p.ancestry ?? []),
