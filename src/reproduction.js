@@ -850,6 +850,55 @@ export function reproduce(
   return produced;
 }
 
+function seedProtection(state, seed, cell) {
+  const point = { r: Math.floor(cell / 8), c: cell % 8 };
+  return state.pieces.filter(
+    (piece) =>
+      piece.owner === seed.owner &&
+      !has(piece, "Fotossíntese") &&
+      distance(piece, point) === 1,
+  ).length;
+}
+
+function perfumeSeedStep(state, seed, candidates) {
+  if (!has(seed.profile, "Perfume Floral")) return pick(state, candidates);
+  const current = square(seed.r, seed.c);
+  if (seedProtection(state, seed, current) > 0) return null;
+
+  const refuges = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      if (occupied(state, r, c, seed.profile)) continue;
+      const cell = square(r, c);
+      if (seedProtection(state, seed, cell) > 0) refuges.push({ r, c, cell });
+    }
+  if (!refuges.length) return pick(state, candidates);
+
+  const refugeDistance = (cell) =>
+      Math.min(...refuges.map((refuge) => distance(cell, refuge))),
+    bestDistance = Math.min(...candidates.map(refugeDistance));
+  let choices = candidates.filter(
+    (candidate) => refugeDistance(candidate) === bestDistance,
+  );
+  const bestProtection = Math.max(
+    ...choices.map((candidate) =>
+      seedProtection(state, seed, square(candidate.r, candidate.c)),
+    ),
+  );
+  choices = choices.filter(
+    (candidate) =>
+      seedProtection(state, seed, square(candidate.r, candidate.c)) ===
+      bestProtection,
+  );
+  const safety = (candidate) => {
+      const value = terrain(state, candidate.r, candidate.c);
+      return value === "fertile" ? 2 : value === "neutral" ? 1 : 0;
+    },
+    bestSafety = Math.max(...choices.map(safety));
+  choices = choices.filter((candidate) => safety(candidate) === bestSafety);
+  return pick(state, choices);
+}
+
 export function tickReproduction(ctx) {
   const state = ctx.state,
     now = round(state);
@@ -865,7 +914,7 @@ export function tickReproduction(ctx) {
           if (inside(r, c) && !occupied(state, r, c, seed.profile))
             candidates.push({ r, c });
         }
-      const target = pick(state, candidates);
+      const target = perfumeSeedStep(state, seed, candidates);
       if (target) {
         seed.r = target.r;
         seed.c = target.c;
