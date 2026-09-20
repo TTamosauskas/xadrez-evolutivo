@@ -11,10 +11,13 @@ export const TRAITS = {
     "🫧",
     "Introduz um ciclo de vida individual: descendentes passam pela infância, adultos entram em senescência a partir de 25 rodadas e a morte natural é certa aos 48. Também habilita características multicelulares complexas.",
   ],
-  Locomoção: ["🐟", "Permite realizar movimentos de xadrez apenas em uma linhagem que possui Predação."],
+  "Locomoção Articulada": [
+    "🦵",
+    "Permite realizar movimentos de xadrez apenas em uma linhagem que possui Predação.",
+  ],
   Escavador: ["🦡", "Pode perfurar barreiras."],
   "Locomoção Avançada": [
-    "🐪",
+    "🐎",
     "Permite uma segunda movimentação no mesmo turno.",
   ],
   Escalador: [
@@ -26,7 +29,7 @@ export const TRAITS = {
     "🦕",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
-  Predação: ["👾", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção, apenas capturas são permitidas."],
+  Predação: ["👾", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção Articulada, apenas capturas são permitidas."],
   Carnívoro: [
     "🦁",
     "Especialização de uma linhagem com Predação: obtém reprodução predatória ao capturar criaturas não fotossintéticas e deixa de usar casas férteis.",
@@ -56,7 +59,7 @@ export const TRAITS = {
     "🐺",
     "Reproduz consumindo uma casa marcada com ☠️, vermelha ou verde.",
   ],
-  Ovíparo: ["🪼", "A reprodução deposita um ovo ⚪ móvel que busca terreno fértil para eclodir após pelo menos três rodadas."],
+  Ovíparo: ["🥒", "A reprodução deposita um ovo ⚪ móvel que busca terreno fértil para eclodir após pelo menos três rodadas."],
   "Ovíparos Amniotas": [
     "🦎",
     "Especialização amniótica: ao reproduzir, escolhe uma casa vazia a até três casas para depositar um ovo 🥚, que eclode na rodada seguinte.",
@@ -72,7 +75,6 @@ export const TRAITS = {
     "🐇",
     "Reduz de três para duas rodadas o intervalo mínimo entre reproduções bem-sucedidas.",
   ],
-  Fertilidade: ["🧫", "Dobra a quantidade de descendentes."],
   "Respiração anaeróbia": [
     "⚪",
     "Metabolismo sem oxigênio. Permite consumir uma casa fértil pré-existente para reprodução a cada quatro turnos próprios.",
@@ -146,7 +148,7 @@ export const TRAITS = {
     "Permite posicionar descendentes não fotossintéticos em casas vazias a até duas casas de distância.",
   ],
   Sociabilidade: [
-    "🐜",
+    "🦗︎",
     "Grupos conectados de quatro ou mais indivíduos podem sacrificar qualquer membro para absorver um ataque.",
   ],
   Mimetismo: [
@@ -166,7 +168,7 @@ export const TRAITS = {
     "Permite observar a próxima ação adversária e desfazer ambas uma vez.",
   ],
   Eusocialidade: [
-    "🐝",
+    "🐜",
     "Indivíduos estéreis aparentados e adjacentes aumentam a ninhada em até dois descendentes.",
   ],
   Regeneração: [
@@ -267,7 +269,7 @@ export const square = (r, c) => r * 8 + c;
 export const coord = (r, c) => `${String.fromCharCode(65 + c)}${8 - r}`;
 const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Respiração aeróbia": ["Respiração anaeróbia"],
-  "Locomoção Avançada": ["Locomoção"],
+  "Locomoção Avançada": ["Locomoção Articulada"],
   "Vetor Patógeno": ["Parasitismo"],
   Onívoro: ["Carnívoro", "Herbívoro"],
   Traqueófitas: ["Embriófitas"],
