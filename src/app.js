@@ -485,8 +485,16 @@ $("game-over-new").addEventListener("click", () => {
   if ($("game-over-dialog").open) $("game-over-dialog").close();
   if ($("notice-dialog").open) $("notice-dialog").close();
   selected = null;
-  const state = controller.state,
-    stage = currentGeologicalStage(state),
+  const state = controller.state;
+  if (state.scenario === "arena") {
+    $("mass-extinction-title").textContent = "Seleção da Arena";
+    $("mass-extinction-copy").textContent =
+      "As linhagens sobreviventes fundam a próxima fase. Antes dela, cada lado pode realizar até duas substituições de Engenharia Genética.";
+    $("mass-extinction-continue").textContent = "Engenharia Genética";
+    $("mass-extinction-dialog").showModal();
+    return;
+  }
+  const stage = currentGeologicalStage(state),
     progress = stageProgress(state),
     next = nextGeologicalStage(stage.id),
     advances = stageComplete(state) && next.id !== stage.id;
@@ -504,8 +512,12 @@ $("game-over-new").addEventListener("click", () => {
   $("mass-extinction-dialog").showModal();
 });
 $("mass-extinction-continue").addEventListener("click", () => {
-  const next = createSuccessorState(controller.state);
   $("mass-extinction-dialog").close();
+  if (controller.state.scenario === "arena") {
+    openArenaEngineering();
+    return;
+  }
+  const next = createSuccessorState(controller.state);
   selected = null;
   controller.replace(next);
 });
@@ -640,7 +652,14 @@ $("discovery-back").addEventListener("click", renderDiscoveryList);
 $("discovery-play").addEventListener("click", () => {
   const stage = $("discovery-play").dataset.stage;
   if (!stage) return;
-  const next = createPeriodState(stage, Date.now(), controller.state.discoveries);
+  const next = createPeriodState(
+    stage,
+    Date.now(),
+    controller.state.discoveries,
+    "earth",
+  );
+  selectedScenario = "earth";
+  $("scenario").value = selectedScenario;
   if ($("discoveries-dialog").open) $("discoveries-dialog").close();
   if ($("menu-dialog").open) $("menu-dialog").close();
   selected = null;
@@ -706,13 +725,22 @@ function closeInfo(run) {
     selected = null;
     action();
   }
-  controller.pause(false);
+  if (!$("arena-dialog").open) controller.pause(false);
 }
 $("info-ok").addEventListener("click", () => closeInfo(true));
 $("info-cancel").addEventListener("click", () => closeInfo(false));
 $("info-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
   closeInfo(false);
+});
+$("scenario").addEventListener("change", () => {
+  selectedScenario = $("scenario").value;
+  try {
+    localStorage.setItem("xe_scenario", selectedScenario);
+  } catch {
+    report("Preferência aplicada nesta sessão.");
+  }
+  report("O cenário selecionado será aplicado à próxima nova partida.");
 });
 for (const id of ["mode", "difficulty"])
   $(id).addEventListener("change", () => {
@@ -730,7 +758,13 @@ $("new").addEventListener("click", () =>
     [
       "A partida em andamento será substituída. Use Salvar partida para guardá-la antes de recomeçar.",
     ],
-    () => controller.replace(createCampaignState()),
+    () => {
+      if (selectedScenario === "arena") {
+        openArenaSetup();
+        return;
+      }
+      controller.replace(createCampaignState(Date.now(), selectedScenario));
+    },
   ),
 );
 $("save").addEventListener("click", () => {
@@ -751,6 +785,8 @@ $("import-file").addEventListener("change", async (event) => {
     if (file.size > 2000000) throw Error("Arquivo muito grande.");
     const state = deserialize(await file.text());
     selected = null;
+    selectedScenario = state.scenario;
+    $("scenario").value = selectedScenario;
     controller.replace(state);
     report("Partida importada.");
   } catch (error) {
