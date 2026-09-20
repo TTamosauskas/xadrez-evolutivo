@@ -821,7 +821,7 @@ function executeMove(ctx, action) {
       return;
     }
   }
-  if (pieceCapture && landingTerrain === "hostile") {
+  if (pieceCapture && terrain(state, p.r, p.c) === "hostile") {
     p.hostileRiskRound = round(state) + 1;
     p.decompositionImmunity = {
       cell,
