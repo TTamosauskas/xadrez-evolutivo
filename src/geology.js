@@ -710,6 +710,14 @@ export function stageComplete(state) {
 
 export function traitUnlocked(state, trait, piece = null) {
   if (NEGATIVE_TRAITS.has(trait)) return true;
+  if (
+    piece &&
+    BODY_PLAN_TRAITS.has(trait) &&
+    [...BODY_PLAN_TRAITS].some(
+      (candidate) => candidate !== trait && piece.traits?.includes(candidate),
+    )
+  )
+    return false;
   if (piece && traitSupersededByActive(piece.traits, trait)) return false;
   if (
     piece?.traits?.includes("Fotossíntese") &&
