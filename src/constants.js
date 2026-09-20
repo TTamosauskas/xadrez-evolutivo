@@ -212,7 +212,10 @@ export const TRAITS = {
     "Neutraliza integralmente a evasão de criaturas Notívagas durante rodadas noturnas.",
   ],
   Resistência: ["🧬", "Impede infecções por patógenos ecológicos e reduz em 75% a mortalidade individual causada por patógenos de pressão populacional."],
-  "Reprodução Sexuada": ["❤️", "Combina características de dois progenitores."],
+  "Reprodução Sexuada": [
+    "❤️",
+    "Cada descendente recebe um alelo de cada progenitor em cada locus, recombinando genes dominantes e recessivos.",
+  ],
   "Precocidade Sexual": [
     "🪰",
     "Em descendentes multicelulares, reduz de duas para uma rodada o tempo natural até a maturidade reprodutiva.",
