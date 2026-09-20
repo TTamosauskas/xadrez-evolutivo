@@ -187,9 +187,29 @@ export const TRAITS = {
   ],
   Carapaça: ["🐚", "Tem 25% de chance de bloquear o risco de uma casa hostil; quando a proteção falha, aplica-se o risco ambiental normal."],
   Camuflagem: ["😶‍🌫️", "Só pode ser capturada por uma peça adjacente."],
+  "Visão Binocular": [
+    "👀",
+    "Permite detectar e capturar criaturas com Camuflagem à distância.",
+  ],
+  Velocidade: [
+    "💨",
+    "Tem 25% de chance de escapar de uma captura; se o agressor também possuir Velocidade, essa proteção é anulada.",
+  ],
+  Notívago: [
+    "🌙",
+    "Em rodadas pares, tem 50% de chance de escapar de uma captura. Visão Noturna do agressor anula essa proteção.",
+  ],
+  "Pele grossa": [
+    "🐘",
+    "Tem 25% de chance de resistir a uma captura. Garras do agressor anulam essa proteção.",
+  ],
+  Garras: [
+    "▽",
+    "Neutraliza a proteção oferecida por Pele grossa.",
+  ],
   "Visão Noturna": [
     "👁️",
-    "Permite detectar e capturar criaturas com Camuflagem à distância.",
+    "Neutraliza integralmente a evasão de criaturas Notívagas durante rodadas noturnas.",
   ],
   Resistência: ["🧬", "Impede infecções por patógenos ecológicos e reduz em 75% a mortalidade individual causada por patógenos de pressão populacional."],
   "Reprodução Sexuada": ["❤️", "Combina características de dois progenitores."],
