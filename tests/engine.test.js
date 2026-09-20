@@ -175,7 +175,7 @@ test("Archean is almost entirely fertile and Proterozoic seeds bounded hostile C
   assertState(proterozoic);
 });
 
-test("ancestral gray King splits into two opposite founder Kings", () => {
+test("ancestral gray King splits into adjacent founders on opposite random sides", () => {
   let s = createCampaignState(301);
   assert.equal(s.phase, "origin");
   assert.equal(s.pieces.length, 0);
@@ -184,16 +184,23 @@ test("ancestral gray King splits into two opposite founder Kings", () => {
   s = transition(s, { type: "ORIGIN_CLICK" });
   assert.equal(s.origin.selected, true);
   assert.equal(s.pieces.length, 0);
+  const origin = { r: s.origin.r, c: s.origin.c };
 
   s = transition(s, { type: "ORIGIN_CLICK" });
   assert.equal(s.phase, "move");
   assert.equal(s.origin, null);
   assert.equal(s.pieces.length, 2);
   assert.ok(s.pieces.every((piece) => piece.rank === 4));
+  assert.ok(
+    s.pieces.every((piece) => piece.traits.includes("Respiração anaeróbia")),
+  );
   const blue = s.pieces.find((piece) => piece.owner === "blue"),
-    amber = s.pieces.find((piece) => piece.owner === "amber");
-  assert.equal(blue.r + amber.r, 7);
-  assert.equal(blue.c + amber.c, 7);
+    amber = s.pieces.find((piece) => piece.owner === "amber"),
+    blueVector = [blue.r - origin.r, blue.c - origin.c],
+    amberVector = [amber.r - origin.r, amber.c - origin.c];
+  assert.equal(Math.max(Math.abs(blueVector[0]), Math.abs(blueVector[1])), 1);
+  assert.equal(Math.max(Math.abs(amberVector[0]), Math.abs(amberVector[1])), 1);
+  assert.deepEqual(amberVector, blueVector.map((value) => -value));
   assert.equal(s.board[blue.r * 8 + blue.c], "fertile");
   assert.equal(s.board[amber.r * 8 + amber.c], "fertile");
   assertState(s);
@@ -750,6 +757,33 @@ test("population pressure governs fertility, pathogens and severe climate", () =
   assert.equal(photosynthesisDelayTurns(state), 8);
   state.pieces = state.pieces.slice(0, 11);
   assert.equal(photosynthesisDelayTurns(state), 6);
+});
+
+test("anaerobic and aerobic respiration set four- and three-round fertile reproduction cooldowns", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração anaeróbia"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  const anaerobic = s.pieces[0];
+  assert.equal(reproduce(context(s), anaerobic, null, "teste", {
+    forcedCount: 1,
+    fertileReproduction: true,
+  }), 1);
+  assert.equal(anaerobic.nextReproductionRound, round(s) + 4);
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração aeróbia"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  const aerobic = s.pieces[0];
+  assert.equal(reproduce(context(s), aerobic, null, "teste", {
+    forcedCount: 1,
+    fertileReproduction: true,
+  }), 1);
+  assert.equal(aerobic.nextReproductionRound, round(s) + 3);
+  assertState(s);
 });
 
 test("gradual population pressure exhausts fertility without arbitrary attrition deaths", () => {
