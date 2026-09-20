@@ -1,5 +1,6 @@
 import { TRAITS, has } from "./constants.js";
 import {
+  BODY_PLAN_TRAITS,
   MULTICELLULAR_DEPENDENT_TRAITS,
   PLANT_DERIVED_TRAITS,
   PLANT_INCOMPATIBLE_TRAITS,
@@ -26,14 +27,14 @@ export const ARENA_RECESSIVE_COUNT = 2;
 const order = new Map(Object.keys(TRAITS).map((trait, index) => [trait, index]));
 
 export const ARENA_ARCHETYPES = [
-  ["Predação", "Multicelularismo", "Locomoção Articulada", "Locomoção Avançada", "Velocidade", "Visão Binocular"],
-  ["Predação", "Multicelularismo", "Carnívoro", "Garras", "Locomoção Articulada", "Camuflagem"],
-  ["Predação", "Multicelularismo", "Herbívoro", "Pele grossa", "Locomoção Articulada", "Carapaça"],
-  ["Predação", "Multicelularismo", "Locomoção Articulada", "Notívago", "Visão Noturna", "Camuflagem"],
+  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Avançada"],
+  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Artrópode", "Locomoção Articulada", "Camuflagem"],
+  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Artrópode", "Locomoção Articulada", "Carapaça"],
+  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Notívago"],
   ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Madeira", "Espinhos"],
   ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Extremófitas"],
-  ["Predação", "Multicelularismo", "Locomoção Articulada", "Ovíparo", "Cuidado Parental", "Sociabilidade"],
-  ["Predação", "Multicelularismo", "Locomoção Articulada", "Ovíparo", "Ovíparos Amniotas", "Voo"],
+  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Ovíparo"],
+  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Artrópode", "Locomoção Articulada", "Visão Binocular"],
 ];
 
 const COUNTERS = {
@@ -122,6 +123,8 @@ export function completeArenaGenome(input, preferred = null) {
 
 export function arenaGenomeValid(genome, budget = null) {
   const normalized = completeArenaGenome(genome);
+  if (normalized.includes("Vertebrado") && normalized.includes("Artrópode"))
+    return false;
   if (normalized.length !== new Set(genome ?? []).size) return false;
   if (budget !== null && normalized.length !== budget) return false;
   const traits = normalizeActiveTraits([BASAL, ...normalized]);
@@ -162,7 +165,8 @@ export function arenaRecessivePairs(genome) {
     pairs = [];
   for (let i = 0; i < completed.length; i++)
     for (let j = i + 1; j < completed.length; j++) {
-      const hidden = [completed[i], completed[j]],
+      const hidden = [completed[i], completed[j]];
+      if (hidden.some((trait) => BODY_PLAN_TRAITS.has(trait))) continue;
         hiddenSet = new Set(hidden),
         active = completed.filter((trait) => !hiddenSet.has(trait));
       if (phenotypeSupportsGenome(active)) pairs.push(hidden);
