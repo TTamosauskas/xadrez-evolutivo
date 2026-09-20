@@ -414,7 +414,7 @@ export function render(
       heading,
       make(
         "p",
-        "Ancestral comum das duas linhagens. Toque novamente no Rei cinza para originar o Rei branco e o Rei preto.",
+        "Ancestral comum das duas linhagens. Toque novamente no Rei cinza para separar quatro Reis primordiais: um fotossintético e um predatório para cada lado.",
         "selected-ancestral",
       ),
     );
