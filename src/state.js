@@ -450,6 +450,7 @@ export function createState(seed = Date.now(), options = {}) {
     historicalTraits: [
       ...new Set(["Respiração anaeróbia", ...(options.historicalTraits ?? [])]),
     ],
+    fossilRecord: structuredClone(options.fossilRecord ?? []),
     discoveries: cloneDiscoveries(options.discoveries),
     logs: [],
     event: null,
@@ -741,6 +742,24 @@ export function dominantLineage(state, owner = null, predicate = null) {
     ? { ...selected, total: pieces.length }
     : { piece: null, count: 0, total: pieces.length };
 }
+function fossilEntries(previous) {
+  return ["blue", "amber"].flatMap((owner) => {
+    const selected = dominantLineage(previous, owner);
+    if (!selected.piece) return [];
+    return [{
+      geologicalStage: previous.geologicalStage,
+      cycle: previous.cycle,
+      owner,
+      winner: previous.result?.winner === owner,
+      rank: selected.piece.rank,
+      traits: [...selected.piece.traits],
+      ancestry: [...new Set(selected.piece.ancestry ?? selected.piece.traits)],
+      count: selected.count,
+      total: selected.total,
+    }];
+  });
+}
+
 function founderProfile(previous, piece) {
   if (!piece) return null;
   const excluded = new Set(["Esterilidade", "Mutação Deletéria"]);
@@ -887,6 +906,10 @@ export function createArenaSuccessorState(
           ...Object.values(genomes).flat(2),
         ]),
       ],
+      fossilRecord: [
+        ...(previous.fossilRecord ?? []),
+        ...fossilEntries(previous),
+      ],
       discoveries: previous.discoveries,
       ownerFounders: profiles,
       arenaFounders: profiles,
@@ -918,6 +941,10 @@ function createEarthSuccessorState(previous, seed) {
         previous.generationOffset + previous.maxGenerationReached + 1,
       historicalTraits: [
         ...new Set([...previous.historicalTraits, ...preview.historicalTraits]),
+      ],
+      fossilRecord: [
+        ...(previous.fossilRecord ?? []),
+        ...fossilEntries(previous),
       ],
       discoveries: previous.discoveries,
       founders: { primary: preview.primary, companion: preview.companion },
@@ -975,6 +1002,10 @@ export function createSuccessorState(previous, seed = Date.now()) {
     totalCycles,
     generationOffset,
     historicalTraits: previous.historicalTraits,
+    fossilRecord: [
+      ...(previous.fossilRecord ?? []),
+      ...fossilEntries(previous),
+    ],
     discoveries: previous.discoveries,
     founder,
     founders,
@@ -1065,6 +1096,22 @@ export function assertState(state) {
     !Array.isArray(state.historicalTraits) ||
     state.historicalTraits.some((trait) => !TRAITS[trait]) ||
     new Set(state.historicalTraits).size !== state.historicalTraits.length ||
+    !Array.isArray(state.fossilRecord) ||
+    state.fossilRecord.some(
+      (entry) =>
+        !entry ||
+        !GEOLOGICAL_STAGES.some((stage) => stage.id === entry.geologicalStage) ||
+        !integer(entry.cycle, 1) ||
+        !["blue", "amber"].includes(entry.owner) ||
+        typeof entry.winner !== "boolean" ||
+        !integer(entry.rank, 0, 5) ||
+        !Array.isArray(entry.traits) ||
+        entry.traits.some((trait) => !TRAITS[trait]) ||
+        !Array.isArray(entry.ancestry) ||
+        entry.ancestry.some((trait) => !TRAITS[trait]) ||
+        !integer(entry.count, 1) ||
+        !integer(entry.total, entry.count)
+    ) ||
     !validDiscoveries(state.discoveries) ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
