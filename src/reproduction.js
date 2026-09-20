@@ -656,12 +656,12 @@ function layPlantSeeds(ctx, parent, brood) {
 
 export function reproductiveOutput(profile) {
   if (!has(profile, "Fotossíntese"))
-    return BIRTH_RATES[profile.rank] * (has(profile, "Fertilidade") ? 2 : 1);
+    return BIRTH_RATES[profile.rank];
   const advanced = ["Traqueófitas", "Gimnospermas", "Angiospermas"].some(
       (trait) => has(profile, trait),
     ),
     base = profile.rank === 4 ? 1 : advanced ? 2 : 3;
-  return Math.min(4, base + (has(profile, "Fertilidade") ? 1 : 0));
+  return Math.min(4, base);
 }
 
 export function populationReproductionLimit(population) {
