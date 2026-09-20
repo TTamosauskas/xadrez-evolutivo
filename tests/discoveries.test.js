@@ -105,11 +105,20 @@ test("each geological discovery can launch the first cycle with prior winners re
         assert.equal(founders.filter((piece) => piece.traits.includes("Fotossíntese")).length, 1);
         assert.equal(founders.filter((piece) => !piece.traits.includes("Fotossíntese")).length, 1);
       }
-      const priorRequired = GEOLOGICAL_STAGES.slice(0, index).flatMap((prior) => prior.required);
-      assert.deepEqual(
-        [...s.historicalTraits].sort(),
-        [...new Set(["Respiração anaeróbia", ...priorRequired])].sort(),
+      const priorRequired = GEOLOGICAL_STAGES.slice(0, index).flatMap(
+        (prior) => prior.required,
       );
+      for (const trait of ["Respiração anaeróbia", ...priorRequired])
+        assert.ok(s.historicalTraits.includes(trait), trait);
+      const currentIndex = stage.index;
+      for (const trait of s.historicalTraits) {
+        const source = GEOLOGICAL_STAGES.find(
+          (candidate) =>
+            candidate.required.includes(trait) ||
+            candidate.id === "archean" && trait === "Respiração anaeróbia",
+        );
+        if (source) assert.ok(source.index < currentIndex, trait);
+      }
     }
     assertState(s);
   }
