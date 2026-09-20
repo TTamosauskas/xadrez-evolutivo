@@ -49,7 +49,7 @@ import {
   predationBirthLimit,
 } from "../src/reproduction.js";
 import { crowdingPenalty } from "../src/ai.js";
-import { habitatProfile } from "../src/geology.js";
+import { GEOLOGICAL_STAGES, habitatProfile } from "../src/geology.js";
 import { cloneReproGenes } from "../src/reproductive-genetics.js";
 import { EVENTS, TRAITS } from "../src/constants.js";
 
@@ -77,6 +77,71 @@ test("period habitat profiles encode the new ecological progression", () => {
   assert.equal(triassic.pattern, "open");
   assert.equal(cretaceous.fertile, 18);
   assert.equal(neogene.pattern, "fragmented");
+});
+
+test("first generation-3 habitat update preserves every geological preset", () => {
+  const cellsOf = (state, type) =>
+      new Set(
+        state.board
+          .map((terrain, cell) => (terrain === type ? cell : null))
+          .filter((cell) => cell !== null),
+      ),
+    retained = (before, after) =>
+      [...before].filter((cell) => after.has(cell)).length;
+
+  for (const [index, stage] of GEOLOGICAL_STAGES.entries()) {
+    if (stage.id === "proterozoic") continue;
+    const s = createState(900 + index, {
+        geologicalStage: stage.id,
+        naturalBarriers: true,
+      }),
+      beforeFertile = cellsOf(s, "fertile"),
+      beforeHostile = cellsOf(s, "hostile");
+
+    s.maxGenerationReached = 3;
+    tickEnvironment(context(s));
+
+    const afterFertile = cellsOf(s, "fertile"),
+      afterHostile = cellsOf(s, "hostile");
+    assert.ok(
+      Math.abs(afterFertile.size - beforeFertile.size) <= 2,
+      `${stage.period}: preset fértil mudou de ${beforeFertile.size} para ${afterFertile.size}`,
+    );
+    assert.ok(
+      Math.abs(afterHostile.size - beforeHostile.size) <= 2,
+      `${stage.period}: preset hostil mudou de ${beforeHostile.size} para ${afterHostile.size}`,
+    );
+    assert.ok(
+      retained(beforeFertile, afterFertile) >=
+        Math.max(0, beforeFertile.size - 2),
+      `${stage.period}: geometria fértil foi reescrita no primeiro tick`,
+    );
+    assert.ok(
+      retained(beforeHostile, afterHostile) >=
+        Math.max(0, beforeHostile.size - 2),
+      `${stage.period}: geometria hostil foi reescrita no primeiro tick`,
+    );
+    assert.equal(s.nextHabitatGeneration, 5);
+    assertState(s);
+  }
+});
+
+test("Archean keeps its abundant fertile preset after generation 3", () => {
+  const s = createState(899, {
+      geologicalStage: "archean",
+      naturalBarriers: true,
+    }),
+    before = s.board.filter((cell) => cell === "fertile").length;
+  assert.ok(before >= 48 && before <= 56);
+
+  s.maxGenerationReached = 3;
+  tickEnvironment(context(s));
+
+  const after = s.board.filter((cell) => cell === "fertile").length;
+  assert.ok(after >= 48 && after <= 56);
+  assert.ok(Math.abs(after - before) <= 1);
+  assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
+  assertState(s);
 });
 
 test("Archean is almost entirely fertile and Proterozoic seeds bounded hostile Conway", () => {
