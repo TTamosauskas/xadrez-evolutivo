@@ -403,7 +403,7 @@ export function createState(seed = Date.now(), options = {}) {
     originPrelude = !!options.originPrelude,
     canonicalPair = !!options.canonicalPair;
   const state = {
-    version: 8,
+    version: 9,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
@@ -853,7 +853,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 8 ||
+    state.version !== 9 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
