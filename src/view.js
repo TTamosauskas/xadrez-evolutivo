@@ -366,7 +366,44 @@ export function render(
           "selected-status",
         ),
       );
-    $("selected").replaceChildren(heading, ...details);
+    const activeHeading = make(
+        "div",
+        "Fenótipo ativo",
+        "selected-group-heading",
+      ),
+      ancestralOnly = [...new Set(actor.ancestry ?? [])].filter(
+        (trait) => TRAITS[trait] && !actor.traits.includes(trait),
+      ),
+      ancestry = make("details", undefined, "ancestry-toggle"),
+      ancestrySummary = make(
+        "summary",
+        `Ancestralidade da linhagem (${ancestralOnly.length})`,
+      ),
+      ancestryList = make("div", undefined, "ancestry-list");
+    if (ancestralOnly.length)
+      for (const trait of ancestralOnly)
+        ancestryList.append(
+          make(
+            "span",
+            `${TRAITS[trait][0]} ${trait}`,
+            "ancestry-chip",
+          ),
+        );
+    else
+      ancestryList.append(
+        make(
+          "p",
+          "Nenhuma característica ancestral suprimida.",
+          "selected-ancestral",
+        ),
+      );
+    ancestry.append(ancestrySummary, ancestryList);
+    $("selected").replaceChildren(
+      heading,
+      activeHeading,
+      ...details,
+      ancestry,
+    );
   } else if (origin?.selected) {
     const heading = make("div", undefined, "selected-piece-heading");
     heading.append(
