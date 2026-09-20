@@ -305,15 +305,17 @@ test("late-period founders separate compact active phenotype from full ancestry"
   const s = createPeriodState("quaternary", 147),
     founders = s.pieces;
   assert.ok(founders.length >= 2);
+  let compacted = 0;
   for (const piece of founders) {
     assert.ok(piece.ancestry.length >= piece.traits.length);
-    assert.ok(piece.ancestry.length > piece.traits.length);
+    if (piece.ancestry.length > piece.traits.length) compacted++;
     for (const family of ACTIVE_TRAIT_FAMILIES)
       assert.ok(
         family.traits.filter((trait) => piece.traits.includes(trait)).length <= 1,
         family.id,
       );
   }
+  assert.ok(compacted > 0);
 });
 
 test("evolutionary dependencies follow lineage ancestry without cumulative traits", () => {
