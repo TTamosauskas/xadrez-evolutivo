@@ -360,7 +360,7 @@ function seedStandardHabitat(state, profile, founderCells) {
   }
   const mobileFounder = state.pieces.some(
     (piece) =>
-      piece.traits.includes("Locomoção") ||
+      piece.traits.includes("Locomoção Articulada") ||
       piece.traits.includes("Locomoção Avançada"),
   );
   if (!mobileFounder)
@@ -384,7 +384,7 @@ function seedHabitat(state) {
   }
   const mobileFounder = state.pieces.some(
       (piece) =>
-        piece.traits.includes("Locomoção") ||
+        piece.traits.includes("Locomoção Articulada") ||
         piece.traits.includes("Locomoção Avançada"),
     ),
     keepFoundersFertile = profile.founderFertile || !mobileFounder;
@@ -1487,7 +1487,7 @@ export function assertState(state) {
     state.chain &&
     !state.pieces.some((p) => p.id === state.chain && p.owner === state.current)
   )
-    throw Error("Locomoção inválida.");
+    throw Error("Locomoção Articulada inválida.");
   if (
     state.phase === "partner" &&
     (!state.partner ||
