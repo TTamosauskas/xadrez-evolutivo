@@ -150,7 +150,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       victim &&
       has(victim, "Camuflagem") &&
       distance(p, victim) > 1 &&
-      !has(p, "Visão Noturna")
+      !has(p, "Visão Binocular")
     )
       return;
     targets.push({
