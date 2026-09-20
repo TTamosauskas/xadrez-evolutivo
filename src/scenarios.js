@@ -19,8 +19,8 @@ export const ARENA_HABITAT = {
 
 export const EARTH_FOUNDER_GENOMES = {
   proterozoic: {
-    plant: ["Fotossíntese", "Fertilidade", "Dormência"],
-    animal: ["Predação", "Fertilidade", "Dormência"],
+    plant: ["Fotossíntese", "Dormência"],
+    animal: ["Predação", "Dormência"],
     rank: 0,
   },
   ediacaran: {
@@ -51,7 +51,7 @@ export const EARTH_FOUNDER_GENOMES = {
       "Predação",
       "Multicelularismo",
       "Respiração aeróbia",
-      "Locomoção",
+      "Locomoção Articulada",
       "Escavador",
       "Construtor de Nicho",
       "Necrófago",
@@ -69,7 +69,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Carnívoro",
       "Carapaça",
       "Camuflagem",
@@ -86,7 +86,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Ovíparo",
       "Herbívoro",
     ],
@@ -102,7 +102,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Ovíparo",
       "Herbívoro",
       "Coletor",
@@ -120,7 +120,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Locomoção Avançada",
       "Onívoro",
       "Visão Binocular",
@@ -139,7 +139,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
       "Ovíparos Amniotas",
@@ -160,7 +160,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
       "Ovíparos Amniotas",
@@ -182,7 +182,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
       "Ovíparos Amniotas",
@@ -205,7 +205,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
       "Ovíparos Amniotas",
@@ -230,7 +230,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
       "Ovíparos Amniotas",
@@ -253,7 +253,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
       "Ovíparos Amniotas",
@@ -275,7 +275,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
-      "Locomoção",
+      "Locomoção Articulada",
       "Locomoção Avançada",
       "Ovíparo",
       "Ovíparos Amniotas",
@@ -291,7 +291,7 @@ export const EARTH_FOUNDER_GENOMES = {
 
 const CONTEXT_AFFINITIES = {
   Carapaça: ["Predação"],
-  Camuflagem: ["Locomoção"],
+  Camuflagem: ["Locomoção Articulada"],
   Veneno: ["Carnívoro"],
   Necrófago: ["Predação"],
   Ooteca: ["Ovíparo"],
