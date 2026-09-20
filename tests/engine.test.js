@@ -312,6 +312,43 @@ test("stationary reproduction keeps its parent and unique occupancy with Ooteca"
   assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 5);
   assertState(s);
 });
+test("Ooteca only releases after successful reproduction on a fertile square", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parent = s.pieces[0];
+
+  assert.equal(parent.oothecaPrimed, false);
+  context(s).kill(parent.id, "teste");
+  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 0);
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  const primed = s.pieces.find((piece) => piece.id === 1);
+  assert.equal(primed.oothecaPrimed, true);
+  const beforeDeath = s.pieces.filter((piece) => piece.owner === "blue").length;
+  context(s).kill(primed.id, "teste");
+  assert.ok(
+    s.pieces.filter((piece) => piece.owner === "blue").length >= beforeDeath,
+    "a Ooteca preparada deve repor ao menos a peça perdida quando houver espaço",
+  );
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Ooteca", "Carnívoro"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  const predator = s.pieces.find((piece) => piece.id === 1);
+  assert.equal(predator.oothecaPrimed, false);
+  assertState(s);
+});
+
 test("capturing Ooteca reserves arrival and cannot overlap the attacker", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
