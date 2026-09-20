@@ -200,7 +200,8 @@ test("ancestral gray King splits into adjacent founders on opposite random sides
     amberVector = [amber.r - origin.r, amber.c - origin.c];
   assert.equal(Math.max(Math.abs(blueVector[0]), Math.abs(blueVector[1])), 1);
   assert.equal(Math.max(Math.abs(amberVector[0]), Math.abs(amberVector[1])), 1);
-  assert.deepEqual(amberVector, blueVector.map((value) => -value));
+  assert.equal(amberVector[0] + blueVector[0], 0);
+  assert.equal(amberVector[1] + blueVector[1], 0);
   assert.equal(s.board[blue.r * 8 + blue.c], "fertile");
   assert.equal(s.board[amber.r * 8 + amber.c], "fertile");
   assertState(s);
@@ -2354,28 +2355,49 @@ test("Mimetismo can redirect capture damage to an adjacent piece", () => {
 });
 
 
-test("Haustório lets a photosynthetic piece capture any adjacent enemy without Predação", () => {
+test("Haustório consumes only adjacent photosynthetic enemies without moving", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 4,
       c: 4,
-      rank: 3,
-      traits: ["Fotossíntese", "Embriófitas", "Haustório"],
+      rank: 0,
+      traits: [
+        "Multicelularismo",
+        "Fotossíntese",
+        "Embriófitas",
+        "Traqueófitas",
+        "Gimnospermas",
+        "Angiospermas",
+        "Haustório",
+      ],
     },
-    { owner: "amber", r: 3, c: 3 },
+    {
+      owner: "amber",
+      r: 3,
+      c: 3,
+      traits: ["Multicelularismo", "Fotossíntese"],
+    },
     { owner: "amber", r: 0, c: 0 },
   ]);
   const plant = s.pieces[0];
   assert.ok(!plant.traits.includes("Predação"));
   assert.ok(
     movesFor(s, plant).some(
-      (target) => target.r === 3 && target.c === 3 && target.capture,
+      (target) =>
+        target.r === 3 &&
+        target.c === 3 &&
+        target.capture &&
+        target.botanicalPredation === "Haustório",
     ),
   );
   s = simulate(s, move(plant, 3, 3));
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
-  assert.ok(s.pieces.some((piece) => piece.id === 1 && piece.r === 3 && piece.c === 3));
+  assert.ok(
+    s.pieces.some(
+      (piece) => piece.id === 1 && piece.r === 4 && piece.c === 4,
+    ),
+  );
   assertState(s);
 });
 
