@@ -11,6 +11,7 @@ import {
   PLANT_INCOMPATIBLE_TRAITS,
   recordHistoricalTraits,
   stageComplete,
+  traitCombinationValid,
 } from "./geology.js";
 import {
   cloneDiscoveries,
@@ -958,6 +959,7 @@ export function assertState(state) {
       p.rank > 5 ||
       !Array.isArray(p.traits) ||
       p.traits.some((t) => !TRAITS[t]) ||
+      !traitCombinationValid(p.traits) ||
       !Array.isArray(p.ancestry) ||
       p.ancestry.some((t) => !TRAITS[t]) ||
       new Set(p.ancestry).size !== p.ancestry.length ||
