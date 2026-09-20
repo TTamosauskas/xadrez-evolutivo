@@ -12,9 +12,9 @@ import {
   ARENA_TRAIT_BUDGET,
 } from "./scenarios.js";
 import {
-  GENETIC_TRAITS,
-  reproGenesFromTraits,
-} from "./reproductive-genetics.js";
+  genomeFromTraits,
+  syncGenomePhenotype,
+} from "./genetics.js";
 
 const NEGATIVE = new Set([
   "Esterilidade",
@@ -206,16 +206,13 @@ export function arenaProfile(genome, rank = 4, recessiveTraits = []) {
       : active.includes("Predação")
         ? "Predação"
         : null,
-    genericRecessives = [...hidden].filter(
-      (trait) => !GENETIC_TRAITS.includes(trait),
-    );
-  return {
-    rank,
-    traits: normalizeActiveTraits([BASAL, ...active], preferred),
-    ancestry: [BASAL, ...completed],
-    recessiveTraits: genericRecessives,
-    reproGenes: reproGenesFromTraits(active, [...hidden]),
-  };
+    profile = {
+      rank,
+      traits: normalizeActiveTraits([BASAL, ...active], preferred),
+      ancestry: [BASAL, ...completed],
+      genome: genomeFromTraits([BASAL, ...active], [...hidden]),
+    };
+  return syncGenomePhenotype(profile, preferred);
 }
 
 function lcg(seed) {
