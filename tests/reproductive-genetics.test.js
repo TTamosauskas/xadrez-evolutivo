@@ -5,6 +5,7 @@ import {
   gainReproAllele,
   inheritSexualReproGenes,
   hiddenRecessiveTraits,
+  reproGenesFromTraits,
   reproPhenotype,
   syncReproTraits,
   validReproGenes,
@@ -89,6 +90,19 @@ test("reproductive loci express one development strategy and spore dispersal", (
   assert.ok(!piece.traits.includes("Vivíparo"));
   assert.ok(piece.traits.includes("Esporos"));
   assert.ok(piece.traits.includes("Voo"));
+});
+
+test("Arena recessive can share a reproductive locus with an active allele", () => {
+  const genes = reproGenesFromTraits(
+    ["Ovíparo"],
+    ["Ovíparos Amniotas"],
+  );
+  assert.deepEqual(genes.development, [
+    dominant("oviparous"),
+    recessive("amniotic"),
+  ]);
+  assert.equal(reproPhenotype(genes).development, "oviparous");
+  assert.deepEqual(hiddenRecessiveTraits(genes), ["Ovíparos Amniotas"]);
 });
 
 test("reproductive alternatives can replace an already occupied locus", () => {
