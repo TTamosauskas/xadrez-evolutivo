@@ -151,6 +151,11 @@ function moveDirection(p) {
   }
 }
 
+function hostileHazardKills(state, piece) {
+  if (random(state) >= 1 / 2) return false;
+  return !has(piece, "Carapaça") || random(state) >= 1 / 4;
+}
+
 function underlyingTerrain(state, cell) {
   if (state.event?.hazards.includes(cell))
     return state.event.snapshots[cell] ?? "neutral";
@@ -388,7 +393,7 @@ function advanceTurn(ctx) {
         p.hostileRiskRound !== round(state)
       ) {
         p.hostileRiskRound = round(state);
-        if (random(state) < (has(p, "Carapaça") ? 0.34 : 0.5))
+        if (hostileHazardKills(state, p))
           ctx.kill(p.id, "casa hostil");
       }
     if (!extinction(state)) applyNaturalDeaths(ctx);
@@ -764,11 +769,11 @@ function executeMove(ctx, action) {
         state,
         "Casas hostis",
         [
-          "Cada casa hostil atravessada tem 50% de risco; Carapaça reduz para 34%. Voo ignora apenas casas atravessadas, não a casa de chegada. Dormência protege a chegada ao imobilizar a criatura.",
+          "Cada casa hostil atravessada tem 50% de risco; Carapaça tem 25% de chance de bloquear uma consequência letal. Voo ignora apenas casas atravessadas, não a casa de chegada. Dormência protege a chegada ao imobilizar a criatura.",
         ],
         "hostile",
       );
-      if (random(state) < (has(p, "Carapaça") ? 0.34 : 0.5)) {
+      if (hostileHazardKills(state, p)) {
         ctx.kill(p.id, "deslocamento em casa hostil");
         advanceTurn(ctx);
         settle(ctx);
@@ -937,12 +942,12 @@ function executeMove(ctx, action) {
       state,
       "Casas hostis",
       [
-        "Em uma captura, a vítima é resolvida primeiro; depois a casa hostil ameaça o agressor. Carapaça reduz o risco de 50% para 34%.",
+        "Em uma captura, a vítima é resolvida primeiro; depois a casa hostil ameaça o agressor. Carapaça tem 25% de chance de bloquear uma consequência letal da casa hostil.",
       ],
       "hostile",
     );
     p.hostileRiskRound = round(state) + 1;
-    if (random(state) < (has(p, "Carapaça") ? 0.34 : 0.5)) {
+    if (hostileHazardKills(state, p)) {
       ctx.kill(p.id, "casa hostil após captura");
       advanceTurn(ctx);
       settle(ctx);
