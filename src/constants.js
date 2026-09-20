@@ -73,6 +73,14 @@ export const TRAITS = {
     "Reduz de três para duas rodadas o intervalo mínimo entre reproduções bem-sucedidas.",
   ],
   Fertilidade: ["🧫", "Dobra a quantidade de descendentes."],
+  "Respiração anaeróbia": [
+    "⚪",
+    "Metabolismo sem oxigênio. Permite consumir uma casa fértil pré-existente para reprodução a cada quatro turnos próprios.",
+  ],
+  "Respiração aeróbia": [
+    "🔵",
+    "Metabolismo mais eficiente com oxigênio. Permite consumir uma casa fértil pré-existente para reprodução a cada três turnos próprios.",
+  ],
   Fotossíntese: [
     "🟢",
     "Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas, independentemente das características das peças vizinhas; é incompatível com Predação na mesma linhagem.",
@@ -219,6 +227,7 @@ export const inside = (r, c) =>
 export const square = (r, c) => r * 8 + c;
 export const coord = (r, c) => `${String.fromCharCode(65 + c)}${8 - r}`;
 const TRAIT_CAPABILITY_IMPLICATIONS = {
+  "Respiração aeróbia": ["Respiração anaeróbia"],
   "Locomoção Avançada": ["Locomoção"],
   "Vetor Patógeno": ["Parasitismo"],
   Onívoro: ["Carnívoro", "Herbívoro"],
