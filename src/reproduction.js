@@ -82,6 +82,15 @@ export function applyAirSacRankFloor(profile) {
   return profile;
 }
 
+export function normalizeBodyPlanRank(profile) {
+  if (
+    has(profile, "Artrópode") &&
+    ![0, 1, 2, 4].includes(profile.rank)
+  )
+    profile.rank = 2;
+  return profile;
+}
+
 function weightedPick(state, options) {
   const total = options.reduce((sum, option) => sum + (option.weight ?? 1), 0);
   if (!total) return null;
@@ -173,6 +182,7 @@ function mutation(state, p, positiveOnly) {
       p.genome = withoutGenomeTraits(p.genome, [otherPlan]);
       p.genome = forceGenomeTrait(p.genome, choice.geneGain, "dominant");
       syncGenomePhenotype(p);
+      normalizeBodyPlanRank(p);
     } else if (choice.geneGain === "Predação") {
       p.genome = withoutGenomeTraits(p.genome, [
         "Fotossíntese",
@@ -257,6 +267,7 @@ function sexualProfile(state, a, b) {
     mutations: Math.max(a.mutations, b.mutations),
   };
   syncGenomePhenotype(profile, preferredEnergy);
+  normalizeBodyPlanRank(profile);
   return normalizePhotosyntheticRank(profile);
 }
 
@@ -344,6 +355,7 @@ function makeChildProfile(state, parent, mate, profile) {
   if (random(state) < (state.event?.id === "solar" ? 1 : 1 / 3))
     mutation(state, child, !!mate);
   applyAirSacRankFloor(child);
+  normalizeBodyPlanRank(child);
   normalizePhotosyntheticRank(child);
   return child;
 }
