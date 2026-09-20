@@ -355,10 +355,17 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
 }
 export function partnersFor(state, p) {
   if (!reproductionReady(state, p)) return [];
+  const branch = has(p, "Fotossíntese")
+    ? "Fotossíntese"
+    : has(p, "Predação")
+      ? "Predação"
+      : null;
+  if (!branch) return [];
   return state.pieces.filter(
     (x) =>
       x.id !== p.id &&
       x.owner === p.owner &&
+      has(x, branch) &&
       reproductionReady(state, x) &&
       !dormant(state, x) &&
       distance(p, x) === 1,
