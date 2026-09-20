@@ -153,7 +153,7 @@ test("geological event pools contain only valid ecological events and no pathoge
 
 test("Archean starts green and stationary", () => {
   const s = createState(101);
-  assert.equal(s.version, 12);
+  assert.equal(s.version, 13);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
