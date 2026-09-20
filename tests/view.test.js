@@ -122,7 +122,7 @@ test("selected panel inspects either side and explains only that piece traits", 
   assert.match(selected.textContent, /🧬 Resistência/);
   assert.match(
     selected.textContent,
-    /Impede novas infecções pelo Patógeno Virulento/,
+    /reduz em 75% a mortalidade individual causada por patógenos de pressão populacional/,
   );
   assert.match(selected.textContent, /❤️ Reprodução Sexuada/);
   assert.match(
