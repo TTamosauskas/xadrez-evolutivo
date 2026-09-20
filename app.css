@@ -245,7 +245,7 @@ main {
   filter:
     drop-shadow(0 2px 1px #0007)
     drop-shadow(0 0 4px #ffffff)
-    drop-shadow(0 0 9px #c8efff);
+    drop-shadow(0 0 10px #ffffff);
 }
 .piece.blue {
   color: #fff8df;
