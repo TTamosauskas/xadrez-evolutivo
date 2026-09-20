@@ -377,9 +377,17 @@ export function inheritSexualGenome(a, b, random) {
         ],
       ]),
     ),
+    parentPlans = [...BODY_PLAN_TRAITS].filter(
+      (trait) => locusExpressed(ga[trait]) || locusExpressed(gb[trait]),
+    ),
     expressedPlans = [...BODY_PLAN_TRAITS].filter((trait) =>
       locusExpressed(child[trait]),
     );
+  if (parentPlans.length && !expressedPlans.length) {
+    const keep = parentPlans[Math.floor(random() * parentPlans.length)];
+    child[keep] = [derivedAllele("dominant"), ancestralAllele()];
+    expressedPlans.push(keep);
+  }
   if (expressedPlans.length > 1) {
     const keep = expressedPlans[Math.floor(random() * expressedPlans.length)];
     for (const trait of expressedPlans)
