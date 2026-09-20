@@ -2,6 +2,9 @@ import {
   createCampaignState,
   createPeriodState,
   createSuccessorState,
+  createArenaState,
+  createArenaSuccessorState,
+  arenaSurvivorGenomes,
 } from "./state.js";
 import { Controller } from "./controller.js";
 import { render } from "./view.js";
@@ -35,9 +38,21 @@ import {
   markDiscoveryRead,
   unreadDiscoveries,
 } from "./discoveries.js";
+import {
+  ARENA_TRAIT_BUDGET,
+  arenaAISide,
+  arenaGenomeValid,
+  arenaInterventionCount,
+  arenaSelectableTraits,
+  completeArenaGenome,
+  engineerArenaAISide,
+  randomArenaSide,
+} from "./arena.js";
 const $ = (id) => document.getElementById(id);
 let selected = null,
-  confirmAction = null;
+  confirmAction = null,
+  selectedScenario = "earth",
+  arenaFlow = null;
 const report = (text) => {
   $("message").textContent = text;
 };
@@ -53,6 +68,9 @@ const controller = new Controller(createCampaignState(), {
   },
 });
 try {
+  const savedScenario = localStorage.getItem("xe_scenario");
+  if (["earth", "alternative", "arena"].includes(savedScenario))
+    selectedScenario = savedScenario;
   const savedMode = localStorage.getItem("xe_game_mode");
   controller.mode = ["multi", "single", "auto"].includes(savedMode)
     ? savedMode
@@ -65,6 +83,7 @@ try {
     "O navegador restringiu o armazenamento. As preferências ficam disponíveis apenas nesta sessão.",
   );
 }
+$("scenario").value = selectedScenario;
 $("mode").value = controller.mode;
 $("difficulty").value = controller.difficulty;
 function dispatch(action) {
@@ -226,6 +245,239 @@ $("notice-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
   acknowledge();
 });
+
+const arenaTraits = arenaSelectableTraits();
+const arenaOwnerName = (owner) => (owner === "blue" ? "Brancas" : "Pretas");
+
+function arenaValidCurrent() {
+  if (!arenaFlow) return false;
+  if (arenaFlow.kind === "setup")
+    return arenaFlow.current.every((genome) =>
+      arenaGenomeValid(genome, ARENA_TRAIT_BUDGET),
+    );
+  return arenaInterventionCount(arenaFlow.baseline, arenaFlow.current).valid;
+}
+
+function arenaStatusText() {
+  if (!arenaFlow) return "";
+  if (arenaFlow.kind === "setup") {
+    const [a, b] = arenaFlow.current.map((genome) => genome.length);
+    return a === ARENA_TRAIT_BUDGET && b === ARENA_TRAIT_BUDGET
+      ? "Genomas válidos. Cada linhagem começa com seis mutações."
+      : `Escolha exatamente ${ARENA_TRAIT_BUDGET} mutações por linhagem. Dependências são incluídas automaticamente.`;
+  }
+  const changes = arenaInterventionCount(
+    arenaFlow.baseline,
+    arenaFlow.current,
+  );
+  if (changes.substitutions === Infinity)
+    return "Engenharia deve trocar características: o número de adições e remoções precisa ser igual.";
+  return `Intervenções: ${changes.substitutions}/2 substituições.`;
+}
+
+function renderArenaDesigner() {
+  if (!arenaFlow) return;
+  const owner = arenaFlow.owners[arenaFlow.ownerIndex];
+  $("arena-title").textContent =
+    arenaFlow.kind === "setup"
+      ? `Arena · ${arenaOwnerName(owner)}`
+      : `Engenharia Genética · ${arenaOwnerName(owner)}`;
+  $("arena-copy").textContent =
+    arenaFlow.kind === "setup"
+      ? "Monte duas linhagens. Respiração anaeróbia é basal e gratuita; Multicelularismo e demais pré-requisitos consomem o orçamento."
+      : "As linhagens sobreviventes seguem adiante. Você pode fazer até duas substituições genéticas entre as duas linhagens.";
+  $("arena-status").textContent = arenaStatusText();
+
+  for (const [index, id] of [
+    [0, "arena-primary"],
+    [1, "arena-companion"],
+  ]) {
+    const container = $(id),
+      selectedTraits = new Set(arenaFlow.current[index]);
+    container.replaceChildren();
+    for (const trait of arenaTraits) {
+      const label = document.createElement("label"),
+        input = document.createElement("input"),
+        copy = document.createElement("span");
+      label.className = "arena-trait";
+      input.type = "checkbox";
+      input.value = trait;
+      input.checked = selectedTraits.has(trait);
+      copy.textContent = `${TRAITS[trait][0]} ${trait}`;
+      input.addEventListener("change", () => {
+        const genome = new Set(arenaFlow.current[index]);
+        if (input.checked) genome.add(trait);
+        else genome.delete(trait);
+        arenaFlow.current[index] = completeArenaGenome(
+          [...genome],
+          input.checked ? trait : null,
+        );
+        renderArenaDesigner();
+      });
+      label.append(input, copy);
+      container.append(label);
+    }
+    const count = arenaFlow.current[index].length;
+    $(index === 0 ? "arena-primary-count" : "arena-companion-count").textContent =
+      arenaFlow.kind === "setup"
+        ? `· ${count}/${ARENA_TRAIT_BUDGET}`
+        : `· ${count} características herdadas`;
+  }
+  $("arena-confirm").disabled = !arenaValidCurrent();
+}
+
+function closeArenaDesigner() {
+  if ($("arena-dialog").open) $("arena-dialog").close();
+  arenaFlow = null;
+  controller.pause(false);
+}
+
+function finishArenaFlow() {
+  const flow = arenaFlow;
+  if (!flow) return;
+  const owner = flow.owners[flow.ownerIndex];
+  flow.results[owner] = flow.current.map((genome) => [...genome]);
+  flow.ownerIndex++;
+  if (flow.ownerIndex < flow.owners.length) {
+    const nextOwner = flow.owners[flow.ownerIndex];
+    flow.baseline =
+      flow.kind === "engineering"
+        ? flow.baselines[nextOwner].map((genome) => [...genome])
+        : null;
+    flow.current =
+      flow.kind === "engineering"
+        ? flow.baseline.map((genome) => [...genome])
+        : [[], []];
+    renderArenaDesigner();
+    return;
+  }
+
+  const previous = flow.previous;
+  let blue = flow.results.blue,
+    amber = flow.results.amber;
+  if (flow.kind === "setup") {
+    if (!blue) blue = arenaAISide(controller.difficulty, null, Date.now());
+    if (!amber)
+      amber = arenaAISide(
+        controller.difficulty,
+        controller.difficulty === "hard" ? blue : null,
+        Date.now() + 1,
+      );
+  } else {
+    if (!blue)
+      blue = engineerArenaAISide(
+        flow.baselines.blue,
+        controller.difficulty,
+        flow.baselines.amber,
+        Date.now(),
+      );
+    if (!amber)
+      amber = engineerArenaAISide(
+        flow.baselines.amber,
+        controller.difficulty,
+        controller.difficulty === "hard" ? blue : flow.baselines.blue,
+        Date.now() + 1,
+      );
+  }
+  if ($("arena-dialog").open) $("arena-dialog").close();
+  arenaFlow = null;
+  selected = null;
+  const next =
+    flow.kind === "setup"
+      ? createArenaState({ blue, amber })
+      : createArenaSuccessorState(previous, { blue, amber });
+  controller.replace(next);
+  controller.pause(false);
+}
+
+function openArenaSetup() {
+  controller.pause(true);
+  if (controller.mode === "auto") {
+    const blue = arenaAISide(controller.difficulty, null, Date.now()),
+      amber = arenaAISide(
+        controller.difficulty,
+        controller.difficulty === "hard" ? blue : null,
+        Date.now() + 1,
+      );
+    selected = null;
+    controller.replace(createArenaState({ blue, amber }));
+    controller.pause(false);
+    return;
+  }
+  arenaFlow = {
+    kind: "setup",
+    owners: controller.mode === "multi" ? ["blue", "amber"] : ["blue"],
+    ownerIndex: 0,
+    current: [[], []],
+    baseline: null,
+    baselines: null,
+    results: {},
+    previous: null,
+  };
+  renderArenaDesigner();
+  $("arena-dialog").showModal();
+}
+
+function openArenaEngineering() {
+  const previous = controller.state,
+    baselines = {
+      blue: arenaSurvivorGenomes(previous, "blue"),
+      amber: arenaSurvivorGenomes(previous, "amber"),
+    };
+  controller.pause(true);
+  if (controller.mode === "auto") {
+    const blue = engineerArenaAISide(
+        baselines.blue,
+        controller.difficulty,
+        baselines.amber,
+        Date.now(),
+      ),
+      amber = engineerArenaAISide(
+        baselines.amber,
+        controller.difficulty,
+        controller.difficulty === "hard" ? blue : baselines.blue,
+        Date.now() + 1,
+      );
+    selected = null;
+    controller.replace(createArenaSuccessorState(previous, { blue, amber }));
+    controller.pause(false);
+    return;
+  }
+  const owners = controller.mode === "multi" ? ["blue", "amber"] : ["blue"];
+  arenaFlow = {
+    kind: "engineering",
+    owners,
+    ownerIndex: 0,
+    baseline: baselines[owners[0]].map((genome) => [...genome]),
+    baselines,
+    current: baselines[owners[0]].map((genome) => [...genome]),
+    results: {},
+    previous,
+  };
+  renderArenaDesigner();
+  $("arena-dialog").showModal();
+}
+
+$("arena-randomize").addEventListener("click", () => {
+  if (!arenaFlow) return;
+  arenaFlow.current =
+    arenaFlow.kind === "setup"
+      ? randomArenaSide(Date.now())
+      : engineerArenaAISide(
+          arenaFlow.baseline,
+          "easy",
+          null,
+          Date.now(),
+        );
+  renderArenaDesigner();
+});
+$("arena-confirm").addEventListener("click", finishArenaFlow);
+$("arena-cancel").addEventListener("click", closeArenaDesigner);
+$("arena-dialog").addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeArenaDesigner();
+});
+
 $("game-over-board").addEventListener("click", () => {
   if ($("game-over-dialog").open) $("game-over-dialog").close();
 });
