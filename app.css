@@ -410,6 +410,43 @@ main {
 .selected-trait {
   margin: 13px 0;
 }
+.selected-group-heading {
+  margin: 2px 0 10px;
+  color: #c1c6b5;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.ancestry-toggle {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid #363e32;
+}
+.ancestry-toggle summary {
+  cursor: pointer;
+  color: #c1c6b5;
+  font-size: 13px;
+  font-weight: 750;
+}
+.ancestry-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 11px;
+}
+.ancestry-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 7px;
+  border: 1px solid #454f40;
+  border-radius: 999px;
+  background: #1d231c;
+  color: #b8beb0;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
 .selected-trait small {
   margin-top: 2px;
 }
