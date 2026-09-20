@@ -53,24 +53,31 @@ let selected = null,
   confirmAction = null,
   selectedScenario = "earth",
   arenaFlow = null;
-const report = (text) => {
-  $("message").textContent = text;
-};
-const controller = new Controller(createCampaignState(), {
-  report,
-  render: (state, busy) => {
-    if (selected && !state.pieces.some((p) => p.id === selected))
-      selected = null;
-    render(document, state, { selected, busy, mode: controller.mode });
-    $("undo-neocortex").hidden =
-      controller.mode === "auto" || !controller.canUndoNeocortex();
-    renderDiscoveryBadges();
-  },
-});
 try {
   const savedScenario = localStorage.getItem("xe_scenario");
   if (["earth", "alternative", "arena"].includes(savedScenario))
     selectedScenario = savedScenario;
+} catch {
+  // Mantém Vida na Terra quando o navegador restringe preferências.
+}
+const report = (text) => {
+  $("message").textContent = text;
+};
+const controller = new Controller(
+  createCampaignState(Date.now(), selectedScenario),
+  {
+    report,
+    render: (state, busy) => {
+      if (selected && !state.pieces.some((p) => p.id === selected))
+        selected = null;
+      render(document, state, { selected, busy, mode: controller.mode });
+      $("undo-neocortex").hidden =
+        controller.mode === "auto" || !controller.canUndoNeocortex();
+      renderDiscoveryBadges();
+    },
+  },
+);
+try {
   const savedMode = localStorage.getItem("xe_game_mode");
   controller.mode = ["multi", "single", "auto"].includes(savedMode)
     ? savedMode
@@ -738,9 +745,9 @@ $("scenario").addEventListener("change", () => {
   try {
     localStorage.setItem("xe_scenario", selectedScenario);
   } catch {
-    report("Preferência aplicada nesta sessão.");
+    report("O navegador restringiu o armazenamento; o cenário será aplicado nesta sessão.");
   }
-  report("O cenário selecionado será aplicado à próxima nova partida.");
+  globalThis.location?.reload?.();
 });
 for (const id of ["mode", "difficulty"])
   $(id).addEventListener("change", () => {
@@ -919,3 +926,4 @@ $("rules").addEventListener("click", () =>
   ]),
 );
 controller.refresh();
+if (selectedScenario === "arena") openArenaSetup();
