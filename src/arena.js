@@ -26,14 +26,14 @@ export const ARENA_RECESSIVE_COUNT = 2;
 const order = new Map(Object.keys(TRAITS).map((trait, index) => [trait, index]));
 
 export const ARENA_ARCHETYPES = [
-  ["Predação", "Multicelularismo", "Locomoção", "Locomoção Avançada", "Velocidade", "Visão Binocular"],
-  ["Predação", "Multicelularismo", "Carnívoro", "Garras", "Locomoção", "Camuflagem"],
-  ["Predação", "Multicelularismo", "Herbívoro", "Pele grossa", "Locomoção", "Carapaça"],
-  ["Predação", "Multicelularismo", "Locomoção", "Notívago", "Visão Noturna", "Camuflagem"],
+  ["Predação", "Multicelularismo", "Locomoção Articulada", "Locomoção Avançada", "Velocidade", "Visão Binocular"],
+  ["Predação", "Multicelularismo", "Carnívoro", "Garras", "Locomoção Articulada", "Camuflagem"],
+  ["Predação", "Multicelularismo", "Herbívoro", "Pele grossa", "Locomoção Articulada", "Carapaça"],
+  ["Predação", "Multicelularismo", "Locomoção Articulada", "Notívago", "Visão Noturna", "Camuflagem"],
   ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Madeira", "Espinhos"],
   ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Extremófitas"],
-  ["Predação", "Multicelularismo", "Locomoção", "Ovíparo", "Cuidado Parental", "Sociabilidade"],
-  ["Predação", "Multicelularismo", "Locomoção", "Ovíparo", "Ovíparos Amniotas", "Voo"],
+  ["Predação", "Multicelularismo", "Locomoção Articulada", "Ovíparo", "Cuidado Parental", "Sociabilidade"],
+  ["Predação", "Multicelularismo", "Locomoção Articulada", "Ovíparo", "Ovíparos Amniotas", "Voo"],
 ];
 
 const COUNTERS = {
