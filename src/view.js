@@ -382,7 +382,7 @@ export function render(
         "Fenótipo ativo",
         "selected-group-heading",
       ),
-      recessiveTraits = hiddenRecessiveTraits(actor.reproGenes),
+      recessiveTraits = hiddenRecessiveTraits(actor),
       recessiveSet = new Set(recessiveTraits),
       ancestralOnly = [...new Set(actor.ancestry ?? [])].filter(
         (trait) =>
