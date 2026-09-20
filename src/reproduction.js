@@ -183,6 +183,10 @@ function mutation(state, p, positiveOnly) {
     label = `Perda de ${choice.geneLoss}`;
   } else if (choice.gain) {
     p.traits = applyTraitMutation(p.traits, choice.gain);
+    if (p.recessiveTraits?.includes(choice.gain))
+      p.recessiveTraits = p.recessiveTraits.filter(
+        (trait) => trait !== choice.gain,
+      );
     label = choice.gain;
   } else {
     p.traits = applyTraitLoss(p.traits, p.ancestry, choice.loss);
@@ -201,6 +205,24 @@ function mutation(state, p, positiveOnly) {
   } else log(state, `${OWNERS[p.owner]}: ${label}.`);
   const discoveryId = mutationDiscoveryId(label);
   if (discoveryId) recordDiscovery(state, "mutations", discoveryId);
+}
+
+function inheritGenericRecessives(state, a, b, selectedTraits) {
+  const active = new Set(selectedTraits),
+    aHidden = new Set(a.recessiveTraits ?? []),
+    bHidden = new Set(b.recessiveTraits ?? []),
+    hidden = [];
+  for (const trait of new Set([...aHidden, ...bHidden])) {
+    if (GENETIC_TRAITS.includes(trait) || active.has(trait)) continue;
+    const fromA = aHidden.has(trait),
+      fromB = bHidden.has(trait);
+    if (fromA && fromB) {
+      const roll = random(state);
+      if (roll < 1 / 4) active.add(trait);
+      else if (roll < 3 / 4) hidden.push(trait);
+    } else if (random(state) < 1 / 2) hidden.push(trait);
+  }
+  return { traits: [...active], recessiveTraits: hidden };
 }
 
 function sexualProfile(state, a, b) {
@@ -248,11 +270,14 @@ function sexualProfile(state, a, b) {
   )
     traits.push("Multicelularismo");
 
-  const hasEnergyConflict =
-      traits.includes("Fotossíntese") && traits.includes("Predação"),
+  const inherited = inheritGenericRecessives(state, a, b, traits),
+    inheritedTraits = inherited.traits,
+    hasEnergyConflict =
+      inheritedTraits.includes("Fotossíntese") &&
+      inheritedTraits.includes("Predação"),
     normalizedTraits = normalizeMulticellularTraits(
       normalizeActiveTraits(
-        traits,
+        inheritedTraits,
         hasEnergyConflict && random(state) < 0.5 ? "Predação" : null,
       ),
     ),
@@ -271,6 +296,9 @@ function sexualProfile(state, a, b) {
         a.reproGenes,
         b.reproGenes,
         () => random(state),
+      ),
+      recessiveTraits: inherited.recessiveTraits.filter(
+        (trait) => !normalizedTraits.includes(trait),
       ),
       mutations: Math.max(a.mutations, b.mutations),
     };
@@ -354,6 +382,9 @@ function makeChildProfile(state, parent, mate, profile) {
       ]),
     ],
     reproGenes: cloneReproGenes(profile.reproGenes ?? parent.reproGenes),
+    recessiveTraits: [
+      ...new Set(profile.recessiveTraits ?? parent.recessiveTraits ?? []),
+    ].filter((trait) => !profile.traits.includes(trait)),
     mutations: profile.mutations,
     generation: Math.max(parent.generation, mate?.generation ?? 0) + 1,
     parentId: parent.id,
