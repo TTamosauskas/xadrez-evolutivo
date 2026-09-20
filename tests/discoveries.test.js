@@ -22,10 +22,10 @@ import {
 test("new campaigns start with an unread Archean discovery", () => {
   const state = createState(201);
   assert.deepEqual(state.discoveries.geology, ["archean"]);
-  assert.equal(unreadDiscoveries(state), 1);
+  assert.equal(unreadDiscoveries(state), 2);
   assert.equal(isDiscoveryUnread(state, "geology", "archean"), true);
   assert.equal(markDiscoveryRead(state, "geology", "archean"), true);
-  assert.equal(unreadDiscoveries(state), 0);
+  assert.equal(unreadDiscoveries(state), 1);
   assert.equal(markDiscoveryRead(state, "geology", "archean"), false);
 });
 
@@ -36,8 +36,8 @@ test("discoveries are unique and counted by category", () => {
   assert.equal(recordDiscovery(state, "events", "volcano"), false);
   assert.equal(recordDiscovery(state, "mutations", "Fotossíntese"), true);
   assert.equal(unreadDiscoveries(state, "events"), 1);
-  assert.equal(unreadDiscoveries(state, "mutations"), 1);
-  assert.equal(unreadDiscoveries(state), 2);
+  assert.equal(unreadDiscoveries(state, "mutations"), 2);
+  assert.equal(unreadDiscoveries(state), 3);
   assert.deepEqual(
     discoveredContent(state, "events").map((entry) => entry.id),
     ["volcano"],
@@ -106,7 +106,10 @@ test("each geological discovery can launch the first cycle with prior winners re
         assert.equal(founders.filter((piece) => !piece.traits.includes("Fotossíntese")).length, 1);
       }
       const priorRequired = GEOLOGICAL_STAGES.slice(0, index).flatMap((prior) => prior.required);
-      assert.deepEqual([...s.historicalTraits].sort(), [...new Set(priorRequired)].sort());
+      assert.deepEqual(
+        [...s.historicalTraits].sort(),
+        [...new Set(["Respiração anaeróbia", ...priorRequired])].sort(),
+      );
     }
     assertState(s);
   }
