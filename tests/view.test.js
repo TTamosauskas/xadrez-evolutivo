@@ -66,6 +66,19 @@ test("ecological event modal uses icon title, italic subtitle and integrated dur
   dom.window.close();
 });
 
+test("scenario preference is applied on reload and Arena opens its designer", () => {
+  const app = readFileSync(new URL("../src/app.js", import.meta.url), "utf8");
+  assert.match(
+    app,
+    /createCampaignState\(Date\.now\(\), selectedScenario\)/,
+  );
+  assert.match(app, /globalThis\.location\?\.reload\?\.\(\)/);
+  assert.match(
+    app,
+    /if \(selectedScenario === "arena"\) openArenaSetup\(\);/,
+  );
+});
+
 test("information dialog opens at the top so recent log entries are visible first", () => {
   const dom = setup(),
     d = dom.window.document,
