@@ -43,6 +43,7 @@ export const TRAITS = {
     "🪱",
     "Ao ser ativado sobre si mesmo, torna fértil a própria casa e hostis as casas adjacentes ocupadas por oponentes.",
   ],
+  "Vetor Patógeno": ["🦟", "Espalha Doenças"],
   Onívoro: [
     "🐻",
     "Especialização posterior de Carnívoro ou Herbívoro: usa casas férteis e obtém reprodução predatória contra criaturas fotossintéticas ou não fotossintéticas.",
@@ -219,6 +220,7 @@ export const square = (r, c) => r * 8 + c;
 export const coord = (r, c) => `${String.fromCharCode(65 + c)}${8 - r}`;
 const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Locomoção Avançada": ["Locomoção"],
+  "Vetor Patógeno": ["Parasitismo"],
   Onívoro: ["Carnívoro", "Herbívoro"],
   Traqueófitas: ["Embriófitas"],
   Gimnospermas: ["Embriófitas", "Traqueófitas"],
