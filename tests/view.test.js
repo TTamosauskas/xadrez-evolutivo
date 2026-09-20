@@ -213,7 +213,7 @@ test("selected panel inspects either side and explains only that piece traits", 
   assert.match(selected.textContent, /❤️ Reprodução Sexuada/);
   assert.match(
     selected.textContent,
-    /Combina características de dois progenitores/,
+    /recebe um alelo de cada progenitor em cada locus/,
   );
   assert.equal(d.getElementById("traits"), null);
   assert.equal(d.querySelectorAll(".cell.legal").length, 0);
