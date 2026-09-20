@@ -44,7 +44,11 @@ function animalTraits(stage, game) {
   if (available("Onívoro", stage)) traits.push("Carnívoro", "Onívoro");
   else if (available("Herbívoro", stage) && game % 2 === 0) traits.push("Herbívoro");
   else if (available("Carnívoro", stage)) traits.push("Carnívoro");
-  if (available("Locomoção", stage)) traits.push("Locomoção");
+  if (available("Locomoção Primitiva", stage))
+    traits.push("Locomoção Primitiva");
+  if (available("Vertebrado", stage)) traits.push("Vertebrado");
+  if (available("Locomoção Articulada", stage))
+    traits.push("Locomoção Articulada");
   if (available("Escavador", stage) && game % 2 === 1) traits.push("Escavador");
   if (available("Respiração Cutânea", stage)) traits.push("Respiração Cutânea");
   if (available("Escalador", stage) && game % 2 === 0) traits.push("Escalador");
