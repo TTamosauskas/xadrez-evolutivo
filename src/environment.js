@@ -168,6 +168,7 @@ function addNaturalBarriers(state, count, near = []) {
         ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
         ...state.deathSites.map((site) => site.cell),
         ...state.fertileTraces.map((trace) => trace.cell),
+        ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
         ...(state.event?.hazards ?? []),
       ]),
       candidates = allCells().filter((cell) => !occupied.has(cell)),
@@ -426,6 +427,7 @@ function habitatDriftCandidates(state, type) {
       ...state.naturalBarriers,
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
+      ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
     ]),
     current = allCells().filter(
       (cell) => board[cell] === type && !protectedCells.has(cell),
