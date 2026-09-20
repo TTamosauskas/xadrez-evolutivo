@@ -1960,7 +1960,7 @@ test("Dormência immobilizes on hostile terrain but the piece remains capturable
   assert.equal(movesFor(s, dormantPiece).length, 0);
 });
 
-test("Visão Noturna counters distant Camuflagem", () => {
+test("Visão Binocular, not Visão Noturna, counters distant Camuflagem", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 0, rank: 3 },
       { owner: "amber", r: 4, c: 4, traits: ["Camuflagem"] },
@@ -1968,7 +1968,74 @@ test("Visão Noturna counters distant Camuflagem", () => {
     observer = s.pieces[0];
   assert.ok(!movesFor(s, observer).some((t) => t.r === 4 && t.c === 4));
   observer.traits.push("Visão Noturna");
+  assert.ok(!movesFor(s, observer).some((t) => t.r === 4 && t.c === 4));
+  observer.traits.push("Visão Binocular");
   assert.ok(movesFor(s, observer).some((t) => t.r === 4 && t.c === 4));
+});
+
+test("Notívago evades on even rounds and Visão Noturna cancels the defense", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4 },
+    { owner: "amber", r: 4, c: 4, traits: ["Notívago"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.turn = 2;
+  s.rng = 0;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.some((piece) => piece.id === 2));
+  assert.ok(s.logs.some((entry) => entry.text.includes("Notívago escapou")));
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Visão Noturna"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Notívago"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.turn = 2;
+  s.rng = 0;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(!s.pieces.some((piece) => piece.id === 2));
+});
+
+test("Velocidade evades captures unless the aggressor also has Velocidade", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4 },
+    { owner: "amber", r: 4, c: 4, traits: ["Velocidade"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.rng = 0;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.some((piece) => piece.id === 2));
+  assert.ok(s.logs.some((entry) => entry.text.includes("Velocidade permitiu")));
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Velocidade"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Velocidade"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.rng = 0;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(!s.pieces.some((piece) => piece.id === 2));
+});
+
+test("Pele grossa resists captures unless the aggressor has Garras", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4 },
+    { owner: "amber", r: 4, c: 4, traits: ["Pele grossa"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.rng = 0;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.some((piece) => piece.id === 2));
+  assert.ok(s.logs.some((entry) => entry.text.includes("Pele grossa resistiu")));
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Garras"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Pele grossa"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.rng = 0;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(!s.pieces.some((piece) => piece.id === 2));
 });
 
 test("Cuidado Parental protects adjacent eggs from Ovífagia", () => {
