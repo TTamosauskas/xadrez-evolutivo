@@ -1,4 +1,4 @@
-import { inside, square, TRAITS, EVENTS } from "./constants.js";
+import { has, inside, square, TRAITS, EVENTS } from "./constants.js";
 import {
   GEOLOGICAL_STAGES,
   currentGeologicalStage,
