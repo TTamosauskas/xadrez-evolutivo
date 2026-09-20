@@ -656,9 +656,16 @@ function executeMove(ctx, action) {
         `${OWNERS[p.owner]}: 🦡 Escavador perfurou barreira(s) em ${destroyed.join(", ")}.`,
       );
   }
+  const landingVictim = at(state, target.r, target.c),
+    landingPieceCapture = !!landingVictim && landingVictim.id !== p.id;
   for (const [r, c] of target.path)
     if (
       terrain(state, r, c) === "hostile" &&
+      !(
+        landingPieceCapture &&
+        r === target.r &&
+        c === target.c
+      ) &&
       !(has(p, "Voo") && (r !== target.r || c !== target.c)) &&
       !(has(p, "Dormência") && r === target.r && c === target.c) &&
       !(
@@ -684,7 +691,8 @@ function executeMove(ctx, action) {
     }
   if (
     !target.stay &&
-    terrain(state, target.r, target.c) === "hostile"
+    terrain(state, target.r, target.c) === "hostile" &&
+    !landingPieceCapture
   )
     p.hostileRiskRound = round(state) + 1;
   if (!target.stay && has(p, "Mutação Disfuncional"))
@@ -780,16 +788,6 @@ function executeMove(ctx, action) {
     manipulation = null;
     const cell = square(target.r, target.c);
     markDecomposition(state, cell);
-    if (terrain(state, target.r, target.c) === "hostile") {
-      p.decompositionImmunity = {
-        cell,
-        throughTurn: state.turn + 3,
-      };
-      log(
-        state,
-        `${OWNERS[p.owner]}: imunidade à decomposição em ${coord(target.r, target.c)} pelos dois turnos seguintes.`,
-      );
-    }
   }
   if (eggCapture) state.eggs = state.eggs.filter((x) => x.id !== egg.id);
   p.r = target.r;
@@ -797,6 +795,43 @@ function executeMove(ctx, action) {
   moveDirection(p);
   ctx.reserved.delete(landingCell);
   const cell = square(p.r, p.c);
+  if (
+    pieceCapture &&
+    landingTerrain === "hostile" &&
+    !has(p, "Dormência") &&
+    !(
+      p.decompositionImmunity &&
+      p.decompositionImmunity.cell === cell &&
+      state.turn <= p.decompositionImmunity.throughTurn
+    )
+  ) {
+    notice(
+      state,
+      "Casas hostis",
+      [
+        "Em uma captura, a vítima é resolvida primeiro; depois a casa hostil ameaça o agressor. Carapaça reduz o risco de 50% para 34%.",
+      ],
+      "hostile",
+    );
+    p.hostileRiskRound = round(state) + 1;
+    if (random(state) < (has(p, "Carapaça") ? 0.34 : 0.5)) {
+      ctx.kill(p.id, "casa hostil após captura");
+      advanceTurn(ctx);
+      settle(ctx);
+      return;
+    }
+  }
+  if (pieceCapture && landingTerrain === "hostile") {
+    p.hostileRiskRound = round(state) + 1;
+    p.decompositionImmunity = {
+      cell,
+      throughTurn: state.turn + 3,
+    };
+    log(
+      state,
+      `${OWNERS[p.owner]}: imunidade à decomposição em ${coord(target.r, target.c)} pelos dois turnos seguintes.`,
+    );
+  }
   if (
     !pieceCapture &&
     stableLanding &&
