@@ -532,7 +532,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
       [...plant.traits, "Espinhos", "Trepadeira", "Angiospermas"],
       "Predação",
     ),
-    ["Predação"],
+    ["Multicelularismo", "Predação"],
   );
 });
 
