@@ -592,7 +592,9 @@ function executeMove(ctx, action) {
     const resource = square(target.r, target.c);
     if (state.board[resource] !== "fertile")
       throw Error("Escolha uma casa fértil ortogonalmente adjacente.");
-    const born = reproduce(ctx, p, null, "Respiração Cutânea");
+    const born = reproduce(ctx, p, null, "Respiração Cutânea", {
+      resourceReproduction: true,
+    });
     if (born) {
       state.board[resource] = "neutral";
       log(
@@ -608,7 +610,9 @@ function executeMove(ctx, action) {
     const resource = square(target.r, target.c);
     if (state.board[resource] !== "fertile")
       throw Error("Escolha uma casa fértil adjacente.");
-    const born = reproduce(ctx, p, null, "Traqueófitas");
+    const born = reproduce(ctx, p, null, "Traqueófitas", {
+      resourceReproduction: true,
+    });
     if (born) {
       state.board[resource] = "neutral";
       log(
