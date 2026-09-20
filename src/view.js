@@ -119,7 +119,9 @@ export function render(
   $("round").textContent =
     state.phase === "origin"
       ? "Origem da campanha · antes do 1º Ciclo"
-      : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
+      : state.scenario === "arena"
+        ? `Arena · Fase ${state.arenaPhase || state.cycle} · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`
+        : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
   const ev = state.event,
     diseases = state.diseases.filter((d) => d.endRound >= currentRound);
   $("event").textContent = [
@@ -485,12 +487,15 @@ export function render(
             : "Nenhuma característica hereditária predominante",
         ),
       );
-      const progress = stageProgress(state),
+      const progress =
+          state.scenario === "arena" ? null : stageProgress(state),
         geologicalProgress = make(
           "p",
-          progress.required.length
-            ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
-            : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
+          state.scenario === "arena"
+            ? `Arena · Fase ${state.arenaPhase || state.cycle} concluída. As linhagens sobreviventes podem receber até duas substituições de Engenharia Genética.`
+            : progress.required.length
+              ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
+              : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
           "evolutionary-end-lineages",
         );
       content.append(
@@ -503,15 +508,18 @@ export function render(
       $("game-over-title").textContent = `Vitória das ${OWNERS[winner]}`;
       $("game-over-body").replaceChildren(content);
     } else {
-      const progress = stageProgress(state);
+      const progress =
+        state.scenario === "arena" ? null : stageProgress(state);
       $("game-over-title").textContent = "Empate";
       $("game-over-body").replaceChildren(
         make("p", state.result.reason || "A partida terminou empatada."),
         make(
           "p",
-          progress.required.length
-            ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
-            : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
+          state.scenario === "arena"
+            ? `Arena · Fase ${state.arenaPhase || state.cycle} concluída.`
+            : progress.required.length
+              ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
+              : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
           "evolutionary-end-lineages",
         ),
       );
