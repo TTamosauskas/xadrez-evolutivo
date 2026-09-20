@@ -217,6 +217,18 @@ export const inside = (r, c) =>
   c < 8;
 export const square = (r, c) => r * 8 + c;
 export const coord = (r, c) => `${String.fromCharCode(65 + c)}${8 - r}`;
-export const has = (piece, trait) => !!piece?.traits.includes(trait);
+const TRAIT_CAPABILITY_IMPLICATIONS = {
+  "Locomoção Avançada": ["Locomoção"],
+  Onívoro: ["Carnívoro", "Herbívoro"],
+  Traqueófitas: ["Embriófitas"],
+  Gimnospermas: ["Embriófitas", "Traqueófitas"],
+  Angiospermas: ["Embriófitas", "Traqueófitas"],
+  Eusocialidade: ["Sociabilidade"],
+};
+export const has = (piece, trait) =>
+  !!piece?.traits?.includes(trait) ||
+  !!piece?.traits?.some((active) =>
+    TRAIT_CAPABILITY_IMPLICATIONS[active]?.includes(trait),
+  );
 export const distance = (a, b) =>
   Math.max(Math.abs(a.r - b.r), Math.abs(a.c - b.c));
