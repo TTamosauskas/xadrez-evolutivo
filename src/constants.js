@@ -11,9 +11,21 @@ export const TRAITS = {
     "🫧",
     "Introduz um ciclo de vida individual: descendentes passam pela infância, adultos entram em senescência a partir de 25 rodadas e a morte natural é certa aos 48. Também habilita características multicelulares complexas.",
   ],
+  "Locomoção Primitiva": [
+    "🔀",
+    "Libera deslocamentos para casas vazias segundo a geometria oficial da peça; capturas continuam dependendo de Predação.",
+  ],
+  Vertebrado: [
+    "🐟",
+    "Plano corporal mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e a evolução completa de Peão até Cavalo, Bispo, Torre e Rainha; Rei continua disponível.",
+  ],
+  "Artrópode": [
+    "🦀",
+    "Plano corporal mutuamente exclusivo com Vertebrado. Habilita Locomoção Articulada, limita formas derivadas a Cavalo e Bispo e dobra a produção-base de descendentes, até 6.",
+  ],
   "Locomoção Articulada": [
     "🦵",
-    "Permite realizar movimentos de xadrez apenas em uma linhagem que possui Predação.",
+    "Especialização locomotora de Vertebrados ou Artrópodes; habilita as formas derivadas permitidas pelo plano corporal e é pré-requisito de Locomoção Avançada.",
   ],
   Escavador: ["🦡", "Pode perfurar barreiras."],
   "Locomoção Avançada": [
@@ -29,7 +41,7 @@ export const TRAITS = {
     "🦕",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
-  Predação: ["👾", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção Articulada, apenas capturas são permitidas."],
+  Predação: ["👾", "Permite capturar criaturas adversárias segundo a geometria tradicional da peça; é incompatível com Fotossíntese, que é perdida quando uma linhagem troca para este ramo. Sem Locomoção Primitiva, apenas capturas são permitidas."],
   Carnívoro: [
     "🦁",
     "Especialização de uma linhagem com Predação: obtém reprodução predatória ao capturar criaturas não fotossintéticas e deixa de usar casas férteis.",
@@ -269,7 +281,8 @@ export const square = (r, c) => r * 8 + c;
 export const coord = (r, c) => `${String.fromCharCode(65 + c)}${8 - r}`;
 const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Respiração aeróbia": ["Respiração anaeróbia"],
-  "Locomoção Avançada": ["Locomoção Articulada"],
+  "Locomoção Articulada": ["Locomoção Primitiva"],
+  "Locomoção Avançada": ["Locomoção Articulada", "Locomoção Primitiva"],
   "Vetor Patógeno": ["Parasitismo"],
   Onívoro: ["Carnívoro", "Herbívoro"],
   Traqueófitas: ["Embriófitas"],
