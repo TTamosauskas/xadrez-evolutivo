@@ -20,6 +20,7 @@ import {
 } from "./discoveries.js";
 import {
   cloneReproGenes,
+  hiddenRecessiveTraits,
   normalizeReproGenes,
   reproGeneSignature,
   syncReproTraits,
@@ -32,6 +33,7 @@ import {
 } from "./scenarios.js";
 import {
   arenaProfile,
+  chooseArenaRecessives,
   completeArenaGenome,
 } from "./arena.js";
 export const clone = (value) => structuredClone(value);
@@ -143,6 +145,13 @@ export function newPiece(state, owner, r, c, source = {}) {
     reproGenes: cloneReproGenes(
       source.reproGenes ?? normalizeReproGenes(null, source.traits ?? []),
     ),
+    recessiveTraits: [
+      ...new Set(
+        (source.recessiveTraits ?? []).filter(
+          (trait) => TRAITS[trait] && !(source.traits ?? []).includes(trait),
+        ),
+      ),
+    ],
     mutations: source.mutations ?? 0,
     generation: source.generation ?? 0,
     parentId: source.parentId ?? null,
@@ -534,6 +543,7 @@ export function createState(seed = Date.now(), options = {}) {
                 traits: source.traits,
                 ancestry: source.ancestry,
                 reproGenes: source.reproGenes,
+                recessiveTraits: source.recessiveTraits,
                 mutations: 0,
                 generation: 0,
               }
@@ -716,8 +726,9 @@ export function activateOrigin(state) {
   return true;
 }
 export function signature(p) {
-  const ancestry = [...(p.ancestry ?? p.traits ?? [])].sort().join("|");
-  return `${p.rank}|${[...p.traits].sort().join("|")}|${ancestry}|${reproGeneSignature(p.reproGenes)}`;
+  const ancestry = [...(p.ancestry ?? p.traits ?? [])].sort().join("|"),
+    recessives = [...(p.recessiveTraits ?? [])].sort().join("|");
+  return `${p.rank}|${[...p.traits].sort().join("|")}|${ancestry}|${recessives}|${reproGeneSignature(p.reproGenes)}`;
 }
 export function dominantLineage(state, owner = null, predicate = null) {
   const pieces = state.pieces.filter(
@@ -770,6 +781,7 @@ function founderProfile(previous, piece) {
       ...new Set([...(piece.ancestry ?? piece.traits ?? []), ...piece.traits]),
     ],
     reproGenes: cloneReproGenes(piece.reproGenes),
+    recessiveTraits: [...(piece.recessiveTraits ?? [])],
   };
 }
 
@@ -835,16 +847,34 @@ export function arenaSurvivorGenomes(state, owner) {
   return arenaSurvivorEntries(state, owner).map(({ genome }) => genome);
 }
 
-function arenaProfiles(ownerGenomes, survivorEntries = null) {
+function arenaProfiles(
+  ownerGenomes,
+  survivorEntries = null,
+  seed = Date.now(),
+) {
   return Object.fromEntries(
-    ["blue", "amber"].map((owner) => {
+    ["blue", "amber"].map((owner, ownerIndex) => {
       const genomes = ownerGenomes[owner],
-        sources = survivorEntries?.[owner] ?? [];
+        sources = survivorEntries?.[owner] ?? [],
+        profileFor = (index) => {
+          const source = sources[index]?.source ?? null,
+            preferred = source ? hiddenRecessiveTraits(source) : [],
+            recessives = chooseArenaRecessives(
+              genomes[index],
+              (seed + ownerIndex * 101 + index * 17) >>> 0,
+              preferred,
+            );
+          return arenaProfile(
+            genomes[index],
+            source?.rank ?? 4,
+            recessives,
+          );
+        };
       return [
         owner,
         {
-          primary: arenaProfile(genomes[0], sources[0]?.source?.rank ?? 4),
-          companion: arenaProfile(genomes[1], sources[1]?.source?.rank ?? 4),
+          primary: profileFor(0),
+          companion: profileFor(1),
         },
       ];
     }),
@@ -856,7 +886,7 @@ export function createArenaState(
   seed = Date.now(),
   discoveries = null,
 ) {
-  const profiles = arenaProfiles(ownerGenomes),
+  const profiles = arenaProfiles(ownerGenomes, null, seed),
     historicalTraits = [
       ...new Set([
         "Respiração anaeróbia",
@@ -891,7 +921,7 @@ export function createArenaSuccessorState(
         blue: survivorEntries.blue.map(({ genome }) => genome),
         amber: survivorEntries.amber.map(({ genome }) => genome),
       },
-    profiles = arenaProfiles(genomes, survivorEntries),
+    profiles = arenaProfiles(genomes, survivorEntries, seed),
     state = createState(seed, {
       scenario: "arena",
       geologicalStage: "quaternary",
@@ -1048,6 +1078,13 @@ export function assertState(state) {
         (Array.isArray(profile.ancestry) &&
           profile.ancestry.every((t) => TRAITS[t]) &&
           new Set(profile.ancestry).size === profile.ancestry.length)) &&
+      (profile.recessiveTraits === undefined ||
+        (Array.isArray(profile.recessiveTraits) &&
+          profile.recessiveTraits.every(
+            (trait) => TRAITS[trait] && !profile.traits.includes(trait),
+          ) &&
+          new Set(profile.recessiveTraits).size ===
+            profile.recessiveTraits.length)) &&
       validReproGenes(profile.reproGenes) &&
       integer(profile.mutations) &&
       integer(profile.generation);
@@ -1277,6 +1314,12 @@ export function assertState(state) {
       !Array.isArray(p.ancestry) ||
       p.ancestry.some((t) => !TRAITS[t]) ||
       new Set(p.ancestry).size !== p.ancestry.length ||
+      (p.recessiveTraits !== undefined &&
+        (!Array.isArray(p.recessiveTraits) ||
+          p.recessiveTraits.some(
+            (trait) => !TRAITS[trait] || p.traits.includes(trait),
+          ) ||
+          new Set(p.recessiveTraits).size !== p.recessiveTraits.length)) ||
       !validReproGenes(p.reproGenes) ||
       !Array.isArray(p.pregnancies)
     )
