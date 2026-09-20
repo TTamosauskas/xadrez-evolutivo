@@ -14,6 +14,7 @@ import {
   pawnMutationUnlocked,
   stageComplete,
   traitUnlocked,
+  traitLossAllowed,
 } from "../src/geology.js";
 import {
   createState,
@@ -51,6 +52,7 @@ test("period innovations follow the didactic sequence", () => {
     "Dormência",
   ]);
   assert.deepEqual(required.proterozoic, [
+    "Multicelularismo",
     "Resistência",
     "Regeneração",
     "Reprodução Sexuada",
@@ -151,7 +153,7 @@ test("Predação enables capture and is an individual prerequisite for Locomoç�
 
   const ancestral = { traits: [] };
   assert.equal(traitUnlocked(s, "Locomoção", ancestral), false);
-  ancestral.traits.push("Predação");
+  ancestral.traits.push("Predação", "Multicelularismo");
   assert.equal(traitUnlocked(s, "Locomoção", ancestral), true);
 });
 
@@ -305,7 +307,7 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
     unrelated = { traits: [], ancestry: [] };
 
   p.ancestry = ["Predação", "Locomoção"];
-  p.traits = [];
+  p.traits = ["Multicelularismo"];
   assert.equal(traitUnlocked(s, "Escavador", p), true);
   assert.equal(traitUnlocked(s, "Escavador", unrelated), false);
 
@@ -352,6 +354,7 @@ test("campaign history from another lineage does not satisfy ancestry prerequisi
         "Predação",
         "Fertilidade",
         "Dormência",
+        "Multicelularismo",
         "Resistência",
         "Regeneração",
         "Reprodução Sexuada",
@@ -441,7 +444,7 @@ test("plant innovations unlock in their geological periods without becoming mand
         "Fotossíntese",
       ],
     }),
-    plant = { traits: ["Fotossíntese"] };
+    plant = { traits: ["Fotossíntese", "Multicelularismo"] };
 
   assert.equal(traitUnlocked(s, "Embriófitas", plant), true);
   assert.equal(traitUnlocked(s, "Traqueófitas", plant), false);
@@ -494,6 +497,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     plant = {
       traits: [
         "Fotossíntese",
+        "Multicelularismo",
         "Embriófitas",
         "Traqueófitas",
         "Gimnospermas",
@@ -578,8 +582,14 @@ test("new social, mimicry and domestication mutations unlock in the intended per
       geologicalStage: "permian",
       historicalTraits: historyThrough("permian"),
     }),
-    animal = { traits: ["Predação"], ancestry: ["Cuidado Parental"] },
-    plant = { traits: ["Fotossíntese"], ancestry: ["Fotossíntese"] };
+    animal = {
+      traits: ["Predação", "Multicelularismo"],
+      ancestry: ["Cuidado Parental"],
+    },
+    plant = {
+      traits: ["Fotossíntese", "Multicelularismo"],
+      ancestry: ["Fotossíntese"],
+    };
 
   assert.equal(traitUnlocked(s, "Mimetismo", animal), true);
   assert.equal(traitUnlocked(s, "Sociabilidade", animal), false);
@@ -599,13 +609,13 @@ test("new social, mimicry and domestication mutations unlock in the intended per
   assert.equal(traitUnlocked(s, "Animais Domésticos", plant), false);
 
   const anthropic = {
-    traits: [],
+    traits: ["Multicelularismo"],
     ancestry: ["Neocórtex Desenvolvido"],
   };
   assert.equal(traitUnlocked(s, "Antropização", anthropic), true);
   assert.equal(
     traitUnlocked(s, "Antropização", {
-      traits: [],
+      traits: ["Multicelularismo"],
       ancestry: ["Construtor de Nicho"],
     }),
     false,
@@ -621,11 +631,11 @@ test("Haustório is a Cretaceous photosynthetic innovation after Embriófitas", 
       ),
     }),
     plant = {
-      traits: ["Fotossíntese"],
+      traits: ["Fotossíntese", "Multicelularismo"],
       ancestry: ["Fotossíntese", "Embriófitas"],
     },
     exPlant = {
-      traits: ["Predação"],
+      traits: ["Predação", "Multicelularismo"],
       ancestry: ["Fotossíntese", "Embriófitas", "Predação"],
     };
   assert.equal(traitUnlocked(s, "Haustório", plant), true);
@@ -639,12 +649,46 @@ test("Parasitismo becomes available in the Cambrian only outside the photosynthe
         (stage) => stage.required,
       ),
     }),
-    animal = { traits: ["Predação"], ancestry: ["Predação"] },
-    plant = { traits: ["Fotossíntese"], ancestry: ["Fotossíntese"] };
+    animal = {
+      traits: ["Predação", "Multicelularismo"],
+      ancestry: ["Predação"],
+    },
+    plant = {
+      traits: ["Fotossíntese", "Multicelularismo"],
+      ancestry: ["Fotossíntese"],
+    };
   assert.equal(traitUnlocked(s, "Parasitismo", animal), true);
   assert.equal(traitUnlocked(s, "Parasitismo", plant), false);
 });
 
+
+test("Multicelularismo is required for complex traits and cannot be lost while they remain", () => {
+  const s = createState(143, {
+      geologicalStage: "ediacaran",
+      historicalTraits: GEOLOGICAL_STAGES.slice(0, 3).flatMap(
+        (stage) => stage.required,
+      ),
+    }),
+    simple = { traits: ["Predação"], ancestry: ["Predação"] },
+    complex = {
+      traits: ["Predação", "Multicelularismo"],
+      ancestry: ["Predação"],
+    };
+
+  assert.equal(traitUnlocked(s, "Locomoção", simple), false);
+  assert.equal(traitUnlocked(s, "Locomoção", complex), true);
+  assert.equal(
+    traitLossAllowed(
+      { traits: ["Multicelularismo", "Locomoção"] },
+      "Multicelularismo",
+    ),
+    false,
+  );
+  assert.equal(
+    traitLossAllowed({ traits: ["Multicelularismo"] }, "Multicelularismo"),
+    true,
+  );
+});
 
 test("severe events are distributed across geologically appropriate periods", () => {
   const byStage = Object.fromEntries(
