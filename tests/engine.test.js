@@ -54,7 +54,12 @@ import {
 } from "../src/reproduction.js";
 import { crowdingPenalty } from "../src/ai.js";
 import { GEOLOGICAL_STAGES, habitatProfile } from "../src/geology.js";
-import { cloneReproGenes } from "../src/reproductive-genetics.js";
+import {
+  cloneGenome,
+  genomeFromTraits,
+  hiddenRecessiveTraits,
+  syncGenomePhenotype,
+} from "../src/genetics.js";
 import { EVENTS, TRAITS } from "../src/constants.js";
 
 test("period habitat profiles encode the new ecological progression", () => {
@@ -1003,7 +1008,7 @@ test("eggs and seeds do not prevent extinction of active organisms", () => {
       rank: parent.rank,
       traits: [...parent.traits],
       ancestry: [...parent.ancestry],
-      reproGenes: structuredClone(parent.reproGenes),
+      genome: cloneGenome(parent.genome),
       mutations: parent.mutations,
       generation: parent.generation + 1,
       parentId: parent.id,
@@ -1532,13 +1537,11 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
       generation: 9,
     },
   ]);
-  s.pieces[0].reproGenes.development = [
-    { value: "viviparous", dominance: "recessive" },
-    { value: "immediate", dominance: "neutral" },
-  ];
-  s.pieces[1].reproGenes.development = structuredClone(
-    s.pieces[0].reproGenes.development,
-  );
+  for (const piece of s.pieces.slice(0, 2)) {
+    piece.genome = genomeFromTraits(piece.traits, ["Vivíparo"]);
+    syncGenomePhenotype(piece);
+    piece.ancestry = [...new Set([...(piece.ancestry ?? []), "Vivíparo"])];
+  }
   s.generationOffset = 0;
   s.maxGenerationReached = 9;
   s.result = { winner: "blue", reason: "Extinção total." };
@@ -1581,10 +1584,7 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
     ],
   );
   for (const p of next.pieces)
-    assert.deepEqual(p.reproGenes.development, [
-      { value: "viviparous", dominance: "recessive" },
-      { value: "immediate", dominance: "neutral" },
-    ]);
+    assert.ok(hiddenRecessiveTraits(p).includes("Vivíparo"));
   assertState(next);
 });
 test("Ovíparo stores the brood in one mobile egg and hatches on fertile terrain after three rounds", () => {
@@ -1678,7 +1678,7 @@ test("only Ovífagia can capture an enemy egg and converts its brood into offspr
       owner: "amber",
       rank: 0,
       traits: [],
-      reproGenes: cloneReproGenes(source.reproGenes),
+      genome: cloneGenome(source.reproGenes.genome ?? source.reproGenes),
       mutations: 0,
       generation: 1,
       parentId: source.id,
@@ -2081,7 +2081,7 @@ test("Cuidado Parental protects adjacent eggs from Ovífagia", () => {
         owner: "amber",
         rank: 0,
         traits: [],
-        reproGenes: cloneReproGenes(parent.reproGenes),
+        genome: cloneGenome(parent.reproGenes.genome ?? parent.reproGenes),
         mutations: 0,
         generation: 1,
         parentId: parent.id,
