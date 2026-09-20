@@ -1,0 +1,269 @@
+import { TRAITS } from "./constants.js";
+import {
+  MULTICELLULAR_DEPENDENT_TRAITS,
+  PLANT_DERIVED_TRAITS,
+  PLANT_INCOMPATIBLE_TRAITS,
+  TRAIT_DEPENDENCIES,
+  normalizeActiveTraits,
+  traitCombinationValid,
+} from "./geology.js";
+import {
+  ARENA_ENGINEERING_CHANGES,
+  ARENA_TRAIT_BUDGET,
+} from "./scenarios.js";
+
+const NEGATIVE = new Set([
+  "Esterilidade",
+  "Mutação Deletéria",
+  "Mutação Disfuncional",
+]);
+const BASAL = "Respiração anaeróbia";
+const order = new Map(Object.keys(TRAITS).map((trait, index) => [trait, index]));
+
+export const ARENA_ARCHETYPES = [
+  ["Predação", "Multicelularismo", "Locomoção", "Locomoção Avançada", "Velocidade", "Visão Binocular"],
+  ["Predação", "Multicelularismo", "Carnívoro", "Garras", "Locomoção", "Camuflagem"],
+  ["Predação", "Multicelularismo", "Herbívoro", "Pele grossa", "Locomoção", "Carapaça"],
+  ["Predação", "Multicelularismo", "Locomoção", "Notívago", "Visão Noturna", "Camuflagem"],
+  ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Madeira", "Espinhos"],
+  ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Extremófitas"],
+  ["Predação", "Multicelularismo", "Locomoção", "Ovíparo", "Cuidado Parental", "Sociabilidade"],
+  ["Predação", "Multicelularismo", "Locomoção", "Ovíparo", "Ovíparos Amniotas", "Voo"],
+];
+
+const COUNTERS = {
+  Camuflagem: "Visão Binocular",
+  Notívago: "Visão Noturna",
+  Velocidade: "Velocidade",
+  "Pele grossa": "Garras",
+  Ovíparo: "Ovífagia",
+  "Ovíparos Amniotas": "Ovífagia",
+  Ovovivíparo: "Ovífagia",
+  Chifre: "Carapaça",
+  Fotossíntese: "Herbívoro",
+};
+
+export function arenaSelectableTraits() {
+  return Object.keys(TRAITS).filter(
+    (trait) => trait !== BASAL && !NEGATIVE.has(trait),
+  );
+}
+
+const sorted = (traits) =>
+  [...new Set(traits)].sort(
+    (a, b) => (order.get(a) ?? 999) - (order.get(b) ?? 999),
+  );
+
+function sanitizeEnergy(set, preferred) {
+  const prefersPlant =
+    preferred === "Fotossíntese" || PLANT_DERIVED_TRAITS.has(preferred);
+  const prefersAnimal =
+    preferred === "Predação" || PLANT_INCOMPATIBLE_TRAITS.has(preferred);
+  if (prefersPlant) {
+    set.delete("Predação");
+    for (const trait of PLANT_INCOMPATIBLE_TRAITS) set.delete(trait);
+  } else if (prefersAnimal) {
+    set.delete("Fotossíntese");
+    for (const trait of PLANT_DERIVED_TRAITS) set.delete(trait);
+  } else if (
+    set.has("Fotossíntese") &&
+    [...PLANT_INCOMPATIBLE_TRAITS].some((trait) => set.has(trait))
+  ) {
+    set.delete("Fotossíntese");
+    for (const trait of PLANT_DERIVED_TRAITS) set.delete(trait);
+  }
+}
+
+export function completeArenaGenome(input, preferred = null) {
+  const set = new Set(
+    (input ?? []).filter(
+      (trait) => TRAITS[trait] && trait !== BASAL && !NEGATIVE.has(trait),
+    ),
+  );
+  sanitizeEnergy(set, preferred);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const trait of [...set]) {
+      if (MULTICELLULAR_DEPENDENT_TRAITS.has(trait) && trait !== "Multicelularismo") {
+        if (!set.has("Multicelularismo")) {
+          set.add("Multicelularismo");
+          changed = true;
+        }
+      }
+      const deps = TRAIT_DEPENDENCIES[trait];
+      for (const dependency of deps?.lineage ?? []) {
+        if (dependency === BASAL) continue;
+        if (!set.has(dependency)) {
+          set.add(dependency);
+          changed = true;
+        }
+      }
+      if (
+        deps?.lineageAny?.length &&
+        !deps.lineageAny.some((dependency) => set.has(dependency))
+      ) {
+        const dependency = deps.lineageAny[0];
+        if (dependency !== BASAL) {
+          set.add(dependency);
+          changed = true;
+        }
+      }
+    }
+    sanitizeEnergy(set, preferred);
+  }
+  return sorted(set);
+}
+
+export function arenaGenomeValid(genome, budget = null) {
+  const normalized = completeArenaGenome(genome);
+  if (normalized.length !== new Set(genome ?? []).size) return false;
+  if (budget !== null && normalized.length !== budget) return false;
+  const traits = normalizeActiveTraits([BASAL, ...normalized]);
+  return traitCombinationValid(traits);
+}
+
+export function arenaProfile(genome, rank = 4) {
+  const completed = completeArenaGenome(genome);
+  const preferred = completed.includes("Fotossíntese")
+    ? "Fotossíntese"
+    : completed.includes("Predação")
+      ? "Predação"
+      : null;
+  return {
+    rank,
+    traits: normalizeActiveTraits([BASAL, ...completed], preferred),
+    ancestry: [BASAL, ...completed],
+  };
+}
+
+function lcg(seed) {
+  let value = seed >>> 0;
+  return () => {
+    value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
+    return value / 4294967296;
+  };
+}
+
+function archetypePool() {
+  return ARENA_ARCHETYPES.map((genome) => completeArenaGenome(genome));
+}
+
+export function randomArenaSide(seed = Date.now()) {
+  const random = lcg(seed),
+    pool = archetypePool(),
+    first = Math.floor(random() * pool.length);
+  let second = Math.floor(random() * (pool.length - 1));
+  if (second >= first) second++;
+  return [pool[first], pool[second]];
+}
+
+function counterScore(genome, opponentGenomes) {
+  const own = new Set(genome),
+    opponent = new Set((opponentGenomes ?? []).flat()),
+    wanted = new Set(
+      [...opponent].map((trait) => COUNTERS[trait]).filter(Boolean),
+    );
+  let score = 0;
+  for (const trait of wanted) if (own.has(trait)) score++;
+  return Math.min(3, score);
+}
+
+export function arenaAISide(
+  difficulty = "medium",
+  opponentGenomes = null,
+  seed = Date.now(),
+) {
+  if (difficulty === "easy") return randomArenaSide(seed);
+  const pool = archetypePool();
+  if (difficulty === "hard" && opponentGenomes?.length) {
+    return pool
+      .map((genome, index) => ({
+        genome,
+        index,
+        score: counterScore(genome, opponentGenomes),
+      }))
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .slice(0, 2)
+      .map((entry) => entry.genome);
+  }
+  const pairs = [
+    [0, 4],
+    [1, 5],
+    [2, 7],
+    [3, 6],
+  ];
+  const pair = pairs[(seed >>> 0) % pairs.length];
+  return pair.map((index) => pool[index]);
+}
+
+export function arenaInterventionCount(before, after) {
+  let removed = 0,
+    added = 0;
+  for (let i = 0; i < 2; i++) {
+    const a = new Set(before?.[i] ?? []),
+      b = new Set(after?.[i] ?? []);
+    for (const trait of a) if (!b.has(trait)) removed++;
+    for (const trait of b) if (!a.has(trait)) added++;
+  }
+  return {
+    removed,
+    added,
+    substitutions: removed === added ? removed : Infinity,
+    valid:
+      removed === added &&
+      removed <= ARENA_ENGINEERING_CHANGES &&
+      (after ?? []).every((genome) => arenaGenomeValid(genome)),
+  };
+}
+
+function swapToward(genome, wanted) {
+  const base = completeArenaGenome(genome),
+    wantedSet = new Set(wanted);
+  for (const add of wanted) {
+    if (base.includes(add)) continue;
+    for (const remove of base) {
+      if (wantedSet.has(remove)) continue;
+      const candidate = completeArenaGenome(
+        [...base.filter((trait) => trait !== remove), add],
+        add,
+      );
+      if (
+        candidate.length === base.length &&
+        arenaGenomeValid(candidate) &&
+        !candidate.includes(remove) &&
+        candidate.includes(add)
+      )
+        return candidate;
+    }
+  }
+  return base;
+}
+
+export function engineerArenaAISide(
+  baseGenomes,
+  difficulty = "medium",
+  opponentGenomes = null,
+  seed = Date.now(),
+) {
+  let result = (baseGenomes ?? []).map((genome) => completeArenaGenome(genome));
+  while (result.length < 2) result.push([...result[0]]);
+  const random = lcg(seed);
+  let wanted;
+  if (difficulty === "hard") {
+    const opponent = new Set((opponentGenomes ?? []).flat());
+    wanted = [...new Set([...opponent].map((trait) => COUNTERS[trait]).filter(Boolean))];
+  } else if (difficulty === "medium") {
+    wanted = arenaAISide("medium", null, seed).flat();
+  } else {
+    const all = arenaSelectableTraits();
+    wanted = Array.from({ length: 8 }, () => all[Math.floor(random() * all.length)]);
+  }
+  for (let change = 0; change < ARENA_ENGINEERING_CHANGES; change++) {
+    const index = change % 2;
+    result[index] = swapToward(result[index], wanted);
+  }
+  return result;
+}
+
+export { ARENA_ENGINEERING_CHANGES, ARENA_TRAIT_BUDGET };
