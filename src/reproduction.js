@@ -237,6 +237,15 @@ function sexualProfile(state, a, b) {
       traits.push(t);
   }
 
+  // Multicelularismo muda o modelo do organismo e não deve desaparecer
+  // acidentalmente pela recombinação sexual. Sua perda continua possível
+  // apenas como mutação explícita quando não há traits dependentes.
+  if (
+    (has(a, "Multicelularismo") || has(b, "Multicelularismo")) &&
+    !traits.includes("Multicelularismo")
+  )
+    traits.push("Multicelularismo");
+
   const hasEnergyConflict =
       traits.includes("Fotossíntese") && traits.includes("Predação"),
     normalizedTraits = normalizeMulticellularTraits(
