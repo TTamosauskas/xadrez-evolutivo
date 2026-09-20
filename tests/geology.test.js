@@ -211,7 +211,11 @@ test("Archean advances only after both innovation cycles are complete", () => {
   let next = createSuccessorState(s, 104);
   assert.equal(next.geologicalStage, "archean");
   assert.equal(next.cycle, 2);
-  assert.deepEqual(next.historicalTraits, ["Fotossíntese", "Predação"]);
+  assert.deepEqual(next.historicalTraits, [
+    "Respiração anaeróbia",
+    "Fotossíntese",
+    "Predação",
+  ]);
 
   const secondCarrier = next.pieces[0];
   secondCarrier.traits.push("Fertilidade", "Dormência");
@@ -318,8 +322,9 @@ test("without a distinct ecological counterpart the dominant founder still seeds
     next.pieces.every(
       (piece) =>
         piece.rank === 4 &&
-        piece.traits.length === 1 &&
-        piece.traits[0] === "Predação",
+        piece.traits.includes("Respiração anaeróbia") &&
+        piece.traits.includes("Predação") &&
+        piece.traits.length === 2,
     ),
   );
 });
@@ -430,7 +435,10 @@ test("evolutionary precedence changes eligibility but never mutation weight", ()
 
 test("a discovered required innovation pauses new appearances until the next one is discovered", () => {
   const s = createState(114),
-    p = { traits: [] };
+    p = {
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
+    };
   s.historicalTraits = ["Fotossíntese"];
   assert.equal(traitUnlocked(s, "Fotossíntese", p), false);
   assert.equal(traitUnlocked(s, "Predação", p), true);
@@ -522,24 +530,43 @@ test("later active phenotypes retain capabilities of the form they replaced", ()
 
 test("Fotossíntese and Predação switch branches by substitutive mutation", () => {
   const s = createState(111);
-  s.historicalTraits = ["Fotossíntese"];
-  const ancestral = { traits: [] },
-    photosynthetic = { traits: ["Fotossíntese"] };
+  s.historicalTraits = ["Respiração anaeróbia", "Fotossíntese"];
+  const ancestral = {
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
+    },
+    photosynthetic = {
+      traits: ["Respiração anaeróbia", "Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+    };
   assert.equal(traitUnlocked(s, "Predação", ancestral), true);
   assert.equal(traitUnlocked(s, "Predação", photosynthetic), true);
   assert.deepEqual(
     applyTraitMutation(photosynthetic.traits, "Predação"),
-    ["Predação"],
+    ["Respiração anaeróbia", "Predação"],
   );
 
   s.historicalTraits.push("Predação");
   const predatory = {
-    traits: ["Predação", "Locomoção", "Carnívoro", "Onívoro"],
+    traits: [
+      "Respiração anaeróbia",
+      "Predação",
+      "Locomoção",
+      "Carnívoro",
+      "Onívoro",
+    ],
+    ancestry: [
+      "Respiração anaeróbia",
+      "Predação",
+      "Locomoção",
+      "Carnívoro",
+      "Onívoro",
+    ],
   };
   assert.equal(traitUnlocked(s, "Fotossíntese", predatory), true);
   assert.deepEqual(
     applyTraitMutation(predatory.traits, "Fotossíntese"),
-    ["Fotossíntese"],
+    ["Respiração anaeróbia", "Fotossíntese"],
   );
   assert.equal(
     innovationWeight(s, "Predação", photosynthetic),
@@ -683,6 +710,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     }),
     plant = {
       traits: [
+        "Respiração anaeróbia",
         "Fotossíntese",
         "Multicelularismo",
         "Embriófitas",
@@ -719,7 +747,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
       [...plant.traits, "Espinhos", "Trepadeira", "Angiospermas"],
       "Predação",
     ),
-    ["Multicelularismo", "Predação"],
+    ["Respiração anaeróbia", "Multicelularismo", "Predação"],
   );
 });
 
@@ -810,7 +838,7 @@ test("new social, mimicry and domestication mutations unlock in the intended per
 });
 
 
-test("Haustório is a Cretaceous photosynthetic innovation after Embriófitas", () => {
+test("Haustório is a Cretaceous photosynthetic innovation after Angiospermas", () => {
   const s = createState(141, {
       geologicalStage: "cretaceous",
       historicalTraits: GEOLOGICAL_STAGES.slice(0, 12).flatMap(
@@ -818,12 +846,27 @@ test("Haustório is a Cretaceous photosynthetic innovation after Embriófitas", 
       ),
     }),
     plant = {
-      traits: ["Fotossíntese", "Multicelularismo"],
-      ancestry: ["Fotossíntese", "Embriófitas"],
+      traits: ["Respiração anaeróbia", "Fotossíntese", "Multicelularismo"],
+      ancestry: [
+        "Respiração anaeróbia",
+        "Fotossíntese",
+        "Embriófitas",
+        "Traqueófitas",
+        "Gimnospermas",
+        "Angiospermas",
+      ],
     },
     exPlant = {
-      traits: ["Predação", "Multicelularismo"],
-      ancestry: ["Fotossíntese", "Embriófitas", "Predação"],
+      traits: ["Respiração anaeróbia", "Predação", "Multicelularismo"],
+      ancestry: [
+        "Respiração anaeróbia",
+        "Fotossíntese",
+        "Embriófitas",
+        "Traqueófitas",
+        "Gimnospermas",
+        "Angiospermas",
+        "Predação",
+      ],
     };
   assert.equal(traitUnlocked(s, "Haustório", plant), true);
   assert.equal(traitUnlocked(s, "Haustório", exPlant), false);

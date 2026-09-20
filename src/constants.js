@@ -90,12 +90,24 @@ export const TRAITS = {
     "Ao completar Fotossíntese, pode tornar fértil também uma casa neutra adjacente desocupada.",
   ],
   Haustório: [
-    "🍁",
-    "Permite capturar peças inimigas adjacentes sem abandonar a linhagem fotossintética.",
+    "🪝",
+    "Permite consumir uma criatura fotossintética inimiga adjacente sem se deslocar. Uma captura bem-sucedida pode gerar um descendente por reprodução predatória.",
+  ],
+  "Perfume Floral": [
+    "🌹",
+    "Sementes orientam a dispersão para refúgios próximos a criaturas aliadas não fotossintéticas, priorizando as casas com maior proteção.",
+  ],
+  "Carnivoria Botânica": [
+    "👄",
+    "Permite consumir uma criatura não fotossintética inimiga adjacente sem se deslocar. Uma captura bem-sucedida pode gerar um descendente por reprodução predatória.",
   ],
   Traqueófitas: [
     "🍃",
     "Pode reproduzir sem se deslocar consumindo uma casa fértil adjacente.",
+  ],
+  Madeira: [
+    "🪵",
+    "O crescimento lenhoso reforça o organismo: ao sofrer uma tentativa de captura, possui 25% de chance de resistir e encerrar a ação do agressor.",
   ],
   Trepadeira: [
     "🌿",
@@ -104,6 +116,10 @@ export const TRAITS = {
   Espinhos: [
     "🌵",
     "Ao sofrer uma tentativa de captura, tem 25% de chance de matar o agressor e impedir a captura.",
+  ],
+  Extremófitas: [
+    "🌴",
+    "Ao sobreviver por uma rodada completa em uma casa hostil, torna essa casa temporariamente fértil; quando a fertilidade termina, o terreno volta a ser hostil.",
   ],
   Gimnospermas: [
     "🌲",

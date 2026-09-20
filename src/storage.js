@@ -159,6 +159,16 @@ export function deserialize(raw) {
         }
         if (!Number.isInteger(piece.nextReproductionRound))
           piece.nextReproductionRound = currentRound;
+        if (
+          !Number.isInteger(piece.extremophyteCell) ||
+          piece.extremophyteCell < 0 ||
+          piece.extremophyteCell > 63 ||
+          !Number.isInteger(piece.extremophyteSinceRound) ||
+          piece.extremophyteCell !== square(piece.r, piece.c)
+        ) {
+          delete piece.extremophyteCell;
+          delete piece.extremophyteSinceRound;
+        }
         piece.oothecaPrimed = !!piece.oothecaPrimed;
         piece.pregnancies = Array.isArray(piece.pregnancies)
           ? piece.pregnancies.map((pregnancy) => ({
@@ -436,6 +446,23 @@ export function deserialize(raw) {
         ? trace.base
         : "neutral",
     }));
+    const extremophyteCells = new Set();
+    data.extremophyteFertility = (
+      Array.isArray(data.extremophyteFertility)
+        ? data.extremophyteFertility
+        : []
+    )
+      .filter(
+        (entry) =>
+          Number.isInteger(entry?.cell) &&
+          entry.cell >= 0 &&
+          entry.cell < 64 &&
+          !extremophyteCells.has(entry.cell),
+      )
+      .map((entry) => {
+        extremophyteCells.add(entry.cell);
+        return { cell: entry.cell, base: "hostile" };
+      });
     if (sourceVersion < 5)
       data.discoveries = legacyDiscoveries({
         geologicalStage: data.geologicalStage,

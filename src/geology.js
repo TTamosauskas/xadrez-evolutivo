@@ -202,10 +202,14 @@ export const TRAIT_STAGE = {
   Embriófitas: "ordovician",
   Traqueófitas: "silurian",
   Espinhos: "devonian",
+  Madeira: "devonian",
   Gimnospermas: "carboniferous",
   Trepadeira: "carboniferous",
+  Extremófitas: "permian",
   Angiospermas: "cretaceous",
   Haustório: "cretaceous",
+  "Perfume Floral": "cretaceous",
+  "Carnivoria Botânica": "paleogene",
   Fertilidade: "archean",
   Dormência: "archean",
   Multicelularismo: "proterozoic",
@@ -314,12 +318,16 @@ export const TRAIT_DEPENDENCIES = {
     historical: ["Fotossíntese"],
   },
   Embriófitas: { lineage: ["Fotossíntese"] },
-  Haustório: { lineage: ["Embriófitas"] },
   Traqueófitas: { lineage: ["Embriófitas"] },
   Espinhos: { lineage: ["Traqueófitas"] },
+  Madeira: { lineage: ["Traqueófitas"] },
   Gimnospermas: { lineage: ["Traqueófitas"] },
   Trepadeira: { lineage: ["Traqueófitas"] },
+  Extremófitas: { lineage: ["Embriófitas"] },
   Angiospermas: { lineage: ["Gimnospermas"] },
+  Haustório: { lineage: ["Angiospermas"] },
+  "Perfume Floral": { lineage: ["Angiospermas"] },
+  "Carnivoria Botânica": { lineage: ["Angiospermas"] },
   Carnívoro: { lineage: ["Predação"] },
   Herbívoro: { lineage: ["Predação"] },
   Canibalismo: { lineage: ["Carnívoro"] },
@@ -395,10 +403,14 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Embriófitas",
   "Traqueófitas",
   "Espinhos",
+  "Madeira",
   "Gimnospermas",
   "Trepadeira",
+  "Extremófitas",
   "Angiospermas",
   "Haustório",
+  "Perfume Floral",
+  "Carnivoria Botânica",
 ]);
 
 export function normalizeMulticellularTraits(traits) {
@@ -412,10 +424,14 @@ export const PLANT_DERIVED_TRAITS = new Set([
   "Embriófitas",
   "Traqueófitas",
   "Espinhos",
+  "Madeira",
   "Gimnospermas",
   "Trepadeira",
+  "Extremófitas",
   "Angiospermas",
   "Haustório",
+  "Perfume Floral",
+  "Carnivoria Botânica",
   "Plantas Domesticadas",
 ]);
 
@@ -654,7 +670,7 @@ export function traitUnlocked(state, trait, piece = null) {
   )
     return false;
   if (
-    ["Plantas Domesticadas", "Haustório"].includes(trait) &&
+    PLANT_DERIVED_TRAITS.has(trait) &&
     !piece?.traits?.includes("Fotossíntese")
   )
     return false;

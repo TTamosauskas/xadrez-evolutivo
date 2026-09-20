@@ -254,7 +254,12 @@ test("selected self-actions appear immediately to the left of Passar vez", () =>
     s = createState(24),
     piece = s.pieces.find((candidate) => candidate.owner === s.current),
     enemy = s.pieces.find((candidate) => candidate.owner !== s.current);
-  piece.traits = ["Multicelularismo", "Predação", "Parasitismo"];
+  piece.traits = [
+    "Respiração anaeróbia",
+    "Multicelularismo",
+    "Predação",
+    "Parasitismo",
+  ];
   piece.ancestry = [...piece.traits];
   s.board[piece.r * 8 + piece.c] = "fertile";
   enemy.r = piece.r - 1;

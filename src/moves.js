@@ -109,6 +109,14 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       egg = eggAt(state, r, c),
       builtBarrier = builtBarrierAt(state, r, c),
       naturalBarrier = naturalBarrierAt(state, r, c),
+      botanicalPredation =
+        victim?.owner !== undefined &&
+        victim.owner !== p.owner &&
+        distance(p, victim) === 1 &&
+        has(p, "Fotossíntese") &&
+        ((has(p, "Haustório") && has(victim, "Fotossíntese")) ||
+          (has(p, "Carnivoria Botânica") &&
+            !has(victim, "Fotossíntese"))),
       cannibal =
         victim?.owner === p.owner &&
         victim.id !== p.id &&
@@ -120,7 +128,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       victim &&
       victim.owner !== p.owner &&
       !captureUnlocked(state, p) &&
-      !(has(p, "Haustório") && distance(p, victim) === 1)
+      !botanicalPredation
     )
       return;
     if (builtBarrier && !has(p, "Escavador")) return;
@@ -240,15 +248,29 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   const mobile = has(p, "Locomoção") || has(p, "Locomoção Avançada");
   if (mobile) chessTargets(false);
   else if (has(p, "Predação")) chessTargets(true);
-  if (has(p, "Haustório") && has(p, "Fotossíntese"))
+  if (
+    has(p, "Fotossíntese") &&
+    (has(p, "Haustório") || has(p, "Carnivoria Botânica"))
+  )
     for (let dr = -1; dr <= 1; dr++)
       for (let dc = -1; dc <= 1; dc++) {
         if (!dr && !dc) continue;
         const r = p.r + dr,
           c = p.c + dc,
           victim = at(state, r, c);
-        if (victim && victim.owner !== p.owner)
-          add(r, c, [[r, c]], { haustorium: true });
+        if (!victim || victim.owner === p.owner) continue;
+        const specialization =
+          has(victim, "Fotossíntese") && has(p, "Haustório")
+            ? "Haustório"
+            : !has(victim, "Fotossíntese") &&
+                has(p, "Carnivoria Botânica")
+              ? "Carnivoria Botânica"
+              : null;
+        if (specialization)
+          add(r, c, [], {
+            botanicalPredation: specialization,
+            stay: true,
+          });
       }
   const collector = has(p, "Coletor"),
     canUseFertility =
