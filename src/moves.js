@@ -1,4 +1,4 @@
-import { inside, has, distance, square } from "./constants.js";
+import { inside, has, distance, square, energyBranch } from "./constants.js";
 import {
   at,
   eggAt,
@@ -251,7 +251,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   }
   const mobile = has(p, "Locomoção Primitiva");
   if (mobile) chessTargets(false);
-  else if (has(p, "Predação")) chessTargets(true);
+  else if (captureUnlocked(state, p)) chessTargets(true);
   if (
     has(p, "Fotossíntese") &&
     (has(p, "Haustório") || has(p, "Carnivoria Botânica"))
@@ -279,7 +279,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   const collector = has(p, "Coletor"),
     canUseFertility =
       has(p, "Respiração anaeróbia") &&
-      (!has(p, "Carnívoro") || has(p, "Onívoro")),
+      (!has(p, "Carnívoro") || has(p, "Onívoro") || has(p, "Mixotrofia")),
     canReproduce = reproductionReady(state, p);
   if (
     canReproduce &&
@@ -355,21 +355,26 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
 }
 export function partnersFor(state, p) {
   if (!reproductionReady(state, p)) return [];
-  const branch = has(p, "Fotossíntese")
-    ? "Fotossíntese"
-    : has(p, "Predação")
-      ? "Predação"
-      : null;
+  const branch = energyBranch(p);
   if (!branch) return [];
-  return state.pieces.filter(
-    (x) =>
-      x.id !== p.id &&
-      x.owner === p.owner &&
-      has(x, branch) &&
-      reproductionReady(state, x) &&
-      !dormant(state, x) &&
-      distance(p, x) === 1,
-  );
+  return state.pieces.filter((x) => {
+    if (
+      x.id === p.id ||
+      x.owner !== p.owner ||
+      !reproductionReady(state, x) ||
+      dormant(state, x) ||
+      distance(p, x) !== 1
+    )
+      return false;
+    const mateBranch = energyBranch(x);
+    return (
+      mateBranch === branch ||
+      (mateBranch &&
+        mateBranch !== branch &&
+        has(p, "Mixotrofia") &&
+        has(x, "Mixotrofia"))
+    );
+  });
 }
 
 export function nursingTargets(state, p) {
