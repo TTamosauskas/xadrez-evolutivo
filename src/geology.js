@@ -406,6 +406,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Vertebrado",
   "Artrópode",
   "Locomoção Articulada",
+  "Percepção Espacial",
   "Escavador",
   "Construtor de Nicho",
   "Necrófago",
