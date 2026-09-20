@@ -150,6 +150,8 @@ export function deserialize(raw) {
             ? normalizeGenome(profile.genome)
             : genomeFromLegacyProfile(profile);
         syncGenomePhenotype(profile);
+        delete profile.reproGenes;
+        delete profile.recessiveTraits;
         normalizePhotosyntheticRank(profile);
         return profile;
       };
