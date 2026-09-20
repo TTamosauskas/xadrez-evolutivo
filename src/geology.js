@@ -265,6 +265,7 @@ export const TRAIT_STAGE = {
   Lactação: "triassic",
   Vivíparo: "triassic",
   "Sacos Aéreos": "triassic",
+  Mixotrofia: "triassic",
   "Ovulação Induzida": "paleogene",
   Mimetismo: "permian",
   Notívago: "triassic",
@@ -369,6 +370,10 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Locomoção Primitiva"],
     lineageAny: ["Vertebrado", "Artrópode"],
   },
+  Mixotrofia: {
+    lineage: ["Respiração aeróbia"],
+    lineageAny: ["Fotossíntese", "Predação"],
+  },
   "Percepção Espacial": { lineage: ["Locomoção Articulada"] },
   Escavador: { lineage: ["Locomoção Primitiva"] },
   "Locomoção Avançada": { lineage: ["Locomoção Articulada"] },
@@ -409,6 +414,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Artrópode",
   "Locomoção Articulada",
   "Percepção Espacial",
+  Mixotrofia,
   "Escavador",
   "Construtor de Nicho",
   "Necrófago",
@@ -829,7 +835,11 @@ export function normalizePhotosyntheticRank(profile) {
 
 export function captureUnlocked(state, piece = null) {
   if (!piece) return false;
-  return piece.traits?.includes("Predação") ?? false;
+  return (
+    piece.traits?.includes("Predação") ||
+    piece.traits?.includes("Mixotrofia") ||
+    false
+  );
 }
 
 export function pathogenUnlocked(state) {
