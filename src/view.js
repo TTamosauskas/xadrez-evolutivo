@@ -10,6 +10,7 @@ import {
   senescent,
   pieceAge,
   naturalDeathChance,
+  reproductionReady,
 } from "./state.js";
 import { currentGeologicalStage, stageProgress } from "./geology.js";
 import {
@@ -225,7 +226,7 @@ export function render(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${juvenile(state, p) ? " juvenile" : ""}${senescent(state, p) ? " senescent" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
+            `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${senescent(state, p) ? " senescent" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
           ),
         );
         const badges = p.traits.map((trait) => ({
