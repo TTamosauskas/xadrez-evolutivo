@@ -40,6 +40,10 @@ import {
   populationPathogenChance,
   pathogenMortalityChance,
   POPULATION_RESISTANCE_MORTALITY_FACTOR,
+  VECTOR_PATHOGEN_TRANSMISSION_CHANCE,
+  VECTOR_PATHOGEN_MORTALITY,
+  VECTOR_RESISTANCE_MORTALITY_FACTOR,
+  tryVectorPathogen,
 } from "../src/disease.js";
 import {
   reproduce,
@@ -639,6 +643,61 @@ test("Resistência blocks ecological pathogens but reduces population-pathogen m
     undefined,
   );
   assertState(s);
+});
+
+test("Vetor Patógeno creates a distinct low-mortality disease after a one-in-four roll", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Multicelularismo", "Vetor Patógeno"],
+      },
+      { owner: "amber", r: 4, c: 5, traits: ["Resistência"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    vector = s.pieces[0],
+    target = s.pieces[1];
+  s.rng = 0;
+
+  assert.equal(VECTOR_PATHOGEN_TRANSMISSION_CHANCE, 0.25);
+  assert.equal(VECTOR_PATHOGEN_MORTALITY, 20);
+  assert.equal(VECTOR_RESISTANCE_MORTALITY_FACTOR, 0.5);
+  const disease = tryVectorPathogen(s, vector);
+  assert.ok(disease);
+  assert.equal(disease.source, "vector");
+  assert.equal(disease.mortality, 20);
+  assert.equal(disease.delay, 3);
+  assert.equal(disease.endRound - disease.startRound, 6);
+  assert.equal(target.infection?.disease, disease.id);
+  assert.equal(pathogenMortalityChance(target, disease), 0.1);
+  assert.equal(s.notices.length, 0);
+  assertState(s);
+});
+
+test("successful reproduction can trigger Vetor Patógeno transmission", () => {
+  let triggered = false;
+  for (let seed = 1; seed <= 80 && !triggered; seed++) {
+    const s = fixture(
+        [
+          {
+            owner: "blue",
+            r: 4,
+            c: 4,
+            rank: 5,
+            traits: ["Multicelularismo", "Vetor Patógeno"],
+          },
+          { owner: "amber", r: 4, c: 5 },
+          { owner: "amber", r: 0, c: 0 },
+        ],
+        seed,
+      ),
+      parent = s.pieces[0];
+    s.board[36] = "fertile";
+    reproduce(context(s), parent, null, "teste", { forcedCount: 1 });
+    triggered = s.diseases.some((disease) => disease.source === "vector");
+  }
+  assert.equal(triggered, true);
 });
 
 test("population pathogen incidence grows with imbalance and respects active-outbreak cooldown", () => {
