@@ -252,6 +252,46 @@ export const TRAIT_STAGE = {
   "Neocórtex Desenvolvido": "quaternary",
 };
 
+export const ACTIVE_TRAIT_FAMILIES = [
+  {
+    id: "energy",
+    traits: ["Fotossíntese", "Predação"],
+  },
+  {
+    id: "diet",
+    traits: ["Carnívoro", "Herbívoro", "Onívoro"],
+  },
+  {
+    id: "locomotion",
+    traits: ["Locomoção", "Locomoção Avançada"],
+  },
+  {
+    id: "plant-form",
+    traits: ["Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas"],
+  },
+  {
+    id: "development",
+    traits: ["Ovíparo", "Ovíparos Amniotas", "Ovovivíparo", "Vivíparo"],
+  },
+  {
+    id: "social-organization",
+    traits: ["Sociabilidade", "Eusocialidade"],
+  },
+];
+
+const activeFamilyByTrait = new Map(
+  ACTIVE_TRAIT_FAMILIES.flatMap((family) =>
+    family.traits.map((trait, index) => [
+      trait,
+      { family, index },
+    ]),
+  ),
+);
+
+export function activeTraitFamily(trait) {
+  return activeFamilyByTrait.get(trait)?.family ?? null;
+}
+
 export const TRAIT_DEPENDENCIES = {
   Embriófitas: { lineage: ["Fotossíntese"] },
   Haustório: { lineage: ["Embriófitas"] },
@@ -395,9 +435,15 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
 
 export function traitCombinationValid(traits) {
   const set = new Set(traits ?? []);
-  return !(
+  if (
     set.has("Fotossíntese") &&
     [...PLANT_INCOMPATIBLE_TRAITS].some((trait) => set.has(trait))
+  )
+    return false;
+  return ACTIVE_TRAIT_FAMILIES.every(
+    (family) =>
+      family.id === "energy" ||
+      family.traits.filter((trait) => set.has(trait)).length <= 1,
   );
 }
 
@@ -409,7 +455,8 @@ export function normalizeEnergyBranch(traits, preferred = null) {
   ) {
     const animalBranch =
       preferred === "Predação" ||
-      (set.has("Predação") &&
+      (preferred !== "Fotossíntese" &&
+        set.has("Predação") &&
         [...PLANT_INCOMPATIBLE_TRAITS].some(
           (trait) => trait !== "Predação" && set.has(trait),
         ));
@@ -423,17 +470,58 @@ export function normalizeEnergyBranch(traits, preferred = null) {
   return [...set];
 }
 
+export function normalizeActiveTraits(traits, preferredEnergy = null) {
+  const source = [...new Set(normalizeEnergyBranch(traits, preferredEnergy))],
+    keep = new Set(source);
+  for (const family of ACTIVE_TRAIT_FAMILIES) {
+    if (family.id === "energy") continue;
+    const present = family.traits.filter((trait) => keep.has(trait));
+    if (present.length <= 1) continue;
+    const winner = present.at(-1);
+    for (const trait of present)
+      if (trait !== winner) keep.delete(trait);
+  }
+  return source.filter((trait) => keep.has(trait));
+}
+
 export function applyTraitMutation(traits, trait) {
-  const set = new Set(traits ?? []);
+  const set = new Set(traits ?? []),
+    family = activeTraitFamily(trait);
+  if (family)
+    for (const member of family.traits) set.delete(member);
   if (trait === "Predação") {
     set.delete("Fotossíntese");
     for (const plantTrait of PLANT_DERIVED_TRAITS) set.delete(plantTrait);
-    set.add("Predação");
   } else if (trait === "Fotossíntese") {
     for (const animalTrait of PLANT_INCOMPATIBLE_TRAITS) set.delete(animalTrait);
-    set.add("Fotossíntese");
-  } else set.add(trait);
-  return normalizeEnergyBranch([...set]);
+  }
+  set.add(trait);
+  return normalizeActiveTraits(
+    [...set],
+    ["Predação", "Fotossíntese"].includes(trait) ? trait : null,
+  );
+}
+
+export function applyTraitLoss(traits, ancestry, trait) {
+  const next = (traits ?? []).filter((candidate) => candidate !== trait),
+    family = activeTraitFamily(trait);
+  if (!family || family.id === "energy") return normalizeActiveTraits(next);
+  const activeFamilyMember = next.some((candidate) =>
+    family.traits.includes(candidate),
+  );
+  if (activeFamilyMember) return normalizeActiveTraits(next);
+
+  const lineage = ancestry ?? [],
+    fallback = [...lineage]
+      .reverse()
+      .find(
+        (candidate) =>
+          candidate !== trait &&
+          family.traits.includes(candidate) &&
+          family.traits.indexOf(candidate) < family.traits.indexOf(trait),
+      );
+  if (fallback) next.push(fallback);
+  return normalizeActiveTraits(next);
 }
 
 export function traitLossAllowed(piece, trait) {
