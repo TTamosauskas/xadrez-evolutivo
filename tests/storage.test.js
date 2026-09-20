@@ -6,6 +6,7 @@ import {
   load,
   LEGACY_KEY,
   SAVE_KEY,
+  V9_KEY,
   V8_KEY,
   V6_KEY,
   V5_KEY,
@@ -69,7 +70,7 @@ test("plant seeds survive save round trip", () => {
     profile: {
       owner: parent.owner,
       rank: parent.rank,
-      traits: ["Fotossíntese", "Embriófitas", "Traqueófitas", "Gimnospermas"],
+      traits: ["Fotossíntese", "Gimnospermas"],
       ancestry: ["Fotossíntese", "Embriófitas", "Traqueófitas", "Gimnospermas"],
       reproGenes: structuredClone(parent.reproGenes),
       mutations: 4,
@@ -109,10 +110,49 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
       getItem: (k) => entries.get(k) ?? null,
     };
   const migrated = load(storage);
-  assert.equal(migrated.version, 9);
+  assert.equal(migrated.version, 10);
   assert.equal(entries.get(V2_KEY), raw);
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Locomoção")));
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
+});
+
+test("v9 cumulative phenotypes migrate to active families while preserving ancestry", () => {
+  const old = createState(82, {
+    geologicalStage: "quaternary",
+  });
+  old.version = 9;
+  old.pieces[0].traits = [
+    "Multicelularismo",
+    "Predação",
+    "Carnívoro",
+    "Onívoro",
+    "Locomoção",
+    "Locomoção Avançada",
+    "Sociabilidade",
+    "Eusocialidade",
+  ];
+  old.pieces[0].ancestry = [...old.pieces[0].traits];
+
+  const raw = JSON.stringify(old),
+    entries = new Map([[V9_KEY, raw]]),
+    storage = {
+      setItem: (key, value) => entries.set(key, value),
+      getItem: (key) => entries.get(key) ?? null,
+    },
+    migrated = load(storage),
+    piece = migrated.pieces[0];
+
+  assert.equal(migrated.version, 10);
+  assert.ok(piece.traits.includes("Onívoro"));
+  assert.ok(piece.traits.includes("Locomoção Avançada"));
+  assert.ok(piece.traits.includes("Eusocialidade"));
+  assert.equal(piece.traits.includes("Carnívoro"), false);
+  assert.equal(piece.traits.includes("Locomoção"), false);
+  assert.equal(piece.traits.includes("Sociabilidade"), false);
+  assert.ok(piece.ancestry.includes("Carnívoro"));
+  assert.ok(piece.ancestry.includes("Locomoção"));
+  assert.ok(piece.ancestry.includes("Sociabilidade"));
+  assertState(migrated);
 });
 
 test("v8 complex lineages migrate to Multicelularismo without instant senescence", () => {
@@ -138,7 +178,7 @@ test("v8 complex lineages migrate to Multicelularismo without instant senescence
     migrated = load(storage),
     piece = migrated.pieces[0];
 
-  assert.equal(migrated.version, 9);
+  assert.equal(migrated.version, 10);
   assert.ok(piece.traits.includes("Multicelularismo"));
   assert.ok(piece.ancestry.includes("Multicelularismo"));
   assert.equal(piece.bornRound, 50);
@@ -188,7 +228,7 @@ test("v6 saves migrate without an origin prelude", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 9);
+  assert.equal(migrated.version, 10);
   assert.equal(migrated.origin, null);
   assert.equal(migrated.phase, "move");
   assert.equal(entries.get(V6_KEY), raw);
@@ -207,7 +247,7 @@ test("v5 saves split invalid Fotossíntese + Predação hybrids during migration
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 9);
+  assert.equal(migrated.version, 10);
   assert.deepEqual(migrated.pieces[0].traits, ["Fotossíntese"]);
   assert.ok(migrated.pieces[1].traits.includes("Predação"));
   assert.ok(migrated.pieces[1].traits.includes("Locomoção"));
@@ -229,7 +269,7 @@ test("v4 saves migrate discoveries without creating unread backlog", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 9);
+  assert.equal(migrated.version, 10);
   assert.ok(migrated.discoveries.geology.includes("archean"));
   assert.ok(migrated.discoveries.mutations.includes("Fotossíntese"));
   assert.equal(
@@ -255,7 +295,7 @@ test("v3 saves rename Predador to Carnívoro and preserve capture with Predaçã
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 9);
+  assert.equal(migrated.version, 10);
   assert.ok(migrated.pieces[0].traits.includes("Carnívoro"));
   assert.ok(migrated.pieces[0].traits.includes("Predação"));
   assert.ok(!migrated.pieces[0].traits.includes("Predador"));
@@ -337,7 +377,7 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
-  assert.equal(s.version, 9);
+  assert.equal(s.version, 10);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "local");
