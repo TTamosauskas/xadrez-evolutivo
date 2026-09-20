@@ -774,7 +774,7 @@ function cleanArenaGenome(piece) {
   );
 }
 
-export function arenaSurvivorGenomes(state, owner) {
+function arenaSurvivorEntries(state, owner) {
   const groups = new Map();
   for (const piece of state.pieces.filter((candidate) => candidate.owner === owner)) {
     const key = signature(piece),
@@ -790,29 +790,42 @@ export function arenaSurvivorGenomes(state, owner) {
         signature(a.piece).localeCompare(signature(b.piece), "pt-BR"),
     )
     .slice(0, 2)
-    .map(({ piece }) => cleanArenaGenome(piece));
+    .map(({ piece }) => ({ source: piece, genome: cleanArenaGenome(piece) }));
   const fallback = state.arenaFounders?.[owner]
     ? [
-        cleanArenaGenome(state.arenaFounders[owner].primary),
-        cleanArenaGenome(state.arenaFounders[owner].companion),
-      ]
+        state.arenaFounders[owner].primary,
+        state.arenaFounders[owner].companion,
+      ].map((source) => ({ source, genome: cleanArenaGenome(source) }))
     : [];
-  for (const genome of fallback)
-    if (selected.length < 2 && genome.length) selected.push(genome);
-  if (!selected.length) selected.push(["Multicelularismo"]);
-  while (selected.length < 2) selected.push([...selected[0]]);
+  for (const entry of fallback)
+    if (selected.length < 2 && entry.genome.length) selected.push(entry);
+  if (!selected.length)
+    selected.push({
+      source: { rank: 4 },
+      genome: ["Multicelularismo"],
+    });
+  while (selected.length < 2)
+    selected.push({
+      source: selected[0].source,
+      genome: [...selected[0].genome],
+    });
   return selected.slice(0, 2);
 }
 
-function arenaProfiles(ownerGenomes) {
+export function arenaSurvivorGenomes(state, owner) {
+  return arenaSurvivorEntries(state, owner).map(({ genome }) => genome);
+}
+
+function arenaProfiles(ownerGenomes, survivorEntries = null) {
   return Object.fromEntries(
     ["blue", "amber"].map((owner) => {
-      const genomes = ownerGenomes[owner];
+      const genomes = ownerGenomes[owner],
+        sources = survivorEntries?.[owner] ?? [];
       return [
         owner,
         {
-          primary: arenaProfile(genomes[0]),
-          companion: arenaProfile(genomes[1]),
+          primary: arenaProfile(genomes[0], sources[0]?.source?.rank ?? 4),
+          companion: arenaProfile(genomes[1], sources[1]?.source?.rank ?? 4),
         },
       ];
     }),
@@ -850,12 +863,16 @@ export function createArenaSuccessorState(
   ownerGenomes = null,
   seed = Date.now(),
 ) {
-  const genomes =
+  const survivorEntries = {
+      blue: arenaSurvivorEntries(previous, "blue"),
+      amber: arenaSurvivorEntries(previous, "amber"),
+    },
+    genomes =
       ownerGenomes ?? {
-        blue: arenaSurvivorGenomes(previous, "blue"),
-        amber: arenaSurvivorGenomes(previous, "amber"),
+        blue: survivorEntries.blue.map(({ genome }) => genome),
+        amber: survivorEntries.amber.map(({ genome }) => genome),
       },
-    profiles = arenaProfiles(genomes),
+    profiles = arenaProfiles(genomes, survivorEntries),
     state = createState(seed, {
       scenario: "arena",
       geologicalStage: "quaternary",
