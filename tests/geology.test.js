@@ -4,6 +4,8 @@ import { TRAITS, EVENTS } from "../src/constants.js";
 import {
   GEOLOGICAL_STAGES,
   TRAIT_STAGE,
+  ACTIVE_TRAIT_FAMILIES,
+  applyTraitLoss,
   applyTraitMutation,
   captureUnlocked,
   currentGeologicalStage,
@@ -11,6 +13,7 @@ import {
   eventWeights,
   innovationWeight,
   missingInnovations,
+  normalizeActiveTraits,
   pawnMutationUnlocked,
   stageComplete,
   traitUnlocked,
@@ -123,7 +126,7 @@ test("geological event pools contain only valid ecological events and no pathoge
 
 test("Archean starts green and stationary", () => {
   const s = createState(101);
-  assert.equal(s.version, 9);
+  assert.equal(s.version, 10);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
@@ -409,6 +412,74 @@ test("Pawn mutation unlocks only from the second campaign cycle", () => {
   first.totalCycles = 2;
   first.cycle = 1;
   assert.equal(pawnMutationUnlocked(first), true);
+});
+
+test("active phenotype families replace older expressions without erasing ancestry", () => {
+  const raw = [
+    "Predação",
+    "Carnívoro",
+    "Herbívoro",
+    "Onívoro",
+    "Locomoção",
+    "Locomoção Avançada",
+    "Embriófitas",
+    "Traqueófitas",
+    "Gimnospermas",
+    "Angiospermas",
+    "Sociabilidade",
+    "Eusocialidade",
+  ];
+  const active = normalizeActiveTraits(raw, "Predação");
+
+  assert.ok(ACTIVE_TRAIT_FAMILIES.length >= 6);
+  assert.ok(active.includes("Predação"));
+  assert.ok(active.includes("Onívoro"));
+  assert.ok(active.includes("Locomoção Avançada"));
+  assert.ok(active.includes("Angiospermas"));
+  assert.ok(active.includes("Eusocialidade"));
+  for (const suppressed of [
+    "Carnívoro",
+    "Herbívoro",
+    "Locomoção",
+    "Embriófitas",
+    "Traqueófitas",
+    "Gimnospermas",
+    "Sociabilidade",
+  ])
+    assert.equal(active.includes(suppressed), false, suppressed);
+
+  assert.deepEqual(
+    applyTraitMutation(["Predação", "Carnívoro"], "Onívoro"),
+    ["Predação", "Onívoro"],
+  );
+  assert.deepEqual(
+    applyTraitLoss(
+      ["Predação", "Onívoro"],
+      ["Predação", "Carnívoro", "Onívoro"],
+      "Onívoro",
+    ),
+    ["Predação", "Carnívoro"],
+  );
+});
+
+test("later active phenotypes retain capabilities of the form they replaced", () => {
+  const advanced = { traits: ["Locomoção Avançada"] },
+    flowering = { traits: ["Fotossíntese", "Angiospermas"] },
+    eusocial = { traits: ["Eusocialidade"] };
+  assert.equal(movesFor({
+    phase: "over",
+    chain: null,
+    pieces: [],
+  }, advanced).length, 0);
+  // Capability inheritance is exposed through the normal trait checks used
+  // by the engine; mutation eligibility should therefore not offer regressions.
+  const s = createState(146, {
+    geologicalStage: "quaternary",
+    historicalTraits: GEOLOGICAL_STAGES.flatMap((stage) => stage.required),
+  });
+  assert.equal(traitUnlocked(s, "Locomoção", advanced), true);
+  assert.equal(traitUnlocked(s, "Embriófitas", flowering), true);
+  assert.equal(traitUnlocked(s, "Sociabilidade", eusocial), true);
 });
 
 test("Fotossíntese and Predação switch branches by substitutive mutation", () => {
