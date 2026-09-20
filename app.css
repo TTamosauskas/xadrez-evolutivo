@@ -120,16 +120,21 @@ main {
 .cell.hostile.dark {
   background: #ad6650;
 }
-.cell.barrier,
-.cell.barrier.dark,
-.cell.barrier:hover {
+.cell.natural-barrier,
+.cell.natural-barrier.dark,
+.cell.natural-barrier:hover {
   background: #704a2d;
-}
-.cell.natural-barrier {
   box-shadow: inset 0 0 0 2px #4d341f66;
 }
-.cell.built-barrier {
-  box-shadow: inset 0 0 0 2px #a77b4f55;
+.barrier-mark {
+  position: absolute;
+  z-index: 2;
+  width: 68%;
+  aspect-ratio: 1;
+  background: #000000;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 5px #0008;
+  pointer-events: none;
 }
 .decomposition-mark {
   position: absolute;
@@ -156,6 +161,7 @@ main {
   z-index: 2;
 }
 .cell.selected {
+  z-index: 6;
   box-shadow: inset 0 0 0 4px #ffdf84;
 }
 .cell.legal:after {
@@ -261,6 +267,58 @@ main {
   text-align: center;
   line-height: 1.2;
   pointer-events: none;
+}
+.badge-icon {
+  display: inline-block;
+}
+.cell.selected .badges.selected-badges {
+  inset: 0;
+  z-index: 5;
+  font-size: clamp(12px, 2.1vw, 19px);
+}
+.cell.selected .badges.selected-badges .badge-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 1.25em;
+  height: 1.25em;
+  border-radius: 50%;
+  background: #151915d9;
+  box-shadow: 0 2px 7px #000a;
+  animation: selected-badge-orbit 360ms cubic-bezier(0.2, 0.85, 0.3, 1.2) both;
+  animation-delay: var(--badge-delay, 0ms);
+}
+@keyframes selected-badge-orbit {
+  from {
+    opacity: 0.15;
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--badge-angle))
+      translateX(0)
+      rotate(calc(-1 * var(--badge-angle)))
+      scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--badge-angle))
+      translateX(var(--badge-radius))
+      rotate(calc(-1 * var(--badge-angle)))
+      scale(1.08);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cell.selected .badges.selected-badges .badge-icon {
+    animation: none;
+    transform:
+      translate(-50%, -50%)
+      rotate(var(--badge-angle))
+      translateX(var(--badge-radius))
+      rotate(calc(-1 * var(--badge-angle)));
+  }
 }
 .event {
   font-size: 13px;
