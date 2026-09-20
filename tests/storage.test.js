@@ -20,6 +20,7 @@ import { createState, clone, assertState } from "../src/state.js";
 import { has } from "../src/constants.js";
 import { reproPhenotype } from "../src/reproductive-genetics.js";
 import { GEOLOGICAL_STAGES } from "../src/geology.js";
+import { cloneGenome } from "../src/genetics.js";
 test("round trip saves deterministic state and rejects duplicate occupancy", () => {
   const s = createState(3);
   assert.deepEqual(deserialize(JSON.stringify(s)), s);
@@ -73,9 +74,9 @@ test("plant seeds survive save round trip", () => {
     profile: {
       owner: parent.owner,
       rank: parent.rank,
-      traits: ["Fotossíntese", "Gimnospermas"],
-      ancestry: ["Fotossíntese", "Embriófitas", "Traqueófitas", "Gimnospermas"],
-      reproGenes: structuredClone(parent.reproGenes),
+      traits: [...parent.traits],
+      ancestry: [...parent.ancestry],
+      genome: cloneGenome(parent.genome),
       mutations: 4,
       generation: 1,
       parentId: parent.id,
@@ -437,8 +438,10 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   assert.ok(s.historicalTraits.includes("Locomoção"));
 });
 
-test("current saves drop obsolete Ovos history discoveries and alleles", () => {
+test("v12 saves drop obsolete Ovos history discoveries and alleles", () => {
   const old = createState(91);
+  old.version = 12;
+  for (const piece of old.pieces) delete piece.genome;
   old.historicalTraits.push("Ovos");
   old.seenMutations.push("Ovos", "Perda de Ovos");
   old.discoveries.mutations.push("Ovos");
