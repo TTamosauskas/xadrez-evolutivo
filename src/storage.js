@@ -155,6 +155,7 @@ export function deserialize(raw) {
         }
         if (!Number.isInteger(piece.nextReproductionRound))
           piece.nextReproductionRound = currentRound;
+        piece.oothecaPrimed = !!piece.oothecaPrimed;
         piece.pregnancies = Array.isArray(piece.pregnancies)
           ? piece.pregnancies.map((pregnancy) => ({
               ...pregnancy,
