@@ -78,6 +78,9 @@ test("menu exposes match log and evolutionary history for consultation", () => {
     d.querySelector('#mode option[value="auto"]').textContent,
     "Computador × computador",
   );
+  const arena = d.getElementById("arena-mode");
+  assert.equal(arena.textContent, "Modo Arena");
+  assert.equal(arena.disabled, true);
   dom.window.close();
 });
 
@@ -108,6 +111,51 @@ test("renders one board occupant per piece and exactly one stylesheet and module
   assert.equal(d.querySelectorAll("link[rel=stylesheet]").length, 1);
   dom.window.close();
 });
+test("built barriers render as black blocks with white borders", () => {
+  const dom = setup(),
+    s = createState(19);
+  s.barriers = [27];
+  render(dom.window.document, s);
+  const d = dom.window.document,
+    cell = d.querySelector('[data-r="3"][data-c="3"]'),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+  assert.ok(cell.classList.contains("built-barrier"));
+  assert.ok(cell.querySelector(".barrier-mark"));
+  assert.match(css, /\.barrier-mark[\s\S]*background:\s*#000000/);
+  assert.match(css, /\.barrier-mark[\s\S]*border:\s*2px solid #ffffff/);
+  dom.window.close();
+});
+
+test("selected pieces expand all mutation icons into an animated radial pattern", () => {
+  const dom = setup(),
+    s = createState(20),
+    piece = s.pieces[0];
+  piece.traits = [
+    "Multicelularismo",
+    "Predação",
+    "Locomoção",
+    "Carapaça",
+    "Camuflagem",
+    "Veneno",
+  ];
+  render(dom.window.document, s, { selected: piece.id });
+  const d = dom.window.document,
+    cell = d.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    ),
+    badges = cell.querySelector(".badges.selected-badges"),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+  assert.ok(badges);
+  assert.equal(badges.querySelectorAll(".badge-icon").length, piece.traits.length);
+  assert.ok(
+    [...badges.querySelectorAll(".badge-icon")].every(
+      (icon) => icon.style.getPropertyValue("--badge-angle"),
+    ),
+  );
+  assert.match(css, /@keyframes selected-badge-orbit/);
+  dom.window.close();
+});
+
 test("selected panel inspects either side and explains only that piece traits", () => {
   const dom = setup(),
     s = createState(21),

@@ -718,7 +718,11 @@ export function reproduce(
   options = {},
 ) {
   const state = ctx.state;
-  if (!reproductionReady(state, parent) || (mate && !reproductionReady(state, mate)))
+  if (
+    !options.ignoreReadiness &&
+    (!reproductionReady(state, parent) ||
+      (mate && !reproductionReady(state, mate)))
+  )
     return 0;
 
   const profile = mate ? sexualProfile(state, parent, mate) : parent,
@@ -801,6 +805,8 @@ export function reproduce(
   }
 
   if (produced) {
+    if (has(parent, "Ooteca") && options.fertileReproduction)
+      parent.oothecaPrimed = true;
     const cooldown = (piece) =>
       round(state) +
       (has(piece, "Ovulação Induzida") ? 2 : 3) +

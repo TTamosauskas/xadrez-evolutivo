@@ -175,7 +175,7 @@ export const TRAITS = {
   Esterilidade: ["🚫", "Impede a reprodução."],
   Ooteca: [
     "🕷",
-    "Ao morrer, a peça libera uma prole nas casas livres ao redor.",
+    "Depois de uma reprodução bem-sucedida em casa fértil, fica preparada; ao morrer, libera uma prole nas casas livres ao redor.",
   ],
   Veneno: ["🫟", "Condena o agressor à morte após dois turnos próprios."],
   "Mutação Deletéria": ["💀", "A peça morre após três rodadas completas."],

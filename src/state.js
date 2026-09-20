@@ -136,6 +136,7 @@ export function newPiece(state, owner, r, c, source = {}) {
     bornRound: source.bornRound ?? bornRound,
     maturesRound: source.maturesRound ?? bornRound,
     nextReproductionRound: source.nextReproductionRound ?? bornRound,
+    oothecaPrimed: source.oothecaPrimed ?? false,
   };
   syncReproTraits(piece);
   return normalizePhotosyntheticRank(piece);
@@ -978,7 +979,8 @@ export function assertState(state) {
       (p.photosynthesisCell !== undefined &&
         !integer(p.photosynthesisCell, 0, 63)) ||
       (p.photosynthesisSinceTurn !== undefined &&
-        !integer(p.photosynthesisSinceTurn))
+        !integer(p.photosynthesisSinceTurn)) ||
+      typeof p.oothecaPrimed !== "boolean"
     )
       throw Error("Perfil inválido.");
     ids.add(p.id);
