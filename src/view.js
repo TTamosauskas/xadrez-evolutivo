@@ -275,7 +275,7 @@ export function render(
       symbol = make(
         "span",
         SYMBOLS[actor.owner][actor.rank],
-        `piece ${actor.owner} selected-piece-symbol`,
+        `piece ${actor.owner} selected-piece-symbol${senescent(state, actor) ? " senescent" : ""}`,
       );
     heading.append(
       symbol,
