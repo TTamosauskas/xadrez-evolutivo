@@ -127,9 +127,15 @@ export function render(
       : state.pendingEcologicalEvents > 0
         ? "Evento ecológico pendente"
         : "",
-    ...diseases.map(
-      (d) => `Patógeno: ${d.mortality}% · desfecho em ${d.delay} rodadas`,
-    ),
+    ...diseases.map((d) => {
+      const label =
+        d.source === "vector"
+          ? "Patógeno vetorial"
+          : d.source === "population"
+            ? "Patógeno populacional"
+            : "Patógeno ecológico";
+      return `${label}: ${d.mortality}% · desfecho em ${d.delay} rodadas`;
+    }),
   ]
     .filter(Boolean)
     .join(" | ");
