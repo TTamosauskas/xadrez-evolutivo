@@ -163,11 +163,14 @@ export function reproGenesFromTraits(activeTraits = [], hiddenRecessives = []) {
   for (const trait of hiddenRecessives) {
     const entry = traitEntry(trait);
     if (!entry) continue;
-    const def = REPRO_LOCI[entry.locus];
-    genes[entry.locus] = [
-      { value: entry.value, dominance: "recessive" },
-      neutralAllele(def.normal),
-    ];
+    const def = REPRO_LOCI[entry.locus],
+      pair = genes[entry.locus],
+      neutralIndex = pair.findIndex((allele) => allele.value === def.normal),
+      replaceIndex = neutralIndex >= 0 ? neutralIndex : 1;
+    pair[replaceIndex] = {
+      value: entry.value,
+      dominance: "recessive",
+    };
   }
   return genes;
 }
