@@ -32,6 +32,7 @@ import {
   validScenario,
 } from "./scenarios.js";
 import {
+  ARENA_RECESSIVE_COUNT,
   arenaProfile,
   chooseArenaRecessives,
   completeArenaGenome,
@@ -863,6 +864,10 @@ function arenaProfiles(
               genomes[index],
               (seed + ownerIndex * 101 + index * 17) >>> 0,
               preferred,
+            );
+          if (recessives.length !== ARENA_RECESSIVE_COUNT)
+            throw Error(
+              "Genoma da Arena não permite dois genes recessivos sem quebrar dependências.",
             );
           return arenaProfile(
             genomes[index],
