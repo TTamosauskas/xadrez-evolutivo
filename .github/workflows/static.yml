@@ -19,10 +19,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Run unit tests
-        id: unit_tests
-        continue-on-error: true
-        run: npm test
+      - run: npm test
       - name: Simulate representative games
         id: simulate
         continue-on-error: true
@@ -49,7 +46,7 @@ jobs:
           DIAGNOSTIC_TURN_LIMIT: 300
           DIAGNOSTIC_TAIL: 100
       - name: Enforce simulation envelope
-        if: steps.unit_tests.outcome == 'failure' || steps.simulate.outcome == 'failure' || steps.period_benchmark.outcome == 'failure' || steps.stall_diagnostics.outcome == 'failure'
+        if: steps.simulate.outcome == 'failure' || steps.period_benchmark.outcome == 'failure' || steps.stall_diagnostics.outcome == 'failure'
         run: exit 1
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
