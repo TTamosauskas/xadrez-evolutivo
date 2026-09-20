@@ -63,8 +63,27 @@ export function photosynthesisDelayTurns(state) {
   if (population <= 17) return 8;
   return 10;
 }
+export const SENESCENCE_AGE = 25;
+export const MAX_NATURAL_AGE = 48;
+export const multicellular = (piece) =>
+  !!piece && (piece.traits ?? []).includes("Multicelularismo");
+export const pieceAge = (state, piece) =>
+  piece && Number.isInteger(piece.bornRound)
+    ? Math.max(0, round(state) - piece.bornRound)
+    : 0;
+export const senescent = (state, piece) =>
+  multicellular(piece) && pieceAge(state, piece) >= SENESCENCE_AGE;
+export function naturalDeathChance(state, piece) {
+  if (!multicellular(piece)) return 0;
+  const age = pieceAge(state, piece);
+  if (age < SENESCENCE_AGE) return 0;
+  if (age < 33) return 0.05;
+  if (age < 41) return 0.1;
+  if (age < MAX_NATURAL_AGE) return 0.2;
+  return 1;
+}
 export const juvenile = (state, piece) =>
-  !!piece &&
+  multicellular(piece) &&
   Number.isInteger(piece.maturesRound) &&
   round(state) < piece.maturesRound;
 export const reproductionReady = (state, piece) =>
