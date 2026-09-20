@@ -23,6 +23,7 @@ import {
   domesticPlacementTargets,
   socialDefenseTargets,
   ovoviviparousPlacementTargets,
+  canParasitize,
 } from "./moves.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
@@ -239,37 +240,10 @@ export function render(
           badges.unshift({ text: `🔴+${viviparousCarried}` });
         if (ovoviviparousCarried)
           badges.unshift({ text: `⚪+${ovoviviparousCarried}` });
-        const selectedPiece = actor?.id === p.id,
-          visibleBadges = selectedPiece ? badges : badges.slice(0, 5),
-          badgeRow = make(
-            "span",
-            undefined,
-            `badges${selectedPiece ? " selected-badges" : ""}`,
-          ),
-          split = visibleBadges.length > 14
-            ? Math.ceil(visibleBadges.length / 2)
-            : visibleBadges.length;
-        visibleBadges.forEach((badge, index) => {
-          const icon = make("span", badge.text, "badge-icon");
-          if (selectedPiece) {
-            const outer = visibleBadges.length <= 14 || index < split,
-              ringIndex = outer ? index : index - split,
-              ringCount = outer ? split : visibleBadges.length - split,
-              angle = ringCount ? (ringIndex / ringCount) * 360 - 90 : -90;
-            icon.style.setProperty("--badge-angle", `${angle}deg`);
-            icon.style.setProperty(
-              "--badge-radius",
-              outer
-                ? "clamp(26px, 4.7vw, 44px)"
-                : "clamp(17px, 3.2vw, 30px)",
-            );
-            icon.style.setProperty(
-              "--badge-delay",
-              `${Math.min(index * 24, 288)}ms`,
-            );
-          }
-          badgeRow.append(icon);
-        });
+        const visibleBadges = badges.slice(0, 5),
+          badgeRow = make("span", undefined, "badges");
+        for (const badge of visibleBadges)
+          badgeRow.append(make("span", badge.text, "badge-icon"));
         cell.append(badgeRow);
       }
       board.append(cell);
@@ -281,6 +255,33 @@ export function render(
     $("board")
       .querySelector(`[data-r="${focusKey[0]}"][data-c="${focusKey[1]}"]`)
       ?.focus({ preventScroll: true });
+  const pieceActions = $("piece-actions");
+  pieceActions.replaceChildren();
+  if (
+    actor &&
+    actor.owner === state.current &&
+    state.phase === "move" &&
+    !locked &&
+    !busy
+  ) {
+    const selfReproduction = targets.some(
+      (target) => target.r === actor.r && target.c === actor.c,
+    );
+    if (selfReproduction) {
+      const button = make("button", "Reproduzir", "piece-action");
+      button.type = "button";
+      button.dataset.pieceAction = "reproduce";
+      button.dataset.pieceId = actor.id;
+      pieceActions.append(button);
+    }
+    if (canParasitize(state, actor)) {
+      const button = make("button", "Parasitismo", "piece-action");
+      button.type = "button";
+      button.dataset.pieceAction = "parasitize";
+      button.dataset.pieceId = actor.id;
+      pieceActions.append(button);
+    }
+  }
   $("pass").disabled =
     state.phase === "origin" ||
     locked ||
@@ -374,13 +375,14 @@ export function render(
       ancestralOnly = [...new Set(actor.ancestry ?? [])].filter(
         (trait) => TRAITS[trait] && !actor.traits.includes(trait),
       ),
-      ancestry = make("details", undefined, "ancestry-toggle"),
-      ancestrySummary = make(
-        "summary",
-        `Ancestralidade da linhagem (${ancestralOnly.length})`,
-      ),
-      ancestryList = make("div", undefined, "ancestry-list");
-    if (ancestralOnly.length)
+      selectedContent = [heading, activeHeading, ...details];
+    if (ancestralOnly.length) {
+      const ancestry = make("details", undefined, "ancestry-toggle"),
+        ancestrySummary = make(
+          "summary",
+          `Ancestralidade da linhagem (${ancestralOnly.length})`,
+        ),
+        ancestryList = make("div", undefined, "ancestry-list");
       for (const trait of ancestralOnly)
         ancestryList.append(
           make(
@@ -389,21 +391,10 @@ export function render(
             "ancestry-chip",
           ),
         );
-    else
-      ancestryList.append(
-        make(
-          "p",
-          "Nenhuma característica ancestral suprimida.",
-          "selected-ancestral",
-        ),
-      );
-    ancestry.append(ancestrySummary, ancestryList);
-    $("selected").replaceChildren(
-      heading,
-      activeHeading,
-      ...details,
-      ancestry,
-    );
+      ancestry.append(ancestrySummary, ancestryList);
+      selectedContent.push(ancestry);
+    }
+    $("selected").replaceChildren(...selectedContent);
   } else if (origin?.selected) {
     const heading = make("div", undefined, "selected-piece-heading");
     heading.append(
