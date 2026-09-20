@@ -1,4 +1,4 @@
-import { has, inside, square, other, OWNERS, coord, distance } from "./constants.js";
+import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance } from "./constants.js";
 import {
   activateOrigin,
   clone,
@@ -283,7 +283,7 @@ function photosynthesisExtraCell(state, p) {
 
 function recordPhotosynthesis(state, owner) {
   for (const p of state.pieces) {
-    if (p.owner !== owner || !has(p, "Fotossíntese")) continue;
+    if (p.owner !== owner || !canPhotosynthesize(p)) continue;
     const cell = square(p.r, p.c);
     if (
       terrain(state, p.r, p.c) !== "neutral" ||
@@ -301,7 +301,7 @@ function recordPhotosynthesis(state, owner) {
 }
 function maturePhotosynthesis(state, owner) {
   for (const p of state.pieces) {
-    if (p.owner !== owner || !has(p, "Fotossíntese")) continue;
+    if (p.owner !== owner || !canPhotosynthesize(p)) continue;
     const cell = square(p.r, p.c);
     const delay = photosynthesisDelayTurns(state);
     if (
@@ -1038,7 +1038,9 @@ function executeMove(ctx, action) {
     fertileResource =
       !scavenging &&
       ((!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay),
-    fertile = fertileResource && (!carnivore || omnivore),
+    fertile =
+      fertileResource &&
+      (!carnivore || omnivore || has(p, "Mixotrofia")),
     photosyntheticPrey = pieceCapture && has(victim, "Fotossíntese"),
     predation =
       pieceCapture &&
