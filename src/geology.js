@@ -323,6 +323,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Chifre",
   "Antropização",
   "Animais Domésticos",
+  "Plantas Domesticadas",
   "Neocórtex Desenvolvido",
   "Canibalismo",
   "Parasitismo",
