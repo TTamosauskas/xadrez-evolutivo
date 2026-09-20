@@ -580,6 +580,21 @@ export function createCampaignState(
   return createState(seed, { originPrelude: true, scenario });
 }
 
+function earthFounderRecessives(historicalTraits, activeTraits, plant) {
+  const active = new Set(activeTraits);
+  return [...new Set(historicalTraits)]
+    .filter(
+      (trait) =>
+        TRAITS[trait] &&
+        !active.has(trait) &&
+        trait !== "Respiração anaeróbia" &&
+        (plant
+          ? trait !== "Predação" && !PLANT_INCOMPATIBLE_TRAITS.has(trait)
+          : trait !== "Fotossíntese" && !PLANT_DERIVED_TRAITS.has(trait)),
+    )
+    .slice(-2);
+}
+
 function previewFounderProfiles(stageIndex) {
   const stage = GEOLOGICAL_STAGES[stageIndex],
     curated = EARTH_FOUNDER_GENOMES[stage?.id];
@@ -599,11 +614,21 @@ function previewFounderProfiles(stageIndex) {
         rank: 0,
         traits: normalizeActiveTraits(curated.plant, "Fotossíntese"),
         ancestry: [...new Set(curated.plant)],
+        recessiveTraits: earthFounderRecessives(
+          historicalTraits,
+          curated.plant,
+          true,
+        ),
       },
       companion: {
         rank: curated.rank ?? 0,
         traits: normalizeActiveTraits(curated.animal, "Predação"),
         ancestry: [...new Set(curated.animal)],
+        recessiveTraits: earthFounderRecessives(
+          historicalTraits,
+          curated.animal,
+          false,
+        ),
       },
     };
   }
@@ -633,11 +658,21 @@ function previewFounderProfiles(stageIndex) {
       rank: 0,
       traits: normalizeActiveTraits(plantTraits, "Fotossíntese"),
       ancestry: [...new Set(plantTraits)],
+      recessiveTraits: earthFounderRecessives(
+        historicalTraits,
+        plantTraits,
+        true,
+      ),
     },
     companion: {
       rank: animalRank,
       traits: normalizeActiveTraits(animalTraits, "Predação"),
       ancestry: [...new Set(animalTraits)],
+      recessiveTraits: earthFounderRecessives(
+        historicalTraits,
+        animalTraits,
+        false,
+      ),
     },
   };
 }
