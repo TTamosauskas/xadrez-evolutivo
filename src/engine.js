@@ -156,6 +156,10 @@ function hostileHazardKills(state, piece) {
   return !has(piece, "Carapaça") || random(state) >= 1 / 4;
 }
 
+function nocturnalRound(state) {
+  return (round(state) + 1) % 2 === 0;
+}
+
 function underlyingTerrain(state, cell) {
   if (state.event?.hazards.includes(cell))
     return state.event.snapshots[cell] ?? "neutral";
@@ -832,6 +836,37 @@ function executeMove(ctx, action) {
       return;
     }
   }
+  const nocturnalEvasion =
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    nocturnalRound(state) &&
+    has(victim, "Notívago") &&
+    !has(p, "Visão Noturna");
+  if (nocturnalEvasion) {
+    if (random(state) < 1 / 2) {
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 🌙 Notívago escapou da captura durante a rodada noturna.`,
+      );
+      advanceTurn(ctx);
+      settle(ctx);
+      return;
+    }
+  } else if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Velocidade") &&
+    !has(p, "Velocidade") &&
+    random(state) < 1 / 4
+  ) {
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 💨 Velocidade permitiu escapar da captura.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
   if (
     pieceCapture &&
     has(victim, "Espinhos") &&
@@ -860,6 +895,21 @@ function executeMove(ctx, action) {
     log(
       state,
       `${OWNERS[victim.owner]}: 🫎 Chifre matou o agressor antes da captura.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Pele grossa") &&
+    !has(p, "Garras") &&
+    random(state) < 1 / 4
+  ) {
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 🐘 Pele grossa resistiu à captura em ${coord(victim.r, victim.c)}.`,
     );
     advanceTurn(ctx);
     settle(ctx);
