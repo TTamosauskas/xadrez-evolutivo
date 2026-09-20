@@ -82,6 +82,29 @@ test("period innovations follow the didactic sequence", () => {
   ]);
 });
 
+test("basal respiration precedes photosynthesis and predation, while aerobic respiration starts in the Proterozoic", () => {
+  const s = createState(109),
+    p = s.pieces[0];
+
+  assert.ok(p.traits.includes("Respiração anaeróbia"));
+  assert.ok(p.ancestry.includes("Respiração anaeróbia"));
+  assert.ok(s.historicalTraits.includes("Respiração anaeróbia"));
+  assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
+  assert.equal(traitUnlocked(s, "Predação", p), false);
+  assert.equal(traitUnlocked(s, "Respiração aeróbia", p), false);
+
+  s.historicalTraits.push("Fotossíntese");
+  assert.equal(traitUnlocked(s, "Predação", p), true);
+
+  s.geologicalStage = "proterozoic";
+  s.cycle = 1;
+  assert.equal(traitUnlocked(s, "Respiração aeróbia", p), true);
+  const aerobic = applyTraitMutation(p.traits, "Respiração aeróbia");
+  assert.ok(aerobic.includes("Respiração aeróbia"));
+  assert.equal(aerobic.includes("Respiração anaeróbia"), false);
+  assert.equal(has({ traits: aerobic }, "Respiração anaeróbia"), true);
+});
+
 test("Archean innovations are split across the first two cycles", () => {
   const s = createState(110),
     p = s.pieces[0];
@@ -127,7 +150,7 @@ test("geological event pools contain only valid ecological events and no pathoge
 
 test("Archean starts green and stationary", () => {
   const s = createState(101);
-  assert.equal(s.version, 10);
+  assert.equal(s.version, 11);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
