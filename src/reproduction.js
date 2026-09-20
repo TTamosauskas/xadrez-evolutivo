@@ -366,8 +366,9 @@ function makeBrood(state, parent, mate, profile, count) {
 
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
-  child.maturesRound =
-    round(state) + (has(child, "Precocidade Sexual") ? 1 : 2);
+  child.maturesRound = has(child, "Multicelularismo")
+    ? round(state) + (has(child, "Precocidade Sexual") ? 1 : 2)
+    : round(state);
   if (has(child, "Mutação Deletéria"))
     child.deleteriousDue = round(state) + 3;
   state.pieces.push(child);
