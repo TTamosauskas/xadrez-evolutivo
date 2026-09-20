@@ -403,23 +403,27 @@ main {
   letter-spacing: 0.07em;
   text-transform: uppercase;
 }
+.recessive-toggle,
 .ancestry-toggle {
   margin-top: 18px;
   padding-top: 12px;
   border-top: 1px solid #363e32;
 }
+.recessive-toggle summary,
 .ancestry-toggle summary {
   cursor: pointer;
   color: #c1c6b5;
   font-size: 13px;
   font-weight: 750;
 }
+.recessive-list,
 .ancestry-list {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
   margin-top: 11px;
 }
+.recessive-chip,
 .ancestry-chip {
   display: inline-flex;
   align-items: center;
