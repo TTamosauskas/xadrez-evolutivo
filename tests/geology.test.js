@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { TRAITS, EVENTS } from "../src/constants.js";
+import { TRAITS, EVENTS, has } from "../src/constants.js";
 import {
   GEOLOGICAL_STAGES,
   TRAIT_STAGE,
@@ -22,6 +22,7 @@ import {
   MULTICELLULAR_DEPENDENT_TRAITS,
 } from "../src/geology.js";
 import {
+  createPeriodState,
   createState,
   createSuccessorState,
   newPiece,
@@ -300,6 +301,21 @@ test("without a distinct ecological counterpart the dominant founder still seeds
   );
 });
 
+test("late-period founders separate compact active phenotype from full ancestry", () => {
+  const s = createPeriodState("quaternary", 147),
+    founders = s.pieces;
+  assert.ok(founders.length >= 2);
+  for (const piece of founders) {
+    assert.ok(piece.ancestry.length >= piece.traits.length);
+    assert.ok(piece.ancestry.length > piece.traits.length);
+    for (const family of ACTIVE_TRAIT_FAMILIES)
+      assert.ok(
+        family.traits.filter((trait) => piece.traits.includes(trait)).length <= 1,
+        family.id,
+      );
+  }
+});
+
 test("evolutionary dependencies follow lineage ancestry without cumulative traits", () => {
   const s = createState(107, {
       geologicalStage: "ediacaran",
@@ -464,22 +480,19 @@ test("active phenotype families replace older expressions without erasing ancest
 
 test("later active phenotypes retain capabilities of the form they replaced", () => {
   const advanced = { traits: ["Locomoção Avançada"] },
-    flowering = { traits: ["Fotossíntese", "Angiospermas"] },
+    vascularSeedPlant = { traits: ["Gimnospermas"] },
+    flowering = { traits: ["Angiospermas"] },
+    omnivore = { traits: ["Onívoro"] },
     eusocial = { traits: ["Eusocialidade"] };
-  assert.equal(movesFor({
-    phase: "over",
-    chain: null,
-    pieces: [],
-  }, advanced).length, 0);
-  // Capability inheritance is exposed through the normal trait checks used
-  // by the engine; mutation eligibility should therefore not offer regressions.
-  const s = createState(146, {
-    geologicalStage: "quaternary",
-    historicalTraits: GEOLOGICAL_STAGES.flatMap((stage) => stage.required),
-  });
-  assert.equal(traitUnlocked(s, "Locomoção", advanced), true);
-  assert.equal(traitUnlocked(s, "Embriófitas", flowering), true);
-  assert.equal(traitUnlocked(s, "Sociabilidade", eusocial), true);
+
+  assert.equal(has(advanced, "Locomoção"), true);
+  assert.equal(has(vascularSeedPlant, "Embriófitas"), true);
+  assert.equal(has(vascularSeedPlant, "Traqueófitas"), true);
+  assert.equal(has(flowering, "Embriófitas"), true);
+  assert.equal(has(flowering, "Traqueófitas"), true);
+  assert.equal(has(omnivore, "Carnívoro"), true);
+  assert.equal(has(omnivore, "Herbívoro"), true);
+  assert.equal(has(eusocial, "Sociabilidade"), true);
 });
 
 test("Fotossíntese and Predação switch branches by substitutive mutation", () => {
