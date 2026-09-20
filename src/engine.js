@@ -371,6 +371,7 @@ function advanceTurn(ctx) {
     if (extinction(state)) return;
     tickEnvironment(ctx);
     if (extinction(state)) return;
+    restoreExtremophyteFertility(state);
     tickDiseases(ctx);
     for (const p of [...state.pieces])
       if (has(p, "Mutação Deletéria") && p.deleteriousDue <= round(state))
