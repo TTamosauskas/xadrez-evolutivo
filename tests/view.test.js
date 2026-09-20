@@ -181,6 +181,49 @@ test("selected panel inspects either side and explains only that piece traits", 
   assert.equal(d.querySelectorAll(".cell.legal").length, 0);
   dom.window.close();
 });
+test("selected legend separates active traits from ancestry behind a closed toggle", () => {
+  const dom = setup(),
+    s = createState(22),
+    piece = s.pieces[0];
+  piece.traits = ["Multicelularismo", "Predação", "Onívoro", "Locomoção Avançada"];
+  piece.ancestry = [
+    "Multicelularismo",
+    "Predação",
+    "Carnívoro",
+    "Onívoro",
+    "Locomoção",
+    "Locomoção Avançada",
+  ];
+
+  render(dom.window.document, s, { selected: piece.id });
+  const d = dom.window.document,
+    selected = d.getElementById("selected"),
+    toggle = selected.querySelector(".ancestry-toggle"),
+    summary = toggle.querySelector("summary");
+
+  assert.match(selected.textContent, /Fenótipo ativo/);
+  assert.match(selected.textContent, /Onívoro/);
+  assert.match(selected.textContent, /Locomoção Avançada/);
+  assert.ok(toggle);
+  assert.equal(toggle.open, false);
+  assert.match(summary.textContent, /Ancestralidade da linhagem \(2\)/);
+  assert.match(toggle.textContent, /Carnívoro/);
+  assert.match(toggle.textContent, /Locomoção/);
+  assert.doesNotMatch(
+    toggle.querySelector(".ancestry-list").textContent,
+    /Onívoro|Locomoção Avançada/,
+  );
+
+  const cell = d.querySelector(
+    `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+  );
+  const boardIcons = cell.querySelector(".badges").textContent;
+  assert.match(boardIcons, /🐻/);
+  assert.match(boardIcons, /🐪/);
+  assert.doesNotMatch(boardIcons, /🦁/);
+  dom.window.close();
+});
+
 test("juveniles render smaller and Lactação highlights eligible children", () => {
   const dom = setup(),
     s = createState(41),
