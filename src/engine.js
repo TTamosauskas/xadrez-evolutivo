@@ -706,6 +706,7 @@ function executeMove(ctx, action) {
   }
   const second = state.chain === p.id,
     locomotion = has(p, "Locomoção Avançada"),
+    botanicalPredation = target.botanicalPredation ?? null,
     landingCell = square(target.r, target.c),
     landingTerrain = terrain(state, target.r, target.c),
     stableLanding =
@@ -856,6 +857,48 @@ function executeMove(ctx, action) {
     );
     advanceTurn(ctx);
     settle(ctx);
+    return;
+  }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Madeira") &&
+    random(state) < 1 / 4
+  ) {
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 🪵 Madeira resistiu à captura em ${coord(victim.r, victim.c)}.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+  if (
+    botanicalPredation &&
+    pieceCapture &&
+    victim.owner !== p.owner
+  ) {
+    const victimCell = square(victim.r, victim.c);
+    ctx.reserved.add(victimCell);
+    const killed = ctx.kill(
+      victim.id,
+      `captura por ${botanicalPredation}`,
+      p,
+    );
+    let born = 0;
+    if (killed) {
+      state.lastSuccessfulCaptureRound = round(state);
+      state.offensiveStagnation = null;
+      markDecomposition(state, victimCell);
+      born = reproduce(ctx, p, null, "predação");
+      log(
+        state,
+        `${OWNERS[p.owner]}: ${botanicalPredation === "Haustório" ? "🪝" : "👄"} ${botanicalPredation} consumiu uma criatura em ${coord(victim.r, victim.c)} sem deslocamento.`,
+      );
+    }
+    ctx.reserved.delete(victimCell);
+    if (born > 0 && deferReproductionPlacement(state, p)) return;
+    completeMove(ctx, p, false, false);
     return;
   }
   ctx.reserved.add(square(target.r, target.c));
