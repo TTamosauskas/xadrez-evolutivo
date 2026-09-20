@@ -9,6 +9,9 @@ import {
 } from "./geology.js";
 
 export const GENETIC_TRAITS = Object.freeze(Object.keys(TRAITS));
+const GENETIC_INDEX = new Map(
+  GENETIC_TRAITS.map((trait, index) => [trait, index]),
+);
 export const BASAL_GENETIC_TRAIT = "Respiração anaeróbia";
 export const NEGATIVE_GENETIC_TRAITS = new Set([
   "Esterilidade",
@@ -195,6 +198,11 @@ export function cloneGenome(source) {
   return normalizeGenome(source);
 }
 
+function readableGenome(source) {
+  const candidate = source?.genome ?? source;
+  return validGenome(candidate) ? candidate : normalizeGenome(candidate);
+}
+
 export function withoutGenomeTraits(source, traits = []) {
   const genome = cloneGenome(source?.genome ?? source);
   for (const trait of traits)
@@ -232,7 +240,7 @@ function locusStrength(pair) {
 }
 
 export function genomeCarriedTraits(source) {
-  const genome = normalizeGenome(source);
+  const genome = readableGenome(source);
   return GENETIC_TRAITS.filter((trait) =>
     genome[trait].some((allele) => allele.value === "derived"),
   );
@@ -247,8 +255,12 @@ export function expressGenome(
   previousTraits = [],
   preferredEnergy = null,
 ) {
-  const genome = normalizeGenome(source),
-    carried = new Set(genomeCarriedTraits(genome)),
+  const genome = readableGenome(source),
+    carried = new Set(
+      GENETIC_TRAITS.filter((trait) =>
+        genome[trait].some((allele) => allele.value === "derived"),
+      ),
+    ),
     raw = GENETIC_TRAITS.filter((trait) => locusExpressed(genome[trait]));
 
   let energyPreference = preferredEnergy;
@@ -311,7 +323,7 @@ export function expressGenome(
 
 export function hiddenRecessiveTraits(source) {
   const profile = source?.genome ? source : null,
-    genome = normalizeGenome(profile?.genome ?? source),
+    genome = readableGenome(profile?.genome ?? source),
     expressed = new Set(
       profile?.traits ?? expressGenome(genome),
     );
@@ -329,18 +341,26 @@ export function hiddenRecessiveTraits(source) {
 }
 
 export function genomeSignature(source) {
-  const genome = normalizeGenome(source?.genome ?? source);
-  return GENETIC_TRAITS.map(
-    (trait) =>
-      `${trait}:${genome[trait]
-        .map((allele) => `${allele.value[0]}:${allele.dominance[0]}`)
-        .join("/")}`,
-  ).join(";");
+  const genome = readableGenome(source);
+  return GENETIC_TRAITS.flatMap((trait) => {
+    const pair = genome[trait];
+    if (pair.every((allele) => allele.value === "ancestral")) return [];
+    const code = pair
+      .map((allele) =>
+        allele.value === "ancestral"
+          ? "a"
+          : allele.dominance === "dominant"
+            ? "D"
+            : "r",
+      )
+      .join("");
+    return [`${GENETIC_INDEX.get(trait)}${code}`];
+  }).join(".");
 }
 
 export function inheritSexualGenome(a, b, random) {
-  const ga = normalizeGenome(a?.genome ?? a),
-    gb = normalizeGenome(b?.genome ?? b);
+  const ga = readableGenome(a),
+    gb = readableGenome(b);
   return Object.fromEntries(
     GENETIC_TRAITS.map((trait) => [
       trait,
