@@ -7,6 +7,11 @@ import { render } from "../src/view.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
+import {
+  cloneGenome,
+  genomeFromTraits,
+  syncGenomePhenotype,
+} from "../src/genetics.js";
 function setup() {
   const dom = new JSDOM(
     readFileSync(new URL("../index.html", import.meta.url), "utf8"),
@@ -220,10 +225,8 @@ test("selected legend shows hidden recessive genes before ancestry without dupli
     piece = s.pieces[0];
   piece.traits = ["Multicelularismo", "Predação"];
   piece.ancestry = ["Multicelularismo", "Predação", "Ovíparo", "Locomoção"];
-  piece.reproGenes.development = [
-    { value: "oviparous", dominance: "recessive" },
-    { value: "immediate", dominance: "neutral" },
-  ];
+  piece.genome = genomeFromTraits(piece.traits, ["Ovíparo"]);
+  syncGenomePhenotype(piece, "Predação");
 
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
@@ -495,7 +498,7 @@ test("renders dispersing Gymnosperm seeds on the board", () => {
       owner: parent.owner,
       rank: parent.rank,
       traits: ["Fotossíntese", "Embriófitas", "Traqueófitas", "Gimnospermas"],
-      reproGenes: structuredClone(parent.reproGenes),
+      genome: cloneGenome(parent.genome),
       mutations: 4,
       generation: 1,
       parentId: parent.id,
@@ -657,7 +660,7 @@ test("renders domestic placement and Sociabilidade sacrifice targets", () => {
       rank: parent.rank,
       traits: ["Animais Domésticos"],
       ancestry: ["Animais Domésticos"],
-      reproGenes: structuredClone(parent.reproGenes),
+      genome: cloneGenome(parent.genome),
       mutations: 1,
       generation: 1,
       parentId: parent.id,
