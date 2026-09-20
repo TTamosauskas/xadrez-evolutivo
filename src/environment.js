@@ -554,7 +554,104 @@ function advancePatternedHabitat(ctx) {
   for (const id of doomed) ctx.kill(id, "mudança do habitat por Conway");
 }
 
-export function advanceConway(ctx) {
+function advanceBlockedConway(ctx) {
+  const state = ctx.state,
+    event = state.event;
+  if (currentGeologicalStage(state).id === "proterozoic")
+    return advancePrimordialConway(ctx);
+
+  if (event)
+    for (const [cell, base] of Object.entries(event.snapshots))
+      state.board[Number(cell)] = base;
+  for (const site of state.deathSites) state.board[site.cell] = site.base;
+
+  const before = [...state.board],
+    alive = (cell, type) => {
+      const r = Math.floor(cell / 8),
+        c = cell % 8;
+      let neighbors = 0;
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++)
+          if (
+            (dr || dc) &&
+            inside(r + dr, c + dc) &&
+            before[square(r + dr, c + dc)] === type
+          )
+            neighbors++;
+      return neighbors === 3 || (before[cell] === type && neighbors === 2);
+    };
+
+  state.board = before.map((_, cell) =>
+    alive(cell, "fertile")
+      ? "fertile"
+      : alive(cell, "hostile")
+        ? "hostile"
+        : "neutral",
+  );
+  for (const cell of state.naturalBarriers)
+    state.board[cell] = before[cell] === "fertile" ? "fertile" : "neutral";
+
+  for (const type of ["fertile", "hostile"]) {
+    if (!state.board.includes(type)) seedCluster(state, type);
+    const unchanged =
+      before.some((terrain) => terrain === type) &&
+      before.every(
+        (terrain, cell) =>
+          (terrain === type) === (state.board[cell] === type),
+      );
+    if (!unchanged) continue;
+    const options = [];
+    for (const cell of allCells().filter(
+      (candidate) => state.board[candidate] === type,
+    ))
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          const r = Math.floor(cell / 8) + dr,
+            c = (cell % 8) + dc;
+          if (
+            (dr || dc) &&
+            inside(r, c) &&
+            state.board[square(r, c)] === "neutral" &&
+            !at(state, r, c) &&
+            !barrierAt(state, r, c)
+          )
+            options.push([cell, square(r, c)]);
+        }
+    const move = pick(state, options);
+    if (move) {
+      state.board[move[0]] = "neutral";
+      state.board[move[1]] = type;
+    }
+  }
+
+  for (const site of state.deathSites) {
+    if (site.base !== "fertile") site.base = state.board[site.cell];
+    if (!event?.hazards.includes(site.cell))
+      state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
+  }
+  if (event)
+    for (const key of Object.keys(event.snapshots)) {
+      const cell = Number(key);
+      event.snapshots[cell] = state.board[cell];
+      state.board[cell] = "hostile";
+    }
+
+  const doomed = state.pieces
+    .filter((piece) => {
+      const cell = square(piece.r, piece.c);
+      return (
+        state.board[cell] === "hostile" &&
+        !hasDecomposition(state, cell) &&
+        !has(piece, "Voo") &&
+        !event?.hazards.includes(cell)
+      );
+    })
+    .map((piece) => piece.id);
+  for (const id of doomed) ctx.kill(id, "mudança do habitat por Conway");
+}
+
+export function advanceConway(ctx, options = {}) {
+  if (options.blocked) return advanceBlockedConway(ctx);
   const state = ctx.state;
   if (currentGeologicalStage(state).id === "proterozoic")
     return advancePrimordialConway(ctx);
