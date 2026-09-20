@@ -15,6 +15,7 @@ import {
   V2_KEY,
 } from "../src/storage.js";
 import { createState, clone, assertState } from "../src/state.js";
+import { has } from "../src/constants.js";
 import { reproPhenotype } from "../src/reproductive-genetics.js";
 import { GEOLOGICAL_STAGES } from "../src/geology.js";
 test("round trip saves deterministic state and rejects duplicate occupancy", () => {
@@ -382,9 +383,9 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   assert.equal(s.nextEgg, 1);
   assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "local");
   assert.ok(!s.pieces[0].traits.includes("Ovos"));
-  assert.ok(s.pieces[0].traits.includes("Locomoção"));
+  assert.equal(s.pieces[0].traits.includes("Locomoção"), false);
   assert.ok(s.pieces[0].traits.includes("Locomoção Avançada"));
-  assert.ok(s.pieces.every((p) => p.traits.includes("Locomoção")));
+  assert.ok(s.pieces.every((p) => has(p, "Locomoção")));
   assert.ok(s.pieces.every((p) => Array.isArray(p.pregnancies)));
   assert.equal(s.totalCycles, 4);
   assert.ok(s.historicalTraits.includes("Locomoção"));
