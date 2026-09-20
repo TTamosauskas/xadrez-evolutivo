@@ -4,6 +4,7 @@ import {
   ancestralReproGenes,
   gainReproAllele,
   inheritSexualReproGenes,
+  hiddenRecessiveTraits,
   reproPhenotype,
   syncReproTraits,
   validReproGenes,
@@ -29,6 +30,26 @@ test("recessive reproductive allele hides in carrier and expresses in pair", () 
   assert.equal(reproPhenotype(genes).development, "immediate");
   genes.development = [recessive("oviparous"), recessive("oviparous")];
   assert.equal(reproPhenotype(genes).development, "oviparous");
+});
+
+test("hidden recessive traits report carriers but not expressed recessives", () => {
+  const genes = ancestralReproGenes();
+  genes.development = [recessive("oviparous"), neutral("immediate")];
+  genes.dispersal = [recessive("spores"), neutral("local")];
+  assert.deepEqual(
+    new Set(hiddenRecessiveTraits(genes)),
+    new Set(["Ovíparo", "Esporos"]),
+  );
+
+  genes.development = [recessive("oviparous"), recessive("oviparous")];
+  assert.deepEqual(hiddenRecessiveTraits(genes), ["Esporos"]);
+});
+
+test("dominant alleles and recessives masked by another expressed allele are classified correctly", () => {
+  const genes = ancestralReproGenes();
+  genes.development = [dominant("viviparous"), recessive("oviparous")];
+  genes.dispersal = [dominant("spores"), neutral("local")];
+  assert.deepEqual(hiddenRecessiveTraits(genes), ["Ovíparo"]);
 });
 
 test("reproductive loci express one development strategy and spore dispersal", () => {
