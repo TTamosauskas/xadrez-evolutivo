@@ -398,72 +398,136 @@ function advancePrimordialConway(ctx) {
   for (const id of doomed) ctx.kill(id, "mudança do habitat por Conway");
 }
 
-export function advanceConway(ctx) {
-  const state = ctx.state,
-    event = state.event;
-  if (currentGeologicalStage(state).id === "proterozoic")
-    return advancePrimordialConway(ctx);
-  // Evolve the underlying habitat, then reapply the temporary event overlay.
-  if (event)
-    for (const [i, base] of Object.entries(event.snapshots))
-      state.board[Number(i)] = base;
-  const deathBases = new Map();
-  for (const site of state.deathSites) {
-    deathBases.set(site.cell, state.board[site.cell]);
-    state.board[site.cell] = site.base;
-  }
-  const before = [...state.board];
-  const alive = (i, type) => {
-    const r = Math.floor(i / 8),
-      c = i % 8;
-    let n = 0;
-    for (let dr = -1; dr <= 1; dr++)
-      for (let dc = -1; dc <= 1; dc++)
-        if (
-          (dr || dc) &&
-          inside(r + dr, c + dc) &&
-          before[square(r + dr, c + dc)] === type
-        )
-          n++;
-    return n === 3 || (before[i] === type && n === 2);
-  };
-  state.board = before.map((_, i) =>
-    alive(i, "fertile")
-      ? "fertile"
-      : alive(i, "hostile")
-        ? "hostile"
-        : "neutral",
-  );
-  for (const cell of state.naturalBarriers)
-    state.board[cell] = before[cell] === "fertile" ? "fertile" : "neutral";
-  for (const type of ["fertile", "hostile"]) {
-    if (!state.board.includes(type)) seedCluster(state, type);
-    const unchanged =
-      before.some((t) => t === type) &&
-      before.every((t, i) => (t === type) === (state.board[i] === type));
-    if (unchanged) {
-      const options = [];
-      for (const i of allCells().filter((i) => state.board[i] === type))
-        for (let dr = -1; dr <= 1; dr++)
-          for (let dc = -1; dc <= 1; dc++) {
-            const r = Math.floor(i / 8) + dr,
-              c = (i % 8) + dc;
-            if (
-              (dr || dc) &&
-              inside(r, c) &&
-              state.board[square(r, c)] === "neutral" &&
-              !at(state, r, c) &&
-              !barrierAt(state, r, c)
-            )
-              options.push([i, square(r, c)]);
-          }
-      const move = pick(state, options);
-      if (move) {
-        state.board[move[0]] = "neutral";
-        state.board[move[1]] = type;
+function habitatRange(value) {
+  if (Array.isArray(value)) return [value[0] ?? 0, value[1] ?? value[0] ?? 0];
+  const target = value ?? 0;
+  return [target, target];
+}
+
+function terrainNeighborCount(board, cell, type) {
+  const r = Math.floor(cell / 8),
+    c = cell % 8;
+  let count = 0;
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++)
+      if (
+        (dr || dc) &&
+        inside(r + dr, c + dc) &&
+        board[square(r + dr, c + dc)] === type
+      )
+        count++;
+  return count;
+}
+
+function habitatDriftCandidates(state, type) {
+  const board = state.board,
+    protectedCells = new Set([
+      ...state.barriers,
+      ...state.naturalBarriers,
+      ...state.deathSites.map((site) => site.cell),
+      ...state.fertileTraces.map((trace) => trace.cell),
+    ]),
+    current = allCells().filter(
+      (cell) => board[cell] === type && !protectedCells.has(cell),
+    ),
+    frontier = allCells().filter((cell) => {
+      if (board[cell] !== "neutral" || protectedCells.has(cell)) return false;
+      const r = Math.floor(cell / 8),
+        c = cell % 8;
+      return (
+        !barrierAt(state, r, c) &&
+        terrainNeighborCount(board, cell, type) > 0
+      );
+    });
+  return { current, frontier };
+}
+
+function chooseHabitatCell(state, cells, type, mode, pattern) {
+  if (!cells.length) return null;
+  const score = (cell) => terrainNeighborCount(state.board, cell, type),
+    ranked = shuffle(state, cells).sort((a, b) => {
+      const as = score(a),
+        bs = score(b);
+      if (mode === "remove") {
+        if (pattern === "fragmented") return bs - as;
+        if (pattern === "corridors")
+          return Math.abs(as - 2) - Math.abs(bs - 2);
+        return as - bs;
       }
+      if (pattern === "fragmented")
+        return Math.abs(as - 1) - Math.abs(bs - 1);
+      if (pattern === "corridors")
+        return Math.abs(as - 2) - Math.abs(bs - 2);
+      if (["forest", "dense", "clusters", "islands"].includes(pattern))
+        return bs - as;
+      return Math.abs(as - 2) - Math.abs(bs - 2);
+    });
+  return ranked[0] ?? null;
+}
+
+function driftTerrainWithinProfile(state, type, profile) {
+  const pattern = profile.pattern ?? "mosaic",
+    [min, max] = habitatRange(profile[type]),
+    count = state.board.filter((cell) => cell === type).length,
+    { current, frontier } = habitatDriftCandidates(state, type),
+    changeLimit = pattern === "primordial" ? 1 : 2;
+
+  if (count > max) {
+    let remaining = Math.min(changeLimit, count - max);
+    const pool = [...current];
+    while (remaining-- > 0 && pool.length) {
+      const cell = chooseHabitatCell(state, pool, type, "remove", pattern);
+      if (cell === null) break;
+      state.board[cell] = "neutral";
+      pool.splice(pool.indexOf(cell), 1);
     }
+    return;
   }
+
+  if (count < min) {
+    let remaining = Math.min(changeLimit, min - count);
+    while (remaining-- > 0) {
+      const candidates = habitatDriftCandidates(state, type).frontier;
+      const cell = chooseHabitatCell(
+        state,
+        candidates,
+        type,
+        "add",
+        pattern,
+      );
+      if (cell === null) break;
+      state.board[cell] = type;
+    }
+    return;
+  }
+
+  if (!current.length || !frontier.length || max === 0) return;
+  const from = chooseHabitatCell(state, current, type, "remove", pattern);
+  if (from === null) return;
+  state.board[from] = "neutral";
+  const candidates = habitatDriftCandidates(state, type).frontier;
+  const to = chooseHabitatCell(state, candidates, type, "add", pattern);
+  if (to === null) {
+    state.board[from] = type;
+    return;
+  }
+  state.board[to] = type;
+}
+
+function advancePatternedHabitat(ctx) {
+  const state = ctx.state,
+    event = state.event,
+    profile = habitatProfile(state);
+
+  // Evolve the underlying geological preset, never the temporary event overlay.
+  if (event)
+    for (const [cell, base] of Object.entries(event.snapshots))
+      state.board[Number(cell)] = base;
+  for (const site of state.deathSites) state.board[site.cell] = site.base;
+
+  driftTerrainWithinProfile(state, "fertile", profile);
+  driftTerrainWithinProfile(state, "hostile", profile);
+
   for (const site of state.deathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
     if (!event?.hazards.includes(site.cell))
@@ -471,23 +535,30 @@ export function advanceConway(ctx) {
   }
   if (event)
     for (const key of Object.keys(event.snapshots)) {
-      const i = Number(key);
-      event.snapshots[i] = state.board[i];
-      state.board[i] = "hostile";
+      const cell = Number(key);
+      event.snapshots[cell] = state.board[cell];
+      state.board[cell] = "hostile";
     }
-  // Retain legacy Conway mortality; other hostile risk is resolved once per round.
+
   const doomed = state.pieces
-    .filter((p) => {
-      const cell = square(p.r, p.c);
+    .filter((piece) => {
+      const cell = square(piece.r, piece.c);
       return (
         state.board[cell] === "hostile" &&
         !hasDecomposition(state, cell) &&
-        !has(p, "Voo") &&
+        !has(piece, "Voo") &&
         !event?.hazards.includes(cell)
       );
     })
-    .map((p) => p.id);
+    .map((piece) => piece.id);
   for (const id of doomed) ctx.kill(id, "mudança do habitat por Conway");
+}
+
+export function advanceConway(ctx) {
+  const state = ctx.state;
+  if (currentGeologicalStage(state).id === "proterozoic")
+    return advancePrimordialConway(ctx);
+  return advancePatternedHabitat(ctx);
 }
 function markHazard(state, event, indices) {
   for (const i of indices) {
