@@ -8,9 +8,11 @@ import {
 } from "../src/geology.js";
 import {
   ARENA_ARCHETYPES,
+  ARENA_RECESSIVE_COUNT,
   ARENA_TRAIT_BUDGET,
   arenaGenomeValid,
   arenaInterventionCount,
+  arenaRecessivePairs,
 } from "../src/arena.js";
 import {
   createArenaState,
@@ -22,6 +24,7 @@ import {
   newPiece,
 } from "../src/state.js";
 import { deserialize } from "../src/storage.js";
+import { hiddenRecessiveTraits } from "../src/reproductive-genetics.js";
 
 test("new campaigns default to Vida na Terra while low-level legacy states stay alternative", () => {
   assert.equal(createCampaignState(1).scenario, "earth");
@@ -66,10 +69,16 @@ test("alternative and arena scenarios use period-independent uniform ecological 
   assert.ok(Object.values(weights).some((weight) => weight !== 1));
 });
 
-test("all built-in Arena archetypes respect the six-mutation budget and dependency tree", () => {
+test("all built-in Arena archetypes respect the six-mutation budget and admit two safe recessives", () => {
   for (const genome of ARENA_ARCHETYPES) {
     assert.equal(genome.length, ARENA_TRAIT_BUDGET);
     assert.equal(arenaGenomeValid(genome, ARENA_TRAIT_BUDGET), true);
+    assert.ok(arenaRecessivePairs(genome).length > 0);
+    assert.ok(
+      arenaRecessivePairs(genome).every(
+        (pair) => pair.length === ARENA_RECESSIVE_COUNT,
+      ),
+    );
   }
 });
 
@@ -94,6 +103,34 @@ test("Arena starts with four engineered founders and ignores geological chronolo
   );
   assert.ok(predator);
   assert.equal(traitUnlocked(state, "Visão Binocular", predator), true);
+});
+
+test("Arena founders carry exactly two randomly recessive characteristics per lineage", () => {
+  const state = createArenaState(
+    {
+      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[1]],
+      amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[7]],
+    },
+    606,
+  );
+  for (const piece of state.pieces) {
+    const recessives = hiddenRecessiveTraits(piece),
+      genome = piece.ancestry.filter(
+        (trait) => trait !== "Respiração anaeróbia",
+      );
+    assert.equal(genome.length, ARENA_TRAIT_BUDGET);
+    assert.equal(recessives.length, ARENA_RECESSIVE_COUNT);
+    assert.ok(recessives.every((trait) => genome.includes(trait)));
+    assert.ok(recessives.every((trait) => !piece.traits.includes(trait)));
+  }
+  const blueHidden = state.pieces
+    .filter((piece) => piece.owner === "blue")
+    .map((piece) => hiddenRecessiveTraits(piece));
+  const amberHidden = state.pieces
+    .filter((piece) => piece.owner === "amber")
+    .map((piece) => hiddenRecessiveTraits(piece));
+  assert.equal(blueHidden.length, 2);
+  assert.equal(amberHidden.length, 2);
 });
 
 test("Arena carries survivor piece forms into the next engineered phase", () => {
