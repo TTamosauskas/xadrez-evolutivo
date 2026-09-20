@@ -5,6 +5,7 @@ import {
   nextGeologicalStage,
   geologicalLabel,
   habitatProfile,
+  normalizeActiveTraits,
   normalizePhotosyntheticRank,
   PLANT_DERIVED_TRAITS,
   PLANT_INCOMPATIBLE_TRAITS,
@@ -120,7 +121,7 @@ export function newPiece(state, owner, r, c, source = {}) {
     r,
     c,
     rank: source.rank ?? 0,
-    traits: [...(source.traits ?? [])],
+    traits: normalizeActiveTraits(source.traits ?? []),
     ancestry: [
       ...new Set([...(source.ancestry ?? []), ...(source.traits ?? [])]),
     ],
@@ -404,7 +405,7 @@ export function createState(seed = Date.now(), options = {}) {
     originPrelude = !!options.originPrelude,
     canonicalPair = !!options.canonicalPair;
   const state = {
-    version: 9,
+    version: 10,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
@@ -551,12 +552,12 @@ function previewFounderProfiles(stageIndex) {
     historicalTraits: [...new Set(historicalTraits)],
     primary: {
       rank: 0,
-      traits: [...new Set(plantTraits)],
+      traits: normalizeActiveTraits(plantTraits, "Fotossíntese"),
       ancestry: [...new Set(plantTraits)],
     },
     companion: {
       rank: animalRank,
-      traits: [...new Set(animalTraits)],
+      traits: normalizeActiveTraits(animalTraits, "Predação"),
       ancestry: [...new Set(animalTraits)],
     },
   };
@@ -854,7 +855,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 9 ||
+    state.version !== 10 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
