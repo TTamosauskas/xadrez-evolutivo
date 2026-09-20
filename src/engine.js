@@ -83,7 +83,7 @@ export function context(state) {
         );
         if (disease) infect(state, attacker, disease);
       }
-      if (has(dead, "Ooteca"))
+      if (has(dead, "Ooteca") && dead.oothecaPrimed)
         reproduce(ctx, dead, null, "Ooteca", { immediateDevelopment: true });
       scatterSeeds(state, dead);
       log(state, `${OWNERS[dead.owner]} perderam uma peça por ${reason}.`);
@@ -857,6 +857,8 @@ function executeMove(ctx, action) {
         !collectorStay &&
         has(p, "Antropização") &&
         terrain(state, p.r, p.c) === "fertile",
+      fertileReproduction:
+        !collectorStay && terrain(state, p.r, p.c) === "fertile",
     };
     state.chain = null;
     return;
@@ -892,6 +894,7 @@ function executeMove(ctx, action) {
       p,
       null,
       predation ? "predação" : "casa fértil",
+      { fertileReproduction: !predation && consumedFertile },
     );
     if (collectorStay && born) p.seeds--;
   }
@@ -961,7 +964,9 @@ function choosePartner(ctx, id) {
   const mate = partnersFor(state, p).find((x) => x.id === id);
   if (!mate) throw Error("Escolha um parceiro destacado.");
   if (!pending.collectorStay) state.board[square(p.r, p.c)] = "neutral";
-  const born = reproduce(ctx, p, mate, "reprodução sexuada");
+  const born = reproduce(ctx, p, mate, "reprodução sexuada", {
+    fertileReproduction: !!pending.fertileReproduction,
+  });
   if (pending.collectorStay && born) p.seeds--;
   state.partner = null;
   if (
