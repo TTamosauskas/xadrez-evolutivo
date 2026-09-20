@@ -21,10 +21,19 @@ export function fixture(
   s.barriers = [];
   s.board.fill("neutral");
   for (const spec of specs) {
-    const requestedTraits = spec.traits ?? [],
+    const requestedTraits = (spec.traits ?? []).flatMap((trait) =>
+        trait === "Locomoção"
+          ? ["Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"]
+          : [trait],
+      ),
       baseTraits = requestedTraits.includes("Fotossíntese")
         ? []
-        : ["Locomoção", "Predação"],
+        : [
+            "Predação",
+            "Locomoção Primitiva",
+            "Vertebrado",
+            "Locomoção Articulada",
+          ],
       source = {
         ...spec,
         traits: [...new Set([...baseTraits, ...requestedTraits])],
