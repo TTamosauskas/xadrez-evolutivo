@@ -32,6 +32,19 @@ test("recessive reproductive allele hides in carrier and expresses in pair", () 
   assert.equal(reproPhenotype(genes).development, "oviparous");
 });
 
+test("hidden recessive traits combine generic Arena carriers with Mendelian loci", () => {
+  const genes = ancestralReproGenes();
+  genes.development = [recessive("oviparous"), neutral("immediate")];
+  const piece = {
+    reproGenes: genes,
+    recessiveTraits: ["Camuflagem", "Velocidade"],
+  };
+  assert.deepEqual(
+    new Set(hiddenRecessiveTraits(piece)),
+    new Set(["Camuflagem", "Velocidade", "Ovíparo"]),
+  );
+});
+
 test("hidden recessive traits report carriers but not expressed recessives", () => {
   const genes = ancestralReproGenes();
   genes.development = [recessive("oviparous"), neutral("immediate")];
