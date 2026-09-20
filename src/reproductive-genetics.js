@@ -1,3 +1,5 @@
+import { hiddenRecessiveTraits as universalHiddenRecessiveTraits } from "./genetics.js";
+
 export const REPRO_LOCI = {
   development: {
     normal: "immediate",
@@ -176,6 +178,7 @@ export function reproGenesFromTraits(activeTraits = [], hiddenRecessives = []) {
 }
 
 export function hiddenRecessiveTraits(source) {
+  if (source?.genome) return universalHiddenRecessiveTraits(source);
   const genes = normalizeReproGenes(source?.reproGenes ?? source),
     hidden = new Set(source?.recessiveTraits ?? []);
   for (const [locus, def] of Object.entries(REPRO_LOCI)) {
