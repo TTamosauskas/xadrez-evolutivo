@@ -935,7 +935,7 @@ test("natural death is certain at age 48, bypasses Regeneração and leaves deco
         c: 4,
         traits: ["Multicelularismo", "Regeneração"],
       },
-      { owner: "amber", r: 0, c: 0 },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),
     elder = s.pieces[0];
   s.turn = 96;
