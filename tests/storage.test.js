@@ -18,9 +18,15 @@ import {
 } from "../src/storage.js";
 import { createState, clone, assertState } from "../src/state.js";
 import { has } from "../src/constants.js";
-import { reproPhenotype } from "../src/reproductive-genetics.js";
+import { ancestralReproGenes } from "../src/reproductive-genetics.js";
 import { GEOLOGICAL_STAGES } from "../src/geology.js";
-import { cloneGenome } from "../src/genetics.js";
+import {
+  cloneGenome,
+  dispersalMode,
+  genomeFromTraits,
+  hiddenRecessiveTraits,
+  syncGenomePhenotype,
+} from "../src/genetics.js";
 test("round trip saves deterministic state and rejects duplicate occupancy", () => {
   const s = createState(3);
   assert.deepEqual(deserialize(JSON.stringify(s)), s);
@@ -290,8 +296,8 @@ test("v5 saves split invalid Fotossíntese + Predação hybrids during migration
     migrated = load(storage);
   assert.equal(migrated.version, 13);
   assert.deepEqual(migrated.pieces[0].traits, [
-    "Fotossíntese",
     "Respiração anaeróbia",
+    "Fotossíntese",
   ]);
   assert.ok(migrated.pieces[1].traits.includes("Predação"));
   assert.ok(migrated.pieces[1].traits.includes("Locomoção"));
@@ -428,7 +434,7 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   assert.equal(s.version, 13);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
-  assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "local");
+  assert.equal(dispersalMode(s.pieces[0]), "local");
   assert.ok(!s.pieces[0].traits.includes("Ovos"));
   assert.equal(s.pieces[0].traits.includes("Locomoção"), false);
   assert.ok(s.pieces[0].traits.includes("Locomoção Avançada"));
@@ -447,6 +453,7 @@ test("v12 saves drop obsolete Ovos history discoveries and alleles", () => {
   old.discoveries.mutations.push("Ovos");
   old.discoveries.read.push("mutations:Ovos");
   old.pieces[0].traits.push("Ovos");
+  old.pieces[0].reproGenes = ancestralReproGenes();
   old.pieces[0].reproGenes.dispersal = [
     { value: "eggs", dominance: "dominant" },
     { value: "spores", dominance: "recessive" },
@@ -458,14 +465,18 @@ test("v12 saves drop obsolete Ovos history discoveries and alleles", () => {
   assert.ok(!restored.discoveries.mutations.includes("Ovos"));
   assert.ok(!restored.discoveries.read.includes("mutations:Ovos"));
   assert.ok(!restored.pieces[0].traits.includes("Ovos"));
-  assert.equal(restored.pieces[0].reproGenes.dispersal[0].value, "local");
-  assert.equal(restored.pieces[0].reproGenes.dispersal[1].value, "spores");
+  assert.equal(dispersalMode(restored.pieces[0]), "local");
+  assert.ok(hiddenRecessiveTraits(restored.pieces[0]).includes("Esporos"));
+  assert.equal(restored.pieces[0].reproGenes, undefined);
+  assert.equal(restored.pieces[0].recessiveTraits, undefined);
   assertState(restored);
 });
 
 test("v7 saves rename Construção de Nicho and preserve it as lineage ancestry", () => {
   const old = createState(122),
     piece = old.pieces[0];
+  old.version = 7;
+  for (const candidate of old.pieces) delete candidate.genome;
   old.totalCycles = 2;
   old.cycle = 2;
   piece.traits = ["Construção de Nicho"];
@@ -505,7 +516,7 @@ test("legacy amniotic eggs migrate to fixed eggs that hatch next round", () => {
         owner: parent.owner,
         rank: parent.rank,
         traits: [...parent.traits],
-        reproGenes: structuredClone(parent.reproGenes),
+        reproGenes: ancestralReproGenes(),
         mutations: 0,
         generation: 1,
         parentId: parent.id,
@@ -570,6 +581,8 @@ test("malformed nested disease and event data are rejected before replacing stat
 
 test("v7 saves migrate Construtor Avançado to Antropização and initialize new phases", () => {
   const old = createState(132);
+  old.version = 7;
+  for (const piece of old.pieces) delete piece.genome;
   old.pieces[0].traits = ["Construtor Avançado"];
   old.pieces[0].ancestry = ["Construtor Avançado"];
   old.historicalTraits = ["Construtor Avançado"];
@@ -591,8 +604,12 @@ test("v7 saves migrate Construtor Avançado to Antropização and initialize new
 test("current saves normalize derived photosynthetic forms back to Pawn", () => {
   const s = createState(150);
   s.pieces[0].rank = 5;
-  s.pieces[0].traits = ["Fotossíntese"];
-  s.pieces[0].ancestry = ["Fotossíntese"];
+  s.pieces[0].genome = genomeFromTraits([
+    "Respiração anaeróbia",
+    "Fotossíntese",
+  ]);
+  syncGenomePhenotype(s.pieces[0], "Fotossíntese");
+  s.pieces[0].ancestry = ["Respiração anaeróbia", "Fotossíntese"];
   const restored = deserialize(JSON.stringify(s));
   assert.equal(restored.pieces[0].rank, 0);
   assert.deepEqual(restored.pieces[0].traits, ["Fotossíntese"]);
