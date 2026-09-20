@@ -6,6 +6,7 @@ import {
   load,
   LEGACY_KEY,
   SAVE_KEY,
+  V11_KEY,
   V9_KEY,
   V8_KEY,
   V6_KEY,
@@ -94,6 +95,26 @@ test("loading a save discards obsolete Marco Evolutivo notices", () => {
   const restored = deserialize(JSON.stringify(s));
   assert.ok(!restored.notices.some((notice) => notice.title === "Marco Evolutivo"));
   assertState(restored);
+});
+
+test("load migrates v11 browser saves into Cenários Alternativos", () => {
+  const old = createState(6);
+  old.version = 11;
+  delete old.scenario;
+  delete old.arenaPhase;
+  delete old.arenaFounders;
+  delete old.fossilRecord;
+  const raw = JSON.stringify(old),
+    entries = new Map([[V11_KEY, raw]]),
+    storage = {
+      setItem: (key, value) => entries.set(key, value),
+      getItem: (key) => entries.get(key) ?? null,
+    },
+    migrated = load(storage);
+  assert.equal(migrated.version, 12);
+  assert.equal(migrated.scenario, "alternative");
+  assert.deepEqual(migrated.fossilRecord, []);
+  assert.equal(entries.get(V11_KEY), raw);
 });
 
 test("load falls back to v2 key and migrates without overwriting it", () => {
