@@ -116,15 +116,20 @@ export function notice(state, title, lines, key = null) {
 }
 export function newPiece(state, owner, r, c, source = {}) {
   const bornRound = round(state),
+    basalTraits = ["Respiração anaeróbia", ...(source.traits ?? [])],
     piece = {
     id: state.nextId++,
     owner,
     r,
     c,
     rank: source.rank ?? 0,
-    traits: normalizeActiveTraits(source.traits ?? []),
+    traits: normalizeActiveTraits(basalTraits),
     ancestry: [
-      ...new Set([...(source.ancestry ?? []), ...(source.traits ?? [])]),
+      ...new Set([
+        "Respiração anaeróbia",
+        ...(source.ancestry ?? []),
+        ...(source.traits ?? []),
+      ]),
     ],
     reproGenes: cloneReproGenes(
       source.reproGenes ?? normalizeReproGenes(null, source.traits ?? []),
@@ -406,7 +411,7 @@ export function createState(seed = Date.now(), options = {}) {
     originPrelude = !!options.originPrelude,
     canonicalPair = !!options.canonicalPair;
   const state = {
-    version: 10,
+    version: 11,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
@@ -428,7 +433,9 @@ export function createState(seed = Date.now(), options = {}) {
     notices: [],
     seen: [],
     seenMutations: [],
-    historicalTraits: [...(options.historicalTraits ?? [])],
+    historicalTraits: [
+      ...new Set(["Respiração anaeróbia", ...(options.historicalTraits ?? [])]),
+    ],
     discoveries: cloneDiscoveries(options.discoveries),
     logs: [],
     event: null,
@@ -514,6 +521,7 @@ export function createState(seed = Date.now(), options = {}) {
   }
   if (options.naturalBarriers !== false) seedNaturalBarriers(state);
   seedHabitat(state);
+  recordDiscovery(state, "mutations", "Respiração anaeróbia");
   recordDiscovery(state, "geology", state.geologicalStage);
   log(
     state,
@@ -604,28 +612,14 @@ export function activateOrigin(state) {
     state.origin.selected = true;
     return false;
   }
-  const clearOfNaturalBarriers = (r, c) =>
-      state.naturalBarriers.every((cell) => {
-        const rr = Math.floor(cell / 8),
-          cc = cell % 8;
-        return Math.max(Math.abs(r - rr), Math.abs(c - cc)) > 1;
-      }),
-    candidates = [];
-  for (let r = 4; r <= 7; r++)
-    for (let c = 0; c < 8; c++) {
-      const opposite = square(7 - r, 7 - c),
-        oppositeR = 7 - r,
-        oppositeC = 7 - c;
-      if (
-        square(r, c) !== square(state.origin.r, state.origin.c) &&
-        opposite !== square(state.origin.r, state.origin.c) &&
-        clearOfNaturalBarriers(r, c) &&
-        clearOfNaturalBarriers(oppositeR, oppositeC)
-      )
-        candidates.push({ r, c });
-    }
-  const blue = pick(state, candidates),
-    amber = { r: 7 - blue.r, c: 7 - blue.c };
+  const directions = [
+      [-1, -1], [-1, 0], [-1, 1],
+      [0, -1],           [0, 1],
+      [1, -1],  [1, 0],  [1, 1],
+    ],
+    [dr, dc] = pick(state, directions),
+    blue = { r: state.origin.r + dr, c: state.origin.c + dc },
+    amber = { r: state.origin.r - dr, c: state.origin.c - dc };
   state.pieces.push(
     newPiece(state, "blue", blue.r, blue.c, { rank: 4 }),
     newPiece(state, "amber", amber.r, amber.c, { rank: 4 }),
@@ -856,7 +850,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 10 ||
+    state.version !== 11 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
