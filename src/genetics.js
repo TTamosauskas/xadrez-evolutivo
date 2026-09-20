@@ -1,5 +1,6 @@
 import { TRAITS } from "./constants.js";
 import {
+  BODY_PLAN_TRAITS,
   MULTICELLULAR_DEPENDENT_TRAITS,
   PLANT_DERIVED_TRAITS,
   TRAIT_DEPENDENCIES,
@@ -334,7 +335,7 @@ export function hiddenRecessiveTraits(source) {
       profile?.traits ?? expressGenome(genome),
     );
   return GENETIC_TRAITS.filter((trait) => {
-    if (expressed.has(trait)) return false;
+    if (expressed.has(trait) || BODY_PLAN_TRAITS.has(trait)) return false;
     const pair = genome[trait];
     return (
       pair.some(
@@ -366,16 +367,25 @@ export function genomeSignature(source) {
 
 export function inheritSexualGenome(a, b, random) {
   const ga = readableGenome(a),
-    gb = readableGenome(b);
-  return Object.fromEntries(
-    GENETIC_TRAITS.map((trait) => [
-      trait,
-      [
-        cloneAllele(ga[trait][Math.floor(random() * 2)]),
-        cloneAllele(gb[trait][Math.floor(random() * 2)]),
-      ],
-    ]),
-  );
+    gb = readableGenome(b),
+    child = Object.fromEntries(
+      GENETIC_TRAITS.map((trait) => [
+        trait,
+        [
+          cloneAllele(ga[trait][Math.floor(random() * 2)]),
+          cloneAllele(gb[trait][Math.floor(random() * 2)]),
+        ],
+      ]),
+    ),
+    expressedPlans = [...BODY_PLAN_TRAITS].filter((trait) =>
+      locusExpressed(child[trait]),
+    );
+  if (expressedPlans.length > 1) {
+    const keep = expressedPlans[Math.floor(random() * expressedPlans.length)];
+    for (const trait of expressedPlans)
+      if (trait !== keep) child[trait] = ancestralPair();
+  }
+  return child;
 }
 
 export function genomeGainOptions(source, expressedTraits = null) {
@@ -399,6 +409,7 @@ export function genomeLossOptions(source) {
   return GENETIC_TRAITS.filter(
     (trait) =>
       trait !== BASAL_GENETIC_TRAIT &&
+      !BODY_PLAN_TRAITS.has(trait) &&
       genome[trait].some((allele) => allele.value === "derived"),
   );
 }
@@ -428,7 +439,13 @@ export function gainGenomeAllele(source, trait, random) {
     hiddenCarrier =
       derived.length === 1 && derived[0].allele.dominance === "recessive";
   pair[index] = derivedAllele(
-    hiddenCarrier ? "recessive" : random() < 0.5 ? "dominant" : "recessive",
+    BODY_PLAN_TRAITS.has(trait)
+      ? "dominant"
+      : hiddenCarrier
+        ? "recessive"
+        : random() < 0.5
+          ? "dominant"
+          : "recessive",
   );
   return genome;
 }
