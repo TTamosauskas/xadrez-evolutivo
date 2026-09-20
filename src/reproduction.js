@@ -44,6 +44,7 @@ import {
   deleteriousMutationUnlocked,
   innovationWeight,
   normalizeEnergyBranch,
+  normalizeMulticellularTraits,
   pawnMutationUnlocked,
   rankMutationUnlocked,
   normalizePhotosyntheticRank,
@@ -238,9 +239,11 @@ function sexualProfile(state, a, b) {
 
   const hasEnergyConflict =
       traits.includes("Fotossíntese") && traits.includes("Predação"),
-    normalizedTraits = normalizeEnergyBranch(
-      traits,
-      hasEnergyConflict && random(state) < 0.5 ? "Predação" : null,
+    normalizedTraits = normalizeMulticellularTraits(
+      normalizeEnergyBranch(
+        traits,
+        hasEnergyConflict && random(state) < 0.5 ? "Predação" : null,
+      ),
     ),
     profile = {
       rank: Math.max(a.rank, b.rank),
