@@ -15,7 +15,8 @@ import {
   isNegativeTrait,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v10";
+export const SAVE_KEY = "xadrez-evolutivo-save-v11";
+export const V10_KEY = "xadrez-evolutivo-save-v10";
 export const V9_KEY = "xadrez-evolutivo-save-v9";
 export const V8_KEY = "xadrez-evolutivo-save-v8";
 export const V7_KEY = "xadrez-evolutivo-save-v7";
@@ -103,7 +104,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -114,6 +115,7 @@ export function deserialize(raw) {
               ? v3TraitName
               : currentTraitName,
           traits = new Set((profile.traits ?? []).map(mapper));
+        if (sourceVersion < 11) traits.add("Respiração anaeróbia");
         if (legacyV2) traits.add("Locomoção");
         if (sourceVersion < 4) traits.add("Predação");
         const validTraits = [...traits].filter((trait) => TRAITS[trait]);
@@ -126,6 +128,7 @@ export function deserialize(raw) {
         const ancestry = new Set(
             (profile.ancestry ?? []).map(mapper).filter((trait) => TRAITS[trait]),
           );
+        if (sourceVersion < 11) ancestry.add("Respiração anaeróbia");
         for (const trait of validTraits) ancestry.add(trait);
         profile.traits = normalizeActiveTraits(validTraits);
         profile.ancestry = [...ancestry];
@@ -340,6 +343,8 @@ export function deserialize(raw) {
           .filter((trait) => TRAITS[trait]),
       ),
     ];
+    if (!data.historicalTraits.includes("Respiração anaeróbia"))
+      data.historicalTraits.unshift("Respiração anaeróbia");
     const migratedMulticellularHistory =
       sourceVersion < 9 &&
       geologicalStage(data.geologicalStage).index >=
@@ -447,6 +452,11 @@ export function deserialize(raw) {
       !data.discoveries.mutations.includes("Multicelularismo")
     )
       data.discoveries.mutations.push("Multicelularismo");
+    if (
+      data.discoveries &&
+      !data.discoveries.mutations.includes("Respiração anaeróbia")
+    )
+      data.discoveries.mutations.unshift("Respiração anaeróbia");
     if (data.totalCycles < 2) {
       const cleanProfile = (profile) => {
           profile.traits = (profile.traits ?? []).filter(
@@ -497,7 +507,7 @@ export function deserialize(raw) {
         );
       }
     }
-    data.version = 10;
+    data.version = 11;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -680,6 +690,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V10_KEY) ??
     storage.getItem(V9_KEY) ??
     storage.getItem(V8_KEY) ??
     storage.getItem(V7_KEY) ??
