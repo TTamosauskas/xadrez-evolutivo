@@ -51,8 +51,6 @@ import {
   pawnMutationUnlocked,
   rankMutationUnlocked,
   normalizePhotosyntheticRank,
-  PLANT_DERIVED_TRAITS,
-  PLANT_INCOMPATIBLE_TRAITS,
   traitLossAllowed,
   traitUnlocked,
 } from "./geology.js";
@@ -183,19 +181,6 @@ function mutation(state, p, positiveOnly) {
       p.genome = forceGenomeTrait(p.genome, choice.geneGain, "dominant");
       syncGenomePhenotype(p);
       normalizeBodyPlanRank(p);
-    } else if (choice.geneGain === "Predação") {
-      p.genome = withoutGenomeTraits(p.genome, [
-        "Fotossíntese",
-        ...PLANT_DERIVED_TRAITS,
-      ]);
-      p.genome = forceGenomeTrait(p.genome, "Predação", "dominant");
-      syncGenomePhenotype(p, "Predação");
-    } else if (choice.geneGain === "Fotossíntese") {
-      p.genome = withoutGenomeTraits(p.genome, [
-        ...PLANT_INCOMPATIBLE_TRAITS,
-      ]);
-      p.genome = forceGenomeTrait(p.genome, "Fotossíntese", "dominant");
-      syncGenomePhenotype(p, "Fotossíntese");
     } else {
       p.genome = gainGenomeAllele(
         p.genome,
@@ -242,17 +227,20 @@ function mutation(state, p, positiveOnly) {
 }
 
 function sexualProfile(state, a, b) {
-  const aPlant = has(a, "Fotossíntese"),
-    bPlant = has(b, "Fotossíntese"),
-    aPredator = has(a, "Predação"),
-    bPredator = has(b, "Predação");
-  let preferredEnergy = null;
-  if ((aPlant || bPlant) && (aPredator || bPredator))
-    preferredEnergy = random(state) < 0.5 ? "Fotossíntese" : "Predação";
-  else if (aPlant || bPlant) preferredEnergy = "Fotossíntese";
-  else if (aPredator || bPredator) preferredEnergy = "Predação";
-
-  const profile = {
+  const branchA = has(a, "Fotossíntese")
+      ? "Fotossíntese"
+      : has(a, "Predação")
+        ? "Predação"
+        : null,
+    branchB = has(b, "Fotossíntese")
+      ? "Fotossíntese"
+      : has(b, "Predação")
+        ? "Predação"
+        : null;
+  if (!branchA || branchA !== branchB)
+    throw Error("Ramos energéticos incompatíveis para reprodução sexuada.");
+  const preferredEnergy = branchA,
+    profile = {
     rank: Math.max(a.rank, b.rank),
     traits: [],
     ancestry: [
@@ -714,6 +702,19 @@ export function reproduce(
   options = {},
 ) {
   const state = ctx.state;
+  if (mate) {
+    const branchParent = has(parent, "Fotossíntese")
+        ? "Fotossíntese"
+        : has(parent, "Predação")
+          ? "Predação"
+          : null,
+      branchMate = has(mate, "Fotossíntese")
+        ? "Fotossíntese"
+        : has(mate, "Predação")
+          ? "Predação"
+          : null;
+    if (!branchParent || branchParent !== branchMate) return 0;
+  }
   if (
     !options.ignoreReadiness &&
     (!reproductionReady(state, parent) ||
