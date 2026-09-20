@@ -18,8 +18,8 @@ import { square } from "../src/constants.js";
 
 test("childhood begins only after Multicelularismo and Precocidade Sexual shortens it", () => {
   const unicellular = fixture([
-      { owner: "blue", r: 4, c: 4, rank: 5 },
-      { owner: "amber", r: 0, c: 0 },
+      { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Fotossíntese"] },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),
     unicellularParent = unicellular.pieces[0];
   assert.equal(
