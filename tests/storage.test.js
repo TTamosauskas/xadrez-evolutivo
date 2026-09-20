@@ -111,7 +111,7 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
       getItem: (k) => entries.get(k) ?? null,
     };
   const migrated = load(storage);
-  assert.equal(migrated.version, 10);
+  assert.equal(migrated.version, 11);
   assert.equal(entries.get(V2_KEY), raw);
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Locomoção")));
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
@@ -143,7 +143,7 @@ test("v9 cumulative phenotypes migrate to active families while preserving ances
     migrated = load(storage),
     piece = migrated.pieces[0];
 
-  assert.equal(migrated.version, 10);
+  assert.equal(migrated.version, 11);
   assert.ok(piece.traits.includes("Onívoro"));
   assert.ok(piece.traits.includes("Locomoção Avançada"));
   assert.ok(piece.traits.includes("Eusocialidade"));
@@ -179,7 +179,7 @@ test("v8 complex lineages migrate to Multicelularismo without instant senescence
     migrated = load(storage),
     piece = migrated.pieces[0];
 
-  assert.equal(migrated.version, 10);
+  assert.equal(migrated.version, 11);
   assert.ok(piece.traits.includes("Multicelularismo"));
   assert.ok(piece.ancestry.includes("Multicelularismo"));
   assert.equal(piece.bornRound, 50);
@@ -229,7 +229,7 @@ test("v6 saves migrate without an origin prelude", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 10);
+  assert.equal(migrated.version, 11);
   assert.equal(migrated.origin, null);
   assert.equal(migrated.phase, "move");
   assert.equal(entries.get(V6_KEY), raw);
@@ -248,12 +248,19 @@ test("v5 saves split invalid Fotossíntese + Predação hybrids during migration
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 10);
-  assert.deepEqual(migrated.pieces[0].traits, ["Fotossíntese"]);
+  assert.equal(migrated.version, 11);
+  assert.deepEqual(migrated.pieces[0].traits, [
+    "Respiração anaeróbia",
+    "Fotossíntese",
+  ]);
   assert.ok(migrated.pieces[1].traits.includes("Predação"));
   assert.ok(migrated.pieces[1].traits.includes("Locomoção"));
   assert.ok(!migrated.pieces[1].traits.includes("Fotossíntese"));
-  assert.deepEqual(migrated.historicalTraits, ["Fotossíntese", "Predação"]);
+  assert.deepEqual(migrated.historicalTraits, [
+    "Respiração anaeróbia",
+    "Fotossíntese",
+    "Predação",
+  ]);
   assert.equal(entries.get(V5_KEY), raw);
 });
 
@@ -270,7 +277,7 @@ test("v4 saves migrate discoveries without creating unread backlog", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 10);
+  assert.equal(migrated.version, 11);
   assert.ok(migrated.discoveries.geology.includes("archean"));
   assert.ok(migrated.discoveries.mutations.includes("Fotossíntese"));
   assert.equal(
@@ -296,7 +303,7 @@ test("v3 saves rename Predador to Carnívoro and preserve capture with Predaçã
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 10);
+  assert.equal(migrated.version, 11);
   assert.ok(migrated.pieces[0].traits.includes("Carnívoro"));
   assert.ok(migrated.pieces[0].traits.includes("Predação"));
   assert.ok(!migrated.pieces[0].traits.includes("Predador"));
@@ -378,7 +385,7 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
-  assert.equal(s.version, 10);
+  assert.equal(s.version, 11);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "local");
@@ -430,7 +437,10 @@ test("v7 saves rename Construção de Nicho and preserve it as lineage ancestry"
     migrated = restored.pieces[0];
   assert.deepEqual(migrated.traits, ["Construtor de Nicho"]);
   assert.deepEqual(migrated.ancestry, ["Construtor de Nicho"]);
-  assert.deepEqual(restored.historicalTraits, ["Construtor de Nicho"]);
+  assert.deepEqual(restored.historicalTraits, [
+    "Respiração anaeróbia",
+    "Construtor de Nicho",
+  ]);
   assert.ok(restored.seenMutations.includes("Construtor de Nicho"));
   assert.ok(restored.seenMutations.includes("Perda de Construtor de Nicho"));
   assert.ok(restored.discoveries.mutations.includes("Construtor de Nicho"));
@@ -526,7 +536,10 @@ test("v7 saves migrate Construtor Avançado to Antropização and initialize new
   const restored = deserialize(JSON.stringify(old));
   assert.deepEqual(restored.pieces[0].traits, ["Antropização"]);
   assert.deepEqual(restored.pieces[0].ancestry, ["Antropização"]);
-  assert.deepEqual(restored.historicalTraits, ["Antropização"]);
+  assert.deepEqual(restored.historicalTraits, [
+    "Respiração anaeróbia",
+    "Antropização",
+  ]);
   assert.equal(restored.domesticPlacement, null);
   assert.equal(restored.socialDefense, null);
   assertState(restored);
