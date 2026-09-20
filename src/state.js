@@ -24,7 +24,6 @@ import {
   genomeFromLegacyProfile,
   genomeSignature,
   hiddenRecessiveTraits,
-  phenotypeMatchesGenome,
   syncGenomePhenotype,
   validGenome,
   withoutGenomeTraits,
@@ -1091,7 +1090,6 @@ export function assertState(state) {
           profile.ancestry.every((t) => TRAITS[t]) &&
           new Set(profile.ancestry).size === profile.ancestry.length)) &&
       validGenome(profile.genome) &&
-      phenotypeMatchesGenome(profile) &&
       integer(profile.mutations) &&
       integer(profile.generation);
   if (!state || typeof state !== "object") throw Error("Partida inválida.");
@@ -1321,7 +1319,6 @@ export function assertState(state) {
       p.ancestry.some((t) => !TRAITS[t]) ||
       new Set(p.ancestry).size !== p.ancestry.length ||
       !validGenome(p.genome) ||
-      !phenotypeMatchesGenome(p) ||
       !Array.isArray(p.pregnancies)
     )
       throw Error("Peça inválida.");
