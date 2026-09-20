@@ -43,9 +43,19 @@ test("active traits are expressed from the genome while heterozygous recessives 
 });
 
 test("phenotypic dependencies suppress genes whose functional prerequisites are not expressed", () => {
-  const incomplete = genomeFromTraits(
-    ["Respiração anaeróbia", "Multicelularismo", "Velocidade"],
-  );
+  const incomplete = ancestralGenome();
+  incomplete["Respiração anaeróbia"] = [
+    { value: "derived", dominance: "dominant" },
+    { value: "derived", dominance: "dominant" },
+  ];
+  incomplete.Multicelularismo = [
+    { value: "derived", dominance: "dominant" },
+    { value: "derived", dominance: "dominant" },
+  ];
+  incomplete.Velocidade = [
+    { value: "derived", dominance: "dominant" },
+    { value: "derived", dominance: "dominant" },
+  ];
   assert.equal(expressGenome(incomplete).includes("Velocidade"), false);
 
   const complete = genomeFromTraits([
