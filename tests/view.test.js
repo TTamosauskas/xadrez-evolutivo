@@ -126,7 +126,7 @@ test("built barriers render as black blocks with white borders", () => {
   dom.window.close();
 });
 
-test("selected pieces expand all mutation icons into an animated radial pattern", () => {
+test("selected pieces keep the normal compact mutation icon layout", () => {
   const dom = setup(),
     s = createState(20),
     piece = s.pieces[0];
@@ -143,16 +143,12 @@ test("selected pieces expand all mutation icons into an animated radial pattern"
     cell = d.querySelector(
       `[data-r="${piece.r}"][data-c="${piece.c}"]`,
     ),
-    badges = cell.querySelector(".badges.selected-badges"),
+    badges = cell.querySelector(".badges"),
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
   assert.ok(badges);
-  assert.equal(badges.querySelectorAll(".badge-icon").length, piece.traits.length);
-  assert.ok(
-    [...badges.querySelectorAll(".badge-icon")].every(
-      (icon) => icon.style.getPropertyValue("--badge-angle"),
-    ),
-  );
-  assert.match(css, /@keyframes selected-badge-orbit/);
+  assert.equal(badges.querySelectorAll(".badge-icon").length, 5);
+  assert.equal(cell.querySelector(".selected-badges"), null);
+  assert.doesNotMatch(css, /selected-badge-orbit/);
   dom.window.close();
 });
 
@@ -221,6 +217,43 @@ test("selected legend separates active traits from ancestry behind a closed togg
   assert.match(boardIcons, /🐻/);
   assert.match(boardIcons, /🐪/);
   assert.doesNotMatch(boardIcons, /🦁/);
+  dom.window.close();
+});
+
+test("ancestry toggle is omitted when the selected phenotype has no suppressed traits", () => {
+  const dom = setup(),
+    s = createState(23),
+    piece = s.pieces[0];
+  piece.traits = ["Multicelularismo", "Predação"];
+  piece.ancestry = [...piece.traits];
+
+  render(dom.window.document, s, { selected: piece.id });
+  assert.equal(
+    dom.window.document.querySelector("#selected .ancestry-toggle"),
+    null,
+  );
+  dom.window.close();
+});
+
+test("selected self-actions appear immediately to the left of Passar vez", () => {
+  const dom = setup(),
+    s = createState(24),
+    piece = s.pieces.find((candidate) => candidate.owner === s.current),
+    enemy = s.pieces.find((candidate) => candidate.owner !== s.current);
+  piece.traits = ["Multicelularismo", "Predação", "Parasitismo"];
+  piece.ancestry = [...piece.traits];
+  s.board[piece.r * 8 + piece.c] = "fertile";
+  enemy.r = piece.r - 1;
+  enemy.c = piece.c;
+
+  render(dom.window.document, s, { selected: piece.id });
+  const d = dom.window.document,
+    actions = d.getElementById("piece-actions"),
+    labels = [...actions.querySelectorAll("button")].map(
+      (button) => button.textContent,
+    );
+  assert.deepEqual(labels, ["Reproduzir", "Parasitismo"]);
+  assert.equal(actions.nextElementSibling?.id, "pass");
   dom.window.close();
 });
 
