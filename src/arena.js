@@ -27,7 +27,7 @@ export const ARENA_RECESSIVE_COUNT = 2;
 const order = new Map(Object.keys(TRAITS).map((trait, index) => [trait, index]));
 
 export const ARENA_ARCHETYPES = [
-  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Avançada"],
+  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Percepção Espacial"],
   ["Predação", "Multicelularismo", "Locomoção Primitiva", "Artrópode", "Locomoção Articulada", "Camuflagem"],
   ["Predação", "Multicelularismo", "Locomoção Primitiva", "Artrópode", "Locomoção Articulada", "Carapaça"],
   ["Predação", "Multicelularismo", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Notívago"],
