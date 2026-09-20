@@ -10,6 +10,7 @@ import {
   round,
   juvenile,
   reproductionReady,
+  fertilityPaused,
 } from "./state.js";
 import { captureUnlocked } from "./geology.js";
 const ORTH = [
@@ -436,15 +437,25 @@ export function ovoviviparousPlacementTargets(state, p) {
 }
 
 export function canParasitize(state, p) {
-  return (
-    state.phase === "move" &&
-    !state.chain &&
-    !!p &&
-    p.owner === state.current &&
-    has(p, "Parasitismo") &&
-    !resting(state, p) &&
-    !dormant(state, p)
-  );
+  if (
+    state.phase !== "move" ||
+    state.chain ||
+    !p ||
+    p.owner !== state.current ||
+    !has(p, "Parasitismo") ||
+    resting(state, p) ||
+    dormant(state, p)
+  )
+    return false;
+  const canFertilize =
+      !fertilityPaused(state) && terrain(state, p.r, p.c) !== "fertile",
+    canAttackHabitat = state.pieces.some(
+      (otherPiece) =>
+        otherPiece.owner !== p.owner &&
+        distance(p, otherPiece) === 1 &&
+        terrain(state, otherPiece.r, otherPiece.c) !== "hostile",
+    );
+  return canFertilize || canAttackHabitat;
 }
 
 export function legalActions(state) {
