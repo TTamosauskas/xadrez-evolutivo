@@ -53,6 +53,7 @@ import {
   traitUnlocked,
 } from "./geology.js";
 import { mutationDiscoveryId, recordDiscovery } from "./discoveries.js";
+import { tryVectorPathogen } from "./disease.js";
 
 const NEGATIVE = ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"];
 const POSITIVE = Object.keys(TRAITS).filter(
@@ -816,6 +817,8 @@ export function reproduce(
     parent.nextReproductionRound = cooldown(parent);
     if (mate) mate.nextReproductionRound = cooldown(mate);
     state.reproductions[parent.owner]++;
+    tryVectorPathogen(state, parent);
+    if (mate) tryVectorPathogen(state, mate);
     log(
       state,
       domesticated
