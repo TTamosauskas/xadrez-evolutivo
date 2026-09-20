@@ -315,9 +315,9 @@ test("Neocórtex rollback survives the opponent response and restores determinis
   s.pieces.push(
     newPiece(s, "blue", 4, 0, {
       rank: 3,
-      traits: ["Locomoção", "Neocórtex Desenvolvido"],
+      traits: ["Predação", "Locomoção", "Neocórtex Desenvolvido"],
     }),
-    newPiece(s, "amber", 0, 7, { rank: 3, traits: ["Locomoção"] }),
+    newPiece(s, "amber", 0, 7, { rank: 3, traits: ["Predação", "Locomoção"] }),
   );
   const c = new Controller(s, { render: () => {} }),
     before = clone(c.state);
