@@ -1223,7 +1223,7 @@ export function transition(previous, action) {
         state,
         "🌀 Conway: ambos os lados estavam sem ação; o habitat avançou um turno.",
       );
-      advanceConway(ctx);
+      advanceConway(ctx, { blocked: true });
     }
     if (!extinction(state)) {
       advanceTurn(ctx);
