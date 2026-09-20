@@ -1,6 +1,7 @@
 import { TRAITS } from "./constants.js";
 import {
   BODY_PLAN_TRAITS,
+  ENERGY_BRANCH_TRAITS,
   MULTICELLULAR_DEPENDENT_TRAITS,
   PLANT_DERIVED_TRAITS,
   TRAIT_DEPENDENCIES,
@@ -146,7 +147,9 @@ export function genomeFromTraits(
 ) {
   const genome = ancestralGenome(),
     hidden = new Set(
-      (hiddenRecessives ?? []).filter((trait) => TRAITS[trait]),
+      (hiddenRecessives ?? []).filter(
+        (trait) => TRAITS[trait] && !ENERGY_BRANCH_TRAITS.has(trait),
+      ),
     ),
     active = [...new Set(activeTraits)].filter(
       (trait) => TRAITS[trait] && !hidden.has(trait),
@@ -335,7 +338,12 @@ export function hiddenRecessiveTraits(source) {
       profile?.traits ?? expressGenome(genome),
     );
   return GENETIC_TRAITS.filter((trait) => {
-    if (expressed.has(trait) || BODY_PLAN_TRAITS.has(trait)) return false;
+    if (
+      expressed.has(trait) ||
+      BODY_PLAN_TRAITS.has(trait) ||
+      ENERGY_BRANCH_TRAITS.has(trait)
+    )
+      return false;
     const pair = genome[trait];
     return (
       pair.some(
@@ -368,7 +376,14 @@ export function genomeSignature(source) {
 export function inheritSexualGenome(a, b, random) {
   const ga = readableGenome(a),
     gb = readableGenome(b),
-    child = Object.fromEntries(
+    energyOf = (genome) =>
+      [...ENERGY_BRANCH_TRAITS].find((trait) => locusExpressed(genome[trait])) ??
+      null,
+    energyA = energyOf(ga),
+    energyB = energyOf(gb);
+  if (energyA && energyB && energyA !== energyB)
+    throw Error("Ramos energéticos incompatíveis para reprodução sexuada.");
+  const child = Object.fromEntries(
       GENETIC_TRAITS.map((trait) => [
         trait,
         [
@@ -393,6 +408,14 @@ export function inheritSexualGenome(a, b, random) {
     for (const trait of expressedPlans)
       if (trait !== keep) child[trait] = ancestralPair();
   }
+  const energy = energyA ?? energyB;
+  if (energy) {
+    for (const trait of ENERGY_BRANCH_TRAITS)
+      child[trait] =
+        trait === energy
+          ? [derivedAllele("dominant"), derivedAllele("dominant")]
+          : ancestralPair();
+  }
   return child;
 }
 
@@ -402,8 +425,15 @@ export function genomeGainOptions(source, expressedTraits = null) {
       expressedTraits ?? source?.traits ?? expressGenome(genome),
     ),
     options = [];
+  const carriedEnergy = [...ENERGY_BRANCH_TRAITS].some((trait) =>
+    genome[trait].some((allele) => allele.value === "derived"),
+  );
   for (const trait of GENETIC_TRAITS) {
-    if (trait === BASAL_GENETIC_TRAIT) continue;
+    if (
+      trait === BASAL_GENETIC_TRAIT ||
+      (carriedEnergy && ENERGY_BRANCH_TRAITS.has(trait))
+    )
+      continue;
     const pair = genome[trait],
       derived = pair.filter((allele) => allele.value === "derived").length;
     if (derived === 0 || (!expressed.has(trait) && derived < 2))
@@ -418,6 +448,7 @@ export function genomeLossOptions(source) {
     (trait) =>
       trait !== BASAL_GENETIC_TRAIT &&
       !BODY_PLAN_TRAITS.has(trait) &&
+      !ENERGY_BRANCH_TRAITS.has(trait) &&
       genome[trait].some((allele) => allele.value === "derived"),
   );
 }
@@ -447,7 +478,7 @@ export function gainGenomeAllele(source, trait, random) {
     hiddenCarrier =
       derived.length === 1 && derived[0].allele.dominance === "recessive";
   pair[index] = derivedAllele(
-    BODY_PLAN_TRAITS.has(trait)
+    BODY_PLAN_TRAITS.has(trait) || ENERGY_BRANCH_TRAITS.has(trait)
       ? "dominant"
       : hiddenCarrier
         ? "recessive"
@@ -518,10 +549,20 @@ export function syncGenomePhenotype(profile, preferredEnergy = null) {
     profile.genome,
     profile.genome ? null : profile,
   );
+  const activeEnergy =
+    preferredEnergy ??
+    [...ENERGY_BRANCH_TRAITS].find((trait) => previous.includes(trait)) ??
+    null;
+  if (activeEnergy)
+    for (const trait of ENERGY_BRANCH_TRAITS)
+      profile.genome[trait] =
+        trait === activeEnergy
+          ? [derivedAllele("dominant"), derivedAllele("dominant")]
+          : ancestralPair();
   profile.traits = expressGenome(
     profile.genome,
     previous,
-    preferredEnergy,
+    activeEnergy,
   );
   return profile;
 }
