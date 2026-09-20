@@ -251,7 +251,9 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           add(r, c, [[r, c]], { haustorium: true });
       }
   const collector = has(p, "Coletor"),
-    canUseFertility = !has(p, "Carnívoro") || has(p, "Onívoro"),
+    canUseFertility =
+      has(p, "Respiração anaeróbia") &&
+      (!has(p, "Carnívoro") || has(p, "Onívoro")),
     canReproduce = reproductionReady(state, p);
   if (
     canReproduce &&
