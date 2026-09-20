@@ -33,7 +33,9 @@ export function fixture(
       {
         traits: _traits,
         ancestry: _ancestry,
+        genome: _genome,
         reproGenes: _reproGenes,
+        recessiveTraits: _recessiveTraits,
         ...overrides
       } = source;
     Object.assign(p, overrides);
