@@ -88,9 +88,19 @@ test("menu exposes match log and evolutionary history for consultation", () => {
     d.querySelector('#mode option[value="auto"]').textContent,
     "Computador × computador",
   );
-  const arena = d.getElementById("arena-mode");
-  assert.equal(arena.textContent, "Modo Arena");
-  assert.equal(arena.disabled, true);
+  assert.equal(d.getElementById("arena-mode"), null);
+  assert.equal(
+    d.querySelector('#scenario option[value="earth"]').textContent,
+    "Vida na Terra",
+  );
+  assert.equal(
+    d.querySelector('#scenario option[value="alternative"]').textContent,
+    "Cenários Alternativos",
+  );
+  assert.equal(
+    d.querySelector('#scenario option[value="arena"]').textContent,
+    "Arena",
+  );
   dom.window.close();
 });
 
@@ -517,7 +527,7 @@ test("application UI can play, acknowledge reproduction, save and reset", async 
     d.querySelector(".origin-piece").parentElement.click();
     assert.match(d.getElementById("turn").textContent, /Toque novamente/);
     d.querySelector(".origin-piece").parentElement.click();
-    assert.equal(d.querySelectorAll(".piece").length, 2);
+    assert.equal(d.querySelectorAll(".piece").length, 4);
     d.querySelector(".piece.amber").parentElement.click();
     assert.match(d.getElementById("selected").textContent, /\(Preto\)/);
     assert.equal(d.querySelectorAll(".cell.legal").length, 0);
