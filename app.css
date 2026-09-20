@@ -488,6 +488,55 @@ select {
   gap: 10px;
   margin: 22px 0;
 }
+#arena-dialog {
+  width: min(96vw, 920px);
+}
+.arena-status {
+  min-height: 22px;
+  color: #e7cd8c;
+}
+.arena-lineages {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.arena-lineages section {
+  min-width: 0;
+}
+.arena-lineages h3 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+.arena-lineages h3 span {
+  color: var(--muted);
+  font-weight: 500;
+}
+.arena-trait-grid {
+  display: grid;
+  gap: 6px;
+  max-height: 48vh;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #1c221b;
+}
+.arena-trait {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  margin: 0;
+  padding: 6px 7px;
+  border-radius: 6px;
+  color: #d2d8c8;
+}
+.arena-trait:hover {
+  background: #2a3227;
+}
+.arena-trait input {
+  margin-top: 3px;
+}
 .unread-badge {
   display: inline-grid;
   place-items: center;
@@ -699,6 +748,9 @@ summary {
   }
   .turn-strip {
     font-size: 14px;
+  }
+  .arena-lineages {
+    grid-template-columns: 1fr;
   }
 }
 @media (prefers-reduced-motion: no-preference) {
