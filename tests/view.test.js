@@ -214,6 +214,57 @@ test("selected panel inspects either side and explains only that piece traits", 
   assert.equal(d.querySelectorAll(".cell.legal").length, 0);
   dom.window.close();
 });
+test("selected legend shows hidden recessive genes before ancestry without duplication", () => {
+  const dom = setup(),
+    s = createState(220),
+    piece = s.pieces[0];
+  piece.traits = ["Multicelularismo", "Predação"];
+  piece.ancestry = ["Multicelularismo", "Predação", "Ovíparo", "Locomoção"];
+  piece.reproGenes.development = [
+    { value: "oviparous", dominance: "recessive" },
+    { value: "immediate", dominance: "neutral" },
+  ];
+
+  render(dom.window.document, s, { selected: piece.id });
+  const d = dom.window.document,
+    selected = d.getElementById("selected"),
+    recessive = selected.querySelector(".recessive-toggle"),
+    ancestry = selected.querySelector(".ancestry-toggle");
+
+  assert.ok(recessive);
+  assert.equal(recessive.open, false);
+  assert.match(
+    recessive.querySelector("summary").textContent,
+    /Genes Recessivos \(1\)/,
+  );
+  assert.match(recessive.textContent, /Ovíparo/);
+  assert.match(
+    recessive.querySelector(".recessive-chip").title,
+    /Presente no genótipo, mas não expresso/,
+  );
+  assert.ok(ancestry);
+  assert.match(ancestry.textContent, /Locomoção/);
+  assert.doesNotMatch(ancestry.textContent, /Ovíparo/);
+  assert.ok(
+    recessive.compareDocumentPosition(ancestry) &
+      dom.window.Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  dom.window.close();
+});
+
+test("recessive genes toggle is omitted when no recessive allele is hidden", () => {
+  const dom = setup(),
+    s = createState(221),
+    piece = s.pieces[0];
+
+  render(dom.window.document, s, { selected: piece.id });
+  assert.equal(
+    dom.window.document.querySelector("#selected .recessive-toggle"),
+    null,
+  );
+  dom.window.close();
+});
+
 test("selected legend separates active traits from ancestry behind a closed toggle", () => {
   const dom = setup(),
     s = createState(22),
