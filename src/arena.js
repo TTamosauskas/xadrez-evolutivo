@@ -167,7 +167,7 @@ export function arenaRecessivePairs(genome) {
     for (let j = i + 1; j < completed.length; j++) {
       const hidden = [completed[i], completed[j]];
       if (hidden.some((trait) => BODY_PLAN_TRAITS.has(trait))) continue;
-        hiddenSet = new Set(hidden),
+      const hiddenSet = new Set(hidden),
         active = completed.filter((trait) => !hiddenSet.has(trait));
       if (phenotypeSupportsGenome(active)) pairs.push(hidden);
     }
