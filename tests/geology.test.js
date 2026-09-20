@@ -838,6 +838,7 @@ test("Paleogene is a one-cycle transition stage", () => {
     GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "paleogene"),
   ).flatMap((stage) => stage.required);
   const s = createState(109, {
+    scenario: "earth",
     geologicalStage: "paleogene",
     historicalTraits: prior,
   });
