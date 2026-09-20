@@ -153,6 +153,13 @@ export function cloneGenome(source) {
   return normalizeGenome(source);
 }
 
+export function withoutGenomeTraits(source, traits = []) {
+  const genome = cloneGenome(source?.genome ?? source);
+  for (const trait of traits)
+    if (genome[trait]) genome[trait] = ancestralPair();
+  return genome;
+}
+
 export function validGenome(source) {
   if (!source || typeof source !== "object") return false;
   return GENETIC_TRAITS.every((trait) => {
