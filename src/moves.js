@@ -245,7 +245,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       }
     } else ray([...ORTH, ...DIAG], captureOnly);
   }
-  const mobile = has(p, "Locomoção") || has(p, "Locomoção Avançada");
+  const mobile = has(p, "Locomoção Articulada") || has(p, "Locomoção Avançada");
   if (mobile) chessTargets(false);
   else if (has(p, "Predação")) chessTargets(true);
   if (
