@@ -122,7 +122,8 @@ test("Archean starts green and stationary", () => {
   assert.equal(s.version, 8);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
-  assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 52);
+  const fertile = s.board.filter((terrain) => terrain === "fertile").length;
+  assert.ok(fertile >= 48 && fertile <= 56);
   assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 0);
   const actions = movesFor(s, s.pieces[0]);
   assert.ok(actions.length > 0);

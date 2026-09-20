@@ -53,6 +53,7 @@ import {
   checkPopulationClimate,
   applyPopulationAttrition,
   repairConwayStagnation,
+  offensiveActionCount,
 } from "./environment.js";
 export function context(state) {
   const ctx = {
@@ -285,6 +286,7 @@ function advanceTurn(ctx) {
       }
     if (!extinction(state)) applyPopulationAttrition(ctx);
     if (!extinction(state)) checkPopulationClimate(ctx);
+    if (!extinction(state)) resolveOffensiveStagnation(ctx);
   }
   maturePhotosynthesis(state, state.current);
   if (!extinction(state)) checkPopulation(state);
@@ -304,6 +306,34 @@ export function mutuallyBlocked(state) {
     actionCountFor(state, "blue") === 0 &&
     actionCountFor(state, "amber") === 0
   );
+}
+
+function resolveOffensiveStagnation(ctx) {
+  const state = ctx.state;
+  if (
+    state.result ||
+    state.phase !== "move" ||
+    state.event ||
+    state.pendingEcologicalEvents > 0
+  )
+    return;
+  const now = round(state),
+    lastCapture = state.lastSuccessfulCaptureRound ?? 0;
+  state.offensiveStagnation ??= { startedRound: lastCapture, level: 0 };
+  if (offensiveActionCount(state) > 0) return;
+
+  const elapsed = now - state.offensiveStagnation.startedRound,
+    thresholds = [24, 36, 52];
+  while (
+    state.offensiveStagnation.level < thresholds.length &&
+    elapsed >= thresholds[state.offensiveStagnation.level]
+  ) {
+    repairConwayStagnation(ctx, 3);
+    state.offensiveStagnation.level++;
+    if (offensiveActionCount(state) > 0) break;
+  }
+  if (state.offensiveStagnation.level === thresholds.length)
+    state.offensiveStagnation = { startedRound: now, level: 0 };
 }
 
 function resolveConwayStagnation(ctx) {
@@ -710,7 +740,15 @@ function executeMove(ctx, action) {
   }
   ctx.reserved.add(square(target.r, target.c));
   if (pieceCapture) {
-    ctx.kill(victim.id, cannibalism ? "canibalismo" : "captura", p);
+    const killed = ctx.kill(
+      victim.id,
+      cannibalism ? "canibalismo" : "captura",
+      p,
+    );
+    if (killed && victim.owner !== p.owner) {
+      state.lastSuccessfulCaptureRound = round(state);
+      state.offensiveStagnation = null;
+    }
     manipulation = null;
     const cell = square(target.r, target.c);
     markDecomposition(state, cell);

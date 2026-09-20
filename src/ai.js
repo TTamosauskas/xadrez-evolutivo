@@ -1,4 +1,4 @@
-import { legalActions } from "./moves.js";
+import { legalActions, movesFor } from "./moves.js";
 import { simulate } from "./engine.js";
 import { has, other, square, distance } from "./constants.js";
 import { eggAt, barrierAt } from "./state.js";
@@ -9,6 +9,47 @@ export function fallbackAction(state) {
       type: "PASS",
     }
   );
+}
+
+function futureCaptureOptions(state, piece, action) {
+  if (
+    !piece ||
+    action.type !== "MOVE" ||
+    !Number.isInteger(action.r) ||
+    !Number.isInteger(action.c)
+  )
+    return 0;
+  const occupied = state.pieces.find(
+    (other) =>
+      other.id !== piece.id &&
+      other.r === action.r &&
+      other.c === action.c,
+  );
+  if (occupied) return 0;
+  const moved = { ...piece, r: action.r, c: action.c },
+    hypothetical = {
+      ...state,
+      chain: null,
+      pieces: state.pieces.map((other) =>
+        other.id === piece.id ? moved : other,
+      ),
+    };
+  return movesFor(hypothetical, moved, { ignoreChain: true }).filter(
+    (target) => {
+      if (!target.capture) return false;
+      const victim = hypothetical.pieces.find(
+        (other) =>
+          other.id !== moved.id &&
+          other.r === target.r &&
+          other.c === target.c,
+      );
+      return victim && victim.owner !== moved.owner;
+    },
+  ).length;
+}
+
+export function crowdingPenalty(count) {
+  return count > 12 ? Math.min(36, (count - 12) * 2) : 0;
 }
 function priority(state, a) {
   if (a.type === "PARTNER")
@@ -70,16 +111,12 @@ function priority(state, a) {
       (piece) => piece.owner === state.current,
     ).length,
     hunt =
-      p && has(p, "Carnívoro") && enemies.length && Number.isInteger(a.r)
-        ? Math.max(
-            0,
-            8 -
-              Math.min(
-                ...enemies.map((enemy) =>
-                  distance({ r: a.r, c: a.c }, enemy),
-                ),
-              ),
-          ) * 2
+      p &&
+      has(p, "Predação") &&
+      enemies.length &&
+      Number.isInteger(a.r) &&
+      !enemyVictim
+        ? Math.min(12, futureCaptureOptions(state, p, a) * 4)
         : 0,
     captureValue = enemyVictim
       ? 10 +
@@ -143,7 +180,7 @@ function evaluate(state, owner) {
       own: state.pieces.filter((piece) => piece.owner === owner).length,
       enemy: state.pieces.filter((piece) => piece.owner !== owner).length,
     },
-    crowding = (count) => (count > 10 ? 3 * (count - 10) ** 2 : 0);
+    crowding = crowdingPenalty;
   return pieces + eggs - crowding(population.own) + crowding(population.enemy);
 }
 /** Bounded search runs only inside a worker. The UI has its own independent timeout. */
