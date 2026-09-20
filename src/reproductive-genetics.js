@@ -158,6 +158,25 @@ export function reproPhenotype(source) {
   return { development, dispersal, traits };
 }
 
+export function hiddenRecessiveTraits(source) {
+  const genes = normalizeReproGenes(source),
+    hidden = new Set();
+  for (const [locus, def] of Object.entries(REPRO_LOCI)) {
+    const expressed = resolveLocus(locus, genes[locus]);
+    for (const allele of genes[locus]) {
+      if (
+        allele.value !== def.normal &&
+        allele.dominance === "recessive" &&
+        allele.value !== expressed
+      ) {
+        const trait = def.traits[allele.value];
+        if (trait) hidden.add(trait);
+      }
+    }
+  }
+  return [...hidden];
+}
+
 export function syncReproTraits(piece) {
   piece.reproGenes = normalizeReproGenes(piece.reproGenes, piece.traits);
   let regular = piece.traits.filter(
