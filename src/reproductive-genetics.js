@@ -158,9 +158,23 @@ export function reproPhenotype(source) {
   return { development, dispersal, traits };
 }
 
+export function reproGenesFromTraits(activeTraits = [], hiddenRecessives = []) {
+  const genes = normalizeReproGenes(null, activeTraits);
+  for (const trait of hiddenRecessives) {
+    const entry = traitEntry(trait);
+    if (!entry) continue;
+    const def = REPRO_LOCI[entry.locus];
+    genes[entry.locus] = [
+      { value: entry.value, dominance: "recessive" },
+      neutralAllele(def.normal),
+    ];
+  }
+  return genes;
+}
+
 export function hiddenRecessiveTraits(source) {
-  const genes = normalizeReproGenes(source),
-    hidden = new Set();
+  const genes = normalizeReproGenes(source?.reproGenes ?? source),
+    hidden = new Set(source?.recessiveTraits ?? []);
   for (const [locus, def] of Object.entries(REPRO_LOCI)) {
     const expressed = resolveLocus(locus, genes[locus]);
     for (const allele of genes[locus]) {
