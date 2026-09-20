@@ -8,14 +8,15 @@ import {
   GEOLOGICAL_STAGES,
   firstCompatibleStage,
   geologicalStage,
-  normalizeEnergyBranch,
+  normalizeActiveTraits,
   normalizePhotosyntheticRank,
   MULTICELLULAR_DEPENDENT_TRAITS,
   priorRequiredInnovations,
   isNegativeTrait,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v9";
+export const SAVE_KEY = "xadrez-evolutivo-save-v10";
+export const V9_KEY = "xadrez-evolutivo-save-v9";
 export const V8_KEY = "xadrez-evolutivo-save-v8";
 export const V7_KEY = "xadrez-evolutivo-save-v7";
 export const V6_KEY = "xadrez-evolutivo-save-v6";
@@ -102,7 +103,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -126,7 +127,7 @@ export function deserialize(raw) {
             (profile.ancestry ?? []).map(mapper).filter((trait) => TRAITS[trait]),
           );
         for (const trait of validTraits) ancestry.add(trait);
-        profile.traits = normalizeEnergyBranch(validTraits);
+        profile.traits = normalizeActiveTraits(validTraits);
         profile.ancestry = [...ancestry];
         profile.reproGenes = normalizeReproGenes(
           profile.reproGenes,
@@ -496,7 +497,7 @@ export function deserialize(raw) {
         );
       }
     }
-    data.version = 9;
+    data.version = 10;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -679,6 +680,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V9_KEY) ??
     storage.getItem(V8_KEY) ??
     storage.getItem(V7_KEY) ??
     storage.getItem(V6_KEY) ??
