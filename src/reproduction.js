@@ -45,6 +45,7 @@ import {
   withoutGenomeTraits,
 } from "./genetics.js";
 import {
+  BODY_PLAN_TRAITS,
   deleteriousMutationUnlocked,
   innovationWeight,
   pawnMutationUnlocked,
@@ -114,16 +115,22 @@ function eusocialBonus(state, parent) {
   );
 }
 
+function nextDerivedRank(piece) {
+  if (!has(piece, "Locomoção Articulada")) return null;
+  const next = DERIVED_FORM_NEXT.get(piece.rank);
+  if (next === undefined) return null;
+  if (has(piece, "Artrópode") && ![1, 2].includes(next)) return null;
+  return has(piece, "Vertebrado") || has(piece, "Artrópode") ? next : null;
+}
+
 function mutation(state, p, positiveOnly) {
   const gains = [];
   if (p.rank === 4 && pawnMutationUnlocked(state))
     gains.push({ rank: 0, weight: 1 });
-  else if (
-    !has(p, "Fotossíntese") &&
-    rankMutationUnlocked(state) &&
-    DERIVED_FORM_NEXT.has(p.rank)
-  )
-    gains.push({ rank: DERIVED_FORM_NEXT.get(p.rank), weight: 1 });
+  else if (!has(p, "Fotossíntese") && rankMutationUnlocked(state)) {
+    const nextRank = nextDerivedRank(p);
+    if (nextRank !== null) gains.push({ rank: nextRank, weight: 1 });
+  }
 
   for (const trait of genomeGainOptions(p).filter((trait) =>
     POSITIVE.includes(trait),
@@ -160,7 +167,13 @@ function mutation(state, p, positiveOnly) {
     p.rank = choice.rank;
     label = `Mutação de peça: ${PIECES[p.rank]}`;
   } else if (choice.geneGain) {
-    if (choice.geneGain === "Predação") {
+    if (BODY_PLAN_TRAITS.has(choice.geneGain)) {
+      const otherPlan =
+        choice.geneGain === "Vertebrado" ? "Artrópode" : "Vertebrado";
+      p.genome = withoutGenomeTraits(p.genome, [otherPlan]);
+      p.genome = forceGenomeTrait(p.genome, choice.geneGain, "dominant");
+      syncGenomePhenotype(p);
+    } else if (choice.geneGain === "Predação") {
       p.genome = withoutGenomeTraits(p.genome, [
         "Fotossíntese",
         ...PLANT_DERIVED_TRAITS,
@@ -712,9 +725,13 @@ export function reproduce(
         : developmentMode(parent),
     dispersal = seedPlant ? "local" : dispersalMode(parent),
     population = activePopulation(state),
+    baseOutput = reproductiveOutput(profile),
+    bodyPlanOutput = has(profile, "Artrópode")
+      ? Math.min(6, baseOutput * 2)
+      : baseOutput,
     baseWanted =
       options.forcedCount ??
-      reproductiveOutput(profile) + eusocialBonus(state, parent),
+      bodyPlanOutput + eusocialBonus(state, parent),
     pressureLimit =
       reason === "predação"
         ? predationBirthLimit(population)
