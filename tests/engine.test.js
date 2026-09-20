@@ -2181,9 +2181,7 @@ test("Parasitismo is offered only when it can change fertility or enemy habitat"
     s.pieces.push(newPiece(s, cell % 2 ? "blue" : "amber", r, col));
   }
   assert.equal(fertilityPaused(s), true);
-  assert.equal(canParasitize(s, s.pieces[0]), false);
-
-  const neighbor = s.pieces.find(
+  const adjacentEnemies = s.pieces.filter(
     (piece) =>
       piece.owner !== s.pieces[0].owner &&
       Math.max(
@@ -2191,12 +2189,16 @@ test("Parasitismo is offered only when it can change fertility or enemy habitat"
         Math.abs(piece.c - s.pieces[0].c),
       ) === 1,
   );
-  if (neighbor) {
-    s.board[neighbor.r * 8 + neighbor.c] = "neutral";
-    assert.equal(canParasitize(s, s.pieces[0]), true);
-    s.board[neighbor.r * 8 + neighbor.c] = "hostile";
-    assert.equal(canParasitize(s, s.pieces[0]), false);
-  }
+  assert.ok(adjacentEnemies.length > 0);
+  for (const enemy of adjacentEnemies)
+    s.board[enemy.r * 8 + enemy.c] = "hostile";
+  assert.equal(canParasitize(s, s.pieces[0]), false);
+
+  const neighbor = adjacentEnemies[0];
+  s.board[neighbor.r * 8 + neighbor.c] = "neutral";
+  assert.equal(canParasitize(s, s.pieces[0]), true);
+  s.board[neighbor.r * 8 + neighbor.c] = "hostile";
+  assert.equal(canParasitize(s, s.pieces[0]), false);
   assertState(s);
 });
 
