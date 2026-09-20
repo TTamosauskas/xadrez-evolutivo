@@ -360,8 +360,7 @@ function seedStandardHabitat(state, profile, founderCells) {
   }
   const mobileFounder = state.pieces.some(
     (piece) =>
-      piece.traits.includes("Locomoção Articulada") ||
-      piece.traits.includes("Locomoção Avançada"),
+      has(piece, "Locomoção Primitiva"),
   );
   if (!mobileFounder)
     for (const cell of founderCells) state.board[cell] = "fertile";
@@ -384,8 +383,7 @@ function seedHabitat(state) {
   }
   const mobileFounder = state.pieces.some(
       (piece) =>
-        piece.traits.includes("Locomoção Articulada") ||
-        piece.traits.includes("Locomoção Avançada"),
+        has(piece, "Locomoção Primitiva"),
     ),
     keepFoundersFertile = profile.founderFertile || !mobileFounder;
 
