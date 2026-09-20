@@ -171,8 +171,14 @@ export function genomeFromTraits(
 }
 
 export function genomeFromLegacyProfile(profile = {}) {
+  const traits = profile.traits ?? [],
+    inferredMulticellular = traits.some((trait) =>
+      MULTICELLULAR_DEPENDENT_TRAITS.has(trait),
+    );
   return genomeFromTraits(
-    profile.traits ?? [],
+    inferredMulticellular
+      ? [...new Set([...traits, "Multicelularismo"])]
+      : traits,
     profile.recessiveTraits ?? [],
     profile.reproGenes ?? null,
   );
