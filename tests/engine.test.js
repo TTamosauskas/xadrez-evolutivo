@@ -281,10 +281,21 @@ test("Locomoção Avançada has exactly two actions and restricts the second to 
   assert.equal(s.turn, 1);
   assert.equal(s.chain, null);
 });
-test("sexual partner is an explicit phase and survives save/restore", () => {
+test("sexual partner preserves Multicelularismo and survives save/restore", () => {
   let s = fixture([
-    { owner: "blue", r: 5, c: 3, traits: ["Reprodução Sexuada"] },
-    { owner: "blue", r: 4, c: 4, rank: 3 },
+    {
+      owner: "blue",
+      r: 5,
+      c: 3,
+      traits: ["Multicelularismo", "Reprodução Sexuada"],
+    },
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 3,
+      traits: ["Multicelularismo"],
+    },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[35] = "fertile";
@@ -295,7 +306,10 @@ test("sexual partner is an explicit phase and survives save/restore", () => {
   assert.throws(() => transition(s, { type: "PASS" }));
   s = simulate(s, { type: "PARTNER", id: 2 });
   assert.equal(s.turn, 1);
-  assert.ok(s.pieces.filter((p) => p.id > 3).every((p) => p.rank >= 3));
+  const children = s.pieces.filter((p) => p.id > 3);
+  assert.ok(children.every((p) => p.rank >= 3));
+  assert.ok(children.every((p) => p.traits.includes("Multicelularismo")));
+  assert.ok(children.every((p) => juvenile(s, p)));
 });
 test("sexual reproduction never combines Fotossíntese with the predatory branch", () => {
   const s = fixture([
