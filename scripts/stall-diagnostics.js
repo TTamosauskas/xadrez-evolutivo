@@ -376,6 +376,7 @@ function aggregate(runs) {
     capped: capped.length,
     cappedRate: pct(capped.length, runs.length),
     decisiveWithin200: finished.filter((run) => run.rounds <= 200).length,
+    naturalDeaths: sum("naturalDeaths", runs),
     cappedFinalRounds: mean(capped.map((run) => run.rounds)),
     loops,
     byPolicy,
