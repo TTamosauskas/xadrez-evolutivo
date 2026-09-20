@@ -814,7 +814,7 @@ export function reproduce(
       const base =
         has(piece, "Ovulação Induzida")
           ? 2
-          : options.fertileReproduction
+          : options.resourceReproduction || options.fertileReproduction
             ? has(piece, "Respiração aeróbia")
               ? 3
               : 4
