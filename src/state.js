@@ -25,6 +25,15 @@ import {
   syncReproTraits,
   validReproGenes,
 } from "./reproductive-genetics.js";
+import {
+  DEFAULT_SCENARIO,
+  EARTH_FOUNDER_GENOMES,
+  validScenario,
+} from "./scenarios.js";
+import {
+  arenaProfile,
+  completeArenaGenome,
+} from "./arena.js";
 export const clone = (value) => structuredClone(value);
 export function random(state) {
   state.rng = (Math.imul(state.rng, 1664525) + 1013904223) >>> 0;
@@ -408,10 +417,15 @@ function seedHabitat(state) {
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null,
     founders = options.founders ?? null,
+    ownerFounders = options.ownerFounders ?? null,
     originPrelude = !!options.originPrelude,
-    canonicalPair = !!options.canonicalPair;
+    canonicalPair = !!options.canonicalPair,
+    scenario = options.scenario ?? "alternative";
   const state = {
-    version: 11,
+    version: 12,
+    scenario,
+    arenaPhase: options.arenaPhase ?? 0,
+    arenaFounders: options.arenaFounders ?? null,
     rng: seed >>> 0,
     revision: 0,
     turn: 0,
@@ -478,7 +492,12 @@ export function createState(seed = Date.now(), options = {}) {
   } else {
     const balancedPair =
         canonicalPair && founders?.primary && founders?.companion,
-      starts = balancedPair
+      ownerPair =
+        ownerFounders?.blue?.primary &&
+        ownerFounders?.blue?.companion &&
+        ownerFounders?.amber?.primary &&
+        ownerFounders?.amber?.companion,
+      starts = balancedPair || ownerPair
         ? [
             ["blue", 7, 3, "primary"],
             ["blue", 7, 4, "companion"],
@@ -497,9 +516,11 @@ export function createState(seed = Date.now(), options = {}) {
               ["amber", 0, 4, null],
             ];
     for (const [owner, r, c, slot] of starts) {
-      const source = balancedPair
-        ? founders[slot]
-        : founders?.[owner] ?? founder;
+      const source = ownerPair
+        ? ownerFounders[owner][slot]
+        : balancedPair
+          ? founders[slot]
+          : founders?.[owner] ?? founder;
       state.pieces.push(
         newPiece(
           state,
@@ -523,21 +544,52 @@ export function createState(seed = Date.now(), options = {}) {
   if (options.naturalBarriers !== false) seedNaturalBarriers(state);
   seedHabitat(state);
   recordDiscovery(state, "mutations", "Respiração anaeróbia");
-  recordDiscovery(state, "geology", state.geologicalStage);
+  if (scenario !== "arena") recordDiscovery(state, "geology", state.geologicalStage);
   log(
     state,
     originPrelude
       ? "Origem da campanha: o ancestral comum aguarda a separação das linhagens."
-      : `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com um organismo de cada lado.`,
+      : scenario === "arena"
+        ? `Arena · Fase ${state.arenaPhase || state.cycle} começa com duas linhagens de cada lado.`
+        : `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com um organismo de cada lado.`,
   );
   return state;
 }
 
-export function createCampaignState(seed = Date.now()) {
-  return createState(seed, { originPrelude: true });
+export function createCampaignState(
+  seed = Date.now(),
+  scenario = DEFAULT_SCENARIO,
+) {
+  return createState(seed, { originPrelude: true, scenario });
 }
 
 function previewFounderProfiles(stageIndex) {
+  const stage = GEOLOGICAL_STAGES[stageIndex],
+    curated = EARTH_FOUNDER_GENOMES[stage?.id];
+  if (curated) {
+    const historicalTraits = [
+      ...new Set([
+        ...GEOLOGICAL_STAGES.slice(0, stageIndex).flatMap(
+          (entry) => entry.required,
+        ),
+        ...curated.plant,
+        ...curated.animal,
+      ]),
+    ];
+    return {
+      historicalTraits,
+      primary: {
+        rank: 0,
+        traits: normalizeActiveTraits(curated.plant, "Fotossíntese"),
+        ancestry: [...new Set(curated.plant)],
+      },
+      companion: {
+        rank: curated.rank ?? 0,
+        traits: normalizeActiveTraits(curated.animal, "Predação"),
+        ancestry: [...new Set(curated.animal)],
+      },
+    };
+  }
   const historicalTraits = GEOLOGICAL_STAGES.slice(0, stageIndex).flatMap(
       (stage) => stage.required,
     ),
@@ -577,6 +629,7 @@ export function createPeriodState(
   geologicalStage,
   seed = Date.now(),
   discoveries = null,
+  scenario = "earth",
 ) {
   const stageIndex = GEOLOGICAL_STAGES.findIndex(
     (stage) => stage.id === geologicalStage,
@@ -589,6 +642,7 @@ export function createPeriodState(
       cycle: 1,
       totalCycles: 1,
       discoveries,
+      scenario,
     });
   const preview = previewFounderProfiles(stageIndex),
     completedCycles = GEOLOGICAL_STAGES.slice(0, stageIndex).reduce(
@@ -596,6 +650,7 @@ export function createPeriodState(
       0,
     );
   return createState(seed, {
+    scenario,
     geologicalStage,
     cycle: 1,
     totalCycles: completedCycles + 1,
@@ -699,7 +754,166 @@ function founderProfile(previous, piece) {
   };
 }
 
+function cleanArenaGenome(piece) {
+  const excluded = new Set([
+    "Respiração anaeróbia",
+    "Esterilidade",
+    "Mutação Deletéria",
+    "Mutação Disfuncional",
+  ]);
+  return completeArenaGenome(
+    (piece?.ancestry ?? piece?.traits ?? []).filter(
+      (trait) => !excluded.has(trait),
+    ),
+  );
+}
+
+export function arenaSurvivorGenomes(state, owner) {
+  const groups = new Map();
+  for (const piece of state.pieces.filter((candidate) => candidate.owner === owner)) {
+    const key = signature(piece),
+      group = groups.get(key);
+    if (group) group.count++;
+    else groups.set(key, { piece, count: 1 });
+  }
+  const selected = [...groups.values()]
+    .sort(
+      (a, b) =>
+        b.count - a.count ||
+        b.piece.generation - a.piece.generation ||
+        signature(a.piece).localeCompare(signature(b.piece), "pt-BR"),
+    )
+    .slice(0, 2)
+    .map(({ piece }) => cleanArenaGenome(piece));
+  const fallback = state.arenaFounders?.[owner]
+    ? [
+        cleanArenaGenome(state.arenaFounders[owner].primary),
+        cleanArenaGenome(state.arenaFounders[owner].companion),
+      ]
+    : [];
+  for (const genome of fallback)
+    if (selected.length < 2 && genome.length) selected.push(genome);
+  if (!selected.length) selected.push(["Multicelularismo"]);
+  while (selected.length < 2) selected.push([...selected[0]]);
+  return selected.slice(0, 2);
+}
+
+function arenaProfiles(ownerGenomes) {
+  return Object.fromEntries(
+    ["blue", "amber"].map((owner) => {
+      const genomes = ownerGenomes[owner];
+      return [
+        owner,
+        {
+          primary: arenaProfile(genomes[0]),
+          companion: arenaProfile(genomes[1]),
+        },
+      ];
+    }),
+  );
+}
+
+export function createArenaState(
+  ownerGenomes,
+  seed = Date.now(),
+  discoveries = null,
+) {
+  const profiles = arenaProfiles(ownerGenomes),
+    historicalTraits = [
+      ...new Set([
+        "Respiração anaeróbia",
+        ...Object.values(ownerGenomes).flat(2),
+      ]),
+    ];
+  return createState(seed, {
+    scenario: "arena",
+    geologicalStage: "quaternary",
+    cycle: 1,
+    totalCycles: 1,
+    arenaPhase: 1,
+    historicalTraits,
+    discoveries,
+    ownerFounders: profiles,
+    arenaFounders: profiles,
+    naturalBarriers: true,
+  });
+}
+
+export function createArenaSuccessorState(
+  previous,
+  ownerGenomes = null,
+  seed = Date.now(),
+) {
+  const genomes =
+      ownerGenomes ?? {
+        blue: arenaSurvivorGenomes(previous, "blue"),
+        amber: arenaSurvivorGenomes(previous, "amber"),
+      },
+    profiles = arenaProfiles(genomes),
+    state = createState(seed, {
+      scenario: "arena",
+      geologicalStage: "quaternary",
+      cycle: previous.cycle + 1,
+      totalCycles: previous.totalCycles + 1,
+      arenaPhase: (previous.arenaPhase || previous.cycle || 1) + 1,
+      generationOffset:
+        previous.generationOffset + previous.maxGenerationReached + 1,
+      historicalTraits: [
+        ...new Set([
+          ...previous.historicalTraits,
+          ...Object.values(genomes).flat(2),
+        ]),
+      ],
+      discoveries: previous.discoveries,
+      ownerFounders: profiles,
+      arenaFounders: profiles,
+      naturalBarriers: true,
+    });
+  log(
+    state,
+    `Arena · Fase ${state.arenaPhase}: sobreviventes e engenharia genética definiram os novos fundadores.`,
+  );
+  return state;
+}
+
+function createEarthSuccessorState(previous, seed) {
+  const priorStage = currentGeologicalStage(previous),
+    candidate = stageComplete(previous)
+      ? nextGeologicalStage(priorStage.id)
+      : priorStage,
+    advanced = candidate.id !== priorStage.id,
+    cycle = advanced ? 1 : previous.cycle + 1,
+    totalCycles = previous.totalCycles + 1,
+    stageIndex = GEOLOGICAL_STAGES.findIndex((stage) => stage.id === candidate.id),
+    preview = previewFounderProfiles(stageIndex),
+    state = createState(seed, {
+      scenario: "earth",
+      geologicalStage: candidate.id,
+      cycle,
+      totalCycles,
+      generationOffset:
+        previous.generationOffset + previous.maxGenerationReached + 1,
+      historicalTraits: [
+        ...new Set([...previous.historicalTraits, ...preview.historicalTraits]),
+      ],
+      discoveries: previous.discoveries,
+      founders: { primary: preview.primary, companion: preview.companion },
+      canonicalPair: true,
+    });
+  log(
+    state,
+    advanced
+      ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period} com linhagens canônicas do período.`
+      : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo com fundadores canônicos.`,
+  );
+  return state;
+}
+
 export function createSuccessorState(previous, seed = Date.now()) {
+  if (previous.scenario === "earth")
+    return createEarthSuccessorState(previous, seed);
+  if (previous.scenario === "arena")
+    return createArenaSuccessorState(previous, null, seed);
   const winner = previous.result?.winner ?? null,
     selected = dominantLineage(previous, winner),
     founder = founderProfile(previous, selected.piece),
@@ -732,6 +946,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
     generationOffset =
       previous.generationOffset + previous.maxGenerationReached + 1;
   const state = createState(seed, {
+    scenario: "alternative",
     geologicalStage,
     cycle,
     totalCycles,
@@ -789,6 +1004,8 @@ export function assertState(state) {
     !integer(state.nextDisease, 1) ||
     !integer(state.nextEgg, 1) ||
     !integer(state.nextPlantSeed, 1) ||
+    !validScenario(state.scenario) ||
+    !integer(state.arenaPhase ?? 0, 0) ||
     !GEOLOGICAL_STAGES.some((stage) => stage.id === state.geologicalStage) ||
     !integer(state.cycle, 1) ||
     !integer(state.totalCycles, 1) ||
@@ -883,7 +1100,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 11 ||
+    state.version !== 12 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
