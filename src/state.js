@@ -761,10 +761,16 @@ function cleanArenaGenome(piece) {
     "Mutação Deletéria",
     "Mutação Disfuncional",
   ]);
+  const preferred = piece?.traits?.includes("Fotossíntese")
+    ? "Fotossíntese"
+    : piece?.traits?.includes("Predação")
+      ? "Predação"
+      : null;
   return completeArenaGenome(
     (piece?.ancestry ?? piece?.traits ?? []).filter(
       (trait) => !excluded.has(trait),
     ),
+    preferred,
   );
 }
 
