@@ -5,6 +5,12 @@ import {
   syncReproTraits,
 } from "./reproductive-genetics.js";
 import {
+  genomeFromLegacyProfile,
+  normalizeGenome,
+  syncGenomePhenotype,
+  withoutGenomeTraits,
+} from "./genetics.js";
+import {
   GEOLOGICAL_STAGES,
   firstCompatibleStage,
   geologicalStage,
@@ -15,7 +21,8 @@ import {
   isNegativeTrait,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v12";
+export const SAVE_KEY = "xadrez-evolutivo-save-v13";
+export const V12_KEY = "xadrez-evolutivo-save-v12";
 export const V11_KEY = "xadrez-evolutivo-save-v11";
 export const V10_KEY = "xadrez-evolutivo-save-v10";
 export const V9_KEY = "xadrez-evolutivo-save-v9";
@@ -105,7 +112,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -138,6 +145,11 @@ export function deserialize(raw) {
           profile.traits,
         );
         syncReproTraits(profile);
+        profile.genome =
+          sourceVersion >= 13 && profile.genome
+            ? normalizeGenome(profile.genome)
+            : genomeFromLegacyProfile(profile);
+        syncGenomePhenotype(profile);
         normalizePhotosyntheticRank(profile);
         return profile;
       };
@@ -154,6 +166,12 @@ export function deserialize(raw) {
       if (data.arenaFounders === undefined) data.arenaFounders = null;
       if (!Array.isArray(data.fossilRecord)) data.fossilRecord = [];
     }
+    if (data.arenaFounders && typeof data.arenaFounders === "object")
+      for (const owner of ["blue", "amber"])
+        if (data.arenaFounders[owner])
+          for (const slot of ["primary", "companion"])
+            if (data.arenaFounders[owner][slot])
+              normalizeProfile(data.arenaFounders[owner][slot]);
     if (Array.isArray(data.pieces))
       for (const piece of data.pieces) {
         normalizeProfile(piece);
@@ -500,9 +518,11 @@ export function deserialize(raw) {
       data.discoveries.mutations.unshift("Respiração anaeróbia");
     if (data.totalCycles < 2) {
       const cleanProfile = (profile) => {
-          profile.traits = (profile.traits ?? []).filter(
-            (trait) => !isNegativeTrait(trait),
+          const removed = (profile.traits ?? []).filter((trait) =>
+            isNegativeTrait(trait),
           );
+          profile.genome = withoutGenomeTraits(profile.genome, removed);
+          syncGenomePhenotype(profile);
           delete profile.deleteriousDue;
           delete profile.lastMoveRound;
           return profile;
@@ -548,7 +568,7 @@ export function deserialize(raw) {
         );
       }
     }
-    data.version = 12;
+    data.version = 13;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -731,6 +751,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V12_KEY) ??
     storage.getItem(V11_KEY) ??
     storage.getItem(V10_KEY) ??
     storage.getItem(V9_KEY) ??
