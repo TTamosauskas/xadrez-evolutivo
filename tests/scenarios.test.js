@@ -14,9 +14,11 @@ import {
 } from "../src/arena.js";
 import {
   createArenaState,
+  createArenaSuccessorState,
   createCampaignState,
   createPeriodState,
   createState,
+  createSuccessorState,
   newPiece,
 } from "../src/state.js";
 import { deserialize } from "../src/storage.js";
@@ -92,6 +94,50 @@ test("Arena starts with four engineered founders and ignores geological chronolo
   );
   assert.ok(predator);
   assert.equal(traitUnlocked(state, "Visão Binocular", predator), true);
+});
+
+test("Arena carries survivor piece forms into the next engineered phase", () => {
+  const state = createArenaState(
+    {
+      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[1]],
+      amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[5]],
+    },
+    8,
+  );
+  for (const piece of state.pieces.filter((candidate) => candidate.owner === "blue"))
+    piece.rank = 3;
+  const next = createArenaSuccessorState(
+    state,
+    {
+      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[1]],
+      amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[5]],
+    },
+    9,
+  );
+  assert.deepEqual(
+    next.pieces
+      .filter((piece) => piece.owner === "blue")
+      .map((piece) => piece.rank),
+    [3, 3],
+  );
+  assert.equal(next.arenaPhase, 2);
+});
+
+test("Vida na Terra keeps prior dominant lineages as a fossil record", () => {
+  const state = createPeriodState("paleogene", 10, null, "earth");
+  state.result = { winner: "blue", reason: "Extinção total." };
+  state.phase = "over";
+  const next = createSuccessorState(state, 11);
+  assert.equal(next.scenario, "earth");
+  assert.ok(next.fossilRecord.length >= 2);
+  assert.ok(
+    next.fossilRecord.some(
+      (entry) =>
+        entry.geologicalStage === "paleogene" &&
+        entry.owner === "blue" &&
+        entry.winner,
+    ),
+  );
 });
 
 test("Arena engineering counts substitutions rather than raw edits", () => {
