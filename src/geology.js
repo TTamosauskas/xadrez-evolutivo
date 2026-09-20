@@ -477,7 +477,12 @@ export function normalizeActiveTraits(traits, preferredEnergy = null) {
     if (family.id === "energy") continue;
     const present = family.traits.filter((trait) => keep.has(trait));
     if (present.length <= 1) continue;
-    const winner = present.at(-1);
+    const winner =
+      family.id === "diet" && !keep.has("Onívoro")
+        ? [...source]
+            .reverse()
+            .find((trait) => ["Carnívoro", "Herbívoro"].includes(trait))
+        : present.at(-1);
     for (const trait of present)
       if (trait !== winner) keep.delete(trait);
   }
@@ -511,6 +516,9 @@ export function applyTraitLoss(traits, ancestry, trait) {
   );
   if (activeFamilyMember) return normalizeActiveTraits(next);
 
+  if (family.id === "diet" && trait !== "Onívoro")
+    return normalizeActiveTraits(next);
+
   const lineage = ancestry ?? [],
     fallback = [...lineage]
       .reverse()
@@ -518,7 +526,8 @@ export function applyTraitLoss(traits, ancestry, trait) {
         (candidate) =>
           candidate !== trait &&
           family.traits.includes(candidate) &&
-          family.traits.indexOf(candidate) < family.traits.indexOf(trait),
+          (family.id === "diet" ||
+            family.traits.indexOf(candidate) < family.traits.indexOf(trait)),
       );
   if (fallback) next.push(fallback);
   return normalizeActiveTraits(next);
