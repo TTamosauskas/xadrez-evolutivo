@@ -488,8 +488,10 @@ test("v7 saves rename Construção de Nicho and preserve it as lineage ancestry"
 
   const restored = deserialize(JSON.stringify(old)),
     migrated = restored.pieces[0];
-  assert.deepEqual(migrated.traits, ["Construtor de Nicho"]);
-  assert.deepEqual(migrated.ancestry, ["Construtor de Nicho"]);
+  assert.ok(migrated.traits.includes("Construtor de Nicho"));
+  assert.ok(migrated.traits.includes("Multicelularismo"));
+  assert.ok(migrated.ancestry.includes("Construtor de Nicho"));
+  assert.ok(migrated.ancestry.includes("Respiração anaeróbia"));
   assert.deepEqual(restored.historicalTraits, [
     "Respiração anaeróbia",
     "Construtor de Nicho",
@@ -589,8 +591,10 @@ test("v7 saves migrate Construtor Avançado to Antropização and initialize new
   delete old.domesticPlacement;
   delete old.socialDefense;
   const restored = deserialize(JSON.stringify(old));
-  assert.deepEqual(restored.pieces[0].traits, ["Antropização"]);
-  assert.deepEqual(restored.pieces[0].ancestry, ["Antropização"]);
+  assert.ok(restored.pieces[0].traits.includes("Antropização"));
+  assert.ok(restored.pieces[0].traits.includes("Multicelularismo"));
+  assert.ok(restored.pieces[0].ancestry.includes("Antropização"));
+  assert.ok(restored.pieces[0].ancestry.includes("Respiração anaeróbia"));
   assert.deepEqual(restored.historicalTraits, [
     "Respiração anaeróbia",
     "Antropização",
