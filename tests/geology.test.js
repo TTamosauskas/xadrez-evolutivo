@@ -481,6 +481,7 @@ test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either 
   s.historicalTraits = GEOLOGICAL_STAGES.slice(0, 6).flatMap(
     (stage) => stage.required,
   );
+  s.historicalTraits.push("Locomoção Avançada");
   const herbivore = {
       traits: ["Multicelularismo", "Predação", "Herbívoro"],
       ancestry: ["Predação", "Herbívoro"],
