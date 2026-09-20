@@ -3,6 +3,12 @@ import { round, random, pick, log, notice } from "./state.js";
 import { pathogenUnlocked } from "./geology.js";
 import { recordDiscovery } from "./discoveries.js";
 export const POPULATION_RESISTANCE_MORTALITY_FACTOR = 0.25;
+export function pathogenMortalityChance(piece, disease) {
+  const base = disease.mortality / 100;
+  return disease.source === "population" && has(piece, "Resistência")
+    ? base * POPULATION_RESISTANCE_MORTALITY_FACTOR
+    : base;
+}
 
 export function infect(state, p, disease) {
   if (
@@ -144,11 +150,7 @@ export function tickDiseases(ctx) {
     );
     for (const p of due) {
       if (disease.source === "population") {
-        const mortality =
-          (disease.mortality / 100) *
-          (has(p, "Resistência")
-            ? POPULATION_RESISTANCE_MORTALITY_FACTOR
-            : 1);
+        const mortality = pathogenMortalityChance(p, disease);
         if (random(state) < mortality) {
           if (ctx.kill(p.id, "Patógeno Virulento")) disease.deaths++;
           else {
