@@ -616,6 +616,9 @@ test("current saves normalize derived photosynthetic forms back to Pawn", () => 
   s.pieces[0].ancestry = ["Respiração anaeróbia", "Fotossíntese"];
   const restored = deserialize(JSON.stringify(s));
   assert.equal(restored.pieces[0].rank, 0);
-  assert.deepEqual(restored.pieces[0].traits, ["Fotossíntese"]);
+  assert.deepEqual(restored.pieces[0].traits, [
+    "Respiração anaeróbia",
+    "Fotossíntese",
+  ]);
   assertState(restored);
 });
