@@ -52,11 +52,15 @@ export function startDisease(
   );
   return disease;
 }
+export function populationPathogenChance(gap) {
+  return Number(
+    Math.min(0.45, 0.05 + Math.max(0, gap) * 0.04).toFixed(2),
+  );
+}
+
 export function checkPopulation(state) {
-  if (!pathogenUnlocked(state)) return;
-  for (const owner of ["blue", "amber"])
-    if (state.pieces.filter((p) => p.owner === owner).length <= 11)
-      state.populationLatched[owner] = false;
+  if (!pathogenUnlocked(state) || state.turn === 0 || state.turn % 2 !== 0)
+    return;
   if (round(state) < state.populationDiseaseCooldownUntil) return;
   if (
     state.diseases.some(
@@ -64,32 +68,47 @@ export function checkPopulation(state) {
     )
   )
     return;
+
   const counts = {
-    blue: state.pieces.filter((p) => p.owner === "blue").length,
-    amber: state.pieces.filter((p) => p.owner === "amber").length,
-  };
-  const dominant =
-    counts.blue === counts.amber
-      ? pick(state, ["blue", "amber"])
-      : counts.blue > counts.amber
-        ? "blue"
-        : "amber";
-  if (counts[dominant] < 17 || state.populationLatched[dominant]) return;
-  state.populationLatched[dominant] = true;
-  const enemies = state.pieces.filter((p) => p.owner === other(dominant));
-  const candidates = state.pieces.filter(
-    (p) => p.owner === dominant && !has(p, "Resistência") && !p.infection,
-  );
+      blue: state.pieces.filter((p) => p.owner === "blue").length,
+      amber: state.pieces.filter((p) => p.owner === "amber").length,
+    },
+    dominant =
+      counts.blue === counts.amber
+        ? pick(state, ["blue", "amber"])
+        : counts.blue > counts.amber
+          ? "blue"
+          : "amber",
+    gap = Math.abs(counts.blue - counts.amber);
+
+  if (
+    counts[dominant] < 17 ||
+    random(state) >= populationPathogenChance(gap)
+  )
+    return;
+
+  const enemies = state.pieces.filter((p) => p.owner === other(dominant)),
+    candidates = state.pieces.filter(
+      (p) => p.owner === dominant && !has(p, "Resistência") && !p.infection,
+    );
+  if (!candidates.length) return;
+
   const score = (p) =>
-    enemies.length ? Math.min(...enemies.map((e) => distance(p, e))) : 0;
-  const max = Math.max(...candidates.map(score));
-  const seed = pick(
-    state,
-    candidates.filter((p) => score(p) === max),
-  );
+      enemies.length ? Math.min(...enemies.map((e) => distance(p, e))) : 0,
+    max = Math.max(...candidates.map(score)),
+    seed = pick(
+      state,
+      candidates.filter((p) => score(p) === max),
+    );
   if (seed) {
     const disease = startDisease(state, "population", seed, dominant);
-    state.populationDiseaseCooldownUntil = (disease?.endRound ?? round(state)) + 6;
+    state.populationDiseaseCooldownUntil =
+      (disease?.endRound ?? round(state)) + 6;
+    if (disease)
+      log(
+        state,
+        `🦠 Pressão demográfica: diferença ${gap} iniciou surto nas ${OWNERS[dominant]}.`,
+      );
   }
 }
 export function tickDiseases(ctx) {

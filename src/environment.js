@@ -24,6 +24,78 @@ const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.9);
 export const severeEventActive = (state) =>
   !!state.event && SEVERE_EVENT_IDS.has(state.event.id);
 
+export function fertilityDepletionRate(population) {
+  if (population < 24) return 0;
+  return Number(
+    Math.min(0.3, 0.05 + (population - 24) * 0.0125).toFixed(2),
+  );
+}
+
+export function populationAttritionChance(population) {
+  if (population < 32) return 0;
+  return Number(
+    Math.min(0.45, 0.1 + (population - 32) * 0.05).toFixed(2),
+  );
+}
+
+function depletePausedFertility(state) {
+  const population = activePopulation(state),
+    rate = fertilityDepletionRate(population);
+  if (!rate) return 0;
+
+  const occupied = new Set([
+      ...state.pieces.map((piece) => square(piece.r, piece.c)),
+      ...state.eggs.map((egg) => square(egg.r, egg.c)),
+      ...state.plantSeeds.map((seed) => square(seed.r, seed.c)),
+    ]),
+    hazards = new Set(state.event?.hazards ?? []),
+    eligible = allCells().filter((cell) => {
+      const r = Math.floor(cell / 8),
+        col = cell % 8;
+      return (
+        state.board[cell] === "fertile" &&
+        !occupied.has(cell) &&
+        !hazards.has(cell) &&
+        !barrierAt(state, r, col)
+      );
+    });
+
+  if (!eligible.length) return 0;
+  const expected = eligible.length * rate,
+    whole = Math.floor(expected),
+    count = Math.min(
+      eligible.length,
+      whole + (random(state) < expected - whole ? 1 : 0),
+    );
+  if (!count) return 0;
+
+  for (const cell of shuffle(state, eligible).slice(0, count))
+    state.board[cell] = "neutral";
+  log(
+    state,
+    `🌾 Superpopulação esgotou ${count} casa(s) fértil(is) desocupada(s).`,
+  );
+  return count;
+}
+
+export function applyPopulationAttrition(ctx) {
+  const state = ctx.state,
+    population = activePopulation(state),
+    chance = populationAttritionChance(population);
+  if (!chance || severeEventActive(state) || random(state) >= chance)
+    return false;
+
+  const density = (piece) =>
+      state.pieces.filter(
+        (other) => other.id !== piece.id && distance(piece, other) === 1,
+      ).length,
+    highest = Math.max(...state.pieces.map(density)),
+    candidates = state.pieces.filter((piece) => density(piece) === highest),
+    victim = pick(state, candidates);
+  if (!victim) return false;
+  return ctx.kill(victim.id, "atrito populacional");
+}
+
 function weightedEvent(state, candidates, weights) {
   const total = candidates.reduce(
     (sum, event) => sum + (weights[event.id] ?? 0),
@@ -710,6 +782,92 @@ export function checkPopulationClimate(ctx) {
   return true;
 }
 
+function conwayPath(state, start, goal) {
+  const startCell = square(start.r, start.c),
+    goalCell = square(goal.r, goal.c),
+    occupied = new Set(
+      state.pieces
+        .filter((piece) => piece.id !== start.id && piece.id !== goal.id)
+        .map((piece) => square(piece.r, piece.c)),
+    ),
+    score = Array(64).fill(Infinity),
+    previous = Array(64).fill(null),
+    pending = new Set(allCells());
+  score[startCell] = 0;
+
+  while (pending.size) {
+    let current = null;
+    for (const cell of pending)
+      if (
+        current === null ||
+        score[cell] < score[current] ||
+        (score[cell] === score[current] && cell < current)
+      )
+        current = cell;
+    if (current === null || !Number.isFinite(score[current])) break;
+    pending.delete(current);
+    if (current === goalCell) break;
+
+    const r = Math.floor(current / 8),
+      c = current % 8;
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const rr = r + dr,
+          cc = c + dc;
+        if (!inside(rr, cc)) continue;
+        const next = square(rr, cc);
+        if (
+          next !== goalCell &&
+          (occupied.has(next) || builtBarrierAt(state, rr, cc))
+        )
+          continue;
+        const edits =
+            (state.board[next] === "hostile" ? 1 : 0) +
+            (naturalBarrierAt(state, rr, cc) ? 1 : 0),
+          candidate = score[current] + 100 + edits;
+        if (
+          candidate < score[next] ||
+          (candidate === score[next] &&
+            (previous[next] === null || current < previous[next]))
+        ) {
+          score[next] = candidate;
+          previous[next] = current;
+        }
+      }
+  }
+
+  if (!Number.isFinite(score[goalCell])) return null;
+  const path = [];
+  for (let cell = goalCell; cell !== null; cell = previous[cell]) {
+    path.push(cell);
+    if (cell === startCell) break;
+  }
+  return path.at(-1) === startCell ? path.reverse() : null;
+}
+
+function nearestPopulationCorridor(state) {
+  const pairs = [];
+  for (const blue of state.pieces.filter((piece) => piece.owner === "blue"))
+    for (const amber of state.pieces.filter((piece) => piece.owner === "amber"))
+      pairs.push({
+        a: blue,
+        b: amber,
+        distance: distance(blue, amber),
+      });
+  pairs.sort(
+    (a, b) =>
+      a.distance - b.distance ||
+      a.a.id - b.a.id ||
+      a.b.id - b.b.id,
+  );
+  for (const pair of pairs) {
+    const path = conwayPath(state, pair.a, pair.b);
+    if (path) return { ...pair, path };
+  }
+  return null;
+}
+
 export function repairConwayStagnation(ctx, level) {
   const state = ctx.state;
   if (level === 1) {
@@ -722,24 +880,52 @@ export function repairConwayStagnation(ctx, level) {
     );
     return;
   }
-  const axis = Math.floor(random(state) * 8),
-    horizontal = random(state) < 0.5,
-    cells = allCells().filter((cell) =>
-      horizontal ? Math.floor(cell / 8) === axis : cell % 8 === axis,
-    ),
-    limit = level === 2 ? 3 : 8;
-  let changed = 0;
-  for (const cell of shuffle(state, cells)) {
-    if (changed >= limit) break;
-    if (state.board[cell] !== "hostile") continue;
-    state.board[cell] = "neutral";
-    changed++;
+  if (level === 2) {
+    const axis = Math.floor(random(state) * 8),
+      horizontal = random(state) < 0.5,
+      cells = allCells().filter((cell) =>
+        horizontal ? Math.floor(cell / 8) === axis : cell % 8 === axis,
+      );
+    let changed = 0;
+    for (const cell of shuffle(state, cells)) {
+      if (changed >= 3) break;
+      if (state.board[cell] !== "hostile") continue;
+      state.board[cell] = "neutral";
+      changed++;
+    }
+    log(
+      state,
+      `🌀 Conway: abriu um corredor local com ${changed} casa(s) neutra(s).`,
+    );
+    return;
+  }
+
+  const corridor = nearestPopulationCorridor(state);
+  if (!corridor) {
+    log(
+      state,
+      "🌀 Conway: o reparo final encontrou populações sem rota disponível.",
+    );
+    return;
+  }
+
+  let changed = 0,
+    barriers = 0;
+  for (const cell of corridor.path.slice(1, -1)) {
+    if (state.board[cell] === "hostile") {
+      state.board[cell] = "neutral";
+      changed++;
+    }
+    if (state.naturalBarriers.includes(cell)) {
+      state.naturalBarriers = state.naturalBarriers.filter(
+        (barrier) => barrier !== cell,
+      );
+      barriers++;
+    }
   }
   log(
     state,
-    level === 2
-      ? `🌀 Conway: abriu um corredor local com ${changed} casa(s) neutra(s).`
-      : `🌀 Conway: reconfigurou uma faixa local com ${changed} casa(s) neutra(s).`,
+    `🌀 Conway: abriu caminho entre organismos adversários próximos, alterando ${changed + barriers} casa(s) (${changed} hostil(is), ${barriers} barreira(s) natural(is)).`,
   );
 }
 
@@ -749,6 +935,7 @@ export function tickEnvironment(ctx) {
 
   tickSevereEventTurn(state);
   tickDecomposition(state);
+  depletePausedFertility(state);
 
   while (
     !severeEventActive(state) &&

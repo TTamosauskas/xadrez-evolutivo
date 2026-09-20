@@ -141,6 +141,34 @@ function summarize(runs) {
       ),
     },
     populationMax: Math.max(...runs.map((run) => run.maxPopulation)),
+    pressure: {
+      attritionDeaths: runs.reduce(
+        (sum, run) => sum + run.attritionDeaths,
+        0,
+      ),
+      fertileDepleted: runs.reduce(
+        (sum, run) => sum + run.fertileDepleted,
+        0,
+      ),
+      populationPathogens: runs.reduce(
+        (sum, run) => sum + run.populationPathogens,
+        0,
+      ),
+      pathogenGapMean: (() => {
+        const gaps = runs.flatMap((run) => run.pathogenGaps);
+        return gaps.length
+          ? Number((gaps.reduce((a, b) => a + b, 0) / gaps.length).toFixed(1))
+          : null;
+      })(),
+      conwayFinalRepairs: runs.reduce(
+        (sum, run) => sum + run.conwayFinalRepairs,
+        0,
+      ),
+      conwayCorridorCells: runs.reduce(
+        (sum, run) => sum + run.conwayCorridorCells,
+        0,
+      ),
+    },
     naturalBarriers: {
       initialMean: Number(
         (
@@ -167,7 +195,13 @@ function runGame(initial, seed) {
     maxPopulation = s.pieces.length,
     maxNaturalBarriers = s.naturalBarriers.length,
     barriersCreated = 0,
-    barriersRemoved = 0;
+    barriersRemoved = 0,
+    attritionDeaths = 0,
+    fertileDepleted = 0,
+    populationPathogens = 0,
+    pathogenGaps = [],
+    conwayFinalRepairs = 0,
+    conwayCorridorCells = 0;
   const initialNaturalBarriers = s.naturalBarriers.length;
 
   while (!s.result && commands < limit) {
@@ -206,9 +240,30 @@ function runGame(initial, seed) {
       if (!beforeNatural.has(cell)) barriersCreated++;
     for (const cell of beforeNatural)
       if (!afterNatural.has(cell)) barriersRemoved++;
-    for (const entry of next.logs.slice(0, next.logs.length - beforeLogLength))
+    for (const entry of next.logs.slice(0, next.logs.length - beforeLogLength)) {
       if (entry.text.includes("passaram automaticamente por bloqueio"))
         autoBlocked++;
+      if (entry.text.includes("perderam uma peça por atrito populacional"))
+        attritionDeaths++;
+      const depleted = entry.text.match(
+        /Superpopulação esgotou (\d+) casa/,
+      );
+      if (depleted) fertileDepleted += Number(depleted[1]);
+      const pathogen = entry.text.match(
+        /Pressão demográfica: diferença (\d+)/,
+      );
+      if (pathogen) {
+        populationPathogens++;
+        pathogenGaps.push(Number(pathogen[1]));
+      }
+      const corridor = entry.text.match(
+        /abriu caminho entre organismos adversários próximos, alterando (\d+) casa/,
+      );
+      if (corridor) {
+        conwayFinalRepairs++;
+        conwayCorridorCells += Number(corridor[1]);
+      }
+    }
 
     s = next;
     commands++;
@@ -232,6 +287,12 @@ function runGame(initial, seed) {
     maxNaturalBarriers,
     barriersCreated,
     barriersRemoved,
+    attritionDeaths,
+    fertileDepleted,
+    populationPathogens,
+    pathogenGaps,
+    conwayFinalRepairs,
+    conwayCorridorCells,
   };
 }
 
