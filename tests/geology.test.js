@@ -15,6 +15,8 @@ import {
   stageComplete,
   traitUnlocked,
   traitLossAllowed,
+  PLANT_DERIVED_TRAITS,
+  MULTICELLULAR_DEPENDENT_TRAITS,
 } from "../src/geology.js";
 import {
   createState,
@@ -434,6 +436,61 @@ test("Fotossíntese and Predação switch branches by substitutive mutation", ()
     innovationWeight(s, "Predação", photosynthetic),
     innovationWeight(s, "Predação", ancestral),
   );
+});
+
+test("all photosynthetic innovations after Fotossíntese require Multicelularismo", () => {
+  const s = createState(144, {
+      geologicalStage: "quaternary",
+      historicalTraits: GEOLOGICAL_STAGES.flatMap((stage) => stage.required),
+    }),
+    unicellularPlant = {
+      traits: ["Fotossíntese"],
+      ancestry: [
+        "Fotossíntese",
+        "Embriófitas",
+        "Traqueófitas",
+        "Gimnospermas",
+      ],
+    };
+
+  for (const trait of PLANT_DERIVED_TRAITS) {
+    assert.ok(MULTICELLULAR_DEPENDENT_TRAITS.has(trait), trait);
+    assert.equal(traitUnlocked(s, trait, unicellularPlant), false, trait);
+  }
+});
+
+test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either diet branch", () => {
+  const prior = GEOLOGICAL_STAGES.slice(
+      0,
+      GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "ordovician"),
+    ).flatMap((stage) => stage.required),
+    s = createState(145, {
+      geologicalStage: "ordovician",
+      historicalTraits: prior,
+    }),
+    predator = {
+      traits: ["Multicelularismo", "Predação"],
+      ancestry: ["Predação"],
+    };
+
+  assert.equal(traitUnlocked(s, "Herbívoro", predator), true);
+  predator.traits.push("Carnívoro");
+  assert.equal(traitUnlocked(s, "Herbívoro", predator), false);
+
+  s.geologicalStage = "devonian";
+  s.historicalTraits = GEOLOGICAL_STAGES.slice(0, 6).flatMap(
+    (stage) => stage.required,
+  );
+  const herbivore = {
+      traits: ["Multicelularismo", "Predação", "Herbívoro"],
+      ancestry: ["Predação", "Herbívoro"],
+    },
+    carnivore = {
+      traits: ["Multicelularismo", "Predação", "Carnívoro"],
+      ancestry: ["Predação", "Carnívoro"],
+    };
+  assert.equal(traitUnlocked(s, "Onívoro", herbivore), true);
+  assert.equal(traitUnlocked(s, "Onívoro", carnivore), true);
 });
 
 test("plant innovations unlock in their geological periods without becoming mandatory stage gates", () => {
