@@ -223,7 +223,7 @@ test("selected legend shows hidden recessive genes before ancestry without dupli
   const dom = setup(),
     s = createState(220),
     piece = s.pieces[0];
-  piece.traits = ["Multicelularismo", "Predação"];
+  piece.traits = ["Respiração anaeróbia", "Multicelularismo", "Predação"];
   piece.ancestry = ["Multicelularismo", "Predação", "Ovíparo", "Locomoção"];
   piece.genome = genomeFromTraits(piece.traits, ["Ovíparo"]);
   syncGenomePhenotype(piece, "Predação");
