@@ -28,24 +28,24 @@ import {
   reproductionReady,
 } from "./state.js";
 import {
-  GENETIC_TRAITS,
-  cloneReproGenes,
-  geneGainOptions,
-  geneLossOptions,
-  gainReproAllele,
-  inheritSexualReproGenes,
-  loseReproAllele,
-  reproGeneSignature,
-  reproPhenotype,
-  syncReproTraits,
-} from "./reproductive-genetics.js";
+  BASAL_GENETIC_TRAIT,
+  NEGATIVE_GENETIC_TRAITS,
+  cloneGenome,
+  developmentMode,
+  dispersalMode,
+  gainGenomeAllele,
+  genomeCarriedTraits,
+  genomeGainOptions,
+  genomeLossOptions,
+  genomeSignature,
+  inheritSexualGenome,
+  loseGenomeAllele,
+  syncGenomePhenotype,
+  withoutGenomeTraits,
+} from "./genetics.js";
 import {
-  applyTraitLoss,
-  applyTraitMutation,
   deleteriousMutationUnlocked,
   innovationWeight,
-  normalizeActiveTraits,
-  normalizeMulticellularTraits,
   pawnMutationUnlocked,
   rankMutationUnlocked,
   normalizePhotosyntheticRank,
@@ -55,9 +55,10 @@ import {
 import { mutationDiscoveryId, recordDiscovery } from "./discoveries.js";
 import { tryVectorPathogen } from "./disease.js";
 
-const NEGATIVE = ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"];
+const NEGATIVE = [...NEGATIVE_GENETIC_TRAITS];
 const POSITIVE = Object.keys(TRAITS).filter(
-  (t) => !NEGATIVE.includes(t) && !GENETIC_TRAITS.includes(t),
+  (trait) =>
+    trait !== BASAL_GENETIC_TRAIT && !NEGATIVE_GENETIC_TRAITS.has(trait),
 );
 const DERIVED_FORM_NEXT = new Map([
   [0, 1],
@@ -89,16 +90,8 @@ function weightedPick(state, options) {
 }
 
 function eusocialLineageKey(piece) {
-  const traits = piece.traits
-    .filter(
-      (t) =>
-        !GENETIC_TRAITS.includes(t) &&
-        t !== "Esterilidade" &&
-        t !== "Eusocialidade",
-    )
-    .sort();
-  return `${piece.rank}|${traits.join("|")}|${reproGeneSignature(
-    piece.reproGenes,
+  return `${piece.rank}|${genomeSignature(
+    withoutGenomeTraits(piece.genome, ["Esterilidade", "Eusocialidade"]),
   )}`;
 }
 
@@ -128,27 +121,25 @@ function mutation(state, p, positiveOnly) {
     DERIVED_FORM_NEXT.has(p.rank)
   )
     gains.push({ rank: DERIVED_FORM_NEXT.get(p.rank), weight: 1 });
-  for (const trait of POSITIVE)
-    if (!has(p, trait) && traitUnlocked(state, trait, p))
-      gains.push({ gain: trait, weight: innovationWeight(state, trait, p) });
-  for (const trait of geneGainOptions(p.reproGenes))
+
+  for (const trait of genomeGainOptions(p).filter((trait) =>
+    POSITIVE.includes(trait),
+  ))
     if (traitUnlocked(state, trait, p))
-      gains.push({ gene: trait, weight: innovationWeight(state, trait, p) });
+      gains.push({
+        geneGain: trait,
+        weight: innovationWeight(state, trait, p),
+      });
 
   const losses = [];
   if (DERIVED_FORM_PREVIOUS.has(p.rank))
     losses.push({ rank: DERIVED_FORM_PREVIOUS.get(p.rank) });
-  for (const trait of p.traits)
-    if (
-      trait !== "Esterilidade" &&
-      !GENETIC_TRAITS.includes(trait) &&
-      traitLossAllowed(p, trait)
-    )
-      losses.push({ loss: trait });
-  for (const trait of geneLossOptions(p.reproGenes))
-    losses.push({ geneLoss: trait });
+  for (const trait of genomeLossOptions(p))
+    if (traitLossAllowed(p, trait))
+      losses.push({ geneLoss: trait });
   for (const trait of NEGATIVE)
-    if (!has(p, trait)) losses.push({ gain: trait });
+    if (!genomeCarriedTraits(p.genome).includes(trait))
+      losses.push({ geneGain: trait });
 
   const negativeAllowed =
       !positiveOnly && deleteriousMutationUnlocked(state),
@@ -165,37 +156,39 @@ function mutation(state, p, positiveOnly) {
   if (choice.rank !== undefined) {
     p.rank = choice.rank;
     label = `Mutação de peça: ${PIECES[p.rank]}`;
-  } else if (choice.gene) {
-    p.reproGenes = gainReproAllele(
-      p.reproGenes,
-      choice.gene,
+  } else if (choice.geneGain) {
+    p.genome = gainGenomeAllele(
+      p.genome,
+      choice.geneGain,
       () => random(state),
     );
-    syncReproTraits(p);
-    label = choice.gene;
+    syncGenomePhenotype(p);
+    p.ancestry = [
+      ...new Set([
+        ...(p.ancestry ?? []),
+        choice.geneGain,
+        ...(p.traits ?? []),
+      ]),
+    ];
+    if (
+      !NEGATIVE_GENETIC_TRAITS.has(choice.geneGain) &&
+      !state.historicalTraits.includes(choice.geneGain)
+    )
+      state.historicalTraits.push(choice.geneGain);
+    label = choice.geneGain;
   } else if (choice.geneLoss) {
-    p.reproGenes = loseReproAllele(
-      p.reproGenes,
+    p.genome = loseGenomeAllele(
+      p.genome,
       choice.geneLoss,
       () => random(state),
     );
-    syncReproTraits(p);
+    syncGenomePhenotype(p);
+    p.ancestry = [
+      ...new Set([...(p.ancestry ?? []), ...(p.traits ?? [])]),
+    ];
     label = `Perda de ${choice.geneLoss}`;
-  } else if (choice.gain) {
-    p.traits = applyTraitMutation(p.traits, choice.gain);
-    if (p.recessiveTraits?.includes(choice.gain))
-      p.recessiveTraits = p.recessiveTraits.filter(
-        (trait) => trait !== choice.gain,
-      );
-    label = choice.gain;
-  } else {
-    p.traits = applyTraitLoss(p.traits, p.ancestry, choice.loss);
-    label = `Perda de ${choice.loss}`;
   }
   normalizePhotosyntheticRank(p);
-  p.ancestry = [
-    ...new Set([...(p.ancestry ?? []), ...(p.traits ?? [])]),
-  ];
   p.mutations++;
   const firstAppearance = !state.seenMutations.includes(label);
   if (firstAppearance) {
@@ -207,102 +200,32 @@ function mutation(state, p, positiveOnly) {
   if (discoveryId) recordDiscovery(state, "mutations", discoveryId);
 }
 
-function inheritGenericRecessives(state, a, b, selectedTraits) {
-  const active = new Set(selectedTraits),
-    aHidden = new Set(a.recessiveTraits ?? []),
-    bHidden = new Set(b.recessiveTraits ?? []),
-    hidden = [];
-  for (const trait of new Set([...aHidden, ...bHidden])) {
-    if (GENETIC_TRAITS.includes(trait) || active.has(trait)) continue;
-    const fromA = aHidden.has(trait),
-      fromB = bHidden.has(trait);
-    if (fromA && fromB) {
-      const roll = random(state);
-      if (roll < 1 / 4) active.add(trait);
-      else if (roll < 3 / 4) hidden.push(trait);
-    } else if (random(state) < 1 / 2) hidden.push(trait);
-  }
-  return { traits: [...active], recessiveTraits: hidden };
-}
-
 function sexualProfile(state, a, b) {
-  const pool = [...new Set([...a.traits, ...b.traits])].filter(
-    (t) => t !== "Esterilidade" && !GENETIC_TRAITS.includes(t),
-  );
-  const aRegular = a.traits.filter((t) => !GENETIC_TRAITS.includes(t)),
-    bRegular = b.traits.filter((t) => !GENETIC_TRAITS.includes(t)),
-    target = Math.min(
-      pool.length,
-      Math.round((aRegular.length + bRegular.length) / 2),
-    );
-  let takeA = Math.floor(target / 2),
-    takeB = target - takeA;
-  if (target % 2 && random(state) < 0.5) [takeA, takeB] = [takeB, takeA];
-  const traits = [
-    ...new Set([
-      ...shuffle(state, aRegular).slice(0, takeA),
-      ...shuffle(state, bRegular).slice(0, takeB),
-    ]),
-  ];
-  traits.push(
-    ...shuffle(
-      state,
-      pool.filter((t) => !traits.includes(t)),
-    ).slice(0, Math.max(0, target - traits.length)),
-  );
+  const aPlant = has(a, "Fotossíntese"),
+    bPlant = has(b, "Fotossíntese"),
+    aPredator = has(a, "Predação"),
+    bPredator = has(b, "Predação");
+  let preferredEnergy = null;
+  if ((aPlant || bPlant) && (aPredator || bPredator))
+    preferredEnergy = random(state) < 0.5 ? "Fotossíntese" : "Predação";
+  else if (aPlant || bPlant) preferredEnergy = "Fotossíntese";
+  else if (aPredator || bPredator) preferredEnergy = "Predação";
 
-  for (const t of ["Coletor", "Camuflagem"]) {
-    const index = traits.indexOf(t);
-    if (index >= 0) traits.splice(index, 1);
-    if (
-      (has(a, t) && has(b, t)) ||
-      ((has(a, t) || has(b, t)) && random(state) < 0.5)
-    )
-      traits.push(t);
-  }
-
-  // Multicelularismo muda o modelo do organismo e não deve desaparecer
-  // acidentalmente pela recombinação sexual. Sua perda continua possível
-  // apenas como mutação explícita quando não há traits dependentes.
-  if (
-    (has(a, "Multicelularismo") || has(b, "Multicelularismo")) &&
-    !traits.includes("Multicelularismo")
-  )
-    traits.push("Multicelularismo");
-
-  const inherited = inheritGenericRecessives(state, a, b, traits),
-    inheritedTraits = inherited.traits,
-    hasEnergyConflict =
-      inheritedTraits.includes("Fotossíntese") &&
-      inheritedTraits.includes("Predação"),
-    normalizedTraits = normalizeMulticellularTraits(
-      normalizeActiveTraits(
-        inheritedTraits,
-        hasEnergyConflict && random(state) < 0.5 ? "Predação" : null,
-      ),
-    ),
-    profile = {
-      rank: Math.max(a.rank, b.rank),
-      traits: normalizedTraits,
-      ancestry: [
-        ...new Set([
-          ...(a.ancestry ?? a.traits ?? []),
-          ...(b.ancestry ?? b.traits ?? []),
-          ...a.traits,
-          ...b.traits,
-        ]),
-      ],
-      reproGenes: inheritSexualReproGenes(
-        a.reproGenes,
-        b.reproGenes,
-        () => random(state),
-      ),
-      recessiveTraits: inherited.recessiveTraits.filter(
-        (trait) => !normalizedTraits.includes(trait),
-      ),
-      mutations: Math.max(a.mutations, b.mutations),
-    };
-  syncReproTraits(profile);
+  const profile = {
+    rank: Math.max(a.rank, b.rank),
+    traits: [],
+    ancestry: [
+      ...new Set([
+        ...(a.ancestry ?? a.traits ?? []),
+        ...(b.ancestry ?? b.traits ?? []),
+        ...genomeCarriedTraits(a.genome),
+        ...genomeCarriedTraits(b.genome),
+      ]),
+    ],
+    genome: inheritSexualGenome(a, b, () => random(state)),
+    mutations: Math.max(a.mutations, b.mutations),
+  };
+  syncGenomePhenotype(profile, preferredEnergy);
   return normalizePhotosyntheticRank(profile);
 }
 
@@ -381,15 +304,12 @@ function makeChildProfile(state, parent, mate, profile) {
         ...profile.traits,
       ]),
     ],
-    reproGenes: cloneReproGenes(profile.reproGenes ?? parent.reproGenes),
-    recessiveTraits: [
-      ...new Set(profile.recessiveTraits ?? parent.recessiveTraits ?? []),
-    ].filter((trait) => !profile.traits.includes(trait)),
+    genome: cloneGenome(profile.genome ?? parent.genome),
     mutations: profile.mutations,
     generation: Math.max(parent.generation, mate?.generation ?? 0) + 1,
     parentId: parent.id,
   };
-  syncReproTraits(child);
+  syncGenomePhenotype(child);
   if (random(state) < (state.event?.id === "solar" ? 1 : 1 / 3))
     mutation(state, child, !!mate);
   applyAirSacRankFloor(child);
@@ -759,7 +679,6 @@ export function reproduce(
     return 0;
 
   const profile = mate ? sexualProfile(state, parent, mate) : parent,
-    phenotype = reproPhenotype(parent.reproGenes),
     plant = has(profile, "Fotossíntese"),
     seedPlant =
       has(profile, "Gimnospermas") || has(profile, "Angiospermas"),
@@ -772,8 +691,8 @@ export function reproduce(
       ? "immediate"
       : plant
         ? "immediate"
-        : phenotype.development,
-    dispersal = seedPlant ? "local" : phenotype.dispersal,
+        : developmentMode(parent),
+    dispersal = seedPlant ? "local" : dispersalMode(parent),
     population = activePopulation(state),
     baseWanted =
       options.forcedCount ??
