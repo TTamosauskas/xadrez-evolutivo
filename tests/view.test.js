@@ -66,6 +66,16 @@ test("ecological event modal uses icon title, italic subtitle and integrated dur
   dom.window.close();
 });
 
+test("information dialog opens at the top so recent log entries are visible first", () => {
+  const dom = setup(),
+    d = dom.window.document,
+    app = readFileSync(new URL("../src/app.js", import.meta.url), "utf8");
+  assert.equal(d.getElementById("info-dialog").getAttribute("tabindex"), "-1");
+  assert.match(app, /dialog\.focus\(\{ preventScroll: true \}\)/);
+  assert.match(app, /dialog\.scrollTop = 0/);
+  dom.window.close();
+});
+
 test("menu exposes match log and evolutionary history for consultation", () => {
   const dom = setup(),
     d = dom.window.document;
@@ -111,18 +121,22 @@ test("renders one board occupant per piece and exactly one stylesheet and module
   assert.equal(d.querySelectorAll("link[rel=stylesheet]").length, 1);
   dom.window.close();
 });
-test("built barriers render as black blocks with white borders", () => {
+test("barriers render with a granite texture", () => {
   const dom = setup(),
     s = createState(19);
   s.barriers = [27];
+  s.naturalBarriers = [28];
   render(dom.window.document, s);
   const d = dom.window.document,
-    cell = d.querySelector('[data-r="3"][data-c="3"]'),
+    built = d.querySelector('[data-r="3"][data-c="3"]'),
+    natural = d.querySelector('[data-r="3"][data-c="4"]'),
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
-  assert.ok(cell.classList.contains("built-barrier"));
-  assert.ok(cell.querySelector(".barrier-mark"));
-  assert.match(css, /\.barrier-mark[\s\S]*background:\s*#000000/);
-  assert.match(css, /\.barrier-mark[\s\S]*border:\s*2px solid #ffffff/);
+  assert.ok(built.classList.contains("built-barrier"));
+  assert.ok(natural.classList.contains("natural-barrier"));
+  assert.ok(built.querySelector(".barrier-mark"));
+  assert.match(css, /\.cell\.barrier[\s\S]*radial-gradient/);
+  assert.match(css, /\.barrier-mark[\s\S]*radial-gradient/);
+  assert.match(css, /rgba\(0,0,0,0\.22\)/);
   dom.window.close();
 });
 
