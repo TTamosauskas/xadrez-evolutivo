@@ -489,6 +489,21 @@ export function normalizeActiveTraits(traits, preferredEnergy = null) {
   return source.filter((trait) => keep.has(trait));
 }
 
+export function traitSupersededByActive(traits, trait) {
+  const entry = activeFamilyByTrait.get(trait);
+  if (!entry || entry.family.id === "energy") return false;
+  const active = entry.family.traits.find((candidate) =>
+    (traits ?? []).includes(candidate),
+  );
+  if (!active || active === trait) return false;
+  if (entry.family.id === "diet")
+    return active === "Onívoro" && trait !== "Onívoro";
+  return (
+    entry.family.traits.indexOf(active) >
+    entry.family.traits.indexOf(trait)
+  );
+}
+
 export function applyTraitMutation(traits, trait) {
   const set = new Set(traits ?? []),
     family = activeTraitFamily(trait);
@@ -607,6 +622,7 @@ export function stageComplete(state) {
 
 export function traitUnlocked(state, trait, piece = null) {
   if (NEGATIVE_TRAITS.has(trait)) return true;
+  if (piece && traitSupersededByActive(piece.traits, trait)) return false;
   if (
     piece?.traits?.includes("Fotossíntese") &&
     trait !== "Predação" &&
