@@ -97,49 +97,42 @@ function importLegacyReproGenes(genome, reproGenes, activeTraits) {
       setActivePair(genome, trait);
 }
 
-function completeGeneticScaffold(activeTraits, hidden) {
-  const set = new Set(
-    (activeTraits ?? []).filter(
-      (trait) => TRAITS[trait] && !hidden.has(trait),
+function lineageScaffold(activeTraits, hidden) {
+  const carried = new Set(
+      (activeTraits ?? []).filter((trait) => TRAITS[trait]),
     ),
-  );
+    scaffold = new Set();
   let changed = true;
   while (changed) {
     changed = false;
-    for (const trait of [...set]) {
-      if (
-        MULTICELLULAR_DEPENDENT_TRAITS.has(trait) &&
-        trait !== "Multicelularismo" &&
-        !set.has("Multicelularismo")
-      ) {
-        set.add("Multicelularismo");
-        changed = true;
-      }
-      if (PLANT_DERIVED_TRAITS.has(trait) && !set.has("Fotossíntese")) {
-        set.add("Fotossíntese");
-        changed = true;
-      }
+    for (const trait of [...carried]) {
       const deps = TRAIT_DEPENDENCIES[trait];
       for (const dependency of deps?.lineage ?? [])
-        if (!set.has(dependency) && !hidden.has(dependency)) {
-          set.add(dependency);
+        if (
+          TRAITS[dependency] &&
+          !carried.has(dependency) &&
+          !hidden.has(dependency)
+        ) {
+          carried.add(dependency);
+          scaffold.add(dependency);
           changed = true;
         }
       if (
         deps?.lineageAny?.length &&
-        !deps.lineageAny.some((dependency) => set.has(dependency))
+        !deps.lineageAny.some((dependency) => carried.has(dependency))
       ) {
         const dependency = deps.lineageAny.find(
-          (candidate) => !hidden.has(candidate),
+          (candidate) => TRAITS[candidate] && !hidden.has(candidate),
         );
         if (dependency) {
-          set.add(dependency);
+          carried.add(dependency);
+          scaffold.add(dependency);
           changed = true;
         }
       }
     }
   }
-  return [...set];
+  return [...scaffold];
 }
 
 export function genomeFromTraits(
@@ -151,9 +144,14 @@ export function genomeFromTraits(
     hidden = new Set(
       (hiddenRecessives ?? []).filter((trait) => TRAITS[trait]),
     ),
-    active = completeGeneticScaffold(activeTraits, hidden);
+    active = [...new Set(activeTraits)].filter(
+      (trait) => TRAITS[trait] && !hidden.has(trait),
+    ),
+    scaffold = lineageScaffold(active, hidden);
 
   for (const trait of active) setActivePair(genome, trait);
+  for (const trait of scaffold)
+    if (!active.includes(trait)) setHiddenPair(genome, trait);
   importLegacyReproGenes(genome, legacyReproGenes, active);
   for (const trait of hidden) {
     const pair = genome[trait];
@@ -240,17 +238,8 @@ export function genomeCarriedTraits(source) {
   );
 }
 
-function dependencySatisfied(trait, dependency, active, carried) {
-  if (dependency === BASAL_GENETIC_TRAIT)
-    return active.has(BASAL_GENETIC_TRAIT) || carried.has(BASAL_GENETIC_TRAIT);
-  if (active.has(dependency)) return true;
-  if (!carried.has(dependency)) return false;
-  const family = activeTraitFamily(dependency);
-  if (!family) return false;
-  const dependencyIndex = family.traits.indexOf(dependency);
-  return family.traits.some(
-    (candidate, index) => index >= dependencyIndex && active.has(candidate),
-  );
+function dependencySatisfied(_trait, dependency, _active, carried) {
+  return carried.has(dependency);
 }
 
 export function expressGenome(
@@ -388,6 +377,16 @@ export function genomeLossOptions(source) {
   );
 }
 
+export function forceGenomeTrait(source, trait, dominance = "dominant") {
+  const genome = cloneGenome(source?.genome ?? source);
+  if (!TRAITS[trait]) return genome;
+  genome[trait] = [
+    derivedAllele(dominance),
+    ancestralAllele(),
+  ];
+  return genome;
+}
+
 export function gainGenomeAllele(source, trait, random) {
   const genome = cloneGenome(source?.genome ?? source);
   if (!TRAITS[trait] || trait === BASAL_GENETIC_TRAIT) return genome;
@@ -472,10 +471,6 @@ export function syncGenomePhenotype(profile, preferredEnergy = null) {
     profile.genome,
     previous,
     preferredEnergy,
-  );
-  profile.reproGenes = legacyReproGenesFromGenome(profile.genome);
-  profile.recessiveTraits = hiddenRecessiveTraits(profile).filter(
-    (trait) => !LEGACY_TRAITS.has(trait),
   );
   return profile;
 }
