@@ -190,7 +190,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
             !has(p, "Escalador")
           )
             break;
-        } else if (!captureOnly || occupied) add(r, c, [...path]);
+        } else if (!captureOnly || occupied) {
+          const distantCapture =
+            occupied && n > 1 && !has(p, "Percepção Espacial");
+          if (!distantCapture) add(r, c, [...path]);
+        }
         if (occupied) break;
       }
     }
