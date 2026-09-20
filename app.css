@@ -136,6 +136,11 @@ main {
   box-shadow: 0 2px 5px #0008;
   pointer-events: none;
 }
+.cell.built-barrier .piece,
+.cell.built-barrier .badges {
+  position: relative;
+  z-index: 3;
+}
 .decomposition-mark {
   position: absolute;
   inset: 0;
