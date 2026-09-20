@@ -54,6 +54,14 @@ const eventRows = [
 ];
 
 const mutationTopics = {
+  "Respiração anaeróbia": [
+    "Respiração anaeróbia",
+    "Metabolismos anaeróbios obtêm energia sem usar oxigênio e são compatíveis com condições da Terra primitiva anteriores à oxigenação atmosférica.",
+  ],
+  "Respiração aeróbia": [
+    "Respiração aeróbia",
+    "Respiração aeróbia usa oxigênio como aceptor final de elétrons e permite extração de energia mais eficiente em muitos organismos.",
+  ],
   "Fotossíntese": ["Fotossíntese", "Fotossíntese converte energia luminosa em energia química e sustenta grande parte das cadeias alimentares da biosfera."],
   "Embriófitas": ["Embryophyta", "Embriófitas são plantas terrestres que protegem o embrião multicelular e representam uma etapa central da colonização dos ambientes continentais."],
   "Haustório": ["Haustório", "Haustórios são estruturas especializadas usadas por plantas parasitas para penetrar tecidos do hospedeiro e retirar água ou nutrientes."],
