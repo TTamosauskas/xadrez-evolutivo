@@ -51,7 +51,7 @@ export const GEOLOGICAL_STAGES = [
     id: "ediacaran",
     group: "Pré-Cambriano",
     period: "Ediacarano",
-    required: ["Locomoção Articulada", "Escavador", "Construtor de Nicho"],
+    required: ["Locomoção Primitiva", "Escavador", "Construtor de Nicho"],
     habitat: { fertile: 30, hostile: 4, founderFertile: true, naturalBarriers: [1, 2], pattern: "mosaic" },
     events: {
       abundance: 3,
@@ -66,7 +66,7 @@ export const GEOLOGICAL_STAGES = [
     id: "cambrian",
     group: "Paleozoico",
     period: "Cambriano",
-    required: ["Carapaça", "Camuflagem", "Veneno"],
+    required: ["Locomoção Articulada", "Carapaça", "Camuflagem", "Veneno"],
     habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3], pattern: "mosaic" },
     events: {
       sea: 3,
@@ -230,7 +230,10 @@ export const TRAIT_STAGE = {
   Parasitismo: "cambrian",
   "Vetor Patógeno": "cretaceous",
   Esporos: "proterozoic",
-  "Locomoção Articulada": "ediacaran",
+  "Locomoção Primitiva": "ediacaran",
+  Vertebrado: "cambrian",
+  "Artrópode": "cambrian",
+  "Locomoção Articulada": "cambrian",
   Escavador: "ediacaran",
   "Construtor de Nicho": "ediacaran",
   Necrófago: "ediacaran",
@@ -282,6 +285,10 @@ export const ACTIVE_TRAIT_FAMILIES = [
   {
     id: "diet",
     traits: ["Carnívoro", "Herbívoro", "Onívoro"],
+  },
+  {
+    id: "body-plan",
+    traits: ["Vertebrado", "Artrópode"],
   },
   {
     id: "locomotion",
@@ -346,8 +353,14 @@ export const TRAIT_DEPENDENCIES = {
   Canibalismo: { lineage: ["Carnívoro"] },
   "Vetor Patógeno": { lineage: ["Parasitismo"] },
   "Precocidade Sexual": { lineage: ["Reprodução Sexuada"] },
-  "Locomoção Articulada": { lineage: ["Predação"] },
-  Escavador: { lineage: ["Locomoção Articulada"] },
+  "Locomoção Primitiva": { lineage: ["Predação"] },
+  Vertebrado: { lineage: ["Locomoção Primitiva"] },
+  "Artrópode": { lineage: ["Locomoção Primitiva"] },
+  "Locomoção Articulada": {
+    lineage: ["Locomoção Primitiva"],
+    lineageAny: ["Vertebrado", "Artrópode"],
+  },
+  Escavador: { lineage: ["Locomoção Primitiva"] },
   "Locomoção Avançada": { lineage: ["Locomoção Articulada"] },
   Escalador: { lineage: ["Locomoção Articulada"] },
   "Respiração Cutânea": { lineage: ["Locomoção Articulada"] },
@@ -375,10 +388,15 @@ export const TRAIT_DEPENDENCIES = {
   "Animais Domésticos": { historical: ["Neocórtex Desenvolvido"] },
 };
 
+export const BODY_PLAN_TRAITS = new Set(["Vertebrado", "Artrópode"]);
+
 export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Regeneração",
   "Reprodução Sexuada",
   "Precocidade Sexual",
+  "Locomoção Primitiva",
+  "Vertebrado",
+  "Artrópode",
   "Locomoção Articulada",
   "Escavador",
   "Construtor de Nicho",
@@ -458,6 +476,9 @@ export const PLANT_DERIVED_TRAITS = new Set([
 
 export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Predação",
+  "Locomoção Primitiva",
+  "Vertebrado",
+  "Artrópode",
   "Locomoção Articulada",
   "Locomoção Avançada",
   "Escavador",
@@ -614,7 +635,8 @@ export function applyTraitLoss(traits, ancestry, trait) {
 }
 
 export function traitLossAllowed(piece, trait) {
-  if (trait === "Respiração anaeróbia") return false;
+  if (trait === "Respiração anaeróbia" || BODY_PLAN_TRAITS.has(trait))
+    return false;
   if (trait !== "Multicelularismo") return true;
   return !(piece?.traits ?? []).some(
     (candidate) =>
