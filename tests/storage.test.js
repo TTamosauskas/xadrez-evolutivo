@@ -250,8 +250,8 @@ test("v5 saves split invalid Fotossíntese + Predação hybrids during migration
     migrated = load(storage);
   assert.equal(migrated.version, 11);
   assert.deepEqual(migrated.pieces[0].traits, [
-    "Respiração anaeróbia",
     "Fotossíntese",
+    "Respiração anaeróbia",
   ]);
   assert.ok(migrated.pieces[1].traits.includes("Predação"));
   assert.ok(migrated.pieces[1].traits.includes("Locomoção"));
