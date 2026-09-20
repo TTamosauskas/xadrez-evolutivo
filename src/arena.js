@@ -1,6 +1,7 @@
 import { TRAITS, has } from "./constants.js";
 import {
   BODY_PLAN_TRAITS,
+  ENERGY_BRANCH_TRAITS,
   MULTICELLULAR_DEPENDENT_TRAITS,
   PLANT_DERIVED_TRAITS,
   PLANT_INCOMPATIBLE_TRAITS,
@@ -166,7 +167,13 @@ export function arenaRecessivePairs(genome) {
   for (let i = 0; i < completed.length; i++)
     for (let j = i + 1; j < completed.length; j++) {
       const hidden = [completed[i], completed[j]];
-      if (hidden.some((trait) => BODY_PLAN_TRAITS.has(trait))) continue;
+      if (
+        hidden.some(
+          (trait) =>
+            BODY_PLAN_TRAITS.has(trait) || ENERGY_BRANCH_TRAITS.has(trait),
+        )
+      )
+        continue;
       const hiddenSet = new Set(hidden),
         active = completed.filter((trait) => !hiddenSet.has(trait));
       if (phenotypeSupportsGenome(active)) pairs.push(hidden);
