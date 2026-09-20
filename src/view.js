@@ -13,6 +13,7 @@ import {
   reproductionReady,
 } from "./state.js";
 import { currentGeologicalStage, stageProgress } from "./geology.js";
+import { hiddenRecessiveTraits } from "./reproductive-genetics.js";
 import {
   movesFor,
   partnersFor,
@@ -381,10 +382,35 @@ export function render(
         "Fenótipo ativo",
         "selected-group-heading",
       ),
+      recessiveTraits = hiddenRecessiveTraits(actor.reproGenes),
+      recessiveSet = new Set(recessiveTraits),
       ancestralOnly = [...new Set(actor.ancestry ?? [])].filter(
-        (trait) => TRAITS[trait] && !actor.traits.includes(trait),
+        (trait) =>
+          TRAITS[trait] &&
+          !actor.traits.includes(trait) &&
+          !recessiveSet.has(trait),
       ),
       selectedContent = [heading, activeHeading, ...details];
+    if (recessiveTraits.length) {
+      const recessives = make("details", undefined, "recessive-toggle"),
+        recessiveSummary = make(
+          "summary",
+          `Genes Recessivos (${recessiveTraits.length})`,
+        ),
+        recessiveList = make("div", undefined, "recessive-list");
+      for (const trait of recessiveTraits) {
+        const chip = make(
+          "span",
+          `${TRAITS[trait]?.[0] || "🧬"} ${trait}`,
+          "recessive-chip",
+        );
+        chip.title =
+          "Presente no genótipo, mas não expresso. Pode ser transmitido aos descendentes.";
+        recessiveList.append(chip);
+      }
+      recessives.append(recessiveSummary, recessiveList);
+      selectedContent.push(recessives);
+    }
     if (ancestralOnly.length) {
       const ancestry = make("details", undefined, "ancestry-toggle"),
         ancestrySummary = make(
