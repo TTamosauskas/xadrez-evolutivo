@@ -39,7 +39,9 @@ const currentTraitName = (name) =>
     ? "Construtor de Nicho"
     : name === "Construtor Avançado"
       ? "Antropização"
-      : name;
+      : name === "Locomoção"
+        ? "Locomoção Articulada"
+        : name;
 const v3TraitName = (name) =>
   currentTraitName(name === "Predador" ? "Carnívoro" : name);
 const legacyTraitName = (name) =>
@@ -48,6 +50,15 @@ const legacyTraitName = (name) =>
   );
 const v2TraitName = (name) =>
   name === "Locomoção" ? "Locomoção Avançada" : legacyTraitName(name);
+const currentGenome = (genome) => {
+  if (!genome || typeof genome !== "object") return genome;
+  const migrated = { ...genome };
+  if (migrated["Locomoção"] && !migrated["Locomoção Articulada"])
+    migrated["Locomoção Articulada"] = migrated["Locomoção"];
+  delete migrated["Locomoção"];
+  delete migrated.Fertilidade;
+  return migrated;
+};
 const mutationLabel = (label, version = 7) => {
   let mapped = label;
   if (mapped === "Construção de Nicho") mapped = "Construtor de Nicho";
@@ -59,6 +70,11 @@ const mutationLabel = (label, version = 7) => {
   if (version <= 3) {
     if (mapped === "Predador") mapped = "Carnívoro";
     if (mapped === "Perda de Predador") mapped = "Perda de Carnívoro";
+  }
+  if (version > 2) {
+    if (mapped === "Locomoção") mapped = "Locomoção Articulada";
+    if (mapped === "Perda de Locomoção")
+      mapped = "Perda de Locomoção Articulada";
   }
   if (version <= 2) {
     if (mapped === "Predação") mapped = "Carnívoro";
@@ -124,7 +140,7 @@ export function deserialize(raw) {
               : currentTraitName,
           traits = new Set((profile.traits ?? []).map(mapper));
         if (sourceVersion < 11) traits.add("Respiração anaeróbia");
-        if (legacyV2) traits.add("Locomoção");
+        if (legacyV2) traits.add("Locomoção Articulada");
         if (sourceVersion < 4) traits.add("Predação");
         const validTraits = [...traits].filter((trait) => TRAITS[trait]);
         if (
@@ -147,7 +163,7 @@ export function deserialize(raw) {
         syncReproTraits(profile);
         profile.genome =
           sourceVersion >= 13 && profile.genome
-            ? normalizeGenome(profile.genome)
+            ? normalizeGenome(currentGenome(profile.genome))
             : genomeFromLegacyProfile(profile);
         syncGenomePhenotype(profile);
         delete profile.reproGenes;
@@ -598,7 +614,7 @@ export function deserialize(raw) {
     const traits = new Set(
       (profile.traits ?? []).map(v2TraitName).filter((t) => TRAITS[t]),
     );
-    traits.add("Locomoção");
+    traits.add("Locomoção Articulada");
     traits.add("Predação");
     for (const entry of profile.mutationStack ?? []) {
       const name = v2TraitName(entry.name);
