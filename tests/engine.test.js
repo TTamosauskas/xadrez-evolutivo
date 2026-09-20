@@ -2181,6 +2181,11 @@ test("Parasitismo is offered only when it can change fertility or enemy habitat"
     s.pieces.push(newPiece(s, cell % 2 ? "blue" : "amber", r, col));
   }
   assert.equal(fertilityPaused(s), true);
+  const seededEnemy = s.pieces.find(
+    (piece) => piece.owner !== s.pieces[0].owner && piece.id !== 2,
+  );
+  seededEnemy.r = 4;
+  seededEnemy.c = 3;
   const adjacentEnemies = s.pieces.filter(
     (piece) =>
       piece.owner !== s.pieces[0].owner &&
