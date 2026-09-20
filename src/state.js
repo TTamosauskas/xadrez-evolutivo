@@ -454,6 +454,7 @@ export function createState(seed = Date.now(), options = {}) {
     offensiveStagnation: null,
     deathSites: [],
     fertileTraces: [],
+    extremophyteFertility: [],
     diseases: [],
     nextDisease: 1,
     nextEgg: 1,
@@ -803,6 +804,7 @@ export function assertState(state) {
     !validDiscoveries(state.discoveries) ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
+    !Array.isArray(state.extremophyteFertility) ||
     !Array.isArray(state.eggs) ||
     !Array.isArray(state.plantSeeds) ||
     !Array.isArray(state.barriers) ||
@@ -818,6 +820,13 @@ export function assertState(state) {
         !integer(t.clearAfterTurn) ||
         !["neutral", "fertile", "hostile"].includes(t.base),
     ) ||
+    state.extremophyteFertility.some(
+      (entry) =>
+        !integer(entry.cell, 0, 63) ||
+        entry.base !== "hostile",
+    ) ||
+    new Set(state.extremophyteFertility.map((entry) => entry.cell)).size !==
+      state.extremophyteFertility.length ||
     state.deathSites.some(
       (d) =>
         !integer(d.cell, 0, 63) ||
@@ -977,6 +986,14 @@ export function assertState(state) {
         !integer(p.photosynthesisCell, 0, 63)) ||
       (p.photosynthesisSinceTurn !== undefined &&
         !integer(p.photosynthesisSinceTurn)) ||
+      (p.extremophyteCell !== undefined &&
+        !integer(p.extremophyteCell, 0, 63)) ||
+      (p.extremophyteSinceRound !== undefined &&
+        !integer(p.extremophyteSinceRound)) ||
+      ((p.extremophyteCell === undefined) !==
+        (p.extremophyteSinceRound === undefined)) ||
+      (p.extremophyteCell !== undefined &&
+        p.extremophyteCell !== square(p.r, p.c)) ||
       typeof p.oothecaPrimed !== "boolean"
     )
       throw Error("Perfil inválido.");
