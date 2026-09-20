@@ -84,9 +84,9 @@ test("Escalador unlocks in the Devonian after Locomoção and is animal-only", (
       geologicalStage: "devonian",
       historicalTraits: prior,
     }),
-    animal = { traits: ["Predação", "Locomoção"] },
-    immobile = { traits: ["Predação"] },
-    plant = { traits: ["Fotossíntese"] };
+    animal = { traits: ["Multicelularismo", "Predação", "Locomoção"] },
+    immobile = { traits: ["Multicelularismo", "Predação"] },
+    plant = { traits: ["Multicelularismo", "Fotossíntese"] };
   assert.equal(traitUnlocked(s, "Escalador", animal), true);
   assert.equal(traitUnlocked(s, "Escalador", immobile), false);
   assert.equal(traitUnlocked(s, "Escalador", plant), false);

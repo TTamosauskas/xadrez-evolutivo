@@ -1,5 +1,16 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
-import { at, eggAt, plantSeedAt, dominantLineage, round, signature, juvenile } from "./state.js";
+import {
+  at,
+  eggAt,
+  plantSeedAt,
+  dominantLineage,
+  round,
+  signature,
+  juvenile,
+  senescent,
+  pieceAge,
+  naturalDeathChance,
+} from "./state.js";
 import { currentGeologicalStage, stageProgress } from "./geology.js";
 import {
   movesFor,
@@ -172,7 +183,7 @@ export function render(
           : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
+          : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (decompositionMark)
@@ -205,13 +216,14 @@ export function render(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${juvenile(state, p) ? " juvenile" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
+            `piece ${p.owner}${juvenile(state, p) ? " juvenile" : ""}${senescent(state, p) ? " senescent" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
           ),
         );
         const badges = p.traits.map((trait) => ({
           text: TRAITS[trait][0],
           trait,
         }));
+        if (senescent(state, p)) badges.push({ text: "⌛" });
         if (p.infection) badges.push({ text: "🦠" });
         if (p.venom) badges.push({ text: "☠" });
         if (p.seeds) badges.push({ text: `${p.seeds}🌰` });
@@ -263,7 +275,7 @@ export function render(
       symbol = make(
         "span",
         SYMBOLS[actor.owner][actor.rank],
-        `piece ${actor.owner} selected-piece-symbol`,
+        `piece ${actor.owner} selected-piece-symbol${senescent(state, actor) ? " senescent" : ""}`,
       );
     heading.append(
       symbol,
@@ -291,6 +303,14 @@ export function render(
         make(
           "p",
           `Juvenil · maturidade em ${Math.max(0, actor.maturesRound - currentRound)} rodada(s).`,
+          "selected-status",
+        ),
+      );
+    else if (senescent(state, actor))
+      details.unshift(
+        make(
+          "p",
+          `⌛ Senescente · idade ${pieceAge(state, actor)} rodada(s) · risco natural ${Math.round(naturalDeathChance(state, actor) * 100)}% por rodada.`,
           "selected-status",
         ),
       );

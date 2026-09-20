@@ -7,6 +7,10 @@ export const SYMBOLS = {
 };
 export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
 export const TRAITS = {
+  Multicelularismo: [
+    "🫧",
+    "Introduz um ciclo de vida individual: descendentes passam pela infância, adultos entram em senescência a partir de 25 rodadas e a morte natural é certa aos 48. Também habilita características multicelulares complexas.",
+  ],
   Locomoção: ["🐾", "Permite realizar movimentos de xadrez apenas em uma linhagem que possui Predação."],
   Escavador: ["🦡", "Pode perfurar barreiras."],
   "Locomoção Avançada": [
@@ -138,7 +142,7 @@ export const TRAITS = {
   ],
   Regeneração: [
     "♻️",
-    "Uma vez por vida, sobrevive a uma morte não causada por captura e descansa na rodada seguinte.",
+    "Uma vez por vida, sobrevive a uma morte não causada por captura e descansa na rodada seguinte. Não evita morte natural por senescência.",
   ],
   "Cuidado Parental": [
     "🪺",
@@ -162,7 +166,7 @@ export const TRAITS = {
   "Reprodução Sexuada": ["❤️", "Combina características de dois progenitores."],
   "Precocidade Sexual": [
     "🪰",
-    "Reduz de duas para uma rodada o tempo natural até a maturidade reprodutiva de um descendente.",
+    "Em descendentes multicelulares, reduz de duas para uma rodada o tempo natural até a maturidade reprodutiva.",
   ],
   Esterilidade: ["🚫", "Impede a reprodução."],
   Ooteca: [

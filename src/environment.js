@@ -36,13 +36,6 @@ export function fertilityDepletionRate(population) {
   );
 }
 
-export function populationAttritionChance(population) {
-  if (population < 32) return 0;
-  return Number(
-    Math.min(0.45, 0.1 + (population - 32) * 0.05).toFixed(2),
-  );
-}
-
 function depletePausedFertility(state) {
   const population = activePopulation(state),
     rate = fertilityDepletionRate(population);
@@ -81,24 +74,6 @@ function depletePausedFertility(state) {
     `🌾 Superpopulação esgotou ${count} casa(s) fértil(is) desocupada(s).`,
   );
   return count;
-}
-
-export function applyPopulationAttrition(ctx) {
-  const state = ctx.state,
-    population = activePopulation(state),
-    chance = populationAttritionChance(population);
-  if (!chance || severeEventActive(state) || random(state) >= chance)
-    return false;
-
-  const density = (piece) =>
-      state.pieces.filter(
-        (other) => other.id !== piece.id && distance(piece, other) === 1,
-      ).length,
-    highest = Math.max(...state.pieces.map(density)),
-    candidates = state.pieces.filter((piece) => density(piece) === highest),
-    victim = pick(state, candidates);
-  if (!victim) return false;
-  return ctx.kill(victim.id, "atrito populacional");
 }
 
 function weightedEvent(state, candidates, weights) {

@@ -22,6 +22,7 @@ const stageIndex = (id) => geologicalStage(id).index,
 function plantTraits(stage, game) {
   return [
     "Fotossíntese",
+    ...(available("Multicelularismo", stage) ? ["Multicelularismo"] : []),
     ...(available("Embriófitas", stage) ? ["Embriófitas"] : []),
     ...(available("Traqueófitas", stage) ? ["Traqueófitas"] : []),
     ...(available("Espinhos", stage) ? ["Espinhos"] : []),
@@ -32,7 +33,10 @@ function plantTraits(stage, game) {
 }
 
 function animalTraits(stage, game) {
-  const traits = ["Predação"];
+  const traits = [
+    "Predação",
+    ...(available("Multicelularismo", stage) ? ["Multicelularismo"] : []),
+  ];
   if (available("Carnívoro", stage)) traits.push("Carnívoro");
   if (available("Locomoção", stage)) traits.push("Locomoção");
   if (available("Escavador", stage) && game % 2 === 1) traits.push("Escavador");
@@ -223,7 +227,7 @@ function runGame(initial, seed) {
     severeEvents = 0,
     pathogenOutbreaks = 0,
     fertilityDepleted = 0,
-    attritionDeaths = 0,
+    naturalDeaths = 0,
     lastSampleRound = -1;
   const samples = [],
     policy = policyFor(seed);
@@ -294,8 +298,8 @@ function runGame(initial, seed) {
       if (entry.text.includes("desencadearam um evento severo")) severeEvents++;
       if (entry.text.includes("Pressão demográfica: diferença"))
         pathogenOutbreaks++;
-      if (entry.text.includes("perderam uma peça por atrito populacional"))
-        attritionDeaths++;
+      if (entry.text.includes("perderam uma peça por morte natural"))
+        naturalDeaths++;
       const depleted = entry.text.match(/Superpopulação esgotou (\d+) casa/);
       if (depleted) fertilityDepleted += Number(depleted[1]);
     }
@@ -326,7 +330,7 @@ function runGame(initial, seed) {
       severeEvents,
       pathogenOutbreaks,
       fertilityDepleted,
-      attritionDeaths,
+      naturalDeaths,
       overall: summarizeSamples(samples),
       tail: summarizeSamples(tailSamples),
       final: snapshot(state),
@@ -372,6 +376,7 @@ function aggregate(runs) {
     capped: capped.length,
     cappedRate: pct(capped.length, runs.length),
     decisiveWithin200: finished.filter((run) => run.rounds <= 200).length,
+    naturalDeaths: sum("naturalDeaths", runs),
     cappedFinalRounds: mean(capped.map((run) => run.rounds)),
     loops,
     byPolicy,
@@ -395,7 +400,7 @@ function aggregate(runs) {
       severeEvents: sum("severeEvents"),
       pathogenOutbreaks: sum("pathogenOutbreaks"),
       fertilityDepleted: sum("fertilityDepleted"),
-      attritionDeaths: sum("attritionDeaths"),
+      naturalDeaths: sum("naturalDeaths"),
     },
     cappedOverall: summarizeSamples(capped.flatMap((run) => {
       const marker = run.overall;
@@ -436,7 +441,7 @@ function aggregate(runs) {
       severeEvents: run.severeEvents,
       pathogenOutbreaks: run.pathogenOutbreaks,
       fertilityDepleted: run.fertilityDepleted,
-      attritionDeaths: run.attritionDeaths,
+      naturalDeaths: run.naturalDeaths,
       tail: run.tail,
       final: run.final,
     })),

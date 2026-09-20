@@ -6,6 +6,7 @@ import {
   load,
   LEGACY_KEY,
   SAVE_KEY,
+  V8_KEY,
   V6_KEY,
   V5_KEY,
   V4_KEY,
@@ -14,6 +15,7 @@ import {
 } from "../src/storage.js";
 import { createState, clone, assertState } from "../src/state.js";
 import { reproPhenotype } from "../src/reproductive-genetics.js";
+import { GEOLOGICAL_STAGES } from "../src/geology.js";
 test("round trip saves deterministic state and rejects duplicate occupancy", () => {
   const s = createState(3);
   assert.deepEqual(deserialize(JSON.stringify(s)), s);
@@ -107,10 +109,42 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
       getItem: (k) => entries.get(k) ?? null,
     };
   const migrated = load(storage);
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, 9);
   assert.equal(entries.get(V2_KEY), raw);
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Locomoção")));
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
+});
+
+test("v8 complex lineages migrate to Multicelularismo without instant senescence", () => {
+  const old = createState(81, {
+    geologicalStage: "devonian",
+    historicalTraits: GEOLOGICAL_STAGES.slice(0, 7).flatMap(
+      (stage) => stage.required,
+    ),
+  });
+  old.version = 8;
+  old.turn = 100;
+  old.pieces[0].traits = ["Predação", "Locomoção"];
+  old.pieces[0].ancestry = ["Predação", "Locomoção"];
+  old.pieces[0].bornRound = 0;
+  old.pieces[0].maturesRound = 0;
+
+  const raw = JSON.stringify(old),
+    entries = new Map([[V8_KEY, raw]]),
+    storage = {
+      setItem: (key, value) => entries.set(key, value),
+      getItem: (key) => entries.get(key) ?? null,
+    },
+    migrated = load(storage),
+    piece = migrated.pieces[0];
+
+  assert.equal(migrated.version, 9);
+  assert.ok(piece.traits.includes("Multicelularismo"));
+  assert.ok(piece.ancestry.includes("Multicelularismo"));
+  assert.equal(piece.bornRound, 50);
+  assert.equal(piece.maturesRound, 50);
+  assert.ok(migrated.historicalTraits.includes("Multicelularismo"));
+  assertState(migrated);
 });
 
 test("first-cycle saves discard deleterious mutations from the old rules", () => {
@@ -154,7 +188,7 @@ test("v6 saves migrate without an origin prelude", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, 9);
   assert.equal(migrated.origin, null);
   assert.equal(migrated.phase, "move");
   assert.equal(entries.get(V6_KEY), raw);
@@ -173,7 +207,7 @@ test("v5 saves split invalid Fotossíntese + Predação hybrids during migration
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, 9);
   assert.deepEqual(migrated.pieces[0].traits, ["Fotossíntese"]);
   assert.ok(migrated.pieces[1].traits.includes("Predação"));
   assert.ok(migrated.pieces[1].traits.includes("Locomoção"));
@@ -195,7 +229,7 @@ test("v4 saves migrate discoveries without creating unread backlog", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, 9);
   assert.ok(migrated.discoveries.geology.includes("archean"));
   assert.ok(migrated.discoveries.mutations.includes("Fotossíntese"));
   assert.equal(
@@ -221,7 +255,7 @@ test("v3 saves rename Predador to Carnívoro and preserve capture with Predaçã
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 8);
+  assert.equal(migrated.version, 9);
   assert.ok(migrated.pieces[0].traits.includes("Carnívoro"));
   assert.ok(migrated.pieces[0].traits.includes("Predação"));
   assert.ok(!migrated.pieces[0].traits.includes("Predador"));
@@ -303,7 +337,7 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
-  assert.equal(s.version, 8);
+  assert.equal(s.version, 9);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(reproPhenotype(s.pieces[0].reproGenes).dispersal, "local");

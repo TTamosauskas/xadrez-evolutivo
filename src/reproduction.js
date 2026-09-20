@@ -44,6 +44,7 @@ import {
   deleteriousMutationUnlocked,
   innovationWeight,
   normalizeEnergyBranch,
+  normalizeMulticellularTraits,
   pawnMutationUnlocked,
   rankMutationUnlocked,
   normalizePhotosyntheticRank,
@@ -236,11 +237,22 @@ function sexualProfile(state, a, b) {
       traits.push(t);
   }
 
+  // Multicelularismo muda o modelo do organismo e não deve desaparecer
+  // acidentalmente pela recombinação sexual. Sua perda continua possível
+  // apenas como mutação explícita quando não há traits dependentes.
+  if (
+    (has(a, "Multicelularismo") || has(b, "Multicelularismo")) &&
+    !traits.includes("Multicelularismo")
+  )
+    traits.push("Multicelularismo");
+
   const hasEnergyConflict =
       traits.includes("Fotossíntese") && traits.includes("Predação"),
-    normalizedTraits = normalizeEnergyBranch(
-      traits,
-      hasEnergyConflict && random(state) < 0.5 ? "Predação" : null,
+    normalizedTraits = normalizeMulticellularTraits(
+      normalizeEnergyBranch(
+        traits,
+        hasEnergyConflict && random(state) < 0.5 ? "Predação" : null,
+      ),
     ),
     profile = {
       rank: Math.max(a.rank, b.rank),
@@ -366,8 +378,9 @@ function makeBrood(state, parent, mate, profile, count) {
 
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
-  child.maturesRound =
-    round(state) + (has(child, "Precocidade Sexual") ? 1 : 2);
+  child.maturesRound = has(child, "Multicelularismo")
+    ? round(state) + (has(child, "Precocidade Sexual") ? 1 : 2)
+    : round(state);
   if (has(child, "Mutação Deletéria"))
     child.deleteriousDue = round(state) + 3;
   state.pieces.push(child);

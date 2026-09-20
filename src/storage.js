@@ -10,11 +10,13 @@ import {
   geologicalStage,
   normalizeEnergyBranch,
   normalizePhotosyntheticRank,
+  MULTICELLULAR_DEPENDENT_TRAITS,
   priorRequiredInnovations,
   isNegativeTrait,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v8";
+export const SAVE_KEY = "xadrez-evolutivo-save-v9";
+export const V8_KEY = "xadrez-evolutivo-save-v8";
 export const V7_KEY = "xadrez-evolutivo-save-v7";
 export const V6_KEY = "xadrez-evolutivo-save-v6";
 export const V5_KEY = "xadrez-evolutivo-save-v5";
@@ -100,7 +102,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -113,8 +115,14 @@ export function deserialize(raw) {
           traits = new Set((profile.traits ?? []).map(mapper));
         if (legacyV2) traits.add("Locomoção");
         if (sourceVersion < 4) traits.add("Predação");
-        const validTraits = [...traits].filter((trait) => TRAITS[trait]),
-          ancestry = new Set(
+        const validTraits = [...traits].filter((trait) => TRAITS[trait]);
+        if (
+          sourceVersion < 9 &&
+          validTraits.some((trait) => MULTICELLULAR_DEPENDENT_TRAITS.has(trait)) &&
+          !validTraits.includes("Multicelularismo")
+        )
+          validTraits.push("Multicelularismo");
+        const ancestry = new Set(
             (profile.ancestry ?? []).map(mapper).filter((trait) => TRAITS[trait]),
           );
         for (const trait of validTraits) ancestry.add(trait);
@@ -132,9 +140,19 @@ export function deserialize(raw) {
       for (const piece of data.pieces) {
         normalizeProfile(piece);
         const currentRound = Math.floor((data.turn ?? 0) / 2);
-        if (!Number.isInteger(piece.bornRound)) piece.bornRound = currentRound;
-        if (!Number.isInteger(piece.maturesRound))
+        if (
+          sourceVersion < 9 &&
+          piece.traits.includes("Multicelularismo")
+        ) {
+          // Saves anteriores registravam bornRound apenas para maturidade.
+          // A longevidade começa na migração para evitar senescência instantânea.
+          piece.bornRound = currentRound;
           piece.maturesRound = currentRound;
+        } else {
+          if (!Number.isInteger(piece.bornRound)) piece.bornRound = currentRound;
+          if (!Number.isInteger(piece.maturesRound))
+            piece.maturesRound = currentRound;
+        }
         if (!Number.isInteger(piece.nextReproductionRound))
           piece.nextReproductionRound = currentRound;
         piece.pregnancies = Array.isArray(piece.pregnancies)
@@ -320,6 +338,15 @@ export function deserialize(raw) {
           .filter((trait) => TRAITS[trait]),
       ),
     ];
+    const migratedMulticellularHistory =
+      sourceVersion < 9 &&
+      geologicalStage(data.geologicalStage).index >=
+        geologicalStage("proterozoic").index;
+    if (
+      migratedMulticellularHistory &&
+      !data.historicalTraits.includes("Multicelularismo")
+    )
+      data.historicalTraits.push("Multicelularismo");
     if (data.discoveries) {
       data.discoveries.mutations = [
         ...new Set(
@@ -412,6 +439,12 @@ export function deserialize(raw) {
         previousEvent: data.previousEvent,
         diseases: data.diseases,
       });
+    if (
+      migratedMulticellularHistory &&
+      data.discoveries &&
+      !data.discoveries.mutations.includes("Multicelularismo")
+    )
+      data.discoveries.mutations.push("Multicelularismo");
     if (data.totalCycles < 2) {
       const cleanProfile = (profile) => {
           profile.traits = (profile.traits ?? []).filter(
@@ -462,7 +495,7 @@ export function deserialize(raw) {
         );
       }
     }
-    data.version = 8;
+    data.version = 9;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -645,6 +678,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V8_KEY) ??
     storage.getItem(V7_KEY) ??
     storage.getItem(V6_KEY) ??
     storage.getItem(V5_KEY) ??

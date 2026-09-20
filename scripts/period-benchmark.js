@@ -20,6 +20,7 @@ const stageIndex = (id) => geologicalStage(id).index,
 function plantTraits(stage, game) {
   return [
     "Fotossíntese",
+    ...(available("Multicelularismo", stage) ? ["Multicelularismo"] : []),
     ...(available("Embriófitas", stage) ? ["Embriófitas"] : []),
     ...(available("Traqueófitas", stage) ? ["Traqueófitas"] : []),
     ...(available("Espinhos", stage) ? ["Espinhos"] : []),
@@ -30,7 +31,10 @@ function plantTraits(stage, game) {
 }
 
 function animalTraits(stage, game) {
-  const traits = ["Predação"];
+  const traits = [
+    "Predação",
+    ...(available("Multicelularismo", stage) ? ["Multicelularismo"] : []),
+  ];
   if (available("Carnívoro", stage)) traits.push("Carnívoro");
   if (available("Locomoção", stage)) traits.push("Locomoção");
   if (available("Escavador", stage) && game % 2 === 1) traits.push("Escavador");
@@ -142,8 +146,8 @@ function summarize(runs) {
     },
     populationMax: Math.max(...runs.map((run) => run.maxPopulation)),
     pressure: {
-      attritionDeaths: runs.reduce(
-        (sum, run) => sum + run.attritionDeaths,
+      naturalDeaths: runs.reduce(
+        (sum, run) => sum + run.naturalDeaths,
         0,
       ),
       fertileDepleted: runs.reduce(
@@ -196,7 +200,7 @@ function runGame(initial, seed) {
     maxNaturalBarriers = s.naturalBarriers.length,
     barriersCreated = 0,
     barriersRemoved = 0,
-    attritionDeaths = 0,
+    naturalDeaths = 0,
     fertileDepleted = 0,
     populationPathogens = 0,
     pathogenGaps = [],
@@ -243,8 +247,8 @@ function runGame(initial, seed) {
     for (const entry of next.logs.slice(0, next.logs.length - beforeLogLength)) {
       if (entry.text.includes("passaram automaticamente por bloqueio"))
         autoBlocked++;
-      if (entry.text.includes("perderam uma peça por atrito populacional"))
-        attritionDeaths++;
+      if (entry.text.includes("perderam uma peça por morte natural"))
+        naturalDeaths++;
       const depleted = entry.text.match(
         /Superpopulação esgotou (\d+) casa/,
       );
@@ -287,7 +291,7 @@ function runGame(initial, seed) {
     maxNaturalBarriers,
     barriersCreated,
     barriersRemoved,
-    attritionDeaths,
+    naturalDeaths,
     fertileDepleted,
     populationPathogens,
     pathogenGaps,

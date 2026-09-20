@@ -11,8 +11,18 @@ import {
   round,
   fertilityPaused,
   photosynthesisDelayTurns,
+  juvenile,
+  senescent,
+  pieceAge,
+  naturalDeathChance,
 } from "../src/state.js";
-import { context, transition, simulate, mutuallyBlocked } from "../src/engine.js";
+import {
+  context,
+  transition,
+  simulate,
+  mutuallyBlocked,
+  applyNaturalDeaths,
+} from "../src/engine.js";
 import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
 import {
   SEVERE_EVENT_IDS,
@@ -20,9 +30,7 @@ import {
   tickEnvironment,
   checkPopulationClimate,
   repairConwayStagnation,
-  applyPopulationAttrition,
   fertilityDepletionRate,
-  populationAttritionChance,
   offensiveActionCount,
 } from "../src/environment.js";
 import {
@@ -273,10 +281,21 @@ test("Locomoção Avançada has exactly two actions and restricts the second to 
   assert.equal(s.turn, 1);
   assert.equal(s.chain, null);
 });
-test("sexual partner is an explicit phase and survives save/restore", () => {
+test("sexual partner preserves Multicelularismo and survives save/restore", () => {
   let s = fixture([
-    { owner: "blue", r: 5, c: 3, traits: ["Reprodução Sexuada"] },
-    { owner: "blue", r: 4, c: 4, rank: 3 },
+    {
+      owner: "blue",
+      r: 5,
+      c: 3,
+      traits: ["Multicelularismo", "Reprodução Sexuada"],
+    },
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 3,
+      traits: ["Multicelularismo"],
+    },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[35] = "fertile";
@@ -287,7 +306,10 @@ test("sexual partner is an explicit phase and survives save/restore", () => {
   assert.throws(() => transition(s, { type: "PASS" }));
   s = simulate(s, { type: "PARTNER", id: 2 });
   assert.equal(s.turn, 1);
-  assert.ok(s.pieces.filter((p) => p.id > 3).every((p) => p.rank >= 3));
+  const children = s.pieces.filter((p) => p.id > 3);
+  assert.ok(children.every((p) => p.rank >= 3));
+  assert.ok(children.every((p) => p.traits.includes("Multicelularismo")));
+  assert.ok(children.every((p) => juvenile(s, p)));
 });
 test("sexual reproduction never combines Fotossíntese with the predatory branch", () => {
   const s = fixture([
@@ -544,17 +566,12 @@ test("population pressure governs fertility, pathogens and severe climate", () =
   assert.equal(photosynthesisDelayTurns(state), 6);
 });
 
-test("gradual population pressure scales from fertility exhaustion to attrition", () => {
+test("gradual population pressure exhausts fertility without arbitrary attrition deaths", () => {
   assert.equal(fertilityDepletionRate(23), 0);
   assert.equal(fertilityDepletionRate(24), 0.05);
   assert.equal(fertilityDepletionRate(32), 0.15);
   assert.equal(fertilityDepletionRate(40), 0.25);
   assert.equal(fertilityDepletionRate(44), 0.3);
-  assert.equal(populationAttritionChance(31), 0);
-  assert.equal(populationAttritionChance(32), 0.1);
-  assert.equal(populationAttritionChance(36), 0.3);
-  assert.equal(populationAttritionChance(39), 0.45);
-  assert.equal(populationAttritionChance(50), 0.45);
 
   const s = fixture([]);
   for (let i = 0; i < 24; i++)
@@ -633,18 +650,57 @@ test("AI crowding penalty stays bounded instead of overwhelming material", () =>
 });
 
 
-test("population attrition targets the densest organisms and uses normal death effects", () => {
-  const s = fixture([]);
-  for (let i = 0; i < 32; i++)
-    s.pieces.push(
-      newPiece(s, i < 16 ? "blue" : "amber", Math.floor(i / 8), i % 8),
-    );
-  s.rng = 1972;
-  assert.equal(applyPopulationAttrition(context(s)), true);
-  assert.equal(s.pieces.length, 31);
-  assert.ok(
-    s.logs.some((entry) => entry.text.includes("atrito populacional")),
-  );
+test("Multicelularismo gates childhood and introduces progressive senescence", () => {
+  const s = fixture([]),
+    unicellular = newPiece(s, "blue", 4, 4, {
+      maturesRound: round(s) + 2,
+    }),
+    multicellular = newPiece(s, "amber", 0, 0, {
+      traits: ["Multicelularismo"],
+      maturesRound: round(s) + 2,
+    });
+  s.pieces.push(unicellular, multicellular);
+
+  assert.equal(juvenile(s, unicellular), false);
+  assert.equal(juvenile(s, multicellular), true);
+
+  s.turn = 50;
+  unicellular.bornRound = 0;
+  multicellular.bornRound = 0;
+  assert.equal(pieceAge(s, multicellular), 25);
+  assert.equal(senescent(s, unicellular), false);
+  assert.equal(senescent(s, multicellular), true);
+  assert.equal(naturalDeathChance(s, unicellular), 0);
+  assert.equal(naturalDeathChance(s, multicellular), 0.05);
+  s.turn = 66;
+  assert.equal(naturalDeathChance(s, multicellular), 0.1);
+  s.turn = 82;
+  assert.equal(naturalDeathChance(s, multicellular), 0.2);
+  s.turn = 96;
+  assert.equal(naturalDeathChance(s, multicellular), 1);
+  assertState(s);
+});
+
+test("natural death is certain at age 48, bypasses Regeneração and leaves decomposition", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Multicelularismo", "Regeneração"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    elder = s.pieces[0];
+  s.turn = 96;
+  elder.bornRound = 0;
+  elder.maturesRound = 2;
+
+  assert.equal(applyNaturalDeaths(context(s)), 1);
+  assert.ok(!s.pieces.some((piece) => piece.id === elder.id));
+  assert.equal(elder.regenerationUsed, undefined);
+  assert.ok(s.deathSites.some((site) => site.cell === 36));
+  assert.ok(s.logs.some((entry) => entry.text.includes("morte natural aos 48")));
   assertState(s);
 });
 

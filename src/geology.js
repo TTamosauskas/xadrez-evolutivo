@@ -22,6 +22,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Pré-Cambriano",
     period: "Proterozoico",
     required: [
+      "Multicelularismo",
       "Resistência",
       "Regeneração",
       "Reprodução Sexuada",
@@ -205,6 +206,7 @@ export const TRAIT_STAGE = {
   Haustório: "cretaceous",
   Fertilidade: "archean",
   Dormência: "archean",
+  Multicelularismo: "proterozoic",
   "Reprodução Sexuada": "proterozoic",
   "Precocidade Sexual": "ediacaran",
   Regeneração: "proterozoic",
@@ -285,6 +287,61 @@ export const TRAIT_DEPENDENCIES = {
   "Plantas Domesticadas": { historical: ["Neocórtex Desenvolvido"] },
   "Animais Domésticos": { historical: ["Neocórtex Desenvolvido"] },
 };
+
+export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
+  "Regeneração",
+  "Reprodução Sexuada",
+  "Precocidade Sexual",
+  "Locomoção",
+  "Escavador",
+  "Construtor de Nicho",
+  "Necrófago",
+  "Carapaça",
+  "Camuflagem",
+  "Veneno",
+  "Coletor",
+  "Locomoção Avançada",
+  "Escalador",
+  "Onívoro",
+  "Respiração Cutânea",
+  "Voo",
+  "Ovíparo",
+  "Ovíparos Amniotas",
+  "Ooteca",
+  "Cuidado Parental",
+  "Ovovivíparo",
+  "Lactação",
+  "Vivíparo",
+  "Sacos Aéreos",
+  "Ovulação Induzida",
+  "Mimetismo",
+  "Sociabilidade",
+  "Visão Noturna",
+  "Eusocialidade",
+  "Ovífagia",
+  "Polegar Opositor",
+  "Chifre",
+  "Antropização",
+  "Animais Domésticos",
+  "Plantas Domesticadas",
+  "Neocórtex Desenvolvido",
+  "Canibalismo",
+  "Parasitismo",
+  "Embriófitas",
+  "Traqueófitas",
+  "Espinhos",
+  "Gimnospermas",
+  "Trepadeira",
+  "Angiospermas",
+  "Haustório",
+]);
+
+export function normalizeMulticellularTraits(traits) {
+  const set = new Set(traits ?? []);
+  if (!set.has("Multicelularismo"))
+    for (const trait of MULTICELLULAR_DEPENDENT_TRAITS) set.delete(trait);
+  return [...set];
+}
 
 export const PLANT_DERIVED_TRAITS = new Set([
   "Embriófitas",
@@ -375,8 +432,12 @@ export function applyTraitMutation(traits, trait) {
   return normalizeEnergyBranch([...set]);
 }
 
-export function traitLossAllowed() {
-  return true;
+export function traitLossAllowed(piece, trait) {
+  if (trait !== "Multicelularismo") return true;
+  return !(piece?.traits ?? []).some(
+    (candidate) =>
+      candidate !== trait && MULTICELLULAR_DEPENDENT_TRAITS.has(candidate),
+  );
 }
 
 export function geologicalStage(id) {
@@ -454,6 +515,11 @@ export function traitUnlocked(state, trait, piece = null) {
   if (
     ["Plantas Domesticadas", "Haustório"].includes(trait) &&
     !piece?.traits?.includes("Fotossíntese")
+  )
+    return false;
+  if (
+    MULTICELLULAR_DEPENDENT_TRAITS.has(trait) &&
+    !piece?.traits?.includes("Multicelularismo")
   )
     return false;
   const stageId = TRAIT_STAGE[trait];

@@ -16,9 +16,33 @@ import { fallbackAction } from "../src/ai.js";
 import { GEOLOGICAL_STAGES, traitUnlocked } from "../src/geology.js";
 import { square } from "../src/constants.js";
 
-test("newborns mature after two rounds and Precocidade Sexual reduces it to one", () => {
-  const ordinary = fixture([
+test("childhood begins only after Multicelularismo and Precocidade Sexual shortens it", () => {
+  const unicellular = fixture([
       { owner: "blue", r: 4, c: 4, rank: 5 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    unicellularParent = unicellular.pieces[0];
+  assert.equal(
+    reproduce(context(unicellular), unicellularParent, null, "teste", {
+      forcedCount: 1,
+    }),
+    1,
+  );
+  const immediate = unicellular.pieces.find(
+    (piece) => piece.parentId === unicellularParent.id,
+  );
+  assert.equal(immediate.maturesRound, round(unicellular));
+  assert.equal(juvenile(unicellular, immediate), false);
+  assert.equal(reproductionReady(unicellular, immediate), true);
+
+  const ordinary = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: ["Multicelularismo"],
+      },
       { owner: "amber", r: 0, c: 0 },
     ]),
     parent = ordinary.pieces[0];
@@ -49,7 +73,11 @@ test("newborns mature after two rounds and Precocidade Sexual reduces it to one"
         r: 4,
         c: 4,
         rank: 5,
-        traits: ["Reprodução Sexuada", "Precocidade Sexual"],
+        traits: [
+          "Multicelularismo",
+          "Reprodução Sexuada",
+          "Precocidade Sexual",
+        ],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
@@ -96,7 +124,7 @@ test("successful reproduction has a three-round cooldown and induced ovulation s
         r: 4,
         c: 4,
         rank: 5,
-        traits: ["Vivíparo", "Ovulação Induzida"],
+        traits: ["Multicelularismo", "Vivíparo", "Ovulação Induzida"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
@@ -123,7 +151,7 @@ test("Lactação spends the turn to mature an adjacent juvenile child", () => {
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Cuidado Parental", "Lactação"],
+        traits: ["Multicelularismo", "Cuidado Parental", "Lactação"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
@@ -131,6 +159,7 @@ test("Lactação spends the turn to mature an adjacent juvenile child", () => {
     child = newPiece(s, "blue", 4, 5, {
       rank: 0,
       parentId: parent.id,
+      traits: ["Multicelularismo"],
     });
   child.maturesRound = round(s) + 2;
   s.pieces.push(child);
@@ -165,7 +194,7 @@ test("Canibalismo captures an allied piece and replaces it with exactly one juve
       r: 4,
       c: 3,
       rank: 3,
-      traits: ["Carnívoro", "Canibalismo"],
+      traits: ["Multicelularismo", "Carnívoro", "Canibalismo"],
     },
     { owner: "blue", r: 4, c: 4, rank: 0 },
     { owner: "amber", r: 0, c: 0 },
@@ -202,7 +231,7 @@ test("Canibalismo cannot target allies while juvenile or in reproductive cooldow
         r: 4,
         c: 3,
         rank: 3,
-        traits: ["Carnívoro", "Canibalismo"],
+        traits: ["Multicelularismo", "Carnívoro", "Canibalismo"],
       },
       { owner: "blue", r: 4, c: 4 },
       { owner: "amber", r: 0, c: 0 },
@@ -258,48 +287,48 @@ test("new life-history traits unlock in their intended optional periods", () => 
 
   s.geologicalStage = "ediacaran";
   s.historicalTraits = historyBefore("ediacaran");
-  p.traits = ["Reprodução Sexuada"];
+  p.traits = ["Multicelularismo", "Reprodução Sexuada"];
   assert.equal(traitUnlocked(s, "Precocidade Sexual", p), true);
 
   s.geologicalStage = "cambrian";
   s.historicalTraits = historyBefore("cambrian");
-  p.traits = ["Predação", "Carnívoro"];
+  p.traits = ["Multicelularismo", "Predação", "Carnívoro"];
   assert.equal(traitUnlocked(s, "Canibalismo", p), true);
 
   s.geologicalStage = "triassic";
   s.historicalTraits = historyBefore("triassic");
-  p.traits = ["Cuidado Parental"];
+  p.traits = ["Multicelularismo", "Cuidado Parental"];
   assert.equal(traitUnlocked(s, "Lactação", p), true);
 
   s.geologicalStage = "ordovician";
   s.historicalTraits = historyBefore("ordovician");
-  p.traits = ["Predação", "Locomoção"];
+  p.traits = ["Multicelularismo", "Predação", "Locomoção"];
   assert.equal(traitUnlocked(s, "Ovíparo", p), true);
 
   s.geologicalStage = "devonian";
   s.historicalTraits = historyBefore("devonian");
-  p.traits = ["Predação", "Locomoção"];
+  p.traits = ["Multicelularismo", "Predação", "Locomoção"];
   assert.equal(traitUnlocked(s, "Respiração Cutânea", p), true);
 
   s.geologicalStage = "carboniferous";
   s.historicalTraits = historyBefore("carboniferous");
-  p.traits = ["Predação", "Locomoção", "Ovíparo"];
+  p.traits = ["Multicelularismo", "Predação", "Locomoção", "Ovíparo"];
   assert.equal(traitUnlocked(s, "Ovíparos Amniotas", p), true);
 
   s.geologicalStage = "permian";
   s.historicalTraits = historyBefore("permian");
-  p.traits = ["Ovíparos Amniotas"];
+  p.traits = ["Multicelularismo", "Ovíparos Amniotas"];
   assert.equal(traitUnlocked(s, "Ovovivíparo", p), true);
 
   s.geologicalStage = "triassic";
   s.historicalTraits = historyBefore("triassic");
-  p.traits = ["Predação"];
+  p.traits = ["Multicelularismo", "Predação"];
   p.ancestry = ["Predação", "Locomoção", "Locomoção Avançada"];
   assert.equal(traitUnlocked(s, "Sacos Aéreos", p), true);
 
   s.geologicalStage = "paleogene";
   s.historicalTraits = historyBefore("paleogene");
-  p.traits = ["Vivíparo"];
+  p.traits = ["Multicelularismo", "Vivíparo"];
   assert.equal(traitUnlocked(s, "Ovulação Induzida", p), true);
 
   for (const stage of GEOLOGICAL_STAGES)
