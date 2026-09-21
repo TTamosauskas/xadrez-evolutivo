@@ -1,0 +1,24 @@
+name: Terrestrial locomotion diagnostics
+on:
+  push:
+    branches: ["diagnostics/terrestrial-locomotion-current"]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Benchmark terrestrial transition
+        run: npm run benchmark:land-transition
+        env:
+          LAND_TRANSITION_GAMES: 12
+          GOAL_TURNS: 200
+          LAND_TRANSITION_TURN_LIMIT: 330
