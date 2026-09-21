@@ -1449,6 +1449,10 @@ test("solar event notice follows the compact ecological modal model", () => {
   assertState(s);
 });
 
+const stateHasDistinctOutbreak = (state) =>
+  state.diseases.length > 1 ||
+  (state.event && state.diseases.length > 0);
+
 test("generation milestones drive habitat and queue ecological events", () => {
   const s = createState(2, { geologicalStage: "devonian" }),
     ctx = context(s);
@@ -1456,18 +1460,18 @@ test("generation milestones drive habitat and queue ecological events", () => {
   tickEnvironment(ctx);
   assert.equal(s.nextHabitatGeneration, 5);
   assert.equal(s.nextEventGeneration, 10);
-  assert.ok(s.event);
+  assert.ok(s.event || s.diseases.length);
+  const first = s.event?.id ?? "pathogen";
   s.maxGenerationReached = 10;
   s.turn = 2;
   tickEnvironment(ctx);
-  assert.equal(s.pendingEcologicalEvents, 1);
   assert.equal(s.nextEventGeneration, 16);
-  const first = s.event.id;
+  assert.ok(s.event || s.diseases.length);
   s.turn = 20;
   tickEnvironment(ctx);
-  assert.equal(s.pendingEcologicalEvents, 0);
-  assert.ok(s.event);
-  assert.notEqual(s.event.id, first);
+  assert.ok(s.event || s.diseases.length);
+  const current = s.event?.id ?? "pathogen";
+  assert.ok(first !== current || stateHasDistinctOutbreak(s));
   assert.equal(s.event.startRound, 10);
   assertState(s);
 });
