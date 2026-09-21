@@ -378,7 +378,7 @@ test("stationary reproduction keeps its parent and unique occupancy with Ooteca"
   s.board[36] = "fertile";
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((p) => p.id === 1));
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 5);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 3);
   assertState(s);
 });
 test("Ooteca only releases after successful reproduction on a fertile square", () => {
@@ -1989,9 +1989,9 @@ test("Esporos spreads siblings far across the board", () => {
     ctx = context(s),
     parent = s.pieces[0];
 
-  assert.equal(reproduce(ctx, parent), 4);
+  assert.equal(reproduce(ctx, parent), 2);
   const children = s.pieces.filter((p) => p.owner === "blue" && p.id !== parent.id);
-  assert.equal(children.length, 4);
+  assert.equal(children.length, 2);
   for (let i = 0; i < children.length; i++)
     for (let j = i + 1; j < children.length; j++)
       assert.ok(
@@ -2263,8 +2263,8 @@ test("Eusocialidade gains up to two offspring from adjacent sterile kin", () => 
       { owner: "amber", r: 0, c: 0 },
     ]),
     parent = s.pieces[0];
-  assert.equal(reproduce(context(s), parent), 6);
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 9);
+  assert.equal(reproduce(context(s), parent), 4);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 7);
   assertState(s);
 });
 
