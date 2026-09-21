@@ -34,7 +34,10 @@ export function fixture(
       baseTraits = requestedTraits.includes("Fotossíntese")
         ? []
         : [
+            "Reparo Celular",
+            "Multicelularismo",
             "Predação",
+            "Simetria Bilateral",
             "Locomoção Primitiva",
             "Vertebrado",
             "Locomoção Articulada",
