@@ -25,6 +25,7 @@ import {
   mutuallyBlocked,
   applyNaturalDeaths,
   advanceEcologicalDomain,
+  resolveEcologicalCollapse,
 } from "../src/engine.js";
 import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
 import {
@@ -3047,7 +3048,7 @@ test("Domínio Ecológico exige três turnos próprios e elimina o rival gradual
   assertState(s);
 });
 
-test("três quadrantes consolidados encerram a partida por Domínio Ecológico", () => {
+test("três quadrantes iniciam colapso e eliminam todos os sobreviventes um a um", () => {
   const s = fixture([
     { owner: "blue", r: 0, c: 0 },
     { owner: "blue", r: 1, c: 1 },
@@ -3072,18 +3073,43 @@ test("três quadrantes consolidados encerram a partida por Domínio Ecológico",
 
   advanceEcologicalDomain(context(s), "blue");
 
-  assert.equal(s.result?.winner, "blue");
-  assert.match(s.result?.reason ?? "", /Domínio Ecológico/);
+  assert.equal(s.result, null);
+  assert.equal(s.phase, "collapse");
+  assert.equal(s.ecologicalDomain.victoryOwner, "blue");
   assert.equal(
     s.ecologicalDomain.quadrants.filter(
       (quadrant) => quadrant.consolidated && quadrant.owner === "blue",
     ).length,
     3,
   );
+
+  const initialAmber = s.pieces.filter((piece) => piece.owner === "amber").length;
+  const fourthQuadrantAmber = s.pieces.filter(
+    (piece) => piece.owner === "amber" && piece.r >= 4 && piece.c >= 4,
+  ).length;
+  assert.ok(fourthQuadrantAmber > 0);
+
+  for (let remaining = initialAmber - 1; remaining >= 0; remaining--) {
+    resolveEcologicalCollapse(context(s));
+    assert.equal(
+      s.pieces.filter((piece) => piece.owner === "amber").length,
+      remaining,
+    );
+    if (remaining > 0) {
+      assert.equal(s.result, null);
+      assert.equal(s.phase, "collapse");
+    }
+  }
+
+  assert.equal(s.result?.winner, "blue");
+  assert.match(s.result?.reason ?? "", /Domínio Ecológico/);
   assert.equal(s.phase, "over");
+  assert.equal(
+    s.pieces.some((piece) => piece.owner === "amber"),
+    false,
+  );
   assertState(s);
 });
-
 
 test("maioria simples inicia Domínio Ecológico mesmo com um único organismo", () => {
   const s = fixture([
