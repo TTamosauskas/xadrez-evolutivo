@@ -42,7 +42,9 @@ const currentTraitName = (name) =>
       ? "Antropização"
       : name === "Locomoção"
         ? "Locomoção Articulada"
-        : name;
+        : name === "Cuidado Parental"
+          ? "Incubação"
+          : name;
 const v3TraitName = (name) =>
   currentTraitName(name === "Predador" ? "Carnívoro" : name);
 const legacyTraitName = (name) =>
@@ -60,6 +62,8 @@ const currentGenome = (genome) => {
   const migrated = { ...genome };
   if (migrated["Locomoção"] && !migrated["Locomoção Articulada"])
     migrated["Locomoção Articulada"] = migrated["Locomoção"];
+  if (migrated["Cuidado Parental"] && !migrated.Incubação)
+    migrated.Incubação = migrated["Cuidado Parental"];
   const articulated =
       migrated["Locomoção Articulada"]?.some(
         (allele) => allele?.value === "derived",
@@ -76,6 +80,7 @@ const currentGenome = (genome) => {
     if (!vertebrate && !arthropod) migrated.Vertebrado = legacyDominantPair();
   }
   delete migrated["Locomoção"];
+  delete migrated["Cuidado Parental"];
   delete migrated.Fertilidade;
   delete migrated.Esporos;
   return migrated;
@@ -85,6 +90,9 @@ const mutationLabel = (label, version = 7) => {
   if (mapped === "Construção de Nicho") mapped = "Construtor de Nicho";
   if (mapped === "Perda de Construção de Nicho")
     mapped = "Perda de Construtor de Nicho";
+  if (mapped === "Cuidado Parental") mapped = "Incubação";
+  if (mapped === "Perda de Cuidado Parental")
+    mapped = "Perda de Incubação";
   if (mapped === "Construtor Avançado") mapped = "Antropização";
   if (mapped === "Perda de Construtor Avançado")
     mapped = "Perda de Antropização";
@@ -504,7 +512,9 @@ export function deserialize(raw) {
                 ? "mutations:Construtor de Nicho"
                 : key === "mutations:Construtor Avançado"
                   ? "mutations:Antropização"
-                  : key,
+                  : key === "mutations:Cuidado Parental"
+                    ? "mutations:Incubação"
+                    : key,
             )
             .filter(
               (key) =>
