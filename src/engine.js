@@ -1042,10 +1042,16 @@ function executeMove(ctx, action) {
       fertileResource &&
       (!carnivore || omnivore || has(p, "Mixotrofia")),
     photosyntheticPrey = pieceCapture && has(victim, "Fotossíntese"),
+    primitiveLocomotionReached =
+      has(p, "Locomoção Primitiva") ||
+      (p.ancestry ?? []).includes("Locomoção Primitiva"),
+    earlyExpansionPredation =
+      has(p, "Predação") && !primitiveLocomotionReached,
     predation =
       pieceCapture &&
       victim.owner !== p.owner &&
-      (omnivore ||
+      (earlyExpansionPredation ||
+        omnivore ||
         (carnivore && !photosyntheticPrey) ||
         (herbivore && photosyntheticPrey));
   log(
