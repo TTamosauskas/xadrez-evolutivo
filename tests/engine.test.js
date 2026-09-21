@@ -932,7 +932,7 @@ test("pre-locomotion predation places offspring toward the nearest rival", () =>
       traits: ["Predação"],
       ancestry: ["Predação"],
     }),
-    rival = newPiece(s, "amber", 2, 3, {
+    rival = newPiece(s, "amber", 4, 2, {
       traits: ["Predação"],
       ancestry: ["Predação"],
     });
@@ -952,7 +952,7 @@ test("pre-locomotion predation places offspring toward the nearest rival", () =>
   );
   assert.ok(child);
   assert.equal(child.r, 5);
-  assert.ok([2, 3, 4].includes(child.c));
+  assert.equal(Math.abs(child.c - rival.c), 1);
 });
 
 test("predation creates at most one descendant and none once population pressure starts", () => {
