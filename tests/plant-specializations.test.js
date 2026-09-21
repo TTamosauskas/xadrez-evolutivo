@@ -161,7 +161,20 @@ test("Madeira blocks one quarter of capture attempts before the victim is remove
   const state = blankState(704),
     attacker = newPiece(state, "blue", 4, 4, {
       rank: 4,
-      traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
+      traits: [
+        "Multicelularismo",
+        "Predação",
+        "Locomoção Primitiva",
+        "Vertebrado",
+        "Locomoção Terrestre",
+      ],
+      ancestry: [
+        "Predação",
+        "Locomoção Primitiva",
+        "Vertebrado",
+        "Locomoção Articulada",
+        "Locomoção Terrestre",
+      ],
     }),
     defender = newPiece(state, "amber", 3, 4, {
       traits: [
