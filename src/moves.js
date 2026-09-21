@@ -185,19 +185,27 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   }
   const occupiedTarget = (r, c) => !!at(state, r, c) || !!eggAt(state, r, c);
   function ray(directions, captureOnly = false) {
-    const movementLimit = has(p, "Deficiência Motora")
-        ? 1
-        : has(p, "Gigantismo")
-          ? 3
-          : 7,
-      captureLimit = has(p, "Deficiência Motora")
-        ? 1
-        : has(p, "Deficiência Sensorial")
-          ? 3
-          : 7;
     for (const [dr, dc] of directions) {
-      const path = [];
-      for (let n = 1; n < 8; n++) {
+      let geometricRange = 0;
+      while (
+        inside(
+          p.r + dr * (geometricRange + 1),
+          p.c + dc * (geometricRange + 1),
+        )
+      )
+        geometricRange++;
+      const movementLimit = has(p, "Deficiência Motora")
+          ? 1
+          : has(p, "Gigantismo")
+            ? Math.max(1, Math.floor(geometricRange / 2))
+            : geometricRange,
+        captureLimit = has(p, "Deficiência Motora")
+          ? 1
+          : has(p, "Deficiência Sensorial")
+            ? Math.max(1, Math.floor(geometricRange / 2))
+            : geometricRange,
+        path = [];
+      for (let n = 1; n <= geometricRange; n++) {
         const r = p.r + dr * n,
           c = p.c + dc * n;
         if (!inside(r, c)) break;
