@@ -95,7 +95,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Siluriano",
     required: ["Coletor"],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3], pattern: "mosaic" },
+    habitat: { fertile: 28, hostile: 7, standard: true, naturalBarriers: [1, 3], pattern: "coast" },
     events: {
       "alluvial-river": 3,
       "abundant-rains": 3,
@@ -680,6 +680,26 @@ export function aquaticFertilityRegime(stateOrStage) {
       ? geologicalStage(stateOrStage)
       : currentGeologicalStage(stateOrStage);
   return stage.index <= geologicalStage("ordovician").index;
+}
+
+const SILURIAN_SHORE_FERTILE_ROWS = new Set([0, 2, 5, 7]);
+
+export function aquaticTerrainCell(stateOrStage, r, c) {
+  const stage =
+    typeof stateOrStage === "string"
+      ? geologicalStage(stateOrStage)
+      : currentGeologicalStage(stateOrStage);
+  if (stage.index <= geologicalStage("ordovician").index) return true;
+  if (stage.id !== "silurian") return false;
+  return c < 3 || (c === 3 && SILURIAN_SHORE_FERTILE_ROWS.has(r));
+}
+
+export function conwayUnlocked(stateOrStage) {
+  const stage =
+    typeof stateOrStage === "string"
+      ? geologicalStage(stateOrStage)
+      : currentGeologicalStage(stateOrStage);
+  return stage.index >= geologicalStage("devonian").index;
 }
 
 export function nextGeologicalStage(id) {
