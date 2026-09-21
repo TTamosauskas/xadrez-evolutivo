@@ -579,7 +579,11 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   const lost = simulate(s, move(s.pieces[0], 3, 3));
   assert.ok(!lost.pieces.some((p) => p.id === 1));
 
-  s.pieces[0].traits = ["Locomoção Primitiva", "Voo"];
+  s.pieces[0].traits = [
+    "Locomoção Primitiva",
+    "Locomoção Terrestre",
+    "Voo",
+  ];
   assert.ok(
     simulate(s, move(s.pieces[0], 3, 3)).pieces.some((p) => p.id === 1),
   );
@@ -2545,7 +2549,13 @@ test("Predação is required for ordinary captures", () => {
     { owner: "amber", r: 4, c: 4 },
   ]);
   const attacker = s.pieces[0];
-  attacker.traits = ["Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Percepção Espacial", "Carnívoro"];
+  attacker.traits = [
+    "Locomoção Primitiva",
+    "Vertebrado",
+    "Locomoção Terrestre",
+    "Percepção Espacial",
+    "Carnívoro",
+  ];
   assert.ok(!movesFor(s, attacker).some((target) => target.c === 4));
   attacker.traits.push("Predação");
   assert.ok(movesFor(s, attacker).some((target) => target.c === 4));
@@ -2563,6 +2573,7 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
       ![
         "Locomoção Primitiva",
         "Locomoção Articulada",
+        "Locomoção Terrestre",
         "Locomoção Avançada",
       ].includes(trait),
   );
@@ -2589,6 +2600,7 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
       ![
         "Locomoção Primitiva",
         "Locomoção Articulada",
+        "Locomoção Terrestre",
         "Locomoção Avançada",
       ].includes(trait),
   );
@@ -2609,6 +2621,7 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
       ![
         "Locomoção Primitiva",
         "Locomoção Articulada",
+        "Locomoção Terrestre",
         "Locomoção Avançada",
       ].includes(trait),
   );
@@ -2687,10 +2700,20 @@ test("Escavador destroys built barriers while Chifre remains purely defensive", 
   assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c === 2));
   assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 3));
 
-  s.pieces[0].traits = ["Predação", "Locomoção Primitiva", "Chifre"];
+  s.pieces[0].traits = [
+    "Predação",
+    "Locomoção Primitiva",
+    "Locomoção Terrestre",
+    "Chifre",
+  ];
   assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c >= 2));
 
-  s.pieces[0].traits = ["Predação", "Locomoção Primitiva", "Escavador"];
+  s.pieces[0].traits = [
+    "Predação",
+    "Locomoção Primitiva",
+    "Locomoção Terrestre",
+    "Escavador",
+  ];
   assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 2));
   s = simulate(s, move(s.pieces[0], 4, 3));
   assert.ok(!s.barriers.includes(34));
