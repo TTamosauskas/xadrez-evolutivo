@@ -31,23 +31,16 @@ const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.9);
 export const severeEventActive = (state) =>
   !!state.event && SEVERE_EVENT_IDS.has(state.event.id);
 
-export function fertilityDepletionRate(population, stage = null) {
+export function fertilityDepletionRate(population) {
   if (population < 24) return 0;
-  const base = Math.min(0.3, 0.05 + (population - 24) * 0.0125);
-  if (stage === "archean" && population >= 28)
-    return Number(
-      Math.min(0.36, Math.max(base, 0.12 + (population - 28) * 0.015)).toFixed(2),
-    );
-  if (stage === "ordovician" && population >= 26)
-    return Number(
-      Math.min(0.36, Math.max(base, 0.11 + (population - 26) * 0.018)).toFixed(2),
-    );
-  return Number(base.toFixed(2));
+  return Number(
+    Math.min(0.3, 0.05 + (population - 24) * 0.0125).toFixed(2),
+  );
 }
 
 function depletePausedFertility(state) {
   const population = activePopulation(state),
-    rate = fertilityDepletionRate(population, state.geologicalStage);
+    rate = fertilityDepletionRate(population);
   if (!rate) return 0;
 
   const occupied = new Set([
