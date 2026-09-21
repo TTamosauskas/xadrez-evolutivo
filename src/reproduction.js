@@ -1005,7 +1005,11 @@ export function reproduce(
               ? 3
               : 4
             : 3;
-      if (has(piece, "Insuficiência Respiratória")) base *= 2;
+      if (
+        has(piece, "Insuficiência Respiratória") &&
+        (options.resourceReproduction || options.fertileReproduction)
+      )
+        base *= 2;
       return (
         round(state) +
         base +
