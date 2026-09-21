@@ -136,7 +136,7 @@ const mutationTopics = {
   "Deficiência Sensorial": ["Deficiência sensorial", "Perdas sensoriais reduzem a aquisição de informação sobre o ambiente; no jogo, diminuem o alcance de capturas à distância."],
   "Filho único": ["Fecundidade", "Fecundidade descreve a capacidade potencial de produzir descendentes; no jogo, esta mutação limita cada reprodução bem-sucedida a uma única prole."],
   Subfertilidade: ["Subfertilidade", "Subfertilidade é a redução da capacidade reprodutiva sem esterilidade completa; no jogo, metade das tentativas pode terminar sem prole."],
-  "Má absorção Alimentar": ["Má absorção", "Síndromes de má absorção reduzem o aproveitamento de nutrientes ingeridos; no jogo, a mesma reprodução exige um recurso fértil adicional quando disponível."],
+  "Má absorção Alimentar": ["Má absorção", "Síndromes de má absorção reduzem o aproveitamento de nutrientes ingeridos; no jogo, a mesma reprodução exige um recurso fértil adicional quando disponível e a recuperação após reprodução por predação leva o dobro do intervalo."],
   Semelparidade: ["Semelparidade", "Semelparidade, em sentido biológico, concentra o investimento reprodutivo antes da morte; o jogo usa uma variante abstrata em que o custo fatal ocorre após três reproduções bem-sucedidas."],
   "Regressão Evolutiva": ["Regulação gênica", "Mudanças regulatórias podem reduzir ou silenciar a expressão de características sem apagar necessariamente os alelos; no jogo, parte dos fenótipos ativos torna-se recessiva."],
   Nanismo: ["Nanismo", "Nanismo descreve fenótipos de crescimento corporal reduzido; no jogo, força a forma funcional de Peão e reduz o tamanho visual da peça."],
