@@ -37,18 +37,33 @@ function chronologicalStageTraits(stage) {
         ...(deps.lineage ?? []),
         ...(deps.lineageAny ?? []),
         ...(deps.historical ?? []),
-      ].filter(
-        (dependency) =>
-          pending.has(dependency) || ordered.includes(dependency),
-      );
+      ].filter((dependency) => traits.includes(dependency));
     },
-    compare = (a, b) => {
-      if (a === "Respiração anaeróbia") return -1;
-      if (b === "Respiração anaeróbia") return 1;
-      const ai = requiredOrder.has(a) ? requiredOrder.get(a) : Infinity,
-        bi = requiredOrder.has(b) ? requiredOrder.get(b) : Infinity;
-      return ai - bi || traits.indexOf(a) - traits.indexOf(b);
+    dependents = new Map(traits.map((trait) => [trait, []])),
+    requiredPriority = (trait, seen = new Set()) => {
+      if (requiredOrder.has(trait)) return requiredOrder.get(trait);
+      if (seen.has(trait)) return Infinity;
+      const nextSeen = new Set([...seen, trait]);
+      return Math.min(
+        Infinity,
+        ...(dependents.get(trait) ?? []).map((dependent) =>
+          requiredPriority(dependent, nextSeen),
+        ),
+      );
     };
+
+  for (const trait of traits)
+    for (const dependency of sameStageDependencies(trait))
+      dependents.get(dependency)?.push(trait);
+
+  const compare = (a, b) => {
+    if (a === "Respiração anaeróbia") return -1;
+    if (b === "Respiração anaeróbia") return 1;
+    return (
+      requiredPriority(a) - requiredPriority(b) ||
+      traits.indexOf(a) - traits.indexOf(b)
+    );
+  };
 
   while (pending.size) {
     const ready = [...pending]
