@@ -905,7 +905,11 @@ export function eventWeights(state) {
     state,
     currentGeologicalStage(state).events,
   );
-  if (pathogenUnlocked(state)) weights.pathogen ??= 1;
+  if (
+    state.scenario !== "earth" ||
+    pathogenUnlocked(state)
+  )
+    weights.pathogen ??= 1;
   else delete weights.pathogen;
   return weights;
 }
