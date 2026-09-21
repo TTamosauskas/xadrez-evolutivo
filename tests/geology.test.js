@@ -24,6 +24,7 @@ import {
   MULTICELLULAR_DEPENDENT_TRAITS,
 } from "../src/geology.js";
 import {
+  consumeFertileTerrain,
   createPeriodState,
   createState,
   createSuccessorState,
