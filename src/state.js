@@ -1,4 +1,4 @@
-import { has, inside, square, TRAITS, EVENTS } from "./constants.js";
+import { has, inside, square, TRAITS, EVENTS, PATHOGEN_AGENT_IDS } from "./constants.js";
 import {
   GEOLOGICAL_STAGES,
   currentGeologicalStage,
@@ -174,7 +174,7 @@ export const juvenile = (state, piece) =>
 export const reproductionReady = (state, piece) =>
   !!piece &&
   !juvenile(state, piece) &&
-  !(piece.traits ?? []).includes("Esterilidade") &&
+  !has(piece, "Esterilidade") &&
   !(piece.pregnancies ?? []).some(
     (pregnancy) => pregnancy.kind === "ovoviviparous",
   ) &&
@@ -231,6 +231,9 @@ export function newPiece(state, owner, r, c, source = {}) {
       maturesRound: source.maturesRound ?? bornRound,
       nextReproductionRound: source.nextReproductionRound ?? bornRound,
       oothecaPrimed: source.oothecaPrimed ?? false,
+      somaticMutations: [],
+      pathogenMutationDiseases: [],
+      pathogenExposureRounds: {},
     };
   const preferredEnergy = source.traits?.includes("Predação")
     ? "Predação"
@@ -1400,7 +1403,7 @@ export function assertState(state) {
         inside(state.eggPlacement.origin?.r, state.eggPlacement.origin?.c) &&
         Array.isArray(state.eggPlacement.brood) &&
         state.eggPlacement.brood.length > 0 &&
-        ["local", "spores"].includes(state.eggPlacement.dispersal))
+        state.eggPlacement.dispersal === "local")
     ) ||
     state.seen.some((s) => typeof s !== "string")
   )
@@ -1416,7 +1419,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 13 ||
+    state.version !== 14 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
@@ -1525,7 +1528,28 @@ export function assertState(state) {
       p.ancestry.some((t) => !TRAITS[t]) ||
       new Set(p.ancestry).size !== p.ancestry.length ||
       !validGenome(p.genome) ||
-      !Array.isArray(p.pregnancies)
+      !Array.isArray(p.pregnancies) ||
+      !Array.isArray(p.somaticMutations) ||
+      p.somaticMutations.some(
+        (trait) =>
+          !["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"].includes(
+            trait,
+          ),
+      ) ||
+      new Set(p.somaticMutations).size !== p.somaticMutations.length ||
+      !Array.isArray(p.pathogenMutationDiseases) ||
+      p.pathogenMutationDiseases.some((id) => !integer(id, 1)) ||
+      new Set(p.pathogenMutationDiseases).size !==
+        p.pathogenMutationDiseases.length ||
+      !p.pathogenExposureRounds ||
+      typeof p.pathogenExposureRounds !== "object" ||
+      Array.isArray(p.pathogenExposureRounds) ||
+      Object.entries(p.pathogenExposureRounds).some(
+        ([id, exposedRound]) =>
+          !/^\\d+$/.test(id) ||
+          Number(id) < 1 ||
+          !integer(exposedRound),
+      )
     )
       throw Error("Peça inválida.");
     if (
@@ -1574,7 +1598,7 @@ export function assertState(state) {
       (egg.mode === "basal" && egg.expireRound !== egg.laidRound + 6) ||
       (egg.mode !== "basal" && egg.expireRound !== egg.hatchRound) ||
       (egg.parentId !== undefined && egg.parentId !== null && !integer(egg.parentId, 1)) ||
-      !["local", "spores"].includes(egg.dispersal) ||
+      egg.dispersal !== "local" ||
       !Array.isArray(egg.brood) ||
       !egg.brood.length ||
       !egg.brood.every((profile) => validBroodProfile(profile, egg.owner))
@@ -1629,7 +1653,7 @@ export function assertState(state) {
         ![undefined, "viviparous", "ovoviviparous"].includes(pregnancy.kind) ||
         (pregnancy.readyLogged !== undefined &&
           typeof pregnancy.readyLogged !== "boolean") ||
-        !["local", "spores"].includes(pregnancy.dispersal) ||
+        pregnancy.dispersal !== "local" ||
         !Array.isArray(pregnancy.brood) ||
         !pregnancy.brood.length ||
         !pregnancy.brood.every((profile) =>
@@ -1726,6 +1750,7 @@ export function assertState(state) {
       !integer(d.endRound) ||
       !integer(d.delay, 2, 6) ||
       !["eco", "population", "vector"].includes(d.source) ||
+      !PATHOGEN_AGENT_IDS.includes(d.agent) ||
       !integer(
         d.mortality,
         d.source === "vector" ? 20 : 60,
@@ -1734,7 +1759,10 @@ export function assertState(state) {
       !integer(d.deaths) ||
       !["diagonal", "orthogonal", "omnidirectional"].includes(d.mode) ||
       !Array.isArray(d.infected) ||
-      !Array.isArray(d.survivors)
+      !Array.isArray(d.survivors) ||
+      !Array.isArray(d.contaminated) ||
+      d.contaminated.some((cell) => !integer(cell, 0, 63)) ||
+      new Set(d.contaminated).size !== d.contaminated.length
     )
       throw Error("Doença inválida.");
     diseaseIds.add(d.id);
@@ -1756,7 +1784,7 @@ export function assertState(state) {
       (!integer(p.venom.remaining, 1, 2) || !integer(p.venom.infectedTurn))
     )
       throw Error("Veneno inválido.");
-    if (p.traits.includes("Mutação Deletéria") && !integer(p.deleteriousDue))
+    if (has(p, "Mutação Deletéria") && !integer(p.deleteriousDue))
       throw Error("Tempo de vida inválido.");
   }
   if (state.event) {
