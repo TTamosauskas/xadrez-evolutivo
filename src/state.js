@@ -148,6 +148,8 @@ export function photosynthesisDelayTurns(state, piece = null) {
   if (population <= 17) return 8;
   return 10;
 }
+export const PRE_BILATERAL_SENESCENCE_AGE = 13;
+export const PRE_BILATERAL_MAX_NATURAL_AGE = 24;
 export const SENESCENCE_AGE = 25;
 export const MAX_NATURAL_AGE = 48;
 export const multicellular = (piece) =>
@@ -156,15 +158,29 @@ export const pieceAge = (state, piece) =>
   piece && Number.isInteger(piece.bornRound)
     ? Math.max(0, round(state) - piece.bornRound)
     : 0;
+export const bilateralLongevity = (piece) =>
+  has(piece, "Fotossíntese") || has(piece, "Simetria Bilateral");
+export function naturalAgeProfile(piece) {
+  return bilateralLongevity(piece)
+    ? { senescence: SENESCENCE_AGE, moderate: 33, high: 41, maximum: MAX_NATURAL_AGE }
+    : {
+        senescence: PRE_BILATERAL_SENESCENCE_AGE,
+        moderate: 17,
+        high: 21,
+        maximum: PRE_BILATERAL_MAX_NATURAL_AGE,
+      };
+}
 export const senescent = (state, piece) =>
-  multicellular(piece) && pieceAge(state, piece) >= SENESCENCE_AGE;
+  multicellular(piece) &&
+  pieceAge(state, piece) >= naturalAgeProfile(piece).senescence;
 export function naturalDeathChance(state, piece) {
   if (!multicellular(piece)) return 0;
-  const age = pieceAge(state, piece);
-  if (age < SENESCENCE_AGE) return 0;
-  if (age < 33) return 0.05;
-  if (age < 41) return 0.1;
-  if (age < MAX_NATURAL_AGE) return 0.2;
+  const age = pieceAge(state, piece),
+    profile = naturalAgeProfile(piece);
+  if (age < profile.senescence) return 0;
+  if (age < profile.moderate) return 0.05;
+  if (age < profile.high) return 0.1;
+  if (age < profile.maximum) return 0.2;
   return 1;
 }
 export const juvenile = (state, piece) =>
@@ -567,7 +583,7 @@ export function createState(seed = Date.now(), options = {}) {
     canonicalPair = !!options.canonicalPair,
     scenario = options.scenario ?? "alternative";
   const state = {
-    version: 14,
+    version: 15,
     scenario,
     arenaPhase: options.arenaPhase ?? 0,
     arenaFounders: options.arenaFounders ?? null,
@@ -742,34 +758,47 @@ function previewFounderProfiles(stageIndex) {
     ),
     prePrimitiveLocomotion = stageIndex <= primitiveLocomotionStageIndex;
   if (curated) {
-    const historicalTraits = [
-      ...new Set([
-        ...GEOLOGICAL_STAGES.slice(0, stageIndex).flatMap(
-          (entry) => entry.required,
-        ),
-        ...curated.plant,
-        ...curated.animal,
-      ]),
-    ];
+    const inheritedRepair = stageIndex > 0 ? ["Reparo Celular"] : [],
+      inheritedBilateral =
+        stageIndex > GEOLOGICAL_STAGES.findIndex((entry) => entry.id === "ediacaran")
+          ? ["Simetria Bilateral"]
+          : [],
+      curatedPlant = [...new Set([...curated.plant, ...inheritedRepair])],
+      curatedAnimal = [
+        ...new Set([
+          ...curated.animal,
+          ...inheritedRepair,
+          ...inheritedBilateral,
+        ]),
+      ],
+      historicalTraits = [
+        ...new Set([
+          ...GEOLOGICAL_STAGES.slice(0, stageIndex).flatMap(
+            (entry) => entry.required,
+          ),
+          ...curatedPlant,
+          ...curatedAnimal,
+        ]),
+      ];
     return {
       historicalTraits,
       primary: {
         rank: prePrimitiveLocomotion ? 4 : 0,
-        traits: normalizeActiveTraits(curated.plant, "Fotossíntese"),
-        ancestry: [...new Set(curated.plant)],
+        traits: normalizeActiveTraits(curatedPlant, "Fotossíntese"),
+        ancestry: [...new Set(curatedPlant)],
         recessiveTraits: earthFounderRecessives(
           historicalTraits,
-          curated.plant,
+          curatedPlant,
           true,
         ),
       },
       companion: {
         rank: prePrimitiveLocomotion ? 4 : (curated.rank ?? 0),
-        traits: normalizeActiveTraits(curated.animal, "Predação"),
-        ancestry: [...new Set(curated.animal)],
+        traits: normalizeActiveTraits(curatedAnimal, "Predação"),
+        ancestry: [...new Set(curatedAnimal)],
         recessiveTraits: earthFounderRecessives(
           historicalTraits,
-          curated.animal,
+          curatedAnimal,
           false,
         ),
       },
