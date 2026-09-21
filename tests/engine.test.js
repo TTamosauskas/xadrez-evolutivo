@@ -1269,7 +1269,7 @@ test("Multicelularismo gates childhood and introduces progressive senescence", (
       maturesRound: round(s) + 2,
     }),
     multicellular = newPiece(s, "amber", 0, 0, {
-      traits: ["Multicelularismo"],
+      traits: ["Reparo Celular", "Multicelularismo", "Simetria Bilateral"],
       maturesRound: round(s) + 2,
     });
   s.pieces.push(unicellular, multicellular);
