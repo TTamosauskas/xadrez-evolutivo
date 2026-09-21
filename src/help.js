@@ -2,6 +2,7 @@ import { EVENTS, PATHOGEN_AGENTS, TRAITS } from "./constants.js";
 import {
   GEOLOGICAL_STAGES,
   NEGATIVE_TRAITS,
+  NEGATIVE_TRAIT_RULES,
   TRAIT_DEPENDENCIES,
   TRAIT_STAGE,
 } from "./geology.js";
@@ -116,6 +117,27 @@ function ecologicalEventLines() {
   );
 }
 
+function negativeMutationRuleLines() {
+  return [...NEGATIVE_HELP_TRAITS].map((trait) => {
+    const rule = NEGATIVE_TRAIT_RULES[trait] ?? {},
+      stage = rule.stage
+        ? GEOLOGICAL_STAGES.find((entry) => entry.id === rule.stage)?.period
+        : null,
+      dependencies = [
+        ...(rule.lineage ?? []),
+        ...(rule.lineageAny ?? []),
+      ],
+      timing = stage ? `desde ${stage}` : "desde o 2º Ciclo",
+      prerequisite = dependencies.length
+        ? `; requer ancestralidade de ${dependencies.join(" ou ")}`
+        : "",
+      somatic = rule.somatic
+        ? "; também pode surgir como alteração somática por exposição patogênica quando compatível"
+        : "; apenas hereditária";
+    return `Disponibilidade — ${traitLabel(trait)}: ${timing}${prerequisite}${somatic}.`;
+  });
+}
+
 export function howToPlayLines() {
   const arenaFoundations = [...ARENA_FOUNDATIONAL_TRAITS]
       .map(traitLabel)
@@ -150,6 +172,9 @@ export function howToPlayLines() {
     "Cada característica hereditária ocupa um locus diploide com dois alelos. Alelos dominantes podem se expressar com uma cópia; recessivos podem permanecer ocultos e reaparecer por herança ou recombinação. Fenótipo mostra o que está ativo, Genes Recessivos mostra variantes ocultas e Ancestralidade registra características pelas quais a linhagem já passou.",
     `${traitLabel("Reprodução Sexuada")} combina um alelo de cada progenitor por locus. Pré-requisitos evolutivos usam a história da própria linhagem; perder uma característica depois não apaga automaticamente as inovações derivadas já alcançadas.`,
     "Perdas e mutações negativas entram no pool a partir do segundo Ciclo da campanha; na Arena, elas seguem as regras próprias desse cenário.",
+    section("Disponibilidade das mutações negativas"),
+    "As mutações negativas espontâneas exigem o 2º Ciclo da campanha. O período abaixo é o período geológico mínimo; pré-requisitos usam a ancestralidade da própria linhagem. Na Arena, a cronologia é ignorada, mas essas mutações continuam fora do construtor inicial e seus pré-requisitos permanecem válidos.",
+    ...negativeMutationRuleLines(),
 
     section("Os três cenários"),
     "Vida na Terra: campanha histórica. A origem começa com um ancestral comum, cada período usa fundadores canônicos, primeiras aparições ficam restritas à janela geológica correspondente e eventos ecológicos recebem pesos próprios de cada período. Inovações obrigatórias guiam o avanço da linha do tempo.",
