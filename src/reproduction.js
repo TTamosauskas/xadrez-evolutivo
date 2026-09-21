@@ -327,7 +327,7 @@ function chooseCellsTowardEnemy(state, cells, origin, count) {
       Math.min(...enemies.map((enemy) => distance(cell, enemy))),
     originDistance = enemyDistance(origin),
     forward = cells.filter((cell) => enemyDistance(cell) <= originDistance),
-    pool = forward.length ? forward : [],
+    pool = forward.length ? forward : cells,
     crowding = (cell) =>
       allies.filter((ally) => distance(cell, ally) <= 1).length;
 
