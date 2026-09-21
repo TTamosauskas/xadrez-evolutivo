@@ -11,6 +11,7 @@ import {
   pieceAge,
   naturalDeathChance,
   reproductionReady,
+  ecologicalQuadrant,
 } from "./state.js";
 import { currentGeologicalStage, stageProgress } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
@@ -124,8 +125,13 @@ export function render(
         ? `Arena · Fase ${state.arenaPhase || state.cycle} · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`
         : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
   const ev = state.event,
-    diseases = state.diseases.filter((d) => d.endRound >= currentRound);
+    diseases = state.diseases.filter((d) => d.endRound >= currentRound),
+    domain = state.ecologicalDomain,
+    domainSummary = domain?.active
+      ? `Domínio Ecológico: Brancas ${domain.quadrants.filter((q) => q.consolidated && q.owner === "blue").length}/3 · Pretas ${domain.quadrants.filter((q) => q.consolidated && q.owner === "amber").length}/3`
+      : null;
   $("event").textContent = [
+    domainSummary,
     ev
       ? `${ev.name} · ${Math.max(0, 10 - (currentRound - ev.startRound))} rodadas restantes`
       : state.pendingEcologicalEvents > 0
@@ -170,15 +176,27 @@ export function render(
         socialTarget = socialDefense.some((piece) => piece.id === p?.id),
         deathSite = state.deathSites.find((d) => d.cell === square(r, c)),
         fertileTrace = state.fertileTraces.some((t) => t.cell === square(r, c)),
-        decompositionMark = deathSite || fertileTrace;
+        decompositionMark = deathSite || fertileTrace,
+        domainIndex = ecologicalQuadrant(r, c),
+        domainQuadrant = state.ecologicalDomain?.active
+          ? state.ecologicalDomain.quadrants[domainIndex]
+          : null,
+        domainVisible = !!(
+          domainQuadrant?.owner &&
+          (domainQuadrant.progress > 0 || domainQuadrant.consolidated)
+        ),
+        domainClass = domainVisible
+          ? ` domain-${domainQuadrant.owner}${domainQuadrant.consolidated ? " domain-consolidated" : ""}${r % 4 === 0 ? " domain-edge-top" : ""}${r % 4 === 3 ? " domain-edge-bottom" : ""}${c % 4 === 0 ? " domain-edge-left" : ""}${c % 4 === 3 ? " domain-edge-right" : ""}`
+          : "";
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${domainClass}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
       cell.dataset.c = c;
+      cell.dataset.domainQuadrant = domainIndex;
       const terrain = {
         fertile: "casa fértil",
         hostile: "casa hostil",
@@ -197,6 +215,22 @@ export function render(
           : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
+      if (
+        domainVisible &&
+        r % 4 === 0 &&
+        c % 4 === 0
+      ) {
+        const progress = domainQuadrant.consolidated
+          ? 3
+          : domainQuadrant.progress;
+        cell.append(
+          make(
+            "span",
+            `${"●".repeat(progress)}${"○".repeat(3 - progress)}`,
+            "domain-progress",
+          ),
+        );
+      }
       if (decompositionMark)
         cell.append(make("span", "☠️", "decomposition-mark"));
       if (builtBarrier)
