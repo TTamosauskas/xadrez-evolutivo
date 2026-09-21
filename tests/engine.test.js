@@ -49,6 +49,9 @@ import {
   VECTOR_PATHOGEN_MORTALITY,
   VECTOR_RESISTANCE_MORTALITY_FACTOR,
   tryVectorPathogen,
+  leaveBacterialTrail,
+  exposePathogenCell,
+  PATHOGEN_SOMATIC_MUTATION_CHANCE,
 } from "../src/disease.js";
 import {
   reproduce,
@@ -653,7 +656,10 @@ test("all fifteen events execute and advance without invalid positions", () => {
         ctx = context(s);
       s.turn = 20;
       startEvent(ctx, id);
-      assert.equal(s.event.id, id);
+      if (id === "pathogen") {
+        assert.equal(s.event, null);
+        assert.equal(s.diseases.length, 1);
+      } else assert.equal(s.event.id, id);
       assertState(s);
       for (let i = 0; i < 10; i++) {
         s.turn += 2;
@@ -678,7 +684,7 @@ test("disease transmits one hop per round, resistance blocks it, survivors stay 
     { owner: "blue", r: 3, c: 3 },
     { owner: "amber", r: 2, c: 1, traits: ["Resistência"] },
   ]);
-  const d = startDisease(s, "eco", s.pieces[0]);
+  const d = startDisease(s, "eco", s.pieces[0], null, "virus");
   d.mode = "orthogonal";
   d.delay = 2;
   d.mortality = 60;
@@ -709,7 +715,7 @@ test("Resistência blocks ecological pathogens but reduces population-pathogen m
       { owner: "blue", r: 4, c: 4, traits: ["Resistência"] },
       { owner: "amber", r: 0, c: 0 },
     ]),
-    d = startDisease(s, "eco", s.pieces[1]);
+    d = startDisease(s, "eco", s.pieces[1], null, "virus");
   assert.equal(
     d ? s.pieces[0].infection : undefined,
     undefined,
@@ -735,7 +741,7 @@ test("Vetor Patógeno creates a distinct low-mortality disease after a one-in-fo
   assert.equal(VECTOR_PATHOGEN_TRANSMISSION_CHANCE, 0.25);
   assert.equal(VECTOR_PATHOGEN_MORTALITY, 20);
   assert.equal(VECTOR_RESISTANCE_MORTALITY_FACTOR, 0.5);
-  const disease = tryVectorPathogen(s, vector);
+  const disease = tryVectorPathogen(s, vector, "virus");
   assert.ok(disease);
   assert.equal(disease.source, "vector");
   assert.equal(disease.mortality, 20);
@@ -1997,25 +2003,80 @@ test("Vivíparo carries the brood for three rounds and loses it with the parent"
   assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 0);
 });
 
-test("Esporos spreads siblings far across the board", () => {
+test("fungal pathogens add exactly two distant contaminated cells per active round", () => {
   const s = fixture([
-      { owner: "blue", r: 4, c: 4, traits: ["Esporos"] },
-      { owner: "amber", r: 3, c: 4 },
+      { owner: "blue", r: 4, c: 4, traits: ["Resistência"] },
+      { owner: "amber", r: 0, c: 0, traits: ["Resistência"] },
     ]),
     ctx = context(s),
-    parent = s.pieces[0];
+    disease = startDisease(s, "eco", s.pieces[0], null, "fungus");
 
-  assert.equal(reproduce(ctx, parent), 4);
-  const children = s.pieces.filter((p) => p.owner === "blue" && p.id !== parent.id);
-  assert.equal(children.length, 4);
-  for (let i = 0; i < children.length; i++)
-    for (let j = i + 1; j < children.length; j++)
-      assert.ok(
-        Math.max(
-          Math.abs(children[i].r - children[j].r),
-          Math.abs(children[i].c - children[j].c),
-        ) >= 3,
-      );
+  assert.deepEqual(disease.contaminated, [36]);
+  s.turn = 2;
+  tickDiseases(ctx);
+  assert.equal(disease.contaminated.length, 3);
+  s.turn = 4;
+  tickDiseases(ctx);
+  assert.equal(disease.contaminated.length, 5);
+  assert.equal(new Set(disease.contaminated).size, 5);
+  assertState(s);
+});
+
+test("bacterial pathogens leave infectious trails behind moving hosts", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    source = s.pieces[0],
+    target = s.pieces[1],
+    disease = startDisease(s, "eco", source, null, "bacteria");
+
+  assert.equal(leaveBacterialTrail(s, source, 36), true);
+  assert.deepEqual(disease.contaminated, [36]);
+  source.r = 5;
+  source.c = 4;
+  target.r = 4;
+  target.c = 4;
+  exposePathogenCell(s, target);
+  assert.equal(target.infection?.disease, disease.id);
+  assertState(s);
+});
+
+test("pathogen exposure can add one non-heritable somatic mutation per outbreak", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    target = s.pieces[0],
+    disease = startDisease(s, "eco", s.pieces[1], null, "fungus");
+
+  assert.equal(PATHOGEN_SOMATIC_MUTATION_CHANCE, 0.25);
+  disease.contaminated.push(36);
+  target.pathogenExposureRounds = {};
+  target.pathogenMutationDiseases = [];
+  target.somaticMutations = [];
+  s.rng = 0;
+  exposePathogenCell(s, target);
+  assert.equal(target.somaticMutations.length, 1);
+  assert.deepEqual(target.pathogenMutationDiseases, [disease.id]);
+
+  const acquired = target.somaticMutations[0];
+  s.turn = 2;
+  exposePathogenCell(s, target);
+  assert.deepEqual(target.somaticMutations, [acquired]);
+
+  const profile = {
+    owner: target.owner,
+    rank: target.rank,
+    traits: [...target.traits],
+    ancestry: [...target.ancestry],
+    genome: cloneGenome(target.genome),
+    mutations: target.mutations,
+    generation: target.generation + 1,
+  };
+  const child = newPiece(s, target.owner, 6, 6, profile);
+  assert.deepEqual(child.somaticMutations, []);
+  assert.equal(child.traits.includes(acquired), false);
   assertState(s);
 });
 
