@@ -511,6 +511,7 @@ export function canParasitize(state, p) {
 
 export function legalActions(state) {
   if (state.result) return [];
+  if (state.phase === "collapse") return [{ type: "DOMAIN_COLLAPSE" }];
   if (state.phase === "manipulate")
     return [
       ...manipulationTargets(state).map((target) => ({
