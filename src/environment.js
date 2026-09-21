@@ -21,6 +21,7 @@ import {
   currentGeologicalStage,
   aquaticFertilityRegime,
   conwayUnlocked,
+  pathogenUnlocked,
 } from "./geology.js";
 import { movesFor } from "./moves.js";
 import { recordDiscovery } from "./discoveries.js";
@@ -823,7 +824,8 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
                 event.id !== state.previousEvent) &&
               (weights[event.id] ?? 0) > 0 &&
               (allowSevere || !SEVERE_EVENT_IDS.has(event.id)) &&
-              (allowPathogen || event.id !== "pathogen"),
+              (event.id !== "pathogen" ||
+                (allowPathogen && pathogenUnlocked(state))),
           );
         return weightedEvent(state, candidates, weights);
       })();
