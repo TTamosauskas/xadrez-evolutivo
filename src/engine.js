@@ -51,7 +51,7 @@ import {
   placeOvoviviparousEgg,
 } from "./reproduction.js";
 import { checkPopulation, tickDiseases, infect } from "./disease.js";
-import { aquaticFertilityRegime } from "./geology.js";
+import { aquaticFertilityRegime, conwayUnlocked } from "./geology.js";
 import {
   consumeDecomposition,
   hasDecomposition,
@@ -1615,7 +1615,7 @@ export function transition(previous, action) {
     advanceTurn(ctx);
     settle(ctx);
   } else if (action.type === "CONWAY_STEP" && mutuallyBlocked(state)) {
-    if (aquaticFertilityRegime(state))
+    if (!conwayUnlocked(state))
       log(state, "Ambos os lados estavam sem ação; o turno avançou.");
     else if (severeEventActive(state))
       log(
@@ -1634,7 +1634,7 @@ export function transition(previous, action) {
       settle(ctx);
       if (
         !state.result &&
-        !aquaticFertilityRegime(state) &&
+        conwayUnlocked(state) &&
         !severeEventActive(state)
       )
         resolveConwayStagnation(ctx);
