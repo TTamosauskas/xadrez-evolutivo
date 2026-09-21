@@ -419,7 +419,7 @@ test("juveniles render smaller and Lactação highlights eligible children", () 
   const dom = setup(),
     s = createState(41),
     parent = s.pieces.find((piece) => piece.owner === "blue");
-  parent.traits = [...new Set([...parent.traits, "Cuidado Parental", "Lactação"])];
+  parent.traits = [...new Set([...parent.traits, "Incubação", "Lactação"])];
   const child = newPiece(s, "blue", parent.r - 1, parent.c, {
     parentId: parent.id,
     traits: ["Multicelularismo"],
