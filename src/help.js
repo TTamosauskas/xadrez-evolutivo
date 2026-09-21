@@ -209,7 +209,7 @@ export function howToPlayLines() {
     section("Patógenos e pressão populacional"),
     `Surtos podem usar três agentes: ${pathogens}. Vírus se espalham entre criaturas; Bactérias deixam rastros infecciosos nas casas abandonadas por hospedeiros; Fungos contaminam casas e criam dois novos focos distantes por rodada de surto.`,
     `Cada exposição pode causar uma alteração somática negativa, limitada a uma por surto e não herdável. ${traitLabel("Reparo Celular")} reduz essa chance; ${traitLabel("Resistência")} impede infecção por patógenos ecológicos e reduz a mortalidade de surtos ligados à pressão populacional.`,
-    `A partir do Proterozoico, populações dominantes com pelo menos 17 organismos podem sofrer surtos demográficos; quanto maior a diferença numérica, maior a chance, até o teto do sistema. Ao atingir 40 organismos ativos, a pressão populacional também pode desencadear um evento ecológico severo.`,
+    `A partir do Proterozoico, populações dominantes com pelo menos 17 organismos podem sofrer surtos demográficos; quanto maior a diferença numérica, maior a chance, até o teto do sistema. Com 24 ou mais organismos ativos, a criação de nova fertilidade é interrompida e casas férteis desocupadas começam a se esgotar progressivamente; ao atingir 40 organismos ativos, a pressão populacional também pode desencadear um evento ecológico severo.`,
 
     section("Eventos ecológicos"),
     "Eventos ecológicos entram na fila a partir da geração local G4 e depois a cada seis gerações. Em Vida na Terra, cada período possui pesos e eventos próprios; em Cenários Alternativos e Arena, os eventos elegíveis recebem peso uniforme e podem se repetir.",
@@ -219,7 +219,7 @@ export function howToPlayLines() {
     section("Contramedidas de estagnação"),
     "Se apenas um lado ficar sem ação legal, ele passa automaticamente. Se ambos ficarem bloqueados, o relógio avança; a partir do Devoniano, o habitat também avança por Conway, salvo durante eventos severos.",
     "Em bloqueio mútuo prolongado a partir do Devoniano, o jogo escala reparos após 3, 6 e 10 turnos: primeiro tenta remover uma barreira natural, depois neutraliza até três casas hostis de uma linha ou coluna e, por fim, procura criar contato ofensivo alterando terreno, reposicionando um organismo ou abrindo um corredor entre populações.",
-    "Mesmo quando ainda existem movimentos, longos períodos sem qualquer opção de captura acionam tentativas de reparo ofensivo após 24, 36 e 52 rodadas. Essas intervenções ficam suspensas enquanto há evento ecológico ativo ou pendente e só operam onde Conway já está liberado.",
+    "Mesmo quando ainda existem movimentos, se o tabuleiro estiver sem qualquer opção de captura e o relógio ofensivo tiver alcançado 24, 36 ou 52 rodadas desde sua referência de estagnação, o jogo tenta um reparo ofensivo. Essas intervenções ficam suspensas enquanto há evento ecológico ativo ou pendente e só operam onde Conway já está liberado.",
     `Como mecanismo final de encerramento, o Domínio Ecológico entra a partir do turno global ${ECOLOGICAL_DOMAIN_START_TURN}; controlar ${ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS} quadrantes encerra partidas que continuam ecologicamente divididas mesmo sem extinção direta.`,
 
     section("Controles, informação e acompanhamento"),
