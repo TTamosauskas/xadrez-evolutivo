@@ -8,7 +8,8 @@
     "simulate": "node tests/simulate.js",
     "benchmark:periods": "node scripts/period-benchmark.js",
     "build": "node scripts/build.js",
-    "benchmark:aquatic-founders": "node scripts/aquatic-founder-benchmark.js"
+    "benchmark:aquatic-founders": "node scripts/aquatic-founder-benchmark.js",
+    "benchmark:land-transition": "node scripts/land-transition-benchmark.js"
   },
   "engines": {
     "node": ">=24"
