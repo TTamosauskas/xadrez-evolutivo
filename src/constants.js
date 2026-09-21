@@ -5,7 +5,7 @@ export const SYMBOLS = {
   blue: ["♙", "♘", "♗", "♖", "♔", "♕"],
   amber: ["♟", "♞", "♝", "♜", "♚", "♛"],
 };
-export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
+export const BIRTH_RATES = [2, 2, 2, 1, 1, 1];
 export const TRAITS = {
   Multicelularismo: [
     "🫧",
