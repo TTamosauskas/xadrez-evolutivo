@@ -527,6 +527,20 @@ export function deserialize(raw) {
       (entry) => entry?.title !== "Marco Evolutivo",
     );
     if (!Array.isArray(data.fertileTraces)) data.fertileTraces = [];
+    if (!Array.isArray(data.fertilityRecovery)) data.fertilityRecovery = [];
+    data.fertilityRecovery = data.fertilityRecovery
+      .filter(
+        (entry) =>
+          Number.isInteger(entry?.cell) &&
+          entry.cell >= 0 &&
+          entry.cell < 64 &&
+          Number.isInteger(entry?.dueTurn) &&
+          entry.dueTurn >= 0,
+      )
+      .filter(
+        (entry, index, entries) =>
+          entries.findIndex((candidate) => candidate.cell === entry.cell) === index,
+      );
     data.fertileTraces = data.fertileTraces.map((trace) => ({
       ...trace,
       base: ["neutral", "fertile", "hostile"].includes(trace.base)

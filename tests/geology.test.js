@@ -158,8 +158,9 @@ test("Archean starts green and stationary", () => {
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
-  assert.ok(fertile >= 48 && fertile <= 56);
+  assert.equal(fertile, 64);
   assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 0);
+  assert.deepEqual(s.naturalBarriers, []);
   const actions = movesFor(s, s.pieces[0]);
   assert.ok(actions.length > 0);
   assert.ok(actions.every((target) => target.stay));
@@ -456,13 +457,30 @@ test("deleterious mutations unlock only from the second campaign cycle", () => {
   assert.equal(deleteriousMutationUnlocked(s), true);
 });
 
-test("Pawn mutation unlocks only from the second campaign cycle", () => {
-  const first = createState(113);
-  assert.equal(first.totalCycles, 1);
-  assert.equal(pawnMutationUnlocked(first), false);
-  first.totalCycles = 2;
-  first.cycle = 1;
-  assert.equal(pawnMutationUnlocked(first), true);
+test("Pawn mutation unlocks only after primitive locomotion in the lineage", () => {
+  const state = createState(113),
+    basal = {
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    },
+    mobile = {
+      traits: ["Predação", "Locomoção Primitiva"],
+      ancestry: ["Respiração anaeróbia", "Predação", "Locomoção Primitiva"],
+    },
+    descendant = {
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação", "Locomoção Primitiva"],
+    };
+
+  state.totalCycles = 20;
+  assert.equal(pawnMutationUnlocked(state), false);
+  assert.equal(pawnMutationUnlocked(state, basal), false);
+  assert.equal(pawnMutationUnlocked(state, mobile), true);
+  assert.equal(pawnMutationUnlocked(state, descendant), true);
+
+  state.scenario = "arena";
+  assert.equal(pawnMutationUnlocked(state, basal), false);
+  assert.equal(pawnMutationUnlocked(state, mobile), true);
 });
 
 test("active phenotype families replace older expressions without erasing ancestry", () => {

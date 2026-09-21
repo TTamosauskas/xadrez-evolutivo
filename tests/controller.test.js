@@ -39,7 +39,10 @@ function setup() {
   return { c, workers, timers, timerDelays };
 }
 test("automatic Conway waits between visible board updates", () => {
-  const s = createState(302);
+  const s = createState(302, {
+    geologicalStage: "silurian",
+    naturalBarriers: false,
+  });
   s.board.fill("neutral");
   s.pieces = [];
   s.nextId = 1;

@@ -10,6 +10,8 @@ import {
   newPiece,
   round,
   fertilityPaused,
+  consumeFertileTerrain,
+  restoreAquaticFertility,
   photosynthesisDelayTurns,
   juvenile,
   senescent,
@@ -30,6 +32,7 @@ import {
   tickEnvironment,
   checkPopulationClimate,
   repairConwayStagnation,
+  advanceConway,
   fertilityDepletionRate,
   offensiveActionCount,
 } from "../src/environment.js";
@@ -53,7 +56,11 @@ import {
   predationBirthLimit,
 } from "../src/reproduction.js";
 import { crowdingPenalty } from "../src/ai.js";
-import { GEOLOGICAL_STAGES, habitatProfile } from "../src/geology.js";
+import {
+  GEOLOGICAL_STAGES,
+  habitatProfile,
+  aquaticFertilityRegime,
+} from "../src/geology.js";
 import {
   cloneGenome,
   genomeFromTraits,
@@ -73,13 +80,12 @@ test("period habitat profiles encode the new ecological progression", () => {
     cretaceous = habitatProfile("cretaceous"),
     neogene = habitatProfile("neogene");
 
-  assert.deepEqual(archean.fertile, [48, 56]);
-  assert.deepEqual(archean.naturalBarriers, [0, 0]);
-  assert.equal(archean.pattern, "primordial");
-  assert.deepEqual(proterozoic.hostile, [2, 4]);
-  assert.equal(proterozoic.hostileCap, 12);
-  assert.equal(proterozoic.pattern, "primordial-conway");
-  assert.equal(ordovician.pattern, "islands");
+  for (const profile of [archean, proterozoic, ordovician]) {
+    assert.equal(profile.fertile, 64);
+    assert.equal(profile.hostile, 0);
+    assert.deepEqual(profile.naturalBarriers, [0, 0]);
+    assert.equal(profile.pattern, "aquatic");
+  }
   assert.equal(devonian.pattern, "corridors");
   assert.deepEqual(carboniferous.naturalBarriers, [3, 6]);
   assert.equal(permian.hostile, 12);
@@ -135,49 +141,69 @@ test("first generation-3 habitat update preserves every geological preset", () =
   }
 });
 
-test("Archean keeps its abundant fertile preset after generation 3", () => {
-  const s = createState(899, {
-      geologicalStage: "archean",
+test("aquatic stages stay fully fertile and outside Conway until Ordovician", () => {
+  for (const stage of ["archean", "proterozoic", "ediacaran", "cambrian", "ordovician"]) {
+    const s = createState(899, {
+      geologicalStage: stage,
       naturalBarriers: true,
-    }),
-    before = s.board.filter((cell) => cell === "fertile").length;
-  assert.ok(before >= 48 && before <= 56);
+    });
+    assert.equal(aquaticFertilityRegime(s), true);
+    assert.equal(s.board.filter((cell) => cell === "fertile").length, 64);
+    assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
+    assert.deepEqual(s.naturalBarriers, []);
 
-  s.maxGenerationReached = 3;
-  tickEnvironment(context(s));
+    const before = [...s.board];
+    s.maxGenerationReached = 3;
+    tickEnvironment(context(s));
+    advanceConway(context(s));
+    assert.deepEqual(s.board, before);
+    assert.deepEqual(s.naturalBarriers, []);
+    assertState(s);
+  }
 
-  const after = s.board.filter((cell) => cell === "fertile").length;
-  assert.ok(after >= 48 && after <= 56);
-  assert.ok(Math.abs(after - before) <= 1);
-  assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
-  assertState(s);
+  const silurian = createState(900, {
+    geologicalStage: "silurian",
+    naturalBarriers: true,
+  });
+  assert.equal(aquaticFertilityRegime(silurian), false);
+  assert.ok(silurian.board.some((cell) => cell !== "fertile"));
+  assertState(silurian);
 });
 
-test("Archean is almost entirely fertile and Proterozoic seeds bounded hostile Conway", () => {
-  const archean = createState(811, {
+test("consumed aquatic fertility returns after three turns", () => {
+  const s = createState(901, {
     geologicalStage: "archean",
     naturalBarriers: true,
   });
-  const fertile = archean.board.filter((cell) => cell === "fertile").length;
-  assert.ok(fertile >= 48 && fertile <= 56);
-  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 0);
-  assert.equal(archean.naturalBarriers.length, 0);
+  const cell = 27;
+  assert.equal(s.board[cell], "fertile");
 
-  const proterozoic = createState(812, {
-    geologicalStage: "proterozoic",
-    naturalBarriers: true,
-  });
-  const initialHostile = proterozoic.board.filter(
-    (cell) => cell === "hostile",
-  ).length;
-  assert.ok(initialHostile >= 2 && initialHostile <= 4);
-  proterozoic.maxGenerationReached = 3;
-  tickEnvironment(context(proterozoic));
-  assert.ok(
-    proterozoic.board.filter((cell) => cell === "hostile").length <= 12,
-  );
-  assertState(archean);
-  assertState(proterozoic);
+  assert.equal(consumeFertileTerrain(s, cell), true);
+  assert.equal(s.board[cell], "neutral");
+  assert.deepEqual(s.fertilityRecovery, [{ cell, dueTurn: 3 }]);
+
+  s.turn = 2;
+  assert.equal(restoreAquaticFertility(s), 0);
+  assert.equal(s.board[cell], "neutral");
+
+  s.turn = 3;
+  assert.equal(restoreAquaticFertility(s), 1);
+  assert.equal(s.board[cell], "fertile");
+  assert.deepEqual(s.fertilityRecovery, []);
+  assertState(s);
+});
+
+test("early aquatic habitats stay fully fertile through Ordovician", () => {
+  for (const stage of ["archean", "proterozoic", "ediacaran", "cambrian", "ordovician"]) {
+    const s = createState(811, {
+      geologicalStage: stage,
+      naturalBarriers: true,
+    });
+    assert.equal(s.board.filter((cell) => cell === "fertile").length, 64);
+    assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
+    assert.equal(s.naturalBarriers.length, 0);
+    assertState(s);
+  }
 });
 
 test("ancestral gray King splits into paired photosynthetic and predatory founders", () => {
@@ -233,7 +259,10 @@ test("ancestral gray King splits into paired photosynthetic and predatory founde
 });
 
 test("mutual blocking advances Conway turn by turn until one side can act", () => {
-  let s = createState(302);
+  let s = createState(302, {
+    geologicalStage: "silurian",
+    naturalBarriers: false,
+  });
   s.board.fill("neutral");
   s.pieces = [];
   s.nextId = 1;
@@ -283,7 +312,10 @@ test("mutual blocking advances Conway turn by turn until one side can act", () =
 });
 
 test("stalled Conway repairs the local habitat in stages without a severe event", () => {
-  let s = createState(303);
+  let s = createState(303, {
+    geologicalStage: "silurian",
+    naturalBarriers: false,
+  });
   s.board.fill("neutral");
   s.pieces = [];
   s.nextId = 1;
@@ -320,10 +352,10 @@ test("stalled Conway repairs the local habitat in stages without a severe event"
       entry.text.includes("Conway: a estagnação"),
     ),
   );
-  assert.ok(s.logs.some((entry) => entry.text.includes("abriu um corredor local")));
   assert.ok(
     s.logs.some(
       (entry) =>
+        entry.text.includes("abriu um corredor local") ||
         entry.text.includes("mobilidade ofensiva") ||
         entry.text.includes("deslocou um organismo") ||
         entry.text.includes("corredor ofensivo"),
@@ -824,6 +856,32 @@ test("gradual population pressure exhausts fertility without arbitrary attrition
   assertState(s);
 });
 
+test("aquatic crowding depletion stays exhausted while consumed cells recover", () => {
+  const s = createState(902, {
+    geologicalStage: "archean",
+    naturalBarriers: true,
+  });
+  const occupied = new Set(s.pieces.map((piece) => piece.r * 8 + piece.c));
+  for (let cell = 0; s.pieces.length < 24 && cell < 64; cell++) {
+    if (occupied.has(cell)) continue;
+    occupied.add(cell);
+    s.pieces.push(
+      newPiece(
+        s,
+        s.pieces.length % 2 ? "blue" : "amber",
+        Math.floor(cell / 8),
+        cell % 8,
+      ),
+    );
+  }
+
+  tickEnvironment(context(s));
+
+  assert.ok(s.board.some((cell) => cell === "neutral"));
+  assert.deepEqual(s.fertilityRecovery, []);
+  assertState(s);
+});
+
 test("reproduction pressure uses hidden hysteresis without suppressing early recovery", () => {
   assert.equal(populationReproductionLimit(17, true), Infinity);
   assert.equal(populationReproductionLimit(18, true), 2);
@@ -832,6 +890,8 @@ test("reproduction pressure uses hidden hysteresis without suppressing early rec
   assert.equal(populationReproductionLimit(24, false), 2);
   assert.equal(populationReproductionLimit(27, false), 2);
   assert.equal(populationReproductionLimit(28, false), 1);
+  assert.equal(populationReproductionLimit(25, false, "ordovician"), 2);
+  assert.equal(populationReproductionLimit(26, false, "ordovician"), 1);
 
   assert.equal(populationReproductionCooldown(17, true), 0);
   assert.equal(populationReproductionCooldown(18, true), 1);
@@ -840,22 +900,22 @@ test("reproduction pressure uses hidden hysteresis without suppressing early rec
   assert.equal(populationReproductionCooldown(24, false), 1);
   assert.equal(populationReproductionCooldown(28, false), 2);
   assert.equal(populationReproductionCooldown(32, false), 3);
+  assert.equal(populationReproductionCooldown(25, false, "ordovician"), 1);
+  assert.equal(populationReproductionCooldown(26, false, "ordovician"), 2);
+  assert.equal(populationReproductionCooldown(30, false, "ordovician"), 3);
 
   assert.equal(predationBirthLimit(23), 1);
   assert.equal(predationBirthLimit(24), 0);
 });
 
-test("late competitive pressure starts only after articulated locomotion", () => {
-  const makeState = (articulated) => {
+test("late competitive pressure starts after primitive locomotion", () => {
+  const makeState = (mobile) => {
     const s = createState(812, {
-      geologicalStage: "cambrian",
+      geologicalStage: "ediacaran",
       historicalTraits: [
         "Respiração anaeróbia",
-        "Multicelularismo",
         "Predação",
         "Locomoção Primitiva",
-        "Vertebrado",
-        "Locomoção Articulada",
       ],
       naturalBarriers: false,
     });
@@ -865,22 +925,12 @@ test("late competitive pressure starts only after articulated locomotion", () =>
     s.populationLatched = { blue: true, amber: true };
 
     const parent = newPiece(s, "blue", 4, 4, {
-      traits: articulated
-        ? [
-            "Predação",
-            "Locomoção Primitiva",
-            "Vertebrado",
-            "Locomoção Articulada",
-          ]
-        : ["Predação", "Locomoção Primitiva"],
-      ancestry: articulated
-        ? [
-            "Predação",
-            "Locomoção Primitiva",
-            "Vertebrado",
-            "Locomoção Articulada",
-          ]
-        : ["Predação", "Locomoção Primitiva"],
+      traits: mobile
+        ? ["Predação", "Locomoção Primitiva"]
+        : ["Predação"],
+      ancestry: mobile
+        ? ["Predação", "Locomoção Primitiva"]
+        : ["Predação"],
     });
     s.pieces.push(parent);
 
@@ -910,11 +960,11 @@ test("late competitive pressure starts only after articulated locomotion", () =>
     return { s, parent };
   };
 
-  const primitive = makeState(false),
-    articulated = makeState(true);
+  const preLocomotion = makeState(false),
+    mobile = makeState(true);
 
   assert.equal(
-    reproduce(context(primitive.s), primitive.parent, null, "teste", {
+    reproduce(context(preLocomotion.s), preLocomotion.parent, null, "teste", {
       forcedCount: 4,
       ignoreReadiness: true,
       immediateDevelopment: true,
@@ -922,13 +972,222 @@ test("late competitive pressure starts only after articulated locomotion", () =>
     2,
   );
   assert.equal(
-    reproduce(context(articulated.s), articulated.parent, null, "teste", {
+    reproduce(context(mobile.s), mobile.parent, null, "teste", {
       forcedCount: 4,
       ignoreReadiness: true,
       immediateDevelopment: true,
     }),
     1,
   );
+});
+
+test("pre-locomotion aquatic reproduction expands toward the nearest rival", () => {
+  const s = createState(912, {
+    geologicalStage: "archean",
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+
+  const parent = newPiece(s, "blue", 6, 3),
+    rival = newPiece(s, "amber", 2, 3);
+  s.pieces.push(parent, rival);
+
+  assert.equal(
+    reproduce(context(s), parent, null, "casa fértil", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+      fertileReproduction: true,
+    }),
+    1,
+  );
+
+  const child = s.pieces.find(
+    (piece) => piece.owner === "blue" && piece.id !== parent.id,
+  );
+  assert.ok(child);
+  assert.equal(child.r, 5);
+  assert.ok([2, 3, 4].includes(child.c));
+  assertState(s);
+});
+
+test("Archean blocks regressive fertile births while Proterozoic allows a directional fallback", () => {
+  const makeState = (geologicalStage) => {
+    const s = createState(911, {
+      geologicalStage,
+      naturalBarriers: false,
+    });
+    s.pieces = [];
+    s.nextId = 1;
+    s.board.fill("fertile");
+
+    const parent = newPiece(s, "blue", 5, 3),
+      rival = newPiece(s, "amber", 1, 3);
+    s.pieces.push(parent, rival);
+
+    for (const [r, col] of [
+      [4, 2],
+      [4, 3],
+      [4, 4],
+      [5, 2],
+      [5, 4],
+    ])
+      s.pieces.push(newPiece(s, "blue", r, col));
+
+    return { s, parent };
+  };
+
+  const archean = makeState("archean");
+  assert.equal(
+    reproduce(context(archean.s), archean.parent, null, "casa fértil", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+      fertileReproduction: true,
+    }),
+    0,
+  );
+  assertState(archean.s);
+
+  const proterozoic = makeState("proterozoic");
+  assert.equal(
+    reproduce(
+      context(proterozoic.s),
+      proterozoic.parent,
+      null,
+      "casa fértil",
+      {
+        forcedCount: 1,
+        ignoreReadiness: true,
+        immediateDevelopment: true,
+        fertileReproduction: true,
+      },
+    ),
+    1,
+  );
+  const child = proterozoic.s.pieces.find(
+    (piece) =>
+      piece.owner === "blue" &&
+      piece.parentId === proterozoic.parent.id,
+  );
+  assert.ok(child);
+  assert.equal(child.r, 6);
+  assertState(proterozoic.s);
+});
+
+test("pre-locomotion predation places offspring toward the nearest rival", () => {
+  const s = createState(913, {
+    geologicalStage: "archean",
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("neutral");
+
+  const parent = newPiece(s, "blue", 6, 3, {
+      traits: ["Predação"],
+      ancestry: ["Predação"],
+    }),
+    rival = newPiece(s, "amber", 4, 2, {
+      traits: ["Predação"],
+      ancestry: ["Predação"],
+    });
+  s.pieces.push(parent, rival);
+
+  assert.equal(
+    reproduce(context(s), parent, null, "predação", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+
+  const child = s.pieces.find(
+    (piece) => piece.owner === "blue" && piece.id !== parent.id,
+  );
+  assert.ok(child);
+  assert.equal(child.r + child.pawnDir, rival.r);
+  assert.equal(Math.abs(child.c - rival.c), 1);
+});
+
+test("basal predation creates a forward-expanding descendant before primitive locomotion", () => {
+  let s = createState(914, {
+    geologicalStage: "archean",
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("neutral");
+
+  const predator = newPiece(s, "blue", 4, 3, {
+      traits: ["Predação"],
+      ancestry: ["Predação"],
+    }),
+    victim = newPiece(s, "amber", 3, 2),
+    survivor = newPiece(s, "amber", 0, 0);
+  s.pieces.push(predator, victim, survivor);
+
+  s = simulate(s, move(predator, 3, 2));
+
+  const blue = s.pieces.filter((piece) => piece.owner === "blue"),
+    child = blue.find((piece) => piece.id !== predator.id);
+  assert.equal(blue.length, 2);
+  assert.ok(child);
+  assert.equal(
+    Math.max(
+      Math.abs(child.r - survivor.r),
+      Math.abs(child.c - survivor.c),
+    ),
+    2,
+  );
+  assertState(s);
+});
+
+test("basal predation keeps one replacement birth above the population threshold", () => {
+  const s = createState(915, {
+    geologicalStage: "archean",
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("neutral");
+
+  const parent = newPiece(s, "blue", 4, 4, {
+    traits: ["Predação"],
+    ancestry: ["Predação"],
+  });
+  s.pieces.push(parent);
+
+  const occupied = new Set([4 * 8 + 4]);
+  for (let cell = 0; s.pieces.length < 25 && cell < 64; cell++) {
+    if (occupied.has(cell)) continue;
+    occupied.add(cell);
+    s.pieces.push(
+      newPiece(
+        s,
+        cell % 2 ? "blue" : "amber",
+        Math.floor(cell / 8),
+        cell % 8,
+      ),
+    );
+  }
+
+  const before = s.pieces.length;
+  assert.equal(
+    reproduce(context(s), parent, null, "predação", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  assert.equal(s.pieces.length, before + 1);
 });
 
 test("predation creates at most one descendant and none once population pressure starts", () => {
@@ -2681,7 +2940,10 @@ test("successor cycle gives both sides the same photosynthetic and non-photosynt
 
 
 test("severe events suspend Conway for five turns while blocked turns still advance", () => {
-  let s = createState(505, { naturalBarriers: false });
+  let s = createState(505, {
+    geologicalStage: "silurian",
+    naturalBarriers: false,
+  });
   s.board.fill("neutral");
   s.pieces = [];
   s.nextId = 1;

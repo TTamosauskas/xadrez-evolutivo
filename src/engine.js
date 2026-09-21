@@ -14,6 +14,8 @@ import {
   notice,
   assertState,
   fertilityPaused,
+  consumeFertileTerrain,
+  restoreAquaticFertility,
   photosynthesisDelayTurns,
   naturalDeathChance,
   pieceAge,
@@ -44,6 +46,7 @@ import {
   placeOvoviviparousEgg,
 } from "./reproduction.js";
 import { checkPopulation, tickDiseases, infect } from "./disease.js";
+import { aquaticFertilityRegime } from "./geology.js";
 import {
   consumeDecomposition,
   hasDecomposition,
@@ -303,7 +306,7 @@ function maturePhotosynthesis(state, owner) {
   for (const p of state.pieces) {
     if (p.owner !== owner || !canPhotosynthesize(p)) continue;
     const cell = square(p.r, p.c);
-    const delay = photosynthesisDelayTurns(state);
+    const delay = photosynthesisDelayTurns(state, p);
     if (
       terrain(state, p.r, p.c) !== "neutral" ||
       !photosynthesisHasSpace(state, p) ||
@@ -372,6 +375,7 @@ function advanceTurn(ctx) {
   state.turn++;
   state.current = other(acting);
   tickSevereEventTurn(state);
+  restoreAquaticFertility(state);
   state.fertileTraces = state.fertileTraces.filter(
     (t) => state.turn <= t.clearAfterTurn,
   );
@@ -686,7 +690,7 @@ function executeMove(ctx, action) {
       resourceReproduction: true,
     });
     if (born) {
-      state.board[resource] = "neutral";
+      consumeFertileTerrain(state, resource);
       log(
         state,
         `${OWNERS[p.owner]}: 🐸 Respiração Cutânea consumiu ${coord(target.r, target.c)} à distância.`,
@@ -704,7 +708,7 @@ function executeMove(ctx, action) {
       resourceReproduction: true,
     });
     if (born) {
-      state.board[resource] = "neutral";
+      consumeFertileTerrain(state, resource);
       log(
         state,
         `${OWNERS[p.owner]}: 🍃 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
@@ -1042,10 +1046,16 @@ function executeMove(ctx, action) {
       fertileResource &&
       (!carnivore || omnivore || has(p, "Mixotrofia")),
     photosyntheticPrey = pieceCapture && has(victim, "Fotossíntese"),
+    primitiveLocomotionReached =
+      has(p, "Locomoção Primitiva") ||
+      (p.ancestry ?? []).includes("Locomoção Primitiva"),
+    earlyExpansionPredation =
+      has(p, "Predação") && !primitiveLocomotionReached,
     predation =
       pieceCapture &&
       victim.owner !== p.owner &&
-      (omnivore ||
+      (earlyExpansionPredation ||
+        omnivore ||
         (carnivore && !photosyntheticPrey) ||
         (herbivore && photosyntheticPrey));
   log(
@@ -1090,7 +1100,7 @@ function executeMove(ctx, action) {
     fertile &&
     !collectorStay &&
     terrain(state, p.r, p.c) === "fertile";
-  if (consumedFertile) state.board[cell] = "neutral";
+  if (consumedFertile) consumeFertileTerrain(state, cell);
   let born = 0;
   if (eggCapture) {
     born = reproduce(ctx, p, null, "ovifagia", {
@@ -1186,7 +1196,7 @@ function choosePartner(ctx, id) {
     p = state.pieces.find((x) => x.id === pending.id);
   const mate = partnersFor(state, p).find((x) => x.id === id);
   if (!mate) throw Error("Escolha um parceiro destacado.");
-  if (!pending.collectorStay) state.board[square(p.r, p.c)] = "neutral";
+  if (!pending.collectorStay) consumeFertileTerrain(state, square(p.r, p.c));
   const born = reproduce(ctx, p, mate, "reprodução sexuada", {
     fertileReproduction: !!pending.fertileReproduction,
   });
@@ -1441,7 +1451,9 @@ export function transition(previous, action) {
     advanceTurn(ctx);
     settle(ctx);
   } else if (action.type === "CONWAY_STEP" && mutuallyBlocked(state)) {
-    if (severeEventActive(state))
+    if (aquaticFertilityRegime(state))
+      log(state, "Ambos os lados estavam sem ação; o turno avançou.");
+    else if (severeEventActive(state))
       log(
         state,
         "⛔ Evento severo: Conway permanece suspenso; o turno avança sem alterar o habitat.",
@@ -1456,7 +1468,12 @@ export function transition(previous, action) {
     if (!extinction(state)) {
       advanceTurn(ctx);
       settle(ctx);
-      if (!state.result && !severeEventActive(state)) resolveConwayStagnation(ctx);
+      if (
+        !state.result &&
+        !aquaticFertilityRegime(state) &&
+        !severeEventActive(state)
+      )
+        resolveConwayStagnation(ctx);
     }
   } else throw Error("Ação incompatível com a fase da partida.");
   logBoardChanges(previous, state);

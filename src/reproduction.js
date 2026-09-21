@@ -54,6 +54,7 @@ import {
   normalizePhotosyntheticRank,
   traitLossAllowed,
   traitUnlocked,
+  aquaticFertilityRegime,
 } from "./geology.js";
 import { mutationDiscoveryId, recordDiscovery } from "./discoveries.js";
 import { tryVectorPathogen } from "./disease.js";
@@ -133,7 +134,7 @@ function nextDerivedRank(piece) {
 
 function mutation(state, p, positiveOnly) {
   const gains = [];
-  if (p.rank === 4 && pawnMutationUnlocked(state))
+  if (p.rank === 4 && pawnMutationUnlocked(state, p))
     gains.push({ rank: 0, weight: 1 });
   else if (!has(p, "Fotossíntese") && rankMutationUnlocked(state)) {
     const nextRank = nextDerivedRank(p);
@@ -317,6 +318,50 @@ function chooseCells(state, cells, origin, count, dispersal) {
   return chosen;
 }
 
+function chooseCellsTowardEnemy(
+  state,
+  cells,
+  origin,
+  count,
+  { strict = false, preferCapture = false } = {},
+) {
+  const enemies = state.pieces.filter((piece) => piece.owner !== origin.owner),
+    allies = state.pieces.filter((piece) => piece.owner === origin.owner);
+  if (!enemies.length) return shuffle(state, cells).slice(0, count);
+
+  const enemyDistance = (cell) =>
+      Math.min(...enemies.map((enemy) => distance(cell, enemy))),
+    originDistance = enemyDistance(origin),
+    forward = cells.filter((cell) => enemyDistance(cell) <= originDistance),
+    pool = strict ? forward : forward.length ? forward : cells,
+    crowding = (cell) =>
+      allies.filter((ally) => distance(cell, ally) <= 1).length,
+    captureOptions = (cell) => {
+      const dir =
+        cell.r === 0
+          ? 1
+          : cell.r === 7
+            ? -1
+            : origin.owner === "blue"
+              ? -1
+              : 1;
+      return enemies.filter(
+        (enemy) =>
+          enemy.r === cell.r + dir &&
+          Math.abs(enemy.c - cell.c) === 1,
+      ).length;
+    };
+
+  return shuffle(state, pool)
+    .sort(
+      (a, b) =>
+        (preferCapture ? captureOptions(b) - captureOptions(a) : 0) ||
+        enemyDistance(a) - enemyDistance(b) ||
+        crowding(a) - crowding(b),
+    )
+    .slice(0, count);
+}
+
 function makeChildProfile(state, parent, mate, profile) {
   const child = {
     owner: parent.owner,
@@ -368,20 +413,29 @@ function spawnChild(state, profile, r, c) {
   return child;
 }
 
-function placeBrood(ctx, brood, origin, dispersal) {
+function placeBrood(
+  ctx,
+  brood,
+  origin,
+  dispersal,
+  direction = null,
+) {
   const ordinary = brood.filter((profile) => !has(profile, "Trepadeira")),
     climbers = brood.filter((profile) => has(profile, "Trepadeira"));
   let born = 0;
 
   if (ordinary.length) {
     const cells = freeCells(ctx, origin, dispersal),
-      targets = chooseCells(
-        ctx.state,
-        cells,
-        origin,
-        Math.min(ordinary.length, cells.length),
-        dispersal,
-      );
+      count = Math.min(ordinary.length, cells.length),
+      targets = direction
+        ? chooseCellsTowardEnemy(
+            ctx.state,
+            cells,
+            origin,
+            count,
+            direction,
+          )
+        : chooseCells(ctx.state, cells, origin, count, dispersal);
     for (let i = 0; i < targets.length; i++) {
       spawnChild(ctx.state, ordinary[i], targets[i].r, targets[i].c);
       born++;
@@ -390,13 +444,16 @@ function placeBrood(ctx, brood, origin, dispersal) {
 
   if (climbers.length) {
     const cells = freeCells(ctx, origin, dispersal, climbers[0]),
-      targets = chooseCells(
-        ctx.state,
-        cells,
-        origin,
-        Math.min(climbers.length, cells.length),
-        dispersal,
-      );
+      count = Math.min(climbers.length, cells.length),
+      targets = direction
+        ? chooseCellsTowardEnemy(
+            ctx.state,
+            cells,
+            origin,
+            count,
+            direction,
+          )
+        : chooseCells(ctx.state, cells, origin, count, dispersal);
     for (let i = 0; i < targets.length; i++) {
       spawnChild(ctx.state, climbers[i], targets[i].r, targets[i].c);
       born++;
@@ -676,9 +733,11 @@ export function reproductiveOutput(profile) {
 export function populationReproductionLimit(
   population,
   pressureLatched = false,
+  stage = null,
 ) {
   if (population < 18) return Infinity;
   if (population < 24) return pressureLatched ? 2 : Infinity;
+  if (stage === "ordovician" && population >= 26) return 1;
   if (population < 28) return 2;
   return 1;
 }
@@ -686,12 +745,17 @@ export function populationReproductionLimit(
 export function populationReproductionCooldown(
   population,
   pressureLatched = false,
+  stage = null,
 ) {
-  if (population < 18) return 0;
-  if (population < 24) return pressureLatched ? 1 : 0;
-  if (population < 28) return 1;
-  if (population < 32) return 2;
-  return 3;
+  let cooldown;
+  if (population < 18) cooldown = 0;
+  else if (population < 24) cooldown = pressureLatched ? 1 : 0;
+  else if (population < 28) cooldown = 1;
+  else if (population < 32) cooldown = 2;
+  else cooldown = 3;
+  return stage === "ordovician" && population >= 26
+    ? cooldown + 1
+    : cooldown;
 }
 
 export function predationBirthLimit(population) {
@@ -713,11 +777,11 @@ function competitiveReproductionPressure(
   parent,
   pressureLatched,
 ) {
-  const articulated =
-    has(parent, "Locomoção Articulada") ||
-    (parent.ancestry ?? []).includes("Locomoção Articulada");
+  const mobile =
+    has(parent, "Locomoção Primitiva") ||
+    (parent.ancestry ?? []).includes("Locomoção Primitiva");
 
-  if (!articulated || !pressureLatched || state.turn < 120)
+  if (!mobile || !pressureLatched || state.turn < 120)
     return { limit: Infinity, cooldown: 0, suppressPredation: false };
 
   const ownerPopulation = state.pieces.filter(
@@ -784,6 +848,11 @@ export function reproduce(
     dispersal = seedPlant ? "local" : dispersalMode(parent),
     population = activePopulation(state),
     pressureLatched = reproductionPressure(state, population),
+    primitiveLocomotionReached =
+      has(parent, "Locomoção Primitiva") ||
+      (parent.ancestry ?? []).includes("Locomoção Primitiva"),
+    preLocomotionPredation =
+      reason === "predação" && !primitiveLocomotionReached,
     competitivePressure = competitiveReproductionPressure(
       state,
       parent,
@@ -798,8 +867,14 @@ export function reproduce(
       bodyPlanOutput + eusocialBonus(state, parent),
     populationLimit =
       reason === "predação"
-        ? predationBirthLimit(population)
-        : populationReproductionLimit(population, pressureLatched),
+        ? preLocomotionPredation
+          ? 1
+          : predationBirthLimit(population)
+        : populationReproductionLimit(
+            population,
+            pressureLatched,
+            state.geologicalStage,
+          ),
     pressureLimit =
       reason === "predação" && competitivePressure.suppressPredation
         ? 0
@@ -857,7 +932,12 @@ export function reproduce(
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
-    produced = placeBrood(ctx, brood, parent, dispersal);
+    const direction = preLocomotionPredation
+      ? { preferCapture: true }
+      : aquaticFertilityRegime(state) && !primitiveLocomotionReached
+        ? { strict: state.geologicalStage === "archean" }
+        : null;
+    produced = placeBrood(ctx, brood, parent, dispersal, direction);
   }
 
   if (produced) {
@@ -878,6 +958,7 @@ export function reproduce(
         populationReproductionCooldown(
           activePopulation(state),
           pressureLatched,
+          state.geologicalStage,
         ) +
         competitivePressure.cooldown
       );

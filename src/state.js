@@ -5,6 +5,7 @@ import {
   nextGeologicalStage,
   geologicalLabel,
   habitatProfile,
+  aquaticFertilityRegime,
   normalizeActiveTraits,
   normalizePhotosyntheticRank,
   PLANT_DERIVED_TRAITS,
@@ -72,9 +73,52 @@ export const round = (state) => Math.floor(state.turn / 2);
 // Ovos e sementes continuam recursos reprodutivos, sem sustentar uma linhagem.
 export const activePopulation = (state) => state.pieces.length;
 export const fertilityPaused = (state) => activePopulation(state) >= 24;
-export function photosynthesisDelayTurns(state) {
-  const population = activePopulation(state);
-  if (population >= 24) return null;
+
+export function consumeFertileTerrain(state, cell) {
+  if (state.board[cell] !== "fertile") return false;
+  state.board[cell] = "neutral";
+  if (aquaticFertilityRegime(state)) {
+    state.fertilityRecovery ??= [];
+    const dueTurn = state.turn + 3,
+      existing = state.fertilityRecovery.find((entry) => entry.cell === cell);
+    if (existing) existing.dueTurn = Math.max(existing.dueTurn, dueTurn);
+    else state.fertilityRecovery.push({ cell, dueTurn });
+  }
+  return true;
+}
+
+export function restoreAquaticFertility(state) {
+  if (!Array.isArray(state.fertilityRecovery)) state.fertilityRecovery = [];
+  if (!aquaticFertilityRegime(state)) {
+    state.fertilityRecovery = [];
+    return 0;
+  }
+  let restored = 0;
+  state.fertilityRecovery = state.fertilityRecovery.filter((entry) => {
+    if (entry.dueTurn > state.turn) return true;
+    if (state.board[entry.cell] === "fertile") return false;
+    if (
+      state.board[entry.cell] !== "neutral" ||
+      state.barriers?.includes(entry.cell) ||
+      state.naturalBarriers?.includes(entry.cell) ||
+      state.deathSites?.some((site) => site.cell === entry.cell) ||
+      state.event?.hazards?.includes(entry.cell)
+    )
+      return true;
+    state.board[entry.cell] = "fertile";
+    restored++;
+    return false;
+  });
+  return restored;
+}
+
+export function photosynthesisDelayTurns(state, piece = null) {
+  const population = activePopulation(state),
+    preArticulated =
+      piece &&
+      !(piece.traits ?? []).includes("Locomoção Articulada") &&
+      !(piece.ancestry ?? []).includes("Locomoção Articulada");
+  if (population >= 24) return preArticulated ? 12 : null;
   if (population <= 11) return 6;
   if (population <= 17) return 8;
   return 10;
@@ -371,6 +415,10 @@ function seedStandardHabitat(state, profile, founderCells) {
 function seedHabitat(state) {
   const profile = habitatProfile(state),
     pattern = profile.pattern ?? "mosaic";
+  if (aquaticFertilityRegime(state)) {
+    state.board.fill("fertile");
+    return;
+  }
   state.board.fill("neutral");
   const founderCells = new Set([
       ...state.pieces.map((p) => square(p.r, p.c)),
@@ -483,6 +531,7 @@ export function createState(seed = Date.now(), options = {}) {
     offensiveStagnation: null,
     deathSites: [],
     fertileTraces: [],
+    fertilityRecovery: [],
     extremophyteFertility: [],
     diseases: [],
     nextDisease: 1,
@@ -558,7 +607,8 @@ export function createState(seed = Date.now(), options = {}) {
       );
     }
   }
-  if (options.naturalBarriers !== false) seedNaturalBarriers(state);
+  if (options.naturalBarriers !== false && !aquaticFertilityRegime(state))
+    seedNaturalBarriers(state);
   seedHabitat(state);
   recordDiscovery(state, "mutations", "Respiração anaeróbia");
   if (scenario !== "arena") recordDiscovery(state, "geology", state.geologicalStage);
@@ -1191,6 +1241,7 @@ export function assertState(state) {
     !validDiscoveries(state.discoveries) ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
+    !Array.isArray(state.fertilityRecovery) ||
     !Array.isArray(state.extremophyteFertility) ||
     !Array.isArray(state.eggs) ||
     !Array.isArray(state.plantSeeds) ||
@@ -1207,6 +1258,13 @@ export function assertState(state) {
         !integer(t.clearAfterTurn) ||
         !["neutral", "fertile", "hostile"].includes(t.base),
     ) ||
+    state.fertilityRecovery.some(
+      (entry) =>
+        !integer(entry.cell, 0, 63) ||
+        !integer(entry.dueTurn, 0),
+    ) ||
+    new Set(state.fertilityRecovery.map((entry) => entry.cell)).size !==
+      state.fertilityRecovery.length ||
     state.extremophyteFertility.some(
       (entry) =>
         !integer(entry.cell, 0, 63) ||

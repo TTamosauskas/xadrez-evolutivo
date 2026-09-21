@@ -21,7 +21,7 @@ export const GEOLOGICAL_STAGES = [
       ["Fotossíntese", "Predação"],
       ["Dormência"],
     ],
-    habitat: { fertile: [48, 56], hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "primordial" },
+    habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2, grb: 1 },
   },
   {
@@ -36,7 +36,7 @@ export const GEOLOGICAL_STAGES = [
       "Esporos",
       "Carnívoro",
     ],
-    habitat: { fertile: 42, hostile: [2, 4], hostileCap: 12, founderFertile: true, naturalBarriers: [0, 1], pattern: "primordial-conway" },
+    habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: {
       fertilized: 3,
       volcano: 2,
@@ -52,7 +52,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Pré-Cambriano",
     period: "Ediacarano",
     required: ["Locomoção Primitiva", "Escavador", "Construtor de Nicho"],
-    habitat: { fertile: 30, hostile: 4, founderFertile: true, naturalBarriers: [1, 2], pattern: "mosaic" },
+    habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: {
       abundance: 3,
       fertilized: 3,
@@ -73,7 +73,7 @@ export const GEOLOGICAL_STAGES = [
       "Camuflagem",
       "Veneno",
     ],
-    habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [1, 3], pattern: "mosaic" },
+    habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: {
       sea: 3,
       abundance: 3,
@@ -87,7 +87,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Paleozoico",
     period: "Ordoviciano",
     required: ["Ovíparo"],
-    habitat: { fertile: 12, hostile: 12, standard: true, naturalBarriers: [1, 3], pattern: "islands" },
+    habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: { ice: 4, grb: 3, sea: 3, blockade: 1, earthquake: 1 },
   },
   {
@@ -674,6 +674,14 @@ export function currentGeologicalStage(state) {
   return geologicalStage(state.geologicalStage);
 }
 
+export function aquaticFertilityRegime(stateOrStage) {
+  const stage =
+    typeof stateOrStage === "string"
+      ? geologicalStage(stateOrStage)
+      : currentGeologicalStage(stateOrStage);
+  return stage.index <= geologicalStage("ordovician").index;
+}
+
 export function nextGeologicalStage(id) {
   const stage = geologicalStage(id);
   return GEOLOGICAL_STAGES[Math.min(stage.index + 1, GEOLOGICAL_STAGES.length - 1)];
@@ -812,8 +820,12 @@ export function traitUnlocked(state, trait, piece = null) {
   return true;
 }
 
-export function pawnMutationUnlocked(state) {
-  return state.scenario === "arena" || (state.totalCycles ?? 1) >= 2;
+export function pawnMutationUnlocked(state, piece = null) {
+  if (!piece) return false;
+  return (
+    (piece.traits ?? []).includes("Locomoção Primitiva") ||
+    (piece.ancestry ?? []).includes("Locomoção Primitiva")
+  );
 }
 
 export function deleteriousMutationUnlocked(state) {
