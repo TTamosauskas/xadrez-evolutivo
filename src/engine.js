@@ -259,15 +259,52 @@ export function advanceEcologicalDomain(ctx, actingOwner) {
       (quadrant) => quadrant.consolidated && quadrant.owner === owner,
     ).length;
     if (consolidated >= ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS) {
-      finishGame(
+      state.ecologicalDomain.victoryOwner = owner;
+      state.phase = "collapse";
+      state.chain = null;
+      state.partner = null;
+      state.manipulation = null;
+      state.building = null;
+      state.eggPlacement = null;
+      state.domesticPlacement = null;
+      state.socialDefense = null;
+      const loser = other(owner);
+      state.eggs = state.eggs.filter((egg) => egg.owner !== loser);
+      state.plantSeeds = state.plantSeeds.filter(
+        (seed) => seed.owner !== loser,
+      );
+      log(
         state,
-        owner,
-        `Domínio Ecológico: ${OWNERS[owner]} consolidaram ${consolidated} dos 4 quadrantes.`,
+        `🏁 ${OWNERS[owner]} consolidaram ${consolidated} dos 4 quadrantes. O colapso final da linhagem adversária começou.`,
       );
       return true;
     }
   }
   return extinction(state);
+}
+
+export function resolveEcologicalCollapse(ctx) {
+  const state = ctx.state,
+    winner = state.ecologicalDomain?.victoryOwner;
+  if (state.phase !== "collapse" || !winner || state.result) return false;
+  const loser = other(winner),
+    victim = state.pieces.find((piece) => piece.owner === loser);
+  if (victim) {
+    excludeEcologicalPiece(
+      state,
+      victim,
+      ecologicalQuadrant(victim.r, victim.c),
+    );
+  }
+  if (!state.pieces.some((piece) => piece.owner === loser)) {
+    finishGame(
+      state,
+      winner,
+      `Domínio Ecológico: ${OWNERS[winner]} consolidaram 3 dos 4 quadrantes.`,
+    );
+    return true;
+  }
+  return false;
 }
 
 function moveDirection(p) {
@@ -623,7 +660,8 @@ function settle(ctx) {
     state.phase === "build" ||
     state.phase === "egg-placement" ||
     state.phase === "domestic-placement" ||
-    state.phase === "social-defense"
+    state.phase === "social-defense" ||
+    state.phase === "collapse"
   )
     return;
 
@@ -1530,7 +1568,9 @@ export function transition(previous, action) {
   if (previous.result || previous.notices.length) return previous;
   const state = clone(previous),
     ctx = context(state);
-  if (action.type === "ORIGIN_CLICK" && state.phase === "origin")
+  if (action.type === "DOMAIN_COLLAPSE" && state.phase === "collapse")
+    resolveEcologicalCollapse(ctx);
+  else if (action.type === "ORIGIN_CLICK" && state.phase === "origin")
     activateOrigin(state);
   else if (action.type === "MOVE" && state.phase === "move")
     executeMove(ctx, action);
