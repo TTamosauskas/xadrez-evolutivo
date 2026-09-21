@@ -69,10 +69,15 @@ const controller = new Controller(
   createCampaignState(Date.now(), selectedScenario),
   {
     report,
-    render: (state, busy) => {
+    render: (state, busy, showResult = true) => {
       if (selected && !state.pieces.some((p) => p.id === selected))
         selected = null;
-      render(document, state, { selected, busy, mode: controller.mode });
+      render(document, state, {
+        selected,
+        busy,
+        mode: controller.mode,
+        showResult,
+      });
       $("undo-neocortex").hidden =
         controller.mode === "auto" || !controller.canUndoNeocortex();
       renderDiscoveryBadges();
