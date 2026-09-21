@@ -1,4 +1,4 @@
-import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square } from "./constants.js";
+import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square, has } from "./constants.js";
 import {
   at,
   eggAt,
@@ -279,7 +279,7 @@ export function render(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${senescent(state, p) ? " senescent" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
+            `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
           ),
         );
         const badges = [
@@ -376,7 +376,7 @@ export function render(
       symbol = make(
         "span",
         SYMBOLS[actor.owner][actor.rank],
-        `piece ${actor.owner} selected-piece-symbol${senescent(state, actor) ? " senescent" : ""}`,
+        `piece ${actor.owner} selected-piece-symbol${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
       );
     heading.append(
       symbol,
