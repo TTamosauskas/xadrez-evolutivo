@@ -207,7 +207,7 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
 
 test("Archean starts green and stationary", () => {
   const s = createState(101);
-  assert.equal(s.version, 14);
+  assert.equal(s.version, 15);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
@@ -389,6 +389,9 @@ test("Predação enables capture and is an individual prerequisite for Locomoç�
   const ancestral = { traits: [] };
   assert.equal(traitUnlocked(s, "Locomoção Primitiva", ancestral), false);
   ancestral.traits.push("Predação", "Multicelularismo");
+  assert.equal(traitUnlocked(s, "Locomoção Primitiva", ancestral), false);
+  s.historicalTraits.push("Simetria Bilateral");
+  ancestral.traits.push("Simetria Bilateral");
   assert.equal(traitUnlocked(s, "Locomoção Primitiva", ancestral), true);
 });
 
@@ -424,7 +427,10 @@ test("Archean advances only after both innovation cycles are complete", () => {
   ]);
 
   const secondCarrier = next.pieces[0];
-  secondCarrier.traits.push("Fertilidade", "Dormência");
+  secondCarrier.traits.push("Reparo Celular");
+  registerDiscoveries(next, secondCarrier);
+  assert.equal(stageComplete(next), false);
+  secondCarrier.traits.push("Dormência");
   registerDiscoveries(next, secondCarrier);
   assert.equal(stageComplete(next), true);
   next.notices = [];
@@ -581,13 +587,20 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
       geologicalStage: "ediacaran",
       historicalTraits: [
         ...GEOLOGICAL_STAGES.slice(0, 2).flatMap((stage) => stage.required),
+        "Simetria Bilateral",
         "Locomoção Primitiva",
       ],
     }),
     p = s.pieces[0],
     unrelated = { traits: [], ancestry: [] };
 
-  p.ancestry = ["Predação", "Locomoção Primitiva"];
+  p.ancestry = [
+    "Predação",
+    "Reparo Celular",
+    "Multicelularismo",
+    "Simetria Bilateral",
+    "Locomoção Primitiva",
+  ];
   p.traits = ["Multicelularismo"];
   assert.equal(traitUnlocked(s, "Escavador", p), true);
   assert.equal(traitUnlocked(s, "Escavador", unrelated), false);
@@ -661,7 +674,8 @@ test("evolutionary precedence changes eligibility but never mutation weight", ()
   assert.deepEqual(missingInnovations(s), [
     "Fotossíntese",
     "Predação",
-        "Dormência",
+    "Reparo Celular",
+    "Dormência",
   ]);
 });
 
