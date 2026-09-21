@@ -40,7 +40,7 @@ function setup() {
 }
 test("automatic Conway waits between visible board updates", () => {
   const s = createState(302, {
-    geologicalStage: "silurian",
+    geologicalStage: "devonian",
     naturalBarriers: false,
   });
   s.board.fill("neutral");
