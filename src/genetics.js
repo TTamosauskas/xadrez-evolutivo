@@ -5,6 +5,7 @@ import {
   MULTICELLULAR_DEPENDENT_TRAITS,
   PLANT_DERIVED_TRAITS,
   TRAIT_DEPENDENCIES,
+  NEGATIVE_TRAITS,
   activeTraitFamily,
   normalizeActiveTraits,
   traitCombinationValid,
@@ -15,11 +16,7 @@ const GENETIC_INDEX = new Map(
   GENETIC_TRAITS.map((trait, index) => [trait, index]),
 );
 export const BASAL_GENETIC_TRAIT = "Respiração anaeróbia";
-export const NEGATIVE_GENETIC_TRAITS = new Set([
-  "Esterilidade",
-  "Mutação Deletéria",
-  "Mutação Disfuncional",
-]);
+export const NEGATIVE_GENETIC_TRAITS = new Set(NEGATIVE_TRAITS);
 export const DOMINANT_MUTATION_TRAITS = new Set(["Locomoção Terrestre"]);
 
 const LEGACY_REPRO_MAP = {
@@ -203,6 +200,15 @@ export function normalizeGenome(source, legacyProfile = null) {
 
 export function cloneGenome(source) {
   return normalizeGenome(source);
+}
+
+export function recessivizeGenomeTrait(source, trait) {
+  const genome = cloneGenome(source?.genome ?? source);
+  if (!genome[trait]) return genome;
+  const hasDerived = genome[trait].some((allele) => allele.value === "derived");
+  if (!hasDerived) return genome;
+  genome[trait] = [derivedAllele("recessive"), ancestralAllele()];
+  return genome;
 }
 
 function readableGenome(source) {
