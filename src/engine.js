@@ -157,8 +157,8 @@ function ecologicalDomainController(state, quadrant) {
   for (const piece of state.pieces)
     if (ecologicalQuadrant(piece.r, piece.c) === quadrant)
       counts[piece.owner]++;
-  if (counts.blue >= 2 && counts.blue > counts.amber) return "blue";
-  if (counts.amber >= 2 && counts.amber > counts.blue) return "amber";
+  if (counts.blue > counts.amber) return "blue";
+  if (counts.amber > counts.blue) return "amber";
   return null;
 }
 
@@ -210,7 +210,7 @@ export function advanceEcologicalDomain(ctx, actingOwner) {
       "Domínio Ecológico",
       [
         "A partida entrou na fase de Domínio Ecológico.",
-        "Tenha mais organismos que o rival e pelo menos 2 organismos em um quadrante para iniciar o domínio.",
+        "Tenha mais organismos que o rival em um quadrante para iniciar o domínio.",
         "Mantenha o controle por 3 turnos próprios para consolidar o quadrante. O rival perde acesso a ele e suas criaturas remanescentes desaparecem uma a uma.",
         "Consolide 3 dos 4 quadrantes para vencer.",
       ],
