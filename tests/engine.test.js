@@ -3065,3 +3065,20 @@ test("três quadrantes consolidados encerram a partida por Domínio Ecológico",
   assert.equal(s.phase, "over");
   assertState(s);
 });
+
+
+test("maioria simples inicia Domínio Ecológico mesmo com um único organismo", () => {
+  const s = fixture([
+    { owner: "blue", r: 0, c: 0 },
+    { owner: "amber", r: 6, c: 6 },
+  ], 154);
+  s.turn = 300;
+  s.ecologicalDomain.active = true;
+
+  advanceEcologicalDomain(context(s), "blue");
+
+  assert.equal(s.ecologicalDomain.quadrants[0].owner, "blue");
+  assert.equal(s.ecologicalDomain.quadrants[0].progress, 1);
+  assert.equal(s.ecologicalDomain.quadrants[0].consolidated, false);
+  assertState(s);
+});
