@@ -281,7 +281,7 @@ export function deserialize(raw) {
             ? Object.fromEntries(
                 Object.entries(piece.pathogenExposureRounds).filter(
                   ([id, exposedRound]) =>
-                    /^\\d+$/.test(id) &&
+                    /^\d+$/.test(id) &&
                     Number(id) >= 1 &&
                     Number.isInteger(exposedRound),
                 ),
