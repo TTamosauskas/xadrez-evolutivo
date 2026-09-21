@@ -991,6 +991,48 @@ test("basal predation creates a forward-expanding descendant before primitive lo
   assertState(s);
 });
 
+test("basal predation keeps one replacement birth above the population threshold", () => {
+  const s = createState(915, {
+    geologicalStage: "archean",
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("neutral");
+
+  const parent = newPiece(s, "blue", 4, 4, {
+    traits: ["Predação"],
+    ancestry: ["Predação"],
+  });
+  s.pieces.push(parent);
+
+  const occupied = new Set([4 * 8 + 4]);
+  for (let cell = 0; s.pieces.length < 25 && cell < 64; cell++) {
+    if (occupied.has(cell)) continue;
+    occupied.add(cell);
+    s.pieces.push(
+      newPiece(
+        s,
+        cell % 2 ? "blue" : "amber",
+        Math.floor(cell / 8),
+        cell % 8,
+      ),
+    );
+  }
+
+  const before = s.pieces.length;
+  assert.equal(
+    reproduce(context(s), parent, null, "predação", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  assert.equal(s.pieces.length, before + 1);
+});
+
 test("predation creates at most one descendant and none once population pressure starts", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
