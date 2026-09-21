@@ -46,6 +46,7 @@ import {
   arenaRecessivePairs,
   arenaInterventionCount,
   arenaSelectableTraits,
+  arenaTraitCost,
   completeArenaGenome,
   engineerArenaAISide,
   randomArenaSide,
@@ -277,7 +278,7 @@ function arenaValidCurrent() {
 function arenaStatusText() {
   if (!arenaFlow) return "";
   if (arenaFlow.kind === "setup") {
-    const [a, b] = arenaFlow.current.map((genome) => genome.length);
+    const [a, b] = arenaFlow.current.map(arenaTraitCost);
     const complete =
       a === ARENA_TRAIT_BUDGET && b === ARENA_TRAIT_BUDGET,
       recessiveReady = arenaFlow.current.every(
@@ -307,7 +308,7 @@ function renderArenaDesigner() {
       : `Engenharia Genética · ${arenaOwnerName(owner)}`;
   $("arena-copy").textContent =
     arenaFlow.kind === "setup"
-      ? "Monte duas linhagens. Respiração anaeróbia é basal e gratuita; Multicelularismo e demais pré-requisitos consomem o orçamento. Duas das seis características serão sorteadas como genes recessivos ocultos."
+      ? "Monte duas linhagens. Respiração anaeróbia, Reparo Celular e Simetria Bilateral são fundações estruturais gratuitas quando exigidas; os demais pré-requisitos consomem o orçamento. Duas das seis características pagas serão sorteadas como genes recessivos ocultos."
       : "As linhagens sobreviventes seguem adiante. Você pode fazer até duas substituições genéticas entre as duas linhagens.";
   $("arena-status").textContent = arenaStatusText();
 
@@ -340,7 +341,7 @@ function renderArenaDesigner() {
       label.append(input, copy);
       container.append(label);
     }
-    const count = arenaFlow.current[index].length;
+    const count = arenaTraitCost(arenaFlow.current[index]);
     $(index === 0 ? "arena-primary-count" : "arena-companion-count").textContent =
       arenaFlow.kind === "setup"
         ? `· ${count}/${ARENA_TRAIT_BUDGET}`
