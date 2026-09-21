@@ -236,6 +236,30 @@ test("Archean advances only after both innovation cycles are complete", () => {
   assert.equal(proterozoic.totalCycles, 3);
 });
 
+test("Earth canonical founders stay Kings until Primitive Locomotion is completed", () => {
+  const archean = createState(198, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Fotossíntese", "Predação"],
+  });
+  archean.result = { winner: "blue", reason: "teste" };
+  archean.phase = "over";
+
+  const secondArchean = createSuccessorState(archean, 199);
+  assert.equal(secondArchean.geologicalStage, "archean");
+  assert.equal(secondArchean.cycle, 2);
+  assert.ok(secondArchean.pieces.every((piece) => piece.rank === 4));
+
+  const proterozoic = createPeriodState("proterozoic", 200),
+    ediacaran = createPeriodState("ediacaran", 201),
+    cambrian = createPeriodState("cambrian", 202);
+  assert.ok(proterozoic.pieces.every((piece) => piece.rank === 4));
+  assert.ok(ediacaran.pieces.every((piece) => piece.rank === 4));
+  assert.ok(cambrian.pieces.some((piece) => piece.rank === 0));
+});
+
 test("successor gives both sides the winner's dominant lineage and its photosynthetic counterpart", () => {
   const s = createState(119);
   s.pieces = [];
