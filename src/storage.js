@@ -20,6 +20,7 @@ import {
   MULTICELLULAR_DEPENDENT_TRAITS,
   priorRequiredInnovations,
   isNegativeTrait,
+  SOMATIC_NEGATIVE_TRAITS,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
 export const SAVE_KEY = "xadrez-evolutivo-save-v15";
@@ -232,6 +233,7 @@ export function deserialize(raw) {
             "dominant",
           );
         syncGenomePhenotype(profile);
+        if (has(profile, "Nanismo")) profile.rank = 0;
         delete profile.reproGenes;
         delete profile.recessiveTraits;
         normalizePhotosyntheticRank(profile);
@@ -298,9 +300,7 @@ export function deserialize(raw) {
         piece.somaticMutations =
           sourceVersion >= 14 && Array.isArray(piece.somaticMutations)
             ? [...new Set(piece.somaticMutations)].filter((trait) =>
-                ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"].includes(
-                  trait,
-                ),
+                SOMATIC_NEGATIVE_TRAITS.has(trait),
               )
             : [];
         piece.pathogenMutationDiseases =
@@ -309,6 +309,12 @@ export function deserialize(raw) {
                 (id) => Number.isInteger(id) && id >= 1,
               )
             : [];
+        piece.lifetimeReproductions =
+          Number.isInteger(piece.lifetimeReproductions) &&
+          piece.lifetimeReproductions >= 0
+            ? piece.lifetimeReproductions
+            : 0;
+        piece.semelparityDeathPending = !!piece.semelparityDeathPending;
         piece.pathogenExposureRounds =
           sourceVersion >= 14 &&
           piece.pathogenExposureRounds &&
