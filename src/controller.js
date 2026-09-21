@@ -19,6 +19,8 @@ export class Controller {
       timeout = 2000,
       aiDelay = 850,
       conwayDelay = 700,
+      collapseDelay = 250,
+      resultDelay = 1000,
     } = {},
   ) {
     this.state = assertState(state);
@@ -30,12 +32,16 @@ export class Controller {
     this.timeout = timeout;
     this.aiDelay = aiDelay;
     this.conwayDelay = conwayDelay;
+    this.collapseDelay = collapseDelay;
+    this.resultDelay = resultDelay;
     this.mode = "multi";
     this.difficulty = "medium";
     this.paused = false;
     this.generation = 0;
     this.job = null;
     this.conwayTimer = null;
+    this.resultTimer = null;
+    this.resultReady = false;
     this.neocortexPending = null;
     this.neocortexWindow = null;
     this.neocortexLock = null;
@@ -52,12 +58,28 @@ export class Controller {
       this.clearTimer(this.conwayTimer);
       this.conwayTimer = null;
     }
+    if (this.resultTimer !== null) {
+      this.clearTimer(this.resultTimer);
+      this.resultTimer = null;
+    }
   }
   refresh() {
-    this.render(
-      this.state,
-      this.conwayTimer !== null ? "conway" : !!this.job,
-    );
+    const busy = this.conwayTimer !== null ? "conway" : !!this.job;
+    if (this.state.result) {
+      if (!this.resultReady && this.resultTimer === null) {
+        const revision = this.state.revision;
+        this.resultTimer = this.setTimer(() => {
+          this.resultTimer = null;
+          if (!this.state.result || this.state.revision !== revision) return;
+          this.resultReady = true;
+          this.render(this.state, false, true);
+        }, this.resultDelay);
+      }
+      this.render(this.state, busy, this.resultReady);
+      return;
+    }
+    this.resultReady = false;
+    this.render(this.state, busy, true);
     if (!this.scheduleConway()) this.schedule();
   }
 
@@ -251,6 +273,13 @@ export class Controller {
       state.result
     )
       return;
+    if (state.phase === "collapse") {
+      this.scheduleAutomaticAction(
+        { type: "DOMAIN_COLLAPSE" },
+        this.collapseDelay,
+      );
+      return;
+    }
     if (this.mode === "auto" && state.notices.length) {
       this.scheduleAutomaticAction({
         type: "ACK_NOTICE",
