@@ -179,6 +179,43 @@ main {
   position: relative;
   z-index: 2;
 }
+.cell.domain-blue {
+  --domain-color: #78a7ff;
+}
+.cell.domain-amber {
+  --domain-color: #f0b55a;
+}
+.cell.domain-edge-top {
+  border-top: 4px solid var(--domain-color);
+}
+.cell.domain-edge-bottom {
+  border-bottom: 4px solid var(--domain-color);
+}
+.cell.domain-edge-left {
+  border-left: 4px solid var(--domain-color);
+}
+.cell.domain-edge-right {
+  border-right: 4px solid var(--domain-color);
+}
+.cell.domain-consolidated {
+  filter: saturate(0.8) brightness(0.88);
+}
+.domain-progress {
+  position: absolute;
+  z-index: 7;
+  top: 3px;
+  left: 4px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: #151814d9;
+  color: var(--domain-color);
+  font-size: clamp(9px, 1.7vw, 16px);
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 1.15;
+  pointer-events: none;
+  text-shadow: 0 1px 2px #000;
+}
 .cell.selected {
   z-index: 6;
   box-shadow: inset 0 0 0 4px #ffdf84;
