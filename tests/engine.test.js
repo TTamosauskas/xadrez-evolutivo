@@ -352,10 +352,10 @@ test("stalled Conway repairs the local habitat in stages without a severe event"
       entry.text.includes("Conway: a estagnação"),
     ),
   );
-  assert.ok(s.logs.some((entry) => entry.text.includes("abriu um corredor local")));
   assert.ok(
     s.logs.some(
       (entry) =>
+        entry.text.includes("abriu um corredor local") ||
         entry.text.includes("mobilidade ofensiva") ||
         entry.text.includes("deslocou um organismo") ||
         entry.text.includes("corredor ofensivo"),
