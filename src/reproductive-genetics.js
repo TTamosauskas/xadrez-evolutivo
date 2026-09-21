@@ -12,12 +12,6 @@ export const REPRO_LOCI = {
     },
     priority: ["viviparous", "ovoviviparous", "amniotic", "oviparous"],
   },
-  dispersal: {
-    normal: "local",
-    mutants: ["spores"],
-    traits: { spores: "Esporos" },
-    priority: ["spores"],
-  },
 };
 
 export const GENETIC_TRAITS = [
@@ -25,7 +19,6 @@ export const GENETIC_TRAITS = [
   "Ovíparos Amniotas",
   "Ovovivíparo",
   "Vivíparo",
-  "Esporos",
 ];
 
 const locusNames = Object.keys(REPRO_LOCI);
@@ -56,8 +49,6 @@ export function normalizeReproGenes(source, legacyTraits = []) {
       allowed = new Set([def.normal, ...def.mutants]),
       pair = Array.isArray(source?.[name]) ? source[name] : null,
       migratedPair = pair?.map((allele) => {
-        if (name === "dispersal" && allele?.value === "eggs")
-          return neutralAllele(def.normal);
         if (
           name === "development" &&
           legacyTraits.includes("Ovíparos Amniotas") &&
@@ -151,13 +142,10 @@ function resolveLocus(name, pair) {
 export function reproPhenotype(source) {
   const genes = normalizeReproGenes(source),
     development = resolveLocus("development", genes.development),
-    dispersal = resolveLocus("dispersal", genes.dispersal),
     traits = [];
-  const developmentTrait = REPRO_LOCI.development.traits[development],
-    dispersalTrait = REPRO_LOCI.dispersal.traits[dispersal];
+  const developmentTrait = REPRO_LOCI.development.traits[development];
   if (developmentTrait) traits.push(developmentTrait);
-  if (dispersalTrait) traits.push(dispersalTrait);
-  return { development, dispersal, traits };
+  return { development, dispersal: "local", traits };
 }
 
 export function reproGenesFromTraits(activeTraits = [], hiddenRecessives = []) {
@@ -203,18 +191,15 @@ export function syncReproTraits(piece) {
     (t) => !GENETIC_TRAITS.includes(t) && t !== "Ovos",
   );
   const plant = regular.includes("Fotossíntese"),
-    seedPlant =
-      regular.includes("Gimnospermas") || regular.includes("Angiospermas"),
     expressed = reproPhenotype(piece.reproGenes).traits.filter(
       (trait) =>
-        (!plant ||
-          ![
-            "Ovíparo",
-            "Ovíparos Amniotas",
-            "Ovovivíparo",
-            "Vivíparo",
-          ].includes(trait)) &&
-        (!seedPlant || trait !== "Esporos"),
+        !plant ||
+        ![
+          "Ovíparo",
+          "Ovíparos Amniotas",
+          "Ovovivíparo",
+          "Vivíparo",
+        ].includes(trait),
     );
   if (!expressed.includes("Vivíparo"))
     regular = regular.filter((trait) => trait !== "Ovulação Induzida");
