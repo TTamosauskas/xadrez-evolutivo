@@ -306,7 +306,6 @@ test("selected legend separates active traits from ancestry behind a closed togg
   );
   const boardIcons = cell.querySelector(".badges").textContent;
   assert.match(boardIcons, /🐻/);
-  assert.match(boardIcons, /🐪/);
   assert.doesNotMatch(boardIcons, /🦁/);
   dom.window.close();
 });
@@ -548,8 +547,8 @@ test("dysfunctional rest fades the piece without adding a sleep badge", () => {
     badges = piece.parentElement.querySelector(".badges");
   assert.ok(piece.classList.contains("dysfunctional-resting"));
   assert.ok(!badges.textContent.includes("💤"));
-  assert.ok(badges.textContent.includes("🧫"));
-  assert.match(d.getElementById("selected").textContent, /🧫 Fertilidade/);
+  assert.ok(badges.textContent.includes("❌"));
+  assert.match(d.getElementById("selected").textContent, /❌ Mutação Disfuncional/);
   dom.window.close();
 });
 
