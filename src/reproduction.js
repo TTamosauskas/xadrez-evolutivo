@@ -1109,6 +1109,8 @@ export function tickReproduction(ctx) {
   }
 
   for (const parent of [...state.pieces]) {
+    if (ecologicalDomainBlocked(state, parent.owner, parent.r, parent.c))
+      continue;
     const dueViviparous = (parent.pregnancies ?? []).filter(
       (pregnancy) =>
         pregnancy.kind !== "ovoviviparous" && pregnancy.dueRound <= now,
