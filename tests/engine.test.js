@@ -1148,7 +1148,7 @@ test("basal predation creates a forward-expanding descendant before primitive lo
   assertState(s);
 });
 
-test("basal predation keeps one replacement birth above the population threshold", () => {
+test("basal predation follows the population threshold without a pre-locomotion exception", () => {
   const s = createState(915, {
     geologicalStage: "archean",
     historicalTraits: ["Respiração anaeróbia", "Predação"],
@@ -1185,9 +1185,9 @@ test("basal predation keeps one replacement birth above the population threshold
       ignoreReadiness: true,
       immediateDevelopment: true,
     }),
-    1,
+    0,
   );
-  assert.equal(s.pieces.length, before + 1);
+  assert.equal(s.pieces.length, before);
 });
 
 test("predation creates at most one descendant and none once population pressure starts", () => {
