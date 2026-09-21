@@ -160,6 +160,30 @@ test("only-child and respiratory insufficiency reduce reproductive performance",
     1,
   );
   assert.equal(respiratoryParent.nextReproductionRound, 8);
+
+  const predator = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: [
+          "Reparo Celular",
+          "Multicelularismo",
+          "Predação",
+          "Insuficiência Respiratória",
+        ],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    predatorParent = predator.pieces[0];
+  assert.equal(
+    reproduce(context(predator), predatorParent, null, "predação", {
+      forcedCount: 1,
+    }),
+    1,
+  );
+  assert.equal(predatorParent.nextReproductionRound, 3);
 });
 
 test("subfertility can spend a reproductive attempt without offspring", () => {
@@ -236,6 +260,44 @@ test("semelparity kills the parent after the third successful reproduction", () 
     if (n < 2) s.turn = current.nextReproductionRound * 2;
   }
   assert.equal(s.pieces.some((piece) => piece.id === id), false);
+});
+
+test("viviparous semelparity waits for the final brood before death", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: [
+          "Reparo Celular",
+          "Multicelularismo",
+          "Ovíparo",
+          "Ovíparos Amniotas",
+          "Vivíparo",
+          "Semelparidade",
+        ],
+        lifetimeReproductions: 2,
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    id = parent.id;
+
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
+    1,
+  );
+  assert.equal(s.pieces.some((piece) => piece.id === id), true);
+  assert.equal(parent.semelparityDeathPending, true);
+  assert.equal(parent.pregnancies.length, 1);
+
+  s.turn = 6;
+  const before = s.pieces.length;
+  const { tickReproduction } = await import("../src/reproduction.js");
+  tickReproduction(context(s));
+  assert.equal(s.pieces.some((piece) => piece.id === id), false);
+  assert.ok(s.pieces.length >= before);
 });
 
 test("immunodeficiency cancels Resistance against pathogens", () => {
