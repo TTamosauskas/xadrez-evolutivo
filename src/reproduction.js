@@ -984,7 +984,7 @@ export function reproduce(
           : development === "amniotic"
             ? `${OWNERS[parent.owner]} prepararam uma postura 🥚 amniótica com ${produced} descendente(s) por ${reason}; escolha o local.`
             : development === "ovoviviparous"
-              ? `${OWNERS[parent.owner]} iniciaram incubação 🦂 de ${produced} descendente(s) por ${reason}.`
+              ? `${OWNERS[parent.owner]} iniciaram incubação 🪳 de ${produced} descendente(s) por ${reason}.`
               : development === "viviparous"
                 ? `${OWNERS[parent.owner]} iniciaram gestação de ${produced} descendente(s) por ${reason}.`
                 : `${OWNERS[parent.owner]} geraram ${produced} descendente(s) por ${reason}.`,
