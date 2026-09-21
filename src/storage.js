@@ -1,5 +1,5 @@
 import { createState, newPiece, assertState, round, notice } from "./state.js";
-import { TRAITS, EVENTS, PIECES, square, has } from "./constants.js";
+import { TRAITS, EVENTS, PIECES, square, has, PATHOGEN_AGENT_IDS } from "./constants.js";
 import {
   normalizeReproGenes,
   syncReproTraits,
@@ -21,7 +21,8 @@ import {
   isNegativeTrait,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v13";
+export const SAVE_KEY = "xadrez-evolutivo-save-v14";
+export const V13_KEY = "xadrez-evolutivo-save-v13";
 export const V12_KEY = "xadrez-evolutivo-save-v12";
 export const V11_KEY = "xadrez-evolutivo-save-v11";
 export const V10_KEY = "xadrez-evolutivo-save-v10";
@@ -76,6 +77,7 @@ const currentGenome = (genome) => {
   }
   delete migrated["Locomoção"];
   delete migrated.Fertilidade;
+  delete migrated.Esporos;
   return migrated;
 };
 const mutationLabel = (label, version = 7) => {
@@ -147,7 +149,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -212,6 +214,15 @@ export function deserialize(raw) {
       if (data.arenaFounders === undefined) data.arenaFounders = null;
       if (!Array.isArray(data.fossilRecord)) data.fossilRecord = [];
     }
+    data.fossilRecord = (data.fossilRecord ?? []).map((entry) => ({
+      ...entry,
+      traits: (entry.traits ?? [])
+        .map(currentTraitName)
+        .filter((trait) => TRAITS[trait]),
+      ancestry: (entry.ancestry ?? [])
+        .map(currentTraitName)
+        .filter((trait) => TRAITS[trait]),
+    }));
     if (data.arenaFounders && typeof data.arenaFounders === "object")
       for (const owner of ["blue", "amber"])
         if (data.arenaFounders[owner])
@@ -248,6 +259,34 @@ export function deserialize(raw) {
           delete piece.extremophyteSinceRound;
         }
         piece.oothecaPrimed = !!piece.oothecaPrimed;
+        piece.somaticMutations =
+          sourceVersion >= 14 && Array.isArray(piece.somaticMutations)
+            ? [...new Set(piece.somaticMutations)].filter((trait) =>
+                ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"].includes(
+                  trait,
+                ),
+              )
+            : [];
+        piece.pathogenMutationDiseases =
+          sourceVersion >= 14 && Array.isArray(piece.pathogenMutationDiseases)
+            ? [...new Set(piece.pathogenMutationDiseases)].filter(
+                (id) => Number.isInteger(id) && id >= 1,
+              )
+            : [];
+        piece.pathogenExposureRounds =
+          sourceVersion >= 14 &&
+          piece.pathogenExposureRounds &&
+          typeof piece.pathogenExposureRounds === "object" &&
+          !Array.isArray(piece.pathogenExposureRounds)
+            ? Object.fromEntries(
+                Object.entries(piece.pathogenExposureRounds).filter(
+                  ([id, exposedRound]) =>
+                    /^\\d+$/.test(id) &&
+                    Number(id) >= 1 &&
+                    Number.isInteger(exposedRound),
+                ),
+              )
+            : {};
         piece.pregnancies = Array.isArray(piece.pregnancies)
           ? piece.pregnancies.map((pregnancy) => ({
               ...pregnancy,
@@ -259,8 +298,7 @@ export function deserialize(raw) {
                 pregnancy.kind === "ovoviviparous"
                   ? !!pregnancy.readyLogged
                   : undefined,
-              dispersal:
-                pregnancy.dispersal === "spores" ? "spores" : "local",
+              dispersal: "local",
               brood: (pregnancy.brood ?? []).map(normalizeProfile),
             }))
           : [];
@@ -292,7 +330,7 @@ export function deserialize(raw) {
               laidRound,
               hatchRound,
               expireRound: laidRound + 6,
-              dispersal: egg.dispersal === "spores" ? "spores" : "local",
+              dispersal: "local",
               brood: (egg.brood ?? []).map(normalizeProfile),
             };
           }
@@ -312,7 +350,7 @@ export function deserialize(raw) {
             laidRound,
             hatchRound,
             expireRound: hatchRound,
-            dispersal: egg.dispersal === "spores" ? "spores" : "local",
+            dispersal: "local",
             brood: (egg.brood ?? []).map(normalizeProfile),
           };
         })
@@ -341,8 +379,7 @@ export function deserialize(raw) {
       data.eggPlacement.brood = (data.eggPlacement.brood ?? []).map(
         normalizeProfile,
       );
-      data.eggPlacement.dispersal =
-        data.eggPlacement.dispersal === "spores" ? "spores" : "local";
+      data.eggPlacement.dispersal = "local";
     }
     if (data.domesticPlacement)
       data.domesticPlacement.brood = (
@@ -456,7 +493,7 @@ export function deserialize(raw) {
         ...new Set(
           (data.discoveries.mutations ?? [])
             .map(currentTraitName)
-            .filter((id) => id !== "Ovos"),
+            .filter((id) => id !== "Ovos" && id !== "Esporos"),
         ),
       ];
       data.discoveries.read = [
@@ -469,7 +506,11 @@ export function deserialize(raw) {
                   ? "mutations:Antropização"
                   : key,
             )
-            .filter((key) => key !== "mutations:Ovos"),
+            .filter(
+              (key) =>
+                key !== "mutations:Ovos" &&
+                key !== "mutations:Esporos",
+            ),
         ),
       ];
     }
@@ -520,6 +561,19 @@ export function deserialize(raw) {
       data.conwayStagnation = null;
     if (!Number.isInteger(data.populationDiseaseCooldownUntil))
       data.populationDiseaseCooldownUntil = 0;
+    data.diseases = Array.isArray(data.diseases)
+      ? data.diseases.map((disease) => ({
+          ...disease,
+          agent: PATHOGEN_AGENT_IDS.includes(disease.agent)
+            ? disease.agent
+            : "virus",
+          contaminated: Array.isArray(disease.contaminated)
+            ? [...new Set(disease.contaminated)].filter(
+                (cell) => Number.isInteger(cell) && cell >= 0 && cell < 64,
+              )
+            : [],
+        }))
+      : [];
     if (typeof data.severePopulationLatched !== "boolean")
       data.severePopulationLatched = false;
     if (!Array.isArray(data.deathSites)) data.deathSites = [];
@@ -637,7 +691,7 @@ export function deserialize(raw) {
         );
       }
     }
-    data.version = 13;
+    data.version = 14;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -755,6 +809,7 @@ export function deserialize(raw) {
         id: state.nextDisease++,
         source: org.ecoSick ? "eco" : "population",
         triggerOwner: outbreak?.triggerOwner ?? null,
+        agent: "virus",
         mode: org.ecoSick
           ? (oldEvent?.pathogenMode ?? "omnidirectional")
           : (outbreak?.mode ?? "omnidirectional"),
@@ -765,6 +820,7 @@ export function deserialize(raw) {
         infected: source.mortalityInfectedIds ?? [],
         survivors: source.mortalitySurvivorIds ?? [],
         deaths: source.mortalityDeaths ?? 0,
+        contaminated: [],
       };
       diseaseIds.set(key, d);
       state.diseases.push(d);
@@ -820,6 +876,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V13_KEY) ??
     storage.getItem(V12_KEY) ??
     storage.getItem(V11_KEY) ??
     storage.getItem(V10_KEY) ??
