@@ -193,31 +193,17 @@ test("consumed aquatic fertility returns after three turns", () => {
   assertState(s);
 });
 
-test("Archean is almost entirely fertile and Proterozoic seeds bounded hostile Conway", () => {
-  const archean = createState(811, {
-    geologicalStage: "archean",
-    naturalBarriers: true,
-  });
-  const fertile = archean.board.filter((cell) => cell === "fertile").length;
-  assert.ok(fertile >= 48 && fertile <= 56);
-  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 0);
-  assert.equal(archean.naturalBarriers.length, 0);
-
-  const proterozoic = createState(812, {
-    geologicalStage: "proterozoic",
-    naturalBarriers: true,
-  });
-  const initialHostile = proterozoic.board.filter(
-    (cell) => cell === "hostile",
-  ).length;
-  assert.ok(initialHostile >= 2 && initialHostile <= 4);
-  proterozoic.maxGenerationReached = 3;
-  tickEnvironment(context(proterozoic));
-  assert.ok(
-    proterozoic.board.filter((cell) => cell === "hostile").length <= 12,
-  );
-  assertState(archean);
-  assertState(proterozoic);
+test("early aquatic habitats stay fully fertile through Ordovician", () => {
+  for (const stage of ["archean", "proterozoic", "ediacaran", "cambrian", "ordovician"]) {
+    const s = createState(811, {
+      geologicalStage: stage,
+      naturalBarriers: true,
+    });
+    assert.equal(s.board.filter((cell) => cell === "fertile").length, 64);
+    assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
+    assert.equal(s.naturalBarriers.length, 0);
+    assertState(s);
+  }
 });
 
 test("ancestral gray King splits into paired photosynthetic and predatory founders", () => {
@@ -273,7 +259,10 @@ test("ancestral gray King splits into paired photosynthetic and predatory founde
 });
 
 test("mutual blocking advances Conway turn by turn until one side can act", () => {
-  let s = createState(302);
+  let s = createState(302, {
+    geologicalStage: "silurian",
+    naturalBarriers: false,
+  });
   s.board.fill("neutral");
   s.pieces = [];
   s.nextId = 1;
@@ -323,7 +312,10 @@ test("mutual blocking advances Conway turn by turn until one side can act", () =
 });
 
 test("stalled Conway repairs the local habitat in stages without a severe event", () => {
-  let s = createState(303);
+  let s = createState(303, {
+    geologicalStage: "silurian",
+    naturalBarriers: false,
+  });
   s.board.fill("neutral");
   s.pieces = [];
   s.nextId = 1;
@@ -2823,7 +2815,10 @@ test("successor cycle gives both sides the same photosynthetic and non-photosynt
 
 
 test("severe events suspend Conway for five turns while blocked turns still advance", () => {
-  let s = createState(505, { naturalBarriers: false });
+  let s = createState(505, {
+    geologicalStage: "silurian",
+    naturalBarriers: false,
+  });
   s.board.fill("neutral");
   s.pieces = [];
   s.nextId = 1;
