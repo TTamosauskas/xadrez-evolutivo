@@ -49,6 +49,8 @@ import {
   placePendingAmnioticEgg,
   placePendingDomesticChild,
   placeOvoviviparousEgg,
+  consumeReproductionResource,
+  resolveSemelparityDeath,
 } from "./reproduction.js";
 import {
   checkPopulation,
@@ -692,6 +694,7 @@ function completeMove(ctx, p, second, locomotion) {
     locomotion &&
     !second &&
     !has(p, "Mutação Disfuncional") &&
+    !has(p, "Deficiência Motora") &&
     state.pieces.some((x) => x.id === p.id) &&
     movesFor(state, p).length
   ) {
@@ -856,9 +859,10 @@ function executeMove(ctx, action) {
       throw Error("Escolha uma casa fértil ortogonalmente adjacente.");
     const born = reproduce(ctx, p, null, "Respiração Cutânea", {
       resourceReproduction: true,
+      resourceCell: resource,
     });
     if (born) {
-      consumeFertileTerrain(state, resource);
+      consumeReproductionResource(state, p, resource);
       log(
         state,
         `${OWNERS[p.owner]}: 🐸 Respiração Cutânea consumiu ${coord(target.r, target.c)} à distância.`,
@@ -874,9 +878,10 @@ function executeMove(ctx, action) {
       throw Error("Escolha uma casa fértil adjacente.");
     const born = reproduce(ctx, p, null, "Traqueófitas", {
       resourceReproduction: true,
+      resourceCell: resource,
     });
     if (born) {
-      consumeFertileTerrain(state, resource);
+      consumeReproductionResource(state, p, resource);
       log(
         state,
         `${OWNERS[p.owner]}: 🍃 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
@@ -1270,7 +1275,7 @@ function executeMove(ctx, action) {
     fertile &&
     !collectorStay &&
     terrain(state, p.r, p.c) === "fertile";
-  if (consumedFertile) consumeFertileTerrain(state, cell);
+  if (consumedFertile) consumeReproductionResource(state, p, cell);
   let born = 0;
   if (eggCapture) {
     born = reproduce(ctx, p, null, "ovifagia", {
@@ -1366,7 +1371,8 @@ function choosePartner(ctx, id) {
     p = state.pieces.find((x) => x.id === pending.id);
   const mate = partnersFor(state, p).find((x) => x.id === id);
   if (!mate) throw Error("Escolha um parceiro destacado.");
-  if (!pending.collectorStay) consumeFertileTerrain(state, square(p.r, p.c));
+  if (!pending.collectorStay)
+    consumeReproductionResource(state, p, square(p.r, p.c));
   const born = reproduce(ctx, p, mate, "reprodução sexuada", {
     fertileReproduction: !!pending.fertileReproduction,
   });
@@ -1416,7 +1422,10 @@ function resolveDomesticPlacement(ctx, action) {
     );
   state.domesticPlacement = null;
   state.phase = "move";
-  if (parent && continuation)
+  const semelparityDeath = parent
+    ? resolveSemelparityDeath(ctx, parent)
+    : false;
+  if (parent && continuation && !semelparityDeath)
     finishMovement(
       ctx,
       parent,
@@ -1473,7 +1482,10 @@ function resolveEggPlacement(ctx, action) {
     state,
     `${OWNERS[egg.owner]}: 🥚 ovo amniótico depositado em ${coord(egg.r, egg.c)}; eclosão na próxima rodada.`,
   );
-  if (parent && continuation)
+  const semelparityDeath = parent
+    ? resolveSemelparityDeath(ctx, parent)
+    : false;
+  if (parent && continuation && !semelparityDeath)
     finishMovement(
       ctx,
       parent,
@@ -1504,6 +1516,7 @@ function resolveOvoviviparousLaying(ctx, action) {
     state,
     `${OWNERS[parent.owner]}: ⚪ ovo ovovivíparo depositado em ${coord(egg.r, egg.c)}; eclosão na próxima rodada.`,
   );
+  resolveSemelparityDeath(ctx, parent);
   advanceTurn(ctx);
   settle(ctx);
 }
