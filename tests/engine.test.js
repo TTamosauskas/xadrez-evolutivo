@@ -2975,6 +2975,24 @@ test("severe events suspend Conway for five turns while blocked turns still adva
 });
 
 
+test("Domínio Ecológico começa no turno 200 e não antes", () => {
+  const s = fixture([
+    { owner: "blue", r: 0, c: 0 },
+    { owner: "amber", r: 7, c: 7 },
+  ], 150);
+  s.turn = 199;
+
+  assert.equal(advanceEcologicalDomain(context(s), "blue"), false);
+  assert.equal(s.ecologicalDomain.active, false);
+
+  s.turn = 200;
+  advanceEcologicalDomain(context(s), "blue");
+
+  assert.equal(s.ecologicalDomain.active, true);
+  assert.ok(s.notices.some((notice) => notice.title === "Domínio Ecológico"));
+  assertState(s);
+});
+
 test("Domínio Ecológico exige três turnos próprios e elimina o rival gradualmente", () => {
   const s = fixture([
     { owner: "blue", r: 0, c: 0 },
@@ -2984,7 +3002,7 @@ test("Domínio Ecológico exige três turnos próprios e elimina o rival gradual
     { owner: "amber", r: 3, c: 3 },
     { owner: "amber", r: 6, c: 6 },
   ], 151);
-  s.turn = 300;
+  s.turn = 200;
   s.ecologicalDomain.active = true;
 
   const quadrant = s.ecologicalDomain.quadrants[0];
@@ -3043,7 +3061,7 @@ test("três quadrantes consolidados encerram a partida por Domínio Ecológico",
     { owner: "amber", r: 5, c: 5 },
     { owner: "amber", r: 6, c: 6 },
   ], 152);
-  s.turn = 300;
+  s.turn = 200;
   s.ecologicalDomain.active = true;
   for (const index of [0, 1, 2])
     Object.assign(s.ecologicalDomain.quadrants[index], {
@@ -3072,7 +3090,7 @@ test("maioria simples inicia Domínio Ecológico mesmo com um único organismo",
     { owner: "blue", r: 0, c: 0 },
     { owner: "amber", r: 6, c: 6 },
   ], 154);
-  s.turn = 300;
+  s.turn = 200;
   s.ecologicalDomain.active = true;
 
   advanceEcologicalDomain(context(s), "blue");
