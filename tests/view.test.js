@@ -175,7 +175,7 @@ test("selected pieces keep the normal compact mutation icon layout", () => {
   piece.traits = [
     "Multicelularismo",
     "Predação",
-    "Locomoção",
+    "Locomoção Primitiva",
     "Carapaça",
     "Camuflagem",
     "Veneno",
@@ -224,7 +224,7 @@ test("selected legend shows hidden recessive genes before ancestry without dupli
     s = createState(220),
     piece = s.pieces[0];
   piece.traits = ["Respiração anaeróbia", "Multicelularismo", "Predação"];
-  piece.ancestry = ["Multicelularismo", "Predação", "Ovíparo", "Locomoção"];
+  piece.ancestry = ["Multicelularismo", "Predação", "Ovíparo", "Locomoção Primitiva"];
   piece.genome = genomeFromTraits(piece.traits, ["Ovíparo"]);
   syncGenomePhenotype(piece, "Predação");
 
@@ -278,7 +278,7 @@ test("selected legend separates active traits from ancestry behind a closed togg
     "Predação",
     "Carnívoro",
     "Onívoro",
-    "Locomoção",
+    "Locomoção Primitiva",
     "Locomoção Avançada",
   ];
 
@@ -537,7 +537,7 @@ test("dysfunctional rest fades the piece without adding a sleep badge", () => {
   const dom = setup(),
     s = createState(23),
     p = s.pieces[0];
-  p.traits = ["Mutação Disfuncional", "Fertilidade"];
+  p.traits = ["Mutação Disfuncional", "Respiração anaeróbia"];
   p.lastMoveRound = 1;
 
   render(dom.window.document, s, { selected: p.id });
