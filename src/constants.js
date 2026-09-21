@@ -7,9 +7,17 @@ export const SYMBOLS = {
 };
 export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
 export const TRAITS = {
+  "Reparo Celular": [
+    "🩹",
+    "Reduz pela metade a ocorrência de novas mutações negativas, normalizando a estabilidade celular e genômica.",
+  ],
   Multicelularismo: [
     "🫧",
     "Introduz um ciclo de vida individual: descendentes passam pela infância, adultos entram em senescência a partir de 25 rodadas e a morte natural é certa aos 48. Também habilita características multicelulares complexas.",
+  ],
+  "Simetria Bilateral": [
+    "⏸",
+    "Dobra a expectativa de vida natural das linhagens animais multicelulares e prepara a organização corporal de Vertebrados e Artrópodes.",
   ],
   "Locomoção Primitiva": [
     "🔀",
