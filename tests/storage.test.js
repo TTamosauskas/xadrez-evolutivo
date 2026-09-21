@@ -433,7 +433,7 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
-  assert.equal(s.version, 13);
+  assert.equal(s.version, 14);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(dispersalMode(s.pieces[0]), "local");
@@ -469,7 +469,7 @@ test("v12 saves drop obsolete Ovos history discoveries and alleles", () => {
   assert.ok(!restored.discoveries.read.includes("mutations:Ovos"));
   assert.ok(!restored.pieces[0].traits.includes("Ovos"));
   assert.equal(dispersalMode(restored.pieces[0]), "local");
-  assert.ok(hiddenRecessiveTraits(restored.pieces[0]).includes("Esporos"));
+  assert.ok(!hiddenRecessiveTraits(restored.pieces[0]).includes("Esporos"));
   assert.equal(restored.pieces[0].reproGenes, undefined);
   assert.equal(restored.pieces[0].recessiveTraits, undefined);
   assertState(restored);
