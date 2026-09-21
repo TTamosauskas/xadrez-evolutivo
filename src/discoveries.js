@@ -89,6 +89,7 @@ const mutationTopics = {
   Vertebrado: ["Vertebrata", "Vertebrados possuem um eixo corporal interno especializado e, no jogo, abrem a progressão completa das formas derivadas de xadrez."],
   "Artrópode": ["Arthropoda", "Artrópodes possuem apêndices articulados e grande diversidade de estratégias reprodutivas; no jogo, trocam o teto morfológico por maior produção de descendentes."],
   "Locomoção Articulada": ["Locomoção articulada", "No jogo, representa a especialização locomotora de linhagens vertebradas ou artrópodas e habilita formas derivadas compatíveis com o plano corporal."],
+  "Locomoção Terrestre": ["Locomoção terrestre", "A colonização animal de substratos expostos exigiu conjuntos distintos de adaptações em diferentes linhagens; no jogo, a característica abstrai essa transição e libera movimento e captura fora das casas férteis."],
   "Percepção Espacial": ["Percepção espacial", "Integra informações sensoriais sobre posição, direção e distância; no jogo, permite orientar capturas para além da primeira casa da trajetória oficial da peça."],
   "Escavador": ["Escavação animal", "Escavações e galerias produzidas por animais já aparecem no registro fóssil do Ediacarano tardio e alteram fisicamente o substrato."],
   "Necrófago": ["Necrofagia", "Necrofagia é o consumo de matéria animal morta e integra a reciclagem de matéria nos ecossistemas."],
