@@ -6,6 +6,7 @@ import {
   geologicalLabel,
   habitatProfile,
   aquaticFertilityRegime,
+  aquaticTerrainCell,
   normalizeActiveTraits,
   normalizePhotosyntheticRank,
   PLANT_DERIVED_TRAITS,
@@ -100,7 +101,9 @@ export const fertilityPaused = (state) => activePopulation(state) >= 24;
 export function consumeFertileTerrain(state, cell) {
   if (state.board[cell] !== "fertile") return false;
   state.board[cell] = "neutral";
-  if (aquaticFertilityRegime(state)) {
+  const r = Math.floor(cell / 8),
+    c = cell % 8;
+  if (aquaticTerrainCell(state, r, c)) {
     state.fertilityRecovery ??= [];
     const dueTurn = state.turn + 3,
       existing = state.fertilityRecovery.find((entry) => entry.cell === cell);
@@ -112,12 +115,11 @@ export function consumeFertileTerrain(state, cell) {
 
 export function restoreAquaticFertility(state) {
   if (!Array.isArray(state.fertilityRecovery)) state.fertilityRecovery = [];
-  if (!aquaticFertilityRegime(state)) {
-    state.fertilityRecovery = [];
-    return 0;
-  }
   let restored = 0;
   state.fertilityRecovery = state.fertilityRecovery.filter((entry) => {
+    const r = Math.floor(entry.cell / 8),
+      c = entry.cell % 8;
+    if (!aquaticTerrainCell(state, r, c)) return false;
     if (entry.dueTurn > state.turn) return true;
     if (state.board[entry.cell] === "fertile") return false;
     if (
@@ -302,7 +304,9 @@ function seedNaturalBarriers(state) {
       }
   const barriers = new Set(),
     all = Array.from({ length: 64 }, (_, cell) => cell).filter(
-      (cell) => !protectedCells.has(cell),
+      (cell) =>
+        !protectedCells.has(cell) &&
+        (state.geologicalStage !== "silurian" || cell % 8 >= 4),
     );
   let attempts = 0;
   while (barriers.size < target && attempts++ < 256) {
@@ -435,6 +439,30 @@ function seedStandardHabitat(state, profile, founderCells) {
     for (const cell of founderCells) state.board[cell] = "fertile";
 }
 
+function seedSilurianCoast(state, profile, founderCells) {
+  state.board.fill("neutral");
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 3; c++) state.board[square(r, c)] = "fertile";
+    if (aquaticTerrainCell(state, r, 3))
+      state.board[square(r, 3)] = "fertile";
+  }
+
+  const hostileCandidates = Array.from({ length: 64 }, (_, cell) => cell).filter(
+    (cell) =>
+      cell % 8 >= 4 &&
+      !founderCells.has(cell) &&
+      !state.naturalBarriers.includes(cell),
+  );
+  for (const cell of habitatSelection(
+    state,
+    hostileCandidates,
+    habitatCount(state, profile.hostile),
+    "mosaic",
+    "hostile",
+  ))
+    state.board[cell] = "hostile";
+}
+
 function seedHabitat(state) {
   const profile = habitatProfile(state),
     pattern = profile.pattern ?? "mosaic";
@@ -447,6 +475,10 @@ function seedHabitat(state) {
       ...state.pieces.map((p) => square(p.r, p.c)),
       ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
     ]);
+  if (pattern === "coast" && state.geologicalStage === "silurian") {
+    seedSilurianCoast(state, profile, founderCells);
+    return;
+  }
   if (
     profile.standard &&
     (pattern === "mosaic" || pattern === "balanced")
