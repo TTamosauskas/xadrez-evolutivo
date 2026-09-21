@@ -306,7 +306,7 @@ function maturePhotosynthesis(state, owner) {
   for (const p of state.pieces) {
     if (p.owner !== owner || !canPhotosynthesize(p)) continue;
     const cell = square(p.r, p.c);
-    const delay = photosynthesisDelayTurns(state);
+    const delay = photosynthesisDelayTurns(state, p);
     if (
       terrain(state, p.r, p.c) !== "neutral" ||
       !photosynthesisHasSpace(state, p) ||
