@@ -796,6 +796,11 @@ export function reproduce(
     dispersal = seedPlant ? "local" : dispersalMode(parent),
     population = activePopulation(state),
     pressureLatched = reproductionPressure(state, population),
+    primitiveLocomotionReached =
+      has(parent, "Locomoção Primitiva") ||
+      (parent.ancestry ?? []).includes("Locomoção Primitiva"),
+    preLocomotionPredation =
+      reason === "predação" && !primitiveLocomotionReached,
     competitivePressure = competitiveReproductionPressure(
       state,
       parent,
@@ -810,7 +815,9 @@ export function reproduce(
       bodyPlanOutput + eusocialBonus(state, parent),
     populationLimit =
       reason === "predação"
-        ? predationBirthLimit(population)
+        ? preLocomotionPredation
+          ? 1
+          : predationBirthLimit(population)
         : populationReproductionLimit(population, pressureLatched),
     pressureLimit =
       reason === "predação" && competitivePressure.suppressPredation
@@ -869,10 +876,7 @@ export function reproduce(
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
-    const towardEnemy =
-      reason === "predação" &&
-      !has(parent, "Locomoção Primitiva") &&
-      !(parent.ancestry ?? []).includes("Locomoção Primitiva");
+    const towardEnemy = preLocomotionPredation;
     produced = placeBrood(ctx, brood, parent, dispersal, towardEnemy);
   }
 
