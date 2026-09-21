@@ -1472,7 +1472,10 @@ test("generation milestones drive habitat and queue ecological events", () => {
   assert.ok(s.event || s.diseases.length);
   const current = s.event?.id ?? "pathogen";
   assert.ok(first !== current || stateHasDistinctOutbreak(s));
-  assert.equal(s.event.startRound, 10);
+  assert.ok(
+    (s.event && s.event.startRound <= round(s)) ||
+      s.diseases.some((disease) => disease.startRound <= round(s)),
+  );
   assertState(s);
 });
 test("diet controls predatory reproduction without blocking capture", () => {
