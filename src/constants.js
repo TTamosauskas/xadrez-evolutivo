@@ -280,7 +280,7 @@ export const TRAITS = {
   ],
   "Má absorção Alimentar": [
     "🐼",
-    "Ao consumir uma casa fértil para reproduzir, consome também uma segunda casa fértil adjacente, quando houver.",
+    "Ao consumir uma casa fértil para reproduzir, consome também uma segunda casa fértil adjacente, quando houver; reprodução por predação exige o dobro do intervalo de recuperação.",
   ],
   Semelparidade: [
     "🐙",
