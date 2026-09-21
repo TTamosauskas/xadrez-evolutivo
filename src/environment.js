@@ -14,7 +14,6 @@ import {
   notice,
   activePopulation,
   fertilityPaused,
-  consumeFertileTerrain,
 } from "./state.js";
 import {
   eventWeights,
@@ -71,7 +70,7 @@ function depletePausedFertility(state) {
   if (!count) return 0;
 
   for (const cell of shuffle(state, eligible).slice(0, count))
-    consumeFertileTerrain(state, cell);
+    state.board[cell] = "neutral";
   log(
     state,
     `🌾 Superpopulação esgotou ${count} casa(s) fértil(is) desocupada(s).`,
