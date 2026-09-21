@@ -560,16 +560,16 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Perfume Floral",
   "Carnivoria Botânica",
   "Insuficiência Respiratória",
-  Imunodeficiência,
+  "Imunodeficiência",
   "Deficiência Motora",
   "Deficiência Sensorial",
   "Filho único",
-  Subfertilidade,
+  "Subfertilidade",
   "Má absorção Alimentar",
-  Semelparidade,
+  "Semelparidade",
   "Regressão Evolutiva",
-  Nanismo,
-  Gigantismo,
+  "Nanismo",
+  "Gigantismo",
 ]);
 
 export function normalizeMulticellularTraits(traits) {
@@ -645,8 +645,8 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Deficiência Sensorial",
   "Filho único",
   "Má absorção Alimentar",
-  Nanismo,
-  Gigantismo,
+  "Nanismo",
+  "Gigantismo",
 ]);
 
 export function traitCombinationValid(traits) {
