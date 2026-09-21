@@ -29,14 +29,10 @@ const LEGACY_REPRO_MAP = {
     ovoviviparous: "Ovovivíparo",
     viviparous: "Vivíparo",
   },
-  dispersal: {
-    spores: "Esporos",
-  },
 };
-const LEGACY_NORMAL = { development: "immediate", dispersal: "local" };
+const LEGACY_NORMAL = { development: "immediate" };
 const LEGACY_PRIORITY = {
   development: ["Vivíparo", "Ovovivíparo", "Ovíparos Amniotas", "Ovíparo"],
-  dispersal: ["Esporos"],
 };
 const LEGACY_TRAITS = new Set(
   Object.values(LEGACY_REPRO_MAP).flatMap((mapping) => Object.values(mapping)),
@@ -602,6 +598,6 @@ export function developmentMode(profile) {
   return "immediate";
 }
 
-export function dispersalMode(profile) {
-  return (profile?.traits ?? []).includes("Esporos") ? "spores" : "local";
+export function dispersalMode() {
+  return "local";
 }
