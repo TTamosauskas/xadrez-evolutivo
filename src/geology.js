@@ -33,7 +33,6 @@ export const GEOLOGICAL_STAGES = [
       "Resistência",
       "Regeneração",
       "Reprodução Sexuada",
-      "Esporos",
       "Carnívoro",
     ],
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
@@ -235,7 +234,6 @@ export const TRAIT_STAGE = {
   Canibalismo: "cambrian",
   Parasitismo: "cambrian",
   "Vetor Patógeno": "cretaceous",
-  Esporos: "proterozoic",
   "Locomoção Primitiva": "ediacaran",
   Vertebrado: "cambrian",
   "Artrópode": "cambrian",
@@ -903,7 +901,12 @@ export function innovationWeight(state, trait, piece = null) {
 }
 
 export function eventWeights(state) {
-  return scenarioEventWeights(state, currentGeologicalStage(state).events);
+  const weights = scenarioEventWeights(
+    state,
+    currentGeologicalStage(state).events,
+  );
+  if (pathogenUnlocked(state)) weights.pathogen ??= 1;
+  return weights;
 }
 
 export function habitatProfile(stateOrStage) {
