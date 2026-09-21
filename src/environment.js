@@ -36,7 +36,7 @@ export function fertilityDepletionRate(population, stage = null) {
   const base = Math.min(0.3, 0.05 + (population - 24) * 0.0125);
   if (stage === "archean" && population >= 28)
     return Number(
-      Math.min(0.45, Math.max(base, 0.18 + (population - 28) * 0.025)).toFixed(2),
+      Math.min(0.36, Math.max(base, 0.12 + (population - 28) * 0.015)).toFixed(2),
     );
   if (stage === "ordovician" && population >= 26)
     return Number(
