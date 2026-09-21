@@ -24,6 +24,7 @@ import {
   simulate,
   mutuallyBlocked,
   applyNaturalDeaths,
+  advanceEcologicalDomain,
 } from "../src/engine.js";
 import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
 import {
@@ -2970,5 +2971,97 @@ test("severe events suspend Conway for five turns while blocked turns still adva
       entry.text.includes("Conway permanece suspenso"),
     ),
   );
+  assertState(s);
+});
+
+
+test("Domínio Ecológico exige três turnos próprios e elimina o rival gradualmente", () => {
+  const s = fixture([
+    { owner: "blue", r: 0, c: 0 },
+    { owner: "blue", r: 0, c: 1 },
+    { owner: "blue", r: 1, c: 0 },
+    { owner: "amber", r: 2, c: 2 },
+    { owner: "amber", r: 3, c: 3 },
+    { owner: "amber", r: 6, c: 6 },
+  ], 151);
+  s.turn = 300;
+  s.ecologicalDomain.active = true;
+
+  const quadrant = s.ecologicalDomain.quadrants[0];
+  advanceEcologicalDomain(context(s), "blue");
+  assert.equal(quadrant.progress, 1);
+  assert.equal(quadrant.consolidated, false);
+
+  advanceEcologicalDomain(context(s), "amber");
+  assert.equal(quadrant.progress, 1);
+
+  advanceEcologicalDomain(context(s), "blue");
+  assert.equal(quadrant.progress, 2);
+  advanceEcologicalDomain(context(s), "amber");
+  assert.equal(quadrant.progress, 2);
+
+  const rivalsBefore = s.pieces.filter(
+    (piece) => piece.owner === "amber" && piece.r < 4 && piece.c < 4,
+  ).length;
+  advanceEcologicalDomain(context(s), "blue");
+  assert.equal(quadrant.progress, 3);
+  assert.equal(quadrant.consolidated, true);
+  assert.equal(
+    s.pieces.filter(
+      (piece) => piece.owner === "amber" && piece.r < 4 && piece.c < 4,
+    ).length,
+    rivalsBefore,
+  );
+
+  const trapped = s.pieces.find(
+    (piece) => piece.owner === "amber" && piece.r < 4 && piece.c < 4,
+  );
+  assert.equal(movesFor(s, trapped).length, 0);
+
+  advanceEcologicalDomain(context(s), "blue");
+  assert.equal(
+    s.pieces.filter(
+      (piece) => piece.owner === "amber" && piece.r < 4 && piece.c < 4,
+    ).length,
+    rivalsBefore - 1,
+  );
+  assert.equal(s.result, null);
+  assertState(s);
+});
+
+test("três quadrantes consolidados encerram a partida por Domínio Ecológico", () => {
+  const s = fixture([
+    { owner: "blue", r: 0, c: 0 },
+    { owner: "blue", r: 1, c: 1 },
+    { owner: "amber", r: 2, c: 2 },
+    { owner: "blue", r: 0, c: 4 },
+    { owner: "blue", r: 1, c: 5 },
+    { owner: "amber", r: 2, c: 6 },
+    { owner: "blue", r: 4, c: 0 },
+    { owner: "blue", r: 5, c: 1 },
+    { owner: "amber", r: 6, c: 2 },
+    { owner: "amber", r: 5, c: 5 },
+    { owner: "amber", r: 6, c: 6 },
+  ], 152);
+  s.turn = 300;
+  s.ecologicalDomain.active = true;
+  for (const index of [0, 1, 2])
+    Object.assign(s.ecologicalDomain.quadrants[index], {
+      owner: "blue",
+      progress: 2,
+      consolidated: false,
+    });
+
+  advanceEcologicalDomain(context(s), "blue");
+
+  assert.equal(s.result?.winner, "blue");
+  assert.match(s.result?.reason ?? "", /Domínio Ecológico/);
+  assert.equal(
+    s.ecologicalDomain.quadrants.filter(
+      (quadrant) => quadrant.consolidated && quadrant.owner === "blue",
+    ).length,
+    3,
+  );
+  assert.equal(s.phase, "over");
   assertState(s);
 });
