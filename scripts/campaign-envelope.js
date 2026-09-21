@@ -238,7 +238,7 @@ function runGame(initial, seed) {
       action = chooseAction(state, policy, {
         now: () => 0,
         budget: 5,
-        maxNodes: 30,
+        maxNodes: 12,
       });
     }
 
