@@ -61,6 +61,7 @@ test("period innovations follow the didactic sequence", () => {
   assert.deepEqual(required.archean, [
     "Fotossíntese",
     "Predação",
+    "Reparo Celular",
     "Dormência",
   ]);
   assert.deepEqual(required.proterozoic, [
@@ -71,6 +72,7 @@ test("period innovations follow the didactic sequence", () => {
     "Carnívoro",
   ]);
   assert.deepEqual(required.ediacaran, [
+    "Simetria Bilateral",
     "Locomoção Primitiva",
     "Escavador",
     "Construtor de Nicho",
@@ -130,9 +132,13 @@ test("Archean innovations are split across the first two cycles", () => {
   s.historicalTraits.push("Fotossíntese");
   assert.equal(traitUnlocked(s, "Predação", p), true);
   s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Reparo Celular", p), false);
   assert.equal(traitUnlocked(s, "Dormência", p), false);
 
   s.cycle = 2;
+  assert.equal(traitUnlocked(s, "Reparo Celular", p), true);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
+  s.historicalTraits.push("Reparo Celular");
   assert.equal(traitUnlocked(s, "Dormência", p), true);
 });
 
@@ -144,7 +150,39 @@ test("Archean keeps the first wave active in later cycles until it is complete",
   s.historicalTraits.push("Fotossíntese");
   assert.equal(traitUnlocked(s, "Predação", p), true);
   s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Reparo Celular", p), true);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
+  s.historicalTraits.push("Reparo Celular");
   assert.equal(traitUnlocked(s, "Dormência", p), true);
+});
+
+test("cellular repair and bilateral symmetry gate complex body plans", () => {
+  const s = createState(113),
+    p = s.pieces[0];
+
+  s.geologicalStage = "proterozoic";
+  s.historicalTraits = ["Respiração anaeróbia"];
+  p.traits = ["Predação"];
+  p.ancestry = ["Respiração anaeróbia", "Predação"];
+  assert.equal(traitUnlocked(s, "Multicelularismo", p), false);
+
+  p.traits.push("Reparo Celular");
+  p.ancestry.push("Reparo Celular");
+  assert.equal(traitUnlocked(s, "Multicelularismo", p), true);
+
+  s.geologicalStage = "ediacaran";
+  p.traits.push("Multicelularismo");
+  p.ancestry.push("Multicelularismo");
+  assert.equal(traitUnlocked(s, "Simetria Bilateral", p), true);
+
+  s.geologicalStage = "cambrian";
+  p.traits.push("Locomoção Primitiva");
+  p.ancestry.push("Locomoção Primitiva");
+  assert.equal(traitUnlocked(s, "Vertebrado", p), false);
+  p.traits.push("Simetria Bilateral");
+  p.ancestry.push("Simetria Bilateral");
+  assert.equal(traitUnlocked(s, "Vertebrado", p), true);
+  assert.equal(traitUnlocked(s, "Artrópode", p), true);
 });
 
 test("geological event pools gain pathogen outbreaks from the Proterozoic onward", () => {
