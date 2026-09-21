@@ -1,4 +1,4 @@
-import { OWNERS, PIECES, SYMBOLS, TRAITS, coord, square } from "./constants.js";
+import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square } from "./constants.js";
 import {
   at,
   eggAt,
@@ -19,6 +19,7 @@ import {
   stageProgress,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
+import { pathogenAgentAt } from "./disease.js";
 import {
   movesFor,
   partnersFor,
@@ -149,13 +150,16 @@ export function render(
         ? "Evento ecológico pendente"
         : "",
     ...diseases.map((d) => {
-      const label =
-        d.source === "vector"
-          ? "Patógeno vetorial"
-          : d.source === "population"
-            ? "Patógeno populacional"
-            : "Patógeno ecológico";
-      return `${label}: ${d.mortality}% · desfecho em ${d.delay} rodadas`;
+      const agent = PATHOGEN_AGENTS[d.agent] ?? PATHOGEN_AGENTS.virus,
+        origin =
+          d.source === "vector"
+            ? "vetorial"
+            : d.source === "population"
+              ? "populacional"
+              : "ecológico";
+      return d.agent === "fungus"
+        ? `${agent.icon} ${agent.name} · ${origin} · mortalidade-base ${d.mortality}% · risco por exposição`
+        : `${agent.icon} ${agent.name} · ${origin} · ${d.mortality}% · desfecho em ${d.delay} rodadas`;
     }),
   ]
     .filter(Boolean)
@@ -164,6 +168,7 @@ export function render(
   for (let r = 0; r < 8; r++)
     for (let c = 0; c < 8; c++) {
       const p = at(state, r, c),
+        pathogenAgents = pathogenAgentAt(state, r, c),
         egg = eggAt(state, r, c),
         plantSeed = plantSeedAt(state, r, c),
         originHere = !!origin && origin.r === r && origin.c === c,
@@ -223,7 +228,7 @@ export function render(
           : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${p.infection ? ", infectado" : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
+          : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
       cell.setAttribute("aria-label", label);
       cell.title = label;
       if (
@@ -277,12 +282,14 @@ export function render(
             `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${senescent(state, p) ? " senescent" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
           ),
         );
-        const badges = p.traits.map((trait) => ({
+        const badges = [
+          ...p.traits,
+          ...(p.somaticMutations ?? []),
+        ].map((trait) => ({
           text: TRAITS[trait][0],
           trait,
         }));
         if (senescent(state, p)) badges.push({ text: "⌛" });
-        if (p.infection) badges.push({ text: "🦠" });
         if (p.venom) badges.push({ text: "☠" });
         if (p.seeds) badges.push({ text: `${p.seeds}🌰` });
         const viviparousCarried = (p.pregnancies ?? [])
@@ -300,6 +307,20 @@ export function render(
         for (const badge of visibleBadges)
           badgeRow.append(make("span", badge.text, "badge-icon"));
         cell.append(badgeRow);
+      }
+      if (pathogenAgents.length) {
+        const overlay = make("span", undefined, "pathogen-overlay");
+        for (const agent of pathogenAgents) {
+          const definition = PATHOGEN_AGENTS[agent] ?? PATHOGEN_AGENTS.virus;
+          overlay.append(
+            make(
+              "span",
+              definition.icon,
+              `pathogen-mark pathogen-${agent}`,
+            ),
+          );
+        }
+        cell.append(overlay);
       }
       board.append(cell);
     }
@@ -366,16 +387,28 @@ export function render(
       const row = make("div", undefined, "trait selected-trait"),
         title = make("strong");
       title.append(
-        make(
-          "span",
-          TRAITS[trait][0],
-          "",
-        ),
+        make("span", TRAITS[trait][0], ""),
         doc.createTextNode(` ${trait}`),
       );
       row.append(title, make("small", TRAITS[trait][1]));
       return row;
     });
+    for (const trait of actor.somaticMutations ?? []) {
+      const row = make("div", undefined, "trait selected-trait somatic-trait"),
+        title = make("strong");
+      title.append(
+        make("span", TRAITS[trait][0], ""),
+        doc.createTextNode(` ${trait} · somática`),
+      );
+      row.append(
+        title,
+        make(
+          "small",
+          `${TRAITS[trait][1]} Alteração induzida por exposição patogênica e ausente da herança da prole.`,
+        ),
+      );
+      details.push(row);
+    }
     if (!details.length)
       details.push(make("p", "🧬 Perfil ancestral", "selected-ancestral"));
     if (juvenile(state, actor))
@@ -402,14 +435,29 @@ export function render(
           "selected-status",
         ),
       );
-    if (actor.infection)
+    const actorPathogens = pathogenAgentAt(state, actor.r, actor.c);
+    for (const agent of actorPathogens) {
+      const definition = PATHOGEN_AGENTS[agent] ?? PATHOGEN_AGENTS.virus,
+        infectionDisease = actor.infection
+          ? state.diseases.find(
+              (disease) =>
+                disease.id === actor.infection.disease &&
+                disease.agent === agent,
+            )
+          : null,
+        status = infectionDisease
+          ? ` · desfecho em ${Math.max(0, actor.infection.due - round(state))} rodada(s)`
+          : agent === "fungus"
+            ? " · exposição territorial; uma nova chance de mortalidade é resolvida nesta rodada"
+            : " · exposição ambiental";
       details.push(
         make(
           "p",
-          `🦠 Desfecho em ${Math.max(0, actor.infection.due - round(state))} rodadas.`,
+          `${definition.icon} ${definition.name}${status}.`,
           "selected-status",
         ),
       );
+    }
     for (const pregnancy of actor.pregnancies ?? [])
       details.push(
         make(
