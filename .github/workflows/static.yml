@@ -36,6 +36,12 @@ jobs:
           GAMES_PER_STAGE: 6
           GOAL_TURNS: 200
           TURN_LIMIT: 330
+      - name: Benchmark aquatic founder dispersion
+        run: npm run benchmark:aquatic-founders
+        env:
+          AQUATIC_GAMES: 6
+          GOAL_TURNS: 200
+          AQUATIC_TURN_LIMIT: 330
       - name: Diagnose Ediacaran Silurian Devonian stalls
         id: stall_diagnostics
         continue-on-error: true
