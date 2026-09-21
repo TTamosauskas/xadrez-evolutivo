@@ -157,7 +157,7 @@ export function negativeMutationChance(piece) {
     : repairAdjusted;
 }
 
-function applyRegressionEffect(state, piece) {
+export function applyRegressionEffect(state, piece) {
   if (!has(piece, "Regressão Evolutiva")) return [];
   const protectedTraits = new Set([
       ...NEGATIVE,
