@@ -56,6 +56,8 @@ import {
   traitLossAllowed,
   traitUnlocked,
   aquaticFertilityRegime,
+  currentGeologicalStage,
+  geologicalStage,
 } from "./geology.js";
 import { mutationDiscoveryId, recordDiscovery } from "./discoveries.js";
 import { tryVectorPathogen } from "./disease.js";
@@ -185,11 +187,14 @@ function mutation(state, p, positiveOnly) {
       syncGenomePhenotype(p);
       normalizeBodyPlanRank(p);
     } else {
-      p.genome = gainGenomeAllele(
-        p.genome,
-        choice.geneGain,
-        () => random(state),
-      );
+      p.genome =
+        choice.geneGain === "Locomoção Terrestre"
+          ? forceGenomeTrait(p.genome, choice.geneGain, "dominant")
+          : gainGenomeAllele(
+              p.genome,
+              choice.geneGain,
+              () => random(state),
+            );
       syncGenomePhenotype(p);
     }
     p.ancestry = [
@@ -267,6 +272,17 @@ function occupied(state, r, c, profile = null) {
   );
 }
 
+function offspringTerrainAllowed(state, profile, r, c) {
+  if (
+    !profile ||
+    has(profile, "Fotossíntese") ||
+    has(profile, "Locomoção Terrestre") ||
+    currentGeologicalStage(state).index < geologicalStage("silurian").index
+  )
+    return true;
+  return terrain(state, r, c) === "fertile";
+}
+
 function freeCells(ctx, origin, dispersal, profile = null) {
   const state = ctx.state,
     cells = [];
@@ -275,6 +291,7 @@ function freeCells(ctx, origin, dispersal, profile = null) {
       for (let c = 0; c < 8; c++)
         if (
           !occupied(state, r, c, profile) &&
+          offspringTerrainAllowed(state, profile, r, c) &&
           !ctx.reserved.has(square(r, c))
         )
           cells.push({ r, c });
@@ -289,6 +306,7 @@ function freeCells(ctx, origin, dispersal, profile = null) {
       if (
         inside(r, c) &&
         !occupied(state, r, c, profile) &&
+        offspringTerrainAllowed(state, profile, r, c) &&
         !ctx.reserved.has(square(r, c))
       )
         cells.push({ r, c });
@@ -423,12 +441,21 @@ function placeBrood(
   direction = null,
 ) {
   const ordinary = brood.filter((profile) => !has(profile, "Trepadeira")),
+    aquaticAnimals = ordinary.filter(
+      (profile) =>
+        !has(profile, "Fotossíntese") &&
+        !has(profile, "Locomoção Terrestre"),
+    ),
+    unrestricted = ordinary.filter(
+      (profile) => !aquaticAnimals.includes(profile),
+    ),
     climbers = brood.filter((profile) => has(profile, "Trepadeira"));
   let born = 0;
 
-  if (ordinary.length) {
-    const cells = freeCells(ctx, origin, dispersal),
-      count = Math.min(ordinary.length, cells.length),
+  const placeGroup = (profiles, placementProfile = null) => {
+    if (!profiles.length) return;
+    const cells = freeCells(ctx, origin, dispersal, placementProfile),
+      count = Math.min(profiles.length, cells.length),
       targets = direction
         ? chooseCellsTowardEnemy(
             ctx.state,
@@ -439,10 +466,13 @@ function placeBrood(
           )
         : chooseCells(ctx.state, cells, origin, count, dispersal);
     for (let i = 0; i < targets.length; i++) {
-      spawnChild(ctx.state, ordinary[i], targets[i].r, targets[i].c);
+      spawnChild(ctx.state, profiles[i], targets[i].r, targets[i].c);
       born++;
     }
-  }
+  };
+
+  placeGroup(aquaticAnimals, aquaticAnimals[0] ?? null);
+  placeGroup(unrestricted, unrestricted[0] ?? null);
 
   if (climbers.length) {
     const cells = freeCells(ctx, origin, dispersal, climbers[0]),
