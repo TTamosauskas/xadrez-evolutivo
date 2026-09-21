@@ -14,11 +14,13 @@ import {
   notice,
   activePopulation,
   fertilityPaused,
+  consumeFertileTerrain,
 } from "./state.js";
 import {
   eventWeights,
   habitatProfile,
   currentGeologicalStage,
+  aquaticFertilityRegime,
 } from "./geology.js";
 import { movesFor } from "./moves.js";
 import { recordDiscovery } from "./discoveries.js";
@@ -69,7 +71,7 @@ function depletePausedFertility(state) {
   if (!count) return 0;
 
   for (const cell of shuffle(state, eligible).slice(0, count))
-    state.board[cell] = "neutral";
+    consumeFertileTerrain(state, cell);
   log(
     state,
     `🌾 Superpopulação esgotou ${count} casa(s) fértil(is) desocupada(s).`,
@@ -656,6 +658,7 @@ function advanceBlockedConway(ctx) {
 }
 
 export function advanceConway(ctx, options = {}) {
+  if (aquaticFertilityRegime(ctx.state)) return;
   if (options.blocked) return advanceBlockedConway(ctx);
   const state = ctx.state;
   if (currentGeologicalStage(state).id === "proterozoic")
@@ -1214,6 +1217,7 @@ function offensiveRelocation(state) {
 
 export function repairConwayStagnation(ctx, level) {
   const state = ctx.state;
+  if (aquaticFertilityRegime(state)) return;
   if (level === 1) {
     const removed = removeNaturalBarriers(state, null, 1).length;
     log(
