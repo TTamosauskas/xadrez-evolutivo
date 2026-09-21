@@ -19,6 +19,11 @@ import {
   photosynthesisDelayTurns,
   naturalDeathChance,
   pieceAge,
+  ECOLOGICAL_DOMAIN_START_TURN,
+  ECOLOGICAL_DOMAIN_REQUIRED_TURNS,
+  ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS,
+  ecologicalQuadrant,
+  createEcologicalDomain,
 } from "./state.js";
 import {
   movesFor,
@@ -147,6 +152,124 @@ function extinction(state) {
   }
   return false;
 }
+function ecologicalDomainController(state, quadrant) {
+  const counts = { blue: 0, amber: 0 };
+  for (const piece of state.pieces)
+    if (ecologicalQuadrant(piece.r, piece.c) === quadrant)
+      counts[piece.owner]++;
+  if (counts.blue >= 2 && counts.blue > counts.amber) return "blue";
+  if (counts.amber >= 2 && counts.amber > counts.blue) return "amber";
+  return null;
+}
+
+function excludeEcologicalPiece(state, piece, quadrant) {
+  state.pieces = state.pieces.filter((candidate) => candidate.id !== piece.id);
+  if (state.chain === piece.id) state.chain = null;
+  log(
+    state,
+    `${OWNERS[piece.owner]} perderam uma peça no quadrante ${quadrant + 1} por exclusão do Domínio Ecológico.`,
+  );
+}
+
+function consolidateEcologicalQuadrant(state, entry, quadrant) {
+  entry.consolidated = true;
+  entry.progress = ECOLOGICAL_DOMAIN_REQUIRED_TURNS;
+  const loser = other(entry.owner);
+  const beforeEggs = state.eggs.length,
+    beforeSeeds = state.plantSeeds.length;
+  state.eggs = state.eggs.filter(
+    (egg) =>
+      !(
+        egg.owner === loser &&
+        ecologicalQuadrant(egg.r, egg.c) === quadrant
+      ),
+  );
+  state.plantSeeds = state.plantSeeds.filter(
+    (seed) =>
+      !(
+        seed.owner === loser &&
+        ecologicalQuadrant(seed.r, seed.c) === quadrant
+      ),
+  );
+  const lostBrood =
+    beforeEggs - state.eggs.length + beforeSeeds - state.plantSeeds.length;
+  log(
+    state,
+    `🏁 ${OWNERS[entry.owner]} consolidaram o quadrante ${quadrant + 1} por Domínio Ecológico.${lostBrood ? ` ${lostBrood} ovo(s) ou semente(s) adversário(s) foram excluídos.` : ""}`,
+  );
+}
+
+function advanceEcologicalDomain(ctx, actingOwner) {
+  const state = ctx.state;
+  if (state.result || state.turn < ECOLOGICAL_DOMAIN_START_TURN) return false;
+  state.ecologicalDomain ??= createEcologicalDomain();
+  if (!state.ecologicalDomain.active) {
+    state.ecologicalDomain.active = true;
+    notice(
+      state,
+      "Domínio Ecológico",
+      [
+        "A partida entrou na fase de Domínio Ecológico.",
+        "Tenha mais organismos que o rival e pelo menos 2 organismos em um quadrante para iniciar o domínio.",
+        "Mantenha o controle por 3 turnos próprios para consolidar o quadrante. O rival perde acesso a ele e suas criaturas remanescentes desaparecem uma a uma.",
+        "Consolide 3 dos 4 quadrantes para vencer.",
+      ],
+      "ecological-domain-start",
+    );
+    log(state, "🏁 Domínio Ecológico iniciado.");
+  }
+
+  for (let quadrant = 0; quadrant < 4; quadrant++) {
+    const entry = state.ecologicalDomain.quadrants[quadrant];
+    if (entry.consolidated) {
+      if (entry.owner !== actingOwner) continue;
+      const victim = state.pieces.find(
+        (piece) =>
+          piece.owner !== entry.owner &&
+          ecologicalQuadrant(piece.r, piece.c) === quadrant,
+      );
+      if (victim) excludeEcologicalPiece(state, victim, quadrant);
+      continue;
+    }
+
+    const controller = ecologicalDomainController(state, quadrant);
+    if (!controller) {
+      entry.owner = null;
+      entry.progress = 0;
+      continue;
+    }
+    if (entry.owner !== controller) {
+      entry.owner = controller;
+      entry.progress = controller === actingOwner ? 1 : 0;
+    } else if (controller === actingOwner)
+      entry.progress = Math.min(
+        ECOLOGICAL_DOMAIN_REQUIRED_TURNS,
+        entry.progress + 1,
+      );
+
+    if (
+      entry.owner === actingOwner &&
+      entry.progress >= ECOLOGICAL_DOMAIN_REQUIRED_TURNS
+    )
+      consolidateEcologicalQuadrant(state, entry, quadrant);
+  }
+
+  for (const owner of ["blue", "amber"]) {
+    const consolidated = state.ecologicalDomain.quadrants.filter(
+      (quadrant) => quadrant.consolidated && quadrant.owner === owner,
+    ).length;
+    if (consolidated >= ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS) {
+      finishGame(
+        state,
+        owner,
+        `Domínio Ecológico: ${OWNERS[owner]} consolidaram ${consolidated} dos 4 quadrantes.`,
+      );
+      return true;
+    }
+  }
+  return extinction(state);
+}
+
 function moveDirection(p) {
   if (p.rank === 0) {
     if (p.r === 0) p.pawnDir = 1;
@@ -411,6 +534,7 @@ function advanceTurn(ctx) {
   }
   maturePhotosynthesis(state, state.current);
   recordExtremophyteAdaptation(state);
+  if (!extinction(state) && advanceEcologicalDomain(ctx, acting)) return;
   if (!extinction(state)) checkPopulation(state);
 }
 function actionCountFor(state, owner) {
