@@ -738,3 +738,18 @@ test("Domínio Ecológico mostra borda do quadrante e três marcadores de estabi
   );
   dom.window.close();
 });
+
+
+test("game-over dialog can be held closed until the result delay expires", () => {
+  const dom = setup(),
+    s = createState(403);
+  s.result = { winner: "blue", reason: "Extinção total." };
+  s.phase = "over";
+
+  render(dom.window.document, s, { showResult: false });
+  assert.equal(dom.window.document.getElementById("game-over-dialog").open, false);
+
+  render(dom.window.document, s, { showResult: true });
+  assert.equal(dom.window.document.getElementById("game-over-dialog").open, true);
+  dom.window.close();
+});
