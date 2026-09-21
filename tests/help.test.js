@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EVENTS, TRAITS } from "../src/constants.js";
-import { GEOLOGICAL_STAGES } from "../src/geology.js";
+import { GEOLOGICAL_STAGES, TRAIT_DEPENDENCIES, TRAIT_STAGE } from "../src/geology.js";
 import {
   HOW_TO_MUTATION_GROUPS,
   howToPlayLines,
@@ -72,6 +72,25 @@ test("Como Jogar orders positive mutations by the Vida na Terra chronology", () 
       if (previous?.[0] === current?.[0])
         assert.ok(previous[1] < current[1], stage.required[i]);
     }
+
+  for (const [trait, deps] of Object.entries(TRAIT_DEPENDENCIES)) {
+    const current = positions.get(trait);
+    if (!current) continue;
+    for (const dependency of [
+      ...(deps.lineage ?? []),
+      ...(deps.lineageAny ?? []),
+      ...(deps.historical ?? []),
+    ]) {
+      if (TRAIT_STAGE[dependency] !== TRAIT_STAGE[trait]) continue;
+      const previous = positions.get(dependency);
+      assert.ok(previous, dependency + " missing before " + trait);
+      assert.ok(
+        previous[0] < current[0] ||
+          (previous[0] === current[0] && previous[1] < current[1]),
+        dependency + " should precede " + trait,
+      );
+    }
+  }
 });
 
 test("Como Jogar does not retain obsolete mutation icon-label pairs", () => {
