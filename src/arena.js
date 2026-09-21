@@ -15,6 +15,7 @@ import {
 } from "./scenarios.js";
 import {
   genomeFromTraits,
+  hiddenRecessiveTraits,
   syncGenomePhenotype,
 } from "./genetics.js";
 
@@ -197,7 +198,12 @@ export function arenaRecessivePairs(genome) {
         continue;
       const hiddenSet = new Set(hidden),
         active = completed.filter((trait) => !hiddenSet.has(trait));
-      if (phenotypeSupportsGenome(active)) pairs.push(hidden);
+      if (phenotypeSupportsGenome(active)) {
+        const profile = arenaProfile(completed, 4, hidden),
+          expressedHidden = hiddenRecessiveTraits(profile);
+        if (hidden.every((trait) => expressedHidden.includes(trait)))
+          pairs.push(hidden);
+      }
     }
   return pairs;
 }
