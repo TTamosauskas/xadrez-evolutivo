@@ -1,0 +1,24 @@
+name: Land transition diagnostics
+on:
+  push:
+    branches: ["diagnostics/land-transition-current"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run Silurian Devonian transition battery
+        run: npm run benchmark:land-transition
+        env:
+          LAND_TRANSITION_GAMES: 12
+          GOAL_TURNS: 200
+          LAND_TRANSITION_TURN_LIMIT: 330
