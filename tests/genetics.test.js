@@ -70,6 +70,28 @@ test("phenotypic dependencies suppress genes whose functional prerequisites are 
   assert.ok(expressGenome(complete, [], "Predação").includes("Velocidade"));
 });
 
+test("Locomoção Terrestre enters the genome as a dominant mutation", () => {
+  let genome = genomeFromTraits([
+    "Respiração anaeróbia",
+    "Multicelularismo",
+    "Predação",
+    "Locomoção Primitiva",
+    "Vertebrado",
+    "Locomoção Articulada",
+  ]);
+  genome = gainGenomeAllele(genome, "Locomoção Terrestre", () => 0.99);
+  assert.ok(
+    genome["Locomoção Terrestre"].some(
+      (allele) =>
+        allele.value === "derived" && allele.dominance === "dominant",
+    ),
+  );
+  const profile = { genome, traits: [] };
+  syncGenomePhenotype(profile, "Predação");
+  assert.ok(profile.traits.includes("Locomoção Terrestre"));
+  assert.equal(profile.traits.includes("Locomoção Articulada"), false);
+});
+
 test("a second recessive mutation reveals a formerly hidden trait", () => {
   let genome = genomeFromTraits([
     "Respiração anaeróbia",
