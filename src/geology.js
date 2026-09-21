@@ -973,7 +973,10 @@ export function deleteriousMutationUnlocked(state) {
 }
 
 export function negativeTraitUnlocked(state, trait, piece = null, options = {}) {
-  if (!NEGATIVE_TRAITS.has(trait) || !deleteriousMutationUnlocked(state))
+  if (
+    !NEGATIVE_TRAITS.has(trait) ||
+    (!options.somatic && !deleteriousMutationUnlocked(state))
+  )
     return false;
   const rule = NEGATIVE_TRAIT_RULES[trait] ?? {};
   if (options.somatic && !rule.somatic) return false;
