@@ -84,7 +84,7 @@ test("period innovations follow the didactic sequence", () => {
     "Veneno",
   ]);
   assert.deepEqual(required.ordovician, ["Ovíparo"]);
-  assert.deepEqual(required.silurian, ["Coletor"]);
+  assert.deepEqual(required.silurian, ["Locomoção Terrestre", "Coletor"]);
   assert.deepEqual(required.devonian, ["Locomoção Avançada", "Onívoro"]);
   assert.deepEqual(required.carboniferous, ["Ovíparos Amniotas", "Ooteca", "Voo"]);
   assert.deepEqual(required.permian, ["Cuidado Parental"]);
@@ -229,6 +229,96 @@ test("Silurian is a stable coast and Devonian starts Conway terrain evolution", 
   assert.equal(d.nextHabitatGeneration, devonianNext + 2);
   assertState(s);
   assertState(d);
+});
+
+test("Locomoção Terrestre is the Silurian gate for dry movement and capture", () => {
+  const historyBeforeSilurian = GEOLOGICAL_STAGES.slice(
+      0,
+      GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "silurian"),
+    ).flatMap((stage) => stage.required),
+    s = createState(1205, {
+      geologicalStage: "silurian",
+      historicalTraits: historyBeforeSilurian,
+      naturalBarriers: false,
+    });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.notices = [];
+  s.board[4 * 8 + 4] = "fertile";
+  s.board[4 * 8 + 3] = "fertile";
+  s.board[5 * 8 + 4] = "hostile";
+
+  const animal = newPiece(s, "blue", 4, 4, {
+      rank: 4,
+      traits: [
+        "Multicelularismo",
+        "Predação",
+        "Locomoção Primitiva",
+        "Vertebrado",
+        "Locomoção Articulada",
+      ],
+      ancestry: [
+        "Predação",
+        "Locomoção Primitiva",
+        "Vertebrado",
+        "Locomoção Articulada",
+      ],
+    }),
+    prey = newPiece(s, "amber", 3, 4, {
+      rank: 4,
+      traits: ["Multicelularismo", "Predação"],
+    });
+  s.pieces.push(animal, prey);
+
+  assert.equal(traitUnlocked(s, "Locomoção Terrestre", animal), true);
+  assert.equal(traitUnlocked(s, "Coletor", animal), false);
+
+  let targets = movesFor(s, animal);
+  assert.ok(targets.some((target) => target.r === 4 && target.c === 3));
+  assert.ok(!targets.some((target) => target.r === 3 && target.c === 4));
+  assert.ok(!targets.some((target) => target.r === 5 && target.c === 4));
+
+  animal.traits = applyTraitMutation(animal.traits, "Locomoção Terrestre");
+  animal.ancestry.push("Locomoção Terrestre");
+  assert.ok(animal.traits.includes("Locomoção Terrestre"));
+  assert.equal(animal.traits.includes("Locomoção Articulada"), false);
+  assert.equal(has(animal, "Locomoção Articulada"), true);
+
+  targets = movesFor(s, animal);
+  assert.ok(
+    targets.some(
+      (target) => target.r === 3 && target.c === 4 && target.capture,
+    ),
+  );
+  assert.ok(targets.some((target) => target.r === 5 && target.c === 4));
+
+  s.historicalTraits.push("Locomoção Terrestre");
+  assert.equal(traitUnlocked(s, "Coletor", animal), true);
+
+  const cambrian = createState(1206, {
+    geologicalStage: "cambrian",
+    naturalBarriers: false,
+  });
+  cambrian.board.fill("neutral");
+  cambrian.pieces = [];
+  cambrian.nextId = 1;
+  const marine = newPiece(cambrian, "blue", 4, 4, {
+    rank: 4,
+    traits: [
+      "Multicelularismo",
+      "Predação",
+      "Locomoção Primitiva",
+      "Vertebrado",
+      "Locomoção Articulada",
+    ],
+  });
+  cambrian.pieces.push(marine);
+  assert.ok(
+    movesFor(cambrian, marine).some(
+      (target) => target.r === 3 && target.c === 4,
+    ),
+  );
 });
 
 test("Predação enables capture and is an individual prerequisite for Locomoção", () => {
@@ -467,7 +557,12 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
       ...GEOLOGICAL_STAGES.slice(0, 6).flatMap((stage) => stage.required),
     ]),
   ];
-  p.ancestry.push("Construtor de Nicho", "Vertebrado", "Locomoção Articulada");
+  p.ancestry.push(
+    "Construtor de Nicho",
+    "Vertebrado",
+    "Locomoção Articulada",
+    "Locomoção Terrestre",
+  );
   assert.equal(traitUnlocked(s, "Locomoção Avançada", p), true);
   s.historicalTraits.push("Locomoção Avançada");
   p.ancestry.push("Carnívoro");
@@ -580,6 +675,7 @@ test("active phenotype families replace older expressions without erasing ancest
     "Onívoro",
     "Locomoção Primitiva",
     "Locomoção Articulada",
+    "Locomoção Terrestre",
     "Locomoção Avançada",
     "Embriófitas",
     "Traqueófitas",
@@ -600,6 +696,7 @@ test("active phenotype families replace older expressions without erasing ancest
     "Carnívoro",
     "Herbívoro",
     "Locomoção Articulada",
+    "Locomoção Terrestre",
     "Embriófitas",
     "Traqueófitas",
     "Gimnospermas",
@@ -628,6 +725,7 @@ test("later active phenotypes retain capabilities of the form they replaced", ()
     omnivore = { traits: ["Onívoro"] },
     eusocial = { traits: ["Eusocialidade"] };
 
+  assert.equal(has(advanced, "Locomoção Terrestre"), true);
   assert.equal(has(advanced, "Locomoção Articulada"), true);
   assert.equal(has(advanced, "Locomoção Primitiva"), true);
   assert.equal(has(vascularSeedPlant, "Embriófitas"), true);
@@ -736,15 +834,15 @@ test("new combat specializations unlock in the intended periods and lineages", (
     },
     predator = {
       traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Avançada"],
-      ancestry: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Avançada"],
+      ancestry: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Locomoção Avançada"],
     },
     herbivore = {
-      traits: ["Multicelularismo", "Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
-      ancestry: ["Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
+      traits: ["Multicelularismo", "Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"],
+      ancestry: ["Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"],
     },
     carnivore = {
-      traits: ["Multicelularismo", "Predação", "Carnívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
-      ancestry: ["Predação", "Carnívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
+      traits: ["Multicelularismo", "Predação", "Carnívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"],
+      ancestry: ["Predação", "Carnívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"],
     };
 
   const devonian = createState(181, {
@@ -882,6 +980,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     "Vertebrado",
     "Artrópode",
     "Locomoção Articulada",
+    "Locomoção Terrestre",
     "Percepção Espacial",
     "Escavador",
     "Escalador",
@@ -911,6 +1010,7 @@ test("switching into Fotossíntese removes animal-only traits", () => {
     "Locomoção Primitiva",
     "Vertebrado",
     "Locomoção Articulada",
+    "Locomoção Terrestre",
     "Percepção Espacial",
     "Escavador",
     "Escalador",
