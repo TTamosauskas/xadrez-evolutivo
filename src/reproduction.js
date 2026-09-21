@@ -1010,6 +1010,8 @@ export function reproduce(
         (options.resourceReproduction || options.fertileReproduction)
       )
         base *= 2;
+      if (has(piece, "Má absorção Alimentar") && reason === "predação")
+        base *= 2;
       return (
         round(state) +
         base +
