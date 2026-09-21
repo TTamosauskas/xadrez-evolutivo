@@ -27,6 +27,7 @@ import {
   notice,
   registerDiscoveries,
   reproductionReady,
+  ecologicalDomainBlocked,
 } from "./state.js";
 import {
   BASAL_GENETIC_TRAIT,
@@ -258,6 +259,7 @@ function sexualProfile(state, a, b) {
 
 function occupied(state, r, c, profile = null) {
   return (
+    ecologicalDomainBlocked(state, profile?.owner, r, c) ||
     at(state, r, c) ||
     eggAt(state, r, c) ||
     plantSeedAt(state, r, c) ||
@@ -471,7 +473,7 @@ function adjacentEggCells(ctx, parent) {
         c = parent.c + dc;
       if (
         inside(r, c) &&
-        !occupied(ctx.state, r, c) &&
+        !occupied(ctx.state, r, c, parent) &&
         !ctx.reserved.has(square(r, c))
       )
         cells.push({ r, c });
@@ -489,7 +491,7 @@ function domesticPlacementCells(ctx, parent) {
       if (
         inside(r, c) &&
         distance(parent, { r, c }) <= 2 &&
-        !occupied(ctx.state, r, c) &&
+        !occupied(ctx.state, r, c, parent) &&
         !ctx.reserved.has(square(r, c))
       )
         cells.push({ r, c });
@@ -529,7 +531,7 @@ function amnioticPlacementCells(ctx, parent) {
       if (
         inside(r, c) &&
         distance(parent, { r, c }) <= 3 &&
-        !occupied(ctx.state, r, c) &&
+        !occupied(ctx.state, r, c, parent) &&
         !ctx.reserved.has(square(r, c))
       )
         cells.push({ r, c });
@@ -629,16 +631,23 @@ function freeEggSteps(state, egg) {
       if (!dr && !dc) continue;
       const r = egg.r + dr,
         c = egg.c + dc;
-      if (inside(r, c) && !occupied(state, r, c)) cells.push({ r, c });
+      if (
+        inside(r, c) &&
+        !occupied(state, r, c, { owner: egg.owner, traits: [] })
+      )
+        cells.push({ r, c });
     }
   return cells;
 }
 
-function fertileCells(state) {
+function fertileCells(state, owner = null) {
   const cells = [];
   for (let r = 0; r < 8; r++)
     for (let c = 0; c < 8; c++)
-      if (terrain(state, r, c) === "fertile" && !occupied(state, r, c))
+      if (
+        terrain(state, r, c) === "fertile" &&
+        !occupied(state, r, c, { owner, traits: [] })
+      )
         cells.push({ r, c });
   return cells;
 }
@@ -646,7 +655,7 @@ function fertileCells(state) {
 function moveEgg(state, egg) {
   const candidates = freeEggSteps(state, egg);
   if (!candidates.length) return false;
-  const fertile = fertileCells(state);
+  const fertile = fertileCells(state, egg.owner);
   let choices = candidates;
   if (fertile.length) {
     const score = (cell) =>
