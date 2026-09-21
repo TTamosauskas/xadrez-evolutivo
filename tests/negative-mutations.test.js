@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "./helpers.js";
 import { context } from "../src/engine.js";
+import { createState, newPiece } from "../src/state.js";
 import { movesFor } from "../src/moves.js";
 import {
   applyRegressionEffect,
@@ -13,9 +14,6 @@ import {
   negativeTraitUnlocked,
   SOMATIC_NEGATIVE_TRAITS,
 } from "../src/geology.js";
-import {
-  hiddenRecessiveTraits,
-} from "../src/genetics.js";
 import {
   pathogenMortalityChance,
 } from "../src/disease.js";
@@ -111,17 +109,15 @@ test("gigantism halves long-range locomotion but preserves capture range", () =>
 });
 
 test("nanism forces pawn form", () => {
-  const s = fixture([
-    {
-      owner: "blue",
-      r: 4,
-      c: 4,
+  const s = createState(9, {
+      geologicalStage: "cambrian",
+      naturalBarriers: false,
+    }),
+    p = newPiece(s, "blue", 4, 4, {
       rank: 5,
       traits: [...animalTraits, "Nanismo"],
-    },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  assert.equal(s.pieces[0].rank, 0);
+    });
+  assert.equal(p.rank, 0);
 });
 
 test("only-child and respiratory insufficiency reduce reproductive performance", () => {
@@ -280,8 +276,16 @@ test("regression hides about half of eligible active positive phenotypes", () =>
   const hidden = applyRegressionEffect(s, p);
   assert.ok(hidden.length >= 1);
   for (const trait of hidden) assert.equal(p.traits.includes(trait), false);
-  const recessives = hiddenRecessiveTraits(p);
-  for (const trait of hidden) assert.ok(recessives.includes(trait));
+  for (const trait of hidden) {
+    const pair = p.genome[trait];
+    assert.equal(
+      pair.some(
+        (allele) =>
+          allele.value === "derived" && allele.dominance === "recessive",
+      ),
+      true,
+    );
+  }
   assert.ok(before.has("Regressão Evolutiva"));
   assert.ok(p.traits.includes("Regressão Evolutiva"));
 });
