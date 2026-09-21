@@ -333,10 +333,14 @@ export function hiddenRecessiveTraits(source) {
     genome = readableGenome(profile?.genome ?? source),
     expressed = new Set(
       profile?.traits ?? expressGenome(genome),
+    ),
+    scaffold = new Set(
+      profile ? lineageScaffold(profile.traits ?? [], new Set()) : [],
     );
   return GENETIC_TRAITS.filter((trait) => {
     if (
       expressed.has(trait) ||
+      scaffold.has(trait) ||
       BODY_PLAN_TRAITS.has(trait) ||
       ENERGY_BRANCH_TRAITS.has(trait)
     )

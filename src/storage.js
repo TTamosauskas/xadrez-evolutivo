@@ -5,6 +5,7 @@ import {
   syncReproTraits,
 } from "./reproductive-genetics.js";
 import {
+  forceGenomeTrait,
   genomeFromLegacyProfile,
   normalizeGenome,
   syncGenomePhenotype,
@@ -21,7 +22,8 @@ import {
   isNegativeTrait,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v14";
+export const SAVE_KEY = "xadrez-evolutivo-save-v15";
+export const V14_KEY = "xadrez-evolutivo-save-v14";
 export const V13_KEY = "xadrez-evolutivo-save-v13";
 export const V12_KEY = "xadrez-evolutivo-save-v12";
 export const V11_KEY = "xadrez-evolutivo-save-v11";
@@ -157,7 +159,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -187,6 +189,20 @@ export function deserialize(raw) {
           !validTraits.includes("Multicelularismo")
         )
           validTraits.push("Multicelularismo");
+        if (
+          sourceVersion < 15 &&
+          validTraits.includes("Multicelularismo") &&
+          !validTraits.includes("Reparo Celular")
+        )
+          validTraits.push("Reparo Celular");
+        if (
+          sourceVersion < 15 &&
+          validTraits.some((trait) =>
+            ["Vertebrado", "Artrópode", "Locomoção Articulada"].includes(trait),
+          ) &&
+          !validTraits.includes("Simetria Bilateral")
+        )
+          validTraits.push("Simetria Bilateral");
         const ancestry = new Set(
             (profile.ancestry ?? []).map(mapper).filter((trait) => TRAITS[trait]),
           );
@@ -203,6 +219,18 @@ export function deserialize(raw) {
           sourceVersion >= 13 && profile.genome
             ? normalizeGenome(currentGenome(profile.genome))
             : genomeFromLegacyProfile(profile);
+        if (sourceVersion < 15 && validTraits.includes("Reparo Celular"))
+          profile.genome = forceGenomeTrait(
+            profile.genome,
+            "Reparo Celular",
+            "dominant",
+          );
+        if (sourceVersion < 15 && validTraits.includes("Simetria Bilateral"))
+          profile.genome = forceGenomeTrait(
+            profile.genome,
+            "Simetria Bilateral",
+            "dominant",
+          );
         syncGenomePhenotype(profile);
         delete profile.reproGenes;
         delete profile.recessiveTraits;
@@ -487,6 +515,24 @@ export function deserialize(raw) {
     }
     if (!data.historicalTraits.includes("Respiração anaeróbia"))
       data.historicalTraits.unshift("Respiração anaeróbia");
+    if (
+      sourceVersion < 15 &&
+      (data.historicalTraits.includes("Multicelularismo") ||
+        geologicalStage(data.geologicalStage).index >=
+          geologicalStage("proterozoic").index) &&
+      !data.historicalTraits.includes("Reparo Celular")
+    )
+      data.historicalTraits.push("Reparo Celular");
+    if (
+      sourceVersion < 15 &&
+      (data.historicalTraits.includes("Locomoção Primitiva") ||
+        data.historicalTraits.includes("Vertebrado") ||
+        data.historicalTraits.includes("Artrópode") ||
+        geologicalStage(data.geologicalStage).index >
+          geologicalStage("ediacaran").index) &&
+      !data.historicalTraits.includes("Simetria Bilateral")
+    )
+      data.historicalTraits.push("Simetria Bilateral");
     const migratedMulticellularHistory =
       sourceVersion < 9 &&
       geologicalStage(data.geologicalStage).index >=
@@ -504,6 +550,18 @@ export function deserialize(raw) {
             .filter((id) => id !== "Ovos" && id !== "Esporos"),
         ),
       ];
+      if (
+        sourceVersion < 15 &&
+        data.historicalTraits.includes("Reparo Celular") &&
+        !data.discoveries.mutations.includes("Reparo Celular")
+      )
+        data.discoveries.mutations.push("Reparo Celular");
+      if (
+        sourceVersion < 15 &&
+        data.historicalTraits.includes("Simetria Bilateral") &&
+        !data.discoveries.mutations.includes("Simetria Bilateral")
+      )
+        data.discoveries.mutations.push("Simetria Bilateral");
       data.discoveries.read = [
         ...new Set(
           (data.discoveries.read ?? [])
@@ -701,7 +759,7 @@ export function deserialize(raw) {
         );
       }
     }
-    data.version = 14;
+    data.version = 15;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -886,6 +944,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V14_KEY) ??
     storage.getItem(V13_KEY) ??
     storage.getItem(V12_KEY) ??
     storage.getItem(V11_KEY) ??

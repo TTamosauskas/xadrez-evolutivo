@@ -18,6 +18,11 @@ export const VECTOR_PATHOGEN_TRANSMISSION_CHANCE = 0.25;
 export const VECTOR_PATHOGEN_MORTALITY = 20;
 export const VECTOR_RESISTANCE_MORTALITY_FACTOR = 0.5;
 export const PATHOGEN_SOMATIC_MUTATION_CHANCE = 0.25;
+export const PRE_REPAIR_PATHOGEN_SOMATIC_MUTATION_CHANCE = 0.5;
+export const pathogenSomaticMutationChance = (piece) =>
+  has(piece, "Reparo Celular")
+    ? PATHOGEN_SOMATIC_MUTATION_CHANCE
+    : PRE_REPAIR_PATHOGEN_SOMATIC_MUTATION_CHANCE;
 export const NEGATIVE_SOMATIC_MUTATIONS = Object.freeze([
   "Esterilidade",
   "Mutação Deletéria",
@@ -67,7 +72,7 @@ export function recordPathogenExposure(state, piece, disease) {
   piece.somaticMutations ??= [];
   if (
     piece.pathogenMutationDiseases.includes(disease.id) ||
-    random(state) >= PATHOGEN_SOMATIC_MUTATION_CHANCE
+    random(state) >= pathogenSomaticMutationChance(piece)
   )
     return true;
 

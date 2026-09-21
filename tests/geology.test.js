@@ -61,6 +61,7 @@ test("period innovations follow the didactic sequence", () => {
   assert.deepEqual(required.archean, [
     "Fotossíntese",
     "Predação",
+    "Reparo Celular",
     "Dormência",
   ]);
   assert.deepEqual(required.proterozoic, [
@@ -71,6 +72,7 @@ test("period innovations follow the didactic sequence", () => {
     "Carnívoro",
   ]);
   assert.deepEqual(required.ediacaran, [
+    "Simetria Bilateral",
     "Locomoção Primitiva",
     "Escavador",
     "Construtor de Nicho",
@@ -130,9 +132,13 @@ test("Archean innovations are split across the first two cycles", () => {
   s.historicalTraits.push("Fotossíntese");
   assert.equal(traitUnlocked(s, "Predação", p), true);
   s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Reparo Celular", p), false);
   assert.equal(traitUnlocked(s, "Dormência", p), false);
 
   s.cycle = 2;
+  assert.equal(traitUnlocked(s, "Reparo Celular", p), true);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
+  s.historicalTraits.push("Reparo Celular");
   assert.equal(traitUnlocked(s, "Dormência", p), true);
 });
 
@@ -144,7 +150,39 @@ test("Archean keeps the first wave active in later cycles until it is complete",
   s.historicalTraits.push("Fotossíntese");
   assert.equal(traitUnlocked(s, "Predação", p), true);
   s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Reparo Celular", p), true);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
+  s.historicalTraits.push("Reparo Celular");
   assert.equal(traitUnlocked(s, "Dormência", p), true);
+});
+
+test("cellular repair and bilateral symmetry gate complex body plans", () => {
+  const s = createState(113),
+    p = s.pieces[0];
+
+  s.geologicalStage = "proterozoic";
+  s.historicalTraits = ["Respiração anaeróbia"];
+  p.traits = ["Predação"];
+  p.ancestry = ["Respiração anaeróbia", "Predação"];
+  assert.equal(traitUnlocked(s, "Multicelularismo", p), false);
+
+  p.traits.push("Reparo Celular");
+  p.ancestry.push("Reparo Celular");
+  assert.equal(traitUnlocked(s, "Multicelularismo", p), true);
+
+  s.geologicalStage = "ediacaran";
+  p.traits.push("Multicelularismo");
+  p.ancestry.push("Multicelularismo");
+  assert.equal(traitUnlocked(s, "Simetria Bilateral", p), true);
+
+  s.geologicalStage = "cambrian";
+  p.traits.push("Locomoção Primitiva");
+  p.ancestry.push("Locomoção Primitiva");
+  assert.equal(traitUnlocked(s, "Vertebrado", p), false);
+  p.traits.push("Simetria Bilateral");
+  p.ancestry.push("Simetria Bilateral");
+  assert.equal(traitUnlocked(s, "Vertebrado", p), true);
+  assert.equal(traitUnlocked(s, "Artrópode", p), true);
 });
 
 test("geological event pools gain pathogen outbreaks from the Proterozoic onward", () => {
@@ -169,7 +207,7 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
 
 test("Archean starts green and stationary", () => {
   const s = createState(101);
-  assert.equal(s.version, 14);
+  assert.equal(s.version, 15);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
@@ -351,6 +389,9 @@ test("Predação enables capture and is an individual prerequisite for Locomoç�
   const ancestral = { traits: [] };
   assert.equal(traitUnlocked(s, "Locomoção Primitiva", ancestral), false);
   ancestral.traits.push("Predação", "Multicelularismo");
+  assert.equal(traitUnlocked(s, "Locomoção Primitiva", ancestral), false);
+  s.historicalTraits.push("Simetria Bilateral");
+  ancestral.traits.push("Simetria Bilateral");
   assert.equal(traitUnlocked(s, "Locomoção Primitiva", ancestral), true);
 });
 
@@ -386,7 +427,10 @@ test("Archean advances only after both innovation cycles are complete", () => {
   ]);
 
   const secondCarrier = next.pieces[0];
-  secondCarrier.traits.push("Fertilidade", "Dormência");
+  secondCarrier.traits.push("Reparo Celular");
+  registerDiscoveries(next, secondCarrier);
+  assert.equal(stageComplete(next), false);
+  secondCarrier.traits.push("Dormência");
   registerDiscoveries(next, secondCarrier);
   assert.equal(stageComplete(next), true);
   next.notices = [];
@@ -543,13 +587,20 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
       geologicalStage: "ediacaran",
       historicalTraits: [
         ...GEOLOGICAL_STAGES.slice(0, 2).flatMap((stage) => stage.required),
+        "Simetria Bilateral",
         "Locomoção Primitiva",
       ],
     }),
     p = s.pieces[0],
     unrelated = { traits: [], ancestry: [] };
 
-  p.ancestry = ["Predação", "Locomoção Primitiva"];
+  p.ancestry = [
+    "Predação",
+    "Reparo Celular",
+    "Multicelularismo",
+    "Simetria Bilateral",
+    "Locomoção Primitiva",
+  ];
   p.traits = ["Multicelularismo"];
   assert.equal(traitUnlocked(s, "Escavador", p), true);
   assert.equal(traitUnlocked(s, "Escavador", unrelated), false);
@@ -623,7 +674,8 @@ test("evolutionary precedence changes eligibility but never mutation weight", ()
   assert.deepEqual(missingInnovations(s), [
     "Fotossíntese",
     "Predação",
-        "Dormência",
+    "Reparo Celular",
+    "Dormência",
   ]);
 });
 

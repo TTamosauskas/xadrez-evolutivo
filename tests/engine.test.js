@@ -52,6 +52,8 @@ import {
   leaveBacterialTrail,
   exposePathogenCell,
   PATHOGEN_SOMATIC_MUTATION_CHANCE,
+  PRE_REPAIR_PATHOGEN_SOMATIC_MUTATION_CHANCE,
+  pathogenSomaticMutationChance,
 } from "../src/disease.js";
 import {
   reproduce,
@@ -1267,7 +1269,7 @@ test("Multicelularismo gates childhood and introduces progressive senescence", (
       maturesRound: round(s) + 2,
     }),
     multicellular = newPiece(s, "amber", 0, 0, {
-      traits: ["Multicelularismo"],
+      traits: ["Reparo Celular", "Multicelularismo", "Simetria Bilateral"],
       maturesRound: round(s) + 2,
     });
   s.pieces.push(unicellular, multicellular);
@@ -2058,6 +2060,12 @@ test("pathogen exposure can add one non-heritable somatic mutation per outbreak"
     disease = startDisease(s, "eco", s.pieces[1], null, "fungus");
 
   assert.equal(PATHOGEN_SOMATIC_MUTATION_CHANCE, 0.25);
+  assert.equal(PRE_REPAIR_PATHOGEN_SOMATIC_MUTATION_CHANCE, 0.5);
+  assert.equal(pathogenSomaticMutationChance({ traits: [] }), 0.5);
+  assert.equal(
+    pathogenSomaticMutationChance({ traits: ["Reparo Celular"] }),
+    0.25,
+  );
   disease.contaminated.push(36);
   target.pathogenExposureRounds = {};
   target.pathogenMutationDiseases = [];

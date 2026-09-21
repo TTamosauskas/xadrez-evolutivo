@@ -7,9 +7,17 @@ export const SYMBOLS = {
 };
 export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
 export const TRAITS = {
+  "Reparo Celular": [
+    "🩹",
+    "Reduz pela metade a ocorrência de novas mutações negativas, normalizando a estabilidade celular e genômica.",
+  ],
   Multicelularismo: [
     "🫧",
-    "Introduz um ciclo de vida individual: descendentes passam pela infância, adultos entram em senescência a partir de 25 rodadas e a morte natural é certa aos 48. Também habilita características multicelulares complexas.",
+    "Introduz um ciclo de vida individual e habilita características multicelulares complexas. Em linhagens animais anteriores à Simetria Bilateral, senescência e morte natural ocorrem aproximadamente duas vezes mais cedo.",
+  ],
+  "Simetria Bilateral": [
+    "⏸",
+    "Dobra a expectativa de vida natural das linhagens animais multicelulares e prepara a organização corporal de Vertebrados e Artrópodes.",
   ],
   "Locomoção Primitiva": [
     "🔀",
@@ -17,11 +25,11 @@ export const TRAITS = {
   ],
   Vertebrado: [
     "🐟",
-    "Plano corporal mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e a evolução completa de Peão até Cavalo, Bispo, Torre e Rainha; Rei continua disponível.",
+    "Plano corporal bilateral mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e a evolução completa de Peão até Cavalo, Bispo, Torre e Rainha; Rei continua disponível.",
   ],
   "Artrópode": [
     "🦀",
-    "Plano corporal mutuamente exclusivo com Vertebrado. Habilita Locomoção Articulada, limita formas derivadas a Cavalo e Bispo e dobra a produção-base de descendentes, até 6.",
+    "Plano corporal bilateral mutuamente exclusivo com Vertebrado. Habilita Locomoção Articulada, limita formas derivadas a Cavalo e Bispo e dobra a produção-base de descendentes, até 6.",
   ],
   "Locomoção Articulada": [
     "🦵",

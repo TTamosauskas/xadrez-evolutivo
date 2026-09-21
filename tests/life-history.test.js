@@ -7,11 +7,13 @@ import {
   juvenile,
   reproductionReady,
   round,
+  senescent,
+  naturalDeathChance,
   assertState,
 } from "../src/state.js";
 import { context, simulate, transition } from "../src/engine.js";
 import { movesFor, nursingTargets } from "../src/moves.js";
-import { reproduce } from "../src/reproduction.js";
+import { negativeMutationChance, reproduce } from "../src/reproduction.js";
 import { fallbackAction } from "../src/ai.js";
 import { GEOLOGICAL_STAGES, traitUnlocked } from "../src/geology.js";
 import { square } from "../src/constants.js";
@@ -95,6 +97,47 @@ test("childhood begins only after Multicelularismo and Precocidade Sexual shorte
   precocious.turn = 2;
   assert.equal(juvenile(precocious, earlyChild), false);
   assertState(precocious);
+});
+
+test("bilateral symmetry doubles animal natural lifespan", () => {
+  const preBilateral = {
+      traits: ["Multicelularismo", "Predação"],
+      bornRound: 0,
+    },
+    bilateral = {
+      traits: ["Multicelularismo", "Predação", "Simetria Bilateral"],
+      bornRound: 0,
+    },
+    plant = {
+      traits: ["Multicelularismo", "Fotossíntese"],
+      bornRound: 0,
+    };
+
+  assert.equal(senescent({ turn: 24 }, preBilateral), false);
+  assert.equal(senescent({ turn: 26 }, preBilateral), true);
+  assert.equal(naturalDeathChance({ turn: 26 }, preBilateral), 0.05);
+  assert.equal(naturalDeathChance({ turn: 48 }, preBilateral), 1);
+
+  assert.equal(senescent({ turn: 48 }, bilateral), false);
+  assert.equal(senescent({ turn: 50 }, bilateral), true);
+  assert.equal(naturalDeathChance({ turn: 50 }, bilateral), 0.05);
+  assert.equal(naturalDeathChance({ turn: 96 }, bilateral), 1);
+
+  assert.equal(senescent({ turn: 48 }, plant), false);
+  assert.equal(naturalDeathChance({ turn: 48 }, plant), 0);
+});
+
+test("cellular repair halves negative mutation pressure to the current baseline", () => {
+  assert.equal(negativeMutationChance({ rank: 0, traits: [] }), 2 / 5);
+  assert.equal(
+    negativeMutationChance({ rank: 0, traits: ["Reparo Celular"] }),
+    1 / 5,
+  );
+  assert.equal(negativeMutationChance({ rank: 4, traits: [] }), 2 / 3);
+  assert.equal(
+    negativeMutationChance({ rank: 4, traits: ["Reparo Celular"] }),
+    1 / 3,
+  );
 });
 
 test("successful reproduction has a three-round cooldown and induced ovulation shortens it to two", () => {

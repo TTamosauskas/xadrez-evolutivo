@@ -16,10 +16,10 @@ export const GEOLOGICAL_STAGES = [
     id: "archean",
     group: "Pré-Cambriano",
     period: "Arqueano",
-    required: ["Fotossíntese", "Predação", "Dormência"],
+    required: ["Fotossíntese", "Predação", "Reparo Celular", "Dormência"],
     cycles: [
       ["Fotossíntese", "Predação"],
-      ["Dormência"],
+      ["Reparo Celular", "Dormência"],
     ],
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2, grb: 1 },
@@ -50,7 +50,7 @@ export const GEOLOGICAL_STAGES = [
     id: "ediacaran",
     group: "Pré-Cambriano",
     period: "Ediacarano",
-    required: ["Locomoção Primitiva", "Escavador", "Construtor de Nicho"],
+    required: ["Simetria Bilateral", "Locomoção Primitiva", "Escavador", "Construtor de Nicho"],
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: {
       abundance: 3,
@@ -209,6 +209,7 @@ const byId = new Map(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
 
 export const TRAIT_STAGE = {
   "Respiração anaeróbia": "archean",
+  "Reparo Celular": "archean",
   "Respiração aeróbia": "proterozoic",
   Fotossíntese: "archean",
   Embriófitas: "ordovician",
@@ -224,6 +225,7 @@ export const TRAIT_STAGE = {
   "Carnivoria Botânica": "paleogene",
   Dormência: "archean",
   Multicelularismo: "proterozoic",
+  "Simetria Bilateral": "ediacaran",
   "Reprodução Sexuada": "proterozoic",
   "Precocidade Sexual": "ediacaran",
   Regeneração: "proterozoic",
@@ -339,6 +341,8 @@ export function activeTraitFamily(trait) {
 }
 
 export const TRAIT_DEPENDENCIES = {
+  Multicelularismo: { lineage: ["Reparo Celular"] },
+  "Simetria Bilateral": { lineage: ["Multicelularismo"] },
   "Respiração aeróbia": {
     lineage: ["Respiração anaeróbia"],
     historical: ["Fotossíntese"],
@@ -367,8 +371,8 @@ export const TRAIT_DEPENDENCIES = {
   "Vetor Patógeno": { lineage: ["Parasitismo"] },
   "Precocidade Sexual": { lineage: ["Reprodução Sexuada"] },
   "Locomoção Primitiva": { lineage: ["Predação"] },
-  Vertebrado: { lineage: ["Locomoção Primitiva"] },
-  "Artrópode": { lineage: ["Locomoção Primitiva"] },
+  Vertebrado: { lineage: ["Locomoção Primitiva", "Simetria Bilateral"] },
+  "Artrópode": { lineage: ["Locomoção Primitiva", "Simetria Bilateral"] },
   "Locomoção Articulada": {
     lineage: ["Locomoção Primitiva"],
     lineageAny: ["Vertebrado", "Artrópode"],
@@ -410,6 +414,7 @@ export const TRAIT_DEPENDENCIES = {
 export const BODY_PLAN_TRAITS = new Set(["Vertebrado", "Artrópode"]);
 
 export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
+  "Simetria Bilateral",
   "Regeneração",
   "Reprodução Sexuada",
   "Precocidade Sexual",
@@ -498,6 +503,7 @@ export const PLANT_DERIVED_TRAITS = new Set([
 
 export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Predação",
+  "Simetria Bilateral",
   "Locomoção Primitiva",
   "Vertebrado",
   "Artrópode",
@@ -663,6 +669,13 @@ export function traitLossAllowed(piece, trait) {
     trait === "Respiração anaeróbia" ||
     BODY_PLAN_TRAITS.has(trait) ||
     ENERGY_BRANCH_TRAITS.has(trait)
+  )
+    return false;
+  if (
+    trait === "Simetria Bilateral" &&
+    (piece?.traits ?? []).some((candidate) =>
+      BODY_PLAN_TRAITS.has(candidate),
+    )
   )
     return false;
   if (trait !== "Multicelularismo") return true;
