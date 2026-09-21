@@ -36,14 +36,14 @@ jobs:
           GAMES_PER_STAGE: 6
           GOAL_TURNS: 200
           TURN_LIMIT: 300
-      - name: Diagnose Ediacaran Silurian Devonian stalls
+      - name: Diagnose campaign periods and configured cycles
         id: stall_diagnostics
         continue-on-error: true
-        run: node scripts/stall-diagnostics.js
+        run: node scripts/campaign-envelope.js
         env:
-          DIAGNOSTIC_GAMES: 24
+          CAMPAIGN_GAMES: 8
           GOAL_TURNS: 200
-          DIAGNOSTIC_TURN_LIMIT: 300
+          TURN_LIMIT: 300
           DIAGNOSTIC_TAIL: 100
       - name: Enforce simulation envelope
         if: steps.simulate.outcome == 'failure' || steps.period_benchmark.outcome == 'failure' || steps.stall_diagnostics.outcome == 'failure'
