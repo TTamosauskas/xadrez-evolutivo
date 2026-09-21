@@ -1041,7 +1041,10 @@ test("Paleogene is a one-cycle transition stage", () => {
   });
   assert.equal(currentGeologicalStage(s).period, "Paleógeno");
   assert.equal(stageComplete(s), true);
-  assert.deepEqual(eventWeights(s), currentGeologicalStage(s).events);
+  assert.deepEqual(eventWeights(s), {
+    ...currentGeologicalStage(s).events,
+    pathogen: 1,
+  });
 });
 
 
