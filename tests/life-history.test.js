@@ -260,7 +260,7 @@ test("AI prioritizes a photosynthetic prey on fertile terrain", () => {
       r: 4,
       c: 4,
       rank: 3,
-      traits: ["Predação", "Locomoção"],
+      traits: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Percepção Espacial"],
     },
     {
       owner: "amber",
@@ -302,17 +302,17 @@ test("new life-history traits unlock in their intended optional periods", () => 
 
   s.geologicalStage = "ordovician";
   s.historicalTraits = historyBefore("ordovician");
-  p.traits = ["Multicelularismo", "Predação", "Locomoção"];
+  p.traits = ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"];
   assert.equal(traitUnlocked(s, "Ovíparo", p), true);
 
   s.geologicalStage = "devonian";
   s.historicalTraits = historyBefore("devonian");
-  p.traits = ["Multicelularismo", "Predação", "Locomoção"];
+  p.traits = ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"];
   assert.equal(traitUnlocked(s, "Respiração Cutânea", p), true);
 
   s.geologicalStage = "carboniferous";
   s.historicalTraits = historyBefore("carboniferous");
-  p.traits = ["Multicelularismo", "Predação", "Locomoção", "Ovíparo"];
+  p.traits = ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Ovíparo"];
   assert.equal(traitUnlocked(s, "Ovíparos Amniotas", p), true);
 
   s.geologicalStage = "permian";
@@ -323,7 +323,7 @@ test("new life-history traits unlock in their intended optional periods", () => 
   s.geologicalStage = "triassic";
   s.historicalTraits = historyBefore("triassic");
   p.traits = ["Multicelularismo", "Predação"];
-  p.ancestry = ["Predação", "Locomoção", "Locomoção Avançada"];
+  p.ancestry = ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Avançada"];
   assert.equal(traitUnlocked(s, "Sacos Aéreos", p), true);
 
   s.geologicalStage = "paleogene";
