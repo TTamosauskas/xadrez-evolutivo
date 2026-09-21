@@ -59,7 +59,12 @@ function evolutionarySummary(state, owner) {
 export function render(
   doc,
   state,
-  { selected = null, busy = false, mode = "multi" } = {},
+  {
+    selected = null,
+    busy = false,
+    mode = "multi",
+    showResult = true,
+  } = {},
 ) {
   const $ = (id) => doc.getElementById(id),
     make = (...args) => element(doc, ...args);
@@ -489,7 +494,7 @@ export function render(
     );
   }
   const gameOverDialog = $("game-over-dialog");
-  if (state.result) {
+  if (state.result && showResult) {
     const winner = state.result.winner;
     if (winner) {
       const loser = winner === "blue" ? "amber" : "blue";
