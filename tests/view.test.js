@@ -696,3 +696,45 @@ test("renders domestic placement and Sociabilidade sacrifice targets", () => {
   );
   dom.window.close();
 });
+
+
+test("Domínio Ecológico mostra borda do quadrante e três marcadores de estabilidade", () => {
+  const dom = setup(),
+    s = createState(153);
+  s.ecologicalDomain.active = true;
+  Object.assign(s.ecologicalDomain.quadrants[0], {
+    owner: "blue",
+    progress: 2,
+    consolidated: false,
+  });
+
+  render(dom.window.document, s);
+  const d = dom.window.document,
+    topLeft = d.querySelector('[data-r="0"][data-c="0"]'),
+    bottomRight = d.querySelector('[data-r="3"][data-c="3"]');
+
+  assert.ok(topLeft.classList.contains("domain-blue"));
+  assert.ok(topLeft.classList.contains("domain-edge-top"));
+  assert.ok(topLeft.classList.contains("domain-edge-left"));
+  assert.ok(bottomRight.classList.contains("domain-edge-bottom"));
+  assert.ok(bottomRight.classList.contains("domain-edge-right"));
+  assert.equal(topLeft.querySelector(".domain-progress")?.textContent, "●●○");
+  assert.match(d.getElementById("event").textContent, /Domínio Ecológico/);
+
+  Object.assign(s.ecologicalDomain.quadrants[0], {
+    owner: "blue",
+    progress: 3,
+    consolidated: true,
+  });
+  render(dom.window.document, s);
+  assert.ok(
+    d.querySelector('[data-r="0"][data-c="0"]').classList.contains(
+      "domain-consolidated",
+    ),
+  );
+  assert.equal(
+    d.querySelector('[data-r="0"][data-c="0"] .domain-progress')?.textContent,
+    "●●●",
+  );
+  dom.window.close();
+});
