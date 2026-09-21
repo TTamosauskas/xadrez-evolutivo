@@ -245,6 +245,15 @@ test("photosynthetic lineages are restricted to King and Pawn forms", () => {
   assert.equal(normalizePhotosyntheticRank(animal).rank, 1);
 });
 
+test("animal fecundity uses the compressed piece curve", () => {
+  const expected = [2, 2, 2, 1, 1, 1];
+  for (const [rank, output] of expected.entries())
+    assert.equal(
+      reproductiveOutput({ rank, traits: ["Predação"] }),
+      output,
+    );
+});
+
 test("photosynthetic fecundity uses the calibrated 3 to 2 curve", () => {
   assert.equal(
     reproductiveOutput({ rank: 4, traits: ["Fotossíntese"] }),
