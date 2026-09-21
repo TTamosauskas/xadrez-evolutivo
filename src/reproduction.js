@@ -677,9 +677,9 @@ export function populationReproductionLimit(
   population,
   pressureLatched = false,
 ) {
-  if (population < 16) return Infinity;
-  if (population < 20) return pressureLatched ? 2 : Infinity;
-  if (population < 24) return pressureLatched ? 1 : Infinity;
+  if (population < 18) return Infinity;
+  if (population < 24) return pressureLatched ? 2 : Infinity;
+  if (population < 28) return 2;
   return 1;
 }
 
@@ -687,18 +687,15 @@ export function populationReproductionCooldown(
   population,
   pressureLatched = false,
 ) {
-  if (population < 16) return 0;
-  if (population < 20) return pressureLatched ? 2 : 0;
-  if (population < 24) return pressureLatched ? 3 : 0;
-  if (population < 28) return 3;
-  if (population < 32) return 4;
-  return 5;
+  if (population < 18) return 0;
+  if (population < 24) return pressureLatched ? 1 : 0;
+  if (population < 28) return 1;
+  if (population < 32) return 2;
+  return 3;
 }
 
-export function predationBirthLimit(population, pressureLatched = false) {
-  if (population >= 24) return 0;
-  if (pressureLatched && population >= 20) return 0;
-  return 1;
+export function predationBirthLimit(population) {
+  return population >= 24 ? 0 : 1;
 }
 
 function reproductionPressure(state, population) {
@@ -709,6 +706,30 @@ function reproductionPressure(state, population) {
   return !!(
     state.populationLatched?.blue || state.populationLatched?.amber
   );
+}
+
+function competitiveReproductionPressure(
+  state,
+  owner,
+  pressureLatched,
+) {
+  if (!pressureLatched || state.turn < 120)
+    return { limit: Infinity, cooldown: 0, suppressPredation: false };
+
+  const ownerPopulation = state.pieces.filter(
+      (piece) => piece.owner === owner,
+    ).length,
+    rivalPopulation = state.pieces.length - ownerPopulation,
+    deficit = rivalPopulation - ownerPopulation;
+
+  if (deficit < 4)
+    return { limit: Infinity, cooldown: 0, suppressPredation: false };
+
+  return {
+    limit: 1,
+    cooldown: state.turn >= 180 ? 2 : 1,
+    suppressPredation: state.turn >= 180 && deficit >= 6,
+  };
 }
 
 export function reproduce(
@@ -759,6 +780,11 @@ export function reproduce(
     dispersal = seedPlant ? "local" : dispersalMode(parent),
     population = activePopulation(state),
     pressureLatched = reproductionPressure(state, population),
+    competitivePressure = competitiveReproductionPressure(
+      state,
+      parent.owner,
+      pressureLatched,
+    ),
     baseOutput = reproductiveOutput(profile),
     bodyPlanOutput = has(profile, "Artrópode")
       ? Math.min(6, baseOutput * 2)
@@ -766,10 +792,14 @@ export function reproduce(
     baseWanted =
       options.forcedCount ??
       bodyPlanOutput + eusocialBonus(state, parent),
-    pressureLimit =
+    populationLimit =
       reason === "predação"
-        ? predationBirthLimit(population, pressureLatched)
+        ? predationBirthLimit(population)
         : populationReproductionLimit(population, pressureLatched),
+    pressureLimit =
+      reason === "predação" && competitivePressure.suppressPredation
+        ? 0
+        : Math.min(populationLimit, competitivePressure.limit),
     wanted = Math.min(baseWanted, pressureLimit);
 
   if (wanted <= 0) return 0;
@@ -844,7 +874,8 @@ export function reproduce(
         populationReproductionCooldown(
           activePopulation(state),
           pressureLatched,
-        )
+        ) +
+        competitivePressure.cooldown
       );
     };
     parent.nextReproductionRound = cooldown(parent);
