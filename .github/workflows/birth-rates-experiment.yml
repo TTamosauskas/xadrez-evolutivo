@@ -1,0 +1,32 @@
+name: Birth rates experiment
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: birth-rates-experiment-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Diagnose campaign periods and configured cycles
+        id: campaign
+        continue-on-error: true
+        run: node scripts/campaign-envelope.js
+        env:
+          CAMPAIGN_GAMES: 8
+          GOAL_TURNS: 200
+          TURN_LIMIT: 300
+          DIAGNOSTIC_TAIL: 100
+      - name: Enforce campaign envelope
+        if: steps.campaign.outcome == 'failure'
+        run: exit 1
