@@ -76,6 +76,7 @@ export const ecologicalQuadrant = (r, c) =>
   (r >= 4 ? 2 : 0) + (c >= 4 ? 1 : 0);
 export const createEcologicalDomain = () => ({
   active: false,
+  victoryOwner: null,
   quadrants: Array.from({ length: 4 }, () => ({
     owner: null,
     progress: 0,
@@ -1210,6 +1211,9 @@ export function assertState(state) {
     state.ecologicalDomain !== undefined &&
     (!state.ecologicalDomain ||
       typeof state.ecologicalDomain.active !== "boolean" ||
+      ![null, "blue", "amber"].includes(
+        state.ecologicalDomain.victoryOwner ?? null,
+      ) ||
       !Array.isArray(state.ecologicalDomain.quadrants) ||
       state.ecologicalDomain.quadrants.length !== 4 ||
       state.ecologicalDomain.quadrants.some(
@@ -1373,6 +1377,7 @@ export function assertState(state) {
       "egg-placement",
       "domestic-placement",
       "social-defense",
+      "collapse",
       "over",
     ].includes(state.phase)
   )
