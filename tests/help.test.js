@@ -44,6 +44,34 @@ test("Como Jogar covers all scenarios, ecological events and Earth required inno
   assert.ok(text.includes("Domínio Ecológico"));
   assert.ok(text.includes("Reparo Celular"));
   assert.ok(text.includes("Simetria Bilateral"));
+  assert.ok(text.includes("🟥 Casas hostis"));
+  assert.equal(text.includes("⬛ Casas hostis"), false);
+});
+
+test("Como Jogar orders positive mutations by the Vida na Terra chronology", () => {
+  const positiveGroups = HOW_TO_MUTATION_GROUPS.filter(
+    (group) => !group.title.startsWith("Mutações negativas"),
+  );
+  assert.deepEqual(
+    positiveGroups.map((group) => group.title),
+    GEOLOGICAL_STAGES.filter((stage) =>
+      positiveGroups.some((group) => group.title === stage.group + " · " + stage.period),
+    ).map((stage) => stage.group + " · " + stage.period),
+  );
+
+  const positions = new Map();
+  positiveGroups.forEach((group, groupIndex) =>
+    group.traits.forEach((trait, traitIndex) =>
+      positions.set(trait, [groupIndex, traitIndex]),
+    ),
+  );
+  for (const stage of GEOLOGICAL_STAGES)
+    for (let i = 1; i < stage.required.length; i++) {
+      const previous = positions.get(stage.required[i - 1]),
+        current = positions.get(stage.required[i]);
+      if (previous?.[0] === current?.[0])
+        assert.ok(previous[1] < current[1], stage.required[i]);
+    }
 });
 
 test("Como Jogar does not retain obsolete mutation icon-label pairs", () => {
