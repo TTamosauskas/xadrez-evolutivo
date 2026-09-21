@@ -25,6 +25,14 @@ const NEGATIVE = new Set([
 ]);
 const BASAL = "Respiração anaeróbia";
 export const ARENA_RECESSIVE_COUNT = 2;
+export const ARENA_FOUNDATIONAL_TRAITS = new Set([
+  "Reparo Celular",
+  "Simetria Bilateral",
+]);
+export const arenaTraitCost = (genome) =>
+  new Set(
+    (genome ?? []).filter((trait) => !ARENA_FOUNDATIONAL_TRAITS.has(trait)),
+  ).size;
 const order = new Map(Object.keys(TRAITS).map((trait, index) => [trait, index]));
 
 export const ARENA_ARCHETYPES = [
@@ -52,7 +60,10 @@ const COUNTERS = {
 
 export function arenaSelectableTraits() {
   return Object.keys(TRAITS).filter(
-    (trait) => trait !== BASAL && !NEGATIVE.has(trait),
+    (trait) =>
+      trait !== BASAL &&
+      !NEGATIVE.has(trait) &&
+      !ARENA_FOUNDATIONAL_TRAITS.has(trait),
   );
 }
 
@@ -123,11 +134,19 @@ export function completeArenaGenome(input, preferred = null) {
 }
 
 export function arenaGenomeValid(genome, budget = null) {
-  const normalized = completeArenaGenome(genome);
+  const normalized = completeArenaGenome(genome),
+    input = new Set(
+      (genome ?? []).filter(
+        (trait) => TRAITS[trait] && !ARENA_FOUNDATIONAL_TRAITS.has(trait),
+      ),
+    ),
+    normalizedBillable = normalized.filter(
+      (trait) => !ARENA_FOUNDATIONAL_TRAITS.has(trait),
+    );
   if (normalized.includes("Vertebrado") && normalized.includes("Artrópode"))
     return false;
-  if (normalized.length !== new Set(genome ?? []).size) return false;
-  if (budget !== null && normalized.length !== budget) return false;
+  if (normalizedBillable.length !== input.size) return false;
+  if (budget !== null && normalizedBillable.length !== budget) return false;
   const traits = normalizeActiveTraits([BASAL, ...normalized]);
   return traitCombinationValid(traits);
 }
@@ -170,7 +189,9 @@ export function arenaRecessivePairs(genome) {
       if (
         hidden.some(
           (trait) =>
-            BODY_PLAN_TRAITS.has(trait) || ENERGY_BRANCH_TRAITS.has(trait),
+            BODY_PLAN_TRAITS.has(trait) ||
+            ENERGY_BRANCH_TRAITS.has(trait) ||
+            ARENA_FOUNDATIONAL_TRAITS.has(trait),
         )
       )
         continue;
@@ -290,8 +311,16 @@ export function arenaInterventionCount(before, after) {
   let removed = 0,
     added = 0;
   for (let i = 0; i < 2; i++) {
-    const a = new Set(before?.[i] ?? []),
-      b = new Set(after?.[i] ?? []);
+    const a = new Set(
+        (before?.[i] ?? []).filter(
+          (trait) => !ARENA_FOUNDATIONAL_TRAITS.has(trait),
+        ),
+      ),
+      b = new Set(
+        (after?.[i] ?? []).filter(
+          (trait) => !ARENA_FOUNDATIONAL_TRAITS.has(trait),
+        ),
+      );
     for (const trait of a) if (!b.has(trait)) removed++;
     for (const trait of b) if (!a.has(trait)) added++;
   }
