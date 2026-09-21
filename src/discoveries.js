@@ -111,7 +111,7 @@ const mutationTopics = {
   "Ovovivíparo": ["Ovoviviparidade", "Na ovoviviparidade, os ovos ficam retidos no corpo do progenitor durante parte ou todo o desenvolvimento embrionário antes da postura ou liberação."],
   "Ooteca": ["Ooteca", "Ootecas são estruturas que envolvem e protegem conjuntos de ovos em alguns grupos de animais."],
   "Voo": ["Voo animal", "Voo ativo permite deslocamento tridimensional e evoluiu independentemente em diferentes linhagens animais."],
-  "Cuidado Parental": ["Cuidado parental", "Cuidado parental inclui comportamentos que aumentam a sobrevivência ou o desenvolvimento da prole."],
+  "Incubação": ["Incubação", "No jogo, Incubação representa o cuidado direto com ovos, aumentando a proteção da prole durante o desenvolvimento."],
   "Lactação": ["Lactação", "Lactação é a produção de secreções nutritivas por glândulas mamárias para alimentar a prole dos mamíferos."],
   "Vivíparo": ["Viviparidade", "Viviparidade envolve retenção e desenvolvimento da prole no corpo do progenitor antes do nascimento."],
   "Sacos Aéreos": ["Saco aéreo", "Sistemas de sacos aéreos e pneumatização esquelética ocorreram em dinossauros saurísquios e estão associados a uma ventilação eficiente e ao gigantismo em várias linhagens."],
