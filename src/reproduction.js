@@ -54,6 +54,7 @@ import {
   normalizePhotosyntheticRank,
   traitLossAllowed,
   traitUnlocked,
+  aquaticFertilityRegime,
 } from "./geology.js";
 import { mutationDiscoveryId, recordDiscovery } from "./discoveries.js";
 import { tryVectorPathogen } from "./disease.js";
@@ -876,7 +877,8 @@ export function reproduce(
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
-    const towardEnemy = preLocomotionPredation;
+    const towardEnemy =
+      aquaticFertilityRegime(state) && !primitiveLocomotionReached;
     produced = placeBrood(ctx, brood, parent, dispersal, towardEnemy);
   }
 
