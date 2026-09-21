@@ -499,6 +499,31 @@ function seedHabitat(state) {
     state.board[cell] = "hostile";
 }
 
+export function earthFounderStarts(geologicalStage, cycle = 1) {
+  if (geologicalStage === "archean" && cycle >= 2)
+    return [
+      ["blue", 4, 2, "primary"],
+      ["blue", 4, 3, "companion"],
+      ["amber", 3, 4, "primary"],
+      ["amber", 3, 5, "companion"],
+    ];
+  if (geologicalStage === "proterozoic")
+    return [
+      ["blue", 5, 2, "primary"],
+      ["blue", 5, 3, "companion"],
+      ["amber", 2, 4, "primary"],
+      ["amber", 2, 5, "companion"],
+    ];
+  if (geologicalStage === "ediacaran")
+    return [
+      ["blue", 6, 2, "primary"],
+      ["blue", 6, 3, "companion"],
+      ["amber", 1, 4, "primary"],
+      ["amber", 1, 5, "companion"],
+    ];
+  return null;
+}
+
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null,
     founders = options.founders ?? null,
@@ -585,14 +610,19 @@ export function createState(seed = Date.now(), options = {}) {
         ownerFounders?.blue?.companion &&
         ownerFounders?.amber?.primary &&
         ownerFounders?.amber?.companion,
-      starts = balancedPair || ownerPair
-        ? [
-            ["blue", 7, 3, "primary"],
-            ["blue", 7, 4, "companion"],
-            ["amber", 0, 3, "primary"],
-            ["amber", 0, 4, "companion"],
-          ]
-        : canonicalPair
+      earthStarts =
+        scenario === "earth" && (balancedPair || ownerPair)
+          ? earthFounderStarts(state.geologicalStage, state.cycle)
+          : null,
+      starts = earthStarts ??
+        (balancedPair || ownerPair
+          ? [
+              ["blue", 7, 3, "primary"],
+              ["blue", 7, 4, "companion"],
+              ["amber", 0, 3, "primary"],
+              ["amber", 0, 4, "companion"],
+            ]
+          : canonicalPair
           ? [
               ["blue", 7, 4, null],
               ["amber", 0, 4, null],
@@ -602,7 +632,7 @@ export function createState(seed = Date.now(), options = {}) {
               ["blue", 7, 4, null],
               ["amber", 0, 3, null],
               ["amber", 0, 4, null],
-            ];
+            ]);
     for (const [owner, r, c, slot] of starts) {
       const source = ownerPair
         ? ownerFounders[owner][slot]
