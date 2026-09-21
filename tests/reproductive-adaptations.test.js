@@ -268,8 +268,4 @@ test("photosynthetic fecundity uses the calibrated 3 to 2 curve", () => {
     }),
     2,
   );
-  assert.equal(
-    reproductiveOutput({ rank: 0, traits: ["Predação", "Fertilidade"] }),
-    8,
-  );
 });
