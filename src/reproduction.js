@@ -673,21 +673,42 @@ export function reproductiveOutput(profile) {
   return Math.min(4, base);
 }
 
-export function populationReproductionLimit(population) {
-  if (population < 24) return Infinity;
-  if (population < 28) return 2;
+export function populationReproductionLimit(
+  population,
+  pressureLatched = false,
+) {
+  if (population < 16) return Infinity;
+  if (population < 20) return pressureLatched ? 2 : Infinity;
+  if (population < 24) return pressureLatched ? 1 : Infinity;
   return 1;
 }
 
-export function populationReproductionCooldown(population) {
-  if (population < 24) return 0;
-  if (population < 28) return 1;
-  if (population < 32) return 2;
-  return 3;
+export function populationReproductionCooldown(
+  population,
+  pressureLatched = false,
+) {
+  if (population < 16) return 0;
+  if (population < 20) return pressureLatched ? 2 : 0;
+  if (population < 24) return pressureLatched ? 3 : 0;
+  if (population < 28) return 3;
+  if (population < 32) return 4;
+  return 5;
 }
 
-export function predationBirthLimit(population) {
-  return population >= 24 ? 0 : 1;
+export function predationBirthLimit(population, pressureLatched = false) {
+  if (population >= 24) return 0;
+  if (pressureLatched && population >= 20) return 0;
+  return 1;
+}
+
+function reproductionPressure(state, population) {
+  if (population >= 24)
+    state.populationLatched = { blue: true, amber: true };
+  else if (population < 16)
+    state.populationLatched = { blue: false, amber: false };
+  return !!(
+    state.populationLatched?.blue || state.populationLatched?.amber
+  );
 }
 
 export function reproduce(
@@ -737,6 +758,7 @@ export function reproduce(
         : developmentMode(parent),
     dispersal = seedPlant ? "local" : dispersalMode(parent),
     population = activePopulation(state),
+    pressureLatched = reproductionPressure(state, population),
     baseOutput = reproductiveOutput(profile),
     bodyPlanOutput = has(profile, "Artrópode")
       ? Math.min(6, baseOutput * 2)
@@ -746,8 +768,8 @@ export function reproduce(
       bodyPlanOutput + eusocialBonus(state, parent),
     pressureLimit =
       reason === "predação"
-        ? predationBirthLimit(population)
-        : populationReproductionLimit(population),
+        ? predationBirthLimit(population, pressureLatched)
+        : populationReproductionLimit(population, pressureLatched),
     wanted = Math.min(baseWanted, pressureLimit);
 
   if (wanted <= 0) return 0;
@@ -819,7 +841,10 @@ export function reproduce(
       return (
         round(state) +
         base +
-        populationReproductionCooldown(activePopulation(state))
+        populationReproductionCooldown(
+          activePopulation(state),
+          pressureLatched,
+        )
       );
     };
     parent.nextReproductionRound = cooldown(parent);
