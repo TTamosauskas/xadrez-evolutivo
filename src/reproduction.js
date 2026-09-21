@@ -710,14 +710,18 @@ function reproductionPressure(state, population) {
 
 function competitiveReproductionPressure(
   state,
-  owner,
+  parent,
   pressureLatched,
 ) {
-  if (!pressureLatched || state.turn < 120)
+  const articulated =
+    has(parent, "Locomoção Articulada") ||
+    (parent.ancestry ?? []).includes("Locomoção Articulada");
+
+  if (!articulated || !pressureLatched || state.turn < 120)
     return { limit: Infinity, cooldown: 0, suppressPredation: false };
 
   const ownerPopulation = state.pieces.filter(
-      (piece) => piece.owner === owner,
+      (piece) => piece.owner === parent.owner,
     ).length,
     rivalPopulation = state.pieces.length - ownerPopulation,
     deficit = rivalPopulation - ownerPopulation;
@@ -782,7 +786,7 @@ export function reproduce(
     pressureLatched = reproductionPressure(state, population),
     competitivePressure = competitiveReproductionPressure(
       state,
-      parent.owner,
+      parent,
       pressureLatched,
     ),
     baseOutput = reproductiveOutput(profile),
