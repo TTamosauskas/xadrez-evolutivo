@@ -2198,7 +2198,12 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
   ]);
   const king = s.pieces[0];
   king.traits = king.traits.filter(
-    (trait) => !["Locomoção", "Locomoção Avançada"].includes(trait),
+    (trait) =>
+      ![
+        "Locomoção Primitiva",
+        "Locomoção Articulada",
+        "Locomoção Avançada",
+      ].includes(trait),
   );
   assert.ok(movesFor(s, king).some((target) => target.r === 4 && target.c === 4));
   assert.ok(!movesFor(s, king).some((target) => target.r === 4 && target.c === 2));
@@ -2219,7 +2224,12 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
   ]);
   const pawn = s.pieces[0];
   pawn.traits = pawn.traits.filter(
-    (trait) => !["Locomoção", "Locomoção Avançada"].includes(trait),
+    (trait) =>
+      ![
+        "Locomoção Primitiva",
+        "Locomoção Articulada",
+        "Locomoção Avançada",
+      ].includes(trait),
   );
   const targets = movesFor(s, pawn);
   assert.ok(!targets.some((target) => target.r === 3 && target.c === 3));
@@ -2234,7 +2244,12 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
   ]);
   const predator = s.pieces[0];
   predator.traits = predator.traits.filter(
-    (trait) => !["Locomoção", "Locomoção Avançada"].includes(trait),
+    (trait) =>
+      ![
+        "Locomoção Primitiva",
+        "Locomoção Articulada",
+        "Locomoção Avançada",
+      ].includes(trait),
   );
   s = simulate(s, move(predator, 4, 4));
   const survivor = s.pieces.find((piece) => piece.id === predator.id);
