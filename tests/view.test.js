@@ -51,6 +51,30 @@ test("rendering a pathogen notice settles and never mutates game state", async (
   observer.disconnect();
   dom.window.close();
 });
+test("pathogen agents render centered overlays with distinct symbols", () => {
+  const dom = setup(),
+    s = createState(23),
+    virusHost = s.pieces[0],
+    mixedHost = s.pieces[1];
+  startDisease(s, "eco", virusHost, null, "virus");
+  startDisease(s, "eco", mixedHost, null, "fungus");
+  startDisease(s, "eco", mixedHost, null, "bacteria");
+
+  render(dom.window.document, s);
+
+  const virusCell = dom.window.document.querySelector(
+      `[data-r="${virusHost.r}"][data-c="${virusHost.c}"]`,
+    ),
+    mixedCell = dom.window.document.querySelector(
+      `[data-r="${mixedHost.r}"][data-c="${mixedHost.c}"]`,
+    );
+  assert.equal(virusCell.querySelector(".pathogen-virus")?.textContent, "☀︎");
+  assert.equal(mixedCell.querySelector(".pathogen-bacteria")?.textContent, "🦠");
+  assert.equal(mixedCell.querySelector(".pathogen-fungus")?.textContent, "🍄");
+  assert.ok(virusCell.querySelector(".pathogen-overlay"));
+  dom.window.close();
+});
+
 test("ecological event modal uses icon title, italic subtitle and integrated duration", () => {
   const dom = setup(),
     s = createState(7);

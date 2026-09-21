@@ -153,7 +153,7 @@ test("asexual genome cloning is exact and allele loss can hide an expressed rece
   assert.ok(hiddenRecessiveTraits(profile).includes("Camuflagem"));
 });
 
-test("legacy reproductive loci migrate into the universal genome without losing dominance", () => {
+test("legacy development loci migrate into the universal genome without losing dominance", () => {
   const legacy = {
       traits: [
         "Respiração anaeróbia",
@@ -167,10 +167,6 @@ test("legacy reproductive loci migrate into the universal genome without losing 
           { value: "oviparous", dominance: "dominant" },
           { value: "viviparous", dominance: "recessive" },
         ],
-        dispersal: [
-          { value: "spores", dominance: "recessive" },
-          { value: "local", dominance: "neutral" },
-        ],
       },
     },
     genome = genomeFromLegacyProfile(legacy),
@@ -178,6 +174,5 @@ test("legacy reproductive loci migrate into the universal genome without losing 
   syncGenomePhenotype(profile, "Predação");
   assert.ok(profile.traits.includes("Ovíparo"));
   assert.ok(hiddenRecessiveTraits(profile).includes("Vivíparo"));
-  assert.ok(hiddenRecessiveTraits(profile).includes("Esporos"));
   assert.ok(hiddenRecessiveTraits(profile).includes("Camuflagem"));
 });

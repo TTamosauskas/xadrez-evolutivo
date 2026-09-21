@@ -280,21 +280,10 @@ function offspringTerrainAllowed(state, profile, r, c) {
   return terrain(state, r, c) === "fertile";
 }
 
-function freeCells(ctx, origin, dispersal, profile = null) {
+function freeCells(ctx, origin, _dispersal, profile = null) {
   const state = ctx.state,
-    cells = [];
-  if (dispersal === "spores") {
-    for (let r = 0; r < 8; r++)
-      for (let c = 0; c < 8; c++)
-        if (
-          !occupied(state, r, c, profile) &&
-          offspringTerrainAllowed(state, profile, r, c) &&
-          !ctx.reserved.has(square(r, c))
-        )
-          cells.push({ r, c });
-    return cells;
-  }
-  const range = 1;
+    cells = [],
+    range = 1;
   for (let dr = -range; dr <= range; dr++)
     for (let dc = -range; dc <= range; dc++) {
       if (!dr && !dc) continue;
@@ -311,28 +300,8 @@ function freeCells(ctx, origin, dispersal, profile = null) {
   return cells;
 }
 
-function chooseCells(state, cells, origin, count, dispersal) {
-  if (dispersal !== "spores") return shuffle(state, cells).slice(0, count);
-  const pool = [...cells],
-    chosen = [];
-  while (chosen.length < count && pool.length) {
-    let best = -1,
-      candidates = [];
-    for (const cell of pool) {
-      const score = chosen.length
-        ? Math.min(...chosen.map((other) => distance(cell, other)))
-        : distance(cell, origin);
-      if (score > best) {
-        best = score;
-        candidates = [cell];
-      } else if (score === best) candidates.push(cell);
-    }
-    const selected = pick(state, candidates),
-      index = pool.indexOf(selected);
-    chosen.push(selected);
-    pool.splice(index, 1);
-  }
-  return chosen;
+function chooseCells(state, cells, _origin, count, _dispersal) {
+  return shuffle(state, cells).slice(0, count);
 }
 
 function chooseCellsTowardEnemy(

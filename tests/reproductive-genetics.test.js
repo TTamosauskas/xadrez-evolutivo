@@ -49,24 +49,19 @@ test("hidden recessive traits combine generic Arena carriers with Mendelian loci
 test("hidden recessive traits report carriers but not expressed recessives", () => {
   const genes = ancestralReproGenes();
   genes.development = [recessive("oviparous"), neutral("immediate")];
-  genes.dispersal = [recessive("spores"), neutral("local")];
-  assert.deepEqual(
-    new Set(hiddenRecessiveTraits(genes)),
-    new Set(["Ovíparo", "Esporos"]),
-  );
+  assert.deepEqual(hiddenRecessiveTraits(genes), ["Ovíparo"]);
 
   genes.development = [recessive("oviparous"), recessive("oviparous")];
-  assert.deepEqual(hiddenRecessiveTraits(genes), ["Esporos"]);
+  assert.deepEqual(hiddenRecessiveTraits(genes), []);
 });
 
 test("dominant alleles and recessives masked by another expressed allele are classified correctly", () => {
   const genes = ancestralReproGenes();
   genes.development = [dominant("viviparous"), recessive("oviparous")];
-  genes.dispersal = [dominant("spores"), neutral("local")];
   assert.deepEqual(hiddenRecessiveTraits(genes), ["Ovíparo"]);
 });
 
-test("reproductive loci express one development strategy and spore dispersal", () => {
+test("reproductive loci express one development strategy", () => {
   const piece = {
     traits: [
       "Voo",
@@ -74,7 +69,6 @@ test("reproductive loci express one development strategy and spore dispersal", (
       "Ovíparos Amniotas",
       "Ovovivíparo",
       "Vivíparo",
-      "Esporos",
     ],
     reproGenes: ancestralReproGenes(),
   };
@@ -82,13 +76,11 @@ test("reproductive loci express one development strategy and spore dispersal", (
     dominant("amniotic"),
     dominant("ovoviviparous"),
   ];
-  piece.reproGenes.dispersal = [dominant("spores"), neutral("local")];
   syncReproTraits(piece);
   assert.ok(!piece.traits.includes("Ovíparo"));
   assert.ok(!piece.traits.includes("Ovíparos Amniotas"));
   assert.ok(piece.traits.includes("Ovovivíparo"));
   assert.ok(!piece.traits.includes("Vivíparo"));
-  assert.ok(piece.traits.includes("Esporos"));
   assert.ok(piece.traits.includes("Voo"));
 });
 
@@ -124,23 +116,17 @@ test("sexual inheritance receives one allele from each parent per locus", () => 
     b = ancestralReproGenes();
   a.development = [dominant("oviparous"), recessive("viviparous")];
   b.development = [recessive("oviparous"), dominant("viviparous")];
-  a.dispersal = [dominant("spores"), neutral("local")];
-  b.dispersal = [neutral("local"), dominant("spores")];
-  const sequence = [0.1, 0.9, 0.1, 0.9];
+  const sequence = [0.1, 0.9];
   let i = 0;
   const child = inheritSexualReproGenes(a, b, () => sequence[i++]);
   assert.deepEqual(child.development, [
     dominant("oviparous"),
     dominant("viviparous"),
   ]);
-  assert.deepEqual(child.dispersal, [
-    dominant("spores"),
-    dominant("spores"),
-  ]);
 });
 
 
-test("obsolete eggs dispersal alleles migrate to local without erasing spores", () => {
+test("obsolete dispersal loci are discarded during reproductive normalization", () => {
   const genes = ancestralReproGenes();
   genes.dispersal = [
     { value: "eggs", dominance: "dominant" },
@@ -148,15 +134,11 @@ test("obsolete eggs dispersal alleles migrate to local without erasing spores", 
   ];
   const piece = { traits: ["Ovos", "Esporos"], reproGenes: genes };
   syncReproTraits(piece);
-  assert.deepEqual(piece.reproGenes.dispersal, [
-    neutral("local"),
-    dominant("spores"),
-  ]);
+  assert.equal(piece.reproGenes.dispersal, undefined);
   assert.ok(!piece.traits.includes("Ovos"));
-  assert.ok(piece.traits.includes("Esporos"));
+  assert.ok(!piece.traits.includes("Esporos"));
   assert.ok(validReproGenes(piece.reproGenes));
 });
-
 
 test("legacy amniotic phenotype migrates from oviparous genes into the development locus", () => {
   const genes = ancestralReproGenes();

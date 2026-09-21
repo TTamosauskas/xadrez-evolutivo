@@ -116,7 +116,7 @@ test("load migrates v12 saves to the universal genome without overwriting the ol
       getItem: (key) => entries.get(key) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.equal(entries.get(V12_KEY), raw);
   assert.ok(migrated.pieces.every((piece) => piece.genome));
   assertState(migrated);
@@ -136,7 +136,7 @@ test("load migrates v11 browser saves into Cenários Alternativos", () => {
       getItem: (key) => entries.get(key) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.equal(migrated.scenario, "alternative");
   assert.deepEqual(migrated.fossilRecord, []);
   assert.equal(entries.get(V11_KEY), raw);
@@ -157,7 +157,7 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
       getItem: (k) => entries.get(k) ?? null,
     };
   const migrated = load(storage);
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.equal(entries.get(V2_KEY), raw);
   assert.ok(migrated.pieces.every((p) => has(p, "Locomoção Primitiva")));
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
@@ -189,7 +189,7 @@ test("v9 cumulative phenotypes migrate to active families while preserving ances
     migrated = load(storage),
     piece = migrated.pieces[0];
 
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.ok(piece.traits.includes("Onívoro"));
   assert.ok(piece.traits.includes("Locomoção Avançada"));
   assert.ok(piece.traits.includes("Eusocialidade"));
@@ -226,7 +226,7 @@ test("v8 complex lineages migrate to Multicelularismo without instant senescence
     migrated = load(storage),
     piece = migrated.pieces[0];
 
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.ok(piece.traits.includes("Multicelularismo"));
   assert.ok(piece.ancestry.includes("Multicelularismo"));
   assert.equal(piece.bornRound, 50);
@@ -276,7 +276,7 @@ test("v6 saves migrate without an origin prelude", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.equal(migrated.origin, null);
   assert.equal(migrated.phase, "move");
   assert.equal(entries.get(V6_KEY), raw);
@@ -295,7 +295,7 @@ test("v5 saves split invalid Fotossíntese + Predação hybrids during migration
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.deepEqual(migrated.pieces[0].traits, [
     "Respiração anaeróbia",
     "Fotossíntese",
@@ -325,7 +325,7 @@ test("v4 saves migrate discoveries without creating unread backlog", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.ok(migrated.discoveries.geology.includes("archean"));
   assert.ok(migrated.discoveries.mutations.includes("Fotossíntese"));
   assert.equal(
@@ -351,7 +351,7 @@ test("v3 saves rename Predador to Carnívoro and preserve capture with Predaçã
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.ok(migrated.pieces[0].traits.includes("Carnívoro"));
   assert.ok(migrated.pieces[0].traits.includes("Predação"));
   assert.ok(!migrated.pieces[0].traits.includes("Predador"));
@@ -433,7 +433,7 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
-  assert.equal(s.version, 13);
+  assert.equal(s.version, 14);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(dispersalMode(s.pieces[0]), "local");
@@ -469,7 +469,7 @@ test("v12 saves drop obsolete Ovos history discoveries and alleles", () => {
   assert.ok(!restored.discoveries.read.includes("mutations:Ovos"));
   assert.ok(!restored.pieces[0].traits.includes("Ovos"));
   assert.equal(dispersalMode(restored.pieces[0]), "local");
-  assert.ok(hiddenRecessiveTraits(restored.pieces[0]).includes("Esporos"));
+  assert.ok(!hiddenRecessiveTraits(restored.pieces[0]).includes("Esporos"));
   assert.equal(restored.pieces[0].reproGenes, undefined);
   assert.equal(restored.pieces[0].recessiveTraits, undefined);
   assertState(restored);

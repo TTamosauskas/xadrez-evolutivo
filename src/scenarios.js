@@ -29,7 +29,6 @@ export const EARTH_FOUNDER_GENOMES = {
       "Multicelularismo",
       "Respiração aeróbia",
       "Reprodução Sexuada",
-      "Esporos",
     ],
     animal: [
       "Predação",

@@ -36,7 +36,7 @@ const geologyRows = [
 const eventRows = [
   ["volcano", "Erupção Vulcânica", "Erupções vulcânicas transportam magma, cinzas e gases para a superfície e podem remodelar rapidamente habitats.", "Erupção vulcânica"],
   ["ice", "Era Glacial", "Períodos glaciais ampliam mantos de gelo e alteram nível do mar, clima, distribuição de habitats e rotas de dispersão.", "Era glacial"],
-  ["pathogen", "Patógeno Virulento", "Patógenos são agentes capazes de causar doenças; epidemias podem alterar fortemente a sobrevivência e a seleção em populações.", "Patógeno"],
+  ["pathogen", "Surto Patogênico", "No jogo, vírus se propagam por contato, bactérias deixam rastros ambientais e fungos formam focos territoriais; surtos alteram sobrevivência e seleção nas populações.", "Patógeno"],
   ["solar", "Tempestade Solar", "Tempestades solares resultam de atividade intensa do Sol e podem aumentar a chegada de partículas energéticas ao entorno da Terra.", "Tempestade solar"],
   ["drought", "Seca Severa", "Secas são períodos prolongados de disponibilidade hídrica abaixo do normal e exercem forte pressão sobre ecossistemas.", "Seca"],
   ["sea", "Elevação do Mar", "Mudanças no nível do mar inundam ou expõem áreas costeiras e reorganizam ambientes rasos e conexões entre populações.", "Nível do mar"],
@@ -81,7 +81,6 @@ const mutationTopics = {
   "Regeneração": ["Regeneração (biologia)", "Regeneração é a capacidade de recompor estruturas ou tecidos danificados, em graus muito diferentes entre organismos."],
   "Reprodução Sexuada": ["Reprodução sexuada", "Reprodução sexuada combina material genético de progenitores e aumenta a variedade de combinações hereditárias."],
   "Precocidade Sexual": ["Maturidade sexual", "A idade de maturidade sexual varia entre linhagens e altera o intervalo entre nascimento e primeira reprodução."],
-  "Esporos": ["Esporo", "Esporos são unidades reprodutivas ou de dispersão capazes de originar novos indivíduos em diversos grupos de organismos."],
   "Carnívoro": ["Carnivoria", "Carnivoria é uma estratégia alimentar baseada predominantemente no consumo de outros animais."],
   "Canibalismo": ["Canibalismo", "Canibalismo é o consumo de indivíduos da mesma espécie e pode influenciar competição, densidade populacional e seleção."],
   "Parasitismo": ["Parasitismo", "Parasitismo é uma interação em que um organismo obtém recursos de um hospedeiro e pode reduzir sua aptidão sem depender de uma morte imediata."],

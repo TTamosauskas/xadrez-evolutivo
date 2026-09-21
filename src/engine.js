@@ -50,7 +50,13 @@ import {
   placePendingDomesticChild,
   placeOvoviviparousEgg,
 } from "./reproduction.js";
-import { checkPopulation, tickDiseases, infect } from "./disease.js";
+import {
+  checkPopulation,
+  tickDiseases,
+  infect,
+  leaveBacterialTrail,
+  exposePathogenCell,
+} from "./disease.js";
 import { aquaticFertilityRegime, conwayUnlocked } from "./geology.js";
 import {
   consumeDecomposition,
@@ -1139,8 +1145,10 @@ function executeMove(ctx, action) {
     markDecomposition(state, cell);
   }
   if (eggCapture) state.eggs = state.eggs.filter((x) => x.id !== egg.id);
+  leaveBacterialTrail(state, p, square(p.r, p.c));
   p.r = target.r;
   p.c = target.c;
+  exposePathogenCell(state, p);
   moveDirection(p);
   ctx.reserved.delete(landingCell);
   const cell = square(p.r, p.c);

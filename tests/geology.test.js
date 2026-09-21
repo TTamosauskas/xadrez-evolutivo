@@ -68,7 +68,6 @@ test("period innovations follow the didactic sequence", () => {
     "Resistência",
     "Regeneração",
     "Reprodução Sexuada",
-    "Esporos",
     "Carnívoro",
   ]);
   assert.deepEqual(required.ediacaran, [
@@ -148,20 +147,29 @@ test("Archean keeps the first wave active in later cycles until it is complete",
   assert.equal(traitUnlocked(s, "Dormência", p), true);
 });
 
-test("geological event pools contain only valid ecological events and no pathogen lottery", () => {
+test("geological event pools gain pathogen outbreaks from the Proterozoic onward", () => {
   const ids = new Set(EVENTS.map((event) => event.id));
-  for (const stage of GEOLOGICAL_STAGES) {
+  for (const stage of GEOLOGICAL_STAGES)
     for (const [id, weight] of Object.entries(stage.events)) {
       assert.ok(ids.has(id), `${stage.id} references ${id}`);
       assert.ok(weight > 0);
-      assert.notEqual(id, "pathogen");
     }
-  }
+
+  const archean = createState(70, {
+      scenario: "earth",
+      geologicalStage: "archean",
+    }),
+    proterozoic = createState(71, {
+      scenario: "earth",
+      geologicalStage: "proterozoic",
+    });
+  assert.equal(eventWeights(archean).pathogen ?? 0, 0);
+  assert.ok(eventWeights(proterozoic).pathogen > 0);
 });
 
 test("Archean starts green and stationary", () => {
   const s = createState(101);
-  assert.equal(s.version, 13);
+  assert.equal(s.version, 14);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
@@ -597,7 +605,6 @@ test("campaign history from another lineage does not satisfy ancestry prerequisi
         "Resistência",
         "Regeneração",
         "Reprodução Sexuada",
-        "Esporos",
       ],
     }),
     descendant = { traits: [], ancestry: ["Predação"] },
@@ -1040,7 +1047,10 @@ test("Paleogene is a one-cycle transition stage", () => {
   });
   assert.equal(currentGeologicalStage(s).period, "Paleógeno");
   assert.equal(stageComplete(s), true);
-  assert.deepEqual(eventWeights(s), currentGeologicalStage(s).events);
+  assert.deepEqual(eventWeights(s), {
+    ...currentGeologicalStage(s).events,
+    pathogen: 1,
+  });
 });
 
 

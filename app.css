@@ -807,3 +807,40 @@ summary {
     transition: background 0.1s;
   }
 }
+
+
+.pathogen-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08em;
+  pointer-events: none;
+}
+
+.pathogen-mark {
+  font-size: clamp(1.4rem, 4.8vw, 2.8rem);
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 65%));
+}
+
+.pathogen-virus {
+  color: #d71920;
+  font-family: "Segoe UI Symbol", "DejaVu Sans", sans-serif;
+  font-weight: 900;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 80%),
+    0 0 3px rgb(255 255 255 / 70%);
+  filter: none;
+}
+
+.pathogen-overlay:has(.pathogen-mark + .pathogen-mark) .pathogen-mark {
+  font-size: clamp(1.05rem, 3.5vw, 2rem);
+}
+
+.somatic-trait {
+  outline: 1px dashed currentColor;
+  outline-offset: -1px;
+}

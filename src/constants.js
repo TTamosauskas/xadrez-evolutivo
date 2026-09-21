@@ -66,7 +66,7 @@ export const TRAITS = {
     "🪱",
     "Ao ser ativado sobre si mesmo, torna fértil a própria casa e hostis as casas adjacentes ocupadas por oponentes.",
   ],
-  "Vetor Patógeno": ["🦟", "Espalha Doenças"],
+  "Vetor Patógeno": ["🦟", "Pode desencadear surtos virais, bacterianos ou fúngicos em criaturas adversárias adjacentes."],
   Onívoro: [
     "🐻",
     "Especialização posterior de Carnívoro ou Herbívoro: usa casas férteis e obtém reprodução predatória contra criaturas fotossintéticas ou não fotossintéticas.",
@@ -89,7 +89,6 @@ export const TRAITS = {
     "Mantém a prole internamente por três rodadas; depois o progenitor pode gastar um turno para depositar um ovo ⚪ adjacente, que eclode na rodada seguinte.",
   ],
   Ovífagia: ["🐍", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
-  Esporos: ["🍄", "Espalha a prole em casas distantes pelo tabuleiro."],
   Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],
   "Ovulação Induzida": [
     "🐇",
@@ -262,10 +261,16 @@ export const TRAITS = {
     "Transporta fertilidade e usa sementes para reproduzir parado.",
   ],
 };
+export const PATHOGEN_AGENTS = Object.freeze({
+  virus: { icon: "☀︎", name: "Vírus Patógenos" },
+  bacteria: { icon: "🦠", name: "Bactérias Patógenas" },
+  fungus: { icon: "🍄", name: "Fungos Patógenos" },
+});
+export const PATHOGEN_AGENT_IDS = Object.freeze(Object.keys(PATHOGEN_AGENTS));
 export const EVENTS = [
   ["volcano", "🌋", "Erupção Vulcânica", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, e Conway fica suspenso."],
   ["ice", "❄️", "Era Glacial", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, e Conway fica suspenso."],
-  ["pathogen", "🦠", "Patógeno Virulento", "Um foco transmite a doença durante 10 rodadas."],
+  ["pathogen", "☣️", "Surto Patogênico", "Um surto viral, bacteriano ou fúngico pressiona as populações durante várias rodadas."],
   ["solar", "🌄", "Tempestade Solar", "Todo nascimento sofre mutação durante 10 rodadas."],
   ["drought", "🏜️", "Seca Severa", "A quantidade de casas férteis fica limitada à metade durante 10 rodadas."],
   ["sea", "🌊", "Elevação do Mar", "As bordas do tabuleiro permanecem hostis durante 10 rodadas."],
@@ -307,11 +312,18 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   Angiospermas: ["Embriófitas", "Traqueófitas"],
   Eusocialidade: ["Sociabilidade"],
 };
-export const has = (piece, trait) =>
-  !!piece?.traits?.includes(trait) ||
-  !!piece?.traits?.some((active) =>
-    TRAIT_CAPABILITY_IMPLICATIONS[active]?.includes(trait),
+export const has = (piece, trait) => {
+  const activeTraits = [
+    ...(piece?.traits ?? []),
+    ...(piece?.somaticMutations ?? []),
+  ];
+  return (
+    activeTraits.includes(trait) ||
+    activeTraits.some((active) =>
+      TRAIT_CAPABILITY_IMPLICATIONS[active]?.includes(trait),
+    )
   );
+};
 export const energyBranch = (piece) =>
   piece?.traits?.includes("Fotossíntese")
     ? "Fotossíntese"

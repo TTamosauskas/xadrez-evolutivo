@@ -222,7 +222,7 @@ test("Arena starts with four engineered founders and ignores geological chronolo
     },
     6,
   );
-  assert.equal(state.version, 13);
+  assert.equal(state.version, 14);
   assert.equal(state.scenario, "arena");
   assert.equal(state.arenaPhase, 1);
   assert.equal(state.pieces.length, 4);
@@ -332,6 +332,6 @@ test("v11 saves migrate to Cenários Alternativos", () => {
   delete legacy.arenaPhase;
   delete legacy.arenaFounders;
   const migrated = deserialize(JSON.stringify(legacy));
-  assert.equal(migrated.version, 13);
+  assert.equal(migrated.version, 14);
   assert.equal(migrated.scenario, "alternative");
 });
