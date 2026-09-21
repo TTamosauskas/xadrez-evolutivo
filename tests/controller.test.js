@@ -408,3 +408,89 @@ test("native browser timers are called without binding the controller as their r
     globalThis.clearTimeout = originalClear;
   }
 });
+
+
+test("game-over rendering waits one second after the result is committed", () => {
+  const s = createState(401),
+    renders = [],
+    timers = new Map(),
+    delays = new Map();
+  let nextTimer = 0;
+  s.result = { winner: "blue", reason: "Extinção total." };
+  s.phase = "over";
+
+  const controller = new Controller(s, {
+    render: (state, busy, showResult) =>
+      renders.push({ revision: state.revision, busy, showResult }),
+    setTimer: (fn, delay) => {
+      const id = ++nextTimer;
+      timers.set(id, fn);
+      delays.set(id, delay);
+      return id;
+    },
+    clearTimer: (id) => {
+      timers.delete(id);
+      delays.delete(id);
+    },
+  });
+
+  controller.refresh();
+  assert.equal(renders.at(-1).showResult, false);
+  const resultTimer = [...delays.entries()].find(([, delay]) => delay === 1000);
+  assert.ok(resultTimer);
+  timers.get(resultTimer[0])();
+  assert.equal(renders.at(-1).showResult, true);
+  controller.dispose();
+});
+
+test("ecological collapse advances automatically one organism at a time", () => {
+  const s = fixture([
+      { owner: "blue", r: 0, c: 0 },
+      { owner: "amber", r: 6, c: 6 },
+      { owner: "amber", r: 7, c: 7 },
+    ], 402),
+    timers = new Map(),
+    delays = new Map();
+  let nextTimer = 0;
+  s.turn = 205;
+  s.phase = "collapse";
+  s.ecologicalDomain.active = true;
+  s.ecologicalDomain.victoryOwner = "blue";
+
+  const controller = new Controller(s, {
+    render: () => {},
+    setTimer: (fn, delay) => {
+      const id = ++nextTimer;
+      timers.set(id, fn);
+      delays.set(id, delay);
+      return id;
+    },
+    clearTimer: (id) => {
+      timers.delete(id);
+      delays.delete(id);
+    },
+  });
+
+  controller.refresh();
+  const first = [...delays.entries()].find(([, delay]) => delay === 250);
+  assert.ok(first);
+  timers.get(first[0])();
+  assert.equal(
+    controller.state.pieces.filter((piece) => piece.owner === "amber").length,
+    1,
+  );
+  assert.equal(controller.state.result, null);
+
+  const second = [...delays.entries()].find(([, delay]) => delay === 250);
+  assert.ok(second);
+  timers.get(second[0])();
+  assert.equal(
+    controller.state.pieces.some((piece) => piece.owner === "amber"),
+    false,
+  );
+  assert.equal(controller.state.result?.winner, "blue");
+
+  const resultTimer = [...delays.entries()].find(([, delay]) => delay === 1000);
+  assert.ok(resultTimer);
+  controller.dispose();
+});
