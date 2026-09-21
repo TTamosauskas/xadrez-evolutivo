@@ -151,7 +151,7 @@ test("Lactação spends the turn to mature an adjacent juvenile child", () => {
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Multicelularismo", "Cuidado Parental", "Lactação"],
+        traits: ["Multicelularismo", "Incubação", "Lactação"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
@@ -297,7 +297,7 @@ test("new life-history traits unlock in their intended optional periods", () => 
 
   s.geologicalStage = "triassic";
   s.historicalTraits = historyBefore("triassic");
-  p.traits = ["Multicelularismo", "Cuidado Parental"];
+  p.traits = ["Multicelularismo", "Incubação"];
   assert.equal(traitUnlocked(s, "Lactação", p), true);
 
   s.geologicalStage = "ordovician";
