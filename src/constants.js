@@ -85,7 +85,7 @@ export const TRAITS = {
     "Especialização amniótica: ao reproduzir, escolhe uma casa vazia a até três casas para depositar um ovo 🥚, que eclode na rodada seguinte.",
   ],
   Ovovivíparo: [
-    "🦂",
+    "🪳",
     "Mantém a prole internamente por três rodadas; depois o progenitor pode gastar um turno para depositar um ovo ⚪ adjacente, que eclode na rodada seguinte.",
   ],
   Ovífagia: ["🐍", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
@@ -198,7 +198,7 @@ export const TRAITS = {
     "♻️",
     "Uma vez por vida, sobrevive a uma morte não causada por captura e descansa na rodada seguinte. Não evita morte natural por senescência.",
   ],
-  "Cuidado Parental": [
+  "Incubação": [
     "🪺",
     "Ovos adjacentes ao progenitor ficam protegidos contra Ovífagia.",
   ],
