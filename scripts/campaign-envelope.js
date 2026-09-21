@@ -235,7 +235,11 @@ function runGame(initial, seed) {
       pseudo = (Math.imul(pseudo, 1664525) + 1013904223) >>> 0;
       action = actions[pseudo % actions.length] ?? { type: "PASS" };
     } else {
-      action = chooseAction(state, policy, { budget: 5, maxNodes: 30 });
+      action = chooseAction(state, policy, {
+        now: () => 0,
+        budget: 5,
+        maxNodes: 30,
+      });
     }
 
     const captureAttempt = isCaptureAction(state, action),
