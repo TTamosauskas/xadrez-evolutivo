@@ -457,13 +457,30 @@ test("deleterious mutations unlock only from the second campaign cycle", () => {
   assert.equal(deleteriousMutationUnlocked(s), true);
 });
 
-test("Pawn mutation unlocks only from the second campaign cycle", () => {
-  const first = createState(113);
-  assert.equal(first.totalCycles, 1);
-  assert.equal(pawnMutationUnlocked(first), false);
-  first.totalCycles = 2;
-  first.cycle = 1;
-  assert.equal(pawnMutationUnlocked(first), true);
+test("Pawn mutation unlocks only after primitive locomotion in the lineage", () => {
+  const state = createState(113),
+    basal = {
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    },
+    mobile = {
+      traits: ["Predação", "Locomoção Primitiva"],
+      ancestry: ["Respiração anaeróbia", "Predação", "Locomoção Primitiva"],
+    },
+    descendant = {
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação", "Locomoção Primitiva"],
+    };
+
+  state.totalCycles = 20;
+  assert.equal(pawnMutationUnlocked(state), false);
+  assert.equal(pawnMutationUnlocked(state, basal), false);
+  assert.equal(pawnMutationUnlocked(state, mobile), true);
+  assert.equal(pawnMutationUnlocked(state, descendant), true);
+
+  state.scenario = "arena";
+  assert.equal(pawnMutationUnlocked(state, basal), false);
+  assert.equal(pawnMutationUnlocked(state, mobile), true);
 });
 
 test("active phenotype families replace older expressions without erasing ancestry", () => {
