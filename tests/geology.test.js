@@ -9,6 +9,8 @@ import {
   applyTraitMutation,
   captureUnlocked,
   currentGeologicalStage,
+  aquaticTerrainCell,
+  conwayUnlocked,
   deleteriousMutationUnlocked,
   eventWeights,
   innovationWeight,
@@ -27,8 +29,11 @@ import {
   createSuccessorState,
   newPiece,
   registerDiscoveries,
+  restoreAquaticFertility,
 } from "../src/state.js";
 import { movesFor } from "../src/moves.js";
+import { context } from "../src/engine.js";
+import { tickEnvironment } from "../src/environment.js";
 
 const negatives = new Set([
   "Esterilidade",
@@ -164,6 +169,64 @@ test("Archean starts green and stationary", () => {
   const actions = movesFor(s, s.pieces[0]);
   assert.ok(actions.length > 0);
   assert.ok(actions.every((target) => target.stay));
+});
+
+test("Silurian is a stable coast and Devonian starts Conway terrain evolution", () => {
+  const s = createPeriodState("silurian", 1201, null, "earth"),
+    shoreFertileRows = new Set([0, 2, 5, 7]);
+
+  for (let r = 0; r < 8; r++) {
+    for (let col = 0; col < 3; col++)
+      assert.equal(s.board[r * 8 + col], "fertile", `Silurian water ${r},${col}`);
+    assert.equal(
+      s.board[r * 8 + 3],
+      shoreFertileRows.has(r) ? "fertile" : "neutral",
+      `Silurian shore ${r},3`,
+    );
+  }
+  assert.equal(
+    s.board.filter((terrain) => terrain === "fertile").length,
+    28,
+  );
+  assert.equal(
+    s.board.filter((terrain) => terrain === "hostile").length,
+    7,
+  );
+  assert.ok(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 4 }, (_, offset) => s.board[r * 8 + 4 + offset]),
+    ).flat().every((terrain) => terrain !== "fertile"),
+  );
+  assert.ok(s.naturalBarriers.every((cell) => cell % 8 >= 4));
+
+  assert.equal(aquaticTerrainCell(s, 4, 1), true);
+  assert.equal(aquaticTerrainCell(s, 0, 3), true);
+  assert.equal(aquaticTerrainCell(s, 1, 3), false);
+  assert.equal(aquaticTerrainCell(s, 4, 5), false);
+  assert.equal(conwayUnlocked(s), false);
+  assert.equal(conwayUnlocked("devonian"), true);
+
+  const waterCell = 4 * 8 + 1;
+  assert.equal(consumeFertileTerrain(s, waterCell), true);
+  assert.equal(s.board[waterCell], "neutral");
+  s.turn += 3;
+  assert.equal(restoreAquaticFertility(s), 1);
+  assert.equal(s.board[waterCell], "fertile");
+
+  s.maxGenerationReached = 3;
+  const before = [...s.board],
+    nextHabitat = s.nextHabitatGeneration;
+  tickEnvironment(context(s));
+  assert.deepEqual(s.board, before);
+  assert.equal(s.nextHabitatGeneration, nextHabitat);
+
+  const d = createPeriodState("devonian", 1202, null, "earth");
+  d.maxGenerationReached = 3;
+  const devonianNext = d.nextHabitatGeneration;
+  tickEnvironment(context(d));
+  assert.equal(d.nextHabitatGeneration, devonianNext + 2);
+  assertState(s);
+  assertState(d);
 });
 
 test("Predação enables capture and is an individual prerequisite for Locomoção", () => {
