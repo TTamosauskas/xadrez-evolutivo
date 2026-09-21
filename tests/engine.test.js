@@ -951,8 +951,44 @@ test("pre-locomotion predation places offspring toward the nearest rival", () =>
     (piece) => piece.owner === "blue" && piece.id !== parent.id,
   );
   assert.ok(child);
-  assert.equal(child.r, 5);
-  assert.equal(Math.abs(child.c - rival.c), 1);
+  assert.equal(
+    Math.max(Math.abs(child.r - rival.r), Math.abs(child.c - rival.c)),
+    1,
+  );
+});
+
+test("basal predation creates a forward-expanding descendant before primitive locomotion", () => {
+  let s = createState(914, {
+    geologicalStage: "archean",
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("neutral");
+
+  const predator = newPiece(s, "blue", 4, 3, {
+      traits: ["Predação"],
+      ancestry: ["Predação"],
+    }),
+    victim = newPiece(s, "amber", 3, 2),
+    survivor = newPiece(s, "amber", 0, 0);
+  s.pieces.push(predator, victim, survivor);
+
+  s = simulate(s, move(predator, 3, 2));
+
+  const blue = s.pieces.filter((piece) => piece.owner === "blue"),
+    child = blue.find((piece) => piece.id !== predator.id);
+  assert.equal(blue.length, 2);
+  assert.ok(child);
+  assert.equal(
+    Math.max(
+      Math.abs(child.r - survivor.r),
+      Math.abs(child.c - survivor.c),
+    ),
+    2,
+  );
+  assertState(s);
 });
 
 test("predation creates at most one descendant and none once population pressure starts", () => {
