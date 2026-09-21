@@ -168,6 +168,45 @@ test("barriers render with a granite texture", () => {
   dom.window.close();
 });
 
+test("hostile terrain is red and terrain tones flatten from the Devonian", () => {
+  const silurianDom = setup(),
+    devonianDom = setup(),
+    silurian = createState(1203, {
+      geologicalStage: "silurian",
+      canonicalPair: true,
+    }),
+    devonian = createState(1204, {
+      geologicalStage: "devonian",
+      canonicalPair: true,
+    }),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+
+  render(silurianDom.window.document, silurian);
+  render(devonianDom.window.document, devonian);
+
+  assert.equal(
+    silurianDom.window.document.querySelectorAll(".terrain-single-tone").length,
+    0,
+  );
+  assert.equal(
+    devonianDom.window.document.querySelectorAll(".terrain-single-tone").length,
+    64,
+  );
+  assert.match(css, /\.cell\.hostile\s*\{\s*background:\s*#b86155/);
+  assert.match(css, /\.cell\.hostile\.dark\s*\{\s*background:\s*#87443d/);
+  assert.match(
+    css,
+    /\.cell\.terrain-single-tone\.fertile,[\s\S]*background:\s*#789754/,
+  );
+  assert.match(
+    css,
+    /\.cell\.terrain-single-tone\.hostile,[\s\S]*background:\s*#a84f45/,
+  );
+
+  silurianDom.window.close();
+  devonianDom.window.close();
+});
+
 test("selected pieces keep the normal compact mutation icon layout", () => {
   const dom = setup(),
     s = createState(20),
