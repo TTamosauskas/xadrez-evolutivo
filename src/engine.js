@@ -967,6 +967,39 @@ function executeMove(ctx, action) {
     capture = pieceCapture || eggCapture;
   if (
     pieceCapture &&
+    has(victim, "Espinhos") &&
+    random(state) < 1 / 10
+  ) {
+    const origin = square(p.r, p.c);
+    ctx.kill(p.id, "defesa por Espinhos", victim);
+    markDecomposition(state, origin);
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 🌵 Espinhos matou o agressor durante a tentativa de captura.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+  if (
+    pieceCapture &&
+    has(victim, "Chifre") &&
+    !has(p, "Carapaça") &&
+    random(state) < 1 / 5
+  ) {
+    const origin = square(p.r, p.c);
+    ctx.kill(p.id, "defesa por Chifre", victim);
+    markDecomposition(state, origin);
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 🫎 Chifre matou o agressor durante a tentativa de captura.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+  if (
+    pieceCapture &&
     victim.owner !== p.owner &&
     has(victim, "Mimetismo")
   ) {
@@ -980,7 +1013,7 @@ function executeMove(ctx, action) {
       markDecomposition(state, redirectedCell);
       log(
         state,
-        `${OWNERS[victim.owner]}: 🐙 Mimetismo desviou o ataque para ${coord(redirected.r, redirected.c)}.`,
+        `${OWNERS[victim.owner]}: 🫥 Mimetismo desviou o ataque para ${coord(redirected.r, redirected.c)}.`,
       );
       advanceTurn(ctx);
       settle(ctx);
@@ -1028,39 +1061,6 @@ function executeMove(ctx, action) {
     log(
       state,
       `${OWNERS[victim.owner]}: 💨 Velocidade permitiu escapar da captura.`,
-    );
-    advanceTurn(ctx);
-    settle(ctx);
-    return;
-  }
-  if (
-    pieceCapture &&
-    has(victim, "Espinhos") &&
-    random(state) < 1 / 4
-  ) {
-    const origin = square(p.r, p.c);
-    ctx.kill(p.id, "defesa por Espinhos", victim);
-    markDecomposition(state, origin);
-    log(
-      state,
-      `${OWNERS[victim.owner]}: 🌵 Espinhos matou o agressor antes da captura.`,
-    );
-    advanceTurn(ctx);
-    settle(ctx);
-    return;
-  }
-  if (
-    pieceCapture &&
-    has(victim, "Chifre") &&
-    !has(p, "Carapaça") &&
-    random(state) < 1 / 5
-  ) {
-    const origin = square(p.r, p.c);
-    ctx.kill(p.id, "defesa por Chifre", victim);
-    markDecomposition(state, origin);
-    log(
-      state,
-      `${OWNERS[victim.owner]}: 🫎 Chifre matou o agressor antes da captura.`,
     );
     advanceTurn(ctx);
     settle(ctx);
@@ -1281,7 +1281,7 @@ function executeMove(ctx, action) {
     if (born)
       log(
         state,
-        `${OWNERS[p.owner]}: 🦈 Canibalismo converteu a morte de um aliado em um descendente.`,
+        `${OWNERS[p.owner]}: 🐻‍❄️ Canibalismo converteu a morte de um aliado em um descendente.`,
       );
   } else if (fertile || predation) {
     born = reproduce(
