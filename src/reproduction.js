@@ -317,6 +317,18 @@ function chooseCells(state, cells, origin, count, dispersal) {
   return chosen;
 }
 
+function chooseCellsTowardEnemy(state, cells, owner, count) {
+  const enemies = state.pieces.filter((piece) => piece.owner !== owner);
+  if (!enemies.length) return shuffle(state, cells).slice(0, count);
+  return shuffle(state, cells)
+    .sort(
+      (a, b) =>
+        Math.min(...enemies.map((enemy) => distance(a, enemy))) -
+        Math.min(...enemies.map((enemy) => distance(b, enemy))),
+    )
+    .slice(0, count);
+}
+
 function makeChildProfile(state, parent, mate, profile) {
   const child = {
     owner: parent.owner,
@@ -368,20 +380,23 @@ function spawnChild(state, profile, r, c) {
   return child;
 }
 
-function placeBrood(ctx, brood, origin, dispersal) {
+function placeBrood(
+  ctx,
+  brood,
+  origin,
+  dispersal,
+  towardEnemy = false,
+) {
   const ordinary = brood.filter((profile) => !has(profile, "Trepadeira")),
     climbers = brood.filter((profile) => has(profile, "Trepadeira"));
   let born = 0;
 
   if (ordinary.length) {
     const cells = freeCells(ctx, origin, dispersal),
-      targets = chooseCells(
-        ctx.state,
-        cells,
-        origin,
-        Math.min(ordinary.length, cells.length),
-        dispersal,
-      );
+      count = Math.min(ordinary.length, cells.length),
+      targets = towardEnemy
+        ? chooseCellsTowardEnemy(ctx.state, cells, origin.owner, count)
+        : chooseCells(ctx.state, cells, origin, count, dispersal);
     for (let i = 0; i < targets.length; i++) {
       spawnChild(ctx.state, ordinary[i], targets[i].r, targets[i].c);
       born++;
@@ -390,13 +405,10 @@ function placeBrood(ctx, brood, origin, dispersal) {
 
   if (climbers.length) {
     const cells = freeCells(ctx, origin, dispersal, climbers[0]),
-      targets = chooseCells(
-        ctx.state,
-        cells,
-        origin,
-        Math.min(climbers.length, cells.length),
-        dispersal,
-      );
+      count = Math.min(climbers.length, cells.length),
+      targets = towardEnemy
+        ? chooseCellsTowardEnemy(ctx.state, cells, origin.owner, count)
+        : chooseCells(ctx.state, cells, origin, count, dispersal);
     for (let i = 0; i < targets.length; i++) {
       spawnChild(ctx.state, climbers[i], targets[i].r, targets[i].c);
       born++;
@@ -713,11 +725,11 @@ function competitiveReproductionPressure(
   parent,
   pressureLatched,
 ) {
-  const articulated =
-    has(parent, "Locomoção Articulada") ||
-    (parent.ancestry ?? []).includes("Locomoção Articulada");
+  const mobile =
+    has(parent, "Locomoção Primitiva") ||
+    (parent.ancestry ?? []).includes("Locomoção Primitiva");
 
-  if (!articulated || !pressureLatched || state.turn < 120)
+  if (!mobile || !pressureLatched || state.turn < 120)
     return { limit: Infinity, cooldown: 0, suppressPredation: false };
 
   const ownerPopulation = state.pieces.filter(
@@ -857,7 +869,11 @@ export function reproduce(
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
-    produced = placeBrood(ctx, brood, parent, dispersal);
+    const towardEnemy =
+      reason === "predação" &&
+      !has(parent, "Locomoção Primitiva") &&
+      !(parent.ancestry ?? []).includes("Locomoção Primitiva");
+    produced = placeBrood(ctx, brood, parent, dispersal, towardEnemy);
   }
 
   if (produced) {
