@@ -9,6 +9,7 @@ import {
   consumeReproductionResource,
   negativeMutationChance,
   reproduce,
+  tickReproduction,
 } from "../src/reproduction.js";
 import {
   negativeTraitUnlocked,
@@ -294,7 +295,6 @@ test("viviparous semelparity waits for the final brood before death", () => {
 
   s.turn = 6;
   const before = s.pieces.length;
-  const { tickReproduction } = await import("../src/reproduction.js");
   tickReproduction(context(s));
   assert.equal(s.pieces.some((piece) => piece.id === id), false);
   assert.ok(s.pieces.length >= before);
