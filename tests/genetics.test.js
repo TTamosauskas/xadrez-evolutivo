@@ -30,13 +30,13 @@ test("universal genome contains a diploid locus for every game trait", () => {
 
 test("active traits are expressed from the genome while heterozygous recessives stay hidden", () => {
   const genome = genomeFromTraits(
-    ["Respiração anaeróbia", "Multicelularismo", "Predação", "Locomoção"],
+    ["Respiração anaeróbia", "Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
     ["Camuflagem"],
   );
   const profile = { genome, traits: [] };
   syncGenomePhenotype(profile, "Predação");
   assert.ok(profile.traits.includes("Predação"));
-  assert.ok(profile.traits.includes("Locomoção"));
+  assert.ok(profile.traits.includes("Locomoção Articulada"));
   assert.equal(profile.traits.includes("Camuflagem"), false);
   assert.deepEqual(hiddenRecessiveTraits(profile), ["Camuflagem"]);
   assert.ok(genomeCarriedTraits(genome).includes("Camuflagem"));
@@ -62,7 +62,8 @@ test("phenotypic dependencies suppress genes whose functional prerequisites are 
     "Respiração anaeróbia",
     "Multicelularismo",
     "Predação",
-    "Locomoção",
+    "Locomoção Primitiva",
+    "Vertebrado",
     "Locomoção Avançada",
     "Velocidade",
   ]);
