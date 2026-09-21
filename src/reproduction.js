@@ -318,7 +318,13 @@ function chooseCells(state, cells, origin, count, dispersal) {
   return chosen;
 }
 
-function chooseCellsTowardEnemy(state, cells, origin, count) {
+function chooseCellsTowardEnemy(
+  state,
+  cells,
+  origin,
+  count,
+  { strict = false, preferCapture = false } = {},
+) {
   const enemies = state.pieces.filter((piece) => piece.owner !== origin.owner),
     allies = state.pieces.filter((piece) => piece.owner === origin.owner);
   if (!enemies.length) return shuffle(state, cells).slice(0, count);
@@ -327,13 +333,29 @@ function chooseCellsTowardEnemy(state, cells, origin, count) {
       Math.min(...enemies.map((enemy) => distance(cell, enemy))),
     originDistance = enemyDistance(origin),
     forward = cells.filter((cell) => enemyDistance(cell) <= originDistance),
-    pool = forward.length ? forward : cells,
+    pool = strict ? forward : forward.length ? forward : cells,
     crowding = (cell) =>
-      allies.filter((ally) => distance(cell, ally) <= 1).length;
+      allies.filter((ally) => distance(cell, ally) <= 1).length,
+    captureOptions = (cell) => {
+      const dir =
+        cell.r === 0
+          ? 1
+          : cell.r === 7
+            ? -1
+            : origin.owner === "blue"
+              ? -1
+              : 1;
+      return enemies.filter(
+        (enemy) =>
+          enemy.r === cell.r + dir &&
+          Math.abs(enemy.c - cell.c) === 1,
+      ).length;
+    };
 
   return shuffle(state, pool)
     .sort(
       (a, b) =>
+        (preferCapture ? captureOptions(b) - captureOptions(a) : 0) ||
         enemyDistance(a) - enemyDistance(b) ||
         crowding(a) - crowding(b),
     )
@@ -396,7 +418,7 @@ function placeBrood(
   brood,
   origin,
   dispersal,
-  towardEnemy = false,
+  direction = null,
 ) {
   const ordinary = brood.filter((profile) => !has(profile, "Trepadeira")),
     climbers = brood.filter((profile) => has(profile, "Trepadeira"));
@@ -405,8 +427,14 @@ function placeBrood(
   if (ordinary.length) {
     const cells = freeCells(ctx, origin, dispersal),
       count = Math.min(ordinary.length, cells.length),
-      targets = towardEnemy
-        ? chooseCellsTowardEnemy(ctx.state, cells, origin, count)
+      targets = direction
+        ? chooseCellsTowardEnemy(
+            ctx.state,
+            cells,
+            origin,
+            count,
+            direction,
+          )
         : chooseCells(ctx.state, cells, origin, count, dispersal);
     for (let i = 0; i < targets.length; i++) {
       spawnChild(ctx.state, ordinary[i], targets[i].r, targets[i].c);
@@ -417,8 +445,14 @@ function placeBrood(
   if (climbers.length) {
     const cells = freeCells(ctx, origin, dispersal, climbers[0]),
       count = Math.min(climbers.length, cells.length),
-      targets = towardEnemy
-        ? chooseCellsTowardEnemy(ctx.state, cells, origin, count)
+      targets = direction
+        ? chooseCellsTowardEnemy(
+            ctx.state,
+            cells,
+            origin,
+            count,
+            direction,
+          )
         : chooseCells(ctx.state, cells, origin, count, dispersal);
     for (let i = 0; i < targets.length; i++) {
       spawnChild(ctx.state, climbers[i], targets[i].r, targets[i].c);
@@ -699,9 +733,11 @@ export function reproductiveOutput(profile) {
 export function populationReproductionLimit(
   population,
   pressureLatched = false,
+  stage = null,
 ) {
   if (population < 18) return Infinity;
   if (population < 24) return pressureLatched ? 2 : Infinity;
+  if (stage === "ordovician" && population >= 26) return 1;
   if (population < 28) return 2;
   return 1;
 }
@@ -709,12 +745,17 @@ export function populationReproductionLimit(
 export function populationReproductionCooldown(
   population,
   pressureLatched = false,
+  stage = null,
 ) {
-  if (population < 18) return 0;
-  if (population < 24) return pressureLatched ? 1 : 0;
-  if (population < 28) return 1;
-  if (population < 32) return 2;
-  return 3;
+  let cooldown;
+  if (population < 18) cooldown = 0;
+  else if (population < 24) cooldown = pressureLatched ? 1 : 0;
+  else if (population < 28) cooldown = 1;
+  else if (population < 32) cooldown = 2;
+  else cooldown = 3;
+  return stage === "ordovician" && population >= 26
+    ? cooldown + 1
+    : cooldown;
 }
 
 export function predationBirthLimit(population) {
@@ -829,7 +870,11 @@ export function reproduce(
         ? preLocomotionPredation
           ? 1
           : predationBirthLimit(population)
-        : populationReproductionLimit(population, pressureLatched),
+        : populationReproductionLimit(
+            population,
+            pressureLatched,
+            state.geologicalStage,
+          ),
     pressureLimit =
       reason === "predação" && competitivePressure.suppressPredation
         ? 0
@@ -887,9 +932,12 @@ export function reproduce(
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
-    const towardEnemy =
-      aquaticFertilityRegime(state) && !primitiveLocomotionReached;
-    produced = placeBrood(ctx, brood, parent, dispersal, towardEnemy);
+    const direction = preLocomotionPredation
+      ? { preferCapture: true }
+      : aquaticFertilityRegime(state) && !primitiveLocomotionReached
+        ? { strict: state.geologicalStage === "archean" }
+        : null;
+    produced = placeBrood(ctx, brood, parent, dispersal, direction);
   }
 
   if (produced) {
@@ -910,6 +958,7 @@ export function reproduce(
         populationReproductionCooldown(
           activePopulation(state),
           pressureLatched,
+          state.geologicalStage,
         ) +
         competitivePressure.cooldown
       );
