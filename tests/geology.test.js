@@ -179,10 +179,10 @@ test("Predação enables capture and is an individual prerequisite for Locomoç�
       rank: 3,
       traits: ["Predação", "Locomoção Primitiva"],
     }),
-    amber = newPiece(s, "amber", 4, 4, { traits: [] });
+    amber = newPiece(s, "amber", 4, 1, { traits: [] });
   s.pieces.push(blue, amber);
   assert.equal(captureUnlocked(s, blue), true);
-  assert.ok(movesFor(s, blue).some((target) => target.c === 4));
+  assert.ok(movesFor(s, blue).some((target) => target.c === 1));
 
   const ancestral = { traits: [] };
   assert.equal(traitUnlocked(s, "Locomoção Primitiva", ancestral), false);
@@ -632,12 +632,12 @@ test("new combat specializations unlock in the intended periods and lineages", (
       ancestry: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Avançada"],
     },
     herbivore = {
-      traits: ["Multicelularismo", "Predação", "Herbívoro", "Locomoção Primitiva"],
-      ancestry: ["Predação", "Herbívoro", "Locomoção Primitiva"],
+      traits: ["Multicelularismo", "Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
+      ancestry: ["Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
     },
     carnivore = {
-      traits: ["Multicelularismo", "Predação", "Carnívoro", "Locomoção Primitiva"],
-      ancestry: ["Predação", "Carnívoro", "Locomoção Primitiva"],
+      traits: ["Multicelularismo", "Predação", "Carnívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
+      ancestry: ["Predação", "Carnívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
     };
 
   const devonian = createState(181, {
@@ -795,14 +795,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
   ])
     assert.equal(traitUnlocked(s, trait, plant), false, trait);
 
-  assert.equal(traitUnlocked(s, "Predação", plant), true);
-  assert.deepEqual(
-    applyTraitMutation(
-      [...plant.traits, "Espinhos", "Trepadeira", "Angiospermas"],
-      "Predação",
-    ),
-    ["Respiração anaeróbia", "Multicelularismo", "Predação"],
-  );
+  assert.equal(traitUnlocked(s, "Predação", plant), false);
 });
 
 test("switching into Fotossíntese removes animal-only traits", () => {
