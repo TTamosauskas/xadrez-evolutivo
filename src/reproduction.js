@@ -1105,12 +1105,6 @@ export function reproduce(
       parent.oothecaPrimed = true;
     applyCooldown();
     state.reproductions[parent.owner]++;
-    const deferredParentDeath =
-      ["viviparous", "ovoviviparous"].includes(development) ||
-      state.phase === "egg-placement" ||
-      state.phase === "domestic-placement";
-    recordSemelparity(ctx, parent, deferredParentDeath);
-    if (mate) recordSemelparity(ctx, mate, false);
     tryVectorPathogen(state, parent);
     if (mate) tryVectorPathogen(state, mate);
     log(
@@ -1129,6 +1123,12 @@ export function reproduce(
                 ? `${OWNERS[parent.owner]} iniciaram gestação de ${produced} descendente(s) por ${reason}.`
                 : `${OWNERS[parent.owner]} geraram ${produced} descendente(s) por ${reason}.`,
     );
+    const deferredParentDeath =
+      ["viviparous", "ovoviviparous"].includes(development) ||
+      state.phase === "egg-placement" ||
+      state.phase === "domestic-placement";
+    recordSemelparity(ctx, parent, deferredParentDeath);
+    if (mate) recordSemelparity(ctx, mate, false);
   }
   return produced;
 }
