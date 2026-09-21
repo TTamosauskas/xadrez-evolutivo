@@ -134,7 +134,7 @@ function nextDerivedRank(piece) {
 
 function mutation(state, p, positiveOnly) {
   const gains = [];
-  if (p.rank === 4 && pawnMutationUnlocked(state))
+  if (p.rank === 4 && pawnMutationUnlocked(state, p))
     gains.push({ rank: 0, weight: 1 });
   else if (!has(p, "Fotossíntese") && rankMutationUnlocked(state)) {
     const nextRank = nextDerivedRank(p);
