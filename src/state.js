@@ -1546,7 +1546,7 @@ export function assertState(state) {
       Array.isArray(p.pathogenExposureRounds) ||
       Object.entries(p.pathogenExposureRounds).some(
         ([id, exposedRound]) =>
-          !/^\\d+$/.test(id) ||
+          !/^\d+$/.test(id) ||
           Number(id) < 1 ||
           !integer(exposedRound),
       )
