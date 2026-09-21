@@ -841,8 +841,8 @@ test("gradual population pressure exhausts fertility without arbitrary attrition
   assert.equal(fertilityDepletionRate(32), 0.15);
   assert.equal(fertilityDepletionRate(40), 0.25);
   assert.equal(fertilityDepletionRate(44), 0.3);
-  assert.equal(fertilityDepletionRate(28, "archean"), 0.18);
-  assert.equal(fertilityDepletionRate(32, "archean"), 0.28);
+  assert.equal(fertilityDepletionRate(28, "archean"), 0.12);
+  assert.equal(fertilityDepletionRate(32, "archean"), 0.18);
   assert.equal(fertilityDepletionRate(26, "ordovician"), 0.11);
   assert.equal(fertilityDepletionRate(30, "ordovician"), 0.18);
   assert.equal(fertilityDepletionRate(30, "proterozoic"), 0.13);
@@ -1013,7 +1013,7 @@ test("pre-locomotion aquatic reproduction expands toward the nearest rival", () 
   assertState(s);
 });
 
-test("pre-locomotion aquatic reproduction avoids regressive births", () => {
+test("pre-locomotion aquatic reproduction uses the least regressive fallback when blocked", () => {
   const s = createState(911, {
     geologicalStage: "archean",
     naturalBarriers: false,
@@ -1042,8 +1042,13 @@ test("pre-locomotion aquatic reproduction avoids regressive births", () => {
       immediateDevelopment: true,
       fertileReproduction: true,
     }),
-    0,
+    1,
   );
+  const child = s.pieces.find(
+    (piece) => piece.owner === "blue" && piece.parentId === parent.id,
+  );
+  assert.ok(child);
+  assert.equal(child.r, 6);
   assertState(s);
 });
 
