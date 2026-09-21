@@ -1,5 +1,10 @@
 import { EVENTS, PATHOGEN_AGENTS, TRAITS } from "./constants.js";
-import { GEOLOGICAL_STAGES, TRAIT_DEPENDENCIES, TRAIT_STAGE } from "./geology.js";
+import {
+  GEOLOGICAL_STAGES,
+  NEGATIVE_TRAITS,
+  TRAIT_DEPENDENCIES,
+  TRAIT_STAGE,
+} from "./geology.js";
 import {
   ARENA_FOUNDATIONAL_TRAITS,
   ARENA_RECESSIVE_COUNT,
@@ -14,11 +19,7 @@ import {
 const traitLabel = (name) => `${TRAITS[name][0]} ${name}`;
 const section = (title) => `§ ${title}`;
 
-const NEGATIVE_HELP_TRAITS = new Set([
-  "Esterilidade",
-  "Mutação Deletéria",
-  "Mutação Disfuncional",
-]);
+const NEGATIVE_HELP_TRAITS = new Set(NEGATIVE_TRAITS);
 
 function chronologicalStageTraits(stage) {
   const traits = Object.keys(TRAITS).filter(
