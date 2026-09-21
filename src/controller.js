@@ -116,6 +116,7 @@ export class Controller {
     this.neocortexWindow = null;
     this.neocortexLock = null;
     this.state = state;
+    this.resultReady = false;
     this.refresh();
   }
   canUndoNeocortex() {
@@ -273,13 +274,6 @@ export class Controller {
       state.result
     )
       return;
-    if (state.phase === "collapse") {
-      this.scheduleAutomaticAction(
-        { type: "DOMAIN_COLLAPSE" },
-        this.collapseDelay,
-      );
-      return;
-    }
     if (this.mode === "auto" && state.notices.length) {
       this.scheduleAutomaticAction({
         type: "ACK_NOTICE",
@@ -288,6 +282,13 @@ export class Controller {
       return;
     }
     if (state.notices.length) return;
+    if (state.phase === "collapse") {
+      this.scheduleAutomaticAction(
+        { type: "DOMAIN_COLLAPSE" },
+        this.collapseDelay,
+      );
+      return;
+    }
     if (this.mode === "auto" && state.phase === "origin") {
       this.scheduleAutomaticAction({ type: "ORIGIN_CLICK" });
       return;
