@@ -845,17 +845,14 @@ test("reproduction pressure uses hidden hysteresis without suppressing early rec
   assert.equal(predationBirthLimit(24), 0);
 });
 
-test("late competitive pressure starts only after articulated locomotion", () => {
-  const makeState = (articulated) => {
+test("late competitive pressure starts after primitive locomotion", () => {
+  const makeState = (mobile) => {
     const s = createState(812, {
-      geologicalStage: "cambrian",
+      geologicalStage: "ediacaran",
       historicalTraits: [
         "Respiração anaeróbia",
-        "Multicelularismo",
         "Predação",
         "Locomoção Primitiva",
-        "Vertebrado",
-        "Locomoção Articulada",
       ],
       naturalBarriers: false,
     });
@@ -865,22 +862,12 @@ test("late competitive pressure starts only after articulated locomotion", () =>
     s.populationLatched = { blue: true, amber: true };
 
     const parent = newPiece(s, "blue", 4, 4, {
-      traits: articulated
-        ? [
-            "Predação",
-            "Locomoção Primitiva",
-            "Vertebrado",
-            "Locomoção Articulada",
-          ]
-        : ["Predação", "Locomoção Primitiva"],
-      ancestry: articulated
-        ? [
-            "Predação",
-            "Locomoção Primitiva",
-            "Vertebrado",
-            "Locomoção Articulada",
-          ]
-        : ["Predação", "Locomoção Primitiva"],
+      traits: mobile
+        ? ["Predação", "Locomoção Primitiva"]
+        : ["Predação"],
+      ancestry: mobile
+        ? ["Predação", "Locomoção Primitiva"]
+        : ["Predação"],
     });
     s.pieces.push(parent);
 
@@ -910,11 +897,11 @@ test("late competitive pressure starts only after articulated locomotion", () =>
     return { s, parent };
   };
 
-  const primitive = makeState(false),
-    articulated = makeState(true);
+  const preLocomotion = makeState(false),
+    mobile = makeState(true);
 
   assert.equal(
-    reproduce(context(primitive.s), primitive.parent, null, "teste", {
+    reproduce(context(preLocomotion.s), preLocomotion.parent, null, "teste", {
       forcedCount: 4,
       ignoreReadiness: true,
       immediateDevelopment: true,
@@ -922,13 +909,50 @@ test("late competitive pressure starts only after articulated locomotion", () =>
     2,
   );
   assert.equal(
-    reproduce(context(articulated.s), articulated.parent, null, "teste", {
+    reproduce(context(mobile.s), mobile.parent, null, "teste", {
       forcedCount: 4,
       ignoreReadiness: true,
       immediateDevelopment: true,
     }),
     1,
   );
+});
+
+test("pre-locomotion predation places offspring toward the nearest rival", () => {
+  const s = createState(913, {
+    geologicalStage: "archean",
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("neutral");
+
+  const parent = newPiece(s, "blue", 6, 3, {
+      traits: ["Predação"],
+      ancestry: ["Predação"],
+    }),
+    rival = newPiece(s, "amber", 2, 3, {
+      traits: ["Predação"],
+      ancestry: ["Predação"],
+    });
+  s.pieces.push(parent, rival);
+
+  assert.equal(
+    reproduce(context(s), parent, null, "predação", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+
+  const child = s.pieces.find(
+    (piece) => piece.owner === "blue" && piece.id !== parent.id,
+  );
+  assert.ok(child);
+  assert.equal(child.r, 5);
+  assert.ok([2, 3, 4].includes(child.c));
 });
 
 test("predation creates at most one descendant and none once population pressure starts", () => {
