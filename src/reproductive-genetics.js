@@ -188,7 +188,10 @@ export function hiddenRecessiveTraits(source) {
 export function syncReproTraits(piece) {
   piece.reproGenes = normalizeReproGenes(piece.reproGenes, piece.traits);
   let regular = piece.traits.filter(
-    (t) => !GENETIC_TRAITS.includes(t) && t !== "Ovos",
+    (t) =>
+      !GENETIC_TRAITS.includes(t) &&
+      t !== "Ovos" &&
+      t !== "Esporos",
   );
   const plant = regular.includes("Fotossíntese"),
     expressed = reproPhenotype(piece.reproGenes).traits.filter(
