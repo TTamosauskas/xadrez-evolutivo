@@ -6,6 +6,7 @@ import {
   load,
   LEGACY_KEY,
   SAVE_KEY,
+  V14_KEY,
   V12_KEY,
   V11_KEY,
   V9_KEY,
@@ -105,6 +106,60 @@ test("loading a save discards obsolete Marco Evolutivo notices", () => {
   assertState(restored);
 });
 
+test("load migrates v14 saves to the new normalization traits", () => {
+  const old = createState(60, {
+      geologicalStage: "cambrian",
+      historicalTraits: [
+        "Respiração anaeróbia",
+        "Fotossíntese",
+        "Predação",
+        "Dormência",
+        "Multicelularismo",
+        "Locomoção Primitiva",
+      ],
+      founder: {
+        rank: 0,
+        traits: [
+          "Predação",
+          "Multicelularismo",
+          "Locomoção Primitiva",
+          "Vertebrado",
+          "Locomoção Articulada",
+        ],
+      },
+    }),
+    piece = old.pieces[0];
+  old.version = 14;
+  old.historicalTraits = old.historicalTraits.filter(
+    (trait) => !["Reparo Celular", "Simetria Bilateral"].includes(trait),
+  );
+  piece.traits = piece.traits.filter(
+    (trait) => !["Reparo Celular", "Simetria Bilateral"].includes(trait),
+  );
+  piece.ancestry = piece.ancestry.filter(
+    (trait) => !["Reparo Celular", "Simetria Bilateral"].includes(trait),
+  );
+  delete piece.genome["Reparo Celular"];
+  delete piece.genome["Simetria Bilateral"];
+
+  const raw = JSON.stringify(old),
+    entries = new Map([[V14_KEY, raw]]),
+    storage = {
+      setItem: (key, value) => entries.set(key, value),
+      getItem: (key) => entries.get(key) ?? null,
+    },
+    migrated = load(storage),
+    restored = migrated.pieces.find((candidate) => candidate.id === piece.id);
+
+  assert.equal(migrated.version, 15);
+  assert.equal(entries.get(V14_KEY), raw);
+  assert.ok(restored.traits.includes("Reparo Celular"));
+  assert.ok(restored.traits.includes("Simetria Bilateral"));
+  assert.ok(migrated.historicalTraits.includes("Reparo Celular"));
+  assert.ok(migrated.historicalTraits.includes("Simetria Bilateral"));
+  assertState(migrated);
+});
+
 test("load migrates v12 saves to the universal genome without overwriting the old key", () => {
   const old = createState(61);
   old.version = 12;
@@ -116,7 +171,7 @@ test("load migrates v12 saves to the universal genome without overwriting the ol
       getItem: (key) => entries.get(key) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.equal(entries.get(V12_KEY), raw);
   assert.ok(migrated.pieces.every((piece) => piece.genome));
   assertState(migrated);
@@ -136,7 +191,7 @@ test("load migrates v11 browser saves into Cenários Alternativos", () => {
       getItem: (key) => entries.get(key) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.equal(migrated.scenario, "alternative");
   assert.deepEqual(migrated.fossilRecord, []);
   assert.equal(entries.get(V11_KEY), raw);
@@ -157,7 +212,7 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
       getItem: (k) => entries.get(k) ?? null,
     };
   const migrated = load(storage);
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.equal(entries.get(V2_KEY), raw);
   assert.ok(migrated.pieces.every((p) => has(p, "Locomoção Primitiva")));
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
@@ -189,7 +244,7 @@ test("v9 cumulative phenotypes migrate to active families while preserving ances
     migrated = load(storage),
     piece = migrated.pieces[0];
 
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.ok(piece.traits.includes("Onívoro"));
   assert.ok(piece.traits.includes("Locomoção Avançada"));
   assert.ok(piece.traits.includes("Eusocialidade"));
@@ -226,7 +281,7 @@ test("v8 complex lineages migrate to Multicelularismo without instant senescence
     migrated = load(storage),
     piece = migrated.pieces[0];
 
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.ok(piece.traits.includes("Multicelularismo"));
   assert.ok(piece.ancestry.includes("Multicelularismo"));
   assert.equal(piece.bornRound, 50);
@@ -276,7 +331,7 @@ test("v6 saves migrate without an origin prelude", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.equal(migrated.origin, null);
   assert.equal(migrated.phase, "move");
   assert.equal(entries.get(V6_KEY), raw);
@@ -295,7 +350,7 @@ test("v5 saves split invalid Fotossíntese + Predação hybrids during migration
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.deepEqual(migrated.pieces[0].traits, [
     "Respiração anaeróbia",
     "Fotossíntese",
@@ -325,7 +380,7 @@ test("v4 saves migrate discoveries without creating unread backlog", () => {
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.ok(migrated.discoveries.geology.includes("archean"));
   assert.ok(migrated.discoveries.mutations.includes("Fotossíntese"));
   assert.equal(
@@ -351,7 +406,7 @@ test("v3 saves rename Predador to Carnívoro and preserve capture with Predaçã
       getItem: (k) => entries.get(k) ?? null,
     },
     migrated = load(storage);
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.ok(migrated.pieces[0].traits.includes("Carnívoro"));
   assert.ok(migrated.pieces[0].traits.includes("Predação"));
   assert.ok(!migrated.pieces[0].traits.includes("Predador"));
@@ -433,7 +488,7 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   old.pieces[0].traits = ["Ovos", "Locomoção"];
 
   const s = deserialize(JSON.stringify(old));
-  assert.equal(s.version, 14);
+  assert.equal(s.version, 15);
   assert.deepEqual(s.eggs, []);
   assert.equal(s.nextEgg, 1);
   assert.equal(dispersalMode(s.pieces[0]), "local");
