@@ -28,6 +28,7 @@ import {
   registerDiscoveries,
   reproductionReady,
   ecologicalDomainBlocked,
+  consumeFertileTerrain,
 } from "./state.js";
 import {
   BASAL_GENETIC_TRAIT,
@@ -43,12 +44,14 @@ import {
   genomeSignature,
   inheritSexualGenome,
   loseGenomeAllele,
+  recessivizeGenomeTrait,
   syncGenomePhenotype,
   withoutGenomeTraits,
 } from "./genetics.js";
 import {
   BODY_PLAN_TRAITS,
   deleteriousMutationUnlocked,
+  negativeTraitUnlocked,
   innovationWeight,
   pawnMutationUnlocked,
   rankMutationUnlocked,
@@ -81,11 +84,20 @@ const DERIVED_FORM_PREVIOUS = new Map([
 ]);
 
 export function applyAirSacRankFloor(profile) {
-  if (has(profile, "Sacos Aéreos") && profile.rank === 0) profile.rank = 1;
+  if (
+    !has(profile, "Nanismo") &&
+    has(profile, "Sacos Aéreos") &&
+    profile.rank === 0
+  )
+    profile.rank = 1;
   return profile;
 }
 
 export function normalizeBodyPlanRank(profile) {
+  if (has(profile, "Nanismo")) {
+    profile.rank = 0;
+    return profile;
+  }
   if (
     has(profile, "Artrópode") &&
     ![0, 1, 2, 4].includes(profile.rank)
@@ -136,8 +148,39 @@ function nextDerivedRank(piece) {
 }
 
 export function negativeMutationChance(piece) {
-  const normalized = piece?.rank === 0 ? 1 / 5 : 1 / 3;
-  return has(piece, "Reparo Celular") ? normalized : Math.min(1, normalized * 2);
+  const normalized = piece?.rank === 0 ? 1 / 5 : 1 / 3,
+    repairAdjusted = has(piece, "Reparo Celular")
+      ? normalized
+      : Math.min(1, normalized * 2);
+  return has(piece, "Mutação Mutadora")
+    ? Math.min(1, repairAdjusted * 2)
+    : repairAdjusted;
+}
+
+function applyRegressionEffect(state, piece) {
+  if (!has(piece, "Regressão Evolutiva")) return [];
+  const protectedTraits = new Set([
+      ...NEGATIVE,
+      BASAL_GENETIC_TRAIT,
+      "Fotossíntese",
+      "Predação",
+      "Reparo Celular",
+      "Multicelularismo",
+      "Vertebrado",
+      "Artrópode",
+    ]),
+    candidates = (piece.traits ?? []).filter(
+      (trait) => !protectedTraits.has(trait),
+    );
+  if (!candidates.length) return [];
+  const count = Math.max(1, Math.floor(candidates.length / 2)),
+    hidden = shuffle(state, candidates).slice(0, count);
+  for (const trait of hidden)
+    piece.genome = recessivizeGenomeTrait(piece.genome, trait);
+  syncGenomePhenotype(piece);
+  normalizeBodyPlanRank(piece);
+  normalizePhotosyntheticRank(piece);
+  return hidden;
 }
 
 function mutation(state, p, positiveOnly) {
@@ -165,7 +208,10 @@ function mutation(state, p, positiveOnly) {
     if (traitLossAllowed(p, trait))
       losses.push({ geneLoss: trait });
   for (const trait of NEGATIVE)
-    if (!genomeCarriedTraits(p.genome).includes(trait))
+    if (
+      !genomeCarriedTraits(p.genome).includes(trait) &&
+      negativeTraitUnlocked(state, trait, p)
+    )
       losses.push({ geneGain: trait });
 
   const negativeAllowed =
@@ -206,6 +252,15 @@ function mutation(state, p, positiveOnly) {
         ...(p.traits ?? []),
       ]),
     ];
+    if (choice.geneGain === "Regressão Evolutiva") {
+      const hidden = applyRegressionEffect(state, p);
+      if (hidden.length)
+        log(
+          state,
+          `${OWNERS[p.owner]}: 🦤 Regressão Evolutiva tornou recessiva(s) ${hidden.join(", ")}.`,
+        );
+    }
+    normalizeBodyPlanRank(p);
     if (
       !NEGATIVE_GENETIC_TRAITS.has(choice.geneGain) &&
       !state.historicalTraits.includes(choice.geneGain)
@@ -810,6 +865,54 @@ function competitiveReproductionPressure(
   };
 }
 
+export function consumeReproductionResource(state, parent, cell) {
+  if (!consumeFertileTerrain(state, cell)) return 0;
+  let consumed = 1;
+  if (!has(parent, "Má absorção Alimentar")) return consumed;
+  const r0 = Math.floor(cell / 8),
+    c0 = cell % 8,
+    adjacent = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = r0 + dr,
+        c = c0 + dc;
+      if (inside(r, c) && terrain(state, r, c) === "fertile")
+        adjacent.push(square(r, c));
+    }
+  const extra = pick(state, adjacent);
+  if (extra !== null) {
+    consumeFertileTerrain(state, extra);
+    consumed++;
+    log(
+      state,
+      `${OWNERS[parent.owner]}: 🐼 Má absorção Alimentar consumiu também ${coord(Math.floor(extra / 8), extra % 8)}.`,
+    );
+  }
+  return consumed;
+}
+
+function recordSemelparity(ctx, piece, deferDeath = false) {
+  if (!piece || !has(piece, "Semelparidade")) return false;
+  piece.lifetimeReproductions = (piece.lifetimeReproductions ?? 0) + 1;
+  if (piece.lifetimeReproductions < 3) return false;
+  if (deferDeath) {
+    piece.semelparityDeathPending = true;
+    return true;
+  }
+  return ctx.kill(piece.id, "Semelparidade após três reproduções", null, true);
+}
+
+export function resolveSemelparityDeath(ctx, piece) {
+  if (
+    !piece?.semelparityDeathPending ||
+    (piece.pregnancies?.length ?? 0) > 0
+  )
+    return false;
+  piece.semelparityDeathPending = false;
+  return ctx.kill(piece.id, "Semelparidade após três reproduções", null, true);
+}
+
 export function reproduce(
   ctx,
   parent,
@@ -872,9 +975,12 @@ export function reproduce(
     bodyPlanOutput = has(profile, "Artrópode")
       ? Math.min(6, baseOutput * 2)
       : baseOutput,
-    baseWanted =
+    naturalWanted =
       options.forcedCount ??
       bodyPlanOutput + eusocialBonus(state, parent),
+    baseWanted = has(profile, "Filho único")
+      ? Math.min(1, naturalWanted)
+      : naturalWanted,
     populationLimit =
       reason === "predação"
         ? preLocomotionPredation
@@ -889,7 +995,44 @@ export function reproduce(
       reason === "predação" && competitivePressure.suppressPredation
         ? 0
         : Math.min(populationLimit, competitivePressure.limit),
-    wanted = Math.min(baseWanted, pressureLimit);
+    wanted = Math.min(baseWanted, pressureLimit),
+    cooldown = (piece) => {
+      let base =
+        has(piece, "Ovulação Induzida")
+          ? 2
+          : options.resourceReproduction || options.fertileReproduction
+            ? has(piece, "Respiração aeróbia")
+              ? 3
+              : 4
+            : 3;
+      if (has(piece, "Insuficiência Respiratória")) base *= 2;
+      return (
+        round(state) +
+        base +
+        populationReproductionCooldown(
+          activePopulation(state),
+          pressureLatched,
+          state.geologicalStage,
+        ) +
+        competitivePressure.cooldown
+      );
+    },
+    applyCooldown = () => {
+      parent.nextReproductionRound = cooldown(parent);
+      if (mate) mate.nextReproductionRound = cooldown(mate);
+    },
+    failIfSubfertile = () => {
+      if (!has(profile, "Subfertilidade") || random(state) >= 0.5)
+        return false;
+      applyCooldown();
+      if (Number.isInteger(options.resourceCell))
+        consumeReproductionResource(state, parent, options.resourceCell);
+      log(
+        state,
+        `${OWNERS[parent.owner]}: 😩 Subfertilidade impediu a geração de prole por ${reason}.`,
+      );
+      return true;
+    };
 
   if (wanted <= 0) return 0;
 
@@ -898,23 +1041,28 @@ export function reproduce(
     const capacity = domesticPlacementCells(ctx, parent).length,
       count = Math.min(wanted, capacity);
     if (!count) return 0;
+    if (failIfSubfertile()) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
     produced = startDomesticPlacement(ctx, parent, brood);
   } else if (seedPlant && !options.immediateDevelopment) {
     const capacity = freeCells(ctx, parent, "local", profile).length,
       count = Math.min(wanted, capacity);
     if (!count) return 0;
+    if (failIfSubfertile()) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
     produced = layPlantSeeds(ctx, parent, brood);
   } else if (development === "oviparous") {
     if (!adjacentEggCells(ctx, parent).length) return 0;
+    if (failIfSubfertile()) return 0;
     const brood = makeBrood(state, parent, mate, profile, wanted);
     produced = layBasalEgg(ctx, parent, brood, dispersal);
   } else if (development === "amniotic") {
     if (!amnioticPlacementCells(ctx, parent).length) return 0;
+    if (failIfSubfertile()) return 0;
     const brood = makeBrood(state, parent, mate, profile, wanted);
     produced = startAmnioticPlacement(ctx, parent, brood, dispersal);
   } else if (development === "ovoviviparous") {
+    if (failIfSubfertile()) return 0;
     const brood = makeBrood(state, parent, mate, profile, wanted);
     if (!brood.length) return 0;
     parent.pregnancies ??= [];
@@ -927,6 +1075,7 @@ export function reproduce(
     });
     produced = brood.length;
   } else if (development === "viviparous") {
+    if (failIfSubfertile()) return 0;
     const brood = makeBrood(state, parent, mate, profile, wanted);
     if (!brood.length) return 0;
     parent.pregnancies ??= [];
@@ -941,6 +1090,7 @@ export function reproduce(
     const capacity = freeCells(ctx, parent, dispersal, profile).length,
       count = Math.min(wanted, capacity);
     if (!count) return 0;
+    if (failIfSubfertile()) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
     const direction = preLocomotionPredation
       ? { preferCapture: true }
@@ -953,29 +1103,14 @@ export function reproduce(
   if (produced) {
     if (has(parent, "Ooteca") && options.fertileReproduction)
       parent.oothecaPrimed = true;
-    const cooldown = (piece) => {
-      const base =
-        has(piece, "Ovulação Induzida")
-          ? 2
-          : options.resourceReproduction || options.fertileReproduction
-            ? has(piece, "Respiração aeróbia")
-              ? 3
-              : 4
-            : 3;
-      return (
-        round(state) +
-        base +
-        populationReproductionCooldown(
-          activePopulation(state),
-          pressureLatched,
-          state.geologicalStage,
-        ) +
-        competitivePressure.cooldown
-      );
-    };
-    parent.nextReproductionRound = cooldown(parent);
-    if (mate) mate.nextReproductionRound = cooldown(mate);
+    applyCooldown();
     state.reproductions[parent.owner]++;
+    const deferredParentDeath =
+      ["viviparous", "ovoviviparous"].includes(development) ||
+      state.phase === "egg-placement" ||
+      state.phase === "domestic-placement";
+    recordSemelparity(ctx, parent, deferredParentDeath);
+    if (mate) recordSemelparity(ctx, mate, false);
     tryVectorPathogen(state, parent);
     if (mate) tryVectorPathogen(state, mate);
     log(
@@ -1133,6 +1268,7 @@ export function tickReproduction(ctx) {
           `🔴 ${OWNERS[parent.owner]} deram à luz ${born} descendente(s).`,
         );
       }
+      resolveSemelparityDeath(ctx, parent);
     }
     for (const pregnancy of parent.pregnancies ?? [])
       if (
