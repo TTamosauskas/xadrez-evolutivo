@@ -23,7 +23,12 @@ export function fixture(
   for (const spec of specs) {
     const requestedTraits = (spec.traits ?? []).flatMap((trait) =>
         trait === "Locomoção"
-          ? ["Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"]
+          ? [
+              "Locomoção Primitiva",
+              "Vertebrado",
+              "Locomoção Articulada",
+              "Locomoção Terrestre",
+            ]
           : [trait],
       ),
       baseTraits = requestedTraits.includes("Fotossíntese")
@@ -33,6 +38,7 @@ export function fixture(
             "Locomoção Primitiva",
             "Vertebrado",
             "Locomoção Articulada",
+            "Locomoção Terrestre",
           ],
       source = {
         ...spec,
