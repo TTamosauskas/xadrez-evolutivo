@@ -162,7 +162,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       const parent = state.pieces.find((piece) => piece.id === egg.parentId),
         protectedEgg =
           parent &&
-          has(parent, "Cuidado Parental") &&
+          has(parent, "Incubação") &&
           distance(parent, egg) === 1;
       if (!has(p, "Ovífagia") || protectedEgg) return;
     }
