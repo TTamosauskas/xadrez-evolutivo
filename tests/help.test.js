@@ -1,7 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EVENTS, TRAITS } from "../src/constants.js";
-import { GEOLOGICAL_STAGES, TRAIT_DEPENDENCIES, TRAIT_STAGE } from "../src/geology.js";
+import {
+  GEOLOGICAL_STAGES,
+  NEGATIVE_TRAIT_RULES,
+  TRAIT_DEPENDENCIES,
+  TRAIT_STAGE,
+} from "../src/geology.js";
 import {
   HOW_TO_MUTATION_GROUPS,
   howToPlayLines,
@@ -91,6 +96,24 @@ test("Como Jogar orders positive mutations by the Vida na Terra chronology", () 
       );
     }
   }
+});
+
+test("Como Jogar orders negative mutations by their minimum geological period", () => {
+  const group = HOW_TO_MUTATION_GROUPS.find((entry) =>
+      entry.title.startsWith("Mutações negativas"),
+    ),
+    stageIndex = (trait) => {
+      const id = NEGATIVE_TRAIT_RULES[trait]?.stage;
+      return id
+        ? GEOLOGICAL_STAGES.find((stage) => stage.id === id)?.index ?? 999
+        : -1;
+    };
+  assert.ok(group);
+  for (let i = 1; i < group.traits.length; i++)
+    assert.ok(
+      stageIndex(group.traits[i - 1]) <= stageIndex(group.traits[i]),
+      group.traits[i],
+    );
 });
 
 test("Como Jogar does not retain obsolete mutation icon-label pairs", () => {
