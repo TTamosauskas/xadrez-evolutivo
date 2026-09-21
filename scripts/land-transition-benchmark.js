@@ -13,7 +13,10 @@ const STAGES = ["silurian", "devonian"];
 function run(initial, seed) {
   let state = clone(initial),
     pseudo = seed ^ 0x9e3779b9,
-    commands = 0;
+    commands = 0,
+    terrestrialTurn = state.historicalTraits.includes("Locomoção Terrestre")
+      ? 0
+      : null;
   while (!state.result && state.turn < LIMIT && commands < COMMAND_LIMIT) {
     let action;
     if (state.notices.length)
@@ -38,6 +41,11 @@ function run(initial, seed) {
     assert.notEqual(next, state);
     assertState(next);
     state = next;
+    if (
+      terrestrialTurn === null &&
+      state.historicalTraits.includes("Locomoção Terrestre")
+    )
+      terrestrialTurn = state.turn;
     commands++;
   }
   return {
@@ -47,6 +55,7 @@ function run(initial, seed) {
     technical: !state.result && commands >= COMMAND_LIMIT,
     turns: state.turn,
     domainWin: /Domínio Ecológico/.test(state.result?.reason ?? ""),
+    terrestrialTurn,
   };
 }
 
@@ -65,6 +74,14 @@ function summarize(runs) {
     stalled330: runs.filter((run) => run.stalled).length,
     technical: runs.filter((run) => run.technical).length,
     domainWins: finished.filter((run) => run.domainWin).length,
+    terrestrialDiscoveries: runs.filter(
+      (run) => run.terrestrialTurn !== null,
+    ).length,
+    meanTerrestrialTurn: mean(
+      runs
+        .map((run) => run.terrestrialTurn)
+        .filter((turn) => turn !== null && turn > 0),
+    ),
     meanFinishedTurn: mean(finished.map((run) => run.turns)),
     maxFinishedTurn: finished.length
       ? Math.max(...finished.map((run) => run.turns))
