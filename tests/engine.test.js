@@ -845,6 +845,92 @@ test("reproduction pressure uses hidden hysteresis without suppressing early rec
   assert.equal(predationBirthLimit(24), 0);
 });
 
+test("late competitive pressure starts only after articulated locomotion", () => {
+  const makeState = (articulated) => {
+    const s = createState(812, {
+      geologicalStage: "cambrian",
+      historicalTraits: [
+        "Respiração anaeróbia",
+        "Multicelularismo",
+        "Predação",
+        "Locomoção Primitiva",
+        "Vertebrado",
+        "Locomoção Articulada",
+      ],
+      naturalBarriers: false,
+    });
+    s.turn = 180;
+    s.pieces = [];
+    s.nextId = 1;
+    s.populationLatched = { blue: true, amber: true };
+
+    const parent = newPiece(s, "blue", 4, 4, {
+      traits: articulated
+        ? [
+            "Predação",
+            "Locomoção Primitiva",
+            "Vertebrado",
+            "Locomoção Articulada",
+          ]
+        : ["Predação", "Locomoção Primitiva"],
+      ancestry: articulated
+        ? [
+            "Predação",
+            "Locomoção Primitiva",
+            "Vertebrado",
+            "Locomoção Articulada",
+          ]
+        : ["Predação", "Locomoção Primitiva"],
+    });
+    s.pieces.push(parent);
+
+    const reserved = new Set([
+      4 * 8 + 4,
+      3 * 8 + 3,
+      3 * 8 + 4,
+      3 * 8 + 5,
+      4 * 8 + 3,
+      4 * 8 + 5,
+      5 * 8 + 3,
+      5 * 8 + 4,
+      5 * 8 + 5,
+    ]);
+    for (let cell = 0; s.pieces.length < 23 && cell < 64; cell++) {
+      if (reserved.has(cell)) continue;
+      const blueCount = s.pieces.filter((piece) => piece.owner === "blue").length;
+      s.pieces.push(
+        newPiece(
+          s,
+          blueCount < 9 ? "blue" : "amber",
+          Math.floor(cell / 8),
+          cell % 8,
+        ),
+      );
+    }
+    return { s, parent };
+  };
+
+  const primitive = makeState(false),
+    articulated = makeState(true);
+
+  assert.equal(
+    reproduce(context(primitive.s), primitive.parent, null, "teste", {
+      forcedCount: 4,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    2,
+  );
+  assert.equal(
+    reproduce(context(articulated.s), articulated.parent, null, "teste", {
+      forcedCount: 4,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+});
+
 test("predation creates at most one descendant and none once population pressure starts", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
