@@ -69,7 +69,7 @@ export const barrierAt = (state, r, c) =>
   builtBarrierAt(state, r, c) || naturalBarrierAt(state, r, c);
 export const terrain = (state, r, c) => state.board[square(r, c)];
 export const round = (state) => Math.floor(state.turn / 2);
-export const ECOLOGICAL_DOMAIN_START_TURN = 300;
+export const ECOLOGICAL_DOMAIN_START_TURN = 200;
 export const ECOLOGICAL_DOMAIN_REQUIRED_TURNS = 3;
 export const ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS = 3;
 export const ecologicalQuadrant = (r, c) =>
