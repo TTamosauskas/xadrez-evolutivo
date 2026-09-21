@@ -12,6 +12,7 @@ import {
   aquaticTerrainCell,
   conwayUnlocked,
   deleteriousMutationUnlocked,
+  NEGATIVE_TRAITS,
   eventWeights,
   innovationWeight,
   missingInnovations,
