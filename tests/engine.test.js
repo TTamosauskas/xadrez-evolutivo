@@ -2245,7 +2245,7 @@ test("Gimnospermas turns offspring into seeds that disperse for three rounds bef
   assertState(s);
 });
 
-test("Espinhos has a one-in-four chance to kill the aggressor before capture", () => {
+test("Espinhos has a one-in-ten chance to kill the aggressor on a capture attempt", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4 },
     {
@@ -2261,7 +2261,7 @@ test("Espinhos has a one-in-four chance to kill the aggressor before capture", (
     },
     { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
   ]);
-  s.rng = 0;
+  s.rng = 1972;
   const attacker = s.pieces[0],
     defender = s.pieces[1];
   s = simulate(s, move(attacker, 4, 4));
@@ -2638,6 +2638,45 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
   assertState(s);
 });
 
+test("Espinhos and Chifre can counterattack before another defense makes capture fail", () => {
+  let thorns = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4 },
+    {
+      owner: "amber",
+      r: 4,
+      c: 4,
+      traits: [
+        "Fotossíntese",
+        "Embriófitas",
+        "Traqueófitas",
+        "Espinhos",
+        "Madeira",
+      ],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  thorns.rng = 1972;
+  thorns = simulate(thorns, move(thorns.pieces[0], 4, 4));
+  assert.ok(!thorns.pieces.some((piece) => piece.id === 1));
+  assert.ok(thorns.pieces.some((piece) => piece.id === 2));
+
+  let horn = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4 },
+    {
+      owner: "amber",
+      r: 4,
+      c: 4,
+      traits: ["Chifre", "Velocidade"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  horn.rng = 1972;
+  horn = simulate(horn, move(horn.pieces[0], 4, 4));
+  assert.ok(!horn.pieces.some((piece) => piece.id === 1));
+  assert.ok(horn.pieces.some((piece) => piece.id === 2));
+  assertState(horn);
+});
+
 test("Chifre can kill an unarmored aggressor before capture", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
@@ -2823,7 +2862,7 @@ test("Mimetismo can redirect capture damage to an adjacent piece", () => {
     const probe = structuredClone(base);
     probe.rng = seed;
     const next = simulate(probe, move(probe.pieces[0], 4, 4));
-    if (next.logs.some((entry) => entry.text.includes("🐙 Mimetismo desviou")))
+    if (next.logs.some((entry) => entry.text.includes("🫥 Mimetismo desviou")))
       result = next;
   }
   assert.ok(result);
