@@ -119,7 +119,10 @@ test("first generation-3 habitat update preserves every geological preset", () =
     tickEnvironment(context(s));
 
     const afterFertile = cellsOf(s, "fertile"),
-      afterHostile = cellsOf(s, "hostile");
+      afterHostile = cellsOf(s, "hostile"),
+      conwayActive =
+        stage.index >=
+        GEOLOGICAL_STAGES.find((entry) => entry.id === "devonian").index;
     assert.ok(
       Math.abs(afterFertile.size - beforeFertile.size) <= 2,
       `${stage.period}: preset fértil mudou de ${beforeFertile.size} para ${afterFertile.size}`,
@@ -138,7 +141,11 @@ test("first generation-3 habitat update preserves every geological preset", () =
         Math.max(0, beforeHostile.size - 2),
       `${stage.period}: geometria hostil foi reescrita no primeiro tick`,
     );
-    assert.equal(s.nextHabitatGeneration, 5);
+    assert.equal(s.nextHabitatGeneration, conwayActive ? 5 : 3);
+    if (!conwayActive) {
+      assert.deepEqual(afterFertile, beforeFertile);
+      assert.deepEqual(afterHostile, beforeHostile);
+    }
     assertState(s);
   }
 });
@@ -262,7 +269,7 @@ test("ancestral gray King splits into paired photosynthetic and predatory founde
 
 test("mutual blocking advances Conway turn by turn until one side can act", () => {
   let s = createState(302, {
-    geologicalStage: "silurian",
+    geologicalStage: "devonian",
     naturalBarriers: false,
   });
   s.board.fill("neutral");
@@ -315,7 +322,7 @@ test("mutual blocking advances Conway turn by turn until one side can act", () =
 
 test("stalled Conway repairs the local habitat in stages without a severe event", () => {
   let s = createState(303, {
-    geologicalStage: "silurian",
+    geologicalStage: "devonian",
     naturalBarriers: false,
   });
   s.board.fill("neutral");
@@ -1430,7 +1437,7 @@ test("solar event notice follows the compact ecological modal model", () => {
 });
 
 test("generation milestones drive habitat and queue ecological events", () => {
-  const s = createState(2),
+  const s = createState(2, { geologicalStage: "devonian" }),
     ctx = context(s);
   s.maxGenerationReached = 4;
   tickEnvironment(ctx);
@@ -2943,7 +2950,7 @@ test("successor cycle gives both sides the same photosynthetic and non-photosynt
 
 test("severe events suspend Conway for five turns while blocked turns still advance", () => {
   let s = createState(505, {
-    geologicalStage: "silurian",
+    geologicalStage: "devonian",
     naturalBarriers: false,
   });
   s.board.fill("neutral");
