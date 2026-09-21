@@ -312,11 +312,18 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   Angiospermas: ["Embriófitas", "Traqueófitas"],
   Eusocialidade: ["Sociabilidade"],
 };
-export const has = (piece, trait) =>
-  !!piece?.traits?.includes(trait) ||
-  !!piece?.traits?.some((active) =>
-    TRAIT_CAPABILITY_IMPLICATIONS[active]?.includes(trait),
+export const has = (piece, trait) => {
+  const activeTraits = [
+    ...(piece?.traits ?? []),
+    ...(piece?.somaticMutations ?? []),
+  ];
+  return (
+    activeTraits.includes(trait) ||
+    activeTraits.some((active) =>
+      TRAIT_CAPABILITY_IMPLICATIONS[active]?.includes(trait),
+    )
   );
+};
 export const energyBranch = (piece) =>
   piece?.traits?.includes("Fotossíntese")
     ? "Fotossíntese"
