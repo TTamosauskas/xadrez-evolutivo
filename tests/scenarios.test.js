@@ -13,6 +13,7 @@ import {
   arenaGenomeValid,
   arenaInterventionCount,
   arenaRecessivePairs,
+  arenaTraitCost,
 } from "../src/arena.js";
 import {
   createArenaState,
@@ -222,7 +223,7 @@ test("Arena starts with four engineered founders and ignores geological chronolo
     },
     6,
   );
-  assert.equal(state.version, 14);
+  assert.equal(state.version, 15);
   assert.equal(state.scenario, "arena");
   assert.equal(state.arenaPhase, 1);
   assert.equal(state.pieces.length, 4);
@@ -250,7 +251,7 @@ test("Arena founders carry exactly two randomly recessive characteristics per li
       genome = piece.ancestry.filter(
         (trait) => trait !== "Respiração anaeróbia",
       );
-    assert.equal(genome.length, ARENA_TRAIT_BUDGET);
+    assert.equal(arenaTraitCost(genome), ARENA_TRAIT_BUDGET);
     assert.equal(recessives.length, ARENA_RECESSIVE_COUNT);
     assert.ok(recessives.every((trait) => genome.includes(trait)));
     assert.ok(recessives.every((trait) => !piece.traits.includes(trait)));
@@ -332,6 +333,6 @@ test("v11 saves migrate to Cenários Alternativos", () => {
   delete legacy.arenaPhase;
   delete legacy.arenaFounders;
   const migrated = deserialize(JSON.stringify(legacy));
-  assert.equal(migrated.version, 14);
+  assert.equal(migrated.version, 15);
   assert.equal(migrated.scenario, "alternative");
 });
