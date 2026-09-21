@@ -25,7 +25,11 @@ export const TRAITS = {
   ],
   "Locomoção Articulada": [
     "🦵",
-    "Especialização locomotora de Vertebrados ou Artrópodes; habilita as formas derivadas permitidas pelo plano corporal e é pré-requisito de Locomoção Avançada.",
+    "Especialização locomotora de Vertebrados ou Artrópodes; habilita as formas derivadas permitidas pelo plano corporal. A partir do Siluriano, sem Locomoção Terrestre, movimento e captura só podem terminar em casas férteis.",
+  ],
+  "Locomoção Terrestre": [
+    "🐛",
+    "Adapta o deslocamento a substratos expostos. A criatura pode mover-se e capturar também em casas neutras e hostis; casas hostis continuam oferecendo o risco ambiental normal.",
   ],
   "Percepção Espacial": [
     "꩜",
@@ -34,7 +38,7 @@ export const TRAITS = {
   Escavador: ["🦡", "Pode perfurar barreiras."],
   "Locomoção Avançada": [
     "🐎",
-    "Permite uma segunda movimentação no mesmo turno.",
+    "Especialização posterior da Locomoção Terrestre; permite uma segunda movimentação no mesmo turno.",
   ],
   Escalador: [
     "🐐",
@@ -290,7 +294,12 @@ export const coord = (r, c) => `${String.fromCharCode(65 + c)}${8 - r}`;
 const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Respiração aeróbia": ["Respiração anaeróbia"],
   "Locomoção Articulada": ["Locomoção Primitiva"],
-  "Locomoção Avançada": ["Locomoção Articulada", "Locomoção Primitiva"],
+  "Locomoção Terrestre": ["Locomoção Articulada", "Locomoção Primitiva"],
+  "Locomoção Avançada": [
+    "Locomoção Terrestre",
+    "Locomoção Articulada",
+    "Locomoção Primitiva",
+  ],
   "Vetor Patógeno": ["Parasitismo"],
   Onívoro: ["Carnívoro", "Herbívoro"],
   Traqueófitas: ["Embriófitas"],
