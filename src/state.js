@@ -647,7 +647,11 @@ function earthFounderRecessives(historicalTraits, activeTraits, plant) {
 
 function previewFounderProfiles(stageIndex) {
   const stage = GEOLOGICAL_STAGES[stageIndex],
-    curated = EARTH_FOUNDER_GENOMES[stage?.id];
+    curated = EARTH_FOUNDER_GENOMES[stage?.id],
+    primitiveLocomotionStageIndex = GEOLOGICAL_STAGES.findIndex((entry) =>
+      entry.required.includes("Locomoção Primitiva"),
+    ),
+    prePrimitiveLocomotion = stageIndex <= primitiveLocomotionStageIndex;
   if (curated) {
     const historicalTraits = [
       ...new Set([
@@ -661,7 +665,7 @@ function previewFounderProfiles(stageIndex) {
     return {
       historicalTraits,
       primary: {
-        rank: 0,
+        rank: prePrimitiveLocomotion ? 4 : 0,
         traits: normalizeActiveTraits(curated.plant, "Fotossíntese"),
         ancestry: [...new Set(curated.plant)],
         recessiveTraits: earthFounderRecessives(
@@ -671,7 +675,7 @@ function previewFounderProfiles(stageIndex) {
         ),
       },
       companion: {
-        rank: curated.rank ?? 0,
+        rank: prePrimitiveLocomotion ? 4 : (curated.rank ?? 0),
         traits: normalizeActiveTraits(curated.animal, "Predação"),
         ancestry: [...new Set(curated.animal)],
         recessiveTraits: earthFounderRecessives(
@@ -698,14 +702,15 @@ function previewFounderProfiles(stageIndex) {
     );
   if (!animalTraits.includes("Predação")) animalTraits.unshift("Predação");
   const derivedRanks = [1, 2, 3, 5],
-    animalRank =
-      stageIndex <= 3
+    animalRank = prePrimitiveLocomotion
+      ? 4
+      : stageIndex <= 3
         ? 0
         : derivedRanks[Math.min(derivedRanks.length - 1, stageIndex - 4)];
   return {
     historicalTraits: [...new Set(historicalTraits)],
     primary: {
-      rank: 0,
+      rank: prePrimitiveLocomotion ? 4 : 0,
       traits: normalizeActiveTraits(plantTraits, "Fotossíntese"),
       ancestry: [...new Set(plantTraits)],
       recessiveTraits: earthFounderRecessives(
