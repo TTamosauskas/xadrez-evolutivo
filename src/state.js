@@ -69,6 +69,28 @@ export const barrierAt = (state, r, c) =>
   builtBarrierAt(state, r, c) || naturalBarrierAt(state, r, c);
 export const terrain = (state, r, c) => state.board[square(r, c)];
 export const round = (state) => Math.floor(state.turn / 2);
+export const ECOLOGICAL_DOMAIN_START_TURN = 300;
+export const ECOLOGICAL_DOMAIN_REQUIRED_TURNS = 3;
+export const ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS = 3;
+export const ecologicalQuadrant = (r, c) =>
+  (r >= 4 ? 2 : 0) + (c >= 4 ? 1 : 0);
+export const createEcologicalDomain = () => ({
+  active: false,
+  quadrants: Array.from({ length: 4 }, () => ({
+    owner: null,
+    progress: 0,
+    consolidated: false,
+  })),
+});
+export function ecologicalDomainBlocked(state, owner, r, c) {
+  if (!owner || !inside(r, c)) return false;
+  const quadrant = state.ecologicalDomain?.quadrants?.[ecologicalQuadrant(r, c)];
+  return !!(
+    quadrant?.consolidated &&
+    quadrant.owner &&
+    quadrant.owner !== owner
+  );
+}
 // O desfecho e a pressão ecológica consideram apenas organismos já ativos.
 // Ovos e sementes continuam recursos reprodutivos, sem sustentar uma linhagem.
 export const activePopulation = (state) => state.pieces.length;
@@ -544,6 +566,7 @@ export function createState(seed = Date.now(), options = {}) {
     populationLatched: { blue: false, amber: false },
     populationDiseaseCooldownUntil: 0,
     severePopulationLatched: false,
+    ecologicalDomain: createEcologicalDomain(),
     result: null,
   };
   if (originPrelude) {
@@ -1183,6 +1206,24 @@ export function assertState(state) {
       integer(profile.mutations) &&
       integer(profile.generation);
   if (!state || typeof state !== "object") throw Error("Partida inválida.");
+  if (
+    state.ecologicalDomain !== undefined &&
+    (!state.ecologicalDomain ||
+      typeof state.ecologicalDomain.active !== "boolean" ||
+      !Array.isArray(state.ecologicalDomain.quadrants) ||
+      state.ecologicalDomain.quadrants.length !== 4 ||
+      state.ecologicalDomain.quadrants.some(
+        (quadrant) =>
+          !quadrant ||
+          ![null, "blue", "amber"].includes(quadrant.owner) ||
+          !integer(quadrant.progress, 0, ECOLOGICAL_DOMAIN_REQUIRED_TURNS) ||
+          typeof quadrant.consolidated !== "boolean" ||
+          (quadrant.consolidated &&
+            (!quadrant.owner ||
+              quadrant.progress !== ECOLOGICAL_DOMAIN_REQUIRED_TURNS)),
+      ))
+  )
+    throw Error("Domínio ecológico inválido.");
   if (
     !integer(state.revision) ||
     !integer(state.nextNotice, 1) ||
