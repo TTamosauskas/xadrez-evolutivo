@@ -2479,10 +2479,10 @@ test("Pele grossa resists captures unless the aggressor has Garras", () => {
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
 });
 
-test("Cuidado Parental protects adjacent eggs from Ovífagia", () => {
+test("Incubação protects adjacent eggs from Ovífagia", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Ovífagia"] },
-      { owner: "amber", r: 3, c: 4, traits: ["Cuidado Parental"] },
+      { owner: "amber", r: 3, c: 4, traits: ["Incubação"] },
     ]),
     eater = s.pieces[0],
     parent = s.pieces[1];
