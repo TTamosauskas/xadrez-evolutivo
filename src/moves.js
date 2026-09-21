@@ -13,7 +13,11 @@ import {
   fertilityPaused,
   ecologicalDomainBlocked,
 } from "./state.js";
-import { captureUnlocked } from "./geology.js";
+import {
+  captureUnlocked,
+  currentGeologicalStage,
+  geologicalStage,
+} from "./geology.js";
 const ORTH = [
     [-1, 0],
     [1, 0],
@@ -109,9 +113,18 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   )
     return [];
   if (!ignoreChain && state.chain && state.chain !== p.id) return [];
-  const targets = [];
+  const targets = [],
+    terrestrialRestriction =
+      currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+      !has(p, "Locomoção Terrestre");
   function add(r, c, path, extra = {}) {
     if (!inside(r, c) || ecologicalDomainBlocked(state, p.owner, r, c)) return;
+    if (
+      terrestrialRestriction &&
+      !extra.stay &&
+      terrain(state, r, c) !== "fertile"
+    )
+      return;
     const victim = at(state, r, c),
       egg = eggAt(state, r, c),
       builtBarrier = builtBarrierAt(state, r, c),
