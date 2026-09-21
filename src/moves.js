@@ -11,6 +11,7 @@ import {
   juvenile,
   reproductionReady,
   fertilityPaused,
+  ecologicalDomainBlocked,
 } from "./state.js";
 import { captureUnlocked } from "./geology.js";
 const ORTH = [
@@ -45,6 +46,9 @@ export const resting = (state, p) =>
 export function manipulationTargets(state) {
   const pending = state.manipulation;
   if (state.phase !== "manipulate" || !pending) return [];
+  const parent = state.pieces.find((piece) => piece.id === pending.id);
+  if (!parent || ecologicalDomainBlocked(state, parent.owner, parent.r, parent.c))
+    return [];
   const origin = {
       r: Math.floor(pending.origin / 8),
       c: pending.origin % 8,
@@ -58,6 +62,7 @@ export function manipulationTargets(state) {
       if (
         inside(r, c) &&
         terrain(state, r, c) === "neutral" &&
+        !ecologicalDomainBlocked(state, parent.owner, r, c) &&
         !barrierAt(state, r, c)
       )
         targets.push({ r, c });
@@ -85,6 +90,7 @@ export function constructionTargets(state) {
         inside(r, c) &&
         !at(state, r, c) &&
         !eggAt(state, r, c) &&
+        !ecologicalDomainBlocked(state, parent.owner, r, c) &&
         !barrierAt(state, r, c) &&
         !decomposition.has(cell)
       )
@@ -97,6 +103,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     !p ||
     state.result ||
     !state.pieces.some((x) => x.id === p.id) ||
+    ecologicalDomainBlocked(state, p.owner, p.r, p.c) ||
     resting(state, p) ||
     dormant(state, p)
   )
@@ -104,7 +111,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   if (!ignoreChain && state.chain && state.chain !== p.id) return [];
   const targets = [];
   function add(r, c, path, extra = {}) {
-    if (!inside(r, c)) return;
+    if (!inside(r, c) || ecologicalDomainBlocked(state, p.owner, r, c)) return;
     const victim = at(state, r, c),
       egg = eggAt(state, r, c),
       builtBarrier = builtBarrierAt(state, r, c),
@@ -383,6 +390,7 @@ export function nursingTargets(state, p) {
     state.chain ||
     !p ||
     p.owner !== state.current ||
+    ecologicalDomainBlocked(state, p.owner, p.r, p.c) ||
     !has(p, "Lactação") ||
     resting(state, p) ||
     dormant(state, p)
@@ -398,9 +406,10 @@ export function nursingTargets(state, p) {
   );
 }
 
-function emptyEggTarget(state, r, c) {
+function emptyEggTarget(state, r, c, owner = null) {
   return (
     inside(r, c) &&
+    !ecologicalDomainBlocked(state, owner, r, c) &&
     !at(state, r, c) &&
     !eggAt(state, r, c) &&
     !plantSeedAt(state, r, c) &&
@@ -419,7 +428,7 @@ export function domesticPlacementTargets(state) {
         c = pending.origin.c + dc;
       if (
         distance(pending.origin, { r, c }) <= 2 &&
-        emptyEggTarget(state, r, c)
+        emptyEggTarget(state, r, c, pending.owner)
       )
         cells.push({ r, c });
     }
@@ -443,7 +452,7 @@ export function eggPlacementTargets(state) {
         c = pending.origin.c + dc;
       if (
         distance(pending.origin, { r, c }) <= 3 &&
-        emptyEggTarget(state, r, c)
+        emptyEggTarget(state, r, c, pending.owner)
       )
         cells.push({ r, c });
     }
@@ -456,6 +465,7 @@ export function ovoviviparousPlacementTargets(state, p) {
     state.chain ||
     !p ||
     p.owner !== state.current ||
+    ecologicalDomainBlocked(state, p.owner, p.r, p.c) ||
     resting(state, p) ||
     dormant(state, p) ||
     !(p.pregnancies ?? []).some(
@@ -471,7 +481,7 @@ export function ovoviviparousPlacementTargets(state, p) {
       if (!dr && !dc) continue;
       const r = p.r + dr,
         c = p.c + dc;
-      if (emptyEggTarget(state, r, c)) cells.push({ r, c });
+      if (emptyEggTarget(state, r, c, p.owner)) cells.push({ r, c });
     }
   return cells;
 }
@@ -482,6 +492,7 @@ export function canParasitize(state, p) {
     state.chain ||
     !p ||
     p.owner !== state.current ||
+    ecologicalDomainBlocked(state, p.owner, p.r, p.c) ||
     !has(p, "Parasitismo") ||
     resting(state, p) ||
     dormant(state, p)
@@ -540,7 +551,11 @@ export function legalActions(state) {
       id: piece.id,
     }));
   return state.pieces
-    .filter((p) => p.owner === state.current)
+    .filter(
+      (p) =>
+        p.owner === state.current &&
+        !ecologicalDomainBlocked(state, p.owner, p.r, p.c),
+    )
     .flatMap((p) => [
       ...movesFor(state, p).map((t) => ({
         type: "MOVE",
@@ -566,15 +581,29 @@ export function legalActions(state) {
 }
 export function canWaitForRest(state, owner) {
   return state.pieces.some(
-    (p) => p.owner === owner && (resting(state, p) || dormant(state, p)),
+    (p) =>
+      p.owner === owner &&
+      !ecologicalDomainBlocked(state, p.owner, p.r, p.c) &&
+      (resting(state, p) || dormant(state, p)),
   );
 }
 export function canWaitForBirth(state, owner) {
   return (
-    state.eggs.some((egg) => egg.owner === owner) ||
-    state.plantSeeds.some((seed) => seed.owner === owner) ||
+    state.eggs.some(
+      (egg) =>
+        egg.owner === owner &&
+        !ecologicalDomainBlocked(state, owner, egg.r, egg.c),
+    ) ||
+    state.plantSeeds.some(
+      (seed) =>
+        seed.owner === owner &&
+        !ecologicalDomainBlocked(state, owner, seed.r, seed.c),
+    ) ||
     state.pieces.some(
-      (p) => p.owner === owner && (p.pregnancies?.length ?? 0) > 0,
+      (p) =>
+        p.owner === owner &&
+        !ecologicalDomainBlocked(state, p.owner, p.r, p.c) &&
+        (p.pregnancies?.length ?? 0) > 0,
     )
   );
 }
