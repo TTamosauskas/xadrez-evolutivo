@@ -612,7 +612,10 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   s.rng = 1;
   s.board[43] = "hostile";
   s.board[35] = "hostile";
-  s.pieces[0].traits = ["Locomoção Primitiva"];
+  s.pieces[0].traits = [
+    "Locomoção Primitiva",
+    "Locomoção Terrestre",
+  ];
   s.pieces[0].rank = 1;
   assert.ok(
     simulate(s, move(s.pieces[0], 4, 4)).pieces.some((p) => p.id === 1),
@@ -2577,6 +2580,7 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
         "Locomoção Avançada",
       ].includes(trait),
   );
+  s.board[4 * 8 + 4] = "fertile";
   assert.ok(movesFor(s, king).some((target) => target.r === 4 && target.c === 4));
   assert.ok(!movesFor(s, king).some((target) => target.r === 4 && target.c === 2));
 
@@ -2604,6 +2608,7 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
         "Locomoção Avançada",
       ].includes(trait),
   );
+  s.board[3 * 8 + 4] = "fertile";
   const targets = movesFor(s, pawn);
   assert.ok(!targets.some((target) => target.r === 3 && target.c === 3));
   assert.ok(targets.some((target) => target.r === 3 && target.c === 4));
@@ -2625,6 +2630,7 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
         "Locomoção Avançada",
       ].includes(trait),
   );
+  s.board[4 * 8 + 4] = "fertile";
   s = simulate(s, move(predator, 4, 4));
   const survivor = s.pieces.find((piece) => piece.id === predator.id);
   assert.deepEqual([survivor.r, survivor.c], [4, 4]);
