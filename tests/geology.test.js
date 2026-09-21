@@ -155,8 +155,14 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
       assert.ok(weight > 0);
     }
 
-  const archean = createState(70, { geologicalStage: "archean" }),
-    proterozoic = createState(71, { geologicalStage: "proterozoic" });
+  const archean = createState(70, {
+      scenario: "earth",
+      geologicalStage: "archean",
+    }),
+    proterozoic = createState(71, {
+      scenario: "earth",
+      geologicalStage: "proterozoic",
+    });
   assert.equal(eventWeights(archean).pathogen ?? 0, 0);
   assert.ok(eventWeights(proterozoic).pathogen > 0);
 });
