@@ -20,6 +20,7 @@ export const NEGATIVE_GENETIC_TRAITS = new Set([
   "Mutação Deletéria",
   "Mutação Disfuncional",
 ]);
+export const DOMINANT_MUTATION_TRAITS = new Set(["Locomoção Terrestre"]);
 
 const LEGACY_REPRO_MAP = {
   development: {
@@ -489,7 +490,9 @@ export function gainGenomeAllele(source, trait, random) {
     hiddenCarrier =
       derived.length === 1 && derived[0].allele.dominance === "recessive";
   pair[index] = derivedAllele(
-    BODY_PLAN_TRAITS.has(trait) || ENERGY_BRANCH_TRAITS.has(trait)
+    BODY_PLAN_TRAITS.has(trait) ||
+      ENERGY_BRANCH_TRAITS.has(trait) ||
+      DOMINANT_MUTATION_TRAITS.has(trait)
       ? "dominant"
       : hiddenCarrier
         ? "recessive"
