@@ -550,6 +550,18 @@ export function deserialize(raw) {
             .filter((id) => id !== "Ovos" && id !== "Esporos"),
         ),
       ];
+      if (
+        sourceVersion < 15 &&
+        data.historicalTraits.includes("Reparo Celular") &&
+        !data.discoveries.mutations.includes("Reparo Celular")
+      )
+        data.discoveries.mutations.push("Reparo Celular");
+      if (
+        sourceVersion < 15 &&
+        data.historicalTraits.includes("Simetria Bilateral") &&
+        !data.discoveries.mutations.includes("Simetria Bilateral")
+      )
+        data.discoveries.mutations.push("Simetria Bilateral");
       data.discoveries.read = [
         ...new Set(
           (data.discoveries.read ?? [])
