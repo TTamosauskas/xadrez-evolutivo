@@ -813,7 +813,6 @@ function endEvent(state) {
 }
 export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen = true } = {}) {
   const state = ctx.state;
-  if (state.event) endEvent(state);
   const def = id
     ? EVENTS.find((e) => e.id === id)
     : (() => {
@@ -829,6 +828,12 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
         return weightedEvent(state, candidates, weights);
       })();
   if (!def) throw Error("Evento inválido.");
+  if (def.id === "pathogen") {
+    const disease = startDisease(state, "eco");
+    if (disease) state.previousEvent = "pathogen";
+    return disease;
+  }
+  if (state.event) endEvent(state);
   const event = {
     ...def,
     startRound: round(state),
@@ -870,9 +875,6 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
         [],
         removeNaturalBarriers(state, event.hazards),
       );
-      break;
-    case "pathogen":
-      startDisease(state);
       break;
     case "drought":
       event.cap = Math.max(1, Math.ceil(fertile(state).length / 2));
@@ -1333,7 +1335,7 @@ export function tickEnvironment(ctx) {
     for (const i of event.hazards) state.board[i] = "hostile";
   } else if (state.pendingEcologicalEvents > 0) {
     state.pendingEcologicalEvents--;
-    startEvent(ctx, null, { allowSevere: false, allowPathogen: false });
+    startEvent(ctx, null, { allowSevere: false, allowPathogen: true });
   }
 }
 
