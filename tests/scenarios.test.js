@@ -152,7 +152,7 @@ test("Arena starts with four engineered founders and ignores geological chronolo
   const predator = state.pieces.find(
     (piece) =>
       piece.owner === "blue" &&
-      piece.ancestry.includes("Carnívoro"),
+      piece.traits.includes("Predação"),
   );
   assert.ok(predator);
   assert.equal(traitUnlocked(state, "Visão Binocular", predator), true);
@@ -208,7 +208,7 @@ test("Arena carries survivor piece forms into the next engineered phase", () => 
     next.pieces
       .filter((piece) => piece.owner === "blue")
       .map((piece) => piece.rank),
-    [3, 3],
+    [3, 2],
   );
   assert.equal(next.arenaPhase, 2);
 });
@@ -237,7 +237,7 @@ test("Arena engineering counts substitutions rather than raw edits", () => {
     ],
     after = [
       ARENA_ARCHETYPES[0].map((trait) =>
-        trait === "Visão Binocular" ? "Camuflagem" : trait,
+        trait === "Percepção Espacial" ? "Camuflagem" : trait,
       ),
       [...ARENA_ARCHETYPES[4]],
     ],

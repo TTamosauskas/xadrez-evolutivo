@@ -159,7 +159,7 @@ test("load falls back to v2 key and migrates without overwriting it", () => {
   const migrated = load(storage);
   assert.equal(migrated.version, 13);
   assert.equal(entries.get(V2_KEY), raw);
-  assert.ok(migrated.pieces.every((p) => p.traits.includes("Locomoção")));
+  assert.ok(migrated.pieces.every((p) => has(p, "Locomoção Primitiva")));
   assert.ok(migrated.pieces.every((p) => p.traits.includes("Predação")));
 });
 
@@ -197,7 +197,8 @@ test("v9 cumulative phenotypes migrate to active families while preserving ances
   assert.equal(piece.traits.includes("Locomoção"), false);
   assert.equal(piece.traits.includes("Sociabilidade"), false);
   assert.ok(piece.ancestry.includes("Carnívoro"));
-  assert.ok(piece.ancestry.includes("Locomoção"));
+  assert.ok(piece.ancestry.includes("Locomoção Articulada"));
+  assert.ok(piece.ancestry.includes("Locomoção Primitiva"));
   assert.ok(piece.ancestry.includes("Sociabilidade"));
   assertState(migrated);
 });
@@ -300,7 +301,8 @@ test("v5 saves split invalid Fotossíntese + Predação hybrids during migration
     "Fotossíntese",
   ]);
   assert.ok(migrated.pieces[1].traits.includes("Predação"));
-  assert.ok(migrated.pieces[1].traits.includes("Locomoção"));
+  assert.ok(migrated.pieces[1].traits.includes("Locomoção Articulada"));
+  assert.ok(migrated.pieces[1].traits.includes("Locomoção Primitiva"));
   assert.ok(!migrated.pieces[1].traits.includes("Fotossíntese"));
   assert.deepEqual(migrated.historicalTraits, [
     "Respiração anaeróbia",
@@ -409,7 +411,7 @@ test("imports legacy positions, specialization loss, seeds, poison and timers", 
   const s = deserialize(JSON.stringify(old));
   assert.equal(s.pieces[0].seeds, 3);
   assert.ok(s.pieces[0].traits.includes("Coletor"));
-  assert.ok(s.pieces[0].traits.includes("Locomoção"));
+  assert.ok(has(s.pieces[0], "Locomoção Primitiva"));
   assert.ok(["silurian", "devonian", "carboniferous", "permian", "triassic", "jurassic", "cretaceous", "paleogene", "neogene", "quaternary"].includes(s.geologicalStage));
   assert.equal(s.turn, 3);
   assert.equal(s.pieces[0].venom.remaining, 2);
@@ -438,10 +440,11 @@ test("v2 saves retire obsolete Ovos genes while preserving old locomotion semant
   assert.ok(!s.pieces[0].traits.includes("Ovos"));
   assert.equal(s.pieces[0].traits.includes("Locomoção"), false);
   assert.ok(s.pieces[0].traits.includes("Locomoção Avançada"));
-  assert.ok(s.pieces.every((p) => has(p, "Locomoção")));
+  assert.ok(s.pieces.every((p) => has(p, "Locomoção Primitiva")));
   assert.ok(s.pieces.every((p) => Array.isArray(p.pregnancies)));
   assert.equal(s.totalCycles, 4);
-  assert.ok(s.historicalTraits.includes("Locomoção"));
+  assert.ok(s.historicalTraits.includes("Locomoção Articulada"));
+  assert.ok(s.historicalTraits.includes("Locomoção Primitiva"));
 });
 
 test("v12 saves drop obsolete Ovos history discoveries and alleles", () => {

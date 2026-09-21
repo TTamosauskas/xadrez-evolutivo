@@ -10,8 +10,9 @@ import { chooseAction } from "../src/ai.js";
 import { legalActions } from "../src/moves.js";
 
 const gamesPerStage = Number(process.env.GAMES_PER_STAGE ?? 6),
-  limit = Number(process.env.LIMIT ?? 1200),
-  goalRounds = Number(process.env.GOAL_ROUNDS ?? 200);
+  goalTurns = Number(process.env.GOAL_TURNS ?? 200),
+  turnLimit = Number(process.env.TURN_LIMIT ?? 300),
+  commandLimit = Number(process.env.COMMAND_LIMIT ?? turnLimit * 4);
 
 const stageIndex = (id) => geologicalStage(id).index,
   available = (trait, stage) =>
@@ -38,7 +39,11 @@ function animalTraits(stage, game) {
   if (available("Onívoro", stage)) traits.push("Carnívoro", "Onívoro");
   else if (available("Herbívoro", stage) && game % 2 === 0) traits.push("Herbívoro");
   else if (available("Carnívoro", stage)) traits.push("Carnívoro");
-  if (available("Locomoção", stage)) traits.push("Locomoção");
+  if (available("Locomoção Primitiva", stage))
+    traits.push("Locomoção Primitiva");
+  if (available("Vertebrado", stage)) traits.push("Vertebrado");
+  if (available("Locomoção Articulada", stage))
+    traits.push("Locomoção Articulada");
   if (available("Escavador", stage) && game % 2 === 1) traits.push("Escavador");
   if (available("Respiração Cutânea", stage)) traits.push("Respiração Cutânea");
   if (available("Escalador", stage) && game % 2 === 0) traits.push("Escalador");
@@ -75,17 +80,22 @@ function percentile(values, q) {
 
 function summarize(runs) {
   const finished = runs.filter((run) => run.finished),
+    unfinished = runs.filter((run) => !run.finished),
     decisive = finished.filter((run) => run.winner),
+    stalled = unfinished.filter((run) => run.stalled),
+    technicalCapped = unfinished.filter((run) => run.technicalCapped),
     turns = finished.map((run) => run.turns),
     rounds = finished.map((run) => run.rounds),
-    goalMet = decisive.filter((run) => run.rounds <= goalRounds),
+    goalMet = decisive.filter((run) => run.turns <= goalTurns),
     commands = finished.map((run) => run.commands);
   return {
     games: runs.length,
     finished: finished.length,
     decisive: decisive.length,
     draws: finished.length - decisive.length,
-    capped: runs.length - finished.length,
+    capped: unfinished.length,
+    stalled: stalled.length,
+    technicalCapped: technicalCapped.length,
     finishRate: Number((finished.length / runs.length).toFixed(3)),
     turns: {
       min: turns.length ? Math.min(...turns) : null,
@@ -108,7 +118,7 @@ function summarize(runs) {
         : null,
     },
     goal: {
-      rounds: goalRounds,
+      turns: goalTurns,
       met: goalMet.length,
       rate: Number((goalMet.length / runs.length).toFixed(3)),
     },
@@ -121,7 +131,7 @@ function summarize(runs) {
       80: finished.filter((run) => run.turns <= 80).length,
       120: finished.filter((run) => run.turns <= 120).length,
       200: finished.filter((run) => run.turns <= 200).length,
-      600: finished.filter((run) => run.turns <= 600).length,
+      300: finished.filter((run) => run.turns <= 300).length,
     },
     blocks: {
       mutualMean: Number(
@@ -209,7 +219,11 @@ function runGame(initial, seed) {
     conwayCorridorCells = 0;
   const initialNaturalBarriers = s.naturalBarriers.length;
 
-  while (!s.result && commands < limit) {
+  while (
+    !s.result &&
+    s.turn < turnLimit &&
+    commands < commandLimit
+  ) {
     if (s.notices.length) {
       s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
       notices++;
@@ -278,6 +292,8 @@ function runGame(initial, seed) {
 
   return {
     finished: !!s.result,
+    stalled: !s.result && s.turn >= turnLimit,
+    technicalCapped: !s.result && commands >= commandLimit,
     winner: s.result?.winner ?? null,
     turns: s.turn,
     rounds: Math.ceil(s.turn / 2),
@@ -304,8 +320,9 @@ function runGame(initial, seed) {
 const report = {
   gamesPerStage,
   paired: true,
-  capCommands: limit,
-  goalRounds,
+  goalTurns,
+  capTurns: turnLimit,
+  capCommands: commandLimit,
   stages: [],
 };
 const started = performance.now();
@@ -360,3 +377,23 @@ report.elapsedSeconds = Number(
 );
 console.log("PERIOD_BENCHMARK_REPORT");
 console.log(JSON.stringify(report, null, 2));
+
+const stalledGames = report.stages.reduce(
+    (sum, stage) =>
+      sum + stage.withBarriers.stalled + stage.withoutBarriers.stalled,
+    0,
+  ),
+  technicalCappedGames = report.stages.reduce(
+    (sum, stage) =>
+      sum +
+      stage.withBarriers.technicalCapped +
+      stage.withoutBarriers.technicalCapped,
+    0,
+  );
+
+if (stalledGames || technicalCappedGames) {
+  console.error(
+    `Period benchmark envelope failed: ${stalledGames} game(s) reached ${turnLimit} turns and ${technicalCappedGames} hit the technical command cap.`,
+  );
+  process.exitCode = 1;
+}

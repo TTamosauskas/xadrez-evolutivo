@@ -54,7 +54,6 @@ test("period innovations follow the didactic sequence", () => {
   assert.deepEqual(required.archean, [
     "Fotossíntese",
     "Predação",
-    "Fertilidade",
     "Dormência",
   ]);
   assert.deepEqual(required.proterozoic, [
@@ -66,9 +65,16 @@ test("period innovations follow the didactic sequence", () => {
     "Carnívoro",
   ]);
   assert.deepEqual(required.ediacaran, [
-    "Locomoção",
+    "Locomoção Primitiva",
     "Escavador",
     "Construtor de Nicho",
+  ]);
+  assert.deepEqual(required.cambrian, [
+    "Locomoção Articulada",
+    "Percepção Espacial",
+    "Carapaça",
+    "Camuflagem",
+    "Veneno",
   ]);
   assert.deepEqual(required.ordovician, ["Ovíparo"]);
   assert.deepEqual(required.silurian, ["Coletor"]);
@@ -113,19 +119,14 @@ test("Archean innovations are split across the first two cycles", () => {
     p = s.pieces[0];
   assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
   assert.equal(traitUnlocked(s, "Predação", p), false);
-  assert.equal(traitUnlocked(s, "Fertilidade", p), false);
   assert.equal(traitUnlocked(s, "Dormência", p), false);
 
   s.historicalTraits.push("Fotossíntese");
   assert.equal(traitUnlocked(s, "Predação", p), true);
   s.historicalTraits.push("Predação");
-  assert.equal(traitUnlocked(s, "Fertilidade", p), false);
   assert.equal(traitUnlocked(s, "Dormência", p), false);
 
   s.cycle = 2;
-  assert.equal(traitUnlocked(s, "Fertilidade", p), true);
-  assert.equal(traitUnlocked(s, "Dormência", p), false);
-  s.historicalTraits.push("Fertilidade");
   assert.equal(traitUnlocked(s, "Dormência", p), true);
 });
 
@@ -133,11 +134,11 @@ test("Archean keeps the first wave active in later cycles until it is complete",
   const s = createState(112, { cycle: 2 }),
     p = s.pieces[0];
   assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
-  assert.equal(traitUnlocked(s, "Fertilidade", p), false);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
   s.historicalTraits.push("Fotossíntese");
   assert.equal(traitUnlocked(s, "Predação", p), true);
   s.historicalTraits.push("Predação");
-  assert.equal(traitUnlocked(s, "Fertilidade", p), true);
+  assert.equal(traitUnlocked(s, "Dormência", p), true);
 });
 
 test("geological event pools contain only valid ecological events and no pathogen lottery", () => {
@@ -176,17 +177,17 @@ test("Predação enables capture and is an individual prerequisite for Locomoç�
   s.board.fill("neutral");
   const blue = newPiece(s, "blue", 4, 0, {
       rank: 3,
-      traits: ["Predação", "Locomoção"],
+      traits: ["Predação", "Locomoção Primitiva"],
     }),
-    amber = newPiece(s, "amber", 4, 4, { traits: [] });
+    amber = newPiece(s, "amber", 4, 1, { traits: [] });
   s.pieces.push(blue, amber);
   assert.equal(captureUnlocked(s, blue), true);
-  assert.ok(movesFor(s, blue).some((target) => target.c === 4));
+  assert.ok(movesFor(s, blue).some((target) => target.c === 1));
 
   const ancestral = { traits: [] };
-  assert.equal(traitUnlocked(s, "Locomoção", ancestral), false);
+  assert.equal(traitUnlocked(s, "Locomoção Primitiva", ancestral), false);
   ancestral.traits.push("Predação", "Multicelularismo");
-  assert.equal(traitUnlocked(s, "Locomoção", ancestral), true);
+  assert.equal(traitUnlocked(s, "Locomoção Primitiva", ancestral), true);
 });
 
 test("registering a new evolutionary discovery does not open a Marco Evolutivo modal", () => {
@@ -354,13 +355,13 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
       geologicalStage: "ediacaran",
       historicalTraits: [
         ...GEOLOGICAL_STAGES.slice(0, 2).flatMap((stage) => stage.required),
-        "Locomoção",
+        "Locomoção Primitiva",
       ],
     }),
     p = s.pieces[0],
     unrelated = { traits: [], ancestry: [] };
 
-  p.ancestry = ["Predação", "Locomoção"];
+  p.ancestry = ["Predação", "Locomoção Primitiva"];
   p.traits = ["Multicelularismo"];
   assert.equal(traitUnlocked(s, "Escavador", p), true);
   assert.equal(traitUnlocked(s, "Escavador", unrelated), false);
@@ -376,7 +377,7 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
       ...GEOLOGICAL_STAGES.slice(0, 6).flatMap((stage) => stage.required),
     ]),
   ];
-  p.ancestry.push("Construtor de Nicho");
+  p.ancestry.push("Construtor de Nicho", "Vertebrado", "Locomoção Articulada");
   assert.equal(traitUnlocked(s, "Locomoção Avançada", p), true);
   s.historicalTraits.push("Locomoção Avançada");
   p.ancestry.push("Carnívoro");
@@ -406,8 +407,7 @@ test("campaign history from another lineage does not satisfy ancestry prerequisi
       historicalTraits: [
         "Fotossíntese",
         "Predação",
-        "Fertilidade",
-        "Dormência",
+                "Dormência",
         "Multicelularismo",
         "Resistência",
         "Regeneração",
@@ -431,8 +431,7 @@ test("evolutionary precedence changes eligibility but never mutation weight", ()
   assert.deepEqual(missingInnovations(s), [
     "Fotossíntese",
     "Predação",
-    "Fertilidade",
-    "Dormência",
+        "Dormência",
   ]);
 });
 
@@ -472,7 +471,8 @@ test("active phenotype families replace older expressions without erasing ancest
     "Carnívoro",
     "Herbívoro",
     "Onívoro",
-    "Locomoção",
+    "Locomoção Primitiva",
+    "Locomoção Articulada",
     "Locomoção Avançada",
     "Embriófitas",
     "Traqueófitas",
@@ -492,7 +492,7 @@ test("active phenotype families replace older expressions without erasing ancest
   for (const suppressed of [
     "Carnívoro",
     "Herbívoro",
-    "Locomoção",
+    "Locomoção Articulada",
     "Embriófitas",
     "Traqueófitas",
     "Gimnospermas",
@@ -521,7 +521,8 @@ test("later active phenotypes retain capabilities of the form they replaced", ()
     omnivore = { traits: ["Onívoro"] },
     eusocial = { traits: ["Eusocialidade"] };
 
-  assert.equal(has(advanced, "Locomoção"), true);
+  assert.equal(has(advanced, "Locomoção Articulada"), true);
+  assert.equal(has(advanced, "Locomoção Primitiva"), true);
   assert.equal(has(vascularSeedPlant, "Embriófitas"), true);
   assert.equal(has(vascularSeedPlant, "Traqueófitas"), true);
   assert.equal(has(flowering, "Embriófitas"), true);
@@ -531,7 +532,7 @@ test("later active phenotypes retain capabilities of the form they replaced", ()
   assert.equal(has(eusocial, "Sociabilidade"), true);
 });
 
-test("Fotossíntese and Predação switch branches by substitutive mutation", () => {
+test("Fotossíntese and Predação remain fixed hereditary energy branches", () => {
   const s = createState(111);
   s.historicalTraits = ["Respiração anaeróbia", "Fotossíntese"];
   const ancestral = {
@@ -543,38 +544,26 @@ test("Fotossíntese and Predação switch branches by substitutive mutation", ()
       ancestry: ["Respiração anaeróbia", "Fotossíntese"],
     };
   assert.equal(traitUnlocked(s, "Predação", ancestral), true);
-  assert.equal(traitUnlocked(s, "Predação", photosynthetic), true);
-  assert.deepEqual(
-    applyTraitMutation(photosynthetic.traits, "Predação"),
-    ["Respiração anaeróbia", "Predação"],
-  );
+  assert.equal(traitUnlocked(s, "Predação", photosynthetic), false);
 
   s.historicalTraits.push("Predação");
   const predatory = {
     traits: [
       "Respiração anaeróbia",
       "Predação",
-      "Locomoção",
+      "Locomoção Primitiva",
       "Carnívoro",
       "Onívoro",
     ],
     ancestry: [
       "Respiração anaeróbia",
       "Predação",
-      "Locomoção",
+      "Locomoção Primitiva",
       "Carnívoro",
       "Onívoro",
     ],
   };
-  assert.equal(traitUnlocked(s, "Fotossíntese", predatory), true);
-  assert.deepEqual(
-    applyTraitMutation(predatory.traits, "Fotossíntese"),
-    ["Respiração anaeróbia", "Fotossíntese"],
-  );
-  assert.equal(
-    innovationWeight(s, "Predação", photosynthetic),
-    innovationWeight(s, "Predação", ancestral),
-  );
+  assert.equal(traitUnlocked(s, "Fotossíntese", predatory), false);
 });
 
 test("all photosynthetic innovations after Fotossíntese require Multicelularismo", () => {
@@ -639,16 +628,16 @@ test("new combat specializations unlock in the intended periods and lineages", (
       return GEOLOGICAL_STAGES.slice(0, index).flatMap((stage) => stage.required);
     },
     predator = {
-      traits: ["Multicelularismo", "Predação", "Locomoção Avançada"],
-      ancestry: ["Predação", "Locomoção", "Locomoção Avançada"],
+      traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Avançada"],
+      ancestry: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Avançada"],
     },
     herbivore = {
-      traits: ["Multicelularismo", "Predação", "Herbívoro", "Locomoção"],
-      ancestry: ["Predação", "Herbívoro", "Locomoção"],
+      traits: ["Multicelularismo", "Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
+      ancestry: ["Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
     },
     carnivore = {
-      traits: ["Multicelularismo", "Predação", "Carnívoro", "Locomoção"],
-      ancestry: ["Predação", "Carnívoro", "Locomoção"],
+      traits: ["Multicelularismo", "Predação", "Carnívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
+      ancestry: ["Predação", "Carnívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
     };
 
   const devonian = createState(181, {
@@ -684,8 +673,8 @@ test("new combat specializations unlock in the intended periods and lineages", (
     historicalTraits: historyBefore("jurassic"),
   });
   const nocturnal = {
-    traits: ["Multicelularismo", "Predação", "Locomoção", "Notívago"],
-    ancestry: ["Predação", "Locomoção", "Notívago"],
+    traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Notívago"],
+    ancestry: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Notívago"],
   };
   assert.equal(traitUnlocked(jurassic, "Visão Noturna", nocturnal), true);
   assert.equal(traitUnlocked(jurassic, "Visão Noturna", predator), false);
@@ -782,7 +771,11 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
 
   assert.equal(traitUnlocked(s, "Angiospermas", plant), true);
   for (const trait of [
-    "Locomoção",
+    "Locomoção Primitiva",
+    "Vertebrado",
+    "Artrópode",
+    "Locomoção Articulada",
+    "Percepção Espacial",
     "Escavador",
     "Escalador",
     "Respiração Cutânea",
@@ -802,20 +795,16 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
   ])
     assert.equal(traitUnlocked(s, trait, plant), false, trait);
 
-  assert.equal(traitUnlocked(s, "Predação", plant), true);
-  assert.deepEqual(
-    applyTraitMutation(
-      [...plant.traits, "Espinhos", "Trepadeira", "Angiospermas"],
-      "Predação",
-    ),
-    ["Respiração anaeróbia", "Multicelularismo", "Predação"],
-  );
+  assert.equal(traitUnlocked(s, "Predação", plant), false);
 });
 
 test("switching into Fotossíntese removes animal-only traits", () => {
   const animal = [
     "Predação",
-    "Locomoção",
+    "Locomoção Primitiva",
+    "Vertebrado",
+    "Locomoção Articulada",
+    "Percepção Espacial",
     "Escavador",
     "Escalador",
     "Carnívoro",
@@ -967,11 +956,11 @@ test("Multicelularismo is required for complex traits and cannot be lost while t
       ancestry: ["Predação"],
     };
 
-  assert.equal(traitUnlocked(s, "Locomoção", simple), false);
-  assert.equal(traitUnlocked(s, "Locomoção", complex), true);
+  assert.equal(traitUnlocked(s, "Locomoção Primitiva", simple), false);
+  assert.equal(traitUnlocked(s, "Locomoção Primitiva", complex), true);
   assert.equal(
     traitLossAllowed(
-      { traits: ["Multicelularismo", "Locomoção"] },
+      { traits: ["Multicelularismo", "Locomoção Primitiva"] },
       "Multicelularismo",
     ),
     false,

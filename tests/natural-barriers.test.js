@@ -84,7 +84,7 @@ test("Escalador unlocks in the Devonian after Locomoção and is animal-only", (
       geologicalStage: "devonian",
       historicalTraits: prior,
     }),
-    animal = { traits: ["Multicelularismo", "Predação", "Locomoção"] },
+    animal = { traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"] },
     immobile = { traits: ["Multicelularismo", "Predação"] },
     plant = { traits: ["Multicelularismo", "Fotossíntese"] };
   assert.equal(traitUnlocked(s, "Escalador", animal), true);
@@ -99,7 +99,7 @@ test("natural barriers block ordinary movers, Voo crosses them, and Escalador ma
         r: 4,
         c: 0,
         rank: 3,
-        traits: ["Predação", "Locomoção"],
+        traits: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"],
       },
       { owner: "amber", r: 0, c: 7 },
     ]),

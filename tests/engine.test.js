@@ -452,7 +452,7 @@ test("sexual partner preserves Multicelularismo and survives save/restore", () =
   assert.ok(children.every((p) => p.traits.includes("Multicelularismo")));
   assert.ok(children.every((p) => juvenile(s, p)));
 });
-test("sexual reproduction never combines Fotossíntese with the predatory branch", () => {
+test("sexual reproduction keeps fixed energy branches separated without Mixotrofia", () => {
   const s = fixture([
       {
         owner: "blue",
@@ -460,7 +460,12 @@ test("sexual reproduction never combines Fotossíntese with the predatory branch
         c: 3,
         traits: ["Fotossíntese", "Reprodução Sexuada"],
       },
-      { owner: "blue", r: 4, c: 4, traits: ["Predação", "Locomoção"] },
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Predação", "Locomoção Primitiva"],
+      },
       { owner: "amber", r: 0, c: 0 },
     ]),
     parent = s.pieces[0],
@@ -468,24 +473,10 @@ test("sexual reproduction never combines Fotossíntese with the predatory branch
   const produced = reproduce(context(s), parent, mate, "teste", {
     forcedCount: 4,
   });
-  assert.ok(produced > 0);
-  const children = s.pieces.filter((piece) => piece.parentId === parent.id);
-  assert.ok(children.length > 0);
-  assert.ok(
-    children.every(
-      (piece) =>
-        !(
-          piece.traits.includes("Fotossíntese") &&
-          piece.traits.includes("Predação")
-        ),
-    ),
-  );
-  assert.ok(
-    children.every(
-      (piece) =>
-        !piece.traits.includes("Locomoção") ||
-        piece.traits.includes("Predação"),
-    ),
+  assert.equal(produced, 0);
+  assert.equal(
+    s.pieces.filter((piece) => piece.parentId === parent.id).length,
+    0,
   );
   assertState(s);
 });
@@ -547,7 +538,7 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   const lost = simulate(s, move(s.pieces[0], 3, 3));
   assert.ok(!lost.pieces.some((p) => p.id === 1));
 
-  s.pieces[0].traits = ["Locomoção", "Voo"];
+  s.pieces[0].traits = ["Locomoção Primitiva", "Voo"];
   assert.ok(
     simulate(s, move(s.pieces[0], 3, 3)).pieces.some((p) => p.id === 1),
   );
@@ -576,7 +567,7 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   s.rng = 1;
   s.board[43] = "hostile";
   s.board[35] = "hostile";
-  s.pieces[0].traits = ["Locomoção"];
+  s.pieces[0].traits = ["Locomoção Primitiva"];
   s.pieces[0].rank = 1;
   assert.ok(
     simulate(s, move(s.pieces[0], 4, 4)).pieces.some((p) => p.id === 1),
@@ -833,16 +824,23 @@ test("gradual population pressure exhausts fertility without arbitrary attrition
   assertState(s);
 });
 
-test("reproduction pressure closes the 24-31 population plateau", () => {
-  assert.equal(populationReproductionLimit(23), Infinity);
-  assert.equal(populationReproductionLimit(24), 2);
-  assert.equal(populationReproductionLimit(27), 2);
-  assert.equal(populationReproductionLimit(28), 1);
-  assert.equal(populationReproductionLimit(31), 1);
-  assert.equal(populationReproductionCooldown(23), 0);
-  assert.equal(populationReproductionCooldown(24), 1);
-  assert.equal(populationReproductionCooldown(28), 2);
-  assert.equal(populationReproductionCooldown(32), 3);
+test("reproduction pressure uses hidden hysteresis without suppressing early recovery", () => {
+  assert.equal(populationReproductionLimit(17, true), Infinity);
+  assert.equal(populationReproductionLimit(18, true), 2);
+  assert.equal(populationReproductionLimit(23, true), 2);
+  assert.equal(populationReproductionLimit(23, false), Infinity);
+  assert.equal(populationReproductionLimit(24, false), 2);
+  assert.equal(populationReproductionLimit(27, false), 2);
+  assert.equal(populationReproductionLimit(28, false), 1);
+
+  assert.equal(populationReproductionCooldown(17, true), 0);
+  assert.equal(populationReproductionCooldown(18, true), 1);
+  assert.equal(populationReproductionCooldown(23, true), 1);
+  assert.equal(populationReproductionCooldown(23, false), 0);
+  assert.equal(populationReproductionCooldown(24, false), 1);
+  assert.equal(populationReproductionCooldown(28, false), 2);
+  assert.equal(populationReproductionCooldown(32, false), 3);
+
   assert.equal(predationBirthLimit(23), 1);
   assert.equal(predationBirthLimit(24), 0);
 });
@@ -875,7 +873,7 @@ test("predation creates at most one descendant and none once population pressure
         s.pieces.length % 2 ? "blue" : "amber",
         Math.floor(cell / 8),
         cell % 8,
-        { traits: ["Locomoção", "Predação"] },
+        { traits: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"] },
       ),
     );
   }
@@ -1389,7 +1387,7 @@ test("non-capture deaths do not create decomposition", () => {
   assert.equal(s.deathSites.length, 0);
   assertState(s);
 });
-test("photosynthetic offspring can mutate into Predação by losing Fotossíntese", () => {
+test("photosynthetic offspring keep their hereditary energy branch", () => {
   const s = fixture([
       {
         owner: "blue",
@@ -1417,16 +1415,9 @@ test("photosynthetic offspring can mutate into Predação by losing Fotossíntes
     1,
   );
   const child = s.pieces.find((piece) => piece.id >= before);
-  assert.ok(child.traits.includes("Predação"));
-  assert.ok(!child.traits.includes("Fotossíntese"));
-  assert.ok(s.historicalTraits.includes("Predação"));
-  assert.ok(
-    s.logs.some(
-      (entry) =>
-        entry.text.startsWith("🧬 Nova mutação:") &&
-        entry.text.includes("Predação"),
-    ),
-  );
+  assert.ok(child.traits.includes("Fotossíntese"));
+  assert.ok(!child.traits.includes("Predação"));
+  assert.ok(!s.historicalTraits.includes("Predação"));
   assertState(s);
 });
 
@@ -1458,7 +1449,7 @@ test("first-cycle mutation attempts never fall back to deleterious outcomes", ()
     1,
   );
   const child = s.pieces.find((piece) => piece.id >= before);
-  assert.equal(child.mutations, 1);
+  assert.equal(child.mutations, 0);
   assert.ok(
     ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"].every(
       (trait) => !child.traits.includes(trait),
@@ -1986,6 +1977,7 @@ test("Visão Binocular, not Visão Noturna, counters distant Camuflagem", () => 
       { owner: "amber", r: 4, c: 4, traits: ["Camuflagem"] },
     ]),
     observer = s.pieces[0];
+  observer.traits.push("Percepção Espacial");
   assert.ok(!movesFor(s, observer).some((t) => t.r === 4 && t.c === 4));
   observer.traits.push("Visão Noturna");
   assert.ok(!movesFor(s, observer).some((t) => t.r === 4 && t.c === 4));
@@ -2199,7 +2191,7 @@ test("Predação is required for ordinary captures", () => {
     { owner: "amber", r: 4, c: 4 },
   ]);
   const attacker = s.pieces[0];
-  attacker.traits = ["Locomoção", "Carnívoro"];
+  attacker.traits = ["Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Percepção Espacial", "Carnívoro"];
   assert.ok(!movesFor(s, attacker).some((target) => target.c === 4));
   attacker.traits.push("Predação");
   assert.ok(movesFor(s, attacker).some((target) => target.c === 4));
@@ -2213,7 +2205,12 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
   ]);
   const king = s.pieces[0];
   king.traits = king.traits.filter(
-    (trait) => !["Locomoção", "Locomoção Avançada"].includes(trait),
+    (trait) =>
+      ![
+        "Locomoção Primitiva",
+        "Locomoção Articulada",
+        "Locomoção Avançada",
+      ].includes(trait),
   );
   assert.ok(movesFor(s, king).some((target) => target.r === 4 && target.c === 4));
   assert.ok(!movesFor(s, king).some((target) => target.r === 4 && target.c === 2));
@@ -2234,7 +2231,12 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
   ]);
   const pawn = s.pieces[0];
   pawn.traits = pawn.traits.filter(
-    (trait) => !["Locomoção", "Locomoção Avançada"].includes(trait),
+    (trait) =>
+      ![
+        "Locomoção Primitiva",
+        "Locomoção Articulada",
+        "Locomoção Avançada",
+      ].includes(trait),
   );
   const targets = movesFor(s, pawn);
   assert.ok(!targets.some((target) => target.r === 3 && target.c === 3));
@@ -2249,7 +2251,12 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
   ]);
   const predator = s.pieces[0];
   predator.traits = predator.traits.filter(
-    (trait) => !["Locomoção", "Locomoção Avançada"].includes(trait),
+    (trait) =>
+      ![
+        "Locomoção Primitiva",
+        "Locomoção Articulada",
+        "Locomoção Avançada",
+      ].includes(trait),
   );
   s = simulate(s, move(predator, 4, 4));
   const survivor = s.pieces.find((piece) => piece.id === predator.id);
@@ -2326,10 +2333,10 @@ test("Escavador destroys built barriers while Chifre remains purely defensive", 
   assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c === 2));
   assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 3));
 
-  s.pieces[0].traits = ["Predação", "Locomoção", "Chifre"];
+  s.pieces[0].traits = ["Predação", "Locomoção Primitiva", "Chifre"];
   assert.ok(!movesFor(s, s.pieces[0]).some((target) => target.c >= 2));
 
-  s.pieces[0].traits = ["Predação", "Locomoção", "Escavador"];
+  s.pieces[0].traits = ["Predação", "Locomoção Primitiva", "Escavador"];
   assert.ok(movesFor(s, s.pieces[0]).some((target) => target.c === 2));
   s = simulate(s, move(s.pieces[0], 4, 3));
   assert.ok(!s.barriers.includes(34));
@@ -2397,7 +2404,7 @@ test("domesticated offspring enter manual placement up to distance two", () => {
 
 test("Sociabilidade lets a connected group of four choose a sacrifice", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 2, rank: 3 },
+    { owner: "blue", r: 4, c: 2, rank: 3, traits: ["Percepção Espacial"] },
     { owner: "amber", r: 4, c: 4, traits: ["Sociabilidade"] },
     { owner: "amber", r: 3, c: 4, traits: ["Sociabilidade"] },
     { owner: "amber", r: 3, c: 5, traits: ["Sociabilidade"] },
