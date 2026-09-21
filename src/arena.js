@@ -6,6 +6,7 @@ import {
   PLANT_DERIVED_TRAITS,
   PLANT_INCOMPATIBLE_TRAITS,
   TRAIT_DEPENDENCIES,
+  NEGATIVE_TRAITS,
   normalizeActiveTraits,
   traitCombinationValid,
 } from "./geology.js";
@@ -19,11 +20,7 @@ import {
   syncGenomePhenotype,
 } from "./genetics.js";
 
-const NEGATIVE = new Set([
-  "Esterilidade",
-  "Mutação Deletéria",
-  "Mutação Disfuncional",
-]);
+const NEGATIVE = NEGATIVE_TRAITS;
 const BASAL = "Respiração anaeróbia";
 export const ARENA_RECESSIVE_COUNT = 2;
 export const ARENA_FOUNDATIONAL_TRAITS = new Set([

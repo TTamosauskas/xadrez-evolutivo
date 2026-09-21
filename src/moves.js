@@ -186,21 +186,47 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   const occupiedTarget = (r, c) => !!at(state, r, c) || !!eggAt(state, r, c);
   function ray(directions, captureOnly = false) {
     for (const [dr, dc] of directions) {
-      const path = [];
-      for (let n = 1; n < 8; n++) {
+      let geometricRange = 0;
+      while (
+        inside(
+          p.r + dr * (geometricRange + 1),
+          p.c + dc * (geometricRange + 1),
+        )
+      )
+        geometricRange++;
+      const movementLimit = has(p, "Deficiência Motora")
+          ? 1
+          : has(p, "Gigantismo")
+            ? Math.max(1, Math.floor(geometricRange / 2))
+            : geometricRange,
+        captureLimit = has(p, "Deficiência Motora")
+          ? 1
+          : has(p, "Deficiência Sensorial")
+            ? Math.max(1, Math.floor(geometricRange / 2))
+            : geometricRange,
+        path = [];
+      for (let n = 1; n <= geometricRange; n++) {
         const r = p.r + dr * n,
           c = p.c + dc * n;
         if (!inside(r, c)) break;
         path.push([r, c]);
         const builtBarrier = builtBarrierAt(state, r, c),
           naturalBarrier = naturalBarrierAt(state, r, c),
-          occupied = occupiedTarget(r, c);
+          occupied = occupiedTarget(r, c),
+          movementAllowed = n <= movementLimit,
+          captureAllowed = n <= captureLimit;
         if (builtBarrier) {
-          if (!captureOnly && has(p, "Escavador")) add(r, c, [...path]);
+          if (
+            !captureOnly &&
+            movementAllowed &&
+            has(p, "Escavador")
+          )
+            add(r, c, [...path]);
           if (!has(p, "Voo") && !has(p, "Escavador")) break;
         } else if (naturalBarrier) {
           if (
             !captureOnly &&
+            movementAllowed &&
             (has(p, "Escavador") || has(p, "Escalador"))
           )
             add(r, c, [...path]);
@@ -210,10 +236,12 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
             !has(p, "Escalador")
           )
             break;
-        } else if (!captureOnly || occupied) {
+        } else if (occupied) {
           const distantCapture =
-            occupied && n > 1 && !has(p, "Percepção Espacial");
-          if (!distantCapture) add(r, c, [...path]);
+            n > 1 && !has(p, "Percepção Espacial");
+          if (!distantCapture && captureAllowed) add(r, c, [...path]);
+        } else if (!captureOnly && movementAllowed) {
+          add(r, c, [...path]);
         }
         if (occupied) break;
       }

@@ -1,5 +1,11 @@
 import { EVENTS, PATHOGEN_AGENTS, TRAITS } from "./constants.js";
-import { GEOLOGICAL_STAGES } from "./geology.js";
+import {
+  GEOLOGICAL_STAGES,
+  NEGATIVE_TRAITS,
+  NEGATIVE_TRAIT_RULES,
+  TRAIT_DEPENDENCIES,
+  TRAIT_STAGE,
+} from "./geology.js";
 import {
   ARENA_FOUNDATIONAL_TRAITS,
   ARENA_RECESSIVE_COUNT,
@@ -14,112 +20,89 @@ import {
 const traitLabel = (name) => `${TRAITS[name][0]} ${name}`;
 const section = (title) => `§ ${title}`;
 
+const NEGATIVE_HELP_TRAITS = new Set(NEGATIVE_TRAITS);
+const chronologicalNegativeTraits = () =>
+  [...NEGATIVE_HELP_TRAITS].sort((a, b) => {
+    const stageIndex = (trait) => {
+      const id = NEGATIVE_TRAIT_RULES[trait]?.stage;
+      return id
+        ? (GEOLOGICAL_STAGES.find((stage) => stage.id === id)?.index ?? 999)
+        : -1;
+    };
+    return (
+      stageIndex(a) - stageIndex(b) ||
+      Object.keys(TRAITS).indexOf(a) - Object.keys(TRAITS).indexOf(b)
+    );
+  });
+
+function chronologicalStageTraits(stage) {
+  const traits = Object.keys(TRAITS).filter(
+      (trait) =>
+        !NEGATIVE_HELP_TRAITS.has(trait) &&
+        TRAIT_STAGE[trait] === stage.id,
+    ),
+    pending = new Set(traits),
+    ordered = [],
+    requiredOrder = new Map(
+      (stage.required ?? []).map((trait, index) => [trait, index]),
+    ),
+    sameStageDependencies = (trait) => {
+      const deps = TRAIT_DEPENDENCIES[trait] ?? {};
+      return [
+        ...(deps.lineage ?? []),
+        ...(deps.lineageAny ?? []),
+        ...(deps.historical ?? []),
+      ].filter((dependency) => traits.includes(dependency));
+    },
+    dependents = new Map(traits.map((trait) => [trait, []])),
+    requiredPriority = (trait, seen = new Set()) => {
+      if (requiredOrder.has(trait)) return requiredOrder.get(trait);
+      if (seen.has(trait)) return Infinity;
+      const nextSeen = new Set([...seen, trait]);
+      return Math.min(
+        Infinity,
+        ...(dependents.get(trait) ?? []).map((dependent) =>
+          requiredPriority(dependent, nextSeen),
+        ),
+      );
+    };
+
+  for (const trait of traits)
+    for (const dependency of sameStageDependencies(trait))
+      dependents.get(dependency)?.push(trait);
+
+  const compare = (a, b) => {
+    if (a === "Respiração anaeróbia") return -1;
+    if (b === "Respiração anaeróbia") return 1;
+    return (
+      requiredPriority(a) - requiredPriority(b) ||
+      traits.indexOf(a) - traits.indexOf(b)
+    );
+  };
+
+  while (pending.size) {
+    const ready = [...pending]
+      .filter((trait) =>
+        sameStageDependencies(trait).every(
+          (dependency) => !pending.has(dependency),
+        ),
+      )
+      .sort(compare);
+    const next = ready[0] ?? [...pending].sort(compare)[0];
+    ordered.push(next);
+    pending.delete(next);
+  }
+  return ordered;
+}
+
 export const HOW_TO_MUTATION_GROUPS = Object.freeze([
+  ...GEOLOGICAL_STAGES.map((stage) => ({
+    title: `${stage.group} · ${stage.period}`,
+    traits: chronologicalStageTraits(stage),
+  })).filter((group) => group.traits.length),
   {
-    title: "Fundamentos, metabolismo e ciclo de vida",
-    traits: [
-      "Respiração anaeróbia",
-      "Respiração aeróbia",
-      "Reparo Celular",
-      "Multicelularismo",
-      "Simetria Bilateral",
-      "Fotossíntese",
-      "Predação",
-      "Mixotrofia",
-      "Dormência",
-      "Resistência",
-      "Regeneração",
-      "Reprodução Sexuada",
-      "Precocidade Sexual",
-    ],
-  },
-  {
-    title: "Plano corporal, movimento e exploração",
-    traits: [
-      "Locomoção Primitiva",
-      "Vertebrado",
-      "Artrópode",
-      "Locomoção Articulada",
-      "Locomoção Terrestre",
-      "Percepção Espacial",
-      "Escavador",
-      "Locomoção Avançada",
-      "Escalador",
-      "Voo",
-      "Sacos Aéreos",
-      "Polegar Opositor",
-      "Neocórtex Desenvolvido",
-    ],
-  },
-  {
-    title: "Alimentação, predação e engenharia ecológica",
-    traits: [
-      "Carnívoro",
-      "Herbívoro",
-      "Canibalismo",
-      "Parasitismo",
-      "Vetor Patógeno",
-      "Onívoro",
-      "Respiração Cutânea",
-      "Necrófago",
-      "Construtor de Nicho",
-      "Antropização",
-      "Coletor",
-    ],
-  },
-  {
-    title: "Reprodução e organização social",
-    traits: [
-      "Ovíparo",
-      "Ovíparos Amniotas",
-      "Ovovivíparo",
-      "Ovífagia",
-      "Vivíparo",
-      "Ovulação Induzida",
-      "Ooteca",
-      "Incubação",
-      "Lactação",
-      "Sociabilidade",
-      "Eusocialidade",
-    ],
-  },
-  {
-    title: "Plantas e especializações fotossintéticas",
-    traits: [
-      "Embriófitas",
-      "Haustório",
-      "Perfume Floral",
-      "Carnivoria Botânica",
-      "Traqueófitas",
-      "Madeira",
-      "Trepadeira",
-      "Espinhos",
-      "Extremófitas",
-      "Gimnospermas",
-      "Angiospermas",
-      "Plantas Domesticadas",
-    ],
-  },
-  {
-    title: "Defesa, percepção e interação",
-    traits: [
-      "Animais Domésticos",
-      "Mimetismo",
-      "Chifre",
-      "Carapaça",
-      "Camuflagem",
-      "Visão Binocular",
-      "Velocidade",
-      "Notívago",
-      "Pele grossa",
-      "Garras",
-      "Visão Noturna",
-      "Veneno",
-    ],
-  },
-  {
-    title: "Mutações negativas",
-    traits: ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"],
+    title: "Mutações negativas · a partir do 2º Ciclo",
+    traits: chronologicalNegativeTraits(),
   },
 ]);
 
@@ -147,6 +130,27 @@ function ecologicalEventLines() {
   );
 }
 
+function negativeMutationRuleLines() {
+  return chronologicalNegativeTraits().map((trait) => {
+    const rule = NEGATIVE_TRAIT_RULES[trait] ?? {},
+      stage = rule.stage
+        ? GEOLOGICAL_STAGES.find((entry) => entry.id === rule.stage)?.period
+        : null,
+      dependencies = [
+        ...(rule.lineage ?? []),
+        ...(rule.lineageAny ?? []),
+      ],
+      timing = stage ? `desde ${stage}` : "desde o 2º Ciclo",
+      prerequisite = dependencies.length
+        ? `; requer ancestralidade de ${dependencies.join(" ou ")}`
+        : "",
+      somatic = rule.somatic
+        ? "; também pode surgir como alteração somática por exposição patogênica quando compatível"
+        : "; apenas hereditária";
+    return `Disponibilidade — ${traitLabel(trait)}: ${timing}${prerequisite}${somatic}.`;
+  });
+}
+
 export function howToPlayLines() {
   const arenaFoundations = [...ARENA_FOUNDATIONAL_TRAITS]
       .map(traitLabel)
@@ -162,7 +166,7 @@ export function howToPlayLines() {
     "Formas de xadrez definem geometria e capacidade reprodutiva. Rei, Peão, Cavalo, Bispo, Torre e Rainha mantêm suas trajetórias oficiais quando a evolução libera movimento ou captura; características biológicas determinam quais dessas ações estão disponíveis.",
 
     section("Tabuleiro, terreno e recursos"),
-    "🟩 Casas férteis são o principal recurso reprodutivo. ⬛ Casas hostis oferecem 50% de risco ambiental por exposição normal. 🟫 Barreiras bloqueiam trajetórias salvo adaptações específicas. ☠️ Decomposição permanece por três rodadas após capturas e pode ser explorada por necrófagos.",
+    "🟩 Casas férteis são o principal recurso reprodutivo. 🟥 Casas hostis oferecem 50% de risco ambiental por exposição normal. 🟫 Barreiras bloqueiam trajetórias salvo adaptações específicas. ☠️ Decomposição permanece por três rodadas após capturas e pode ser explorada por necrófagos.",
     `${traitLabel("Carapaça")} reduz o risco ambiental, ${traitLabel("Dormência")} evita o risco enquanto a criatura permanece imóvel em terreno hostil, ${traitLabel("Regeneração")} pode evitar uma morte não causada por captura uma vez por vida e ${traitLabel("Voo")} permite atravessar casas hostis, embora pousar nelas continue arriscado.`,
     "Nos ambientes aquáticos iniciais, recursos férteis consumidos podem se recuperar. A partir do Devoniano, a dinâmica de habitat por Conway passa a remodelar fertilidade e hostilidade conforme a progressão geracional.",
 
@@ -181,6 +185,9 @@ export function howToPlayLines() {
     "Cada característica hereditária ocupa um locus diploide com dois alelos. Alelos dominantes podem se expressar com uma cópia; recessivos podem permanecer ocultos e reaparecer por herança ou recombinação. Fenótipo mostra o que está ativo, Genes Recessivos mostra variantes ocultas e Ancestralidade registra características pelas quais a linhagem já passou.",
     `${traitLabel("Reprodução Sexuada")} combina um alelo de cada progenitor por locus. Pré-requisitos evolutivos usam a história da própria linhagem; perder uma característica depois não apaga automaticamente as inovações derivadas já alcançadas.`,
     "Perdas e mutações negativas entram no pool a partir do segundo Ciclo da campanha; na Arena, elas seguem as regras próprias desse cenário.",
+    section("Disponibilidade das mutações negativas"),
+    "As mutações negativas espontâneas exigem o 2º Ciclo da campanha. O período abaixo é o período geológico mínimo; pré-requisitos usam a ancestralidade da própria linhagem. Na Arena, a cronologia é ignorada, mas essas mutações continuam fora do construtor inicial e seus pré-requisitos permanecem válidos.",
+    ...negativeMutationRuleLines(),
 
     section("Os três cenários"),
     "Vida na Terra: campanha histórica. A origem começa com um ancestral comum, cada período usa fundadores canônicos, primeiras aparições ficam restritas à janela geológica correspondente e eventos ecológicos recebem pesos próprios de cada período. Inovações obrigatórias guiam o avanço da linha do tempo.",

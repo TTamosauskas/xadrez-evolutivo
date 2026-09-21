@@ -254,6 +254,54 @@ export const TRAITS = {
     "Em descendentes multicelulares, reduz de duas para uma rodada o tempo natural até a maturidade reprodutiva.",
   ],
   Esterilidade: ["🚫", "Impede a reprodução."],
+  "Insuficiência Respiratória": [
+    "😮‍💨",
+    "Dobra o intervalo metabólico da reprodução, tornando a recuperação respiratória mais lenta.",
+  ],
+  Imunodeficiência: [
+    "🤢",
+    "Anula os efeitos de Resistência enquanto estiver expressa, restaurando a suscetibilidade normal a infecções e mortalidade patogênica.",
+  ],
+  "Deficiência Motora": [
+    "🐾",
+    "Reduz movimento e captura ao primeiro passo da trajetória e impede a segunda movimentação de Locomoção Avançada.",
+  ],
+  "Deficiência Sensorial": [
+    "👁️‍🗨️",
+    "Reduz pela metade o alcance máximo de captura à distância, com mínimo de uma casa.",
+  ],
+  "Filho único": [
+    "☝️",
+    "Limita cada reprodução bem-sucedida a uma única prole, mesmo quando outros efeitos aumentariam a ninhada.",
+  ],
+  Subfertilidade: [
+    "😩",
+    "Cada tentativa de reprodução tem 50% de chance de cumprir o custo e a recuperação sem gerar prole.",
+  ],
+  "Má absorção Alimentar": [
+    "🐼",
+    "Ao consumir uma casa fértil para reproduzir, consome também uma segunda casa fértil adjacente, quando houver; reprodução por predação exige o dobro do intervalo de recuperação.",
+  ],
+  Semelparidade: [
+    "🐙",
+    "Após completar três reproduções bem-sucedidas, o progenitor morre; Regeneração não evita essa morte.",
+  ],
+  "Regressão Evolutiva": [
+    "🦤",
+    "Ao surgir e se expressar, converte aproximadamente metade dos fenótipos positivos elegíveis da peça em alelos recessivos ocultos.",
+  ],
+  Nanismo: [
+    "📉",
+    "Força a forma funcional de Peão e reduz visualmente o organismo ao tamanho de uma peça juvenil.",
+  ],
+  Gigantismo: [
+    "📈",
+    "Aumenta visualmente o organismo e reduz pela metade o alcance de locomoção das formas de longo alcance.",
+  ],
+  "Mutação Mutadora": [
+    "🧟",
+    "Dobra novamente a chance de uma mutação espontânea entrar no ramo de mutações negativas.",
+  ],
   Ooteca: [
     "🕷",
     "Depois de uma reprodução bem-sucedida em casa fértil, fica preparada; ao morrer, libera uma prole nas casas livres ao redor.",

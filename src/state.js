@@ -14,6 +14,7 @@ import {
   recordHistoricalTraits,
   stageComplete,
   traitCombinationValid,
+  SOMATIC_NEGATIVE_TRAITS,
 } from "./geology.js";
 import {
   cloneDiscoveries,
@@ -250,6 +251,8 @@ export function newPiece(state, owner, r, c, source = {}) {
       somaticMutations: [],
       pathogenMutationDiseases: [],
       pathogenExposureRounds: {},
+      lifetimeReproductions: source.lifetimeReproductions ?? 0,
+      semelparityDeathPending: source.semelparityDeathPending ?? false,
     };
   const preferredEnergy = source.traits?.includes("Predação")
     ? "Predação"
@@ -257,7 +260,8 @@ export function newPiece(state, owner, r, c, source = {}) {
       ? "Fotossíntese"
       : null;
   syncGenomePhenotype(piece, preferredEnergy);
-  if (has(piece, "Artrópode") && ![0, 1, 2, 4].includes(piece.rank))
+  if (has(piece, "Nanismo")) piece.rank = 0;
+  else if (has(piece, "Artrópode") && ![0, 1, 2, 4].includes(piece.rank))
     piece.rank = 2;
   return normalizePhotosyntheticRank(piece);
 }
@@ -1560,10 +1564,7 @@ export function assertState(state) {
       !Array.isArray(p.pregnancies) ||
       !Array.isArray(p.somaticMutations) ||
       p.somaticMutations.some(
-        (trait) =>
-          !["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"].includes(
-            trait,
-          ),
+        (trait) => !SOMATIC_NEGATIVE_TRAITS.has(trait),
       ) ||
       new Set(p.somaticMutations).size !== p.somaticMutations.length ||
       !Array.isArray(p.pathogenMutationDiseases) ||
@@ -1588,6 +1589,8 @@ export function assertState(state) {
       !integer(p.bornRound) ||
       !integer(p.maturesRound) ||
       !integer(p.nextReproductionRound) ||
+      !integer(p.lifetimeReproductions ?? 0, 0) ||
+      typeof (p.semelparityDeathPending ?? false) !== "boolean" ||
       ![1, -1].includes(p.pawnDir) ||
       (p.regenerationUsed !== undefined &&
         typeof p.regenerationUsed !== "boolean") ||

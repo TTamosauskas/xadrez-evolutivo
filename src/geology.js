@@ -5,11 +5,77 @@ import {
   scenarioInnovationWeight,
 } from "./scenarios.js";
 
-const NEGATIVE_TRAITS = new Set([
-  "Esterilidade",
-  "Mutação Deletéria",
-  "Mutação Disfuncional",
-]);
+export const NEGATIVE_TRAIT_RULES = Object.freeze({
+  Esterilidade: { stage: null, somatic: true },
+  "Mutação Deletéria": { stage: null, somatic: true },
+  "Mutação Disfuncional": { stage: null, somatic: true },
+  "Insuficiência Respiratória": {
+    stage: "proterozoic",
+    lineage: ["Multicelularismo"],
+    somatic: true,
+  },
+  Imunodeficiência: {
+    stage: "proterozoic",
+    lineage: ["Resistência"],
+    somatic: true,
+  },
+  "Deficiência Motora": {
+    stage: "ediacaran",
+    lineage: ["Locomoção Primitiva"],
+    somatic: true,
+  },
+  "Deficiência Sensorial": {
+    stage: "cambrian",
+    lineage: ["Percepção Espacial"],
+    somatic: true,
+  },
+  "Filho único": {
+    stage: "triassic",
+    lineage: ["Vivíparo"],
+    somatic: false,
+  },
+  Subfertilidade: {
+    stage: "proterozoic",
+    lineage: ["Reprodução Sexuada"],
+    somatic: false,
+  },
+  "Má absorção Alimentar": {
+    stage: "ediacaran",
+    lineage: ["Multicelularismo", "Predação"],
+    somatic: true,
+  },
+  Semelparidade: {
+    stage: "proterozoic",
+    lineage: ["Multicelularismo"],
+    somatic: false,
+  },
+  "Regressão Evolutiva": {
+    stage: "proterozoic",
+    lineage: ["Reprodução Sexuada"],
+    somatic: false,
+  },
+  Nanismo: {
+    stage: "cambrian",
+    lineageAny: ["Vertebrado", "Artrópode"],
+    somatic: false,
+  },
+  Gigantismo: {
+    stage: "devonian",
+    lineage: ["Locomoção Articulada"],
+    somatic: false,
+  },
+  "Mutação Mutadora": {
+    stage: "archean",
+    lineage: ["Reparo Celular"],
+    somatic: false,
+  },
+});
+export const NEGATIVE_TRAITS = new Set(Object.keys(NEGATIVE_TRAIT_RULES));
+export const SOMATIC_NEGATIVE_TRAITS = new Set(
+  Object.entries(NEGATIVE_TRAIT_RULES)
+    .filter(([, rule]) => rule.somatic)
+    .map(([trait]) => trait),
+);
 
 export const GEOLOGICAL_STAGES = [
   {
@@ -325,6 +391,10 @@ export const ACTIVE_TRAIT_FAMILIES = [
     id: "social-organization",
     traits: ["Sociabilidade", "Eusocialidade"],
   },
+  {
+    id: "body-size",
+    traits: ["Nanismo", "Gigantismo"],
+  },
 ];
 
 const activeFamilyByTrait = new Map(
@@ -409,6 +479,18 @@ export const TRAIT_DEPENDENCIES = {
   Sociabilidade: { lineage: ["Incubação"] },
   "Plantas Domesticadas": { historical: ["Neocórtex Desenvolvido"] },
   "Animais Domésticos": { historical: ["Neocórtex Desenvolvido"] },
+  "Insuficiência Respiratória": { lineage: ["Multicelularismo"] },
+  Imunodeficiência: { lineage: ["Resistência"] },
+  "Deficiência Motora": { lineage: ["Locomoção Primitiva"] },
+  "Deficiência Sensorial": { lineage: ["Percepção Espacial"] },
+  "Filho único": { lineage: ["Vivíparo"] },
+  Subfertilidade: { lineage: ["Reprodução Sexuada"] },
+  "Má absorção Alimentar": { lineage: ["Multicelularismo", "Predação"] },
+  Semelparidade: { lineage: ["Multicelularismo"] },
+  "Regressão Evolutiva": { lineage: ["Reprodução Sexuada"] },
+  Nanismo: { lineageAny: ["Vertebrado", "Artrópode"] },
+  Gigantismo: { lineage: ["Locomoção Articulada"] },
+  "Mutação Mutadora": { lineage: ["Reparo Celular"] },
 };
 
 export const BODY_PLAN_TRAITS = new Set(["Vertebrado", "Artrópode"]);
@@ -477,6 +559,17 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Haustório",
   "Perfume Floral",
   "Carnivoria Botânica",
+  "Insuficiência Respiratória",
+  "Imunodeficiência",
+  "Deficiência Motora",
+  "Deficiência Sensorial",
+  "Filho único",
+  "Subfertilidade",
+  "Má absorção Alimentar",
+  "Semelparidade",
+  "Regressão Evolutiva",
+  "Nanismo",
+  "Gigantismo",
 ]);
 
 export function normalizeMulticellularTraits(traits) {
@@ -547,6 +640,13 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Animais Domésticos",
   "Sociabilidade",
   "Mimetismo",
+  "Insuficiência Respiratória",
+  "Deficiência Motora",
+  "Deficiência Sensorial",
+  "Filho único",
+  "Má absorção Alimentar",
+  "Nanismo",
+  "Gigantismo",
 ]);
 
 export function traitCombinationValid(traits) {
@@ -778,7 +878,8 @@ export function stageComplete(state) {
 }
 
 export function traitUnlocked(state, trait, piece = null) {
-  if (NEGATIVE_TRAITS.has(trait)) return true;
+  if (NEGATIVE_TRAITS.has(trait))
+    return negativeTraitUnlocked(state, trait, piece);
   if (
     piece &&
     ENERGY_BRANCH_TRAITS.has(trait) &&
@@ -869,6 +970,38 @@ export function pawnMutationUnlocked(state, piece = null) {
 
 export function deleteriousMutationUnlocked(state) {
   return state.scenario === "arena" || (state.totalCycles ?? 1) >= 2;
+}
+
+export function negativeTraitUnlocked(state, trait, piece = null, options = {}) {
+  if (
+    !NEGATIVE_TRAITS.has(trait) ||
+    (!options.somatic && !deleteriousMutationUnlocked(state))
+  )
+    return false;
+  const rule = NEGATIVE_TRAIT_RULES[trait] ?? {};
+  if (options.somatic && !rule.somatic) return false;
+  if (
+    piece?.traits?.includes("Fotossíntese") &&
+    PLANT_INCOMPATIBLE_TRAITS.has(trait)
+  )
+    return false;
+  if (state.scenario !== "arena" && rule.stage) {
+    const current = currentGeologicalStage(state),
+      required = geologicalStage(rule.stage);
+    if (current.index < required.index) return false;
+  }
+  const lineage = new Set([
+    ...(piece?.ancestry ?? piece?.traits ?? []),
+    ...(piece?.traits ?? []),
+  ]);
+  if ((rule.lineage ?? []).some((dependency) => !lineage.has(dependency)))
+    return false;
+  if (
+    rule.lineageAny?.length &&
+    !rule.lineageAny.some((dependency) => lineage.has(dependency))
+  )
+    return false;
+  return true;
 }
 
 export function rankMutationUnlocked(state) {

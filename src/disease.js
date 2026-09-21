@@ -9,7 +9,11 @@ import {
   PATHOGEN_AGENT_IDS,
 } from "./constants.js";
 import { round, random, pick, log, notice } from "./state.js";
-import { pathogenUnlocked } from "./geology.js";
+import {
+  pathogenUnlocked,
+  negativeTraitUnlocked,
+  SOMATIC_NEGATIVE_TRAITS,
+} from "./geology.js";
 import { recordDiscovery } from "./discoveries.js";
 import { chooseDistantCells } from "./dispersal.js";
 
@@ -24,9 +28,7 @@ export const pathogenSomaticMutationChance = (piece) =>
     ? PATHOGEN_SOMATIC_MUTATION_CHANCE
     : PRE_REPAIR_PATHOGEN_SOMATIC_MUTATION_CHANCE;
 export const NEGATIVE_SOMATIC_MUTATIONS = Object.freeze([
-  "Esterilidade",
-  "Mutação Deletéria",
-  "Mutação Disfuncional",
+  ...SOMATIC_NEGATIVE_TRAITS,
 ]);
 
 const agentDefinition = (disease) =>
@@ -36,8 +38,10 @@ const activeDisease = (disease, now) =>
   now >= disease.startRound && now <= disease.endRound;
 
 export function pathogenMortalityChance(piece, disease) {
-  const base = disease.mortality / 100;
-  if (!has(piece, "Resistência")) return base;
+  const base = disease.mortality / 100,
+    resistant =
+      has(piece, "Resistência") && !has(piece, "Imunodeficiência");
+  if (!resistant) return base;
   if (disease.source === "population")
     return base * POPULATION_RESISTANCE_MORTALITY_FACTOR;
   if (disease.source === "vector")
@@ -49,7 +53,8 @@ export function fungalExposureMortalityChance(piece, disease) {
   if (
     disease.agent === "fungus" &&
     disease.source === "eco" &&
-    has(piece, "Resistência")
+    has(piece, "Resistência") &&
+    !has(piece, "Imunodeficiência")
   )
     return 0;
   const cumulative = Math.min(0.99, pathogenMortalityChance(piece, disease)),
@@ -77,7 +82,9 @@ export function recordPathogenExposure(state, piece, disease) {
     return true;
 
   const available = NEGATIVE_SOMATIC_MUTATIONS.filter(
-    (trait) => !has(piece, trait),
+    (trait) =>
+      !has(piece, trait) &&
+      negativeTraitUnlocked(state, trait, piece, { somatic: true }),
   );
   const trait = pick(state, available);
   if (!trait) {
@@ -99,6 +106,7 @@ export function infect(state, piece, disease) {
   if (!piece || !disease || disease.agent === "fungus") return false;
   if (
     (has(piece, "Resistência") &&
+      !has(piece, "Imunodeficiência") &&
       !["population", "vector"].includes(disease.source)) ||
     piece.infection ||
     disease.survivors.includes(piece.id)
@@ -118,7 +126,8 @@ function initialCandidates(state, source, agent) {
     if (piece.infection) return false;
     return (
       ["population", "vector"].includes(source) ||
-      !has(piece, "Resistência")
+      !has(piece, "Resistência") ||
+      has(piece, "Imunodeficiência")
     );
   });
 }

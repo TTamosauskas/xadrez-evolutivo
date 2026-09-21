@@ -12,6 +12,7 @@ import {
   aquaticTerrainCell,
   conwayUnlocked,
   deleteriousMutationUnlocked,
+  NEGATIVE_TRAITS,
   eventWeights,
   innovationWeight,
   missingInnovations,
@@ -37,14 +38,8 @@ import { movesFor } from "../src/moves.js";
 import { context } from "../src/engine.js";
 import { tickEnvironment } from "../src/environment.js";
 
-const negatives = new Set([
-  "Esterilidade",
-  "Mutação Deletéria",
-  "Mutação Disfuncional",
-]);
-
 test("geological timeline assigns every positive mutation to one stage", () => {
-  const positive = Object.keys(TRAITS).filter((trait) => !negatives.has(trait));
+  const positive = Object.keys(TRAITS).filter((trait) => !NEGATIVE_TRAITS.has(trait));
   assert.deepEqual(
     [...new Set(Object.keys(TRAIT_STAGE))].sort(),
     [...positive].sort(),
