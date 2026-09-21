@@ -318,14 +318,24 @@ function chooseCells(state, cells, origin, count, dispersal) {
   return chosen;
 }
 
-function chooseCellsTowardEnemy(state, cells, owner, count) {
-  const enemies = state.pieces.filter((piece) => piece.owner !== owner);
+function chooseCellsTowardEnemy(state, cells, origin, count) {
+  const enemies = state.pieces.filter((piece) => piece.owner !== origin.owner),
+    allies = state.pieces.filter((piece) => piece.owner === origin.owner);
   if (!enemies.length) return shuffle(state, cells).slice(0, count);
-  return shuffle(state, cells)
+
+  const enemyDistance = (cell) =>
+      Math.min(...enemies.map((enemy) => distance(cell, enemy))),
+    originDistance = enemyDistance(origin),
+    forward = cells.filter((cell) => enemyDistance(cell) <= originDistance),
+    pool = forward.length ? forward : [],
+    crowding = (cell) =>
+      allies.filter((ally) => distance(cell, ally) <= 1).length;
+
+  return shuffle(state, pool)
     .sort(
       (a, b) =>
-        Math.min(...enemies.map((enemy) => distance(a, enemy))) -
-        Math.min(...enemies.map((enemy) => distance(b, enemy))),
+        enemyDistance(a) - enemyDistance(b) ||
+        crowding(a) - crowding(b),
     )
     .slice(0, count);
 }
@@ -396,7 +406,7 @@ function placeBrood(
     const cells = freeCells(ctx, origin, dispersal),
       count = Math.min(ordinary.length, cells.length),
       targets = towardEnemy
-        ? chooseCellsTowardEnemy(ctx.state, cells, origin.owner, count)
+        ? chooseCellsTowardEnemy(ctx.state, cells, origin, count)
         : chooseCells(ctx.state, cells, origin, count, dispersal);
     for (let i = 0; i < targets.length; i++) {
       spawnChild(ctx.state, ordinary[i], targets[i].r, targets[i].c);
@@ -408,7 +418,7 @@ function placeBrood(
     const cells = freeCells(ctx, origin, dispersal, climbers[0]),
       count = Math.min(climbers.length, cells.length),
       targets = towardEnemy
-        ? chooseCellsTowardEnemy(ctx.state, cells, origin.owner, count)
+        ? chooseCellsTowardEnemy(ctx.state, cells, origin, count)
         : chooseCells(ctx.state, cells, origin, count, dispersal);
     for (let i = 0; i < targets.length; i++) {
       spawnChild(ctx.state, climbers[i], targets[i].r, targets[i].c);
