@@ -86,7 +86,7 @@ test("period innovations follow the didactic sequence", () => {
   assert.deepEqual(required.silurian, ["Locomoção Terrestre", "Coletor"]);
   assert.deepEqual(required.devonian, ["Locomoção Avançada", "Onívoro"]);
   assert.deepEqual(required.carboniferous, ["Ovíparos Amniotas", "Ooteca", "Voo"]);
-  assert.deepEqual(required.permian, ["Cuidado Parental"]);
+  assert.deepEqual(required.permian, ["Incubação"]);
   assert.deepEqual(required.triassic, ["Vivíparo", "Notívago"]);
   assert.deepEqual(required.jurassic, ["Visão Noturna"]);
   assert.deepEqual(required.cretaceous, ["Eusocialidade", "Ovífagia"]);
@@ -1067,7 +1067,7 @@ test("new social, mimicry and domestication mutations unlock in the intended per
     }),
     animal = {
       traits: ["Predação", "Multicelularismo"],
-      ancestry: ["Cuidado Parental"],
+      ancestry: ["Incubação"],
     },
     plant = {
       traits: ["Fotossíntese", "Multicelularismo"],
