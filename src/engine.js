@@ -199,7 +199,7 @@ function consolidateEcologicalQuadrant(state, entry, quadrant) {
   );
 }
 
-function advanceEcologicalDomain(ctx, actingOwner) {
+export function advanceEcologicalDomain(ctx, actingOwner) {
   const state = ctx.state;
   if (state.result || state.turn < ECOLOGICAL_DOMAIN_START_TURN) return false;
   state.ecologicalDomain ??= createEcologicalDomain();
