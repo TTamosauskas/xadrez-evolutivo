@@ -841,11 +841,6 @@ test("gradual population pressure exhausts fertility without arbitrary attrition
   assert.equal(fertilityDepletionRate(32), 0.15);
   assert.equal(fertilityDepletionRate(40), 0.25);
   assert.equal(fertilityDepletionRate(44), 0.3);
-  assert.equal(fertilityDepletionRate(28, "archean"), 0.12);
-  assert.equal(fertilityDepletionRate(32, "archean"), 0.18);
-  assert.equal(fertilityDepletionRate(26, "ordovician"), 0.11);
-  assert.equal(fertilityDepletionRate(30, "ordovician"), 0.18);
-  assert.equal(fertilityDepletionRate(30, "proterozoic"), 0.13);
 
   const s = fixture([]);
   for (let i = 0; i < 24; i++)
@@ -895,6 +890,8 @@ test("reproduction pressure uses hidden hysteresis without suppressing early rec
   assert.equal(populationReproductionLimit(24, false), 2);
   assert.equal(populationReproductionLimit(27, false), 2);
   assert.equal(populationReproductionLimit(28, false), 1);
+  assert.equal(populationReproductionLimit(25, false, "ordovician"), 2);
+  assert.equal(populationReproductionLimit(26, false, "ordovician"), 1);
 
   assert.equal(populationReproductionCooldown(17, true), 0);
   assert.equal(populationReproductionCooldown(18, true), 1);
@@ -903,6 +900,9 @@ test("reproduction pressure uses hidden hysteresis without suppressing early rec
   assert.equal(populationReproductionCooldown(24, false), 1);
   assert.equal(populationReproductionCooldown(28, false), 2);
   assert.equal(populationReproductionCooldown(32, false), 3);
+  assert.equal(populationReproductionCooldown(25, false, "ordovician"), 1);
+  assert.equal(populationReproductionCooldown(26, false, "ordovician"), 2);
+  assert.equal(populationReproductionCooldown(30, false, "ordovician"), 3);
 
   assert.equal(predationBirthLimit(23), 1);
   assert.equal(predationBirthLimit(24), 0);
@@ -1013,43 +1013,68 @@ test("pre-locomotion aquatic reproduction expands toward the nearest rival", () 
   assertState(s);
 });
 
-test("pre-locomotion aquatic reproduction uses the least regressive fallback when blocked", () => {
-  const s = createState(911, {
-    geologicalStage: "archean",
-    naturalBarriers: false,
-  });
-  s.pieces = [];
-  s.nextId = 1;
-  s.board.fill("fertile");
+test("Archean blocks regressive fertile births while Proterozoic allows a directional fallback", () => {
+  const makeState = (geologicalStage) => {
+    const s = createState(911, {
+      geologicalStage,
+      naturalBarriers: false,
+    });
+    s.pieces = [];
+    s.nextId = 1;
+    s.board.fill("fertile");
 
-  const parent = newPiece(s, "blue", 5, 3),
-    rival = newPiece(s, "amber", 1, 3);
-  s.pieces.push(parent, rival);
+    const parent = newPiece(s, "blue", 5, 3),
+      rival = newPiece(s, "amber", 1, 3);
+    s.pieces.push(parent, rival);
 
-  for (const [r, col] of [
-    [4, 2],
-    [4, 3],
-    [4, 4],
-    [5, 2],
-    [5, 4],
-  ])
-    s.pieces.push(newPiece(s, "blue", r, col));
+    for (const [r, col] of [
+      [4, 2],
+      [4, 3],
+      [4, 4],
+      [5, 2],
+      [5, 4],
+    ])
+      s.pieces.push(newPiece(s, "blue", r, col));
 
+    return { s, parent };
+  };
+
+  const archean = makeState("archean");
   assert.equal(
-    reproduce(context(s), parent, null, "casa fértil", {
+    reproduce(context(archean.s), archean.parent, null, "casa fértil", {
       forcedCount: 1,
       ignoreReadiness: true,
       immediateDevelopment: true,
       fertileReproduction: true,
     }),
+    0,
+  );
+  assertState(archean.s);
+
+  const proterozoic = makeState("proterozoic");
+  assert.equal(
+    reproduce(
+      context(proterozoic.s),
+      proterozoic.parent,
+      null,
+      "casa fértil",
+      {
+        forcedCount: 1,
+        ignoreReadiness: true,
+        immediateDevelopment: true,
+        fertileReproduction: true,
+      },
+    ),
     1,
   );
-  const child = s.pieces.find(
-    (piece) => piece.owner === "blue" && piece.parentId === parent.id,
+  const child = proterozoic.s.pieces.find(
+    (piece) =>
+      piece.owner === "blue" &&
+      piece.parentId === proterozoic.parent.id,
   );
   assert.ok(child);
   assert.equal(child.r, 6);
-  assertState(s);
+  assertState(proterozoic.s);
 });
 
 test("pre-locomotion predation places offspring toward the nearest rival", () => {
@@ -1085,10 +1110,8 @@ test("pre-locomotion predation places offspring toward the nearest rival", () =>
     (piece) => piece.owner === "blue" && piece.id !== parent.id,
   );
   assert.ok(child);
-  assert.equal(
-    Math.max(Math.abs(child.r - rival.r), Math.abs(child.c - rival.c)),
-    1,
-  );
+  assert.equal(child.r + child.pawnDir, rival.r);
+  assert.equal(Math.abs(child.c - rival.c), 1);
 });
 
 test("basal predation creates a forward-expanding descendant before primitive locomotion", () => {
