@@ -21,6 +21,7 @@ import {
   createPeriodState,
   createState,
   createSuccessorState,
+  earthFounderStarts,
   newPiece,
 } from "../src/state.js";
 import { deserialize } from "../src/storage.js";
@@ -34,6 +35,84 @@ import {
 test("new campaigns default to Vida na Terra while low-level legacy states stay alternative", () => {
   assert.equal(createCampaignState(1).scenario, "earth");
   assert.equal(createState(1).scenario, "alternative");
+});
+
+test("Vida na Terra disperses aquatic founders progressively through early geological stages", () => {
+  assert.deepEqual(earthFounderStarts("archean", 2), [
+    ["blue", 4, 2, "primary"],
+    ["blue", 4, 3, "companion"],
+    ["amber", 3, 4, "primary"],
+    ["amber", 3, 5, "companion"],
+  ]);
+  assert.deepEqual(earthFounderStarts("proterozoic", 1), [
+    ["blue", 5, 2, "primary"],
+    ["blue", 5, 3, "companion"],
+    ["amber", 2, 4, "primary"],
+    ["amber", 2, 5, "companion"],
+  ]);
+  assert.deepEqual(earthFounderStarts("ediacaran", 1), [
+    ["blue", 6, 2, "primary"],
+    ["blue", 6, 3, "companion"],
+    ["amber", 1, 4, "primary"],
+    ["amber", 1, 5, "companion"],
+  ]);
+  assert.equal(earthFounderStarts("cambrian", 1), null);
+  assert.equal(earthFounderStarts("ordovician", 1), null);
+
+  const coords = (state) =>
+    state.pieces.map((piece) => [piece.owner, piece.r, piece.c]);
+
+  assert.deepEqual(coords(createPeriodState("proterozoic", 701)), [
+    ["blue", 5, 2],
+    ["blue", 5, 3],
+    ["amber", 2, 4],
+    ["amber", 2, 5],
+  ]);
+  assert.deepEqual(coords(createPeriodState("ediacaran", 702)), [
+    ["blue", 6, 2],
+    ["blue", 6, 3],
+    ["amber", 1, 4],
+    ["amber", 1, 5],
+  ]);
+  for (const stage of ["cambrian", "ordovician"])
+    assert.deepEqual(coords(createPeriodState(stage, 703)), [
+      ["blue", 7, 3],
+      ["blue", 7, 4],
+      ["amber", 0, 3],
+      ["amber", 0, 4],
+    ]);
+
+  const prior = createState(704, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Fotossíntese", "Predação"],
+    founders: {
+      primary: {
+        rank: 4,
+        traits: ["Fotossíntese"],
+        ancestry: ["Fotossíntese"],
+      },
+      companion: {
+        rank: 4,
+        traits: ["Predação"],
+        ancestry: ["Predação"],
+      },
+    },
+    canonicalPair: true,
+  });
+  prior.result = { winner: "blue", reason: "Extinção total." };
+  prior.phase = "over";
+  const archeanCycle2 = createSuccessorState(prior, 705);
+  assert.equal(archeanCycle2.geologicalStage, "archean");
+  assert.equal(archeanCycle2.cycle, 2);
+  assert.deepEqual(coords(archeanCycle2), [
+    ["blue", 4, 2],
+    ["blue", 4, 3],
+    ["amber", 3, 4],
+    ["amber", 3, 5],
+  ]);
 });
 
 test("Vida na Terra restricts first appearances to their historical period and rewards direct sequences", () => {
