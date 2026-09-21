@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createState, assertState } from "../src/state.js";
-import { transition } from "../src/engine.js";
+import { transition, mutuallyBlocked } from "../src/engine.js";
 import { chooseAction } from "../src/ai.js";
 import { legalActions } from "../src/moves.js";
 import { distance } from "../src/constants.js";
@@ -168,7 +168,9 @@ for (let seed = 1; seed <= count; seed++) {
 
     const actions = legalActions(s);
     let action;
-    if (seed % 4 === 0) {
+    if (mutuallyBlocked(s)) {
+      action = { type: "CONWAY_STEP" };
+    } else if (seed % 4 === 0) {
       random = (Math.imul(random, 1664525) + 1013904223) >>> 0;
       action = actions[random % actions.length] ?? { type: "PASS" };
     } else
