@@ -976,6 +976,38 @@ test("late competitive pressure starts after primitive locomotion", () => {
   );
 });
 
+test("pre-locomotion aquatic reproduction expands toward the nearest rival", () => {
+  const s = createState(912, {
+    geologicalStage: "archean",
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+
+  const parent = newPiece(s, "blue", 6, 3),
+    rival = newPiece(s, "amber", 2, 3);
+  s.pieces.push(parent, rival);
+
+  assert.equal(
+    reproduce(context(s), parent, null, "casa fértil", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+      fertileReproduction: true,
+    }),
+    1,
+  );
+
+  const child = s.pieces.find(
+    (piece) => piece.owner === "blue" && piece.id !== parent.id,
+  );
+  assert.ok(child);
+  assert.equal(child.r, 5);
+  assert.ok([2, 3, 4].includes(child.c));
+  assertState(s);
+});
+
 test("pre-locomotion predation places offspring toward the nearest rival", () => {
   const s = createState(913, {
     geologicalStage: "archean",
