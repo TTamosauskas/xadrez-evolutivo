@@ -824,27 +824,25 @@ test("gradual population pressure exhausts fertility without arbitrary attrition
   assertState(s);
 });
 
-test("reproduction pressure uses hidden hysteresis to prevent population rebound", () => {
-  assert.equal(populationReproductionLimit(15, true), Infinity);
-  assert.equal(populationReproductionLimit(19, true), 2);
-  assert.equal(populationReproductionLimit(20, true), 1);
-  assert.equal(populationReproductionLimit(23, true), 1);
+test("reproduction pressure uses hidden hysteresis without suppressing early recovery", () => {
+  assert.equal(populationReproductionLimit(17, true), Infinity);
+  assert.equal(populationReproductionLimit(18, true), 2);
+  assert.equal(populationReproductionLimit(23, true), 2);
   assert.equal(populationReproductionLimit(23, false), Infinity);
-  assert.equal(populationReproductionLimit(24, false), 1);
-  assert.equal(populationReproductionLimit(31, false), 1);
+  assert.equal(populationReproductionLimit(24, false), 2);
+  assert.equal(populationReproductionLimit(27, false), 2);
+  assert.equal(populationReproductionLimit(28, false), 1);
 
-  assert.equal(populationReproductionCooldown(15, true), 0);
-  assert.equal(populationReproductionCooldown(19, true), 2);
-  assert.equal(populationReproductionCooldown(20, true), 3);
+  assert.equal(populationReproductionCooldown(17, true), 0);
+  assert.equal(populationReproductionCooldown(18, true), 1);
+  assert.equal(populationReproductionCooldown(23, true), 1);
   assert.equal(populationReproductionCooldown(23, false), 0);
-  assert.equal(populationReproductionCooldown(24, false), 3);
-  assert.equal(populationReproductionCooldown(28, false), 4);
-  assert.equal(populationReproductionCooldown(32, false), 5);
+  assert.equal(populationReproductionCooldown(24, false), 1);
+  assert.equal(populationReproductionCooldown(28, false), 2);
+  assert.equal(populationReproductionCooldown(32, false), 3);
 
-  assert.equal(predationBirthLimit(19, true), 1);
-  assert.equal(predationBirthLimit(20, true), 0);
-  assert.equal(predationBirthLimit(23, false), 1);
-  assert.equal(predationBirthLimit(24, false), 0);
+  assert.equal(predationBirthLimit(23), 1);
+  assert.equal(predationBirthLimit(24), 0);
 });
 
 test("predation creates at most one descendant and none once population pressure starts", () => {
