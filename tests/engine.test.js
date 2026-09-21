@@ -841,6 +841,11 @@ test("gradual population pressure exhausts fertility without arbitrary attrition
   assert.equal(fertilityDepletionRate(32), 0.15);
   assert.equal(fertilityDepletionRate(40), 0.25);
   assert.equal(fertilityDepletionRate(44), 0.3);
+  assert.equal(fertilityDepletionRate(28, "archean"), 0.18);
+  assert.equal(fertilityDepletionRate(32, "archean"), 0.28);
+  assert.equal(fertilityDepletionRate(26, "ordovician"), 0.11);
+  assert.equal(fertilityDepletionRate(30, "ordovician"), 0.18);
+  assert.equal(fertilityDepletionRate(30, "proterozoic"), 0.13);
 
   const s = fixture([]);
   for (let i = 0; i < 24; i++)
@@ -1005,6 +1010,40 @@ test("pre-locomotion aquatic reproduction expands toward the nearest rival", () 
   assert.ok(child);
   assert.equal(child.r, 5);
   assert.ok([2, 3, 4].includes(child.c));
+  assertState(s);
+});
+
+test("pre-locomotion aquatic reproduction avoids regressive births", () => {
+  const s = createState(911, {
+    geologicalStage: "archean",
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+
+  const parent = newPiece(s, "blue", 5, 3),
+    rival = newPiece(s, "amber", 1, 3);
+  s.pieces.push(parent, rival);
+
+  for (const [r, col] of [
+    [4, 2],
+    [4, 3],
+    [4, 4],
+    [5, 2],
+    [5, 4],
+  ])
+    s.pieces.push(newPiece(s, "blue", r, col));
+
+  assert.equal(
+    reproduce(context(s), parent, null, "casa fértil", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+      fertileReproduction: true,
+    }),
+    0,
+  );
   assertState(s);
 });
 
