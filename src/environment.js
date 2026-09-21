@@ -20,6 +20,7 @@ import {
   habitatProfile,
   currentGeologicalStage,
   aquaticFertilityRegime,
+  conwayUnlocked,
 } from "./geology.js";
 import { movesFor } from "./moves.js";
 import { recordDiscovery } from "./discoveries.js";
@@ -657,7 +658,7 @@ function advanceBlockedConway(ctx) {
 }
 
 export function advanceConway(ctx, options = {}) {
-  if (aquaticFertilityRegime(ctx.state)) return;
+  if (!conwayUnlocked(ctx.state)) return;
   if (options.blocked) return advanceBlockedConway(ctx);
   const state = ctx.state;
   if (currentGeologicalStage(state).id === "proterozoic")
@@ -1216,7 +1217,7 @@ function offensiveRelocation(state) {
 
 export function repairConwayStagnation(ctx, level) {
   const state = ctx.state;
-  if (aquaticFertilityRegime(state)) return;
+  if (!conwayUnlocked(state)) return;
   if (level === 1) {
     const removed = removeNaturalBarriers(state, null, 1).length;
     log(
@@ -1303,6 +1304,7 @@ export function tickEnvironment(ctx) {
   depletePausedFertility(state);
 
   while (
+    conwayUnlocked(state) &&
     !severeEventActive(state) &&
     state.maxGenerationReached >= state.nextHabitatGeneration
   ) {
