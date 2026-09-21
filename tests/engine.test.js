@@ -10,6 +10,8 @@ import {
   newPiece,
   round,
   fertilityPaused,
+  consumeFertileTerrain,
+  restoreAquaticFertility,
   photosynthesisDelayTurns,
   juvenile,
   senescent,
@@ -30,6 +32,7 @@ import {
   tickEnvironment,
   checkPopulationClimate,
   repairConwayStagnation,
+  advanceConway,
   fertilityDepletionRate,
   offensiveActionCount,
 } from "../src/environment.js";
@@ -53,7 +56,11 @@ import {
   predationBirthLimit,
 } from "../src/reproduction.js";
 import { crowdingPenalty } from "../src/ai.js";
-import { GEOLOGICAL_STAGES, habitatProfile } from "../src/geology.js";
+import {
+  GEOLOGICAL_STAGES,
+  habitatProfile,
+  aquaticFertilityRegime,
+} from "../src/geology.js";
 import {
   cloneGenome,
   genomeFromTraits,
@@ -73,13 +80,12 @@ test("period habitat profiles encode the new ecological progression", () => {
     cretaceous = habitatProfile("cretaceous"),
     neogene = habitatProfile("neogene");
 
-  assert.deepEqual(archean.fertile, [48, 56]);
-  assert.deepEqual(archean.naturalBarriers, [0, 0]);
-  assert.equal(archean.pattern, "primordial");
-  assert.deepEqual(proterozoic.hostile, [2, 4]);
-  assert.equal(proterozoic.hostileCap, 12);
-  assert.equal(proterozoic.pattern, "primordial-conway");
-  assert.equal(ordovician.pattern, "islands");
+  for (const profile of [archean, proterozoic, ordovician]) {
+    assert.equal(profile.fertile, 64);
+    assert.equal(profile.hostile, 0);
+    assert.deepEqual(profile.naturalBarriers, [0, 0]);
+    assert.equal(profile.pattern, "aquatic");
+  }
   assert.equal(devonian.pattern, "corridors");
   assert.deepEqual(carboniferous.naturalBarriers, [3, 6]);
   assert.equal(permian.hostile, 12);
@@ -135,21 +141,55 @@ test("first generation-3 habitat update preserves every geological preset", () =
   }
 });
 
-test("Archean keeps its abundant fertile preset after generation 3", () => {
-  const s = createState(899, {
-      geologicalStage: "archean",
+test("aquatic stages stay fully fertile and outside Conway until Ordovician", () => {
+  for (const stage of ["archean", "proterozoic", "ediacaran", "cambrian", "ordovician"]) {
+    const s = createState(899, {
+      geologicalStage: stage,
       naturalBarriers: true,
-    }),
-    before = s.board.filter((cell) => cell === "fertile").length;
-  assert.ok(before >= 48 && before <= 56);
+    });
+    assert.equal(aquaticFertilityRegime(s), true);
+    assert.equal(s.board.filter((cell) => cell === "fertile").length, 64);
+    assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
+    assert.deepEqual(s.naturalBarriers, []);
 
-  s.maxGenerationReached = 3;
-  tickEnvironment(context(s));
+    const before = [...s.board];
+    s.maxGenerationReached = 3;
+    tickEnvironment(context(s));
+    advanceConway(context(s));
+    assert.deepEqual(s.board, before);
+    assert.deepEqual(s.naturalBarriers, []);
+    assertState(s);
+  }
 
-  const after = s.board.filter((cell) => cell === "fertile").length;
-  assert.ok(after >= 48 && after <= 56);
-  assert.ok(Math.abs(after - before) <= 1);
-  assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
+  const silurian = createState(900, {
+    geologicalStage: "silurian",
+    naturalBarriers: true,
+  });
+  assert.equal(aquaticFertilityRegime(silurian), false);
+  assert.ok(silurian.board.some((cell) => cell !== "fertile"));
+  assertState(silurian);
+});
+
+test("consumed aquatic fertility returns after three turns", () => {
+  const s = createState(901, {
+    geologicalStage: "archean",
+    naturalBarriers: true,
+  });
+  const cell = 27;
+  assert.equal(s.board[cell], "fertile");
+
+  assert.equal(consumeFertileTerrain(s, cell), true);
+  assert.equal(s.board[cell], "neutral");
+  assert.deepEqual(s.fertilityRecovery, [{ cell, dueTurn: 3 }]);
+
+  s.turn = 2;
+  assert.equal(restoreAquaticFertility(s), 0);
+  assert.equal(s.board[cell], "neutral");
+
+  s.turn = 3;
+  assert.equal(restoreAquaticFertility(s), 1);
+  assert.equal(s.board[cell], "fertile");
+  assert.deepEqual(s.fertilityRecovery, []);
   assertState(s);
 });
 
