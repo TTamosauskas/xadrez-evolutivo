@@ -820,8 +820,12 @@ export function traitUnlocked(state, trait, piece = null) {
   return true;
 }
 
-export function pawnMutationUnlocked(state) {
-  return state.scenario === "arena" || (state.totalCycles ?? 1) >= 2;
+export function pawnMutationUnlocked(state, piece = null) {
+  if (!piece) return false;
+  return (
+    (piece.traits ?? []).includes("Locomoção Primitiva") ||
+    (piece.ancestry ?? []).includes("Locomoção Primitiva")
+  );
 }
 
 export function deleteriousMutationUnlocked(state) {
