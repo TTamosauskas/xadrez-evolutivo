@@ -851,8 +851,6 @@ export function reproduce(
     primitiveLocomotionReached =
       has(parent, "Locomoção Primitiva") ||
       (parent.ancestry ?? []).includes("Locomoção Primitiva"),
-    preLocomotionPredation =
-      reason === "predação" && !primitiveLocomotionReached,
     competitivePressure = competitiveReproductionPressure(
       state,
       parent,
@@ -867,9 +865,7 @@ export function reproduce(
       bodyPlanOutput + eusocialBonus(state, parent),
     populationLimit =
       reason === "predação"
-        ? preLocomotionPredation
-          ? 1
-          : predationBirthLimit(population)
+        ? predationBirthLimit(population)
         : populationReproductionLimit(
             population,
             pressureLatched,
@@ -932,9 +928,8 @@ export function reproduce(
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     const brood = makeBrood(state, parent, mate, profile, count);
-    const direction = preLocomotionPredation
-      ? { preferCapture: true }
-      : aquaticFertilityRegime(state) && !primitiveLocomotionReached
+    const direction =
+      aquaticFertilityRegime(state) && !primitiveLocomotionReached
         ? { strict: state.geologicalStage === "archean" }
         : null;
     produced = placeBrood(ctx, brood, parent, dispersal, direction);
