@@ -112,9 +112,13 @@ export function restoreAquaticFertility(state) {
   return restored;
 }
 
-export function photosynthesisDelayTurns(state) {
-  const population = activePopulation(state);
-  if (population >= 24) return null;
+export function photosynthesisDelayTurns(state, piece = null) {
+  const population = activePopulation(state),
+    preArticulated =
+      piece &&
+      !(piece.traits ?? []).includes("Locomoção Articulada") &&
+      !(piece.ancestry ?? []).includes("Locomoção Articulada");
+  if (population >= 24) return preArticulated ? 12 : null;
   if (population <= 11) return 6;
   if (population <= 17) return 8;
   return 10;
