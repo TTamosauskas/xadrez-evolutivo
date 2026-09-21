@@ -2570,6 +2570,7 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
+  s.geologicalStage = "cambrian";
   const king = s.pieces[0];
   king.traits = king.traits.filter(
     (trait) =>
@@ -2580,7 +2581,6 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
         "Locomoção Avançada",
       ].includes(trait),
   );
-  s.board[4 * 8 + 4] = "fertile";
   assert.ok(movesFor(s, king).some((target) => target.r === 4 && target.c === 4));
   assert.ok(!movesFor(s, king).some((target) => target.r === 4 && target.c === 2));
 
@@ -2598,6 +2598,7 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
     { owner: "amber", r: 3, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
+  s.geologicalStage = "cambrian";
   const pawn = s.pieces[0];
   pawn.traits = pawn.traits.filter(
     (trait) =>
@@ -2608,7 +2609,6 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
         "Locomoção Avançada",
       ].includes(trait),
   );
-  s.board[3 * 8 + 4] = "fertile";
   const targets = movesFor(s, pawn);
   assert.ok(!targets.some((target) => target.r === 3 && target.c === 3));
   assert.ok(targets.some((target) => target.r === 3 && target.c === 4));
@@ -2620,6 +2620,7 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
+  s.geologicalStage = "cambrian";
   const predator = s.pieces[0];
   predator.traits = predator.traits.filter(
     (trait) =>
@@ -2630,7 +2631,6 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
         "Locomoção Avançada",
       ].includes(trait),
   );
-  s.board[4 * 8 + 4] = "fertile";
   s = simulate(s, move(predator, 4, 4));
   const survivor = s.pieces.find((piece) => piece.id === predator.id);
   assert.deepEqual([survivor.r, survivor.c], [4, 4]);
