@@ -320,27 +320,12 @@ function chooseCells(state, cells, origin, count, dispersal) {
 function chooseCellsTowardEnemy(state, cells, owner, count) {
   const enemies = state.pieces.filter((piece) => piece.owner !== owner);
   if (!enemies.length) return shuffle(state, cells).slice(0, count);
-
-  const score = (cell) => {
-    const dir = cell.r === 0 ? 1 : cell.r === 7 ? -1 : owner === "blue" ? -1 : 1,
-      immediateCaptures = enemies.filter(
-        (enemy) =>
-          enemy.r === cell.r + dir &&
-          Math.abs(enemy.c - cell.c) === 1,
-      ).length,
-      nearest = Math.min(...enemies.map((enemy) => distance(cell, enemy)));
-    return { immediateCaptures, nearest };
-  };
-
   return shuffle(state, cells)
-    .sort((a, b) => {
-      const aa = score(a),
-        bb = score(b);
-      return (
-        bb.immediateCaptures - aa.immediateCaptures ||
-        aa.nearest - bb.nearest
-      );
-    })
+    .sort(
+      (a, b) =>
+        Math.min(...enemies.map((enemy) => distance(a, enemy))) -
+        Math.min(...enemies.map((enemy) => distance(b, enemy))),
+    )
     .slice(0, count);
 }
 
