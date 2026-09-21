@@ -59,7 +59,7 @@ export const TRAITS = {
     "Especialização de uma linhagem com Predação: pode capturar qualquer criatura, mas só obtém reprodução predatória ao capturar seres do ramo fotossintético.",
   ],
   Canibalismo: [
-    "🦈",
+    "🐻‍❄️",
     "Especialização de Carnívoro: permite capturar uma peça aliada segundo a geometria da peça e converter a morte em exatamente um descendente.",
   ],
   Parasitismo: [
@@ -141,7 +141,7 @@ export const TRAITS = {
   ],
   Espinhos: [
     "🌵",
-    "Ao sofrer uma tentativa de captura, tem 25% de chance de matar o agressor e impedir a captura.",
+    "Ao sofrer uma tentativa de captura, tem 10% de chance de matar o agressor, mesmo se a captura fosse falhar por outra defesa.",
   ],
   Extremófitas: [
     "🌴",
@@ -176,12 +176,12 @@ export const TRAITS = {
     "Grupos conectados de quatro ou mais indivíduos podem sacrificar qualquer membro para absorver um ataque.",
   ],
   Mimetismo: [
-    "🐙",
+    "🫥",
     "Confunde captores imitando outros seres.",
   ],
   Chifre: [
     "🫎",
-    "Ao sofrer uma tentativa de captura, tem 20% de chance de matar o agressor; Carapaça do agressor impede a defesa.",
+    "Ao sofrer uma tentativa de captura, tem 20% de chance de matar o agressor, mesmo se a captura fosse falhar por outra defesa; Carapaça do agressor impede a defesa.",
   ],
   "Polegar Opositor": [
     "✋",
