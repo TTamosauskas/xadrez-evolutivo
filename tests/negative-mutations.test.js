@@ -238,6 +238,31 @@ test("malabsorption consumes one additional adjacent fertile resource", () => {
   assert.equal(s.board[extra], "neutral");
 });
 
+test("malabsorption doubles recovery after reproductive predation", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: [
+          "Reparo Celular",
+          "Multicelularismo",
+          "Predação",
+          "Má absorção Alimentar",
+        ],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0];
+
+  assert.equal(
+    reproduce(context(s), parent, null, "predação", { forcedCount: 1 }),
+    1,
+  );
+  assert.equal(parent.nextReproductionRound, 6);
+});
+
 test("semelparity kills the parent after the third successful reproduction", () => {
   const s = fixture([
       {
