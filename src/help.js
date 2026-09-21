@@ -21,6 +21,19 @@ const traitLabel = (name) => `${TRAITS[name][0]} ${name}`;
 const section = (title) => `§ ${title}`;
 
 const NEGATIVE_HELP_TRAITS = new Set(NEGATIVE_TRAITS);
+const chronologicalNegativeTraits = () =>
+  [...NEGATIVE_HELP_TRAITS].sort((a, b) => {
+    const stageIndex = (trait) => {
+      const id = NEGATIVE_TRAIT_RULES[trait]?.stage;
+      return id
+        ? (GEOLOGICAL_STAGES.find((stage) => stage.id === id)?.index ?? 999)
+        : -1;
+    };
+    return (
+      stageIndex(a) - stageIndex(b) ||
+      Object.keys(TRAITS).indexOf(a) - Object.keys(TRAITS).indexOf(b)
+    );
+  });
 
 function chronologicalStageTraits(stage) {
   const traits = Object.keys(TRAITS).filter(
@@ -89,7 +102,7 @@ export const HOW_TO_MUTATION_GROUPS = Object.freeze([
   })).filter((group) => group.traits.length),
   {
     title: "Mutações negativas · a partir do 2º Ciclo",
-    traits: [...NEGATIVE_HELP_TRAITS],
+    traits: chronologicalNegativeTraits(),
   },
 ]);
 
@@ -118,7 +131,7 @@ function ecologicalEventLines() {
 }
 
 function negativeMutationRuleLines() {
-  return [...NEGATIVE_HELP_TRAITS].map((trait) => {
+  return chronologicalNegativeTraits().map((trait) => {
     const rule = NEGATIVE_TRAIT_RULES[trait] ?? {},
       stage = rule.stage
         ? GEOLOGICAL_STAGES.find((entry) => entry.id === rule.stage)?.period
