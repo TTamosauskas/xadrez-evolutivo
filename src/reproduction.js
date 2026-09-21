@@ -135,6 +135,11 @@ function nextDerivedRank(piece) {
   return has(piece, "Vertebrado") || has(piece, "Artrópode") ? next : null;
 }
 
+export function negativeMutationChance(piece) {
+  const normalized = piece?.rank === 0 ? 1 / 5 : 1 / 3;
+  return has(piece, "Reparo Celular") ? normalized : Math.min(1, normalized * 2);
+}
+
 function mutation(state, p, positiveOnly) {
   const gains = [];
   if (p.rank === 4 && pawnMutationUnlocked(state, p))
@@ -166,7 +171,7 @@ function mutation(state, p, positiveOnly) {
   const negativeAllowed =
       !positiveOnly && deleteriousMutationUnlocked(state),
     negative =
-      negativeAllowed && random(state) < (p.rank === 0 ? 1 / 5 : 1 / 3);
+      negativeAllowed && random(state) < negativeMutationChance(p);
   let options = negative ? losses : gains;
   if (!options.length)
     options =
