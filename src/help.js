@@ -1,5 +1,5 @@
 import { EVENTS, PATHOGEN_AGENTS, TRAITS } from "./constants.js";
-import { GEOLOGICAL_STAGES } from "./geology.js";
+import { GEOLOGICAL_STAGES, TRAIT_DEPENDENCIES, TRAIT_STAGE } from "./geology.js";
 import {
   ARENA_FOUNDATIONAL_TRAITS,
   ARENA_RECESSIVE_COUNT,
@@ -14,112 +14,65 @@ import {
 const traitLabel = (name) => `${TRAITS[name][0]} ${name}`;
 const section = (title) => `§ ${title}`;
 
+const NEGATIVE_HELP_TRAITS = new Set([
+  "Esterilidade",
+  "Mutação Deletéria",
+  "Mutação Disfuncional",
+]);
+
+function chronologicalStageTraits(stage) {
+  const traits = Object.keys(TRAITS).filter(
+      (trait) =>
+        !NEGATIVE_HELP_TRAITS.has(trait) &&
+        TRAIT_STAGE[trait] === stage.id,
+    ),
+    pending = new Set(traits),
+    ordered = [],
+    requiredOrder = new Map(
+      (stage.required ?? []).map((trait, index) => [trait, index]),
+    ),
+    sameStageDependencies = (trait) => {
+      const deps = TRAIT_DEPENDENCIES[trait] ?? {};
+      return [
+        ...(deps.lineage ?? []),
+        ...(deps.lineageAny ?? []),
+        ...(deps.historical ?? []),
+      ].filter(
+        (dependency) =>
+          pending.has(dependency) || ordered.includes(dependency),
+      );
+    },
+    compare = (a, b) => {
+      if (a === "Respiração anaeróbia") return -1;
+      if (b === "Respiração anaeróbia") return 1;
+      const ai = requiredOrder.has(a) ? requiredOrder.get(a) : Infinity,
+        bi = requiredOrder.has(b) ? requiredOrder.get(b) : Infinity;
+      return ai - bi || traits.indexOf(a) - traits.indexOf(b);
+    };
+
+  while (pending.size) {
+    const ready = [...pending]
+      .filter((trait) =>
+        sameStageDependencies(trait).every(
+          (dependency) => !pending.has(dependency),
+        ),
+      )
+      .sort(compare);
+    const next = ready[0] ?? [...pending].sort(compare)[0];
+    ordered.push(next);
+    pending.delete(next);
+  }
+  return ordered;
+}
+
 export const HOW_TO_MUTATION_GROUPS = Object.freeze([
+  ...GEOLOGICAL_STAGES.map((stage) => ({
+    title: `${stage.group} · ${stage.period}`,
+    traits: chronologicalStageTraits(stage),
+  })).filter((group) => group.traits.length),
   {
-    title: "Fundamentos, metabolismo e ciclo de vida",
-    traits: [
-      "Respiração anaeróbia",
-      "Respiração aeróbia",
-      "Reparo Celular",
-      "Multicelularismo",
-      "Simetria Bilateral",
-      "Fotossíntese",
-      "Predação",
-      "Mixotrofia",
-      "Dormência",
-      "Resistência",
-      "Regeneração",
-      "Reprodução Sexuada",
-      "Precocidade Sexual",
-    ],
-  },
-  {
-    title: "Plano corporal, movimento e exploração",
-    traits: [
-      "Locomoção Primitiva",
-      "Vertebrado",
-      "Artrópode",
-      "Locomoção Articulada",
-      "Locomoção Terrestre",
-      "Percepção Espacial",
-      "Escavador",
-      "Locomoção Avançada",
-      "Escalador",
-      "Voo",
-      "Sacos Aéreos",
-      "Polegar Opositor",
-      "Neocórtex Desenvolvido",
-    ],
-  },
-  {
-    title: "Alimentação, predação e engenharia ecológica",
-    traits: [
-      "Carnívoro",
-      "Herbívoro",
-      "Canibalismo",
-      "Parasitismo",
-      "Vetor Patógeno",
-      "Onívoro",
-      "Respiração Cutânea",
-      "Necrófago",
-      "Construtor de Nicho",
-      "Antropização",
-      "Coletor",
-    ],
-  },
-  {
-    title: "Reprodução e organização social",
-    traits: [
-      "Ovíparo",
-      "Ovíparos Amniotas",
-      "Ovovivíparo",
-      "Ovífagia",
-      "Vivíparo",
-      "Ovulação Induzida",
-      "Ooteca",
-      "Incubação",
-      "Lactação",
-      "Sociabilidade",
-      "Eusocialidade",
-    ],
-  },
-  {
-    title: "Plantas e especializações fotossintéticas",
-    traits: [
-      "Embriófitas",
-      "Haustório",
-      "Perfume Floral",
-      "Carnivoria Botânica",
-      "Traqueófitas",
-      "Madeira",
-      "Trepadeira",
-      "Espinhos",
-      "Extremófitas",
-      "Gimnospermas",
-      "Angiospermas",
-      "Plantas Domesticadas",
-    ],
-  },
-  {
-    title: "Defesa, percepção e interação",
-    traits: [
-      "Animais Domésticos",
-      "Mimetismo",
-      "Chifre",
-      "Carapaça",
-      "Camuflagem",
-      "Visão Binocular",
-      "Velocidade",
-      "Notívago",
-      "Pele grossa",
-      "Garras",
-      "Visão Noturna",
-      "Veneno",
-    ],
-  },
-  {
-    title: "Mutações negativas",
-    traits: ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"],
+    title: "Mutações negativas · a partir do 2º Ciclo",
+    traits: [...NEGATIVE_HELP_TRAITS],
   },
 ]);
 
@@ -162,7 +115,7 @@ export function howToPlayLines() {
     "Formas de xadrez definem geometria e capacidade reprodutiva. Rei, Peão, Cavalo, Bispo, Torre e Rainha mantêm suas trajetórias oficiais quando a evolução libera movimento ou captura; características biológicas determinam quais dessas ações estão disponíveis.",
 
     section("Tabuleiro, terreno e recursos"),
-    "🟩 Casas férteis são o principal recurso reprodutivo. ⬛ Casas hostis oferecem 50% de risco ambiental por exposição normal. 🟫 Barreiras bloqueiam trajetórias salvo adaptações específicas. ☠️ Decomposição permanece por três rodadas após capturas e pode ser explorada por necrófagos.",
+    "🟩 Casas férteis são o principal recurso reprodutivo. 🟥 Casas hostis oferecem 50% de risco ambiental por exposição normal. 🟫 Barreiras bloqueiam trajetórias salvo adaptações específicas. ☠️ Decomposição permanece por três rodadas após capturas e pode ser explorada por necrófagos.",
     `${traitLabel("Carapaça")} reduz o risco ambiental, ${traitLabel("Dormência")} evita o risco enquanto a criatura permanece imóvel em terreno hostil, ${traitLabel("Regeneração")} pode evitar uma morte não causada por captura uma vez por vida e ${traitLabel("Voo")} permite atravessar casas hostis, embora pousar nelas continue arriscado.`,
     "Nos ambientes aquáticos iniciais, recursos férteis consumidos podem se recuperar. A partir do Devoniano, a dinâmica de habitat por Conway passa a remodelar fertilidade e hostilidade conforme a progressão geracional.",
 
