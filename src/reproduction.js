@@ -187,14 +187,11 @@ function mutation(state, p, positiveOnly) {
       syncGenomePhenotype(p);
       normalizeBodyPlanRank(p);
     } else {
-      p.genome =
-        choice.geneGain === "Locomoção Terrestre"
-          ? forceGenomeTrait(p.genome, choice.geneGain, "dominant")
-          : gainGenomeAllele(
-              p.genome,
-              choice.geneGain,
-              () => random(state),
-            );
+      p.genome = gainGenomeAllele(
+        p.genome,
+        choice.geneGain,
+        () => random(state),
+      );
       syncGenomePhenotype(p);
     }
     p.ancestry = [
