@@ -856,6 +856,32 @@ test("gradual population pressure exhausts fertility without arbitrary attrition
   assertState(s);
 });
 
+test("aquatic crowding depletion stays exhausted while consumed cells recover", () => {
+  const s = createState(902, {
+    geologicalStage: "archean",
+    naturalBarriers: true,
+  });
+  const occupied = new Set(s.pieces.map((piece) => piece.r * 8 + piece.c));
+  for (let cell = 0; s.pieces.length < 24 && cell < 64; cell++) {
+    if (occupied.has(cell)) continue;
+    occupied.add(cell);
+    s.pieces.push(
+      newPiece(
+        s,
+        s.pieces.length % 2 ? "blue" : "amber",
+        Math.floor(cell / 8),
+        cell % 8,
+      ),
+    );
+  }
+
+  tickEnvironment(context(s));
+
+  assert.ok(s.board.some((cell) => cell === "neutral"));
+  assert.deepEqual(s.fertilityRecovery, []);
+  assertState(s);
+});
+
 test("reproduction pressure uses hidden hysteresis without suppressing early recovery", () => {
   assert.equal(populationReproductionLimit(17, true), Infinity);
   assert.equal(populationReproductionLimit(18, true), 2);
