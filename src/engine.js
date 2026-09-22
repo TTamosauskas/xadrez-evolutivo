@@ -1515,7 +1515,11 @@ function resolveDirectPartner(ctx, action) {
         piece.owner === state.current,
     ),
     candidates = partnersFor(state, p);
-  if (!p || !candidates.length)
+  if (
+    !p ||
+    (state.chain && state.chain !== p.id) ||
+    !candidates.length
+  )
     throw Error("Reprodução sexuada indisponível.");
   const requested = candidates.find((candidate) => candidate.id === action.id);
   if (!requested) throw Error("Escolha um parceiro destacado.");
