@@ -59,11 +59,11 @@ export const TRAITS = {
   ],
   Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Permite capturar criaturas adversárias segundo a geometria tradicional da peça; descendentes permanecem neste ramo e, sem Locomoção Primitiva, apenas capturas são permitidas."],
   Carnívoro: [
-    "🦁",
+    "🍖",
     "Especialização de uma linhagem com Predação: obtém reprodução predatória ao capturar criaturas não fotossintéticas e deixa de usar casas férteis.",
   ],
   Herbívoro: [
-    "🐊",
+    "🥬",
     "Especialização de uma linhagem com Predação: pode capturar qualquer criatura, mas só obtém reprodução predatória ao capturar seres do ramo fotossintético.",
   ],
   Canibalismo: [
@@ -89,7 +89,7 @@ export const TRAITS = {
   ],
   Ovíparo: ["🥒", "A reprodução deposita um ovo ⚪ móvel que busca terreno fértil para eclodir após pelo menos três rodadas."],
   "Ovíparos Amniotas": [
-    "🦎",
+    "🥚",
     "Especialização amniótica: ao reproduzir, escolhe uma casa vazia a até três casas para depositar um ovo 🥚, que eclode na rodada seguinte.",
   ],
   Ovovivíparo: [
