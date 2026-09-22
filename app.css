@@ -40,6 +40,18 @@ header p {
   font-size: 13px;
   letter-spacing: 0.07em;
 }
+#menu-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.menu-icon {
+  line-height: 1;
+}
+.mobile-selected-summary {
+  display: none;
+}
 button,
 select {
   font: inherit;
@@ -913,12 +925,103 @@ summary {
 }
 @media (max-width: 760px) {
   header {
-    padding: 20px 14px;
+    align-items: flex-start;
+    padding: 11px 12px 9px;
+    gap: 10px;
+  }
+  header > div {
+    min-width: 0;
+  }
+  h1 {
+    max-width: 290px;
+    font-size: clamp(24px, 7vw, 30px);
+    line-height: 0.98;
+  }
+  header p {
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.15;
+  }
+  #menu-button {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 9px;
+    font-size: 25px;
+  }
+  #menu-button .menu-label {
+    display: none;
   }
   main {
     grid-template-columns: 1fr;
     padding: 0 12px;
-    gap: 15px;
+    gap: 12px;
+  }
+  .turn-strip {
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 0 7px;
+    font-size: 13px;
+    line-height: 1.25;
+  }
+  .turn-strip strong {
+    flex: 0 1 42%;
+  }
+  .turn-strip span {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .event {
+    min-height: 0;
+    padding-bottom: 7px;
+  }
+  .event:empty {
+    display: none;
+  }
+  .mobile-selected-summary {
+    display: block;
+    margin: 2px 0 8px;
+    padding: 8px 10px;
+    border: 1px solid #363e32;
+    border-radius: 8px;
+    background: #242a22;
+  }
+  .mobile-selected-summary[hidden] {
+    display: none;
+  }
+  .mobile-selected-heading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .mobile-selected-symbol {
+    font-size: 24px;
+    line-height: 1;
+  }
+  .mobile-selected-traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.25;
+  }
+  .mobile-actionable-trait {
+    color: #ebe8de;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .mobile-selected-more {
+    color: var(--muted);
+    white-space: nowrap;
   }
   aside {
     display: grid;
@@ -943,9 +1046,6 @@ summary {
   }
   .panel {
     padding: 13px;
-  }
-  .turn-strip {
-    font-size: 14px;
   }
   .arena-lineages {
     grid-template-columns: 1fr;
