@@ -231,7 +231,7 @@ test("hostile terrain is red and terrain tones flatten from the Devonian", () =>
   devonianDom.window.close();
 });
 
-test("selected pieces keep the normal compact mutation icon layout", () => {
+test("active mutations form a frame around the board piece", () => {
   const dom = setup(),
     s = createState(20),
     piece = s.pieces[0];
@@ -248,12 +248,66 @@ test("selected pieces keep the normal compact mutation icon layout", () => {
     cell = d.querySelector(
       `[data-r="${piece.r}"][data-c="${piece.c}"]`,
     ),
-    badges = cell.querySelector(".badges"),
+    frame = cell.querySelector(".trait-frame"),
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
-  assert.ok(badges);
-  assert.equal(badges.querySelectorAll(".badge-icon").length, 5);
-  assert.equal(cell.querySelector(".selected-badges"), null);
-  assert.doesNotMatch(css, /selected-badge-orbit/);
+  assert.ok(frame);
+  assert.equal(frame.querySelectorAll(".trait-badge").length, 6);
+  assert.ok(frame.querySelector(".trait-slot-0"));
+  assert.ok(frame.querySelector(".trait-slot-5"));
+  assert.equal(frame.querySelector(".trait-overflow"), null);
+  assert.match(css, /\.trait-slot-0[\s\S]*left:\s*25%/);
+  assert.match(css, /\.trait-slot-11[\s\S]*top:\s*25%/);
+  dom.window.close();
+});
+
+test("mutation frame shows twelve phenotypes and an overflow counter", () => {
+  const dom = setup(),
+    s = createState(201),
+    piece = s.pieces[0];
+  piece.traits = [
+    "Respiração anaeróbia",
+    "Reparo Celular",
+    "Multicelularismo",
+    "Predação",
+    "Simetria Bilateral",
+    "Locomoção Primitiva",
+    "Vertebrado",
+    "Locomoção Articulada",
+    "Percepção Espacial",
+    "Carnívoro",
+    "Ovíparo",
+    "Carapaça",
+    "Camuflagem",
+    "Veneno",
+    "Resistência",
+  ];
+
+  render(dom.window.document, s);
+  const cell = dom.window.document.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    ),
+    frame = cell.querySelector(".trait-frame");
+  assert.equal(frame.querySelectorAll(".trait-badge").length, 12);
+  assert.equal(frame.querySelector(".trait-overflow").textContent, "+3");
+  assert.ok(cell.classList.contains("trait-dense"));
+  dom.window.close();
+});
+
+test("somatic mutations are visually distinct in the mutation frame", () => {
+  const dom = setup(),
+    s = createState(202),
+    piece = s.pieces[0];
+  piece.traits = ["Respiração anaeróbia", "Multicelularismo"];
+  piece.somaticMutations = ["Imunodeficiência"];
+
+  render(dom.window.document, s);
+  const cell = dom.window.document.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    ),
+    somatic = cell.querySelector(".trait-badge.somatic-badge");
+  assert.ok(somatic);
+  assert.equal(somatic.dataset.trait, "Imunodeficiência");
+  assert.equal(somatic.textContent, "🤢");
   dom.window.close();
 });
 
@@ -367,7 +421,7 @@ test("selected legend separates active traits from ancestry behind a closed togg
   const cell = d.querySelector(
     `[data-r="${piece.r}"][data-c="${piece.c}"]`,
   );
-  const boardIcons = cell.querySelector(".badges").textContent;
+  const boardIcons = cell.querySelector(".trait-frame").textContent;
   assert.match(boardIcons, /🐻/);
   assert.doesNotMatch(boardIcons, /🦁/);
   dom.window.close();
@@ -456,7 +510,7 @@ test("senescent pieces render italic lifecycle styling and age status", () => {
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
   assert.ok(piece.classList.contains("senescent"));
   assert.match(piece.parentElement.title, /senescente, idade 25/);
-  assert.match(piece.parentElement.querySelector(".badges").textContent, /⌛/);
+  assert.match(piece.parentElement.querySelector(".piece-status").textContent, /⌛/);
   assert.match(d.getElementById("selected").textContent, /Senescente · idade 25/);
   assert.match(css, /\.piece\.senescent[\s\S]*font-style:\s*italic/);
   dom.window.close();
@@ -492,7 +546,7 @@ test("renders eggs and carried brood count", () => {
   assert.match(d.querySelector(".egg-mark").parentElement.title, /busca terreno fértil/);
   assert.match(d.querySelector(".egg-mark").parentElement.title, /2 descendente/);
   assert.match(
-    d.querySelector(`[data-r="${parent.r}"][data-c="${parent.c}"] .badges`)
+    d.querySelector(`[data-r="${parent.r}"][data-c="${parent.c}"] .piece-status`)
       .textContent,
     /\+3/,
   );
@@ -607,7 +661,7 @@ test("dysfunctional rest fades the piece without adding a sleep badge", () => {
     piece = d.querySelector(
       `[data-r="${p.r}"][data-c="${p.c}"] .piece`,
     ),
-    badges = piece.parentElement.querySelector(".badges");
+    badges = piece.parentElement.querySelector(".trait-frame");
   assert.ok(piece.classList.contains("dysfunctional-resting"));
   assert.ok(!badges.textContent.includes("💤"));
   assert.ok(badges.textContent.includes("❌"));

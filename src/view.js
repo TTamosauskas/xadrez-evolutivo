@@ -16,6 +16,7 @@ import {
 import {
   currentGeologicalStage,
   geologicalStage,
+  isNegativeTrait,
   stageProgress,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
@@ -39,6 +40,42 @@ const element = (doc, tag, text, cls) => {
   if (cls) e.className = cls;
   return e;
 };
+const TRAIT_FRAME_LIMIT = 12;
+const TRAIT_DISPLAY_ORDER = new Map(
+  Object.keys(TRAITS).map((trait, index) => [trait, index]),
+);
+
+export function traitFrameEntries(piece) {
+  const entries = [
+    ...(piece?.traits ?? []).map((trait) => ({ trait, somatic: false })),
+    ...(piece?.somaticMutations ?? []).map((trait) => ({
+      trait,
+      somatic: true,
+    })),
+  ]
+    .filter(({ trait }) => TRAITS[trait])
+    .sort(
+      (a, b) =>
+        Number(a.somatic) - Number(b.somatic) ||
+        Number(isNegativeTrait(a.trait)) - Number(isNegativeTrait(b.trait)) ||
+        (TRAIT_DISPLAY_ORDER.get(a.trait) ?? Number.MAX_SAFE_INTEGER) -
+          (TRAIT_DISPLAY_ORDER.get(b.trait) ?? Number.MAX_SAFE_INTEGER),
+    );
+  const unique = [],
+    seen = new Set();
+  for (const entry of entries) {
+    const key = `${entry.somatic ? "somatic" : "inherited"}:${entry.trait}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(entry);
+  }
+  return {
+    visible: unique.slice(0, TRAIT_FRAME_LIMIT),
+    overflow: Math.max(0, unique.length - TRAIT_FRAME_LIMIT),
+    total: unique.length,
+  };
+}
+
 function evolutionarySummary(state, owner) {
   const pieces = state.pieces.filter((p) => p.owner === owner),
     lineages = new Set(pieces.map(signature)),
@@ -275,6 +312,8 @@ export function render(
       if (originHere)
         cell.append(make("span", "♚", "piece origin-piece"));
       if (p) {
+        const traitFrame = traitFrameEntries(p);
+        if (traitFrame.total > 8) cell.classList.add("trait-dense");
         cell.append(
           make(
             "span",
@@ -282,16 +321,34 @@ export function render(
             `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
           ),
         );
-        const badges = [
-          ...p.traits,
-          ...(p.somaticMutations ?? []),
-        ].map((trait) => ({
-          text: TRAITS[trait][0],
-          trait,
-        }));
-        if (senescent(state, p)) badges.push({ text: "⌛" });
-        if (p.venom) badges.push({ text: "☠" });
-        if (p.seeds) badges.push({ text: `${p.seeds}🌰` });
+
+        if (traitFrame.visible.length) {
+          const frame = make("span", undefined, "trait-frame");
+          for (const [index, entry] of traitFrame.visible.entries()) {
+            const icon = make(
+              "span",
+              TRAITS[entry.trait][0],
+              `trait-badge trait-slot-${index}${entry.somatic ? " somatic-badge" : ""}`,
+            );
+            icon.dataset.trait = entry.trait;
+            frame.append(icon);
+          }
+          if (traitFrame.overflow) {
+            const overflow = make(
+              "span",
+              `+${traitFrame.overflow}`,
+              "trait-overflow",
+            );
+            overflow.title = `${traitFrame.overflow} mutação(ões) ativa(s) adicional(is); selecione a peça para ver todas.`;
+            frame.append(overflow);
+          }
+          cell.append(frame);
+        }
+
+        const statusBadges = [];
+        if (senescent(state, p)) statusBadges.push("⌛");
+        if (p.venom) statusBadges.push("☠");
+        if (p.seeds) statusBadges.push(`${p.seeds}🌰`);
         const viviparousCarried = (p.pregnancies ?? [])
             .filter((pregnancy) => pregnancy.kind !== "ovoviviparous")
             .reduce((sum, pregnancy) => sum + pregnancy.brood.length, 0),
@@ -299,14 +356,15 @@ export function render(
             .filter((pregnancy) => pregnancy.kind === "ovoviviparous")
             .reduce((sum, pregnancy) => sum + pregnancy.brood.length, 0);
         if (viviparousCarried)
-          badges.unshift({ text: `🔴+${viviparousCarried}` });
+          statusBadges.unshift(`🔴+${viviparousCarried}`);
         if (ovoviviparousCarried)
-          badges.unshift({ text: `⚪+${ovoviviparousCarried}` });
-        const visibleBadges = badges.slice(0, 5),
-          badgeRow = make("span", undefined, "badges");
-        for (const badge of visibleBadges)
-          badgeRow.append(make("span", badge.text, "badge-icon"));
-        cell.append(badgeRow);
+          statusBadges.unshift(`⚪+${ovoviviparousCarried}`);
+        if (statusBadges.length) {
+          const status = make("span", undefined, "piece-status");
+          for (const badge of statusBadges)
+            status.append(make("span", badge, "status-badge"));
+          cell.append(status);
+        }
       }
       if (pathogenAgents.length) {
         const overlay = make("span", undefined, "pathogen-overlay");
