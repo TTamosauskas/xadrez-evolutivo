@@ -75,7 +75,7 @@ import {
   hiddenRecessiveTraits,
   syncGenomePhenotype,
 } from "../src/genetics.js";
-import { EVENTS, TRAITS } from "../src/constants.js";
+import { EVENTS, TRAITS, square } from "../src/constants.js";
 
 test("period habitat profiles encode the new ecological progression", () => {
   const archean = habitatProfile("archean"),
