@@ -5,7 +5,17 @@ export const SYMBOLS = {
   blue: ["♙", "♘", "♗", "♖", "♔", "♕"],
   amber: ["♟", "♞", "♝", "♜", "♚", "♛"],
 };
-export const BIRTH_RATES = [4, 3, 2, 2, 1, 1];
+export const PIECE_LIFE_HISTORY = Object.freeze([
+  Object.freeze({ brood: 4, respiration: 3, predation: 2, maturity: 1 }),
+  Object.freeze({ brood: 3, respiration: 4, predation: 3, maturity: 2 }),
+  Object.freeze({ brood: 2, respiration: 4, predation: 3, maturity: 2 }),
+  Object.freeze({ brood: 2, respiration: 5, predation: 4, maturity: 3 }),
+  Object.freeze({ brood: 1, respiration: 5, predation: 4, maturity: 3 }),
+  Object.freeze({ brood: 1, respiration: 6, predation: 5, maturity: 4 }),
+]);
+export const BIRTH_RATES = Object.freeze(
+  PIECE_LIFE_HISTORY.map((profile) => profile.brood),
+);
 export const TRAITS = {
   "Reparo Celular": [
     "🩹",
@@ -100,15 +110,15 @@ export const TRAITS = {
   Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],
   "Ovulação Induzida": [
     "🐇",
-    "Reduz de três para duas rodadas o intervalo mínimo entre reproduções bem-sucedidas.",
+    "Reduz em uma rodada a recuperação reprodutiva própria da peça, até o mínimo de uma rodada.",
   ],
   "Respiração anaeróbia": [
     "⚪",
-    "Metabolismo sem oxigênio. Permite consumir uma casa fértil pré-existente para reprodução a cada quatro turnos próprios.",
+    "Metabolismo sem oxigênio. Permite consumir uma casa fértil pré-existente; a recuperação reprodutiva depende do tipo de peça.",
   ],
   "Respiração aeróbia": [
     "🔵",
-    "Metabolismo mais eficiente com oxigênio. Permite consumir uma casa fértil pré-existente para reprodução a cada três turnos próprios.",
+    "Metabolismo mais eficiente com oxigênio. Reduz em uma rodada a recuperação respiratória própria da peça.",
   ],
   Fotossíntese: [
     "🟢",
@@ -251,7 +261,7 @@ export const TRAITS = {
   ],
   "Precocidade Sexual": [
     "🪰",
-    "Em descendentes multicelulares, reduz de duas para uma rodada o tempo natural até a maturidade reprodutiva.",
+    "Em descendentes multicelulares, reduz em uma rodada o tempo natural de maturidade sexual próprio da peça, até o mínimo de uma rodada.",
   ],
   Esterilidade: ["🚫", "Impede a reprodução."],
   "Insuficiência Respiratória": [

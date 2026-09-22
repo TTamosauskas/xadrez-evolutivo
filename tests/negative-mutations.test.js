@@ -160,7 +160,7 @@ test("only-child and respiratory insufficiency reduce reproductive performance",
     }),
     1,
   );
-  assert.equal(respiratoryParent.nextReproductionRound, 8);
+  assert.equal(respiratoryParent.nextReproductionRound, 12);
 
   const predator = fixture([
       {
@@ -184,7 +184,7 @@ test("only-child and respiratory insufficiency reduce reproductive performance",
     }),
     1,
   );
-  assert.equal(predatorParent.nextReproductionRound, 3);
+  assert.equal(predatorParent.nextReproductionRound, 5);
 });
 
 test("subfertility can spend a reproductive attempt without offspring", () => {
@@ -260,7 +260,7 @@ test("malabsorption doubles recovery after reproductive predation", () => {
     reproduce(context(s), parent, null, "predação", { forcedCount: 1 }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 6);
+  assert.equal(parent.nextReproductionRound, 10);
 });
 
 test("semelparity kills the parent after the third successful reproduction", () => {

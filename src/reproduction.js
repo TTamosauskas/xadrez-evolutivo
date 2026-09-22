@@ -1,5 +1,6 @@
 import {
   BIRTH_RATES,
+  PIECE_LIFE_HISTORY,
   PIECES,
   TRAITS,
   has,
@@ -507,7 +508,7 @@ function makeRequestedBrood(count) {
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
   child.maturesRound = has(child, "Multicelularismo")
-    ? round(state) + (has(child, "Precocidade Sexual") ? 1 : 2)
+    ? round(state) + sexualMaturityRounds(child)
     : round(state);
   if (has(child, "Mutação Deletéria"))
     child.deleteriousDue = round(state) + 3;
@@ -842,6 +843,31 @@ function layPlantSeeds(ctx, parent, brood) {
   return laid;
 }
 
+export function pieceLifeHistory(profile) {
+  return (
+    PIECE_LIFE_HISTORY[profile?.rank] ??
+    PIECE_LIFE_HISTORY[0]
+  );
+}
+
+export function respiratoryReproductionCooldown(profile) {
+  const base = pieceLifeHistory(profile).respiration;
+  return has(profile, "Respiração aeróbia")
+    ? Math.max(1, base - 1)
+    : base;
+}
+
+export function predatoryReproductionCooldown(profile) {
+  return pieceLifeHistory(profile).predation;
+}
+
+export function sexualMaturityRounds(profile) {
+  const base = pieceLifeHistory(profile).maturity;
+  return has(profile, "Precocidade Sexual")
+    ? Math.max(1, base - 1)
+    : base;
+}
+
 export function reproductiveOutput(profile) {
   if (!has(profile, "Fotossíntese"))
     return BIRTH_RATES[profile.rank];
@@ -1074,20 +1100,19 @@ export function reproduce(
         : Math.min(populationLimit, competitivePressure.limit),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece) => {
-      let base =
-        has(piece, "Ovulação Induzida")
-          ? 2
-          : options.resourceReproduction || options.fertileReproduction
-            ? has(piece, "Respiração aeróbia")
-              ? 3
-              : 4
-            : 3;
-      if (
-        has(piece, "Insuficiência Respiratória") &&
-        (options.resourceReproduction || options.fertileReproduction)
-      )
+      const respiratory =
+          options.resourceReproduction || options.fertileReproduction,
+        predatory = reason === "predação";
+      let base = respiratory
+        ? respiratoryReproductionCooldown(piece)
+        : predatory
+          ? predatoryReproductionCooldown(piece)
+          : 3;
+      if (has(piece, "Ovulação Induzida"))
+        base = Math.max(1, base - 1);
+      if (has(piece, "Insuficiência Respiratória") && respiratory)
         base *= 2;
-      if (has(piece, "Má absorção Alimentar") && reason === "predação")
+      if (has(piece, "Má absorção Alimentar") && predatory)
         base *= 2;
       return (
         round(state) +

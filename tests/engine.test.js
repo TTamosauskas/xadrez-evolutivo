@@ -62,6 +62,9 @@ import {
   populationReproductionLimit,
   populationReproductionCooldown,
   predationBirthLimit,
+  respiratoryReproductionCooldown,
+  predatoryReproductionCooldown,
+  sexualMaturityRounds,
 } from "../src/reproduction.js";
 import { crowdingPenalty } from "../src/ai.js";
 import {
@@ -75,7 +78,12 @@ import {
   hiddenRecessiveTraits,
   syncGenomePhenotype,
 } from "../src/genetics.js";
-import { EVENTS, TRAITS, square } from "../src/constants.js";
+import {
+  EVENTS,
+  TRAITS,
+  PIECE_LIFE_HISTORY,
+  square,
+} from "../src/constants.js";
 
 test("period habitat profiles encode the new ecological progression", () => {
   const archean = habitatProfile("archean"),
@@ -908,30 +916,121 @@ test("population pressure governs fertility, pathogens and severe climate", () =
   assert.equal(photosynthesisDelayTurns(state), 6);
 });
 
-test("anaerobic and aerobic respiration set four- and three-round fertile reproduction cooldowns", () => {
+test("piece life history defines brood, respiration, predation and sexual maturity", () => {
+  assert.deepEqual(
+    PIECE_LIFE_HISTORY.map(
+      ({ brood, respiration, predation, maturity }) => [
+        brood,
+        respiration,
+        predation,
+        maturity,
+      ],
+    ),
+    [
+      [4, 3, 2, 1],
+      [3, 4, 3, 2],
+      [2, 4, 3, 2],
+      [2, 5, 4, 3],
+      [1, 5, 4, 3],
+      [1, 6, 5, 4],
+    ],
+  );
+
+  for (let rank = 0; rank < PIECE_LIFE_HISTORY.length; rank++) {
+    const profile = { rank, traits: ["Respiração anaeróbia"] },
+      aerobic = { rank, traits: ["Respiração aeróbia"] },
+      precocious = {
+        rank,
+        traits: ["Respiração anaeróbia", "Precocidade Sexual"],
+      };
+    assert.equal(
+      respiratoryReproductionCooldown(profile),
+      PIECE_LIFE_HISTORY[rank].respiration,
+    );
+    assert.equal(
+      respiratoryReproductionCooldown(aerobic),
+      Math.max(1, PIECE_LIFE_HISTORY[rank].respiration - 1),
+    );
+    assert.equal(
+      predatoryReproductionCooldown(profile),
+      PIECE_LIFE_HISTORY[rank].predation,
+    );
+    assert.equal(
+      sexualMaturityRounds(profile),
+      PIECE_LIFE_HISTORY[rank].maturity,
+    );
+    assert.equal(
+      sexualMaturityRounds(precocious),
+      Math.max(1, PIECE_LIFE_HISTORY[rank].maturity - 1),
+    );
+  }
+});
+
+test("fertile reproduction uses the piece respiratory recovery profile", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração anaeróbia"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
-  const anaerobic = s.pieces[0];
-  assert.equal(reproduce(context(s), anaerobic, null, "teste", {
+  const anaerobicQueen = s.pieces[0];
+  assert.equal(reproduce(context(s), anaerobicQueen, null, "teste", {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(anaerobic.nextReproductionRound, round(s) + 4);
+  assert.equal(anaerobicQueen.nextReproductionRound, round(s) + 6);
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração aeróbia"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
-  const aerobic = s.pieces[0];
-  assert.equal(reproduce(context(s), aerobic, null, "teste", {
+  const aerobicQueen = s.pieces[0];
+  assert.equal(reproduce(context(s), aerobicQueen, null, "teste", {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(aerobic.nextReproductionRound, round(s) + 3);
+  assert.equal(aerobicQueen.nextReproductionRound, round(s) + 5);
+
+  s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 0,
+      traits: ["Respiração anaeróbia", "Ovulação Induzida"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[36] = "fertile";
+  const inducedPawn = s.pieces[0];
+  assert.equal(reproduce(context(s), inducedPawn, null, "teste", {
+    forcedCount: 1,
+    fertileReproduction: true,
+  }), 1);
+  assert.equal(inducedPawn.nextReproductionRound, round(s) + 2);
+  assertState(s);
+});
+
+test("predatory recovery scales with piece rank", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 0, traits: ["Predação"] },
+    { owner: "amber", r: 3, c: 3, rank: 0 },
+  ]);
+  let predator = s.pieces[0];
+  assert.equal(reproduce(context(s), predator, null, "predação", {
+    forcedCount: 1,
+  }), 1);
+  assert.equal(predator.nextReproductionRound, round(s) + 2);
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Predação"] },
+    { owner: "amber", r: 0, c: 0, rank: 0 },
+  ]);
+  predator = s.pieces[0];
+  assert.equal(reproduce(context(s), predator, null, "predação", {
+    forcedCount: 1,
+  }), 1);
+  assert.equal(predator.nextReproductionRound, round(s) + 5);
   assertState(s);
 });
 
