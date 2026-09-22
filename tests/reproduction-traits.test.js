@@ -368,6 +368,7 @@ test("Onívoro Oportunista can target an enemy egg without Ovífagia", () => {
     ],
     dispersal: "local",
   });
+  s.maxGenerationReached = 1;
 
   assert.ok(
     movesFor(s, attacker).some(
