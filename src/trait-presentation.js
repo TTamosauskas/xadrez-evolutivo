@@ -17,7 +17,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Carnívoro: "Capturas de não fotossintéticos podem gerar prole; não usa casas férteis.",
   Herbívoro: "Capturas de fotossintéticos podem gerar prole.",
   Canibalismo: "Pode capturar aliado e gerar 1 descendente.",
-  Parasitismo: "Pode fertilizar a própria casa e hostilizar inimigos adjacentes.",
+  Parasitismo: "Pode fertilizar a própria casa e atacar o habitat de 1 inimigo adjacente.",
   "Vetor Patógeno": "Pode causar surtos patogênicos em inimigos adjacentes.",
   Onívoro: "Usa casas férteis e capturas de qualquer ramo para reproduzir.",
   "Respiração Cutânea": "Pode reproduzir consumindo casa fértil ortogonal adjacente.",
