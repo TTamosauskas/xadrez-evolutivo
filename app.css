@@ -884,8 +884,12 @@ summary {
   .piece {
     font-size: clamp(25px, 8vw, 55px);
   }
-  .badges {
-    font-size: clamp(8px, 2.5vw, 13px);
+  .trait-badge {
+    font-size: clamp(9px, 2.35vw, 13px);
+  }
+  .piece-status,
+  .trait-overflow {
+    font-size: clamp(8px, 2vw, 11px);
   }
   .board {
     border-width: 5px;
