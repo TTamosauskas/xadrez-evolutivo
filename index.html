@@ -28,7 +28,6 @@
         ></div>
         <div class="board-footer">
           <div id="board-legend" class="terrain-key" aria-label="Legenda contextual do tabuleiro"></div>
-          <div id="piece-actions" class="piece-actions" aria-label="Ações da peça selecionada"></div>
           <button id="pass">Passar vez</button>
         </div>
         <p id="message" role="status"></p>
@@ -49,6 +48,12 @@
         </section>
       </aside>
     </main>
+    <dialog id="vivify-dialog" aria-labelledby="vivify-title">
+      <h2 id="vivify-title">Vivificar</h2>
+      <p id="vivify-copy">Escolha a ação biológica.</p>
+      <div id="vivify-options" class="dialog-actions"></div>
+      <button id="vivify-cancel">Cancelar</button>
+    </dialog>
     <dialog id="notice-dialog" aria-labelledby="notice-title">
       <h2 id="notice-title"></h2>
       <div id="notice-content"></div>
