@@ -497,6 +497,29 @@ main {
   font-size: 12px;
   color: var(--muted);
 }
+.terrain-key:empty {
+  display: none;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.legend-action-ring {
+  display: inline-block;
+  width: 13px;
+  aspect-ratio: 1;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.legend-action-ring.reproduction {
+  color: #5bd66c;
+}
+.legend-action-ring.capture {
+  color: #d54242;
+}
 .panel {
   background: #242a22;
   border: 1px solid #363e32;
