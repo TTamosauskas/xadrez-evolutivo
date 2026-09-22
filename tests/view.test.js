@@ -176,6 +176,41 @@ test("renders one board occupant per piece and exactly one stylesheet and module
   assert.equal(d.querySelectorAll("link[rel=stylesheet]").length, 1);
   dom.window.close();
 });
+test("board legend only shows terrain elements currently visible", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 6, c: 3 },
+      { owner: "amber", r: 1, c: 4 },
+    ]);
+  s.board.fill("neutral");
+  s.board[0] = "fertile";
+  s.board[1] = "hostile";
+  s.barriers = [2];
+  s.deathSites = [{ cell: 3 }];
+
+  render(dom.window.document, s);
+  const legend = dom.window.document.getElementById("board-legend"),
+    labels = [...legend.querySelectorAll(".legend-item")].map(
+      (item) => item.textContent,
+    );
+
+  assert.deepEqual(labels, [
+    "🟩Casa fértil",
+    "🟥Casa hostil",
+    "🟫Barreira",
+    "☠️Decomposição",
+  ]);
+  assert.equal(legend.querySelector(".legend-action-ring"), null);
+
+  s.board[0] = "neutral";
+  s.board[1] = "neutral";
+  s.barriers = [];
+  s.deathSites = [];
+  render(dom.window.document, s);
+  assert.equal(legend.children.length, 0);
+  dom.window.close();
+});
+
 test("barriers render with a granite texture", () => {
   const dom = setup(),
     s = createState(19);
@@ -840,6 +875,20 @@ test("selected sexual pieces mark partners green and capture targets red", () =>
   assert.match(
     css,
     /\.cell\.legal\.capture-target::after[\s\S]*border:\s*4px solid #d54242/,
+  );
+
+  const legend = d.getElementById("board-legend");
+  assert.match(legend.textContent, /Reprodução/);
+  assert.match(legend.textContent, /Captura/);
+  assert.ok(legend.querySelector(".legend-action-ring.reproduction"));
+  assert.ok(legend.querySelector(".legend-action-ring.capture"));
+  assert.match(
+    css,
+    /\.legend-action-ring\.reproduction[\s\S]*color:\s*#5bd66c/,
+  );
+  assert.match(
+    css,
+    /\.legend-action-ring\.capture[\s\S]*color:\s*#d54242/,
   );
   dom.window.close();
 });
