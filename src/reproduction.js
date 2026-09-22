@@ -352,29 +352,42 @@ function settlementRing(r, c) {
   return Math.min(r, c, 7 - r, 7 - c);
 }
 
-function sessileCells(ctx, origin, profile) {
-  const state = ctx.state;
-  let cells = [];
+function allOpenOffspringCells(ctx, profile) {
+  const cells = [];
   for (let r = 0; r < 8; r++)
     for (let c = 0; c < 8; c++)
       if (
-        !occupied(state, r, c, profile) &&
-        offspringTerrainAllowed(state, profile, r, c) &&
+        !occupied(ctx.state, r, c, profile) &&
+        offspringTerrainAllowed(ctx.state, profile, r, c) &&
         !ctx.reserved.has(square(r, c))
       )
         cells.push({ r, c });
-  if (has(profile, "Colônia") && origin?.colonyId) {
-    const members = state.pieces.filter(
+  return cells;
+}
+
+function colonyPerimeterCells(ctx, origin, profile) {
+  if (!origin?.colonyId) return [];
+  const members = ctx.state.pieces.filter(
       (piece) =>
         piece.owner === profile.owner && piece.colonyId === origin.colonyId,
-    );
-    const connected = cells.filter((cell) =>
-      members.some((member) => distance(member, cell) === 1),
-    );
-    if (connected.length) cells = connected;
-  }
+    ),
+    cells = allOpenOffspringCells(ctx, profile);
+  return cells.filter((cell) =>
+    members.some((member) => distance(member, cell) === 1),
+  );
+}
+
+function sessileCells(ctx, origin, profile) {
+  let cells =
+    has(profile, "Colônia") && origin?.colonyId
+      ? colonyPerimeterCells(ctx, origin, profile)
+      : allOpenOffspringCells(ctx, profile);
+  if (!cells.length && has(profile, "Colônia"))
+    cells = allOpenOffspringCells(ctx, profile);
   if (!cells.length) return cells;
-  const bestRing = Math.min(...cells.map((cell) => settlementRing(cell.r, cell.c)));
+  const bestRing = Math.min(
+    ...cells.map((cell) => settlementRing(cell.r, cell.c)),
+  );
   return cells.filter((cell) => settlementRing(cell.r, cell.c) === bestRing);
 }
 
@@ -382,6 +395,10 @@ function freeCells(ctx, origin, _dispersal, profile = null) {
   const state = ctx.state;
   if (profile && has(profile, "Séssil"))
     return sessileCells(ctx, origin, profile);
+  if (profile && has(profile, "Colônia") && origin?.colonyId) {
+    const perimeter = colonyPerimeterCells(ctx, origin, profile);
+    if (perimeter.length) return perimeter;
+  }
   const cells = [],
     range = 1;
   for (let dr = -range; dr <= range; dr++)
