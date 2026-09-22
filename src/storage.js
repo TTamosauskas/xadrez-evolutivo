@@ -23,7 +23,8 @@ import {
   SOMATIC_NEGATIVE_TRAITS,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v15";
+export const SAVE_KEY = "xadrez-evolutivo-save-v16";
+export const V15_KEY = "xadrez-evolutivo-save-v15";
 export const V14_KEY = "xadrez-evolutivo-save-v14";
 export const V13_KEY = "xadrez-evolutivo-save-v13";
 export const V12_KEY = "xadrez-evolutivo-save-v12";
@@ -38,14 +39,14 @@ export const V4_KEY = "xadrez-evolutivo-save-v4";
 export const V3_KEY = "xadrez-evolutivo-save-v3";
 export const V2_KEY = "xadrez-evolutivo-save-v2";
 export const LEGACY_KEY = "xadrez-evolutivo-save";
-const currentTraitName = (name) =>
+const currentTraitName = (name, version = 15) =>
   name === "Construção de Nicho"
     ? "Construtor de Nicho"
     : name === "Construtor Avançado"
       ? "Antropização"
       : name === "Locomoção"
         ? "Locomoção Articulada"
-        : name === "Cuidado Parental"
+        : version <= 15 && name === "Cuidado Parental"
           ? "Incubação"
           : name;
 const v3TraitName = (name) =>
@@ -60,12 +61,16 @@ const legacyDominantPair = () => [
   { value: "derived", dominance: "dominant" },
   { value: "ancestral", dominance: "neutral" },
 ];
-const currentGenome = (genome) => {
+const currentGenome = (genome, version = 15) => {
   if (!genome || typeof genome !== "object") return genome;
   const migrated = { ...genome };
   if (migrated["Locomoção"] && !migrated["Locomoção Articulada"])
     migrated["Locomoção Articulada"] = migrated["Locomoção"];
-  if (migrated["Cuidado Parental"] && !migrated.Incubação)
+  if (
+    version <= 15 &&
+    migrated["Cuidado Parental"] &&
+    !migrated.Incubação
+  )
     migrated.Incubação = migrated["Cuidado Parental"];
   const articulated =
       migrated["Locomoção Articulada"]?.some(
@@ -83,7 +88,7 @@ const currentGenome = (genome) => {
     if (!vertebrate && !arthropod) migrated.Vertebrado = legacyDominantPair();
   }
   delete migrated["Locomoção"];
-  delete migrated["Cuidado Parental"];
+  if (version <= 15) delete migrated["Cuidado Parental"];
   delete migrated.Fertilidade;
   delete migrated.Esporos;
   return migrated;
@@ -93,8 +98,8 @@ const mutationLabel = (label, version = 7) => {
   if (mapped === "Construção de Nicho") mapped = "Construtor de Nicho";
   if (mapped === "Perda de Construção de Nicho")
     mapped = "Perda de Construtor de Nicho";
-  if (mapped === "Cuidado Parental") mapped = "Incubação";
-  if (mapped === "Perda de Cuidado Parental")
+  if (version <= 15 && mapped === "Cuidado Parental") mapped = "Incubação";
+  if (version <= 15 && mapped === "Perda de Cuidado Parental")
     mapped = "Perda de Incubação";
   if (mapped === "Construtor Avançado") mapped = "Antropização";
   if (mapped === "Perda de Construtor Avançado")
@@ -160,7 +165,7 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
@@ -169,7 +174,7 @@ export function deserialize(raw) {
             ? v2TraitName
             : legacyV3
               ? v3TraitName
-              : currentTraitName,
+              : (name) => currentTraitName(name, sourceVersion),
           traits = new Set((profile.traits ?? []).map(mapper));
         if (sourceVersion < 11) traits.add("Respiração anaeróbia");
         if (legacyV2) traits.add("Locomoção Articulada");
@@ -218,7 +223,7 @@ export function deserialize(raw) {
         syncReproTraits(profile);
         profile.genome =
           sourceVersion >= 13 && profile.genome
-            ? normalizeGenome(currentGenome(profile.genome))
+            ? normalizeGenome(currentGenome(profile.genome, sourceVersion))
             : genomeFromLegacyProfile(profile);
         if (sourceVersion < 15 && validTraits.includes("Reparo Celular"))
           profile.genome = forceGenomeTrait(
@@ -255,10 +260,10 @@ export function deserialize(raw) {
     data.fossilRecord = (data.fossilRecord ?? []).map((entry) => ({
       ...entry,
       traits: (entry.traits ?? [])
-        .map(currentTraitName)
+        .map((name) => currentTraitName(name, sourceVersion))
         .filter((trait) => TRAITS[trait]),
       ancestry: (entry.ancestry ?? [])
-        .map(currentTraitName)
+        .map((name) => currentTraitName(name, sourceVersion))
         .filter((trait) => TRAITS[trait]),
     }));
     if (data.arenaFounders && typeof data.arenaFounders === "object")
@@ -297,6 +302,53 @@ export function deserialize(raw) {
           delete piece.extremophyteSinceRound;
         }
         piece.oothecaPrimed = !!piece.oothecaPrimed;
+        piece.parentIds = Array.isArray(piece.parentIds)
+          ? [...new Set(piece.parentIds)].filter(
+              (id) => Number.isInteger(id) && id >= 1,
+            )
+          : Number.isInteger(piece.parentId) && piece.parentId >= 1
+            ? [piece.parentId]
+            : [];
+        piece.stationarySinceRound =
+          Number.isInteger(piece.stationarySinceRound) &&
+          piece.stationarySinceRound >= 0
+            ? piece.stationarySinceRound
+            : currentRound;
+        piece.budded = !!piece.budded;
+        piece.colonyId =
+          Number.isInteger(piece.colonyId) && piece.colonyId >= 1
+            ? piece.colonyId
+            : null;
+        piece.paedogenesisUsed = !!piece.paedogenesisUsed;
+        piece.pupaUntilRound =
+          Number.isInteger(piece.pupaUntilRound) && piece.pupaUntilRound >= 0
+            ? piece.pupaUntilRound
+            : null;
+        piece.metamorphosisUsed = !!piece.metamorphosisUsed;
+        piece.pairedWithId =
+          Number.isInteger(piece.pairedWithId) && piece.pairedWithId >= 1
+            ? piece.pairedWithId
+            : null;
+        piece.biparentalGuardCharges =
+          Number.isInteger(piece.biparentalGuardCharges) &&
+          piece.biparentalGuardCharges >= 0
+            ? piece.biparentalGuardCharges
+            : 0;
+        piece.marsupialPouch = Array.isArray(piece.marsupialPouch)
+          ? piece.marsupialPouch
+              .filter(
+                (entry) =>
+                  entry &&
+                  Number.isInteger(entry.releaseRound) &&
+                  entry.releaseRound >= 0 &&
+                  Array.isArray(entry.brood),
+              )
+              .map((entry) => ({
+                releaseRound: entry.releaseRound,
+                dispersal: "local",
+                brood: entry.brood.map(normalizeProfile),
+              }))
+          : [];
         piece.somaticMutations =
           sourceVersion >= 14 && Array.isArray(piece.somaticMutations)
             ? [...new Set(piece.somaticMutations)].filter((trait) =>
@@ -345,6 +397,60 @@ export function deserialize(raw) {
             }))
           : [];
       }
+    const maximumColonyId = Math.max(
+      0,
+      ...(data.pieces ?? [])
+        .map((piece) => piece.colonyId ?? 0)
+        .filter(Number.isInteger),
+    );
+    data.nextColonyId =
+      Number.isInteger(data.nextColonyId) &&
+      data.nextColonyId > maximumColonyId
+        ? data.nextColonyId
+        : maximumColonyId + 1;
+    data.colonyCooldowns =
+      data.colonyCooldowns &&
+      typeof data.colonyCooldowns === "object" &&
+      !Array.isArray(data.colonyCooldowns)
+        ? Object.fromEntries(
+            Object.entries(data.colonyCooldowns).filter(
+              ([id, readyRound]) =>
+                /^\d+$/.test(id) &&
+                Number(id) >= 1 &&
+                Number.isInteger(readyRound) &&
+                readyRound >= 0,
+            ),
+          )
+        : {};
+    data.fragments = Array.isArray(data.fragments)
+      ? data.fragments
+          .filter(
+            (fragment) =>
+              fragment &&
+              Number.isInteger(fragment.id) &&
+              fragment.id >= 1 &&
+              ["blue", "amber"].includes(fragment.owner) &&
+              Number.isInteger(fragment.r) &&
+              Number.isInteger(fragment.c) &&
+              Number.isInteger(fragment.createdRound) &&
+              Number.isInteger(fragment.expireRound) &&
+              fragment.profile,
+          )
+          .map((fragment) => ({
+            ...fragment,
+            profile: normalizeProfile(fragment.profile),
+          }))
+      : [];
+    const maximumFragmentId = Math.max(
+      0,
+      ...data.fragments.map((fragment) => fragment.id),
+    );
+    data.nextFragment =
+      Number.isInteger(data.nextFragment) &&
+      data.nextFragment > maximumFragmentId
+        ? data.nextFragment
+        : maximumFragmentId + 1;
+
     data.eggs = Array.isArray(data.eggs)
       ? data.eggs.map((egg) => {
           const currentRound = Math.floor((data.turn ?? 0) / 2),
@@ -765,7 +871,7 @@ export function deserialize(raw) {
         );
       }
     }
-    data.version = 15;
+    data.version = 16;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -950,6 +1056,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V15_KEY) ??
     storage.getItem(V14_KEY) ??
     storage.getItem(V13_KEY) ??
     storage.getItem(V12_KEY) ??

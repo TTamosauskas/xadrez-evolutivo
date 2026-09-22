@@ -14,6 +14,7 @@ import {
   at,
   eggAt,
   plantSeedAt,
+  fragmentAt,
   barrierAt,
   terrain,
   random,
@@ -63,6 +64,13 @@ import {
   geologicalStage,
 } from "./geology.js";
 import { mutationDiscoveryId, recordDiscovery } from "./discoveries.js";
+import {
+  BUDDING_STATIONARY_ROUNDS,
+  COLONY_BUD_COOLDOWN,
+  FRAGMENT_LIFETIME,
+  MARSUPIAL_CARRY_ROUNDS,
+  paedogenesisReady,
+} from "./reproduction-traits.js";
 import { tryVectorPathogen } from "./disease.js";
 
 const NEGATIVE = [...NEGATIVE_GENETIC_TRAITS];
@@ -325,6 +333,7 @@ function occupied(state, r, c, profile = null) {
     at(state, r, c) ||
     eggAt(state, r, c) ||
     plantSeedAt(state, r, c) ||
+    fragmentAt(state, r, c) ||
     (barrierAt(state, r, c) && !has(profile, "Trepadeira"))
   );
 }
@@ -340,9 +349,56 @@ function offspringTerrainAllowed(state, profile, r, c) {
   return terrain(state, r, c) === "fertile";
 }
 
+function settlementRing(r, c) {
+  return Math.min(r, c, 7 - r, 7 - c);
+}
+
+function allOpenOffspringCells(ctx, profile) {
+  const cells = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (
+        !occupied(ctx.state, r, c, profile) &&
+        offspringTerrainAllowed(ctx.state, profile, r, c) &&
+        !ctx.reserved.has(square(r, c))
+      )
+        cells.push({ r, c });
+  return cells;
+}
+
+function colonyPerimeterCells(ctx, origin, profile) {
+  if (!origin?.colonyId) return [];
+  const members = ctx.state.pieces.filter(
+      (piece) =>
+        piece.owner === profile.owner && piece.colonyId === origin.colonyId,
+    ),
+    cells = allOpenOffspringCells(ctx, profile);
+  return cells.filter((cell) =>
+    members.some((member) => distance(member, cell) === 1),
+  );
+}
+
+function sessileCells(ctx, origin, profile) {
+  const cells =
+    has(profile, "Colônia") && origin?.colonyId
+      ? colonyPerimeterCells(ctx, origin, profile)
+      : allOpenOffspringCells(ctx, profile);
+  if (!cells.length) return cells;
+  const bestRing = Math.min(
+    ...cells.map((cell) => settlementRing(cell.r, cell.c)),
+  );
+  return cells.filter((cell) => settlementRing(cell.r, cell.c) === bestRing);
+}
+
 function freeCells(ctx, origin, _dispersal, profile = null) {
-  const state = ctx.state,
-    cells = [],
+  const state = ctx.state;
+  if (profile && has(profile, "Séssil"))
+    return sessileCells(ctx, origin, profile);
+  if (profile && has(profile, "Colônia") && origin?.colonyId) {
+    const perimeter = colonyPerimeterCells(ctx, origin, profile);
+    if (perimeter.length) return perimeter;
+  }
+  const cells = [],
     range = 1;
   for (let dr = -range; dr <= range; dr++)
     for (let dc = -range; dc <= range; dc++) {
@@ -425,6 +481,7 @@ function makeChildProfile(state, parent, mate, profile) {
     mutations: profile.mutations,
     generation: Math.max(parent.generation, mate?.generation ?? 0) + 1,
     parentId: parent.id,
+    parentIds: mate ? [parent.id, mate.id] : [parent.id],
   };
   syncGenomePhenotype(child);
   if (random(state) < (state.event?.id === "solar" ? 1 : 1 / 3))
@@ -435,7 +492,7 @@ function makeChildProfile(state, parent, mate, profile) {
   return child;
 }
 
-function makeBrood(state, parent, mate, profile, count) {
+function makeRequestedBrood(count) {
   const brood = [];
   for (let i = 0; i < count; i++)
     brood.push(makeChildProfile(state, parent, mate, profile));
@@ -920,16 +977,21 @@ export function reproduce(
   reason = "casa fértil",
   options = {},
 ) {
-  const state = ctx.state;
-  if (mate) {
+  const state = ctx.state,
+    mates = [...new Map(
+      [mate, options.additionalMate]
+        .filter(Boolean)
+        .map((candidate) => [candidate.id, candidate]),
+    ).values()];
+  for (const candidate of mates) {
     const branchParent = energyBranch(parent),
-      branchMate = energyBranch(mate),
+      branchMate = energyBranch(candidate),
       crossBranch =
         branchParent && branchMate && branchParent !== branchMate,
       crossAllowed =
         crossBranch &&
         has(parent, "Mixotrofia") &&
-        has(mate, "Mixotrofia");
+        has(candidate, "Mixotrofia");
     if (
       !branchParent ||
       !branchMate ||
@@ -937,14 +999,19 @@ export function reproduce(
     )
       return 0;
   }
+  const paedogenic =
+    !mates.length && (options.paedogenesis || paedogenesisReady(state, parent));
   if (
     !options.ignoreReadiness &&
-    (!reproductionReady(state, parent) ||
-      (mate && !reproductionReady(state, mate)))
+    (!(reproductionReady(state, parent) || paedogenic) ||
+      mates.some((candidate) => !reproductionReady(state, candidate)))
   )
     return 0;
 
-  const profile = mate ? sexualProfile(state, parent, mate) : parent,
+  const sexualProfiles = mates.map((candidate) =>
+      sexualProfile(state, parent, candidate),
+    ),
+    profile = sexualProfiles[0] ?? parent,
     plant = has(profile, "Fotossíntese"),
     seedPlant =
       has(profile, "Gimnospermas") || has(profile, "Angiospermas"),
@@ -971,16 +1038,20 @@ export function reproduce(
       parent,
       pressureLatched,
     ),
-    baseOutput = reproductiveOutput(profile),
-    bodyPlanOutput = has(profile, "Artrópode")
-      ? Math.min(6, baseOutput * 2)
-      : baseOutput,
+    outputFor = (candidate) => {
+      const base = reproductiveOutput(candidate);
+      return has(candidate, "Artrópode") ? Math.min(6, base * 2) : base;
+    },
     naturalWanted =
       options.forcedCount ??
-      bodyPlanOutput + eusocialBonus(state, parent),
-    baseWanted = has(profile, "Filho único")
-      ? Math.min(1, naturalWanted)
-      : naturalWanted,
+      (sexualProfiles.length
+        ? sexualProfiles.reduce((sum, candidate) => sum + outputFor(candidate), 0)
+        : outputFor(profile)) +
+        eusocialBonus(state, parent),
+    baseWanted =
+      has(parent, "Filho único") || paedogenic
+        ? Math.min(1, naturalWanted)
+        : naturalWanted,
     populationLimit =
       reason === "predação"
         ? preLocomotionPredation
@@ -1024,8 +1095,44 @@ export function reproduce(
       );
     },
     applyCooldown = () => {
-      parent.nextReproductionRound = cooldown(parent);
-      if (mate) mate.nextReproductionRound = cooldown(mate);
+      const now = round(state),
+        factor = mates.length > 1 ? 2 : 1,
+        apply = (piece) => {
+          const target = cooldown(piece);
+          piece.nextReproductionRound = now + (target - now) * factor;
+        };
+      apply(parent);
+      for (const candidate of mates) apply(candidate);
+    },
+    makeRequestedBrood = (count) => {
+      const brood = [];
+      for (let i = 0; i < count; i++) {
+        const index = mates.length ? i % mates.length : 0,
+          childMate = mates[index] ?? null,
+          childProfile = sexualProfiles[index] ?? profile;
+        brood.push(makeChildProfile(state, parent, childMate, childProfile));
+      }
+      if (brood.length)
+        state.maxGenerationReached = Math.max(
+          state.maxGenerationReached,
+          ...brood.map((child) => child.generation),
+        );
+      if (options.budding && has(parent, "Colônia")) {
+        if (!parent.colonyId) {
+          parent.colonyId = state.nextColonyId++;
+          state.colonyCooldowns[parent.colonyId] ??= round(state);
+        }
+        for (const child of brood) child.colonyId = parent.colonyId;
+      }
+      if (
+        mates.length === 1 &&
+        (has(parent, "Monogamia") || has(mates[0], "Monogamia"))
+      ) {
+        const guarded = Math.ceil(brood.length / 2);
+        for (let i = 0; i < guarded; i++)
+          brood[i].biparentalGuardCharges = 1;
+      }
+      return brood;
     },
     failIfSubfertile = () => {
       if (!has(profile, "Subfertilidade") || random(state) >= 0.5)
@@ -1048,28 +1155,28 @@ export function reproduce(
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     if (failIfSubfertile()) return 0;
-    const brood = makeBrood(state, parent, mate, profile, count);
+    const brood = makeRequestedBrood(count);
     produced = startDomesticPlacement(ctx, parent, brood);
   } else if (seedPlant && !options.immediateDevelopment) {
     const capacity = freeCells(ctx, parent, "local", profile).length,
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     if (failIfSubfertile()) return 0;
-    const brood = makeBrood(state, parent, mate, profile, count);
+    const brood = makeRequestedBrood(count);
     produced = layPlantSeeds(ctx, parent, brood);
   } else if (development === "oviparous") {
     if (!adjacentEggCells(ctx, parent).length) return 0;
     if (failIfSubfertile()) return 0;
-    const brood = makeBrood(state, parent, mate, profile, wanted);
+    const brood = makeRequestedBrood(wanted);
     produced = layBasalEgg(ctx, parent, brood, dispersal);
   } else if (development === "amniotic") {
     if (!amnioticPlacementCells(ctx, parent).length) return 0;
     if (failIfSubfertile()) return 0;
-    const brood = makeBrood(state, parent, mate, profile, wanted);
+    const brood = makeRequestedBrood(wanted);
     produced = startAmnioticPlacement(ctx, parent, brood, dispersal);
   } else if (development === "ovoviviparous") {
     if (failIfSubfertile()) return 0;
-    const brood = makeBrood(state, parent, mate, profile, wanted);
+    const brood = makeRequestedBrood(wanted);
     if (!brood.length) return 0;
     parent.pregnancies ??= [];
     parent.pregnancies.push({
@@ -1082,7 +1189,7 @@ export function reproduce(
     produced = brood.length;
   } else if (development === "viviparous") {
     if (failIfSubfertile()) return 0;
-    const brood = makeBrood(state, parent, mate, profile, wanted);
+    const brood = makeRequestedBrood(wanted);
     if (!brood.length) return 0;
     parent.pregnancies ??= [];
     parent.pregnancies.push({
@@ -1097,7 +1204,7 @@ export function reproduce(
       count = Math.min(wanted, capacity);
     if (!count) return 0;
     if (failIfSubfertile()) return 0;
-    const brood = makeBrood(state, parent, mate, profile, count);
+    const brood = makeRequestedBrood(count);
     const direction = preLocomotionPredation
       ? { preferCapture: true }
       : aquaticFertilityRegime(state) && !primitiveLocomotionReached
@@ -1110,9 +1217,26 @@ export function reproduce(
     if (has(parent, "Ooteca") && options.fertileReproduction)
       parent.oothecaPrimed = true;
     applyCooldown();
+    if (
+      mates.length === 1 &&
+      (has(parent, "Monogamia") || has(mates[0], "Monogamia"))
+    ) {
+      parent.pairedWithId = mates[0].id;
+      mates[0].pairedWithId = parent.id;
+    }
+    if (paedogenic) parent.paedogenesisUsed = true;
+    if (options.budding) {
+      parent.nextReproductionRound = Math.max(
+        parent.nextReproductionRound,
+        round(state) + BUDDING_STATIONARY_ROUNDS,
+      );
+      if (has(parent, "Colônia") && parent.colonyId)
+        state.colonyCooldowns[parent.colonyId] =
+          round(state) + COLONY_BUD_COOLDOWN;
+    }
     state.reproductions[parent.owner]++;
     tryVectorPathogen(state, parent);
-    if (mate) tryVectorPathogen(state, mate);
+    for (const candidate of mates) tryVectorPathogen(state, candidate);
     log(
       state,
       domesticated
@@ -1134,9 +1258,185 @@ export function reproduce(
       state.phase === "egg-placement" ||
       state.phase === "domestic-placement";
     recordSemelparity(ctx, parent, deferredParentDeath);
-    if (mate) recordSemelparity(ctx, mate, false);
+    for (const candidate of mates) recordSemelparity(ctx, candidate, false);
   }
   return produced;
+}
+
+export function bud(ctx, parent) {
+  return reproduce(ctx, parent, null, "Brotamento", {
+    forcedCount: 1,
+    immediateDevelopment: true,
+    budding: true,
+  });
+}
+
+function reducedFragmentRank(rank) {
+  if (rank === 5) return 3;
+  if (rank === 3) return 2;
+  if (rank === 2) return 1;
+  return 0;
+}
+
+export function fragmentOnCapture(ctx, dead) {
+  if (!dead || !has(dead, "Fragmentação")) return 0;
+  const state = ctx.state,
+    cells = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = dead.r + dr,
+        c = dead.c + dc;
+      if (
+        inside(r, c) &&
+        !occupied(state, r, c, dead) &&
+        !ctx.reserved.has(square(r, c))
+      )
+        cells.push({ r, c });
+    }
+  const targets = shuffle(state, cells).slice(0, 2),
+    createdRound = round(state);
+  for (const target of targets) {
+    const profile = {
+      owner: dead.owner,
+      rank: reducedFragmentRank(dead.rank),
+      traits: [...dead.traits],
+      ancestry: [...(dead.ancestry ?? dead.traits ?? [])],
+      genome: cloneGenome(dead.genome),
+      mutations: dead.mutations ?? 0,
+      generation: (dead.generation ?? 0) + 1,
+      parentId: dead.id,
+      parentIds: [dead.id],
+      colonyId: null,
+    };
+    state.fragments.push({
+      id: state.nextFragment++,
+      owner: dead.owner,
+      r: target.r,
+      c: target.c,
+      createdRound,
+      expireRound: createdRound + FRAGMENT_LIFETIME,
+      parentId: dead.id,
+      profile,
+    });
+    state.maxGenerationReached = Math.max(
+      state.maxGenerationReached,
+      profile.generation,
+    );
+  }
+  if (targets.length)
+    log(
+      state,
+      `${OWNERS[dead.owner]}: 𓇼 Fragmentação liberou ${targets.length} fragmento(s).`,
+    );
+  return targets.length;
+}
+
+function fragmentCellFree(state, fragment, r, c) {
+  return (
+    inside(r, c) &&
+    !at(state, r, c) &&
+    !eggAt(state, r, c) &&
+    !plantSeedAt(state, r, c) &&
+    !barrierAt(state, r, c) &&
+    !state.fragments.some(
+      (other) =>
+        other.id !== fragment.id && other.r === r && other.c === c,
+    )
+  );
+}
+
+function establishFragment(ctx, fragment) {
+  if (!fragmentCellFree(ctx.state, fragment, fragment.r, fragment.c))
+    return false;
+  ctx.state.fragments = ctx.state.fragments.filter(
+    (item) => item.id !== fragment.id,
+  );
+  spawnChild(
+    ctx.state,
+    fragment.profile,
+    fragment.r,
+    fragment.c,
+  );
+  log(
+    ctx.state,
+    `${OWNERS[fragment.owner]}: 𓇼 fragmento estabeleceu-se em ${coord(fragment.r, fragment.c)}.`,
+  );
+  return true;
+}
+
+function tickFragments(ctx) {
+  const state = ctx.state,
+    now = round(state);
+  for (const fragment of [...state.fragments]) {
+    if (terrain(state, fragment.r, fragment.c) === "fertile") {
+      if (establishFragment(ctx, fragment)) continue;
+    }
+    const fertile = [];
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 8; c++)
+        if (
+          terrain(state, r, c) === "fertile" &&
+          fragmentCellFree(state, fragment, r, c)
+        )
+          fertile.push({ r, c });
+    if (fertile.length) {
+      const candidates = [];
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          const r = fragment.r + dr,
+            c = fragment.c + dc;
+          if (fragmentCellFree(state, fragment, r, c))
+            candidates.push({ r, c });
+        }
+      if (candidates.length) {
+        const score = (cell) =>
+            Math.min(...fertile.map((target) => distance(cell, target))),
+          best = Math.min(...candidates.map(score)),
+          target = pick(
+            state,
+            candidates.filter((cell) => score(cell) === best),
+          );
+        fragment.r = target.r;
+        fragment.c = target.c;
+        if (
+          terrain(state, fragment.r, fragment.c) === "fertile" &&
+          establishFragment(ctx, fragment)
+        )
+          continue;
+      }
+    }
+    if (now >= fragment.expireRound) {
+      state.fragments = state.fragments.filter(
+        (item) => item.id !== fragment.id,
+      );
+      log(
+        state,
+        `${OWNERS[fragment.owner]}: 𓇼 fragmento não encontrou habitat fértil e se perdeu.`,
+      );
+    }
+  }
+}
+
+export function releaseMarsupialPouch(ctx, parent, forced = false) {
+  if (!parent || !(parent.marsupialPouch?.length)) return 0;
+  const now = round(ctx.state),
+    ready = parent.marsupialPouch.filter(
+      (entry) => forced || entry.releaseRound <= now,
+    );
+  if (!ready.length) return 0;
+  parent.marsupialPouch = parent.marsupialPouch.filter(
+    (entry) => !ready.includes(entry),
+  );
+  let born = 0;
+  for (const entry of ready)
+    born += placeBrood(ctx, entry.brood, parent, entry.dispersal);
+  log(
+    ctx.state,
+    `${OWNERS[parent.owner]}: 🦘 bolsa marsupial liberou ${born} descendente(s).`,
+  );
+  return born;
 }
 
 function seedProtection(state, seed, cell) {
@@ -1191,6 +1491,22 @@ function perfumeSeedStep(state, seed, candidates) {
 export function tickReproduction(ctx) {
   const state = ctx.state,
     now = round(state);
+
+  for (const piece of state.pieces)
+    if (
+      Number.isInteger(piece.pupaUntilRound) &&
+      now >= piece.pupaUntilRound
+    ) {
+      piece.rank = piece.rank === 0 ? 1 : piece.rank === 1 ? 2 : piece.rank;
+      piece.pupaUntilRound = null;
+      piece.maturesRound = now;
+      log(
+        state,
+        `${OWNERS[piece.owner]}: 🦋 Metamorfose completou-se; a criatura emergiu como ${PIECES[piece.rank]}.`,
+      );
+    }
+
+  tickFragments(ctx);
 
   for (const seed of [...state.plantSeeds]) {
     if (seed.movesRemaining > 0) {
@@ -1253,6 +1569,7 @@ export function tickReproduction(ctx) {
   for (const parent of [...state.pieces]) {
     if (ecologicalDomainBlocked(state, parent.owner, parent.r, parent.c))
       continue;
+    releaseMarsupialPouch(ctx, parent);
     const dueViviparous = (parent.pregnancies ?? []).filter(
       (pregnancy) =>
         pregnancy.kind !== "ovoviviparous" && pregnancy.dueRound <= now,
@@ -1263,6 +1580,22 @@ export function tickReproduction(ctx) {
           pregnancy.kind === "ovoviviparous" || pregnancy.dueRound > now,
       );
       for (const pregnancy of dueViviparous) {
+        if (
+          pregnancy.kind === "viviparous" &&
+          has(parent, "Marsupial")
+        ) {
+          parent.marsupialPouch ??= [];
+          parent.marsupialPouch.push({
+            releaseRound: now + MARSUPIAL_CARRY_ROUNDS,
+            brood: pregnancy.brood,
+            dispersal: pregnancy.dispersal,
+          });
+          log(
+            state,
+            `${OWNERS[parent.owner]}: 🦘 prole nasceu imatura e permaneceu na bolsa marsupial.`,
+          );
+          continue;
+        }
         const born = placeBrood(
           ctx,
           pregnancy.brood,

@@ -302,6 +302,62 @@ export const TRAITS = {
     "🧟",
     "Dobra novamente a chance de uma mutação espontânea entrar no ramo de mutações negativas.",
   ],
+  "Transferência Horizontal": [
+    "➡️",
+    "Após capturar uma criatura inimiga, tem 10% de chance de incorporar um alelo transferível compatível do genoma da vítima.",
+  ],
+  Brotamento: [
+    "🪸",
+    "Após quatro rodadas completas sem mudar de casa, um adulto pode gastar a ação para produzir um único descendente por brotamento; cada indivíduo brota uma única vez.",
+  ],
+  Colônia: [
+    "🧫",
+    "Brotos permanecem integrados à mesma colônia clonal: o crescimento usa o perímetro colonial e toda a colônia compartilha o intervalo entre brotamentos.",
+  ],
+  "Séssil": [
+    "🦪",
+    "Suprime o deslocamento voluntário e orienta o estabelecimento da prole das bordas para o centro do tabuleiro.",
+  ],
+  Fragmentação: [
+    "𓇼",
+    "Ao morrer por captura, pode liberar até dois fragmentos clonais reduzidos que buscam casas férteis por até três rodadas.",
+  ],
+  "Onívoro Oportunista": [
+    "🐷",
+    "Especialização de Onívoro: permite aproveitar carniça e ovos como rotas reprodutivas de baixa eficiência quando faltam as especializações correspondentes.",
+  ],
+  "Acasalamento Preferencial": [
+    "🦚",
+    "Na reprodução sexuada, prioriza automaticamente parceiros de maior forma, com mais características positivas e menos mutações negativas.",
+  ],
+  Promiscuidade: [
+    "🐒",
+    "Amplia parceiros sexuais elegíveis para a rede aliada conectada em até três passos sociais.",
+  ],
+  Pedogênese: [
+    "🌸",
+    "Uma cria juvenil pode reproduzir assexuadamente uma única vez antes da maturidade, gerando no máximo um descendente.",
+  ],
+  "Cuidado Parental": [
+    "🐠",
+    "Uma cria juvenil adjacente a pelo menos um progenitor com esta característica fica protegida contra captura.",
+  ],
+  Marsupial: [
+    "🦘",
+    "Após a gestação vivípara, mantém a prole em uma bolsa por uma rodada adicional; a morte do portador libera imediatamente os filhotes que couberem ao redor.",
+  ],
+  Monogamia: [
+    "🐧",
+    "Forma um vínculo sexual exclusivo. Metade da ninhada recebe uma proteção de captura e parceiros adjacentes ganham 10% de chance adicional de sobreviver à captura.",
+  ],
+  "Acasalamento Múltiplo": [
+    "🦭",
+    "Permite dois parceiros na mesma reprodução; a ninhada potencial combina duas subninhadas biparentais e os três participantes recebem intervalo reprodutivo dobrado.",
+  ],
+  Metamorfose: [
+    "🦋",
+    "Uma cria artrópode pode gastar a ação para empupar por uma rodada e emergir uma forma acima, até o limite de Bispo.",
+  ],
   Ooteca: [
     "🕷",
     "Depois de uma reprodução bem-sucedida em casa fértil, fica preparada; ao morrer, libera uma prole nas casas livres ao redor.",
@@ -367,6 +423,7 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   Gimnospermas: ["Embriófitas", "Traqueófitas"],
   Angiospermas: ["Embriófitas", "Traqueófitas"],
   Eusocialidade: ["Sociabilidade"],
+  "Acasalamento Múltiplo": ["Promiscuidade"],
 };
 export const has = (piece, trait) => {
   const activeTraits = [

@@ -509,6 +509,25 @@ export function gainGenomeAllele(source, trait, random) {
   return genome;
 }
 
+export function transferGenomeAllele(receiver, donor, trait, random) {
+  const genome = cloneGenome(receiver?.genome ?? receiver);
+  if (!TRAITS[trait] || trait === BASAL_GENETIC_TRAIT) return genome;
+  const donorGenome = normalizeGenome(donor?.genome ?? donor),
+    donorDerived = donorGenome[trait].filter(
+      (allele) => allele.value === "derived",
+    ),
+    receiverPair = genome[trait],
+    ancestral = receiverPair
+      .map((allele, index) => ({ allele, index }))
+      .filter(({ allele }) => allele.value === "ancestral");
+  if (!donorDerived.length || !ancestral.length) return genome;
+  const donorAllele =
+      donorDerived[Math.floor(random() * donorDerived.length)],
+    index = ancestral[Math.floor(random() * ancestral.length)].index;
+  receiverPair[index] = derivedAllele(donorAllele.dominance);
+  return genome;
+}
+
 export function loseGenomeAllele(source, trait, random) {
   const genome = cloneGenome(source?.genome ?? source);
   if (!TRAITS[trait] || trait === BASAL_GENETIC_TRAIT) return genome;

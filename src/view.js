@@ -3,6 +3,7 @@ import {
   at,
   eggAt,
   plantSeedAt,
+  fragmentAt,
   dominantLineage,
   round,
   signature,
@@ -34,6 +35,7 @@ import {
   ovoviviparousPlacementTargets,
   canParasitize,
 } from "./moves.js";
+import { canBud, canPupate } from "./reproduction-traits.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
   if (text !== undefined) e.textContent = text;
@@ -217,6 +219,7 @@ export function render(
         pathogenAgents = pathogenAgentAt(state, r, c),
         egg = eggAt(state, r, c),
         plantSeed = plantSeedAt(state, r, c),
+        fragment = fragmentAt(state, r, c),
         originHere = !!origin && origin.r === r && origin.c === c,
         target = targets.some((t) => t.r === r && t.c === c),
         manipulate = manipulation.some((t) => t.r === r && t.c === c),
@@ -253,7 +256,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${domainClass}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${domainClass}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -275,8 +278,11 @@ export function render(
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
           : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
-      cell.setAttribute("aria-label", label);
-      cell.title = label;
+      const accessibleLabel = fragment
+        ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
+        : label;
+      cell.setAttribute("aria-label", accessibleLabel);
+      cell.title = accessibleLabel;
       if (
         domainVisible &&
         r % 4 === 0 &&
@@ -318,6 +324,7 @@ export function render(
           ),
         );
       if (plantSeed) cell.append(make("span", "🌰", "egg-mark"));
+      if (fragment) cell.append(make("span", "𓇼", "fragment-mark"));
       if (originHere)
         cell.append(make("span", "♚", "piece origin-piece"));
       if (p) {
@@ -338,7 +345,7 @@ export function render(
             const icon = make(
               "span",
               TRAITS[entry.trait][0],
-              `trait-badge trait-slot-${slots[index]}${entry.somatic ? " somatic-badge" : ""}`,
+              `trait-badge trait-slot-${slots[index]}${entry.somatic ? " somatic-badge" : ""}${entry.trait === "Fragmentação" ? " fragmentation-badge" : ""}`,
             );
             icon.dataset.trait = entry.trait;
             frame.append(icon);
@@ -415,6 +422,20 @@ export function render(
       const button = make("button", "Reproduzir", "piece-action");
       button.type = "button";
       button.dataset.pieceAction = "reproduce";
+      button.dataset.pieceId = actor.id;
+      pieceActions.append(button);
+    }
+    if (canBud(state, actor)) {
+      const button = make("button", "Brotar", "piece-action");
+      button.type = "button";
+      button.dataset.pieceAction = "bud";
+      button.dataset.pieceId = actor.id;
+      pieceActions.append(button);
+    }
+    if (canPupate(state, actor)) {
+      const button = make("button", "Metamorfosear", "piece-action");
+      button.type = "button";
+      button.dataset.pieceAction = "pupate";
       button.dataset.pieceId = actor.id;
       pieceActions.append(button);
     }

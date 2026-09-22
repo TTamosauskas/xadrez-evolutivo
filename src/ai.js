@@ -52,6 +52,11 @@ export function crowdingPenalty(count) {
   return count > 12 ? Math.min(36, (count - 12) * 2) : 0;
 }
 function priority(state, a) {
+  if (a.type === "BUD") return 12;
+  if (a.type === "PUPATE") {
+    const piece = state.pieces.find((candidate) => candidate.id === a.id);
+    return 7 + (piece?.rank ?? 0) * 2;
+  }
   if (a.type === "PARTNER")
     return state.pieces.find((p) => p.id === a.id)?.rank * 2 || 0;
   if (a.type === "NURSE") {
