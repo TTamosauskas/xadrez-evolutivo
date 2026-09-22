@@ -149,6 +149,36 @@ test("menu exposes match log and evolutionary history for consultation", () => {
   dom.window.close();
 });
 
+test("mobile first fold exposes a compact actionable selected-piece summary", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Predação", "Resistência"],
+      },
+      { owner: "amber", r: 3, c: 4, traits: ["Fotossíntese"] },
+    ]),
+    piece = s.pieces[0];
+
+  render(dom.window.document, s, { selected: piece.id });
+  const d = dom.window.document,
+    summary = d.getElementById("mobile-selected-summary"),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+
+  assert.equal(summary.hidden, false);
+  assert.match(summary.textContent, /Rei \(Branco\)/);
+  assert.match(summary.textContent, /Predação/);
+  assert.ok(summary.querySelector(".mobile-actionable-trait"));
+  assert.match(css, /@media \(max-width: 760px\)[\s\S]*header \{[\s\S]*padding: 11px 12px 9px/);
+  assert.match(css, /#menu-button \.menu-label \{\s*display: none/);
+  assert.match(css, /\.event:empty \{\s*display: none/);
+  assert.equal(d.querySelector("#menu-button .menu-label")?.textContent, "Menu");
+  dom.window.close();
+});
+
 test("status counter includes turns and historical generation", () => {
   const dom = setup(),
     s = createState(32);
