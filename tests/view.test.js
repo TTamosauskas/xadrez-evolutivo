@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { createState, clone, newPiece, round } from "../src/state.js";
 import { fixture } from "./helpers.js";
+import { TRAITS } from "../src/constants.js";
 import { render, traitFrameSlots } from "../src/view.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
@@ -190,6 +191,7 @@ test("barriers render with a granite texture", () => {
   assert.match(css, /\.cell\.barrier[\s\S]*radial-gradient/);
   assert.match(css, /\.barrier-mark[\s\S]*radial-gradient/);
   assert.match(css, /rgba\(0,0,0,0\.22\)/);
+  assert.doesNotMatch(css, /\.cell\.barrier[\s\S]*inset 0 0 0 2px/);
   dom.window.close();
 });
 
@@ -230,6 +232,12 @@ test("hostile terrain is red and terrain tones flatten from the Devonian", () =>
 
   silurianDom.window.close();
   devonianDom.window.close();
+});
+
+test("diet and amniote traits use the intended compact icons", () => {
+  assert.equal(TRAITS.Herbívoro[0], "🥬");
+  assert.equal(TRAITS.Carnívoro[0], "🍖");
+  assert.equal(TRAITS["Ovíparos Amniotas"][0], "🥚");
 });
 
 test("active mutations form an evenly spaced frame starting at bottom center", () => {
