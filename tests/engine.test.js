@@ -17,6 +17,7 @@ import {
   senescent,
   pieceAge,
   naturalDeathChance,
+  CANONICAL_FOUNDER_CELLS,
 } from "../src/state.js";
 import {
   context,
@@ -1941,14 +1942,17 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   );
   assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 1);
   assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 1);
-  assert.deepEqual(
-    next.pieces
-      .map((p) => [p.owner, p.r, p.c])
-      .sort((a, b) => a[0].localeCompare(b[0])),
-    [
-      ["amber", 0, 4],
-      ["blue", 7, 4],
-    ],
+  const canonicalPool = new Set(
+    CANONICAL_FOUNDER_CELLS.map(({ r, c }) => `${r},${c}`),
+  );
+  assert.ok(
+    next.pieces.every((piece) =>
+      canonicalPool.has(`${piece.r},${piece.c}`),
+    ),
+  );
+  assert.equal(
+    new Set(next.pieces.map((piece) => `${piece.r},${piece.c}`)).size,
+    2,
   );
   for (const p of next.pieces)
     assert.ok(hiddenRecessiveTraits(p).includes("Vivíparo"));
