@@ -190,6 +190,7 @@ test("Promiscuidade reaches a sexual partner through a connected allied network"
     focal = s.pieces[0],
     remote = s.pieces[2];
 
+  s.board[focal.r * 8 + focal.c] = "fertile";
   assert.ok(partnersFor(s, focal).some((piece) => piece.id === remote.id));
   assertState(s);
 });
