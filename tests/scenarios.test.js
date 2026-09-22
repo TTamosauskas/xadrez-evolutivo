@@ -24,6 +24,7 @@ import {
   createSuccessorState,
   earthFounderStarts,
   CANONICAL_FOUNDER_CELLS,
+  canonicalFounderStarts,
   newPiece,
 } from "../src/state.js";
 import { deserialize } from "../src/storage.js";
@@ -150,8 +151,12 @@ test("canonical founder pool prevents immediate queen and knight captures", () =
     ],
     seen = new Set();
 
+  for (let seed = 1; seed <= 1024; seed++)
+    for (const [, r, c] of canonicalFounderStarts({ rng: seed }, false))
+      seen.add(`${r},${c}`);
+
   for (const rank of [1, 5])
-    for (let seed = 1; seed <= 96; seed++) {
+    for (let seed = 1; seed <= 32; seed++) {
       const state = createState(seed, {
           scenario: "alternative",
           founder: { rank, traits, ancestry: traits },
