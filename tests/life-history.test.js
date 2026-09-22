@@ -59,13 +59,13 @@ test("childhood begins only after Multicelularismo and Precocidade Sexual shorte
   );
   const child = ordinary.pieces.find((piece) => piece.parentId === parent.id);
   assert.ok(child);
-  assert.equal(child.maturesRound, 2);
+  assert.equal(child.maturesRound, 4);
   assert.equal(juvenile(ordinary, child), true);
   assert.equal(reproductionReady(ordinary, child), false);
 
-  ordinary.turn = 2;
+  ordinary.turn = 6;
   assert.equal(juvenile(ordinary, child), true);
-  ordinary.turn = 4;
+  ordinary.turn = 8;
   assert.equal(juvenile(ordinary, child), false);
   assert.equal(reproductionReady(ordinary, child), true);
 
@@ -93,8 +93,10 @@ test("childhood begins only after Multicelularismo and Precocidade Sexual shorte
   const earlyChild = precocious.pieces.find(
     (piece) => piece.parentId === earlyParent.id,
   );
-  assert.equal(earlyChild.maturesRound, 1);
-  precocious.turn = 2;
+  assert.equal(earlyChild.maturesRound, 3);
+  precocious.turn = 4;
+  assert.equal(juvenile(precocious, earlyChild), true);
+  precocious.turn = 6;
   assert.equal(juvenile(precocious, earlyChild), false);
   assertState(precocious);
 });
