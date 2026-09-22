@@ -123,14 +123,18 @@ function budPlacementAvailable(state, piece) {
   return false;
 }
 
+export function buddingCanProgress(state, piece) {
+  return !!(
+    piece &&
+    has(piece, "Brotamento") &&
+    reproductionReady(state, piece) &&
+    !Number.isInteger(piece.pupaUntilRound) &&
+    budPlacementAvailable(state, piece)
+  );
+}
+
 export function canBud(state, piece) {
-  if (
-    !piece ||
-    !has(piece, "Brotamento") ||
-    !reproductionReady(state, piece) ||
-    Number.isInteger(piece.pupaUntilRound)
-  )
-    return false;
+  if (!buddingCanProgress(state, piece)) return false;
   if (
     round(state) -
       (piece.stationarySinceRound ?? piece.bornRound ?? round(state)) <
@@ -141,7 +145,7 @@ export function canBud(state, piece) {
     const ready = state.colonyCooldowns?.[piece.colonyId] ?? 0;
     if (round(state) < ready) return false;
   }
-  return budPlacementAvailable(state, piece);
+  return true;
 }
 
 export function canPupate(state, piece) {
