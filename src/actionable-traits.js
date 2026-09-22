@@ -1,17 +1,112 @@
 import { has, distance, square } from "./constants.js";
 import {
   at,
+  eggAt,
+  plantSeedAt,
   barrierAt,
   naturalBarrierAt,
   eventBarrierAt,
   terrain,
   reproductionReady,
+  photosynthesisAvailable,
 } from "./state.js";
-import { movesFor, actionsForPiece } from "./moves.js";
-import { paedogenesisReady } from "./reproduction-traits.js";
+import { movesFor, actionsForPiece, dormant } from "./moves.js";
+import {
+  paedogenesisReady,
+  buddingCanProgress,
+} from "./reproduction-traits.js";
 
 const firstExplicitTrait = (piece, traits) =>
   traits.find((trait) => (piece?.traits ?? []).includes(trait)) ?? null;
+
+function photosynthesisStationaryContext(state, piece) {
+  const context = {
+    extra: false,
+    alliedExtra: false,
+    barrierSupport: barrierAt(state, piece.r, piece.c),
+  };
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = piece.r + dr,
+        c = piece.c + dc;
+      if (
+        r < 0 ||
+        r >= 8 ||
+        c < 0 ||
+        c >= 8 ||
+        terrain(state, r, c) !== "neutral"
+      )
+        continue;
+      const occupant = at(state, r, c);
+      if (
+        (piece.traits ?? []).includes("Angiospermas") &&
+        occupant?.owner === piece.owner
+      ) {
+        context.extra = true;
+        context.alliedExtra = true;
+        continue;
+      }
+      if (
+        !occupant &&
+        !eggAt(state, r, c) &&
+        !plantSeedAt(state, r, c) &&
+        (!barrierAt(state, r, c) ||
+          (piece.traits ?? []).includes("Trepadeira"))
+      ) {
+        context.extra = true;
+        if (barrierAt(state, r, c)) context.barrierSupport = true;
+      }
+    }
+  return context;
+}
+
+function addStationaryActionableTraits(state, piece, actionable) {
+  if (photosynthesisAvailable(state, piece)) {
+    const photosyntheticTrait = firstExplicitTrait(piece, [
+      "Fotossíntese",
+      "Mixotrofia",
+    ]);
+    if (photosyntheticTrait) actionable.add(photosyntheticTrait);
+
+    const context = photosynthesisStationaryContext(state, piece);
+    if (
+      context.extra &&
+      (piece.traits ?? []).includes("Embriófitas")
+    )
+      actionable.add("Embriófitas");
+    if (
+      context.alliedExtra &&
+      (piece.traits ?? []).includes("Angiospermas")
+    )
+      actionable.add("Angiospermas");
+    if (
+      context.barrierSupport &&
+      (piece.traits ?? []).includes("Trepadeira")
+    )
+      actionable.add("Trepadeira");
+  }
+
+  const cell = square(piece.r, piece.c);
+  if (
+    (piece.traits ?? []).includes("Extremófitas") &&
+    terrain(state, piece.r, piece.c) === "hostile" &&
+    !state.event?.hazards?.includes(cell) &&
+    !(state.extremophyteFertility ?? []).some(
+      (entry) => entry.cell === cell,
+    )
+  )
+    actionable.add("Extremófitas");
+
+  if (
+    (piece.traits ?? []).includes("Dormência") &&
+    dormant(state, piece)
+  )
+    actionable.add("Dormência");
+
+  if (buddingCanProgress(state, piece))
+    actionable.add("Brotamento");
+}
 
 export function actionableTraitsForPiece(state, piece) {
   const actionable = new Set();
@@ -22,6 +117,8 @@ export function actionableTraitsForPiece(state, piece) {
     piece.owner !== state.current
   )
     return actionable;
+
+  addStationaryActionableTraits(state, piece, actionable);
 
   const actions = actionsForPiece(state, piece);
   if (!actions.length) return actionable;
