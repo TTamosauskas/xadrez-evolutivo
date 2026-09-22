@@ -1,4 +1,12 @@
-import { has, inside, square, TRAITS, EVENTS, PATHOGEN_AGENT_IDS } from "./constants.js";
+import {
+  has,
+  inside,
+  square,
+  TRAITS,
+  EVENTS,
+  PATHOGEN_AGENT_IDS,
+  STATE_VERSION,
+} from "./constants.js";
 import {
   GEOLOGICAL_STAGES,
   currentGeologicalStage,
@@ -709,7 +717,7 @@ export function createState(seed = Date.now(), options = {}) {
     canonicalPair = !!options.canonicalPair,
     scenario = options.scenario ?? "alternative";
   const state = {
-    version: 17,
+    version: STATE_VERSION,
     scenario,
     arenaPhase: options.arenaPhase ?? 0,
     arenaFounders: options.arenaFounders ?? null,
@@ -1580,7 +1588,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 17 ||
+    state.version !== STATE_VERSION ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
