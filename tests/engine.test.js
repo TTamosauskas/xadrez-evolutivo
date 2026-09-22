@@ -1697,7 +1697,10 @@ const stateHasDistinctOutbreak = (state) =>
   (state.event && state.diseases.length > 0);
 
 test("generation milestones drive habitat and queue ecological events", () => {
-  const s = createState(2, { geologicalStage: "devonian" }),
+  const s = createState(2, {
+      scenario: "earth",
+      geologicalStage: "devonian",
+    }),
     ctx = context(s);
   s.maxGenerationReached = 4;
   tickEnvironment(ctx);
