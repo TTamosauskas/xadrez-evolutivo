@@ -65,6 +65,7 @@ import {
 } from "./geology.js";
 import { mutationDiscoveryId, recordDiscovery } from "./discoveries.js";
 import {
+  BUDDING_STATIONARY_ROUNDS,
   COLONY_BUD_COOLDOWN,
   FRAGMENT_LIFETIME,
   MARSUPIAL_CARRY_ROUNDS,
@@ -378,12 +379,10 @@ function colonyPerimeterCells(ctx, origin, profile) {
 }
 
 function sessileCells(ctx, origin, profile) {
-  let cells =
+  const cells =
     has(profile, "Colônia") && origin?.colonyId
       ? colonyPerimeterCells(ctx, origin, profile)
       : allOpenOffspringCells(ctx, profile);
-  if (!cells.length && has(profile, "Colônia"))
-    cells = allOpenOffspringCells(ctx, profile);
   if (!cells.length) return cells;
   const bestRing = Math.min(
     ...cells.map((cell) => settlementRing(cell.r, cell.c)),
@@ -1227,7 +1226,10 @@ export function reproduce(
     }
     if (paedogenic) parent.paedogenesisUsed = true;
     if (options.budding) {
-      parent.budded = true;
+      parent.nextReproductionRound = Math.max(
+        parent.nextReproductionRound,
+        round(state) + BUDDING_STATIONARY_ROUNDS,
+      );
       if (has(parent, "Colônia") && parent.colonyId)
         state.colonyCooldowns[parent.colonyId] =
           round(state) + COLONY_BUD_COOLDOWN;
