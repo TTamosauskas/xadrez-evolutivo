@@ -260,14 +260,14 @@ main {
   background: transparent;
   box-sizing: border-box;
 }
-.cell.legal.capture-target::after {
+.cell.attack-target::after {
   width: 84%;
   border: 4px solid #d54242;
   border-radius: 50%;
   background: transparent;
   box-sizing: border-box;
 }
-.cell.partner.capture-target::before {
+.cell.partner.attack-target::before {
   width: 70%;
 }
 .cell.nurse-target {
@@ -517,7 +517,7 @@ main {
 .legend-action-ring.reproduction {
   color: #5bd66c;
 }
-.legend-action-ring.capture {
+.legend-action-ring.attack {
   color: #d54242;
 }
 .panel {
