@@ -241,7 +241,7 @@ export function render(
       symbol = make(
         "span",
         SYMBOLS[actor.owner][actor.rank],
-        `piece ${actor.owner} mobile-selected-symbol${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
+        `mobile-selected-symbol ${actor.owner}${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
       );
     heading.append(
       symbol,
@@ -297,7 +297,7 @@ export function render(
   } else if (!state.result && origin?.selected) {
     const heading = make("div", undefined, "mobile-selected-heading");
     heading.append(
-      make("span", "♚", "piece origin-piece mobile-selected-symbol"),
+      make("span", "♚", "mobile-selected-symbol mobile-origin-symbol"),
       doc.createTextNode("Rei ancestral"),
     );
     mobileSummary.append(
