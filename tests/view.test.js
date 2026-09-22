@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 import { createState, clone, newPiece, round } from "../src/state.js";
 import { fixture } from "./helpers.js";
 import { TRAITS } from "../src/constants.js";
-import { render, traitFrameSlots } from "../src/view.js";
+import { render, traitFrameSlots, universalTraits } from "../src/view.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
@@ -255,6 +255,8 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
     "Carapaça",
     "Veneno",
   ];
+  for (const other of s.pieces)
+    if (other.id !== piece.id) other.traits = ["Fotossíntese"];
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
     cell = d.querySelector(
@@ -301,6 +303,8 @@ test("mutation frame shows twelve phenotypes and an overflow counter", () => {
     "Veneno",
     "Resistência",
   ];
+  for (const other of s.pieces)
+    if (other.id !== piece.id) other.traits = ["Fotossíntese"];
 
   render(dom.window.document, s);
   const cell = dom.window.document.querySelector(
@@ -310,6 +314,91 @@ test("mutation frame shows twelve phenotypes and an overflow counter", () => {
   assert.equal(frame.querySelectorAll(".trait-badge").length, 12);
   assert.equal(frame.querySelector(".trait-overflow").textContent, "+3");
   assert.ok(cell.classList.contains("trait-dense"));
+  dom.window.close();
+});
+
+test("universal inherited traits move to genetic legacy and return when differential", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "blue", r: 4, c: 5 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    selectedPiece = s.pieces[0],
+    ally = s.pieces[1],
+    rival = s.pieces[2];
+
+  selectedPiece.traits = [
+    "Respiração anaeróbia",
+    "Carapaça",
+    "Resistência",
+    "Deficiência Motora",
+  ];
+  ally.traits = ["Respiração anaeróbia", "Carapaça"];
+  rival.traits = ["Respiração anaeróbia", "Carapaça"];
+  selectedPiece.ancestry = [...selectedPiece.traits];
+  ally.ancestry = [...ally.traits];
+  rival.ancestry = [...rival.traits];
+
+  assert.deepEqual(
+    [...universalTraits(s)].sort(),
+    ["Carapaça", "Respiração anaeróbia"].sort(),
+  );
+
+  render(dom.window.document, s, { selected: selectedPiece.id });
+  let d = dom.window.document,
+    selected = d.getElementById("selected"),
+    cell = d.querySelector(
+      `[data-r="${selectedPiece.r}"][data-c="${selectedPiece.c}"]`,
+    );
+  assert.match(selected.textContent, /Vantagens Evolutivas/);
+  assert.match(selected.textContent, /Resistência/);
+  assert.match(selected.textContent, /Desvantagens Evolutivas/);
+  assert.match(selected.textContent, /Deficiência Motora/);
+  assert.match(selected.querySelector(".legacy-toggle").textContent, /Carapaça/);
+  assert.doesNotMatch(
+    [...cell.querySelectorAll(".trait-badge")]
+      .map((badge) => badge.dataset.trait)
+      .join("|"),
+    /Carapaça|Respiração anaeróbia/,
+  );
+
+  rival.traits = ["Respiração anaeróbia"];
+  rival.ancestry = [...rival.traits];
+  render(dom.window.document, s, { selected: selectedPiece.id });
+  d = dom.window.document;
+  selected = d.getElementById("selected");
+  cell = d.querySelector(
+    `[data-r="${selectedPiece.r}"][data-c="${selectedPiece.c}"]`,
+  );
+  assert.match(selected.textContent, /Carapaça/);
+  assert.ok(
+    [...cell.querySelectorAll(".trait-badge")].some(
+      (badge) => badge.dataset.trait === "Carapaça",
+    ),
+  );
+  dom.window.close();
+});
+
+test("somatic disadvantages stay individual even when the inherited trait is universal", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0],
+    rival = s.pieces[1];
+  piece.traits = ["Respiração anaeróbia"];
+  rival.traits = ["Respiração anaeróbia"];
+  piece.somaticMutations = ["Imunodeficiência"];
+
+  render(dom.window.document, s, { selected: piece.id });
+  const selected = dom.window.document.getElementById("selected");
+  assert.match(selected.textContent, /Desvantagens Evolutivas/);
+  assert.match(selected.textContent, /Imunodeficiência · somática/);
+  assert.ok(
+    dom.window.document.querySelector(".trait-badge.somatic-badge"),
+  );
   dom.window.close();
 });
 
@@ -369,7 +458,7 @@ test("selected legend shows hidden recessive genes before ancestry without dupli
   const d = dom.window.document,
     selected = d.getElementById("selected"),
     recessive = selected.querySelector(".recessive-toggle"),
-    ancestry = selected.querySelector(".ancestry-toggle");
+    ancestry = selected.querySelector(".legacy-toggle");
 
   assert.ok(recessive);
   assert.equal(recessive.open, false);
@@ -422,15 +511,15 @@ test("selected legend separates active traits from ancestry behind a closed togg
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
     selected = d.getElementById("selected"),
-    toggle = selected.querySelector(".ancestry-toggle"),
+    toggle = selected.querySelector(".legacy-toggle"),
     summary = toggle.querySelector("summary");
 
-  assert.match(selected.textContent, /Fenótipo ativo/);
+  assert.match(selected.textContent, /Vantagens Evolutivas/);
   assert.match(selected.textContent, /Onívoro/);
   assert.match(selected.textContent, /Locomoção Avançada/);
   assert.ok(toggle);
   assert.equal(toggle.open, false);
-  assert.match(summary.textContent, /Ancestralidade da linhagem \(2\)/);
+  assert.match(summary.textContent, /Legado Genético \(2\)/);
   assert.match(toggle.textContent, /Carnívoro/);
   assert.match(toggle.textContent, /Locomoção/);
   assert.doesNotMatch(
@@ -447,16 +536,22 @@ test("selected legend separates active traits from ancestry behind a closed togg
   dom.window.close();
 });
 
-test("ancestry toggle is omitted when the selected phenotype has no suppressed traits", () => {
+test("legacy toggle is omitted when there are no historical or universal traits", () => {
   const dom = setup(),
-    s = createState(23),
-    piece = s.pieces[0];
-  piece.traits = ["Multicelularismo", "Predação"];
+    s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0],
+    rival = s.pieces[1];
+  piece.traits = ["Predação"];
   piece.ancestry = [...piece.traits];
+  rival.traits = ["Fotossíntese"];
+  rival.ancestry = [...rival.traits];
 
   render(dom.window.document, s, { selected: piece.id });
   assert.equal(
-    dom.window.document.querySelector("#selected .ancestry-toggle"),
+    dom.window.document.querySelector("#selected .legacy-toggle"),
     null,
   );
   dom.window.close();
