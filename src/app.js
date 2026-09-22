@@ -236,6 +236,10 @@ $("piece-actions").addEventListener("click", (event) => {
   if (!piece) return;
   if (button.dataset.pieceAction === "reproduce")
     dispatch({ type: "MOVE", id: piece.id, r: piece.r, c: piece.c });
+  else if (button.dataset.pieceAction === "bud")
+    dispatch({ type: "BUD", id: piece.id });
+  else if (button.dataset.pieceAction === "pupate")
+    dispatch({ type: "PUPATE", id: piece.id });
   else if (button.dataset.pieceAction === "parasitize")
     dispatch({ type: "PARASITIZE", id: piece.id });
 });
