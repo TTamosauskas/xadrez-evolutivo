@@ -455,7 +455,7 @@ export function sexualReproductionResource(state, parent, mate) {
   return null;
 }
 
-export function partnersFor(state, p) {
+export function partnersFor(state, p, { requireResource = true } = {}) {
   if (
     !reproductionReady(state, p) ||
     !has(p, "Reprodução Sexuada") ||
@@ -482,7 +482,7 @@ export function partnersFor(state, p) {
       resting(state, x) ||
       dormant(state, x) ||
       (!has(p, "Promiscuidade") && distance(p, x) !== 1) ||
-      !sexualReproductionResource(state, p, x)
+      (requireResource && !sexualReproductionResource(state, p, x))
     )
       return false;
     const mateBranch = energyBranch(x);
@@ -648,7 +648,7 @@ export function legalActions(state) {
   if (state.phase === "partner") {
     const p = state.pieces.find((x) => x.id === state.partner.id),
       selected = new Set(state.partner.selectedIds ?? []);
-    return partnersFor(state, p)
+    return partnersFor(state, p, { requireResource: selected.size === 0 })
       .filter((mate) => !selected.has(mate.id))
       .map((mate) => ({ type: "PARTNER", id: mate.id }));
   }
