@@ -353,11 +353,23 @@ main {
 .selected-piece-symbol.gigantism {
   font-size: 38px;
 }
+.selected-wait-badge {
+  display: inline-grid;
+  place-items: center;
+  margin-left: 6px;
+  min-width: 1.45em;
+  min-height: 1.45em;
+  border-radius: 999px;
+  background: #171b17b8;
+  font-size: 0.82em;
+  line-height: 1;
+  vertical-align: middle;
+}
 .piece.senescent {
   font-style: italic;
 }
-.piece.dysfunctional-resting {
-  opacity: 0.42;
+.cell .piece.waiting {
+  opacity: 0.48;
 }
 .trait-frame {
   position: absolute;
