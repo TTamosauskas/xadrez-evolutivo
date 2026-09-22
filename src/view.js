@@ -84,7 +84,8 @@ export function establishedTraits(state) {
     const group = traitComparisonGroup(pieces, trait);
     if (!group.length) continue;
     if (!ENERGY_BRANCH_TRAITS.has(trait) && group.length < 2) continue;
-    if (group.every((piece) => has(piece, trait))) established.add(trait);
+    if (group.every((piece) => expressesTrait(piece, trait)))
+      established.add(trait);
   }
   return established;
 }
