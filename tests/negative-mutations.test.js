@@ -184,7 +184,7 @@ test("only-child and respiratory insufficiency reduce reproductive performance",
     }),
     1,
   );
-  assert.equal(predatorParent.nextReproductionRound, 3);
+  assert.equal(predatorParent.nextReproductionRound, 5);
 });
 
 test("subfertility can spend a reproductive attempt without offspring", () => {
