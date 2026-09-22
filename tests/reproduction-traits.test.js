@@ -21,7 +21,7 @@ import {
   canBud,
 } from "../src/reproduction-traits.js";
 
-test("Brotamento is once per individual and Colônia shares identity and cooldown", () => {
+test("Brotamento repeats on a four-round cadence and Colônia shares identity and cooldown", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -45,9 +45,11 @@ test("Brotamento is once per individual and Colônia shares identity and cooldow
   const parent = s.pieces.find((piece) => piece.id === parentId),
     child = s.pieces.find((piece) => piece.parentId === parentId);
   assert.ok(child);
-  assert.equal(parent.budded, true);
   assert.equal(child.colonyId, parent.colonyId);
   assert.ok(s.colonyCooldowns[parent.colonyId] >= 8);
+  assert.equal(canBud(s, parent), false);
+  s.turn = 16;
+  assert.equal(canBud(s, parent), true);
   assertState(s);
 });
 
