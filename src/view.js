@@ -19,6 +19,9 @@ import {
   geologicalStage,
   isNegativeTrait,
   stageProgress,
+  ENERGY_BRANCH_TRAITS,
+  PLANT_DERIVED_TRAITS,
+  PLANT_INCOMPATIBLE_TRAITS,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
 import { pathogenAgentAt } from "./disease.js";
@@ -56,26 +59,56 @@ export function traitFrameSlots(count) {
   );
 }
 
-export function universalTraits(state) {
+const expressesTrait = (piece, trait) =>
+  (piece?.traits ?? []).includes(trait);
+
+export function traitComparisonGroup(pieces, trait) {
+  if (ENERGY_BRANCH_TRAITS.has(trait)) {
+    const siblingBranches = [...ENERGY_BRANCH_TRAITS].filter(
+      (candidate) => candidate !== trait,
+    );
+    return pieces.filter(
+      (piece) =>
+        !siblingBranches.some((candidate) =>
+          expressesTrait(piece, candidate),
+        ),
+    );
+  }
+  if (PLANT_DERIVED_TRAITS.has(trait))
+    return pieces.filter((piece) =>
+      expressesTrait(piece, "Fotossíntese"),
+    );
+  if (PLANT_INCOMPATIBLE_TRAITS.has(trait))
+    return pieces.filter(
+      (piece) => !expressesTrait(piece, "Fotossíntese"),
+    );
+  return pieces;
+}
+
+export function establishedTraits(state) {
   const pieces = (state?.pieces ?? []).filter(
       (piece) => piece && ["blue", "amber"].includes(piece.owner),
     ),
-    owners = new Set(pieces.map((piece) => piece.owner));
+    owners = new Set(pieces.map((piece) => piece.owner)),
+    established = new Set();
   if (!owners.has("blue") || !owners.has("amber") || pieces.length < 2)
-    return new Set();
-  const common = new Set(
-    (pieces[0].traits ?? []).filter((trait) => TRAITS[trait]),
-  );
-  for (const piece of pieces)
-    for (const trait of [...common])
-      if (!(piece.traits ?? []).includes(trait)) common.delete(trait);
-  return common;
+    return established;
+
+  for (const trait of Object.keys(TRAITS)) {
+    const group = traitComparisonGroup(pieces, trait);
+    if (!group.length) continue;
+    if (!ENERGY_BRANCH_TRAITS.has(trait) && group.length < 2) continue;
+    if (group.every((piece) => expressesTrait(piece, trait)))
+      established.add(trait);
+  }
+  return established;
 }
 
-export function traitFrameEntries(piece, universal = new Set()) {
+
+export function traitFrameEntries(piece, established = new Set()) {
   const entries = [
     ...(piece?.traits ?? [])
-      .filter((trait) => !universal.has(trait))
+      .filter((trait) => !established.has(trait))
       .map((trait) => ({ trait, somatic: false })),
     ...(piece?.somaticMutations ?? []).map((trait) => ({
       trait,
@@ -106,7 +139,7 @@ export function traitFrameEntries(piece, universal = new Set()) {
 }
 
 function evolutionarySummary(state, owner) {
-  const universal = universalTraits(state),
+  const established = establishedTraits(state),
     pieces = state.pieces.filter((p) => p.owner === owner),
     lineages = new Set(pieces.map(signature)),
     selected = dominantLineage(state, owner),
@@ -116,7 +149,7 @@ function evolutionarySummary(state, owner) {
       ? Math.round((selected.count / pieces.length) * 100)
       : 0,
     traits = (representative?.traits ?? [])
-      .filter((trait) => !universal.has(trait))
+      .filter((trait) => !established.has(trait))
       .slice(0, 3)
       .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
 
@@ -156,7 +189,7 @@ export function render(
       state.notices.length > 0 ||
       mode === "auto" ||
       (mode === "single" && state.current === "amber"),
-    universal = universalTraits(state);
+    established = establishedTraits(state);
   const targets =
     state.phase === "move" && actor && actor.owner === state.current
       ? movesFor(state, actor)
@@ -245,7 +278,7 @@ export function render(
     for (let c = 0; c < 8; c++) {
       const p = at(state, r, c),
         differentialTraits = p
-          ? (p.traits ?? []).filter((trait) => !universal.has(trait))
+          ? (p.traits ?? []).filter((trait) => !established.has(trait))
           : [],
         pathogenAgents = pathogenAgentAt(state, r, c),
         egg = eggAt(state, r, c),
@@ -362,7 +395,7 @@ export function render(
       if (originHere)
         cell.append(make("span", "♚", "piece origin-piece"));
       if (p) {
-        const traitFrame = traitFrameEntries(p, universal);
+        const traitFrame = traitFrameEntries(p, established);
         if (traitFrame.total > 8) cell.classList.add("trait-dense");
         cell.append(
           make(
@@ -535,7 +568,7 @@ export function render(
         .filter(
           (trait) =>
             TRAITS[trait] &&
-            !universal.has(trait) &&
+            !established.has(trait) &&
             !isNegativeTrait(trait),
         )
         .map((trait) => traitRow(trait)),
@@ -543,7 +576,7 @@ export function render(
         .filter(
           (trait) =>
             TRAITS[trait] &&
-            !universal.has(trait) &&
+            !established.has(trait) &&
             isNegativeTrait(trait),
         )
         .map((trait) => traitRow(trait));
@@ -614,12 +647,12 @@ export function render(
     const recessiveTraits = hiddenRecessiveTraits(actor),
       recessiveSet = new Set(recessiveTraits),
       legacyTraits = [
-        ...new Set([...(actor.ancestry ?? []), ...universal]),
+        ...new Set([...(actor.ancestry ?? []), ...established]),
       ]
         .filter(
           (trait) =>
             TRAITS[trait] &&
-            (universal.has(trait)
+            (established.has(trait)
               ? (actor.traits ?? []).includes(trait)
               : !(actor.traits ?? []).includes(trait) &&
                 !recessiveSet.has(trait)),
@@ -683,8 +716,8 @@ export function render(
           `${TRAITS[trait][0]} ${trait}`,
           "ancestry-chip legacy-chip",
         );
-        chip.title = universal.has(trait)
-          ? "Expressa atualmente em todos os organismos vivos das duas cores; permanece mecanicamente ativa."
+        chip.title = established.has(trait)
+          ? "Característica estabelecida no seu grupo evolutivo de comparação; permanece mecanicamente ativa."
           : "Presente na história evolutiva desta linhagem, embora fora do fenótipo atual.";
         legacyList.append(chip);
       }
