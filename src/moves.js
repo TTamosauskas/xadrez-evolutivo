@@ -604,27 +604,34 @@ export function ovoviviparousPlacementTargets(state, p) {
   return cells;
 }
 
+function parasitismReady(state, p) {
+  return !!(
+    state.phase === "move" &&
+    !state.chain &&
+    p &&
+    p.owner === state.current &&
+    !ecologicalDomainBlocked(state, p.owner, p.r, p.c) &&
+    has(p, "Parasitismo") &&
+    !resting(state, p) &&
+    !dormant(state, p)
+  );
+}
+
+export function parasitismTargets(state, p) {
+  if (!parasitismReady(state, p)) return [];
+  return state.pieces.filter(
+    (otherPiece) =>
+      otherPiece.owner !== p.owner &&
+      distance(p, otherPiece) === 1 &&
+      terrain(state, otherPiece.r, otherPiece.c) !== "hostile",
+  );
+}
+
 export function canParasitize(state, p) {
-  if (
-    state.phase !== "move" ||
-    state.chain ||
-    !p ||
-    p.owner !== state.current ||
-    ecologicalDomainBlocked(state, p.owner, p.r, p.c) ||
-    !has(p, "Parasitismo") ||
-    resting(state, p) ||
-    dormant(state, p)
-  )
-    return false;
+  if (!parasitismReady(state, p)) return false;
   const canFertilize =
-      !fertilityPaused(state) && terrain(state, p.r, p.c) !== "fertile",
-    canAttackHabitat = state.pieces.some(
-      (otherPiece) =>
-        otherPiece.owner !== p.owner &&
-        distance(p, otherPiece) === 1 &&
-        terrain(state, otherPiece.r, otherPiece.c) !== "hostile",
-    );
-  return canFertilize || canAttackHabitat;
+    !fertilityPaused(state) && terrain(state, p.r, p.c) !== "fertile";
+  return canFertilize || parasitismTargets(state, p).length > 0;
 }
 
 function pieceEvaluationState(state, piece) {
@@ -696,9 +703,18 @@ export function actionsForPiece(
       r: target.r,
       c: target.c,
     })),
-    ...(canParasitize(source, piece)
-      ? [{ type: "PARASITIZE", id: piece.id }]
-      : []),
+    ...(() => {
+      const parasiteTargets = parasitismTargets(source, piece);
+      if (parasiteTargets.length)
+        return parasiteTargets.map((target) => ({
+          type: "PARASITIZE",
+          id: piece.id,
+          targetId: target.id,
+        }));
+      return canParasitize(source, piece)
+        ? [{ type: "PARASITIZE", id: piece.id }]
+        : [];
+    })(),
     ...(canBud(source, piece) ? [{ type: "BUD", id: piece.id }] : []),
     ...(canPupate(source, piece) ? [{ type: "PUPATE", id: piece.id }] : []),
   ];
