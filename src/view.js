@@ -90,7 +90,6 @@ export function establishedTraits(state) {
   return established;
 }
 
-export const universalTraits = establishedTraits;
 
 export function traitFrameEntries(piece, established = new Set()) {
   const entries = [
