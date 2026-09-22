@@ -345,7 +345,7 @@ export function render(
             const icon = make(
               "span",
               TRAITS[entry.trait][0],
-              `trait-badge trait-slot-${slots[index]}${entry.somatic ? " somatic-badge" : ""}`,
+              `trait-badge trait-slot-${slots[index]}${entry.somatic ? " somatic-badge" : ""}${entry.trait === "Fragmentação" ? " fragmentation-badge" : ""}`,
             );
             icon.dataset.trait = entry.trait;
             frame.append(icon);
