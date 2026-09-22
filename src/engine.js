@@ -29,6 +29,7 @@ import {
 import {
   movesFor,
   partnersFor,
+  sexualReproductionResource,
   legalActions,
   canWaitForRest,
   canWaitForBirth,
@@ -1313,7 +1314,6 @@ function executeMove(ctx, action) {
       ],
       "reproduction",
     );
-  if (collectorStay) p.seedUsedTurn = state.turn;
   const sexualPartners = partnersFor(state, p);
   if (
     fertile &&
@@ -1327,15 +1327,9 @@ function executeMove(ctx, action) {
       selectedIds: [],
       second,
       locomotion,
-      collectorStay,
+      collectorStay: false,
       predation,
       manipulation,
-      buildEligible:
-        !collectorStay &&
-        has(p, "Antropização") &&
-        terrain(state, p.r, p.c) === "fertile",
-      fertileReproduction:
-        !collectorStay && terrain(state, p.r, p.c) === "fertile",
     };
     state.chain = null;
     if (has(p, "Acasalamento Preferencial")) {
@@ -1348,6 +1342,7 @@ function executeMove(ctx, action) {
     }
     return;
   }
+  if (collectorStay) p.seedUsedTurn = state.turn;
   const consumedFertile =
     fertile &&
     !collectorStay &&
@@ -1488,6 +1483,69 @@ function resolveNursing(ctx, action) {
   settle(ctx);
 }
 
+function consumeSexualResource(state, parent, mate) {
+  const resource = sexualReproductionResource(state, parent, mate);
+  if (!resource) return null;
+  const provider = state.pieces.find((piece) => piece.id === resource.providerId);
+  if (!provider) return null;
+  if (resource.kind === "fertile") {
+    if (!consumeReproductionResource(state, provider, resource.cell)) return null;
+  } else {
+    if (
+      !has(provider, "Coletor") ||
+      (provider.seeds ?? 0) <= 0 ||
+      provider.seedUsedTurn === state.turn
+    )
+      return null;
+    provider.seeds--;
+    provider.seedUsedTurn = state.turn;
+  }
+  return resource;
+}
+
+function resolveDirectPartner(ctx, action) {
+  const state = ctx.state,
+    p = state.pieces.find(
+      (piece) =>
+        piece.id === action.parentId &&
+        piece.owner === state.current,
+    ),
+    candidates = partnersFor(state, p);
+  if (!p || !candidates.length)
+    throw Error("Reprodução sexuada indisponível.");
+  const requested = candidates.find((candidate) => candidate.id === action.id);
+  if (!requested) throw Error("Escolha um parceiro destacado.");
+  const firstMate = has(p, "Acasalamento Preferencial")
+    ? candidates[0]
+    : requested;
+  const second = state.chain === p.id;
+  state.phase = "partner";
+  state.partner = {
+    id: p.id,
+    selectedIds: [],
+    second,
+    locomotion: has(p, "Locomoção Avançada"),
+    collectorStay: false,
+    predation: false,
+    manipulation: null,
+  };
+  state.chain = null;
+  if (
+    has(p, "Acasalamento Múltiplo") &&
+    candidates.some((candidate) => candidate.id !== firstMate.id)
+  ) {
+    state.partner.selectedIds = [firstMate.id];
+    if (has(p, "Acasalamento Preferencial")) {
+      const secondMate = candidates.find(
+        (candidate) => candidate.id !== firstMate.id,
+      );
+      choosePartner(ctx, secondMate.id);
+    }
+    return;
+  }
+  choosePartner(ctx, firstMate.id);
+}
+
 function choosePartner(ctx, id) {
   const state = ctx.state,
     pending = state.partner,
@@ -1510,19 +1568,18 @@ function choosePartner(ctx, id) {
       : mate,
     secondMate = selectedIds.length ? mate : null;
   if (!firstMate) throw Error("Parceiro inicial indisponível.");
-  if (!pending.collectorStay)
-    consumeReproductionResource(state, p, square(p.r, p.c));
+  const resource = consumeSexualResource(state, p, firstMate);
+  if (!resource) throw Error("O casal precisa de um recurso fértil disponível.");
   const born = reproduce(
     ctx,
     p,
     firstMate,
     secondMate ? "acasalamento múltiplo" : "reprodução sexuada",
     {
-      fertileReproduction: !!pending.fertileReproduction,
+      fertileReproduction: resource.kind === "fertile",
       additionalMate: secondMate,
     },
   );
-  if (pending.collectorStay && born) p.seeds--;
   state.partner = null;
   if (
     born > 0 &&
@@ -1530,7 +1587,10 @@ function choosePartner(ctx, id) {
       manipulation: pending.manipulation ?? null,
       second: pending.second,
       locomotion: pending.locomotion,
-      build: born > 0 && !!pending.buildEligible,
+      build:
+        born > 0 &&
+        resource.kind === "fertile" &&
+        has(p, "Antropização"),
     })
   )
     return;
@@ -1541,7 +1601,9 @@ function choosePartner(ctx, id) {
     pending.manipulation ?? null,
     pending.second,
     pending.locomotion,
-    born > 0 && !!pending.buildEligible,
+    born > 0 &&
+      resource.kind === "fertile" &&
+      has(p, "Antropização"),
   );
 }
 function resolveDomesticPlacement(ctx, action) {
@@ -1741,6 +1803,8 @@ export function transition(previous, action) {
     activateOrigin(state);
   else if (action.type === "MOVE" && state.phase === "move")
     executeMove(ctx, action);
+  else if (action.type === "PARTNER" && state.phase === "move")
+    resolveDirectPartner(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
     resolveNursing(ctx, action);
   else if (action.type === "BUD" && state.phase === "move")
