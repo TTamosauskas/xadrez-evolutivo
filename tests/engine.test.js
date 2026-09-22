@@ -39,6 +39,7 @@ import {
   domesticPlacementTargets,
   socialDefenseTargets,
   canParasitize,
+  parasitismTargets,
 } from "../src/moves.js";
 import {
   SEVERE_EVENT_IDS,
@@ -3280,19 +3281,39 @@ test("Haustório consumes only adjacent photosynthetic enemies without moving", 
   assertState(s);
 });
 
-test("Parasitismo is offered only when it can change fertility or enemy habitat", () => {
+test("Parasitismo targets one adjacent enemy habitat and can still fertilize itself", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
     { owner: "amber", r: 3, c: 4 },
     { owner: "amber", r: 4, c: 5 },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  const parasite = s.pieces[0];
+  const parasite = s.pieces[0],
+    firstTarget = s.pieces[1],
+    secondTarget = s.pieces[2],
+    targets = parasitismTargets(s, parasite);
   assert.equal(canParasitize(s, parasite), true);
-  s = simulate(s, { type: "PARASITIZE", id: parasite.id });
+  assert.deepEqual(
+    new Set(targets.map((piece) => piece.id)),
+    new Set([firstTarget.id, secondTarget.id]),
+  );
+  assert.ok(
+    legalActions(s).some(
+      (action) =>
+        action.type === "PARASITIZE" &&
+        action.id === parasite.id &&
+        action.targetId === firstTarget.id,
+    ),
+  );
+
+  s = simulate(s, {
+    type: "PARASITIZE",
+    id: parasite.id,
+    targetId: firstTarget.id,
+  });
   assert.equal(s.board[4 * 8 + 4], "fertile");
   assert.equal(s.board[3 * 8 + 4], "hostile");
-  assert.equal(s.board[4 * 8 + 5], "hostile");
+  assert.equal(s.board[4 * 8 + 5], "neutral");
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
@@ -3334,6 +3355,7 @@ test("Parasitismo is offered only when it can change fertility or enemy habitat"
   const neighbor = adjacentEnemies[0];
   s.board[neighbor.r * 8 + neighbor.c] = "neutral";
   assert.equal(canParasitize(s, s.pieces[0]), true);
+  assert.equal(parasitismTargets(s, s.pieces[0]).length, 1);
   s.board[neighbor.r * 8 + neighbor.c] = "hostile";
   assert.equal(canParasitize(s, s.pieces[0]), false);
   assertState(s);
