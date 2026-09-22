@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 import { createState, clone, newPiece, round } from "../src/state.js";
 import { fixture } from "./helpers.js";
 import { TRAITS } from "../src/constants.js";
-import { render, traitFrameSlots, universalTraits } from "../src/view.js";
+import { render, traitFrameSlots, establishedTraits } from "../src/view.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
@@ -257,6 +257,9 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
   ];
   for (const other of s.pieces)
     if (other.id !== piece.id) other.traits = ["Fotossíntese"];
+  s.pieces.find((other) => other.id !== piece.id).traits = [
+    "Respiração anaeróbia",
+  ];
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
     cell = d.querySelector(
@@ -305,6 +308,9 @@ test("mutation frame shows twelve phenotypes and an overflow counter", () => {
   ];
   for (const other of s.pieces)
     if (other.id !== piece.id) other.traits = ["Fotossíntese"];
+  s.pieces.find((other) => other.id !== piece.id).traits = [
+    "Respiração anaeróbia",
+  ];
 
   render(dom.window.document, s);
   const cell = dom.window.document.querySelector(
@@ -317,7 +323,7 @@ test("mutation frame shows twelve phenotypes and an overflow counter", () => {
   dom.window.close();
 });
 
-test("universal inherited traits move to genetic legacy and return when differential", () => {
+test("globally established inherited traits move to genetic legacy and return when differential", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4 },
@@ -341,7 +347,7 @@ test("universal inherited traits move to genetic legacy and return when differen
   rival.ancestry = [...rival.traits];
 
   assert.deepEqual(
-    [...universalTraits(s)].sort(),
+    [...establishedTraits(s)].sort(),
     ["Carapaça", "Respiração anaeróbia"].sort(),
   );
 
@@ -380,7 +386,129 @@ test("universal inherited traits move to genetic legacy and return when differen
   dom.window.close();
 });
 
-test("somatic disadvantages stay individual even when the inherited trait is universal", () => {
+test("animal traits establish inside the non-photosynthetic branch", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "amber", r: 0, c: 0 },
+      { owner: "blue", r: 2, c: 2 },
+    ]),
+    animalA = s.pieces[0],
+    animalB = s.pieces[1],
+    plant = s.pieces[2];
+
+  animalA.traits = ["Predação", "Multicelularismo", "Simetria Bilateral"];
+  animalB.traits = ["Predação", "Multicelularismo", "Simetria Bilateral"];
+  plant.traits = ["Fotossíntese"];
+  animalA.ancestry = [...animalA.traits];
+  animalB.ancestry = [...animalB.traits];
+  plant.ancestry = [...plant.traits];
+
+  let established = establishedTraits(s);
+  assert.ok(established.has("Simetria Bilateral"));
+  assert.ok(!established.has("Multicelularismo"));
+
+  render(dom.window.document, s, { selected: animalA.id });
+  let d = dom.window.document,
+    selected = d.getElementById("selected"),
+    cell = d.querySelector(
+      `[data-r="${animalA.r}"][data-c="${animalA.c}"]`,
+    );
+  assert.match(
+    selected.querySelector(".legacy-toggle").textContent,
+    /Simetria Bilateral/,
+  );
+  assert.ok(
+    ![...cell.querySelectorAll(".trait-badge")].some(
+      (badge) => badge.dataset.trait === "Simetria Bilateral",
+    ),
+  );
+
+  animalB.traits = ["Predação", "Multicelularismo"];
+  animalB.ancestry = [...animalB.traits];
+  established = establishedTraits(s);
+  assert.ok(!established.has("Simetria Bilateral"));
+
+  render(dom.window.document, s, { selected: animalA.id });
+  d = dom.window.document;
+  selected = d.getElementById("selected");
+  cell = d.querySelector(
+    `[data-r="${animalA.r}"][data-c="${animalA.c}"]`,
+  );
+  assert.match(selected.textContent, /Vantagens Evolutivas/);
+  assert.match(selected.textContent, /Simetria Bilateral/);
+  assert.ok(
+    [...cell.querySelectorAll(".trait-badge")].some(
+      (badge) => badge.dataset.trait === "Simetria Bilateral",
+    ),
+  );
+  dom.window.close();
+});
+
+test("plant traits establish inside the photosynthetic branch", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "amber", r: 0, c: 0 },
+      { owner: "blue", r: 2, c: 2 },
+    ]),
+    plantA = s.pieces[0],
+    plantB = s.pieces[1],
+    predator = s.pieces[2];
+
+  plantA.traits = ["Fotossíntese", "Embriófitas"];
+  plantB.traits = ["Fotossíntese", "Embriófitas"];
+  predator.traits = ["Predação"];
+
+  let established = establishedTraits(s);
+  assert.ok(established.has("Embriófitas"));
+
+  plantB.traits = ["Fotossíntese"];
+  established = establishedTraits(s);
+  assert.ok(!established.has("Embriófitas"));
+});
+
+test("energy branches stay in legacy until a piece lacks both basal branches", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    plant = s.pieces[0],
+    predator = s.pieces[1];
+
+  plant.traits = ["Fotossíntese"];
+  predator.traits = ["Predação"];
+  plant.ancestry = [...plant.traits];
+  predator.ancestry = [...predator.traits];
+
+  let established = establishedTraits(s);
+  assert.ok(established.has("Fotossíntese"));
+  assert.ok(established.has("Predação"));
+
+  render(dom.window.document, s, { selected: plant.id });
+  let selected = dom.window.document.getElementById("selected");
+  assert.match(
+    selected.querySelector(".legacy-toggle").textContent,
+    /Fotossíntese/,
+  );
+
+  const unassigned = newPiece(s, "blue", 6, 6, {
+    traits: [],
+    ancestry: [],
+  });
+  s.pieces.push(unassigned);
+  established = establishedTraits(s);
+  assert.ok(!established.has("Fotossíntese"));
+  assert.ok(!established.has("Predação"));
+
+  render(dom.window.document, s, { selected: plant.id });
+  selected = dom.window.document.getElementById("selected");
+  assert.match(selected.textContent, /Vantagens Evolutivas/);
+  assert.match(selected.textContent, /Fotossíntese/);
+  dom.window.close();
+});
+
+test("somatic disadvantages stay individual even when an inherited trait is established", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4 },
