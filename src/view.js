@@ -262,7 +262,9 @@ export function render(
       details.append(
         make(
           "span",
-          actorActionState.reason,
+          actorActionState.reason === "Sem ação legal disponível"
+            ? "Nenhuma ação disponível."
+            : actorActionState.reason,
           "mobile-actionable-trait",
         ),
       );
