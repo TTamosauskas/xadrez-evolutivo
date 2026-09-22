@@ -183,7 +183,7 @@ export function howToPlayLines() {
 
     section("Genética e ancestralidade"),
     "Cada característica hereditária ocupa um locus diploide com dois alelos. Alelos dominantes podem se expressar com uma cópia; recessivos podem permanecer ocultos e reaparecer por herança ou recombinação. Fenótipo mostra o que está ativo, Genes Recessivos mostra variantes ocultas e Ancestralidade registra características pelas quais a linhagem já passou.",
-    `${traitLabel("Reprodução Sexuada")} combina um alelo de cada progenitor por locus. Pré-requisitos evolutivos usam a história da própria linhagem; perder uma característica depois não apaga automaticamente as inovações derivadas já alcançadas.`,
+    `${traitLabel("Reprodução Sexuada")} exige dois portadores reprodutivamente aptos e combina um alelo de cada progenitor por locus. O casal pode usar uma casa fértil ocupada por qualquer um dos dois ou uma semente armazenada por Coletor. Pré-requisitos evolutivos usam a história da própria linhagem; perder uma característica depois não apaga automaticamente as inovações derivadas já alcançadas.`,
     "Perdas e mutações negativas entram no pool a partir do segundo Ciclo da campanha; na Arena, elas seguem as regras próprias desse cenário.",
     section("Disponibilidade das mutações negativas"),
     "As mutações negativas espontâneas exigem o 2º Ciclo da campanha. O período abaixo é o período geológico mínimo; pré-requisitos usam a ancestralidade da própria linhagem. Na Arena, a cronologia é ignorada, mas essas mutações continuam fora do construtor inicial e seus pré-requisitos permanecem válidos.",
