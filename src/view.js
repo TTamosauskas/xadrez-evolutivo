@@ -34,9 +34,9 @@ import {
   domesticPlacementTargets,
   socialDefenseTargets,
   ovoviviparousPlacementTargets,
-  canParasitize,
+  actionsForPiece,
+  pieceActionState,
 } from "./moves.js";
-import { canBud, canPupate } from "./reproduction-traits.js";
 const element = (doc, tag, text, cls) => {
   const e = doc.createElement(tag);
   if (text !== undefined) e.textContent = text;
@@ -247,6 +247,7 @@ export function render(
         differentialTraits = p
           ? (p.traits ?? []).filter((trait) => !established.has(trait))
           : [],
+        actionState = p ? pieceActionState(state, p) : null,
         pathogenAgents = pathogenAgentAt(state, r, c),
         egg = eggAt(state, r, c),
         plantSeed = plantSeedAt(state, r, c),
@@ -341,7 +342,7 @@ export function render(
           : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${reproductionTarget ? ", reprodução disponível" : ""}${captureTarget ? ", alvo de captura" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
+          : `${coord(r, c)}, ${terrain}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${reproductionTarget ? ", reprodução disponível" : ""}${captureTarget ? ", alvo de captura" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
       const accessibleLabel = fragment
         ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
         : label;
@@ -427,7 +428,7 @@ export function render(
         }
 
         const statusBadges = [];
-        if (senescent(state, p)) statusBadges.push("⌛");
+        if (actionState?.waiting) statusBadges.push("⏳");
         if (p.venom) statusBadges.push("☠");
         if (p.seeds) statusBadges.push(`${p.seeds}🌰`);
         const viviparousCarried = (p.pregnancies ?? [])
@@ -479,9 +480,13 @@ export function render(
     !locked &&
     !busy
   ) {
-    const selfReproduction = targets.some(
-      (target) => target.r === actor.r && target.c === actor.c,
-    );
+    const actorActions = actionsForPiece(state, actor),
+      selfReproduction = actorActions.some(
+        (action) =>
+          action.type === "MOVE" &&
+          action.r === actor.r &&
+          action.c === actor.c,
+      );
     if (
       selfReproduction &&
       (!has(actor, "Reprodução Sexuada") || mates.length === 0)
@@ -492,21 +497,21 @@ export function render(
       button.dataset.pieceId = actor.id;
       pieceActions.append(button);
     }
-    if (canBud(state, actor)) {
+    if (actorActions.some((action) => action.type === "BUD")) {
       const button = make("button", "Brotar", "piece-action");
       button.type = "button";
       button.dataset.pieceAction = "bud";
       button.dataset.pieceId = actor.id;
       pieceActions.append(button);
     }
-    if (canPupate(state, actor)) {
+    if (actorActions.some((action) => action.type === "PUPATE")) {
       const button = make("button", "Metamorfosear", "piece-action");
       button.type = "button";
       button.dataset.pieceAction = "pupate";
       button.dataset.pieceId = actor.id;
       pieceActions.append(button);
     }
-    if (canParasitize(state, actor)) {
+    if (actorActions.some((action) => action.type === "PARASITIZE")) {
       const button = make("button", "Parasitismo", "piece-action");
       button.type = "button";
       button.dataset.pieceAction = "parasitize";
@@ -580,8 +585,20 @@ export function render(
     for (const trait of actor.somaticMutations ?? [])
       if (TRAITS[trait]) disadvantages.push(traitRow(trait, true));
 
-    const statusDetails = [];
-    if (juvenile(state, actor))
+    const statusDetails = [],
+      actorActionState = pieceActionState(state, actor);
+    if (actorActionState.waiting)
+      statusDetails.push(
+        make(
+          "p",
+          `⏳ ${actorActionState.reason}${actorActionState.remainingRounds ? ` · ${actorActionState.remainingRounds} rodada(s) restante(s)` : ""}.`,
+          "selected-status",
+        ),
+      );
+    if (
+      juvenile(state, actor) &&
+      actorActionState.reason !== "Maturidade sexual"
+    )
       statusDetails.push(
         make(
           "p",
@@ -589,15 +606,18 @@ export function render(
           "selected-status",
         ),
       );
-    else if (senescent(state, actor))
+    if (senescent(state, actor))
       statusDetails.push(
         make(
           "p",
-          `⌛ Senescente · idade ${pieceAge(state, actor)} rodada(s) · risco natural ${Math.round(naturalDeathChance(state, actor) * 100)}% por rodada.`,
+          `Senescente · idade ${pieceAge(state, actor)} rodada(s) · risco natural ${Math.round(naturalDeathChance(state, actor) * 100)}% por rodada.`,
           "selected-status",
         ),
       );
-    else if ((actor.nextReproductionRound ?? 0) > currentRound)
+    if (
+      (actor.nextReproductionRound ?? 0) > currentRound &&
+      actorActionState.reason !== "Recuperação reprodutiva"
+    )
       statusDetails.push(
         make(
           "p",
