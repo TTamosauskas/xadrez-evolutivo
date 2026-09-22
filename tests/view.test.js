@@ -886,16 +886,13 @@ test("selected sexual pieces mark partners green and attack targets red", () => 
     enemyCell = d.querySelector(
       `[data-r="${enemy.r}"][data-c="${enemy.c}"]`,
     ),
-    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
-    labels = [...d.querySelectorAll("#piece-actions button")].map(
-      (button) => button.textContent,
-    );
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
 
   assert.ok(parentCell.classList.contains("vivification-target"));
   assert.ok(mateCell.classList.contains("partner"));
   assert.ok(enemyCell.classList.contains("attack-target"));
   assert.equal(d.getElementById("piece-actions"), null);
-  assert.match(parentCell.title, /reprodução disponível/);
+  assert.match(parentCell.title, /vivificação disponível: Reprodução/);
   assert.match(mateCell.title, /parceiro disponível/);
   assert.match(enemyCell.title, /alvo de ataque/);
   assert.match(
