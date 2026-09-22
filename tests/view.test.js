@@ -496,12 +496,12 @@ test("selected panel inspects either side and explains only that piece traits", 
   assert.match(selected.textContent, /🧬 Resistência/);
   assert.match(
     selected.textContent,
-    /reduz em 75% a mortalidade individual causada por patógenos de pressão populacional/,
+    /Impede infecção ecológica e reduz em 75% a mortalidade patogênica populacional/,
   );
   assert.match(selected.textContent, /❤️ Reprodução Sexuada/);
   assert.match(
     selected.textContent,
-    /recebe um alelo de cada progenitor em cada locus/,
+    /Pode cruzar com parceiro compatível e recombinar alelos/,
   );
   assert.equal(d.getElementById("traits"), null);
   assert.equal(d.querySelectorAll(".cell.legal").length, 0);
