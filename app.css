@@ -253,7 +253,14 @@ main {
   z-index: 4;
   pointer-events: none;
 }
-.cell.capture-target::after {
+.cell.legal.reproduction-target::after {
+  width: 84%;
+  border: 4px solid #5bd66c;
+  border-radius: 50%;
+  background: transparent;
+  box-sizing: border-box;
+}
+.cell.legal.capture-target::after {
   width: 84%;
   border: 4px solid #d54242;
   border-radius: 50%;

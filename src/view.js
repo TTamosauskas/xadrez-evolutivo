@@ -19,9 +19,6 @@ import {
   geologicalStage,
   isNegativeTrait,
   stageProgress,
-  ENERGY_BRANCH_TRAITS,
-  PLANT_DERIVED_TRAITS,
-  PLANT_INCOMPATIBLE_TRAITS,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
 import { pathogenAgentAt } from "./disease.js";
@@ -59,51 +56,20 @@ export function traitFrameSlots(count) {
   );
 }
 
-const expressesTrait = (piece, trait) =>
-  (piece?.traits ?? []).includes(trait);
-
-export function traitComparisonGroup(pieces, trait) {
-  if (ENERGY_BRANCH_TRAITS.has(trait)) {
-    const siblingBranches = [...ENERGY_BRANCH_TRAITS].filter(
-      (candidate) => candidate !== trait,
-    );
-    return pieces.filter(
-      (piece) =>
-        !siblingBranches.some((candidate) =>
-          expressesTrait(piece, candidate),
-        ),
-    );
-  }
-  if (PLANT_DERIVED_TRAITS.has(trait))
-    return pieces.filter((piece) =>
-      expressesTrait(piece, "Fotossíntese"),
-    );
-  if (PLANT_INCOMPATIBLE_TRAITS.has(trait))
-    return pieces.filter(
-      (piece) => !expressesTrait(piece, "Fotossíntese"),
-    );
-  return pieces;
-}
-
 export function establishedTraits(state) {
   const pieces = (state?.pieces ?? []).filter(
-      (piece) => piece && ["blue", "amber"].includes(piece.owner),
-    ),
-    owners = new Set(pieces.map((piece) => piece.owner)),
-    established = new Set();
-  if (!owners.has("blue") || !owners.has("amber") || pieces.length < 2)
-    return established;
+    (piece) => piece && ["blue", "amber"].includes(piece.owner),
+  );
+  if (pieces.length < 2) return new Set();
 
-  for (const trait of Object.keys(TRAITS)) {
-    const group = traitComparisonGroup(pieces, trait);
-    if (!group.length) continue;
-    if (!ENERGY_BRANCH_TRAITS.has(trait) && group.length < 2) continue;
-    if (group.every((piece) => expressesTrait(piece, trait)))
-      established.add(trait);
-  }
+  const established = new Set(
+    (pieces[0].traits ?? []).filter((trait) => TRAITS[trait]),
+  );
+  for (const piece of pieces)
+    for (const trait of [...established])
+      if (!(piece.traits ?? []).includes(trait)) established.delete(trait);
   return established;
 }
-
 
 export function traitFrameEntries(piece, established = new Set()) {
   const entries = [
@@ -285,9 +251,10 @@ export function render(
         plantSeed = plantSeedAt(state, r, c),
         fragment = fragmentAt(state, r, c),
         originHere = !!origin && origin.r === r && origin.c === c,
-        target = targets.some((t) => t.r === r && t.c === c),
-        captureTarget = targets.some(
-          (t) => t.r === r && t.c === c && t.capture,
+        targetEntry = targets.find((t) => t.r === r && t.c === c),
+        target = !!targetEntry,
+        captureTarget = !!(
+          targetEntry?.capture || targetEntry?.eggCapture
         ),
         manipulate = manipulation.some((t) => t.r === r && t.c === c),
         build = construction.some((t) => t.r === r && t.c === c),
@@ -295,6 +262,34 @@ export function render(
         naturalBarrier = state.naturalBarriers.includes(square(r, c)),
         barrier = builtBarrier || naturalBarrier,
         partner = mates.some((m) => m.id === p?.id),
+        fertileReproductionTarget = !!(
+          actor &&
+          targetEntry &&
+          !captureTarget &&
+          reproductionReady(state, actor) &&
+          has(actor, "Respiração anaeróbia") &&
+          (!has(actor, "Carnívoro") ||
+            has(actor, "Onívoro") ||
+            has(actor, "Mixotrofia")) &&
+          state.board[square(r, c)] === "fertile"
+        ),
+        scavengingReproductionTarget = !!(
+          actor &&
+          targetEntry &&
+          !captureTarget &&
+          reproductionReady(state, actor) &&
+          (has(actor, "Necrófago") ||
+            has(actor, "Onívoro Oportunista")) &&
+          (state.deathSites.some((site) => site.cell === square(r, c)) ||
+            state.fertileTraces.some((trace) => trace.cell === square(r, c)))
+        ),
+        reproductionTarget = !!(
+          targetEntry &&
+          !captureTarget &&
+          (targetEntry.stay ||
+            fertileReproductionTarget ||
+            scavengingReproductionTarget)
+        ),
         nurse = nursing.some((child) => child.id === p?.id),
         eggPlacementTarget = eggPlacement.some(
           (target) => target.r === r && target.c === c,
@@ -323,7 +318,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${captureTarget ? " capture-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${domainClass}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${reproductionTarget ? " reproduction-target" : ""}${captureTarget ? " capture-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${domainClass}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -344,7 +339,7 @@ export function render(
           : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${captureTarget ? ", alvo de captura" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
+          : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${reproductionTarget ? ", reprodução disponível" : ""}${captureTarget ? ", alvo de captura" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
       const accessibleLabel = fragment
         ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
         : label;
@@ -717,7 +712,7 @@ export function render(
           "ancestry-chip legacy-chip",
         );
         chip.title = established.has(trait)
-          ? "Característica estabelecida no seu grupo evolutivo de comparação; permanece mecanicamente ativa."
+          ? "Expressa atualmente em todas as peças vivas do tabuleiro; permanece mecanicamente ativa."
           : "Presente na história evolutiva desta linhagem, embora fora do fenótipo atual.";
         legacyList.append(chip);
       }
