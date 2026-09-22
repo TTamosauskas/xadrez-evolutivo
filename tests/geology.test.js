@@ -238,10 +238,23 @@ test("Silurian is a stable coast and Devonian starts Conway terrain evolution", 
     s.board.filter((terrain) => terrain === "hostile").length,
     7,
   );
+  const landFertility = Array.from({ length: 8 }, (_, r) =>
+    Array.from({ length: 4 }, (_, offset) => ({
+      r,
+      c: 4 + offset,
+      terrain: s.board[r * 8 + 4 + offset],
+    })),
+  )
+    .flat()
+    .filter(({ terrain }) => terrain === "fertile");
   assert.ok(
-    Array.from({ length: 8 }, (_, r) =>
-      Array.from({ length: 4 }, (_, offset) => s.board[r * 8 + 4 + offset]),
-    ).flat().every((terrain) => terrain !== "fertile"),
+    landFertility.every(({ r, c }) =>
+      s.pieces.some(
+        (piece) =>
+          Math.max(Math.abs(piece.r - r), Math.abs(piece.c - c)) <= 1,
+      ),
+    ),
+    "Silurian land fertility must stay confined to founder refuges",
   );
   assert.ok(s.naturalBarriers.every((cell) => cell % 8 >= 4));
 
