@@ -399,7 +399,7 @@ export function render(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${dysfunctionalResting(state, p) ? " dysfunctional-resting" : ""}`,
+            `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
           ),
         );
 
@@ -428,7 +428,6 @@ export function render(
         }
 
         const statusBadges = [];
-        if (actionState?.waiting) statusBadges.push("⏳");
         if (p.venom) statusBadges.push("☠");
         if (p.seeds) statusBadges.push(`${p.seeds}🌰`);
         const viviparousCarried = (p.pregnancies ?? [])
@@ -532,7 +531,8 @@ export function render(
         ? "Encerrar movimento"
         : "Passar vez";
   if (actor) {
-    const ownerName = actor.owner === "blue" ? "Branco" : "Preto",
+    const actorActionState = pieceActionState(state, actor),
+      ownerName = actor.owner === "blue" ? "Branco" : "Preto",
       heading = make("div", undefined, "selected-piece-heading"),
       symbol = make(
         "span",
@@ -543,6 +543,12 @@ export function render(
       symbol,
       doc.createTextNode(` ${PIECES[actor.rank]} (${ownerName})`),
     );
+    if (actorActionState.waiting) {
+      const waitBadge = make("span", "⏳", "selected-wait-badge");
+      waitBadge.title = actorActionState.reason;
+      waitBadge.setAttribute("aria-label", `Em espera: ${actorActionState.reason}`);
+      heading.append(waitBadge);
+    }
 
     const traitRow = (trait, somatic = false) => {
         const row = make(
@@ -585,13 +591,12 @@ export function render(
     for (const trait of actor.somaticMutations ?? [])
       if (TRAITS[trait]) disadvantages.push(traitRow(trait, true));
 
-    const statusDetails = [],
-      actorActionState = pieceActionState(state, actor);
+    const statusDetails = [];
     if (actorActionState.waiting)
       statusDetails.push(
         make(
           "p",
-          `⏳ ${actorActionState.reason}${actorActionState.remainingRounds ? ` · ${actorActionState.remainingRounds} rodada(s) restante(s)` : ""}.`,
+          `${actorActionState.reason}${actorActionState.remainingRounds ? ` · ${actorActionState.remainingRounds} rodada(s) restante(s)` : ""}.`,
           "selected-status",
         ),
       );
