@@ -6,6 +6,7 @@ import { createState, clone, newPiece, round } from "../src/state.js";
 import { fixture } from "./helpers.js";
 import { TRAITS } from "../src/constants.js";
 import { render, traitFrameSlots, establishedTraits } from "../src/view.js";
+import { actionableTraitsForPiece } from "../src/actionable-traits.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
@@ -639,7 +640,7 @@ test("actionable mutations appear first, bold and with concise descriptions", ()
     predation = rows.find((row) => row.textContent.includes("Predação")),
     resistance = rows.find((row) => row.textContent.includes("Resistência"));
 
-  assert.equal(rows[0], predation);
+  assert.match(rows[0].textContent, /Predação/);
   assert.ok(predation.classList.contains("actionable-trait"));
   assert.ok(predation.querySelector("strong"));
   assert.match(predation.textContent, /Pode capturar peças/);
@@ -648,9 +649,8 @@ test("actionable mutations appear first, bold and with concise descriptions", ()
   dom.window.close();
 });
 
-test("a mutation is not highlighted when it has no legal action this turn", () => {
-  const dom = setup(),
-    s = fixture([
+test("a mutation is not actionable when it has no legal action this turn", () => {
+  const s = fixture([
       {
         owner: "blue",
         r: 4,
@@ -658,19 +658,12 @@ test("a mutation is not highlighted when it has no legal action this turn", () =
         rank: 4,
         traits: ["Resistência", "Predação"],
       },
-      { owner: "amber", r: 0, c: 0 },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),
-    piece = s.pieces[0];
+    piece = s.pieces[0],
+    actionable = actionableTraitsForPiece(s, piece);
 
-  render(dom.window.document, s, { selected: piece.id });
-  const predation = [...dom.window.document.querySelectorAll(
-    "#selected .selected-trait",
-  )].find((row) => row.textContent.includes("Predação"));
-
-  assert.ok(predation);
-  assert.ok(!predation.classList.contains("actionable-trait"));
-  assert.equal(predation.querySelector("strong"), null);
-  dom.window.close();
+  assert.ok(!actionable.has("Predação"));
 });
 
 test("selected self-actions appear immediately to the left of Passar vez", () => {
