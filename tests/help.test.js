@@ -124,7 +124,7 @@ test("Como Jogar does not retain obsolete mutation icon-label pairs", () => {
     "🍁 Haustório",
     "🐙 Mimetismo",
     "🦂 Ovovivíparo",
-    "Cuidado Parental",
+    "🪺 Cuidado Parental",
   ])
     assert.equal(text.includes(obsolete), false, obsolete);
 });
