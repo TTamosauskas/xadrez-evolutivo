@@ -6,6 +6,7 @@ import { createState, clone, newPiece, round } from "../src/state.js";
 import { fixture } from "./helpers.js";
 import { TRAITS } from "../src/constants.js";
 import { render, traitFrameSlots, establishedTraits } from "../src/view.js";
+import { actionableTraitsForPiece } from "../src/actionable-traits.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
@@ -328,7 +329,7 @@ test("globally established inherited traits move to genetic legacy and return wh
     s = fixture([
       { owner: "blue", r: 4, c: 4 },
       { owner: "blue", r: 4, c: 5 },
-      { owner: "amber", r: 0, c: 0 },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),
     selectedPiece = s.pieces[0],
     ally = s.pieces[1],
@@ -496,12 +497,12 @@ test("selected panel inspects either side and explains only that piece traits", 
   assert.match(selected.textContent, /🧬 Resistência/);
   assert.match(
     selected.textContent,
-    /reduz em 75% a mortalidade individual causada por patógenos de pressão populacional/,
+    /Impede infecção ecológica e reduz em 75% a mortalidade patogênica populacional/,
   );
   assert.match(selected.textContent, /❤️ Reprodução Sexuada/);
   assert.match(
     selected.textContent,
-    /recebe um alelo de cada progenitor em cada locus/,
+    /Pode cruzar com parceiro compatível e recombinar alelos/,
   );
   assert.equal(d.getElementById("traits"), null);
   assert.equal(d.querySelectorAll(".cell.legal").length, 0);
@@ -617,6 +618,60 @@ test("legacy toggle is omitted when there are no historical or established trait
     null,
   );
   dom.window.close();
+});
+
+test("actionable mutations appear first, bold and with concise descriptions", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Resistência", "Predação"],
+      },
+      { owner: "amber", r: 3, c: 4, traits: ["Fotossíntese"] },
+    ]),
+    piece = s.pieces[0];
+
+  render(dom.window.document, s, { selected: piece.id });
+  const selected = dom.window.document.getElementById("selected"),
+    rows = [...selected.querySelectorAll(".selected-trait")],
+    predation = rows.find((row) => row.textContent.includes("Predação")),
+    resistance = rows.find((row) => row.textContent.includes("Resistência"));
+
+  const firstPassiveIndex = rows.findIndex(
+    (row) => !row.classList.contains("actionable-trait"),
+  );
+  assert.ok(predation.classList.contains("actionable-trait"));
+  assert.ok(predation.querySelector("strong"));
+  assert.match(predation.textContent, /Pode capturar peças/);
+  assert.ok(!resistance.classList.contains("actionable-trait"));
+  assert.equal(resistance.querySelector("strong"), null);
+  assert.ok(rows.indexOf(predation) < rows.indexOf(resistance));
+  assert.ok(
+    rows
+      .slice(0, firstPassiveIndex)
+      .every((row) => row.classList.contains("actionable-trait")),
+  );
+  dom.window.close();
+});
+
+test("a mutation is not actionable when it has no legal action this turn", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Resistência", "Predação"],
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
+    ]),
+    piece = s.pieces[0],
+    actionable = actionableTraitsForPiece(s, piece);
+
+  assert.ok(!actionable.has("Predação"));
 });
 
 test("selected self-actions appear immediately to the left of Passar vez", () => {

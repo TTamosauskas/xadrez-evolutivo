@@ -23,6 +23,8 @@ import {
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
 import { pathogenAgentAt } from "./disease.js";
+import { traitSummary } from "./trait-presentation.js";
+import { actionableTraitsForPiece } from "./actionable-traits.js";
 import {
   movesFor,
   partnersFor,
@@ -549,13 +551,20 @@ export function render(
       heading.append(waitBadge);
     }
 
-    const traitRow = (trait, somatic = false) => {
-        const row = make(
+    const actionableTraits = actionableTraitsForPiece(state, actor),
+      traitOrder = (a, b) =>
+        Number(actionableTraits.has(b)) -
+          Number(actionableTraits.has(a)) ||
+        (TRAIT_DISPLAY_ORDER.get(a) ?? Number.MAX_SAFE_INTEGER) -
+          (TRAIT_DISPLAY_ORDER.get(b) ?? Number.MAX_SAFE_INTEGER),
+      traitRow = (trait, somatic = false) => {
+        const actionable = !somatic && actionableTraits.has(trait),
+          row = make(
             "div",
             undefined,
-            `trait selected-trait${somatic ? " somatic-trait" : ""}`,
+            `trait selected-trait${actionable ? " actionable-trait" : ""}${somatic ? " somatic-trait" : ""}`,
           ),
-          title = make("strong");
+          title = make(actionable ? "strong" : "span");
         title.append(
           make("span", TRAITS[trait][0], ""),
           doc.createTextNode(` ${trait}${somatic ? " · somática" : ""}`),
@@ -565,8 +574,8 @@ export function render(
           make(
             "small",
             somatic
-              ? `${TRAITS[trait][1]} Alteração induzida por exposição patogênica e ausente da herança da prole.`
-              : TRAITS[trait][1],
+              ? `${traitSummary(trait, TRAITS[trait][1])} Alteração somática; não é herdada.`
+              : traitSummary(trait, TRAITS[trait][1]),
           ),
         );
         return row;
@@ -578,6 +587,7 @@ export function render(
             !established.has(trait) &&
             !isNegativeTrait(trait),
         )
+        .sort(traitOrder)
         .map((trait) => traitRow(trait)),
       disadvantages = (actor.traits ?? [])
         .filter(
@@ -586,6 +596,7 @@ export function render(
             !established.has(trait) &&
             isNegativeTrait(trait),
         )
+        .sort(traitOrder)
         .map((trait) => traitRow(trait));
     for (const trait of actor.somaticMutations ?? [])
       if (TRAITS[trait]) disadvantages.push(traitRow(trait, true));
