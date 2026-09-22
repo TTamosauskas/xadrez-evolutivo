@@ -466,9 +466,53 @@ export function render(
     }
   const focused = doc.activeElement?.closest?.(".cell");
   const focusKey = focused ? [focused.dataset.r, focused.dataset.c] : null;
-  $("board").replaceChildren(board);
+  const boardElement = $("board");
+  boardElement.replaceChildren(board);
+
+  const legend = $("board-legend"),
+    legendEntries = [
+      boardElement.querySelector(".cell.fertile:not(.barrier)")
+        ? { marker: "🟩", label: "Casa fértil" }
+        : null,
+      boardElement.querySelector(".cell.hostile:not(.barrier)")
+        ? { marker: "🟥", label: "Casa hostil" }
+        : null,
+      boardElement.querySelector(".cell.barrier")
+        ? { marker: "🟫", label: "Barreira" }
+        : null,
+      boardElement.querySelector(".cell.decomposition")
+        ? { marker: "☠️", label: "Decomposição" }
+        : null,
+      boardElement.querySelector(
+        ".cell.reproduction-target, .cell.partner",
+      )
+        ? {
+            label: "Reprodução",
+            markerClass: "legend-action-ring reproduction",
+          }
+        : null,
+      boardElement.querySelector(".cell.capture-target")
+        ? {
+            label: "Captura",
+            markerClass: "legend-action-ring capture",
+          }
+        : null,
+    ].filter(Boolean);
+  legend.replaceChildren();
+  for (const entry of legendEntries) {
+    const item = make("span", undefined, "legend-item"),
+      marker = make(
+        "span",
+        entry.marker ?? undefined,
+        entry.markerClass ?? "legend-symbol",
+      );
+    marker.setAttribute("aria-hidden", "true");
+    item.append(marker, doc.createTextNode(entry.label));
+    legend.append(item);
+  }
+
   if (focusKey)
-    $("board")
+    boardElement
       .querySelector(`[data-r="${focusKey[0]}"][data-c="${focusKey[1]}"]`)
       ?.focus({ preventScroll: true });
   const pieceActions = $("piece-actions");
