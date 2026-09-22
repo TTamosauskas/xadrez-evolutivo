@@ -459,6 +459,7 @@ export function partnersFor(state, p) {
   if (
     !reproductionReady(state, p) ||
     !has(p, "Reprodução Sexuada") ||
+    resting(state, p) ||
     dormant(state, p)
   )
     return [];
@@ -478,6 +479,7 @@ export function partnersFor(state, p) {
       x.owner !== p.owner ||
       !has(x, "Reprodução Sexuada") ||
       !reproductionReady(state, x) ||
+      resting(state, x) ||
       dormant(state, x) ||
       (!has(p, "Promiscuidade") && distance(p, x) !== 1) ||
       !sexualReproductionResource(state, p, x)
@@ -680,9 +682,12 @@ export function legalActions(state) {
         r: t.r,
         c: t.c,
       })),
-      ...(has(p, "Acasalamento Preferencial")
-        ? partnersFor(state, p).slice(0, 1)
-        : partnersFor(state, p)
+      ...(
+        state.chain && state.chain !== p.id
+          ? []
+          : has(p, "Acasalamento Preferencial")
+            ? partnersFor(state, p).slice(0, 1)
+            : partnersFor(state, p)
       ).map((mate) => ({
         type: "PARTNER",
         parentId: p.id,
