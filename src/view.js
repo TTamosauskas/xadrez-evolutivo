@@ -175,7 +175,7 @@ export function render(
       state.notices.length > 0 ||
       mode === "auto" ||
       (mode === "single" && state.current === "amber"),
-    universal = universalTraits(state);
+    established = establishedTraits(state);
   const targets =
     state.phase === "move" && actor && actor.owner === state.current
       ? movesFor(state, actor)
