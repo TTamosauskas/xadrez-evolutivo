@@ -757,7 +757,7 @@ test("senescent pieces use only italic lifecycle styling and age status", () => 
   dom.window.close();
 });
 
-test("pieces with no available action show an hourglass and selected wait reason", () => {
+test("pieces with no available action fade on board and show wait badge when selected", () => {
   const dom = setup(),
     s = createState(43),
     piece = s.pieces.find((candidate) => candidate.owner === "blue");
@@ -770,11 +770,21 @@ test("pieces with no available action show an hourglass and selected wait reason
   const d = dom.window.document,
     cell = d.querySelector(
       `[data-r="${piece.r}"][data-c="${piece.c}"]`,
-    );
-  assert.match(cell.querySelector(".piece-status").textContent, /⏳/);
+    ),
+    boardPiece = cell.querySelector(".piece"),
+    selected = d.getElementById("selected"),
+    waitBadge = selected.querySelector(".selected-wait-badge"),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    waitRule = css.match(/\.cell \.piece\.waiting\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.ok(boardPiece.classList.contains("waiting"));
+  assert.doesNotMatch(cell.textContent, /⏳/);
   assert.match(cell.title, /aguardando: Metamorfose/);
-  assert.match(d.getElementById("selected").textContent, /⏳ Metamorfose/);
-  assert.match(d.getElementById("selected").textContent, /2 rodada/);
+  assert.equal(waitBadge?.textContent, "⏳");
+  assert.equal(waitBadge?.title, "Metamorfose");
+  assert.match(selected.textContent, /Metamorfose/);
+  assert.match(selected.textContent, /2 rodada/);
+  assert.match(waitRule, /opacity:\s*0\.48/);
   dom.window.close();
 });
 
@@ -911,7 +921,7 @@ test("renders barriers, build targets and construction emoji icons", () => {
   dom.window.close();
 });
 
-test("dysfunctional rest fades the piece without adding a sleep badge", () => {
+test("dysfunctional rest uses the shared waiting fade and selected badge", () => {
   const dom = setup(),
     s = createState(23),
     p = s.pieces[0];
@@ -920,14 +930,21 @@ test("dysfunctional rest fades the piece without adding a sleep badge", () => {
 
   render(dom.window.document, s, { selected: p.id });
   const d = dom.window.document,
-    piece = d.querySelector(
-      `[data-r="${p.r}"][data-c="${p.c}"] .piece`,
+    cell = d.querySelector(
+      `[data-r="${p.r}"][data-c="${p.c}"]`,
     ),
-    badges = piece.parentElement.querySelector(".trait-frame");
-  assert.ok(piece.classList.contains("dysfunctional-resting"));
-  assert.ok(!badges.textContent.includes("💤"));
+    piece = cell.querySelector(".piece"),
+    badges = cell.querySelector(".trait-frame"),
+    selected = d.getElementById("selected");
+  assert.ok(piece.classList.contains("waiting"));
+  assert.doesNotMatch(cell.textContent, /⏳|💤/);
   assert.ok(badges.textContent.includes("❌"));
-  assert.match(d.getElementById("selected").textContent, /❌ Mutação Disfuncional/);
+  assert.equal(
+    selected.querySelector(".selected-wait-badge")?.textContent,
+    "⏳",
+  );
+  assert.match(selected.textContent, /Descanso por Mutação Disfuncional/);
+  assert.match(selected.textContent, /❌ Mutação Disfuncional/);
   dom.window.close();
 });
 
