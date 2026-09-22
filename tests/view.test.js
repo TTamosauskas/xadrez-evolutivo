@@ -640,12 +640,20 @@ test("actionable mutations appear first, bold and with concise descriptions", ()
     predation = rows.find((row) => row.textContent.includes("Predação")),
     resistance = rows.find((row) => row.textContent.includes("Resistência"));
 
-  assert.match(rows[0].textContent, /Predação/);
+  const firstPassiveIndex = rows.findIndex(
+    (row) => !row.classList.contains("actionable-trait"),
+  );
   assert.ok(predation.classList.contains("actionable-trait"));
   assert.ok(predation.querySelector("strong"));
   assert.match(predation.textContent, /Pode capturar peças/);
   assert.ok(!resistance.classList.contains("actionable-trait"));
   assert.equal(resistance.querySelector("strong"), null);
+  assert.ok(rows.indexOf(predation) < rows.indexOf(resistance));
+  assert.ok(
+    rows
+      .slice(0, firstPassiveIndex)
+      .every((row) => row.classList.contains("actionable-trait")),
+  );
   dom.window.close();
 });
 
