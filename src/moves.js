@@ -627,6 +627,158 @@ export function canParasitize(state, p) {
   return canFertilize || canAttackHabitat;
 }
 
+function pieceEvaluationState(state, piece) {
+  if (
+    state.phase === "move" &&
+    state.current === piece.owner &&
+    !state.chain
+  )
+    return state;
+  return {
+    ...state,
+    current: piece.owner,
+    phase: "move",
+    chain: null,
+  };
+}
+
+export function actionsForPiece(
+  state,
+  piece,
+  { ignoreTurn = false } = {},
+) {
+  if (
+    !piece ||
+    state.result ||
+    !state.pieces.some((candidate) => candidate.id === piece.id)
+  )
+    return [];
+  if (
+    !ignoreTurn &&
+    (state.phase !== "move" || piece.owner !== state.current)
+  )
+    return [];
+
+  const source = ignoreTurn ? pieceEvaluationState(state, piece) : state;
+  if (ecologicalDomainBlocked(source, piece.owner, piece.r, piece.c))
+    return [];
+
+  const mates =
+    source.chain && source.chain !== piece.id
+      ? []
+      : has(piece, "Acasalamento Preferencial")
+        ? partnersFor(source, piece).slice(0, 1)
+        : partnersFor(source, piece);
+
+  return [
+    ...movesFor(source, piece).map((target) => ({
+      type: "MOVE",
+      id: piece.id,
+      r: target.r,
+      c: target.c,
+    })),
+    ...mates.map((mate) => ({
+      type: "PARTNER",
+      parentId: piece.id,
+      id: mate.id,
+    })),
+    ...nursingTargets(source, piece).map((child) => ({
+      type: "NURSE",
+      id: piece.id,
+      childId: child.id,
+    })),
+    ...ovoviviparousPlacementTargets(source, piece).map((target) => ({
+      type: "LAY_OVOVIVIPAROUS",
+      id: piece.id,
+      r: target.r,
+      c: target.c,
+    })),
+    ...(canParasitize(source, piece)
+      ? [{ type: "PARASITIZE", id: piece.id }]
+      : []),
+    ...(canBud(source, piece) ? [{ type: "BUD", id: piece.id }] : []),
+    ...(canPupate(source, piece) ? [{ type: "PUPATE", id: piece.id }] : []),
+  ];
+}
+
+function actionsAfterPieceChange(state, piece, changes) {
+  const candidate = { ...piece, ...changes };
+  return actionsForPiece(state, candidate, { ignoreTurn: true });
+}
+
+export function pieceActionState(state, piece) {
+  if (!piece || state.result || state.phase === "origin")
+    return { waiting: false, reason: null, remainingRounds: null };
+  const actions = actionsForPiece(state, piece, { ignoreTurn: true });
+  if (actions.length)
+    return { waiting: false, reason: null, remainingRounds: null };
+
+  const currentRound = round(state);
+  if (ecologicalDomainBlocked(state, piece.owner, piece.r, piece.c))
+    return {
+      waiting: true,
+      reason: "Bloqueada por Domínio Ecológico",
+      remainingRounds: null,
+    };
+  if (pupating(state, piece))
+    return {
+      waiting: true,
+      reason: "Metamorfose",
+      remainingRounds: Math.max(1, piece.pupaUntilRound - currentRound),
+    };
+  if (regenerationResting(state, piece))
+    return {
+      waiting: true,
+      reason: "Recuperação por Regeneração",
+      remainingRounds: Math.max(
+        1,
+        piece.regenerationRestThroughRound - currentRound + 1,
+      ),
+    };
+  if (dysfunctionalResting(state, piece))
+    return {
+      waiting: true,
+      reason: "Descanso por Mutação Disfuncional",
+      remainingRounds: null,
+    };
+  if (dormant(state, piece))
+    return {
+      waiting: true,
+      reason: "Dormência em terreno hostil",
+      remainingRounds: null,
+    };
+
+  if (
+    juvenile(state, piece) &&
+    actionsAfterPieceChange(state, piece, {
+      maturesRound: currentRound,
+    }).length
+  )
+    return {
+      waiting: true,
+      reason: "Maturidade sexual",
+      remainingRounds: Math.max(1, piece.maturesRound - currentRound),
+    };
+
+  if (
+    (piece.nextReproductionRound ?? 0) > currentRound &&
+    actionsAfterPieceChange(state, piece, {
+      nextReproductionRound: currentRound,
+    }).length
+  )
+    return {
+      waiting: true,
+      reason: "Recuperação reprodutiva",
+      remainingRounds: piece.nextReproductionRound - currentRound,
+    };
+
+  return {
+    waiting: true,
+    reason: "Sem ação legal disponível",
+    remainingRounds: null,
+  };
+}
+
 export function legalActions(state) {
   if (state.result) return [];
   if (state.phase === "collapse") return [{ type: "DOMAIN_COLLAPSE" }];
@@ -673,46 +825,8 @@ export function legalActions(state) {
       id: piece.id,
     }));
   return state.pieces
-    .filter(
-      (p) =>
-        p.owner === state.current &&
-        !ecologicalDomainBlocked(state, p.owner, p.r, p.c),
-    )
-    .flatMap((p) => [
-      ...movesFor(state, p).map((t) => ({
-        type: "MOVE",
-        id: p.id,
-        r: t.r,
-        c: t.c,
-      })),
-      ...(
-        state.chain && state.chain !== p.id
-          ? []
-          : has(p, "Acasalamento Preferencial")
-            ? partnersFor(state, p).slice(0, 1)
-            : partnersFor(state, p)
-      ).map((mate) => ({
-        type: "PARTNER",
-        parentId: p.id,
-        id: mate.id,
-      })),
-      ...nursingTargets(state, p).map((child) => ({
-        type: "NURSE",
-        id: p.id,
-        childId: child.id,
-      })),
-      ...ovoviviparousPlacementTargets(state, p).map((target) => ({
-        type: "LAY_OVOVIVIPAROUS",
-        id: p.id,
-        r: target.r,
-        c: target.c,
-      })),
-      ...(canParasitize(state, p)
-        ? [{ type: "PARASITIZE", id: p.id }]
-        : []),
-      ...(canBud(state, p) ? [{ type: "BUD", id: p.id }] : []),
-      ...(canPupate(state, p) ? [{ type: "PUPATE", id: p.id }] : []),
-    ]);
+    .filter((piece) => piece.owner === state.current)
+    .flatMap((piece) => actionsForPiece(state, piece));
 }
 export function canWaitForRest(state, owner) {
   return state.pieces.some(
