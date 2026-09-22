@@ -23,7 +23,8 @@ import {
   SOMATIC_NEGATIVE_TRAITS,
 } from "./geology.js";
 import { legacyDiscoveries } from "./discoveries.js";
-export const SAVE_KEY = "xadrez-evolutivo-save-v16";
+export const SAVE_KEY = "xadrez-evolutivo-save-v17";
+export const V16_KEY = "xadrez-evolutivo-save-v16";
 export const V15_KEY = "xadrez-evolutivo-save-v15";
 export const V14_KEY = "xadrez-evolutivo-save-v14";
 export const V13_KEY = "xadrez-evolutivo-save-v13";
@@ -165,8 +166,12 @@ export function deserialize(raw) {
   if (typeof raw !== "string" || raw.length > 2000000)
     throw Error("Arquivo de partida inválido.");
   const data = JSON.parse(raw);
-  if ([16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
+  if ([17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2].includes(data?.version)) {
     const sourceVersion = data.version,
+      migratedEventId = (id) =>
+        sourceVersion <= 16 && id === "insularization"
+          ? "eutrophication"
+          : id,
       legacyV2 = sourceVersion === 2,
       legacyV3 = sourceVersion === 3,
       normalizeProfile = (profile) => {
@@ -244,6 +249,13 @@ export function deserialize(raw) {
         normalizePhotosyntheticRank(profile);
         return profile;
       };
+    if (sourceVersion <= 16) {
+      if (data.event?.id === "insularization") {
+        const definition = EVENTS.find((event) => event.id === "eutrophication");
+        if (definition) data.event = { ...data.event, ...definition };
+      }
+      data.previousEvent = migratedEventId(data.previousEvent);
+    }
     if (sourceVersion < 12) {
       data.scenario = "alternative";
       data.arenaPhase = 0;
@@ -655,6 +667,11 @@ export function deserialize(raw) {
     )
       data.historicalTraits.push("Multicelularismo");
     if (data.discoveries) {
+      data.discoveries.events = [
+        ...new Set(
+          (data.discoveries.events ?? []).map(migratedEventId),
+        ),
+      ];
       data.discoveries.mutations = [
         ...new Set(
           (data.discoveries.mutations ?? [])
@@ -678,8 +695,10 @@ export function deserialize(raw) {
         ...new Set(
           (data.discoveries.read ?? [])
             .map((key) =>
-              key === "mutations:Construção de Nicho"
-                ? "mutations:Construtor de Nicho"
+              sourceVersion <= 16 && key === "events:insularization"
+                ? "events:eutrophication"
+                : key === "mutations:Construção de Nicho"
+                  ? "mutations:Construtor de Nicho"
                 : key === "mutations:Construtor Avançado"
                   ? "mutations:Antropização"
                   : key === "mutations:Cuidado Parental"
@@ -705,7 +724,9 @@ export function deserialize(raw) {
                   (label) => label !== "Ovos" && label !== "Perda de Ovos",
                 ),
             }
-          : entry,
+          : sourceVersion <= 16 && entry?.title === "🏝️ Insularização"
+            ? { ...entry, title: "⚠️ Eutrofização" }
+            : entry,
       )
       .filter(
         (entry) => entry?.title !== "Novas mutações" || entry.lines.length,
@@ -871,7 +892,7 @@ export function deserialize(raw) {
         );
       }
     }
-    data.version = 16;
+    data.version = 17;
     delete data.nextEventRound;
     return assertState(data);
   }
@@ -939,7 +960,9 @@ export function deserialize(raw) {
   state.nextId = Math.max(0, ...state.pieces.map((p) => p.id)) + 1;
   const oldEvent = data.ecoCycle?.active;
   if (oldEvent) {
-    const def = EVENTS.find((e) => e.id === oldEvent.id);
+    const eventId =
+        oldEvent.id === "insularization" ? "eutrophication" : oldEvent.id,
+      def = EVENTS.find((e) => e.id === eventId);
     if (!def) throw Error("Evento do arquivo antigo incompatível.");
     state.event = {
       ...def,
@@ -962,7 +985,10 @@ export function deserialize(raw) {
       initial: oldEvent.initialFertile ?? 1,
     };
   }
-  state.previousEvent = data.ecoCycle?.previousId ?? null;
+  state.previousEvent =
+    data.ecoCycle?.previousId === "insularization"
+      ? "eutrophication"
+      : data.ecoCycle?.previousId ?? null;
   state.maxGenerationReached = Math.max(
     0,
     ...state.pieces.map((p) => p.generation),
@@ -1056,6 +1082,7 @@ export function save(storage, state) {
 export function load(storage) {
   const raw =
     storage.getItem(SAVE_KEY) ??
+    storage.getItem(V16_KEY) ??
     storage.getItem(V15_KEY) ??
     storage.getItem(V14_KEY) ??
     storage.getItem(V13_KEY) ??

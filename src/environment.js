@@ -953,7 +953,7 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
           if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
       break;
     }
-    case "insularization": {
+    case "eutrophication": {
       const r = 1 + Math.floor(random(state) * 6),
         c = 1 + Math.floor(random(state) * 6);
       markHazard(
@@ -968,7 +968,38 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
       );
       for (const p of [...state.pieces])
         if (event.hazards.includes(square(p.r, p.c)))
-          ctx.kill(p.id, "Insularização");
+          ctx.kill(p.id, "Eutrofização");
+      break;
+    }
+    case "insularization": {
+      const diagonals = [
+          Array.from({ length: 8 }, (_, index) => square(index, index)),
+          Array.from({ length: 8 }, (_, index) => square(index, 7 - index)),
+        ],
+        permanentBarrier = (cell) =>
+          state.barriers.includes(cell) || state.naturalBarriers.includes(cell),
+        freeCount = (diagonal) =>
+          diagonal.filter((cell) => !permanentBarrier(cell)).length,
+        bestFree = Math.max(...diagonals.map(freeCount)),
+        diagonal =
+          pick(
+            state,
+            diagonals.filter((candidate) => freeCount(candidate) === bestFree),
+          ) ?? diagonals[0],
+        freeOpenings = shuffle(
+          state,
+          diagonal.filter((cell) => !permanentBarrier(cell)),
+        ),
+        openings = freeOpenings.slice(0, 2);
+      if (openings.length < 2)
+        openings.push(
+          ...shuffle(
+            state,
+            diagonal.filter((cell) => !openings.includes(cell)),
+          ).slice(0, 2 - openings.length),
+        );
+      event.openings = openings;
+      event.barriers = diagonal.filter((cell) => !openings.includes(cell));
       break;
     }
     case "alluvial-river": {

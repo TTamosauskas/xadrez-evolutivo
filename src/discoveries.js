@@ -49,6 +49,7 @@ const eventRows = [
   ["fertilized", "Ambiente Fertilizado", "Aumento de nutrientes pode elevar a produtividade de um ambiente, embora excessos também possam desequilibrar ecossistemas.", "Nutriente"],
   ["earthquake", "Terremoto", "Terremotos são vibrações produzidas pela liberação súbita de energia na crosta e podem modificar habitats em segundos.", "Sismo"],
   ["abundant-rains", "Chuvas Abundantes", "Chuvas intensas alteram disponibilidade de água, erosão, rios, solos e a distribuição temporária de recursos.", "Chuva"],
+  ["eutrophication", "Eutrofização", "A eutrofização ocorre quando o excesso de nutrientes favorece crescimento biológico intenso e pode reduzir o oxigênio disponível, criando zonas ambientalmente hostis.", "Eutrofização"],
   ["insularization", "Insularização", "O isolamento em ilhas ou fragmentos de habitat restringe dispersão e cria trajetórias evolutivas parcialmente independentes.", "Biogeografia de ilhas"],
   ["alluvial-river", "Rio Aluvial", "Rios transportam e depositam sedimentos e nutrientes, criando planícies aluviais férteis e habitats em constante renovação.", "Planície aluvial"],
 ];

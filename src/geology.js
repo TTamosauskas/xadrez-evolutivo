@@ -212,7 +212,7 @@ export const GEOLOGICAL_STAGES = [
     period: "Triássico",
     required: ["Vivíparo", "Notívago"],
     habitat: { fertile: 12, hostile: 5, standard: true, naturalBarriers: [1, 2], pattern: "open" },
-    events: { drought: 3, desert: 3, volcano: 2, warming: 2, insularization: 2, sea: 1 },
+    events: { drought: 3, desert: 3, volcano: 2, warming: 2, eutrophication: 1, insularization: 1, sea: 1 },
   },
   {
     id: "jurassic",
@@ -222,7 +222,8 @@ export const GEOLOGICAL_STAGES = [
     habitat: { fertile: 18, hostile: 5, standard: true, naturalBarriers: [3, 5], pattern: "dense" },
     events: {
       sea: 3,
-      insularization: 3,
+      eutrophication: 1,
+      insularization: 2,
       "abundant-rains": 2,
       "alluvial-river": 2,
       earthquake: 1,
@@ -236,7 +237,7 @@ export const GEOLOGICAL_STAGES = [
     period: "Cretáceo",
     required: ["Eusocialidade", "Ovífagia"],
     habitat: { fertile: 18, hostile: 6, standard: true, naturalBarriers: [2, 4], pattern: "clusters" },
-    events: { sea: 3, abundance: 2, insularization: 2, meteor: 3, volcano: 1, warming: 2 },
+    events: { sea: 3, abundance: 2, eutrophication: 1, insularization: 1, meteor: 3, volcano: 1, warming: 2 },
   },
   {
     id: "paleogene",
@@ -248,7 +249,8 @@ export const GEOLOGICAL_STAGES = [
       earthquake: 2,
       "alluvial-river": 2,
       "abundant-rains": 2,
-      insularization: 2,
+      eutrophication: 1,
+      insularization: 1,
       abundance: 1,
       warming: 2,
     },

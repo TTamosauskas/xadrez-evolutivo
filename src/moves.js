@@ -7,6 +7,7 @@ import {
   barrierAt,
   builtBarrierAt,
   naturalBarrierAt,
+  eventBarrierAt,
   terrain,
   round,
   juvenile,
@@ -143,6 +144,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       fragment = fragmentAt(state, r, c),
       builtBarrier = builtBarrierAt(state, r, c),
       naturalBarrier = naturalBarrierAt(state, r, c),
+      eventBarrier = eventBarrierAt(state, r, c),
       botanicalPredation =
         victim?.owner !== undefined &&
         victim.owner !== p.owner &&
@@ -171,7 +173,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       return;
     if (builtBarrier && !has(p, "Escavador")) return;
     if (
-      naturalBarrier &&
+      (naturalBarrier || eventBarrier) &&
       !has(p, "Escavador") &&
       !has(p, "Escalador")
     )
@@ -240,6 +242,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         path.push([r, c]);
         const builtBarrier = builtBarrierAt(state, r, c),
           naturalBarrier = naturalBarrierAt(state, r, c),
+          eventBarrier = eventBarrierAt(state, r, c),
           occupied = occupiedTarget(r, c),
           movementAllowed = n <= movementLimit,
           captureAllowed = n <= captureLimit;
@@ -251,7 +254,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           )
             add(r, c, [...path]);
           if (!has(p, "Voo") && !has(p, "Escavador")) break;
-        } else if (naturalBarrier) {
+        } else if (naturalBarrier || eventBarrier) {
           if (
             !captureOnly &&
             movementAllowed &&

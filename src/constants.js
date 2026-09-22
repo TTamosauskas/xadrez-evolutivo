@@ -405,7 +405,8 @@ export const EVENTS = [
   ["fertilized", "🌿", "Ambiente Fertilizado", "Uma casa fértil é adicionada a cada rodada durante 10 rodadas."],
   ["earthquake", "🌎", "Terremoto", "As peças são deslocadas para casas adjacentes no início do evento, que dura 10 rodadas."],
   ["abundant-rains", "🌧️", "Chuvas Abundantes", "Um quadrante inteiro torna-se fértil no início do evento, que dura 10 rodadas."],
-  ["insularization", "🏝️", "Insularização", "Uma linha e uma coluna hostis dividem o tabuleiro durante 10 rodadas."],
+  ["eutrophication", "⚠️", "Eutrofização", "Uma linha e uma coluna hostis atravessam o tabuleiro durante 10 rodadas."],
+  ["insularization", "🏝️", "Insularização", "Uma diagonal de casas Barreira divide o tabuleiro durante 10 rodadas, mantendo apenas duas aberturas aleatórias."],
   ["alluvial-river", "🏞️", "Rio Aluvial", "Uma faixa diagonal larga torna-se fértil no início do evento, que dura 10 rodadas."],
 ].map(([id, icon, name, description]) => ({ id, icon, name, description }));
 export const other = (owner) => (owner === "blue" ? "amber" : "blue");
