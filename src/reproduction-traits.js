@@ -1,4 +1,4 @@
-import { distance, energyBranch, has } from "./constants.js";
+import { distance, energyBranch, has, inside } from "./constants.js";
 import {
   juvenile,
   reproductionReady,
@@ -6,8 +6,20 @@ import {
   random,
   log,
   registerDiscoveries,
+  at,
+  eggAt,
+  plantSeedAt,
+  fragmentAt,
+  barrierAt,
+  terrain,
+  ecologicalDomainBlocked,
 } from "./state.js";
-import { NEGATIVE_TRAITS, traitUnlocked } from "./geology.js";
+import {
+  NEGATIVE_TRAITS,
+  traitUnlocked,
+  currentGeologicalStage,
+  geologicalStage,
+} from "./geology.js";
 import {
   genomeCarriedTraits,
   genomeGainOptions,
@@ -60,17 +72,68 @@ export function paedogenesisReady(state, piece) {
   );
 }
 
+function budCellOpen(state, piece, r, c) {
+  if (
+    !inside(r, c) ||
+    ecologicalDomainBlocked(state, piece.owner, r, c) ||
+    at(state, r, c) ||
+    eggAt(state, r, c) ||
+    plantSeedAt(state, r, c) ||
+    fragmentAt(state, r, c) ||
+    (barrierAt(state, r, c) && !has(piece, "Trepadeira"))
+  )
+    return false;
+  if (
+    !has(piece, "Fotossíntese") &&
+    !has(piece, "Locomoção Terrestre") &&
+    currentGeologicalStage(state).index >= geologicalStage("silurian").index
+  )
+    return terrain(state, r, c) === "fertile";
+  return true;
+}
+
+function budPlacementAvailable(state, piece) {
+  if (has(piece, "Colônia") && piece.colonyId) {
+    const members = state.pieces.filter(
+      (candidate) =>
+        candidate.owner === piece.owner &&
+        candidate.colonyId === piece.colonyId,
+    );
+    for (const member of members)
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          if (!dr && !dc) continue;
+          if (budCellOpen(state, piece, member.r + dr, member.c + dc))
+            return true;
+        }
+    return false;
+  }
+  if (has(piece, "Séssil")) {
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 8; c++)
+        if (budCellOpen(state, piece, r, c)) return true;
+    return false;
+  }
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      if (budCellOpen(state, piece, piece.r + dr, piece.c + dc))
+        return true;
+    }
+  return false;
+}
+
 export function canBud(state, piece) {
   if (
     !piece ||
     !has(piece, "Brotamento") ||
-    piece.budded ||
     !reproductionReady(state, piece) ||
     Number.isInteger(piece.pupaUntilRound)
   )
     return false;
   if (
-    round(state) - (piece.stationarySinceRound ?? piece.bornRound ?? round(state)) <
+    round(state) -
+      (piece.stationarySinceRound ?? piece.bornRound ?? round(state)) <
     BUDDING_STATIONARY_ROUNDS
   )
     return false;
@@ -78,7 +141,7 @@ export function canBud(state, piece) {
     const ready = state.colonyCooldowns?.[piece.colonyId] ?? 0;
     if (round(state) < ready) return false;
   }
-  return true;
+  return budPlacementAvailable(state, piece);
 }
 
 export function canPupate(state, piece) {
