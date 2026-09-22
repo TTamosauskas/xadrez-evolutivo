@@ -983,7 +983,7 @@ summary {
   }
   .mobile-selected-summary {
     display: block;
-    margin: 2px 0 8px;
+    margin: 8px 0 2px;
     padding: 8px 10px;
     border: 1px solid #363e32;
     border-radius: 8px;

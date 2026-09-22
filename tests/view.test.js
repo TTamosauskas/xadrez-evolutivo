@@ -149,7 +149,7 @@ test("menu exposes match log and evolutionary history for consultation", () => {
   dom.window.close();
 });
 
-test("mobile first fold exposes a compact actionable selected-piece summary", () => {
+test("mobile selected-piece summary stays below the board", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -169,6 +169,7 @@ test("mobile first fold exposes a compact actionable selected-piece summary", ()
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
 
   assert.equal(summary.hidden, false);
+  assert.equal(d.getElementById("board").nextElementSibling?.id, "mobile-selected-summary");
   assert.match(summary.textContent, /Rei \(Branco\)/);
   assert.match(summary.textContent, /Predação/);
   assert.ok(summary.querySelector(".mobile-actionable-trait"));
@@ -176,6 +177,21 @@ test("mobile first fold exposes a compact actionable selected-piece summary", ()
   assert.match(css, /#menu-button \.menu-label \{\s*display: none/);
   assert.match(css, /\.event:empty \{\s*display: none/);
   assert.equal(d.querySelector("#menu-button .menu-label")?.textContent, "Menu");
+  dom.window.close();
+});
+
+test("mobile summary says no action is available when nothing is actionable", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
+    ]),
+    opponent = s.pieces[1];
+
+  render(dom.window.document, s, { selected: opponent.id });
+  const summary = dom.window.document.getElementById("mobile-selected-summary");
+
+  assert.match(summary.textContent, /Nenhuma ação disponível\./);
   dom.window.close();
 });
 
