@@ -660,7 +660,10 @@ export function actionsForPiece(
     return [];
 
   const source = ignoreTurn ? pieceEvaluationState(state, piece) : state;
-  if (ecologicalDomainBlocked(source, piece.owner, piece.r, piece.c))
+  if (
+    ecologicalDomainBlocked(source, piece.owner, piece.r, piece.c) ||
+    (source.chain && source.chain !== piece.id)
+  )
     return [];
 
   const mates =
