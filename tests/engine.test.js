@@ -29,7 +29,17 @@ import {
   advanceEcologicalDomain,
   resolveEcologicalCollapse,
 } from "../src/engine.js";
-import { movesFor, partnersFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
+import {
+  movesFor,
+  partnersFor,
+  legalActions,
+  actionsForPiece,
+  pieceActionState,
+  constructionTargets,
+  domesticPlacementTargets,
+  socialDefenseTargets,
+  canParasitize,
+} from "../src/moves.js";
 import {
   SEVERE_EVENT_IDS,
   startEvent,
@@ -724,6 +734,36 @@ test("landing on hostile cell is exempt from a second roll at the same round end
   assert.ok(next.pieces.some((p) => p.id === 2));
   assert.equal(next.pieces.find((p) => p.id === 2).hostileRiskRound, 1);
 });
+test("piece action source matches legal actions and exposes wait reasons", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 1,
+        traits: ["Predação", "Locomoção Primitiva"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0],
+    pieceActions = actionsForPiece(s, piece);
+
+  assert.ok(pieceActions.length > 0);
+  assert.deepEqual(
+    legalActions(s).filter((action) => action.id === piece.id),
+    pieceActions,
+  );
+  assert.equal(pieceActionState(s, piece).waiting, false);
+
+  piece.pupaUntilRound = round(s) + 2;
+  assert.deepEqual(actionsForPiece(s, piece), []);
+  assert.deepEqual(pieceActionState(s, piece), {
+    waiting: true,
+    reason: "Metamorfose",
+    remainingRounds: 2,
+  });
+});
+
 test("pawn bounces at both edges; camouflage blocks distant captures", () => {
   let s = fixture([
     { owner: "blue", r: 0, c: 3 },
