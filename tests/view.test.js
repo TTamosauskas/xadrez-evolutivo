@@ -510,7 +510,7 @@ test("senescent pieces render italic lifecycle styling and age status", () => {
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
   assert.ok(piece.classList.contains("senescent"));
   assert.match(piece.parentElement.title, /senescente, idade 25/);
-  assert.match(piece.parentElement.querySelector(".trait-frame").textContent, /⌛/);
+  assert.match(piece.parentElement.querySelector(".piece-status").textContent, /⌛/);
   assert.match(d.getElementById("selected").textContent, /Senescente · idade 25/);
   assert.match(css, /\.piece\.senescent[\s\S]*font-style:\s*italic/);
   dom.window.close();
