@@ -28,7 +28,7 @@ import {
   advanceEcologicalDomain,
   resolveEcologicalCollapse,
 } from "../src/engine.js";
-import { movesFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
+import { movesFor, partnersFor, legalActions, constructionTargets, domesticPlacementTargets, socialDefenseTargets, canParasitize } from "../src/moves.js";
 import {
   SEVERE_EVENT_IDS,
   startEvent,
@@ -482,7 +482,7 @@ test("sexual partner preserves Multicelularismo and survives save/restore", () =
       r: 4,
       c: 4,
       rank: 3,
-      traits: ["Multicelularismo"],
+      traits: ["Multicelularismo", "Reprodução Sexuada"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -499,6 +499,81 @@ test("sexual partner preserves Multicelularismo and survives save/restore", () =
   assert.ok(children.every((p) => p.traits.includes("Multicelularismo")));
   assert.ok(children.every((p) => juvenile(s, p)));
 });
+test("sexual partners require the trait on both parents and can use the mate's fertile square", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: ["Reprodução Sexuada"],
+    },
+    {
+      owner: "blue",
+      r: 4,
+      c: 5,
+      traits: ["Reprodução Sexuada"],
+    },
+    {
+      owner: "blue",
+      r: 3,
+      c: 4,
+      traits: [],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parent = s.pieces[0],
+    mate = s.pieces[1],
+    nonSexual = s.pieces[2];
+  s.board[square(mate.r, mate.c)] = "fertile";
+  assert.deepEqual(
+    partnersFor(s, parent).map((piece) => piece.id),
+    [mate.id],
+  );
+  assert.ok(!partnersFor(s, parent).some((piece) => piece.id === nonSexual.id));
+
+  s = simulate(s, { type: "PARTNER", parentId: parent.id, id: mate.id });
+  assert.equal(s.board[square(mate.r, mate.c)], "neutral");
+  assert.equal(s.turn, 1);
+  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 3);
+  assertState(s);
+});
+
+test("pure carnivores can use their own fertile square for sexual reproduction", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: ["Carnívoro", "Reprodução Sexuada"],
+    },
+    {
+      owner: "blue",
+      r: 4,
+      c: 5,
+      traits: ["Carnívoro", "Reprodução Sexuada"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parent = s.pieces[0],
+    mate = s.pieces[1];
+  s.board[square(parent.r, parent.c)] = "fertile";
+  assert.ok(
+    !movesFor(s, parent).some(
+      (target) => target.r === parent.r && target.c === parent.c,
+    ),
+  );
+  assert.deepEqual(
+    partnersFor(s, parent).map((piece) => piece.id),
+    [mate.id],
+  );
+
+  s = simulate(s, { type: "PARTNER", parentId: parent.id, id: mate.id });
+  assert.equal(s.board[square(parent.r, parent.c)], "neutral");
+  assert.equal(s.turn, 1);
+  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 2);
+  assertState(s);
+});
+
 test("sexual reproduction keeps fixed energy branches separated without Mixotrofia", () => {
   const s = fixture([
       {
