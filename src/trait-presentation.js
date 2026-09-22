@@ -30,7 +30,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   "Ovulação Induzida": "Reduz em 1 rodada a recuperação reprodutiva.",
   "Respiração anaeróbia": "Permite reproduzir consumindo casa fértil.",
   "Respiração aeróbia": "Reduz em 1 rodada a recuperação respiratória.",
-  Fotossíntese: "Fertiliza casa neutra após 3 rodadas de permanência, quando houver espaço.",
+  Fotossíntese: "Fertiliza casa neutra após 3–6 rodadas imóvel; pressão alta pode suspender.",
   Mixotrofia: "Combina Fotossíntese e Predação.",
   Embriófitas: "Fotossíntese também fertiliza 1 casa neutra adjacente.",
   Haustório: "Pode consumir fotossintético inimigo adjacente sem se mover.",

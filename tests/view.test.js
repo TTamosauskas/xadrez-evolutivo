@@ -674,6 +674,92 @@ test("a mutation is not actionable when it has no legal action this turn", () =>
   assert.ok(!actionable.has("Predação"));
 });
 
+test("stationary photosynthesis is actionable even without an explicit action target", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Fotossíntese", "Embriófitas"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0];
+
+  render(dom.window.document, s, { selected: piece.id });
+  const rows = [...dom.window.document.querySelectorAll(
+      "#selected .selected-trait",
+    )],
+    photosynthesis = rows.find((row) =>
+      row.textContent.includes("Fotossíntese"),
+    ),
+    embryophytes = rows.find((row) =>
+      row.textContent.includes("Embriófitas"),
+    );
+
+  assert.ok(photosynthesis?.classList.contains("actionable-trait"));
+  assert.ok(photosynthesis.querySelector("strong"));
+  assert.match(
+    photosynthesis.textContent,
+    /3–6 rodadas imóvel/,
+  );
+  assert.ok(embryophytes?.classList.contains("actionable-trait"));
+  dom.window.close();
+});
+
+test("stationary preparation makes Brotamento actionable before the button is ready", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Brotamento"],
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
+    ]),
+    piece = s.pieces[0];
+  piece.stationarySinceRound = round(s);
+
+  render(dom.window.document, s, { selected: piece.id });
+  const selected = dom.window.document.getElementById("selected"),
+    budding = [...selected.querySelectorAll(".selected-trait")].find(
+      (row) => row.textContent.includes("Brotamento"),
+    ),
+    actions = [...dom.window.document.querySelectorAll(
+      "#piece-actions button",
+    )].map((button) => button.textContent);
+
+  assert.ok(budding?.classList.contains("actionable-trait"));
+  assert.doesNotMatch(actions.join("|"), /Brotar/);
+  dom.window.close();
+});
+
+test("stationary environmental effects remain actionable while active", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: [
+          "Fotossíntese",
+          "Multicelularismo",
+          "Embriófitas",
+          "Dormência",
+          "Extremófitas",
+        ],
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
+    ]),
+    piece = s.pieces[0];
+  s.board[piece.r * 8 + piece.c] = "hostile";
+
+  const actionable = actionableTraitsForPiece(s, piece);
+  assert.ok(actionable.has("Dormência"));
+  assert.ok(actionable.has("Extremófitas"));
+});
+
 test("selected self-actions appear immediately to the left of Passar vez", () => {
   const dom = setup(),
     s = createState(24),

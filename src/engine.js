@@ -17,6 +17,7 @@ import {
   consumeFertileTerrain,
   restoreAquaticFertility,
   photosynthesisDelayTurns,
+  photosynthesisHasSpace,
   naturalDeathChance,
   pieceAge,
   juvenile,
@@ -426,27 +427,6 @@ function matureExtremophytes(state) {
       `${OWNERS[p.owner]}: 🌴 Extremófitas tornou ${coord(p.r, p.c)} temporariamente fértil.`,
     );
   }
-}
-
-function photosynthesisHasSpace(state, p) {
-  let free = 0;
-  for (let dr = -1; dr <= 1; dr++)
-    for (let dc = -1; dc <= 1; dc++) {
-      if (!dr && !dc) continue;
-      const r = p.r + dr,
-        c = p.c + dc;
-      if (
-        inside(r, c) &&
-        !at(state, r, c) &&
-        !eggAt(state, r, c) &&
-        !plantSeedAt(state, r, c) &&
-        (!barrierAt(state, r, c) || has(p, "Trepadeira"))
-      ) {
-        free++;
-        if (free >= 2) return true;
-      }
-    }
-  return false;
 }
 
 function photosynthesisExtraCell(state, p) {
