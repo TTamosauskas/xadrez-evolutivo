@@ -181,8 +181,8 @@ export function howToPlayLines() {
     `${traitLabel("Multicelularismo")} introduz senescência. Animais multicelulares anteriores a ${traitLabel("Simetria Bilateral")} usam aproximadamente metade da longevidade natural: senescência aos 13 e morte natural certa aos 24. Com Simetria Bilateral, a curva volta ao padrão de senescência aos 25 e morte certa aos 48. Linhagens fotossintéticas mantêm a curva longa.`,
     `Antes de ${traitLabel("Reparo Celular")}, a chance de entrar no ramo de mutações negativas é dobrada. Reparo Celular normaliza essa pressão para os valores de referência do jogo e também reduz de 50% para 25% a chance de alteração somática negativa por exposição a patógenos.`,
 
-    section("Genética e ancestralidade"),
-    "Cada característica hereditária ocupa um locus diploide com dois alelos. Alelos dominantes podem se expressar com uma cópia; recessivos podem permanecer ocultos e reaparecer por herança ou recombinação. Fenótipo mostra o que está ativo, Genes Recessivos mostra variantes ocultas e Ancestralidade registra características pelas quais a linhagem já passou.",
+    section("Genética e legado"),
+    "Cada característica hereditária ocupa um locus diploide com dois alelos. Alelos dominantes podem se expressar com uma cópia; recessivos podem permanecer ocultos e reaparecer por herança ou recombinação. O painel separa Vantagens Evolutivas e Desvantagens Evolutivas que diferenciam a peça, Genes Recessivos ocultos e o Legado Genético da linhagem.",
     `${traitLabel("Reprodução Sexuada")} exige dois portadores reprodutivamente aptos e combina um alelo de cada progenitor por locus. O casal pode usar uma casa fértil ocupada por qualquer um dos dois ou uma semente armazenada por Coletor. Pré-requisitos evolutivos usam a história da própria linhagem; perder uma característica depois não apaga automaticamente as inovações derivadas já alcançadas.`,
     "Perdas e mutações negativas entram no pool a partir do segundo Ciclo da campanha; na Arena, elas seguem as regras próprias desse cenário.",
     section("Disponibilidade das mutações negativas"),
@@ -232,7 +232,7 @@ export function howToPlayLines() {
 
     section("Controles, informação e acompanhamento"),
     "O Menu permite salvar a partida, importar um arquivo, consultar História evolutiva, Descobertas e Log da partida. História evolutiva mostra o período, o Ciclo e as próximas inovações; Descobertas reúne eras, eventos e mutações já observadas; o Log registra mudanças relevantes em ordem cronológica reversa.",
-    "No tabuleiro, os fenótipos ativos formam uma moldura de até 12 ícones uniformemente espaçados ao redor da peça, começando pelo centro inferior. Com quatro mutações, por exemplo, há um ícone no centro de cada lado. Quando há mais características, +N indica o restante; selecione a peça para consultar a lista completa. Estados temporários como senescência, sementes e gestação aparecem separados da moldura, e mutações somáticas recebem marcação visual própria.",
+    "No tabuleiro, apenas características fenotípicas diferenciais formam a moldura de até 12 ícones ao redor da peça. Quando uma característica hereditária está expressa em todos os organismos vivos das duas cores, ela continua produzindo seus efeitos, sai das molduras e das listas diferenciais e aparece em Legado Genético; se voltar a existir um organismo sem ela, retorna automaticamente à exibição individual. Vantagens e desvantagens diferenciais ficam separadas no painel; Genes Recessivos permanecem ocultos no fenótipo, e mutações somáticas continuam sempre visíveis como alterações individuais.",
     `${traitLabel("Neocórtex Desenvolvido")} permite observar a resposta adversária e usar ↻ uma vez para desfazer sua ação e a resposta observada; a nova linha de jogo passa a valer definitivamente naquele Ciclo.`,
 
     section("Catálogo completo de mutações"),
