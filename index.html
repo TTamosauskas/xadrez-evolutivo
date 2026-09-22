@@ -13,7 +13,10 @@
         <h1>Invenit: o Xadrez Evolutivo</h1>
         <p>vita viam invenit</p>
       </div>
-      <button id="menu-button" aria-haspopup="dialog">☰ Menu</button>
+      <button id="menu-button" aria-haspopup="dialog" aria-label="Abrir menu">
+        <span class="menu-icon" aria-hidden="true">☰</span>
+        <span class="menu-label">Menu</span>
+      </button>
     </header>
     <main>
       <section class="play-area" aria-label="Partida">
@@ -21,6 +24,12 @@
           <strong id="turn" aria-live="polite"></strong><span id="round"></span>
         </div>
         <div id="event" class="event"></div>
+        <div
+          id="mobile-selected-summary"
+          class="mobile-selected-summary"
+          aria-label="Resumo da peça selecionada"
+          hidden
+        ></div>
         <div
           id="board"
           class="board"
