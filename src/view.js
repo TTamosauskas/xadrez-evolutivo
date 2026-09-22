@@ -226,6 +226,91 @@ export function render(
       : state.scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`
         : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
+  const mobileSummary = $("mobile-selected-summary");
+  mobileSummary.replaceChildren();
+  mobileSummary.hidden = true;
+  if (!state.result && actor) {
+    const actorActionState = pieceActionState(state, actor),
+      ownerName = actor.owner === "blue" ? "Branco" : "Preto",
+      actionable = [...actionableTraitsForPiece(state, actor)].sort(
+        (a, b) =>
+          (TRAIT_DISPLAY_ORDER.get(a) ?? Number.MAX_SAFE_INTEGER) -
+          (TRAIT_DISPLAY_ORDER.get(b) ?? Number.MAX_SAFE_INTEGER),
+      ),
+      heading = make("div", undefined, "mobile-selected-heading"),
+      symbol = make(
+        "span",
+        SYMBOLS[actor.owner][actor.rank],
+        `mobile-selected-symbol ${actor.owner}${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
+      );
+    heading.append(
+      symbol,
+      doc.createTextNode(`${PIECES[actor.rank]} (${ownerName})`),
+    );
+    if (actorActionState.waiting) {
+      const waitBadge = make("span", "⏳", "selected-wait-badge");
+      waitBadge.title = actorActionState.reason;
+      waitBadge.setAttribute(
+        "aria-label",
+        `Em espera: ${actorActionState.reason}`,
+      );
+      heading.append(waitBadge);
+    }
+
+    const details = make("div", undefined, "mobile-selected-traits");
+    if (actorActionState.waiting)
+      details.append(
+        make(
+          "span",
+          actorActionState.reason,
+          "mobile-actionable-trait",
+        ),
+      );
+    else if (actionable.length) {
+      for (const trait of actionable.slice(0, 3))
+        details.append(
+          make(
+            "span",
+            `${TRAITS[trait]?.[0] || "🧬"} ${trait}`,
+            "mobile-actionable-trait",
+          ),
+        );
+      if (actionable.length > 3)
+        details.append(
+          make(
+            "span",
+            `+${actionable.length - 3}`,
+            "mobile-selected-more",
+          ),
+        );
+    } else
+      details.append(
+        make(
+          "span",
+          "Nenhuma mutação acionável agora.",
+          "mobile-selected-more",
+        ),
+      );
+
+    mobileSummary.append(heading, details);
+    mobileSummary.hidden = false;
+  } else if (!state.result && origin?.selected) {
+    const heading = make("div", undefined, "mobile-selected-heading");
+    heading.append(
+      make("span", "♚", "mobile-selected-symbol mobile-origin-symbol"),
+      doc.createTextNode("Rei ancestral"),
+    );
+    mobileSummary.append(
+      heading,
+      make(
+        "div",
+        "Toque novamente para iniciar a campanha.",
+        "mobile-selected-traits",
+      ),
+    );
+    mobileSummary.hidden = false;
+  }
+
   const ev = state.event,
     diseases = state.diseases.filter((d) => d.endRound >= currentRound),
     domain = state.ecologicalDomain,
