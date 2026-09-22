@@ -43,6 +43,7 @@ import {
   socialDefenseTargets,
   ovoviviparousPlacementTargets,
   canParasitize,
+  canParasitizeSelf,
   parasitismTargets,
 } from "./moves.js";
 import {
@@ -1430,23 +1431,27 @@ function resolveParasitism(ctx, action) {
     );
   if (!canParasitize(state, p)) throw Error("Parasitismo indisponível.");
 
-  const targets = parasitismTargets(state, p),
-    target = Number.isInteger(action.targetId)
-      ? targets.find((candidate) => candidate.id === action.targetId)
-      : null,
-    fertilized =
-      !fertilityPaused(state) && terrain(state, p.r, p.c) !== "fertile";
-
-  if (targets.length && !target)
-    throw Error("Escolha uma criatura adversária adjacente para o Parasitismo.");
-  if (target)
+  if (Number.isInteger(action.targetId)) {
+    const target = parasitismTargets(state, p).find(
+      (candidate) => candidate.id === action.targetId,
+    );
+    if (!target)
+      throw Error("Escolha uma criatura adversária adjacente para o Parasitismo.");
     state.board[square(target.r, target.c)] = "hostile";
-  if (fertilized) state.board[square(p.r, p.c)] = "fertile";
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🪱 Parasitismo atacou o habitat em ${coord(target.r, target.c)}.`,
+    );
+  } else {
+    if (!canParasitizeSelf(state, p))
+      throw Error("A própria casa não pode ser fertilizada por Parasitismo.");
+    state.board[square(p.r, p.c)] = "fertile";
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🪱 Parasitismo tornou ${coord(p.r, p.c)} fértil.`,
+    );
+  }
 
-  log(
-    state,
-    `${OWNERS[p.owner]}: 🪱 Parasitismo ${fertilized ? `tornou ${coord(p.r, p.c)} fértil` : ""}${fertilized && target ? " e " : ""}${target ? `atacou o habitat em ${coord(target.r, target.c)}` : ""}.`,
-  );
   advanceTurn(ctx);
   settle(ctx);
 }
