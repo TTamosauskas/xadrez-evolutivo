@@ -1288,6 +1288,10 @@ function executeMove(ctx, action) {
     fertile =
       fertileResource &&
       (!carnivore || omnivore || has(p, "Mixotrofia")),
+    sexualResourceHere =
+      !scavenging &&
+      !capture &&
+      (terrain(state, p.r, p.c) === "fertile" || collectorStay),
     photosyntheticPrey = pieceCapture && has(victim, "Fotossíntese"),
     primitiveLocomotionReached =
       has(p, "Locomoção Primitiva") ||
@@ -1316,7 +1320,7 @@ function executeMove(ctx, action) {
     );
   const sexualPartners = partnersFor(state, p);
   if (
-    fertile &&
+    sexualResourceHere &&
     has(p, "Reprodução Sexuada") &&
     !has(p, "Esterilidade") &&
     sexualPartners.length
