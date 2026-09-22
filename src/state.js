@@ -1,5 +1,6 @@
 import {
   has,
+  canPhotosynthesize,
   inside,
   square,
   TRAITS,
@@ -163,6 +164,37 @@ export function photosynthesisDelayTurns(state, piece = null) {
   if (population <= 11) return 6;
   if (population <= 17) return 8;
   return 10;
+}
+
+export function photosynthesisHasSpace(state, piece) {
+  let free = 0;
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = piece.r + dr,
+        c = piece.c + dc;
+      if (
+        inside(r, c) &&
+        !at(state, r, c) &&
+        !eggAt(state, r, c) &&
+        !plantSeedAt(state, r, c) &&
+        (!barrierAt(state, r, c) || has(piece, "Trepadeira"))
+      ) {
+        free++;
+        if (free >= 2) return true;
+      }
+    }
+  return false;
+}
+
+export function photosynthesisAvailable(state, piece) {
+  return !!(
+    piece &&
+    canPhotosynthesize(piece) &&
+    terrain(state, piece.r, piece.c) === "neutral" &&
+    photosynthesisDelayTurns(state, piece) !== null &&
+    photosynthesisHasSpace(state, piece)
+  );
 }
 export const PRE_BILATERAL_SENESCENCE_AGE = 13;
 export const PRE_BILATERAL_MAX_NATURAL_AGE = 24;
