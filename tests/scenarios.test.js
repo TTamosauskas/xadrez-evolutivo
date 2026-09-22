@@ -433,13 +433,11 @@ test("Arena engineering counts substitutions rather than raw edits", () => {
   assert.equal(changes.valid, true);
 });
 
-test("v11 saves migrate to Cenários Alternativos", () => {
+test("obsolete development saves are rejected instead of migrated", () => {
   const legacy = createState(7);
   legacy.version = 11;
-  delete legacy.scenario;
-  delete legacy.arenaPhase;
-  delete legacy.arenaFounders;
-  const migrated = deserialize(JSON.stringify(legacy));
-  assert.equal(migrated.version, 17);
-  assert.equal(migrated.scenario, "alternative");
+  assert.throws(
+    () => deserialize(JSON.stringify(legacy)),
+    /incompatível/i,
+  );
 });
