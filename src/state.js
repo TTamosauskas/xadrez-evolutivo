@@ -418,6 +418,33 @@ function habitatSelection(state, candidates, count, pattern, type) {
   return shuffle(state, candidates).slice(0, limited);
 }
 
+function ensureFounderFertility(state, founderCells) {
+  for (const cell of founderCells) {
+    const r0 = Math.floor(cell / 8),
+      c0 = cell % 8,
+      neighbors = [];
+    let nearbyFertile = false;
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = r0 + dr,
+          c = c0 + dc;
+        if (!inside(r, c)) continue;
+        const next = square(r, c);
+        if (terrain(state, r, c) === "fertile") nearbyFertile = true;
+        if (
+          terrain(state, r, c) === "neutral" &&
+          !naturalBarrierAt(state, r, c)
+        )
+          neighbors.push(next);
+      }
+    if (nearbyFertile) continue;
+    const chosen = pick(state, neighbors);
+    if (chosen !== null) state.board[chosen] = "fertile";
+    else if (!naturalBarrierAt(state, r0, c0)) state.board[cell] = "fertile";
+  }
+}
+
 function seedStandardHabitat(state, profile, founderCells) {
   const empty = shuffle(
     state,
@@ -426,40 +453,27 @@ function seedStandardHabitat(state, profile, founderCells) {
     ),
   );
   for (const i of empty.slice(0, profile.fertile)) state.board[i] = "fertile";
-  const safe = new Set([3, 4, 11, 12, 51, 52, 59, 60]);
+  const safe = new Set(founderCells);
+  for (const cell of founderCells) {
+    const r0 = Math.floor(cell / 8),
+      c0 = cell % 8;
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        const r = r0 + dr,
+          c = c0 + dc;
+        if (inside(r, c)) safe.add(square(r, c));
+      }
+  }
   for (const i of empty
     .filter((i) => !safe.has(i) && state.board[i] === "neutral")
     .slice(0, profile.hostile))
     state.board[i] = "hostile";
-  for (const c of [3, 4]) {
-    for (let r = 1; r <= 6; r++)
-      if (terrain(state, r, c) === "fertile")
-        state.board[square(r, c)] = "neutral";
-    for (const rows of [
-      [1, 2, 3],
-      [4, 5, 6],
-    ]) {
-      const candidates = rows.filter(
-        (r) =>
-          terrain(state, r, c) === "neutral" &&
-          !naturalBarrierAt(state, r, c),
-      );
-      const fallback = rows.filter(
-        (r) => !naturalBarrierAt(state, r, c),
-      );
-      const chosen = pick(
-        state,
-        candidates.length ? candidates : fallback,
-      );
-      if (chosen !== null) state.board[square(chosen, c)] = "fertile";
-    }
-  }
-  const mobileFounder = state.pieces.some(
-    (piece) =>
-      has(piece, "Locomoção Primitiva"),
+  const mobileFounder = state.pieces.some((piece) =>
+    has(piece, "Locomoção Primitiva"),
   );
   if (!mobileFounder)
     for (const cell of founderCells) state.board[cell] = "fertile";
+  ensureFounderFertility(state, founderCells);
 }
 
 function seedSilurianCoast(state, profile, founderCells) {
@@ -484,6 +498,7 @@ function seedSilurianCoast(state, profile, founderCells) {
     "hostile",
   ))
     state.board[cell] = "hostile";
+  ensureFounderFertility(state, founderCells);
 }
 
 function seedHabitat(state) {
@@ -552,6 +567,86 @@ function seedHabitat(state) {
     "hostile",
   ))
     state.board[cell] = "hostile";
+  ensureFounderFertility(state, founderCells);
+}
+
+export const CANONICAL_FOUNDER_CELLS = Object.freeze([
+  Object.freeze({ label: "a1", r: 7, c: 0 }),
+  Object.freeze({ label: "b5", r: 3, c: 1 }),
+  Object.freeze({ label: "c8", r: 0, c: 2 }),
+  Object.freeze({ label: "d6", r: 2, c: 3 }),
+  Object.freeze({ label: "e3", r: 5, c: 4 }),
+  Object.freeze({ label: "f7", r: 1, c: 5 }),
+  Object.freeze({ label: "g2", r: 6, c: 6 }),
+  Object.freeze({ label: "h4", r: 4, c: 7 }),
+]);
+
+const founderNeighborCapacity = ({ r, c }) =>
+  (1 + Number(r > 0) + Number(r < 7)) *
+    (1 + Number(c > 0) + Number(c < 7)) -
+  1;
+
+const foundersThreatenImmediately = (a, b) => {
+  const dr = Math.abs(a.r - b.r),
+    dc = Math.abs(a.c - b.c);
+  return (
+    a.r === b.r ||
+    a.c === b.c ||
+    dr === dc ||
+    (Math.min(dr, dc) === 1 && Math.max(dr, dc) === 2)
+  );
+};
+
+function canonicalFounderLayouts() {
+  const layouts = [];
+  for (let a = 0; a < CANONICAL_FOUNDER_CELLS.length; a++)
+    for (let b = a + 1; b < CANONICAL_FOUNDER_CELLS.length; b++) {
+      const blue = [
+        CANONICAL_FOUNDER_CELLS[a],
+        CANONICAL_FOUNDER_CELLS[b],
+      ];
+      for (let c = 0; c < CANONICAL_FOUNDER_CELLS.length; c++)
+        for (let d = c + 1; d < CANONICAL_FOUNDER_CELLS.length; d++) {
+          if ([a, b].includes(c) || [a, b].includes(d)) continue;
+          const amber = [
+            CANONICAL_FOUNDER_CELLS[c],
+            CANONICAL_FOUNDER_CELLS[d],
+          ];
+          if (
+            blue.some((left) =>
+              amber.some((right) => foundersThreatenImmediately(left, right)),
+            )
+          )
+            continue;
+          const blueCapacity = blue.reduce(
+              (sum, cell) => sum + founderNeighborCapacity(cell),
+              0,
+            ),
+            amberCapacity = amber.reduce(
+              (sum, cell) => sum + founderNeighborCapacity(cell),
+              0,
+            );
+          if (Math.abs(blueCapacity - amberCapacity) > 1) continue;
+          layouts.push({ blue, amber });
+        }
+    }
+  return layouts;
+}
+
+const CANONICAL_FOUNDER_LAYOUTS = Object.freeze(canonicalFounderLayouts());
+
+export function canonicalFounderStarts(state, slots = true) {
+  const layout = pick(state, CANONICAL_FOUNDER_LAYOUTS);
+  if (!layout) throw Error("Posições canônicas indisponíveis.");
+  const blue = shuffle(state, layout.blue),
+    amber = shuffle(state, layout.amber),
+    names = slots ? ["primary", "companion"] : [null, null];
+  return [
+    ["blue", blue[0].r, blue[0].c, names[0]],
+    ["blue", blue[1].r, blue[1].c, names[1]],
+    ["amber", amber[0].r, amber[0].c, names[0]],
+    ["amber", amber[1].r, amber[1].c, names[1]],
+  ];
 }
 
 export function earthFounderStarts(geologicalStage, cycle = 1) {
@@ -669,25 +764,14 @@ export function createState(seed = Date.now(), options = {}) {
         scenario === "earth" && (balancedPair || ownerPair)
           ? earthFounderStarts(state.geologicalStage, state.cycle)
           : null,
+      canonicalStarts = canonicalFounderStarts(
+        state,
+        balancedPair || ownerPair,
+      ),
       starts = earthStarts ??
-        (balancedPair || ownerPair
-          ? [
-              ["blue", 7, 3, "primary"],
-              ["blue", 7, 4, "companion"],
-              ["amber", 0, 3, "primary"],
-              ["amber", 0, 4, "companion"],
-            ]
-          : canonicalPair
-          ? [
-              ["blue", 7, 4, null],
-              ["amber", 0, 4, null],
-            ]
-          : [
-              ["blue", 7, 3, null],
-              ["blue", 7, 4, null],
-              ["amber", 0, 3, null],
-              ["amber", 0, 4, null],
-            ]);
+        (canonicalPair && !balancedPair && !ownerPair
+          ? [canonicalStarts[0], canonicalStarts[2]]
+          : canonicalStarts);
     for (const [owner, r, c, slot] of starts) {
       const source = ownerPair
         ? ownerFounders[owner][slot]
