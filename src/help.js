@@ -232,6 +232,7 @@ export function howToPlayLines() {
 
     section("Controles, informação e acompanhamento"),
     "O Menu permite salvar a partida, importar um arquivo, consultar História evolutiva, Descobertas e Log da partida. História evolutiva mostra o período, o Ciclo e as próximas inovações; Descobertas reúne eras, eventos e mutações já observadas; o Log registra mudanças relevantes em ordem cronológica reversa.",
+    "No tabuleiro, os fenótipos ativos formam uma moldura de até 12 ícones ao redor da peça. Quando há mais características, +N indica o restante; selecione a peça para consultar a lista completa. Estados temporários como senescência, sementes e gestação aparecem separados da moldura, e mutações somáticas recebem marcação visual própria.",
     `${traitLabel("Neocórtex Desenvolvido")} permite observar a resposta adversária e usar ↻ uma vez para desfazer sua ação e a resposta observada; a nova linha de jogo passa a valer definitivamente naquele Ciclo.`,
 
     section("Catálogo completo de mutações"),
