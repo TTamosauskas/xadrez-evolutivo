@@ -19,6 +19,7 @@ import {
   socialDefenseTargets,
   ovoviviparousPlacementTargets,
   canParasitize,
+  parasitismTargets,
 } from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
@@ -185,7 +186,29 @@ $("board").addEventListener("click", (event) => {
   if (
     actor?.id === p?.id &&
     actor?.owner === state.current &&
-    canParasitize(state, actor)
+    movesFor(state, actor).some(
+      (target) =>
+        target.r === actor.r &&
+        target.c === actor.c &&
+        target.stay,
+    )
+  ) {
+    dispatch({ type: "MOVE", id: actor.id, r: actor.r, c: actor.c });
+    return;
+  }
+  if (
+    actor?.owner === state.current &&
+    p &&
+    parasitismTargets(state, actor).some((target) => target.id === p.id)
+  ) {
+    dispatch({ type: "PARASITIZE", id: actor.id, targetId: p.id });
+    return;
+  }
+  if (
+    actor?.id === p?.id &&
+    actor?.owner === state.current &&
+    canParasitize(state, actor) &&
+    parasitismTargets(state, actor).length === 0
   ) {
     dispatch({ type: "PARASITIZE", id: actor.id });
     return;
@@ -248,9 +271,7 @@ $("piece-actions").addEventListener("click", (event) => {
   const id = Number(button.dataset.pieceId),
     piece = controller.state.pieces.find((candidate) => candidate.id === id);
   if (!piece) return;
-  if (button.dataset.pieceAction === "reproduce")
-    dispatch({ type: "MOVE", id: piece.id, r: piece.r, c: piece.c });
-  else if (button.dataset.pieceAction === "bud")
+  if (button.dataset.pieceAction === "bud")
     dispatch({ type: "BUD", id: piece.id });
   else if (button.dataset.pieceAction === "pupate")
     dispatch({ type: "PUPATE", id: piece.id });
