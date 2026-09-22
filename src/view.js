@@ -56,9 +56,27 @@ export function traitFrameSlots(count) {
   );
 }
 
-export function traitFrameEntries(piece) {
+export function universalTraits(state) {
+  const pieces = (state?.pieces ?? []).filter(
+      (piece) => piece && ["blue", "amber"].includes(piece.owner),
+    ),
+    owners = new Set(pieces.map((piece) => piece.owner));
+  if (!owners.has("blue") || !owners.has("amber") || pieces.length < 2)
+    return new Set();
+  const common = new Set(
+    (pieces[0].traits ?? []).filter((trait) => TRAITS[trait]),
+  );
+  for (const piece of pieces)
+    for (const trait of [...common])
+      if (!(piece.traits ?? []).includes(trait)) common.delete(trait);
+  return common;
+}
+
+export function traitFrameEntries(piece, universal = new Set()) {
   const entries = [
-    ...(piece?.traits ?? []).map((trait) => ({ trait, somatic: false })),
+    ...(piece?.traits ?? [])
+      .filter((trait) => !universal.has(trait))
+      .map((trait) => ({ trait, somatic: false })),
     ...(piece?.somaticMutations ?? []).map((trait) => ({
       trait,
       somatic: true,
@@ -132,10 +150,11 @@ export function render(
     actor = state.pieces.find((p) => p.id === actorId),
     origin = state.origin;
   const locked =
-    !!state.result ||
-    state.notices.length > 0 ||
-    mode === "auto" ||
-    (mode === "single" && state.current === "amber");
+      !!state.result ||
+      state.notices.length > 0 ||
+      mode === "auto" ||
+      (mode === "single" && state.current === "amber"),
+    universal = universalTraits(state);
   const targets =
     state.phase === "move" && actor && actor.owner === state.current
       ? movesFor(state, actor)
@@ -287,7 +306,7 @@ export function render(
           : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", selecionado; toque novamente para iniciar" : ", selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${p.traits.length ? ", " + p.traits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${captureTarget ? ", alvo de captura" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
+          : `${coord(r, c)}, ${terrain}${naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${captureTarget ? ", alvo de captura" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
       const accessibleLabel = fragment
         ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
         : label;
@@ -338,7 +357,7 @@ export function render(
       if (originHere)
         cell.append(make("span", "♚", "piece origin-piece"));
       if (p) {
-        const traitFrame = traitFrameEntries(p);
+        const traitFrame = traitFrameEntries(p, universal);
         if (traitFrame.total > 8) cell.classList.add("trait-dense");
         cell.append(
           make(
@@ -485,36 +504,50 @@ export function render(
       doc.createTextNode(` ${PIECES[actor.rank]} (${ownerName})`),
     );
 
-    const details = actor.traits.map((trait) => {
-      const row = make("div", undefined, "trait selected-trait"),
-        title = make("strong");
-      title.append(
-        make("span", TRAITS[trait][0], ""),
-        doc.createTextNode(` ${trait}`),
-      );
-      row.append(title, make("small", TRAITS[trait][1]));
-      return row;
-    });
-    for (const trait of actor.somaticMutations ?? []) {
-      const row = make("div", undefined, "trait selected-trait somatic-trait"),
-        title = make("strong");
-      title.append(
-        make("span", TRAITS[trait][0], ""),
-        doc.createTextNode(` ${trait} · somática`),
-      );
-      row.append(
-        title,
-        make(
-          "small",
-          `${TRAITS[trait][1]} Alteração induzida por exposição patogênica e ausente da herança da prole.`,
-        ),
-      );
-      details.push(row);
-    }
-    if (!details.length)
-      details.push(make("p", "🧬 Perfil ancestral", "selected-ancestral"));
+    const traitRow = (trait, somatic = false) => {
+        const row = make(
+            "div",
+            undefined,
+            `trait selected-trait${somatic ? " somatic-trait" : ""}`,
+          ),
+          title = make("strong");
+        title.append(
+          make("span", TRAITS[trait][0], ""),
+          doc.createTextNode(` ${trait}${somatic ? " · somática" : ""}`),
+        );
+        row.append(
+          title,
+          make(
+            "small",
+            somatic
+              ? `${TRAITS[trait][1]} Alteração induzida por exposição patogênica e ausente da herança da prole.`
+              : TRAITS[trait][1],
+          ),
+        );
+        return row;
+      },
+      advantages = (actor.traits ?? [])
+        .filter(
+          (trait) =>
+            TRAITS[trait] &&
+            !universal.has(trait) &&
+            !isNegativeTrait(trait),
+        )
+        .map((trait) => traitRow(trait)),
+      disadvantages = (actor.traits ?? [])
+        .filter(
+          (trait) =>
+            TRAITS[trait] &&
+            !universal.has(trait) &&
+            isNegativeTrait(trait),
+        )
+        .map((trait) => traitRow(trait));
+    for (const trait of actor.somaticMutations ?? [])
+      if (TRAITS[trait]) disadvantages.push(traitRow(trait, true));
+
+    const statusDetails = [];
     if (juvenile(state, actor))
-      details.unshift(
+      statusDetails.push(
         make(
           "p",
           `Juvenil · maturidade em ${Math.max(0, actor.maturesRound - currentRound)} rodada(s).`,
@@ -522,7 +555,7 @@ export function render(
         ),
       );
     else if (senescent(state, actor))
-      details.unshift(
+      statusDetails.push(
         make(
           "p",
           `⌛ Senescente · idade ${pieceAge(state, actor)} rodada(s) · risco natural ${Math.round(naturalDeathChance(state, actor) * 100)}% por rodada.`,
@@ -530,7 +563,7 @@ export function render(
         ),
       );
     else if ((actor.nextReproductionRound ?? 0) > currentRound)
-      details.unshift(
+      statusDetails.push(
         make(
           "p",
           `Recuperação reprodutiva · ${actor.nextReproductionRound - currentRound} rodada(s) restante(s).`,
@@ -552,7 +585,7 @@ export function render(
           : agent === "fungus"
             ? " · exposição territorial; uma nova chance de mortalidade é resolvida nesta rodada"
             : " · exposição ambiental";
-      details.push(
+      statusDetails.push(
         make(
           "p",
           `${definition.icon} ${definition.name}${status}.`,
@@ -561,7 +594,7 @@ export function render(
       );
     }
     for (const pregnancy of actor.pregnancies ?? [])
-      details.push(
+      statusDetails.push(
         make(
           "p",
           pregnancy.kind === "ovoviviparous"
@@ -572,20 +605,46 @@ export function render(
           "selected-status",
         ),
       );
-    const activeHeading = make(
-        "div",
-        "Fenótipo ativo",
-        "selected-group-heading",
-      ),
-      recessiveTraits = hiddenRecessiveTraits(actor),
+
+    const recessiveTraits = hiddenRecessiveTraits(actor),
       recessiveSet = new Set(recessiveTraits),
-      ancestralOnly = [...new Set(actor.ancestry ?? [])].filter(
-        (trait) =>
-          TRAITS[trait] &&
-          !actor.traits.includes(trait) &&
-          !recessiveSet.has(trait),
-      ),
-      selectedContent = [heading, activeHeading, ...details];
+      legacyTraits = [
+        ...new Set([...(actor.ancestry ?? []), ...universal]),
+      ]
+        .filter(
+          (trait) =>
+            TRAITS[trait] &&
+            (universal.has(trait)
+              ? (actor.traits ?? []).includes(trait)
+              : !(actor.traits ?? []).includes(trait) &&
+                !recessiveSet.has(trait)),
+        )
+        .sort(
+          (a, b) =>
+            (TRAIT_DISPLAY_ORDER.get(a) ?? Number.MAX_SAFE_INTEGER) -
+            (TRAIT_DISPLAY_ORDER.get(b) ?? Number.MAX_SAFE_INTEGER),
+        ),
+      selectedContent = [heading, ...statusDetails];
+
+    if (advantages.length)
+      selectedContent.push(
+        make("div", "Vantagens Evolutivas", "selected-group-heading"),
+        ...advantages,
+      );
+    if (disadvantages.length)
+      selectedContent.push(
+        make("div", "Desvantagens Evolutivas", "selected-group-heading"),
+        ...disadvantages,
+      );
+    if (!advantages.length && !disadvantages.length)
+      selectedContent.push(
+        make(
+          "p",
+          "Sem diferenças fenotípicas individuais.",
+          "selected-ancestral",
+        ),
+      );
+
     if (recessiveTraits.length) {
       const recessives = make("details", undefined, "recessive-toggle"),
         recessiveSummary = make(
@@ -606,23 +665,26 @@ export function render(
       recessives.append(recessiveSummary, recessiveList);
       selectedContent.push(recessives);
     }
-    if (ancestralOnly.length) {
-      const ancestry = make("details", undefined, "ancestry-toggle"),
-        ancestrySummary = make(
+    if (legacyTraits.length) {
+      const legacy = make("details", undefined, "ancestry-toggle legacy-toggle"),
+        legacySummary = make(
           "summary",
-          `Ancestralidade da linhagem (${ancestralOnly.length})`,
+          `Legado Genético (${legacyTraits.length})`,
         ),
-        ancestryList = make("div", undefined, "ancestry-list");
-      for (const trait of ancestralOnly)
-        ancestryList.append(
-          make(
-            "span",
-            `${TRAITS[trait][0]} ${trait}`,
-            "ancestry-chip",
-          ),
+        legacyList = make("div", undefined, "ancestry-list legacy-list");
+      for (const trait of legacyTraits) {
+        const chip = make(
+          "span",
+          `${TRAITS[trait][0]} ${trait}`,
+          "ancestry-chip legacy-chip",
         );
-      ancestry.append(ancestrySummary, ancestryList);
-      selectedContent.push(ancestry);
+        chip.title = universal.has(trait)
+          ? "Expressa atualmente em todos os organismos vivos das duas cores; permanece mecanicamente ativa."
+          : "Presente na história evolutiva desta linhagem, embora fora do fenótipo atual.";
+        legacyList.append(chip);
+      }
+      legacy.append(legacySummary, legacyList);
+      selectedContent.push(legacy);
     }
     $("selected").replaceChildren(...selectedContent);
   } else if (origin?.selected) {
