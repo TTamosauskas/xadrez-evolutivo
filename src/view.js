@@ -59,15 +59,29 @@ export function traitFrameSlots(count) {
   );
 }
 
+const expressesTrait = (piece, trait) =>
+  (piece?.traits ?? []).includes(trait);
+
 export function traitComparisonGroup(pieces, trait) {
-  if (trait === "Fotossíntese")
-    return pieces.filter((piece) => !has(piece, "Predação"));
-  if (trait === "Predação")
-    return pieces.filter((piece) => !has(piece, "Fotossíntese"));
+  if (ENERGY_BRANCH_TRAITS.has(trait)) {
+    const siblingBranches = [...ENERGY_BRANCH_TRAITS].filter(
+      (candidate) => candidate !== trait,
+    );
+    return pieces.filter(
+      (piece) =>
+        !siblingBranches.some((candidate) =>
+          expressesTrait(piece, candidate),
+        ),
+    );
+  }
   if (PLANT_DERIVED_TRAITS.has(trait))
-    return pieces.filter((piece) => has(piece, "Fotossíntese"));
+    return pieces.filter((piece) =>
+      expressesTrait(piece, "Fotossíntese"),
+    );
   if (PLANT_INCOMPATIBLE_TRAITS.has(trait))
-    return pieces.filter((piece) => !has(piece, "Fotossíntese"));
+    return pieces.filter(
+      (piece) => !expressesTrait(piece, "Fotossíntese"),
+    );
   return pieces;
 }
 
