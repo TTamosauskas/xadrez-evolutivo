@@ -664,7 +664,7 @@ test("selected legend separates active traits from ancestry behind a closed togg
   dom.window.close();
 });
 
-test("legacy toggle is omitted when there are no historical or universal traits", () => {
+test("legacy toggle is omitted when there are no historical or established traits", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4 },
@@ -672,7 +672,7 @@ test("legacy toggle is omitted when there are no historical or universal traits"
     ]),
     piece = s.pieces[0],
     rival = s.pieces[1];
-  piece.traits = ["Predação"];
+  piece.traits = ["Resistência"];
   piece.ancestry = [...piece.traits];
   rival.traits = ["Fotossíntese"];
   rival.ancestry = [...rival.traits];
