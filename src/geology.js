@@ -346,6 +346,20 @@ export const TRAIT_STAGE = {
   "Plantas Domesticadas": "quaternary",
   "Animais Domésticos": "quaternary",
   "Neocórtex Desenvolvido": "quaternary",
+  "Transferência Horizontal": "archean",
+  Brotamento: "proterozoic",
+  Fragmentação: "ediacaran",
+  Colônia: "ediacaran",
+  "Séssil": "ediacaran",
+  "Acasalamento Preferencial": "cambrian",
+  "Onívoro Oportunista": "carboniferous",
+  Metamorfose: "carboniferous",
+  "Cuidado Parental": "permian",
+  Promiscuidade: "jurassic",
+  Pedogênese: "cretaceous",
+  Marsupial: "cretaceous",
+  "Acasalamento Múltiplo": "cretaceous",
+  Monogamia: "paleogene",
 };
 
 export const ENERGY_BRANCH_TRAITS = new Set(["Fotossíntese", "Predação"]);
@@ -394,6 +408,10 @@ export const ACTIVE_TRAIT_FAMILIES = [
   {
     id: "body-size",
     traits: ["Nanismo", "Gigantismo"],
+  },
+  {
+    id: "mating-system",
+    traits: ["Promiscuidade", "Monogamia", "Acasalamento Múltiplo"],
   },
 ];
 
@@ -491,6 +509,26 @@ export const TRAIT_DEPENDENCIES = {
   Nanismo: { lineageAny: ["Vertebrado", "Artrópode"] },
   Gigantismo: { lineage: ["Locomoção Articulada"] },
   "Mutação Mutadora": { lineage: ["Reparo Celular"] },
+  "Transferência Horizontal": { lineage: ["Predação"] },
+  Brotamento: { lineage: ["Multicelularismo"] },
+  Fragmentação: { lineage: ["Multicelularismo", "Regeneração"] },
+  Colônia: { lineage: ["Brotamento"] },
+  "Séssil": { lineage: ["Multicelularismo"] },
+  "Onívoro Oportunista": { lineage: ["Onívoro"] },
+  "Acasalamento Preferencial": {
+    lineage: ["Reprodução Sexuada", "Percepção Espacial"],
+  },
+  Promiscuidade: { lineage: ["Reprodução Sexuada", "Sociabilidade"] },
+  Pedogênese: { lineage: ["Artrópode", "Metamorfose"] },
+  "Cuidado Parental": { lineage: ["Incubação"] },
+  Marsupial: { lineage: ["Vertebrado", "Vivíparo", "Lactação"] },
+  Monogamia: { lineage: ["Reprodução Sexuada", "Cuidado Parental"] },
+  "Acasalamento Múltiplo": {
+    lineage: ["Promiscuidade", "Reprodução Sexuada"],
+  },
+  Metamorfose: {
+    lineage: ["Artrópode", "Ovíparo", "Locomoção Terrestre"],
+  },
 };
 
 export const BODY_PLAN_TRAITS = new Set(["Vertebrado", "Artrópode"]);
@@ -500,6 +538,19 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Regeneração",
   "Reprodução Sexuada",
   "Precocidade Sexual",
+  "Brotamento",
+  "Fragmentação",
+  "Colônia",
+  "Séssil",
+  "Onívoro Oportunista",
+  "Acasalamento Preferencial",
+  "Promiscuidade",
+  "Pedogênese",
+  "Cuidado Parental",
+  "Marsupial",
+  "Monogamia",
+  "Acasalamento Múltiplo",
+  "Metamorfose",
   "Locomoção Primitiva",
   "Vertebrado",
   "Artrópode",
@@ -640,6 +691,16 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Animais Domésticos",
   "Sociabilidade",
   "Mimetismo",
+  "Onívoro Oportunista",
+  "Acasalamento Preferencial",
+  "Promiscuidade",
+  "Pedogênese",
+  "Cuidado Parental",
+  "Marsupial",
+  "Monogamia",
+  "Acasalamento Múltiplo",
+  "Metamorfose",
+  "Transferência Horizontal",
   "Insuficiência Respiratória",
   "Deficiência Motora",
   "Deficiência Sensorial",
@@ -649,11 +710,43 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Gigantismo",
 ]);
 
+export const TRAIT_BRANCH_SCOPE = Object.freeze({
+  "Transferência Horizontal": "predation",
+  Brotamento: "shared",
+  Fragmentação: "shared",
+  Colônia: "shared",
+  "Séssil": "shared",
+  "Onívoro Oportunista": "predation",
+  "Acasalamento Preferencial": "predation",
+  Promiscuidade: "predation",
+  Pedogênese: "predation",
+  "Cuidado Parental": "predation",
+  Marsupial: "predation",
+  Monogamia: "predation",
+  "Acasalamento Múltiplo": "predation",
+  Metamorfose: "predation",
+});
+
+export const TRAIT_INCOMPATIBILITIES = Object.freeze({
+  Fragmentação: ["Vertebrado", "Artrópode", "Ooteca"],
+  Vertebrado: ["Fragmentação"],
+  "Artrópode": ["Fragmentação"],
+  Ooteca: ["Fragmentação"],
+  Pedogênese: ["Precocidade Sexual"],
+  "Precocidade Sexual": ["Pedogênese"],
+});
+
 export function traitCombinationValid(traits) {
   const set = new Set(traits ?? []);
   if (
     set.has("Fotossíntese") &&
     [...PLANT_INCOMPATIBLE_TRAITS].some((trait) => set.has(trait))
+  )
+    return false;
+  if (
+    [...set].some((trait) =>
+      (TRAIT_INCOMPATIBILITIES[trait] ?? []).some((other) => set.has(other)),
+    )
   )
     return false;
   return ACTIVE_TRAIT_FAMILIES.every(
@@ -725,6 +818,8 @@ export function applyTraitMutation(traits, trait) {
     family = activeTraitFamily(trait);
   if (family)
     for (const member of family.traits) set.delete(member);
+  for (const incompatible of TRAIT_INCOMPATIBILITIES[trait] ?? [])
+    set.delete(incompatible);
   if (trait === "Predação") {
     set.delete("Fotossíntese");
     for (const plantTrait of PLANT_DERIVED_TRAITS) set.delete(plantTrait);
@@ -897,6 +992,13 @@ export function traitUnlocked(state, trait, piece = null) {
   )
     return false;
   if (piece && traitSupersededByActive(piece.traits, trait)) return false;
+  if (
+    piece &&
+    (TRAIT_INCOMPATIBILITIES[trait] ?? []).some((candidate) =>
+      piece.traits?.includes(candidate),
+    )
+  )
+    return false;
   if (
     piece?.traits?.includes("Fotossíntese") &&
     trait !== "Predação" &&

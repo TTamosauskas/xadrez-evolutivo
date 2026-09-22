@@ -63,6 +63,8 @@ export const eggAt = (state, r, c) =>
   state.eggs?.find((egg) => egg.r === r && egg.c === c);
 export const plantSeedAt = (state, r, c) =>
   state.plantSeeds?.find((seed) => seed.r === r && seed.c === c);
+export const fragmentAt = (state, r, c) =>
+  state.fragments?.find((fragment) => fragment.r === r && fragment.c === c);
 export const builtBarrierAt = (state, r, c) =>
   state.barriers?.includes(square(r, c)) ?? false;
 export const naturalBarrierAt = (state, r, c) =>
@@ -241,6 +243,11 @@ export function newPiece(state, owner, r, c, source = {}) {
       mutations: source.mutations ?? 0,
       generation: source.generation ?? 0,
       parentId: source.parentId ?? null,
+      parentIds: Array.isArray(source.parentIds)
+        ? [...new Set(source.parentIds)]
+        : source.parentId
+          ? [source.parentId]
+          : [],
       pawnDir: owner === "blue" ? -1 : 1,
       seeds: 0,
       pregnancies: [],
@@ -253,6 +260,17 @@ export function newPiece(state, owner, r, c, source = {}) {
       pathogenExposureRounds: {},
       lifetimeReproductions: source.lifetimeReproductions ?? 0,
       semelparityDeathPending: source.semelparityDeathPending ?? false,
+      stationarySinceRound: source.stationarySinceRound ?? bornRound,
+      budded: source.budded ?? false,
+      colonyId: source.colonyId ?? null,
+      paedogenesisUsed: source.paedogenesisUsed ?? false,
+      pupaUntilRound: source.pupaUntilRound ?? null,
+      metamorphosisUsed: source.metamorphosisUsed ?? false,
+      pairedWithId: source.pairedWithId ?? null,
+      biparentalGuardCharges: source.biparentalGuardCharges ?? 0,
+      marsupialPouch: Array.isArray(source.marsupialPouch)
+        ? structuredClone(source.marsupialPouch)
+        : [],
     };
   const preferredEnergy = source.traits?.includes("Predação")
     ? "Predação"
@@ -263,6 +281,10 @@ export function newPiece(state, owner, r, c, source = {}) {
   if (has(piece, "Nanismo")) piece.rank = 0;
   else if (has(piece, "Artrópode") && ![0, 1, 2, 4].includes(piece.rank))
     piece.rank = 2;
+  if (has(piece, "Colônia") && piece.colonyId === null) {
+    piece.colonyId = state.nextColonyId++;
+    state.colonyCooldowns[piece.colonyId] ??= bornRound;
+  }
   return normalizePhotosyntheticRank(piece);
 }
 
@@ -682,7 +704,7 @@ export function createState(seed = Date.now(), options = {}) {
     canonicalPair = !!options.canonicalPair,
     scenario = options.scenario ?? "alternative";
   const state = {
-    version: 15,
+    version: 16,
     scenario,
     arenaPhase: options.arenaPhase ?? 0,
     arenaFounders: options.arenaFounders ?? null,
@@ -737,6 +759,10 @@ export function createState(seed = Date.now(), options = {}) {
     eggs: [],
     nextPlantSeed: 1,
     plantSeeds: [],
+    nextFragment: 1,
+    fragments: [],
+    nextColonyId: 1,
+    colonyCooldowns: {},
     barriers: [],
     naturalBarriers: [],
     populationLatched: { blue: false, amber: false },
@@ -1419,6 +1445,15 @@ export function assertState(state) {
     !integer(state.nextDisease, 1) ||
     !integer(state.nextEgg, 1) ||
     !integer(state.nextPlantSeed, 1) ||
+    !integer(state.nextFragment ?? 1, 1) ||
+    !integer(state.nextColonyId ?? 1, 1) ||
+    !state.colonyCooldowns ||
+    typeof state.colonyCooldowns !== "object" ||
+    Array.isArray(state.colonyCooldowns) ||
+    Object.entries(state.colonyCooldowns).some(
+      ([id, readyRound]) =>
+        !/^\d+$/.test(id) || !integer(Number(id), 1) || !integer(readyRound),
+    ) ||
     !validScenario(state.scenario) ||
     !integer(state.arenaPhase ?? 0, 0) ||
     !GEOLOGICAL_STAGES.some((stage) => stage.id === state.geologicalStage) ||
@@ -1480,6 +1515,7 @@ export function assertState(state) {
     !Array.isArray(state.extremophyteFertility) ||
     !Array.isArray(state.eggs) ||
     !Array.isArray(state.plantSeeds) ||
+    !Array.isArray(state.fragments) ||
     !Array.isArray(state.barriers) ||
     state.barriers.some((cell) => !integer(cell, 0, 63)) ||
     new Set(state.barriers).size !== state.barriers.length ||
@@ -1539,7 +1575,7 @@ export function assertState(state) {
     throw Error("Contadores inválidos.");
 
   if (
-    state.version !== 15 ||
+    state.version !== 16 ||
     !Array.isArray(state.board) ||
     state.board.length !== 64 ||
     !state.board.every((t) => ["neutral", "fertile", "hostile"].includes(t))
@@ -1648,6 +1684,9 @@ export function assertState(state) {
       p.ancestry.some((t) => !TRAITS[t]) ||
       new Set(p.ancestry).size !== p.ancestry.length ||
       !validGenome(p.genome) ||
+      !Array.isArray(p.parentIds) ||
+      p.parentIds.some((id) => !integer(id, 1)) ||
+      new Set(p.parentIds).size !== p.parentIds.length ||
       !Array.isArray(p.pregnancies) ||
       !Array.isArray(p.somaticMutations) ||
       p.somaticMutations.some(
@@ -1695,12 +1734,46 @@ export function assertState(state) {
         (p.extremophyteSinceRound === undefined)) ||
       (p.extremophyteCell !== undefined &&
         p.extremophyteCell !== square(p.r, p.c)) ||
-      typeof p.oothecaPrimed !== "boolean"
+      typeof p.oothecaPrimed !== "boolean" ||
+      !integer(p.stationarySinceRound ?? p.bornRound, 0) ||
+      typeof (p.budded ?? false) !== "boolean" ||
+      !(p.colonyId === null || p.colonyId === undefined || integer(p.colonyId, 1)) ||
+      typeof (p.paedogenesisUsed ?? false) !== "boolean" ||
+      !(p.pupaUntilRound === null || p.pupaUntilRound === undefined || integer(p.pupaUntilRound, 0)) ||
+      typeof (p.metamorphosisUsed ?? false) !== "boolean" ||
+      !(p.pairedWithId === null || p.pairedWithId === undefined || integer(p.pairedWithId, 1)) ||
+      !integer(p.biparentalGuardCharges ?? 0, 0) ||
+      !Array.isArray(p.marsupialPouch ?? []) ||
+      (p.marsupialPouch ?? []).some(
+        (entry) =>
+          !integer(entry.releaseRound, 0) ||
+          !Array.isArray(entry.brood) ||
+          !entry.brood.every((profile) => validBroodProfile(profile, p.owner)),
+      )
     )
       throw Error("Perfil inválido.");
     ids.add(p.id);
     cells.add(square(p.r, p.c));
   }
+  const fragmentIds = new Set();
+  for (const fragment of state.fragments) {
+    const cell = square(fragment.r, fragment.c);
+    if (
+      !integer(fragment.id, 1) ||
+      fragmentIds.has(fragment.id) ||
+      !["blue", "amber"].includes(fragment.owner) ||
+      !inside(fragment.r, fragment.c) ||
+      !integer(fragment.createdRound, 0) ||
+      !integer(fragment.expireRound, fragment.createdRound) ||
+      !validBroodProfile(fragment.profile, fragment.owner) ||
+      cells.has(cell)
+    )
+      throw Error("Fragmento inválido.");
+    fragmentIds.add(fragment.id);
+  }
+  if (state.nextFragment <= Math.max(0, ...fragmentIds))
+    throw Error("Identificadores de fragmentos inválidos.");
+
   const eggIds = new Set();
   for (const egg of state.eggs) {
     const cell = square(egg.r, egg.c);
@@ -1785,12 +1858,16 @@ export function assertState(state) {
   const unbornGenerations = [
     ...state.eggs.flatMap((egg) => egg.brood.map((p) => p.generation)),
     ...state.plantSeeds.map((seed) => seed.profile.generation),
+    ...state.fragments.map((fragment) => fragment.profile.generation),
     ...(state.domesticPlacement?.brood ?? []).map((p) => p.generation),
-    ...state.pieces.flatMap((p) =>
-      p.pregnancies.flatMap((pregnancy) =>
+    ...state.pieces.flatMap((p) => [
+      ...p.pregnancies.flatMap((pregnancy) =>
         pregnancy.brood.map((child) => child.generation),
       ),
-    ),
+      ...(p.marsupialPouch ?? []).flatMap((entry) =>
+        entry.brood.map((child) => child.generation),
+      ),
+    ]),
   ];
   if (
     state.maxGenerationReached <
