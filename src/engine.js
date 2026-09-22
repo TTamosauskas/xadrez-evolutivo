@@ -43,6 +43,7 @@ import {
   socialDefenseTargets,
   ovoviviparousPlacementTargets,
   canParasitize,
+  parasitismTargets,
 } from "./moves.js";
 import {
   reproduce,
@@ -1428,22 +1429,23 @@ function resolveParasitism(ctx, action) {
       (piece) => piece.id === action.id && piece.owner === state.current,
     );
   if (!canParasitize(state, p)) throw Error("Parasitismo indisponível.");
-  const fertilized =
-    !fertilityPaused(state) && terrain(state, p.r, p.c) !== "fertile";
+
+  const targets = parasitismTargets(state, p),
+    target = Number.isInteger(action.targetId)
+      ? targets.find((candidate) => candidate.id === action.targetId)
+      : null,
+    fertilized =
+      !fertilityPaused(state) && terrain(state, p.r, p.c) !== "fertile";
+
+  if (targets.length && !target)
+    throw Error("Escolha uma criatura adversária adjacente para o Parasitismo.");
+  if (target)
+    state.board[square(target.r, target.c)] = "hostile";
   if (fertilized) state.board[square(p.r, p.c)] = "fertile";
-  const affected = [];
-  for (const otherPiece of state.pieces)
-    if (
-      otherPiece.owner !== p.owner &&
-      distance(p, otherPiece) === 1 &&
-      terrain(state, otherPiece.r, otherPiece.c) !== "hostile"
-    ) {
-      state.board[square(otherPiece.r, otherPiece.c)] = "hostile";
-      affected.push(coord(otherPiece.r, otherPiece.c));
-    }
+
   log(
     state,
-    `${OWNERS[p.owner]}: 🪱 Parasitismo ${fertilized ? `tornou ${coord(p.r, p.c)} fértil` : ""}${fertilized && affected.length ? " e " : ""}${affected.length ? `${affected.join(", ")} hostil(is)` : ""}.`,
+    `${OWNERS[p.owner]}: 🪱 Parasitismo ${fertilized ? `tornou ${coord(p.r, p.c)} fértil` : ""}${fertilized && target ? " e " : ""}${target ? `atacou o habitat em ${coord(target.r, target.c)}` : ""}.`,
   );
   advanceTurn(ctx);
   settle(ctx);
