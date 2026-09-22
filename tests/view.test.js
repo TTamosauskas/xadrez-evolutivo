@@ -727,11 +727,15 @@ test("juveniles render smaller and Lactação highlights eligible children", () 
   dom.window.close();
 });
 
-test("senescent pieces render italic lifecycle styling and age status", () => {
+test("senescent pieces use only italic lifecycle styling and age status", () => {
   const dom = setup(),
     s = createState(42),
     elder = s.pieces[0];
-  elder.traits = ["Multicelularismo"];
+  elder.traits = [
+    "Multicelularismo",
+    "Locomoção Primitiva",
+    "Predação",
+  ];
   elder.bornRound = 0;
   elder.maturesRound = 2;
   s.turn = 50;
@@ -741,12 +745,36 @@ test("senescent pieces render italic lifecycle styling and age status", () => {
     piece = d.querySelector(
       `[data-r="${elder.r}"][data-c="${elder.c}"] .piece`,
     ),
-    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+    status = piece.parentElement.querySelector(".piece-status"),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    rule = css.match(/\.piece\.senescent\s*\{([^}]*)\}/)?.[1] ?? "";
   assert.ok(piece.classList.contains("senescent"));
   assert.match(piece.parentElement.title, /senescente, idade 25/);
-  assert.match(piece.parentElement.querySelector(".piece-status").textContent, /⌛/);
+  assert.doesNotMatch(status?.textContent ?? "", /⌛|⏳/);
   assert.match(d.getElementById("selected").textContent, /Senescente · idade 25/);
-  assert.match(css, /\.piece\.senescent[\s\S]*font-style:\s*italic/);
+  assert.match(rule, /font-style:\s*italic/);
+  assert.doesNotMatch(rule, /transform|opacity|font-size/);
+  dom.window.close();
+});
+
+test("pieces with no available action show an hourglass and selected wait reason", () => {
+  const dom = setup(),
+    s = createState(43),
+    piece = s.pieces.find((candidate) => candidate.owner === "blue");
+  piece.traits = [
+    ...new Set([...piece.traits, "Multicelularismo", "Metamorfose"]),
+  ];
+  piece.pupaUntilRound = round(s) + 2;
+
+  render(dom.window.document, s, { selected: piece.id });
+  const d = dom.window.document,
+    cell = d.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    );
+  assert.match(cell.querySelector(".piece-status").textContent, /⏳/);
+  assert.match(cell.title, /aguardando: Metamorfose/);
+  assert.match(d.getElementById("selected").textContent, /⏳ Metamorfose/);
+  assert.match(d.getElementById("selected").textContent, /2 rodada/);
   dom.window.close();
 });
 
