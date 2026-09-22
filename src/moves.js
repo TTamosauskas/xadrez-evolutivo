@@ -3,6 +3,7 @@ import {
   at,
   eggAt,
   plantSeedAt,
+  fragmentAt,
   barrierAt,
   builtBarrierAt,
   naturalBarrierAt,
@@ -18,6 +19,14 @@ import {
   currentGeologicalStage,
   geologicalStage,
 } from "./geology.js";
+import {
+  canBud,
+  canPupate,
+  connectedAlliesWithin,
+  paedogenesisReady,
+  parentalCareProtects,
+  sortPreferredMates,
+} from "./reproduction-traits.js";
 const ORTH = [
     [-1, 0],
     [1, 0],
@@ -44,8 +53,12 @@ export const dormant = (state, p) =>
   has(p, "Dormência") &&
   terrain(state, p.r, p.c) === "hostile" &&
   !decompositionImmune(state, p);
+export const pupating = (state, p) =>
+  Number.isInteger(p?.pupaUntilRound) && round(state) < p.pupaUntilRound;
 export const resting = (state, p) =>
-  dysfunctionalResting(state, p) || regenerationResting(state, p);
+  dysfunctionalResting(state, p) ||
+  regenerationResting(state, p) ||
+  pupating(state, p);
 
 export function manipulationTargets(state) {
   const pending = state.manipulation;
@@ -127,6 +140,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       return;
     const victim = at(state, r, c),
       egg = eggAt(state, r, c),
+      fragment = fragmentAt(state, r, c),
       builtBarrier = builtBarrierAt(state, r, c),
       naturalBarrier = naturalBarrierAt(state, r, c),
       botanicalPredation =
@@ -142,7 +156,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         victim.id !== p.id &&
         has(p, "Canibalismo") &&
         reproductionReady(state, p);
-    if ((victim?.owner === p.owner && !cannibal) || egg?.owner === p.owner)
+    if (
+      fragment ||
+      (victim?.owner === p.owner && !cannibal) ||
+      egg?.owner === p.owner
+    )
       return;
     if (
       victim &&
@@ -164,8 +182,18 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           parent &&
           has(parent, "Incubação") &&
           distance(parent, egg) === 1;
-      if (!has(p, "Ovífagia") || protectedEgg) return;
+      if (
+        (!has(p, "Ovífagia") && !has(p, "Onívoro Oportunista")) ||
+        protectedEgg
+      )
+        return;
     }
+    if (
+      victim &&
+      victim.owner !== p.owner &&
+      parentalCareProtects(state, victim)
+    )
+      return;
     if (
       victim &&
       has(victim, "Camuflagem") &&
@@ -297,7 +325,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       }
     } else ray([...ORTH, ...DIAG], captureOnly);
   }
-  const mobile = has(p, "Locomoção Primitiva");
+  const mobile = has(p, "Locomoção Primitiva") && !has(p, "Séssil");
   if (mobile) chessTargets(false);
   else if (captureUnlocked(state, p)) chessTargets(true);
   if (
@@ -328,7 +356,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     canUseFertility =
       has(p, "Respiração anaeróbia") &&
       (!has(p, "Carnívoro") || has(p, "Onívoro") || has(p, "Mixotrofia")),
-    canReproduce = reproductionReady(state, p);
+    canReproduce =
+      reproductionReady(state, p) || paedogenesisReady(state, p);
   if (
     canReproduce &&
     canUseFertility &&
@@ -405,13 +434,21 @@ export function partnersFor(state, p) {
   if (!reproductionReady(state, p)) return [];
   const branch = energyBranch(p);
   if (!branch) return [];
-  return state.pieces.filter((x) => {
+  let pool;
+  if (has(p, "Monogamia") && p.pairedWithId) {
+    pool = state.pieces.filter((candidate) => candidate.id === p.pairedWithId);
+  } else if (has(p, "Promiscuidade")) {
+    pool = connectedAlliesWithin(state, p);
+  } else {
+    pool = state.pieces;
+  }
+  let candidates = pool.filter((x) => {
     if (
       x.id === p.id ||
       x.owner !== p.owner ||
       !reproductionReady(state, x) ||
       dormant(state, x) ||
-      distance(p, x) !== 1
+      (!has(p, "Promiscuidade") && distance(p, x) !== 1)
     )
       return false;
     const mateBranch = energyBranch(x);
@@ -423,6 +460,9 @@ export function partnersFor(state, p) {
         has(x, "Mixotrofia"))
     );
   });
+  if (has(p, "Acasalamento Preferencial"))
+    candidates = sortPreferredMates(candidates);
+  return candidates;
 }
 
 export function nursingTargets(state, p) {
@@ -572,8 +612,11 @@ export function legalActions(state) {
       { type: "SKIP_BUILD" },
     ];
   if (state.phase === "partner") {
-    const p = state.pieces.find((x) => x.id === state.partner.id);
-    return partnersFor(state, p).map((m) => ({ type: "PARTNER", id: m.id }));
+    const p = state.pieces.find((x) => x.id === state.partner.id),
+      selected = new Set(state.partner.selectedIds ?? []);
+    return partnersFor(state, p)
+      .filter((mate) => !selected.has(mate.id))
+      .map((mate) => ({ type: "PARTNER", id: mate.id }));
   }
   if (state.phase === "egg-placement")
     return eggPlacementTargets(state).map((target) => ({
@@ -619,6 +662,8 @@ export function legalActions(state) {
       ...(canParasitize(state, p)
         ? [{ type: "PARASITIZE", id: p.id }]
         : []),
+      ...(canBud(state, p) ? [{ type: "BUD", id: p.id }] : []),
+      ...(canPupate(state, p) ? [{ type: "PUPATE", id: p.id }] : []),
     ]);
 }
 export function canWaitForRest(state, owner) {
@@ -635,6 +680,16 @@ export function canWaitForBirth(state, owner) {
       (egg) =>
         egg.owner === owner &&
         !ecologicalDomainBlocked(state, owner, egg.r, egg.c),
+    ) ||
+    state.fragments.some(
+      (fragment) =>
+        fragment.owner === owner &&
+        !ecologicalDomainBlocked(state, owner, fragment.r, fragment.c),
+    ) ||
+    state.pieces.some(
+      (piece) =>
+        piece.owner === owner &&
+        (piece.marsupialPouch?.length ?? 0) > 0,
     ) ||
     state.plantSeeds.some(
       (seed) =>

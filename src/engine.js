@@ -19,6 +19,7 @@ import {
   photosynthesisDelayTurns,
   naturalDeathChance,
   pieceAge,
+  juvenile,
   ECOLOGICAL_DOMAIN_START_TURN,
   ECOLOGICAL_DOMAIN_REQUIRED_TURNS,
   ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS,
@@ -51,6 +52,9 @@ import {
   placeOvoviviparousEgg,
   consumeReproductionResource,
   resolveSemelparityDeath,
+  bud,
+  fragmentOnCapture,
+  releaseMarsupialPouch,
 } from "./reproduction.js";
 import {
   checkPopulation,
@@ -60,6 +64,14 @@ import {
   exposePathogenCell,
 } from "./disease.js";
 import { aquaticFertilityRegime, conwayUnlocked } from "./geology.js";
+import {
+  attemptHorizontalTransfer,
+  canBud,
+  canPupate,
+  monogamySurvivalBonus,
+  paedogenesisReady,
+  parentalCareProtects,
+} from "./reproduction-traits.js";
 import {
   consumeDecomposition,
   hasDecomposition,
@@ -89,7 +101,11 @@ export function context(state) {
         );
         return false;
       }
+      const bonded = dead.pairedWithId
+        ? state.pieces.find((piece) => piece.id === dead.pairedWithId)
+        : null;
       state.pieces = state.pieces.filter((p) => p.id !== id);
+      if (bonded?.pairedWithId === dead.id) bonded.pairedWithId = null;
       if (state.chain === id) state.chain = null;
       if (attacker) {
         if (has(dead, "Veneno"))
@@ -99,6 +115,10 @@ export function context(state) {
         );
         if (disease) infect(state, attacker, disease);
       }
+      if (dead.marsupialPouch?.length)
+        releaseMarsupialPouch(ctx, dead, true);
+      if (attacker && has(dead, "Fragmentação"))
+        fragmentOnCapture(ctx, dead);
       if (has(dead, "Ooteca") && dead.oothecaPrimed)
         reproduce(ctx, dead, null, "Ooteca", {
           immediateDevelopment: true,
@@ -978,6 +998,19 @@ function executeMove(ctx, action) {
     capture = pieceCapture || eggCapture;
   if (
     pieceCapture &&
+    victim.owner !== p.owner &&
+    parentalCareProtects(state, victim)
+  ) {
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 🐠 Cuidado Parental protegeu a cria em ${coord(victim.r, victim.c)}.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+  if (
+    pieceCapture &&
     has(victim, "Espinhos") &&
     random(state) < 1 / 10
   ) {
@@ -1107,6 +1140,35 @@ function executeMove(ctx, action) {
     return;
   }
   if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    monogamySurvivalBonus(state, victim) > 0 &&
+    random(state) < monogamySurvivalBonus(state, victim)
+  ) {
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 🐧 parceiro monogâmico adjacente ajudou a evitar a captura.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    juvenile(state, victim) &&
+    (victim.biparentalGuardCharges ?? 0) > 0
+  ) {
+    victim.biparentalGuardCharges--;
+    log(
+      state,
+      `${OWNERS[victim.owner]}: 🐧 proteção biparental absorveu a captura da cria.`,
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+  if (
     botanicalPredation &&
     pieceCapture &&
     victim.owner !== p.owner
@@ -1135,6 +1197,7 @@ function executeMove(ctx, action) {
     return;
   }
   ctx.reserved.add(square(target.r, target.c));
+  let capturedEnemy = null;
   if (pieceCapture) {
     const killed = ctx.kill(
       victim.id,
@@ -1142,6 +1205,7 @@ function executeMove(ctx, action) {
       p,
     );
     if (killed && victim.owner !== p.owner) {
+      capturedEnemy = victim;
       state.lastSuccessfulCaptureRound = round(state);
       state.offensiveStagnation = null;
     }
@@ -1153,6 +1217,7 @@ function executeMove(ctx, action) {
   leaveBacterialTrail(state, p, square(p.r, p.c));
   p.r = target.r;
   p.c = target.c;
+  if (!target.stay) p.stationarySinceRound = round(state);
   exposePathogenCell(state, p);
   moveDirection(p);
   ctx.reserved.delete(landingCell);
@@ -1207,7 +1272,9 @@ function executeMove(ctx, action) {
     );
   }
   const scavenging =
-      !capture && has(p, "Necrófago") && hasDecomposition(state, cell);
+      !capture &&
+      (has(p, "Necrófago") || has(p, "Onívoro Oportunista")) &&
+      hasDecomposition(state, cell);
   if (!capture && !scavenging) harvest(state, p, p.r, p.c);
   const collectorStay =
       !scavenging && has(p, "Coletor") && target.stay && p.seeds > 0,
@@ -1247,15 +1314,17 @@ function executeMove(ctx, action) {
       "reproduction",
     );
   if (collectorStay) p.seedUsedTurn = state.turn;
+  const sexualPartners = partnersFor(state, p);
   if (
     fertile &&
     has(p, "Reprodução Sexuada") &&
     !has(p, "Esterilidade") &&
-    partnersFor(state, p).length
+    sexualPartners.length
   ) {
     state.phase = "partner";
     state.partner = {
       id: p.id,
+      selectedIds: [],
       second,
       locomotion,
       collectorStay,
@@ -1269,6 +1338,14 @@ function executeMove(ctx, action) {
         !collectorStay && terrain(state, p.r, p.c) === "fertile",
     };
     state.chain = null;
+    if (has(p, "Acasalamento Preferencial")) {
+      if (has(p, "Acasalamento Múltiplo") && sexualPartners.length > 1) {
+        state.partner.selectedIds = [sexualPartners[0].id];
+        choosePartner(ctx, sexualPartners[1].id);
+      } else {
+        choosePartner(ctx, sexualPartners[0].id);
+      }
+    }
     return;
   }
   const consumedFertile =
@@ -1277,17 +1354,25 @@ function executeMove(ctx, action) {
     terrain(state, p.r, p.c) === "fertile";
   if (consumedFertile) consumeReproductionResource(state, p, cell);
   let born = 0;
+  const paedogenic = paedogenesisReady(state, p);
   if (eggCapture) {
     born = reproduce(ctx, p, null, "ovifagia", {
-      forcedCount: egg.brood.length,
+      forcedCount:
+        paedogenic || !has(p, "Ovífagia") ? 1 : egg.brood.length,
       immediateDevelopment: true,
+      paedogenesis: paedogenic,
     });
     log(
       state,
       `${OWNERS[p.owner]} consumiram um ovo com ${egg.brood.length} descendente(s).`,
     );
   } else if (scavenging) {
-    born = reproduce(ctx, p, null, "necrofagia");
+    born = reproduce(ctx, p, null, "necrofagia", {
+      forcedCount:
+        paedogenic || !has(p, "Necrófago") ? 1 : undefined,
+      immediateDevelopment: paedogenic,
+      paedogenesis: paedogenic,
+    });
     if (born) consumeDecomposition(state, cell);
   } else if (cannibalism) {
     born = reproduce(ctx, p, null, "canibalismo", { forcedCount: 1 });
@@ -1302,10 +1387,16 @@ function executeMove(ctx, action) {
       p,
       null,
       predation ? "predação" : "casa fértil",
-      { fertileReproduction: !predation && consumedFertile },
+      {
+        fertileReproduction: !predation && consumedFertile,
+        forcedCount: paedogenic ? 1 : undefined,
+        immediateDevelopment: paedogenic,
+        paedogenesis: paedogenic,
+      },
     );
     if (collectorStay && born) p.seeds--;
   }
+  if (capturedEnemy) attemptHorizontalTransfer(state, p, capturedEnemy);
   const build =
     born > 0 && consumedFertile && has(p, "Antropização");
   if (
@@ -1320,6 +1411,38 @@ function executeMove(ctx, action) {
     return;
   finishMovement(ctx, p, manipulation, second, locomotion, build);
 }
+function resolveBudding(ctx, action) {
+  const state = ctx.state,
+    p = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    );
+  if (!canBud(state, p)) throw Error("Brotamento indisponível.");
+  const born = bud(ctx, p);
+  if (!born) throw Error("Brotamento sem espaço ou capacidade populacional.");
+  log(
+    state,
+    `${OWNERS[p.owner]}: 🪸 Brotamento produziu um descendente.`,
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolvePupation(ctx, action) {
+  const state = ctx.state,
+    p = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    );
+  if (!canPupate(state, p)) throw Error("Metamorfose indisponível.");
+  p.metamorphosisUsed = true;
+  p.pupaUntilRound = round(state) + 1;
+  log(
+    state,
+    `${OWNERS[p.owner]}: 🦋 entrou em pupa por uma rodada.`,
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveParasitism(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -1368,14 +1491,37 @@ function resolveNursing(ctx, action) {
 function choosePartner(ctx, id) {
   const state = ctx.state,
     pending = state.partner,
-    p = state.pieces.find((x) => x.id === pending.id);
-  const mate = partnersFor(state, p).find((x) => x.id === id);
+    p = state.pieces.find((x) => x.id === pending.id),
+    selectedIds = pending.selectedIds ?? [],
+    mate = partnersFor(state, p).find(
+      (x) => x.id === id && !selectedIds.includes(x.id),
+    );
   if (!mate) throw Error("Escolha um parceiro destacado.");
+  if (
+    has(p, "Acasalamento Múltiplo") &&
+    selectedIds.length === 0 &&
+    partnersFor(state, p).some((candidate) => candidate.id !== mate.id)
+  ) {
+    pending.selectedIds = [mate.id];
+    return;
+  }
+  const firstMate = selectedIds.length
+      ? state.pieces.find((candidate) => candidate.id === selectedIds[0])
+      : mate,
+    secondMate = selectedIds.length ? mate : null;
+  if (!firstMate) throw Error("Parceiro inicial indisponível.");
   if (!pending.collectorStay)
     consumeReproductionResource(state, p, square(p.r, p.c));
-  const born = reproduce(ctx, p, mate, "reprodução sexuada", {
-    fertileReproduction: !!pending.fertileReproduction,
-  });
+  const born = reproduce(
+    ctx,
+    p,
+    firstMate,
+    secondMate ? "acasalamento múltiplo" : "reprodução sexuada",
+    {
+      fertileReproduction: !!pending.fertileReproduction,
+      additionalMate: secondMate,
+    },
+  );
   if (pending.collectorStay && born) p.seeds--;
   state.partner = null;
   if (
@@ -1597,6 +1743,10 @@ export function transition(previous, action) {
     executeMove(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
     resolveNursing(ctx, action);
+  else if (action.type === "BUD" && state.phase === "move")
+    resolveBudding(ctx, action);
+  else if (action.type === "PUPATE" && state.phase === "move")
+    resolvePupation(ctx, action);
   else if (action.type === "PARASITIZE" && state.phase === "move")
     resolveParasitism(ctx, action);
   else if (
