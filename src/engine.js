@@ -1514,7 +1514,8 @@ function resolveDirectPartner(ctx, action) {
         piece.id === action.parentId &&
         piece.owner === state.current,
     ),
-    candidates = partnersFor(state, p);
+    candidates = partnersFor(state, p),
+    compatibleCandidates = partnersFor(state, p, { requireResource: false });
   if (
     !p ||
     (state.chain && state.chain !== p.id) ||
@@ -1540,11 +1541,11 @@ function resolveDirectPartner(ctx, action) {
   state.chain = null;
   if (
     has(p, "Acasalamento Múltiplo") &&
-    candidates.some((candidate) => candidate.id !== firstMate.id)
+    compatibleCandidates.some((candidate) => candidate.id !== firstMate.id)
   ) {
     state.partner.selectedIds = [firstMate.id];
     if (has(p, "Acasalamento Preferencial")) {
-      const secondMate = candidates.find(
+      const secondMate = compatibleCandidates.find(
         (candidate) => candidate.id !== firstMate.id,
       );
       choosePartner(ctx, secondMate.id);
@@ -1559,14 +1560,16 @@ function choosePartner(ctx, id) {
     pending = state.partner,
     p = state.pieces.find((x) => x.id === pending.id),
     selectedIds = pending.selectedIds ?? [],
-    mate = partnersFor(state, p).find(
-      (x) => x.id === id && !selectedIds.includes(x.id),
-    );
+    mate = partnersFor(state, p, {
+      requireResource: selectedIds.length === 0,
+    }).find((x) => x.id === id && !selectedIds.includes(x.id));
   if (!mate) throw Error("Escolha um parceiro destacado.");
   if (
     has(p, "Acasalamento Múltiplo") &&
     selectedIds.length === 0 &&
-    partnersFor(state, p).some((candidate) => candidate.id !== mate.id)
+    partnersFor(state, p, { requireResource: false }).some(
+      (candidate) => candidate.id !== mate.id,
+    )
   ) {
     pending.selectedIds = [mate.id];
     return;
