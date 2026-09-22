@@ -17,6 +17,7 @@ import {
   senescent,
   pieceAge,
   naturalDeathChance,
+  barrierAt,
   CANONICAL_FOUNDER_CELLS,
 } from "../src/state.js";
 import {
@@ -735,7 +736,7 @@ test("pawn bounces at both edges; camouflage blocks distant captures", () => {
   ]);
   assert.ok(!movesFor(s, s.pieces[0]).some((t) => t.c === 4));
 });
-test("all fifteen events execute and advance without invalid positions", () => {
+test("all ecological events execute and advance without invalid positions", () => {
   for (const { id } of EVENTS)
     for (let seed = 1; seed <= 6; seed++) {
       const s = createState(seed),
@@ -754,6 +755,71 @@ test("all fifteen events execute and advance without invalid positions", () => {
       }
     }
 });
+test("Insularização creates a temporary diagonal barrier with two openings for ten rounds", () => {
+  const s = fixture([
+      { owner: "blue", r: 6, c: 3 },
+      { owner: "amber", r: 1, c: 4 },
+    ]),
+    ctx = context(s);
+  s.turn = 20;
+  startEvent(ctx, "insularization");
+
+  assert.equal(s.event.id, "insularization");
+  assert.equal(s.event.barriers.length, 6);
+  assert.equal(s.event.openings.length, 2);
+  const diagonal = [...s.event.barriers, ...s.event.openings].sort(
+    (a, b) => a - b,
+  );
+  assert.equal(new Set(diagonal).size, 8);
+  assert.ok(
+    diagonal.every((cell) => Math.floor(cell / 8) === cell % 8) ||
+      diagonal.every(
+        (cell) => Math.floor(cell / 8) + (cell % 8) === 7,
+      ),
+  );
+  for (const cell of s.event.barriers)
+    assert.equal(
+      barrierAt(s, Math.floor(cell / 8), cell % 8),
+      true,
+    );
+  for (const cell of s.event.openings)
+    assert.equal(
+      barrierAt(s, Math.floor(cell / 8), cell % 8),
+      false,
+    );
+
+  for (let age = 1; age < 10; age++) {
+    s.turn += 2;
+    tickEnvironment(ctx);
+    assert.equal(s.event?.id, "insularization");
+  }
+  s.turn += 2;
+  tickEnvironment(ctx);
+  assert.equal(s.event, null);
+  for (const cell of diagonal)
+    assert.equal(
+      barrierAt(s, Math.floor(cell / 8), cell % 8),
+      false,
+    );
+  assertState(s);
+});
+
+test("Eutrofização keeps the former hostile cross mechanic", () => {
+  const s = fixture([
+      { owner: "blue", r: 7, c: 7 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    ctx = context(s),
+    definition = EVENTS.find((event) => event.id === "eutrophication");
+  s.turn = 20;
+  startEvent(ctx, "eutrophication");
+  assert.equal(definition.icon, "⚠️");
+  assert.equal(definition.name, "Eutrofização");
+  assert.equal(s.event.id, "eutrophication");
+  assert.equal(s.event.hazards.length, 15);
+  assertState(s);
+});
+
 test("full-board earthquakes terminate with unique occupied squares", () => {
   const s = fixture([]);
   for (let r = 0; r < 8; r++)
