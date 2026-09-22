@@ -921,7 +921,7 @@ test("renders barriers, build targets and construction emoji icons", () => {
   dom.window.close();
 });
 
-test("dysfunctional rest fades the piece without adding a sleep badge", () => {
+test("dysfunctional rest uses the shared waiting fade and selected badge", () => {
   const dom = setup(),
     s = createState(23),
     p = s.pieces[0];
@@ -930,14 +930,21 @@ test("dysfunctional rest fades the piece without adding a sleep badge", () => {
 
   render(dom.window.document, s, { selected: p.id });
   const d = dom.window.document,
-    piece = d.querySelector(
-      `[data-r="${p.r}"][data-c="${p.c}"] .piece`,
+    cell = d.querySelector(
+      `[data-r="${p.r}"][data-c="${p.c}"]`,
     ),
-    badges = piece.parentElement.querySelector(".trait-frame");
-  assert.ok(piece.classList.contains("dysfunctional-resting"));
-  assert.ok(!badges.textContent.includes("💤"));
+    piece = cell.querySelector(".piece"),
+    badges = cell.querySelector(".trait-frame"),
+    selected = d.getElementById("selected");
+  assert.ok(piece.classList.contains("waiting"));
+  assert.doesNotMatch(cell.textContent, /⏳|💤/);
   assert.ok(badges.textContent.includes("❌"));
-  assert.match(d.getElementById("selected").textContent, /❌ Mutação Disfuncional/);
+  assert.equal(
+    selected.querySelector(".selected-wait-badge")?.textContent,
+    "⏳",
+  );
+  assert.match(selected.textContent, /Descanso por Mutação Disfuncional/);
+  assert.match(selected.textContent, /❌ Mutação Disfuncional/);
   dom.window.close();
 });
 
