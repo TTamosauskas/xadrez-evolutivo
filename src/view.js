@@ -106,7 +106,8 @@ export function traitFrameEntries(piece, universal = new Set()) {
 }
 
 function evolutionarySummary(state, owner) {
-  const pieces = state.pieces.filter((p) => p.owner === owner),
+  const universal = universalTraits(state),
+    pieces = state.pieces.filter((p) => p.owner === owner),
     lineages = new Set(pieces.map(signature)),
     selected = dominantLineage(state, owner),
     representative = selected.piece,
@@ -115,6 +116,7 @@ function evolutionarySummary(state, owner) {
       ? Math.round((selected.count / pieces.length) * 100)
       : 0,
     traits = (representative?.traits ?? [])
+      .filter((trait) => !universal.has(trait))
       .slice(0, 3)
       .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
 
@@ -242,6 +244,9 @@ export function render(
   for (let r = 0; r < 8; r++)
     for (let c = 0; c < 8; c++) {
       const p = at(state, r, c),
+        differentialTraits = p
+          ? (p.traits ?? []).filter((trait) => !universal.has(trait))
+          : [],
         pathogenAgents = pathogenAgentAt(state, r, c),
         egg = eggAt(state, r, c),
         plantSeed = plantSeedAt(state, r, c),
