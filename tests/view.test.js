@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { createState, clone, newPiece, round } from "../src/state.js";
 import { fixture } from "./helpers.js";
+import { TRAITS } from "../src/constants.js";
 import { render, traitFrameSlots } from "../src/view.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
