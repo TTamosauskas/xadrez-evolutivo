@@ -28,7 +28,6 @@ import {
   partnersFor,
   manipulationTargets,
   constructionTargets,
-  dysfunctionalResting,
   nursingTargets,
   eggPlacementTargets,
   domesticPlacementTargets,
