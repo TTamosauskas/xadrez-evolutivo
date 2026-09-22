@@ -34,6 +34,7 @@ import {
   partnersFor,
   legalActions,
   actionsForPiece,
+  vivificationActionsForPiece,
   pieceActionState,
   constructionTargets,
   domesticPlacementTargets,
@@ -3279,6 +3280,32 @@ test("Haustório consumes only adjacent photosynthetic enemies without moving", 
     ),
   );
   assertState(s);
+});
+
+test("Vivificar groups multiple legal self-actions without hidden priority", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Brotamento", "Respiração anaeróbia"],
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
+    ]),
+    piece = s.pieces[0];
+  s.board[36] = "fertile";
+  piece.stationarySinceRound = Math.max(0, round(s) - 4);
+
+  const actions = vivificationActionsForPiece(s, piece);
+  assert.ok(
+    actions.some(
+      (action) =>
+        action.type === "MOVE" &&
+        action.r === piece.r &&
+        action.c === piece.c,
+    ),
+  );
+  assert.ok(actions.some((action) => action.type === "BUD"));
 });
 
 test("Parasitismo targets one adjacent enemy habitat and can still fertilize itself", () => {
