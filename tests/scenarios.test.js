@@ -23,10 +23,12 @@ import {
   createState,
   createSuccessorState,
   earthFounderStarts,
+  CANONICAL_FOUNDER_CELLS,
   newPiece,
 } from "../src/state.js";
 import { deserialize } from "../src/storage.js";
 import { hiddenRecessiveTraits } from "../src/reproductive-genetics.js";
+import { movesFor } from "../src/moves.js";
 import {
   genomeFromTraits,
   genomeSignature,
@@ -75,13 +77,21 @@ test("Vida na Terra disperses aquatic founders progressively through early geolo
     ["amber", 1, 4],
     ["amber", 1, 5],
   ]);
-  for (const stage of ["cambrian", "ordovician"])
-    assert.deepEqual(coords(createPeriodState(stage, 703)), [
-      ["blue", 7, 3],
-      ["blue", 7, 4],
-      ["amber", 0, 3],
-      ["amber", 0, 4],
-    ]);
+  const canonicalPool = new Set(
+    CANONICAL_FOUNDER_CELLS.map(({ r, c }) => `${r},${c}`),
+  );
+  for (const stage of ["cambrian", "ordovician"]) {
+    const state = createPeriodState(stage, 703),
+      positions = coords(state);
+    assert.equal(positions.length, 4);
+    assert.equal(
+      new Set(positions.map(([, r, c]) => `${r},${c}`)).size,
+      4,
+    );
+    assert.ok(
+      positions.every(([, r, c]) => canonicalPool.has(`${r},${c}`)),
+    );
+  }
 
   const prior = createState(704, {
     scenario: "earth",
@@ -114,6 +124,98 @@ test("Vida na Terra disperses aquatic founders progressively through early geolo
     ["amber", 3, 4],
     ["amber", 3, 5],
   ]);
+});
+
+test("canonical founder pool prevents immediate queen and knight captures", () => {
+  assert.deepEqual(
+    CANONICAL_FOUNDER_CELLS.map(({ label }) => label),
+    ["a1", "b5", "c8", "d6", "e3", "f7", "g2", "h4"],
+  );
+  const pool = new Set(
+      CANONICAL_FOUNDER_CELLS.map(({ r, c }) => `${r},${c}`),
+    ),
+    capacity = ({ r, c }) =>
+      (1 + Number(r > 0) + Number(r < 7)) *
+        (1 + Number(c > 0) + Number(c < 7)) -
+      1,
+    traits = [
+      "Reparo Celular",
+      "Multicelularismo",
+      "Predação",
+      "Simetria Bilateral",
+      "Locomoção Primitiva",
+      "Vertebrado",
+      "Locomoção Articulada",
+      "Percepção Espacial",
+    ],
+    seen = new Set();
+
+  for (const rank of [1, 5])
+    for (let seed = 1; seed <= 96; seed++) {
+      const state = createState(seed, {
+          scenario: "alternative",
+          founder: { rank, traits, ancestry: traits },
+          naturalBarriers: false,
+        }),
+        blue = state.pieces.filter((piece) => piece.owner === "blue"),
+        amber = state.pieces.filter((piece) => piece.owner === "amber");
+
+      assert.equal(state.pieces.length, 4);
+      assert.equal(
+        new Set(state.pieces.map((piece) => `${piece.r},${piece.c}`)).size,
+        4,
+      );
+      for (const piece of state.pieces) {
+        assert.ok(pool.has(`${piece.r},${piece.c}`));
+        seen.add(`${piece.r},${piece.c}`);
+        assert.equal(
+          movesFor(state, piece).some((target) => target.capture),
+          false,
+          `rank ${rank}, seed ${seed}`,
+        );
+      }
+
+      const blueCapacity = blue.reduce((sum, piece) => sum + capacity(piece), 0),
+        amberCapacity = amber.reduce(
+          (sum, piece) => sum + capacity(piece),
+          0,
+        );
+      assert.ok(Math.abs(blueCapacity - amberCapacity) <= 1);
+    }
+
+  assert.deepEqual([...seen].sort(), [...pool].sort());
+});
+
+test("canonical founders receive nearby fertile access outside aquatic stages", () => {
+  for (const [stage, seed] of [
+    ["silurian", 811],
+    ["devonian", 812],
+    ["permian", 813],
+    ["quaternary", 814],
+  ]) {
+    const state = createPeriodState(stage, seed),
+      nearbyFertile = (piece) => {
+        for (let dr = -1; dr <= 1; dr++)
+          for (let dc = -1; dc <= 1; dc++) {
+            if (!dr && !dc) continue;
+            const r = piece.r + dr,
+              c = piece.c + dc;
+            if (
+              r >= 0 &&
+              r < 8 &&
+              c >= 0 &&
+              c < 8 &&
+              state.board[r * 8 + c] === "fertile"
+            )
+              return true;
+          }
+        return false;
+      };
+    assert.ok(
+      state.pieces.every(nearbyFertile),
+      `${stage} deixou fundador sem recurso fértil próximo`,
+    );
+  }
 });
 
 test("Vida na Terra restricts first appearances to their historical period and rewards direct sequences", () => {
