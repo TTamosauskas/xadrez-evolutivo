@@ -69,8 +69,13 @@ export const builtBarrierAt = (state, r, c) =>
   state.barriers?.includes(square(r, c)) ?? false;
 export const naturalBarrierAt = (state, r, c) =>
   state.naturalBarriers?.includes(square(r, c)) ?? false;
+export const eventBarrierAt = (state, r, c) =>
+  state.event?.id === "insularization" &&
+  (state.event.barriers?.includes(square(r, c)) ?? false);
 export const barrierAt = (state, r, c) =>
-  builtBarrierAt(state, r, c) || naturalBarrierAt(state, r, c);
+  builtBarrierAt(state, r, c) ||
+  naturalBarrierAt(state, r, c) ||
+  eventBarrierAt(state, r, c);
 export const terrain = (state, r, c) => state.board[square(r, c)];
 export const round = (state) => Math.floor(state.turn / 2);
 export const ECOLOGICAL_DOMAIN_START_TURN = 200;
@@ -704,7 +709,7 @@ export function createState(seed = Date.now(), options = {}) {
     canonicalPair = !!options.canonicalPair,
     scenario = options.scenario ?? "alternative";
   const state = {
-    version: 16,
+    version: 17,
     scenario,
     arenaPhase: options.arenaPhase ?? 0,
     arenaFounders: options.arenaFounders ?? null,
@@ -2002,7 +2007,17 @@ export function assertState(state) {
       (["ice", "volcano", "meteor", "grb", "warming"].includes(e.id) &&
         !integer(e.startTurn)) ||
       (e.id === "drought" && !integer(e.cap, 1, 64)) ||
-      (e.id === "desert" && !integer(e.initial, 1, 64))
+      (e.id === "desert" && !integer(e.initial, 1, 64)) ||
+      (e.id === "insularization" &&
+        (!Array.isArray(e.barriers) ||
+          e.barriers.length !== 6 ||
+          new Set(e.barriers).size !== 6 ||
+          e.barriers.some((cell) => !integer(cell, 0, 63)) ||
+          !Array.isArray(e.openings) ||
+          e.openings.length !== 2 ||
+          new Set(e.openings).size !== 2 ||
+          e.openings.some((cell) => !integer(cell, 0, 63)) ||
+          e.openings.some((cell) => e.barriers.includes(cell))))
     )
       throw Error("Duração do evento inválida.");
   }
