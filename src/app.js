@@ -18,8 +18,8 @@ import {
   domesticPlacementTargets,
   socialDefenseTargets,
   ovoviviparousPlacementTargets,
-  canParasitize,
   parasitismTargets,
+  vivificationActionsForPiece,
 } from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
@@ -110,6 +110,36 @@ function dispatch(action) {
   if (!controller.dispatch({ ...action, revision }))
     selected = previousSelection;
 }
+
+const VIVIFICATION_LABELS = Object.freeze({
+  MOVE: "Reproduzir",
+  BUD: "Brotar",
+  PUPATE: "Metamorfosear",
+  PARASITIZE: "Fertilizar por Parasitismo",
+});
+const vivificationLabel = (action) =>
+  VIVIFICATION_LABELS[action?.type] ?? "Vivificar";
+
+function chooseVivification(actions) {
+  if (actions.length === 1) {
+    dispatch(actions[0]);
+    return;
+  }
+  const dialog = $("vivify-dialog"),
+    options = $("vivify-options");
+  $("vivify-copy").textContent =
+    "Mais de uma ação pode ser realizada nesta casa. Escolha como vivificar.";
+  options.replaceChildren();
+  for (const action of actions) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "primary";
+    button.textContent = vivificationLabel(action);
+    button.dataset.vivifyAction = JSON.stringify(action);
+    options.append(button);
+  }
+  dialog.showModal();
+}
 $("board").addEventListener("click", (event) => {
   const cell = event.target.closest(".cell");
   if (!cell || controller.paused) return;
@@ -183,18 +213,12 @@ $("board").addEventListener("click", (event) => {
     return;
   }
   const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
-  if (
-    actor?.id === p?.id &&
-    actor?.owner === state.current &&
-    movesFor(state, actor).some(
-      (target) =>
-        target.r === actor.r &&
-        target.c === actor.c &&
-        target.stay,
-    )
-  ) {
-    dispatch({ type: "MOVE", id: actor.id, r: actor.r, c: actor.c });
-    return;
+  if (actor?.id === p?.id && actor?.owner === state.current) {
+    const vivificationActions = vivificationActionsForPiece(state, actor);
+    if (vivificationActions.length) {
+      chooseVivification(vivificationActions);
+      return;
+    }
   }
   if (
     actor?.owner === state.current &&
@@ -202,15 +226,6 @@ $("board").addEventListener("click", (event) => {
     parasitismTargets(state, actor).some((target) => target.id === p.id)
   ) {
     dispatch({ type: "PARASITIZE", id: actor.id, targetId: p.id });
-    return;
-  }
-  if (
-    actor?.id === p?.id &&
-    actor?.owner === state.current &&
-    canParasitize(state, actor) &&
-    parasitismTargets(state, actor).length === 0
-  ) {
-    dispatch({ type: "PARASITIZE", id: actor.id });
     return;
   }
   if (
@@ -265,19 +280,17 @@ $("board").addEventListener("keydown", (event) => {
     )
     ?.focus();
 });
-$("piece-actions").addEventListener("click", (event) => {
-  const button = event.target.closest("[data-piece-action]");
+$("vivify-options").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-vivify-action]");
   if (!button) return;
-  const id = Number(button.dataset.pieceId),
-    piece = controller.state.pieces.find((candidate) => candidate.id === id);
-  if (!piece) return;
-  if (button.dataset.pieceAction === "bud")
-    dispatch({ type: "BUD", id: piece.id });
-  else if (button.dataset.pieceAction === "pupate")
-    dispatch({ type: "PUPATE", id: piece.id });
-  else if (button.dataset.pieceAction === "parasitize")
-    dispatch({ type: "PARASITIZE", id: piece.id });
+  const action = JSON.parse(button.dataset.vivifyAction);
+  $("vivify-dialog").close();
+  dispatch(action);
 });
+$("vivify-cancel").addEventListener("click", () =>
+  $("vivify-dialog").close(),
+);
+
 $("pass").addEventListener("click", () =>
   dispatch(
     controller.state.phase === "manipulate"
