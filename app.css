@@ -260,7 +260,8 @@ main {
   background: transparent;
   box-sizing: border-box;
 }
-.cell.attack-target::after {
+.cell.attack-target::after,
+.cell.legal.attack-target::after {
   width: 84%;
   border: 4px solid #d54242;
   border-radius: 50%;
