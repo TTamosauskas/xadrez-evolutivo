@@ -187,6 +187,14 @@ $("board").addEventListener("click", (event) => {
   if (
     actor?.owner === state.current &&
     p &&
+    partnersFor(state, actor).some((mate) => mate.id === p.id)
+  ) {
+    dispatch({ type: "PARTNER", parentId: actor.id, id: p.id });
+    return;
+  }
+  if (
+    actor?.owner === state.current &&
+    p &&
     nursingTargets(state, actor).some((child) => child.id === p.id)
   ) {
     dispatch({ type: "NURSE", id: actor.id, childId: p.id });
