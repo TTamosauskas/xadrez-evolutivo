@@ -817,12 +817,24 @@ test("selected self-actions appear immediately to the left of Passar vez", () =>
     labels = [...actions.querySelectorAll("button")].map(
       (button) => button.textContent,
     );
-  assert.deepEqual(labels, ["Reproduzir", "Parasitismo"]);
+  const selfCell = d.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    ),
+    enemyCell = d.querySelector(
+      `[data-r="${enemy.r}"][data-c="${enemy.c}"]`,
+    ),
+    legend = d.getElementById("board-legend");
+  assert.deepEqual(labels, []);
+  assert.ok(selfCell.classList.contains("reproduction-target"));
+  assert.ok(enemyCell.classList.contains("attack-target"));
+  assert.match(enemyCell.title, /ataque por Parasitismo/);
+  assert.match(legend.textContent, /Reprodução/);
+  assert.match(legend.textContent, /Ataque/);
   assert.equal(actions.nextElementSibling?.id, "pass");
   dom.window.close();
 });
 
-test("selected sexual pieces mark partners green and capture targets red", () => {
+test("selected sexual pieces mark partners green and attack targets red", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -863,32 +875,32 @@ test("selected sexual pieces mark partners green and capture targets red", () =>
 
   assert.ok(parentCell.classList.contains("reproduction-target"));
   assert.ok(mateCell.classList.contains("partner"));
-  assert.ok(enemyCell.classList.contains("capture-target"));
+  assert.ok(enemyCell.classList.contains("attack-target"));
   assert.doesNotMatch(labels.join("|"), /Reproduzir/);
   assert.match(parentCell.title, /reprodução disponível/);
   assert.match(mateCell.title, /parceiro disponível/);
-  assert.match(enemyCell.title, /alvo de captura/);
+  assert.match(enemyCell.title, /alvo de ataque/);
   assert.match(
     css,
     /\.cell\.legal\.reproduction-target::after[\s\S]*border:\s*4px solid #5bd66c/,
   );
   assert.match(
     css,
-    /\.cell\.legal\.capture-target::after[\s\S]*border:\s*4px solid #d54242/,
+    /\.cell\.attack-target::after[\s\S]*border:\s*4px solid #d54242/,
   );
 
   const legend = d.getElementById("board-legend");
   assert.match(legend.textContent, /Reprodução/);
-  assert.match(legend.textContent, /Captura/);
+  assert.match(legend.textContent, /Ataque/);
   assert.ok(legend.querySelector(".legend-action-ring.reproduction"));
-  assert.ok(legend.querySelector(".legend-action-ring.capture"));
+  assert.ok(legend.querySelector(".legend-action-ring.attack"));
   assert.match(
     css,
     /\.legend-action-ring\.reproduction[\s\S]*color:\s*#5bd66c/,
   );
   assert.match(
     css,
-    /\.legend-action-ring\.capture[\s\S]*color:\s*#d54242/,
+    /\.legend-action-ring\.attack[\s\S]*color:\s*#d54242/,
   );
   dom.window.close();
 });
