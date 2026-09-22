@@ -296,7 +296,9 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
               (victim.id !== p.id &&
                 has(p, "Canibalismo") &&
                 reproductionReady(state, p)))) ||
-            (egg?.owner && egg.owner !== p.owner && has(p, "Ovífagia")))
+            (egg?.owner &&
+              egg.owner !== p.owner &&
+              (has(p, "Ovífagia") || has(p, "Onívoro Oportunista"))))
         )
           add(r, c, [[r, c]]);
       }
@@ -327,7 +329,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   }
   const mobile = has(p, "Locomoção Primitiva") && !has(p, "Séssil");
   if (mobile) chessTargets(false);
-  else if (captureUnlocked(state, p)) chessTargets(true);
+  else if (!has(p, "Séssil") && captureUnlocked(state, p)) chessTargets(true);
   if (
     has(p, "Fotossíntese") &&
     (has(p, "Haustório") || has(p, "Carnivoria Botânica"))
