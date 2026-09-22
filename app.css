@@ -364,18 +364,18 @@ main {
   background: #6d384f99;
   box-shadow: 0 0 0 1px #f2a6cb99;
 }
-.trait-slot-0 { left: 25%; top: 6%; }
-.trait-slot-1 { left: 50%; top: 6%; }
-.trait-slot-2 { left: 75%; top: 6%; }
-.trait-slot-3 { left: 94%; top: 25%; }
-.trait-slot-4 { left: 94%; top: 50%; }
-.trait-slot-5 { left: 94%; top: 75%; }
-.trait-slot-6 { left: 75%; top: 94%; }
-.trait-slot-7 { left: 50%; top: 94%; }
-.trait-slot-8 { left: 25%; top: 94%; }
-.trait-slot-9 { left: 6%; top: 75%; }
-.trait-slot-10 { left: 6%; top: 50%; }
-.trait-slot-11 { left: 6%; top: 25%; }
+.trait-slot-0 { left: 50%; top: 94%; }
+.trait-slot-1 { left: 25%; top: 94%; }
+.trait-slot-2 { left: 6%; top: 75%; }
+.trait-slot-3 { left: 6%; top: 50%; }
+.trait-slot-4 { left: 6%; top: 25%; }
+.trait-slot-5 { left: 25%; top: 6%; }
+.trait-slot-6 { left: 50%; top: 6%; }
+.trait-slot-7 { left: 75%; top: 6%; }
+.trait-slot-8 { left: 94%; top: 25%; }
+.trait-slot-9 { left: 94%; top: 50%; }
+.trait-slot-10 { left: 94%; top: 75%; }
+.trait-slot-11 { left: 75%; top: 94%; }
 .trait-overflow {
   position: absolute;
   right: 0;

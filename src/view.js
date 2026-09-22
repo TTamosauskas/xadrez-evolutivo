@@ -45,6 +45,15 @@ const TRAIT_DISPLAY_ORDER = new Map(
   Object.keys(TRAITS).map((trait, index) => [trait, index]),
 );
 
+export function traitFrameSlots(count) {
+  if (!Number.isInteger(count) || count <= 0) return [];
+  const visibleCount = Math.min(TRAIT_FRAME_LIMIT, count);
+  return Array.from({ length: visibleCount }, (_, index) =>
+    Math.round((index * TRAIT_FRAME_LIMIT) / visibleCount) %
+      TRAIT_FRAME_LIMIT,
+  );
+}
+
 export function traitFrameEntries(piece) {
   const entries = [
     ...(piece?.traits ?? []).map((trait) => ({ trait, somatic: false })),
@@ -323,12 +332,13 @@ export function render(
         );
 
         if (traitFrame.visible.length) {
-          const frame = make("span", undefined, "trait-frame");
+          const frame = make("span", undefined, "trait-frame"),
+            slots = traitFrameSlots(traitFrame.visible.length);
           for (const [index, entry] of traitFrame.visible.entries()) {
             const icon = make(
               "span",
               TRAITS[entry.trait][0],
-              `trait-badge trait-slot-${index}${entry.somatic ? " somatic-badge" : ""}`,
+              `trait-badge trait-slot-${slots[index]}${entry.somatic ? " somatic-badge" : ""}`,
             );
             icon.dataset.trait = entry.trait;
             frame.append(icon);
