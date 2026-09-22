@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { createState, clone, newPiece, round } from "../src/state.js";
+import { fixture } from "./helpers.js";
 import { render, traitFrameSlots } from "../src/view.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
@@ -477,6 +478,49 @@ test("selected self-actions appear immediately to the left of Passar vez", () =>
     );
   assert.deepEqual(labels, ["Reproduzir", "Parasitismo"]);
   assert.equal(actions.nextElementSibling?.id, "pass");
+  dom.window.close();
+});
+
+test("selected sexual pieces mark partners green and capture targets red", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Reprodução Sexuada"],
+      },
+      {
+        owner: "blue",
+        r: 4,
+        c: 5,
+        traits: ["Reprodução Sexuada"],
+      },
+      { owner: "amber", r: 3, c: 4 },
+    ]),
+    parent = s.pieces[0],
+    mate = s.pieces[1],
+    enemy = s.pieces[2];
+  s.board[parent.r * 8 + parent.c] = "fertile";
+
+  render(dom.window.document, s, { selected: parent.id });
+  const d = dom.window.document,
+    mateCell = d.querySelector(
+      `[data-r="${mate.r}"][data-c="${mate.c}"]`,
+    ),
+    enemyCell = d.querySelector(
+      `[data-r="${enemy.r}"][data-c="${enemy.c}"]`,
+    ),
+    labels = [...d.querySelectorAll("#piece-actions button")].map(
+      (button) => button.textContent,
+    );
+
+  assert.ok(mateCell.classList.contains("partner"));
+  assert.ok(enemyCell.classList.contains("capture-target"));
+  assert.doesNotMatch(labels.join("|"), /Reproduzir/);
+  assert.match(mateCell.title, /parceiro disponível/);
+  assert.match(enemyCell.title, /alvo de captura/);
   dom.window.close();
 });
 

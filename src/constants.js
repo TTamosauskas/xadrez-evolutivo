@@ -247,7 +247,7 @@ export const TRAITS = {
   Resistência: ["🧬", "Impede infecções por patógenos ecológicos e reduz em 75% a mortalidade individual causada por patógenos de pressão populacional."],
   "Reprodução Sexuada": [
     "❤️",
-    "Cada descendente recebe um alelo de cada progenitor em cada locus, recombinando genes dominantes e recessivos.",
+    "Dois portadores reprodutivamente aptos podem cruzar quando pelo menos um deles fornece uma casa fértil ou uma semente armazenada; cada descendente recebe um alelo de cada progenitor em cada locus.",
   ],
   "Precocidade Sexual": [
     "🪰",

@@ -148,7 +148,13 @@ $("board").addEventListener("click", (event) => {
   }
   if (state.phase === "partner") {
     const parent = state.pieces.find((p) => p.id === state.partner.id);
-    if (p && partnersFor(state, parent).some((m) => m.id === p.id))
+    const selectedIds = new Set(state.partner.selectedIds ?? []);
+    if (
+      p &&
+      partnersFor(state, parent, {
+        requireResource: selectedIds.size === 0,
+      }).some((m) => m.id === p.id && !selectedIds.has(m.id))
+    )
       dispatch({ type: "PARTNER", id: p.id });
     return;
   }
@@ -182,6 +188,14 @@ $("board").addEventListener("click", (event) => {
     canParasitize(state, actor)
   ) {
     dispatch({ type: "PARASITIZE", id: actor.id });
+    return;
+  }
+  if (
+    actor?.owner === state.current &&
+    p &&
+    partnersFor(state, actor).some((mate) => mate.id === p.id)
+  ) {
+    dispatch({ type: "PARTNER", parentId: actor.id, id: p.id });
     return;
   }
   if (

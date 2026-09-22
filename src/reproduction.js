@@ -983,6 +983,12 @@ export function reproduce(
         .filter(Boolean)
         .map((candidate) => [candidate.id, candidate]),
     ).values()];
+  if (
+    mates.length &&
+    (!has(parent, "Reprodução Sexuada") ||
+      mates.some((candidate) => !has(candidate, "Reprodução Sexuada")))
+  )
+    return 0;
   for (const candidate of mates) {
     const branchParent = energyBranch(parent),
       branchMate = energyBranch(candidate),

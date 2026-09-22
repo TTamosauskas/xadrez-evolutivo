@@ -432,8 +432,37 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       }
   return targets;
 }
-export function partnersFor(state, p) {
-  if (!reproductionReady(state, p)) return [];
+export function sexualReproductionResource(state, parent, mate) {
+  const providers = [parent, mate].filter(Boolean);
+  for (const provider of providers)
+    if (
+      has(provider, "Respiração anaeróbia") &&
+      terrain(state, provider.r, provider.c) === "fertile"
+    )
+      return {
+        kind: "fertile",
+        providerId: provider.id,
+        cell: square(provider.r, provider.c),
+      };
+  for (const provider of providers)
+    if (
+      has(provider, "Respiração anaeróbia") &&
+      has(provider, "Coletor") &&
+      (provider.seeds ?? 0) > 0 &&
+      provider.seedUsedTurn !== state.turn
+    )
+      return { kind: "seed", providerId: provider.id };
+  return null;
+}
+
+export function partnersFor(state, p, { requireResource = true } = {}) {
+  if (
+    !reproductionReady(state, p) ||
+    !has(p, "Reprodução Sexuada") ||
+    resting(state, p) ||
+    dormant(state, p)
+  )
+    return [];
   const branch = energyBranch(p);
   if (!branch) return [];
   let pool;
@@ -448,9 +477,12 @@ export function partnersFor(state, p) {
     if (
       x.id === p.id ||
       x.owner !== p.owner ||
+      !has(x, "Reprodução Sexuada") ||
       !reproductionReady(state, x) ||
+      resting(state, x) ||
       dormant(state, x) ||
-      (!has(p, "Promiscuidade") && distance(p, x) !== 1)
+      (!has(p, "Promiscuidade") && distance(p, x) !== 1) ||
+      (requireResource && !sexualReproductionResource(state, p, x))
     )
       return false;
     const mateBranch = energyBranch(x);
@@ -616,7 +648,7 @@ export function legalActions(state) {
   if (state.phase === "partner") {
     const p = state.pieces.find((x) => x.id === state.partner.id),
       selected = new Set(state.partner.selectedIds ?? []);
-    return partnersFor(state, p)
+    return partnersFor(state, p, { requireResource: selected.size === 0 })
       .filter((mate) => !selected.has(mate.id))
       .map((mate) => ({ type: "PARTNER", id: mate.id }));
   }
@@ -649,6 +681,17 @@ export function legalActions(state) {
         id: p.id,
         r: t.r,
         c: t.c,
+      })),
+      ...(
+        state.chain && state.chain !== p.id
+          ? []
+          : has(p, "Acasalamento Preferencial")
+            ? partnersFor(state, p).slice(0, 1)
+            : partnersFor(state, p)
+      ).map((mate) => ({
+        type: "PARTNER",
+        parentId: p.id,
+        id: mate.id,
       })),
       ...nursingTargets(state, p).map((child) => ({
         type: "NURSE",

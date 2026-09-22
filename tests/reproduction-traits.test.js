@@ -190,6 +190,7 @@ test("Promiscuidade reaches a sexual partner through a connected allied network"
     focal = s.pieces[0],
     remote = s.pieces[2];
 
+  s.board[focal.r * 8 + focal.c] = "fertile";
   assert.ok(partnersFor(s, focal).some((piece) => piece.id === remote.id));
   assertState(s);
 });
@@ -329,6 +330,57 @@ test("Acasalamento Múltiplo creates biparental sub-broods and doubles recovery"
   assert.ok(parent.nextReproductionRound >= 6);
   assert.ok(first.nextReproductionRound >= 6);
   assert.ok(second.nextReproductionRound >= 6);
+  assertState(s);
+});
+
+test("Acasalamento Múltiplo uses one fertile resource across both partners", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: ["Reprodução Sexuada", "Promiscuidade", "Acasalamento Múltiplo"],
+    },
+    {
+      owner: "blue",
+      r: 4,
+      c: 5,
+      traits: ["Reprodução Sexuada"],
+    },
+    {
+      owner: "blue",
+      r: 5,
+      c: 4,
+      traits: ["Reprodução Sexuada"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parent = s.pieces[0],
+    first = s.pieces[1],
+    second = s.pieces[2];
+  s.board[first.r * 8 + first.c] = "fertile";
+
+  assert.deepEqual(
+    partnersFor(s, parent).map((piece) => piece.id),
+    [first.id],
+  );
+  s = transition(s, {
+    type: "PARTNER",
+    parentId: parent.id,
+    id: first.id,
+  });
+  assert.equal(s.phase, "partner");
+  assert.deepEqual(s.partner.selectedIds, [first.id]);
+  assert.ok(
+    legalActions(s).some(
+      (action) => action.type === "PARTNER" && action.id === second.id,
+    ),
+  );
+
+  s = transition(s, { type: "PARTNER", id: second.id });
+  assert.equal(s.board[first.r * 8 + first.c], "neutral");
+  assert.equal(s.turn, 1);
+  assert.ok(parent.id);
   assertState(s);
 });
 
