@@ -795,7 +795,7 @@ test("stationary environmental effects remain actionable while active", () => {
   assert.ok(actionable.has("Extremófitas"));
 });
 
-test("selected self-actions appear immediately to the left of Passar vez", () => {
+test("reproduction and targeted Parasitismo use board rings instead of action buttons", () => {
   const dom = setup(),
     s = createState(24),
     piece = s.pieces.find((candidate) => candidate.owner === s.current),
@@ -831,6 +831,26 @@ test("selected self-actions appear immediately to the left of Passar vez", () =>
   assert.match(legend.textContent, /Reprodução/);
   assert.match(legend.textContent, /Ataque/);
   assert.equal(actions.nextElementSibling?.id, "pass");
+  dom.window.close();
+});
+
+test("self-only Parasitismo remains an action button when there is no attack target", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
+    ]),
+    piece = s.pieces[0];
+
+  render(dom.window.document, s, { selected: piece.id });
+  const d = dom.window.document,
+    labels = [...d.querySelectorAll("#piece-actions button")].map(
+      (button) => button.textContent,
+    ),
+    legend = d.getElementById("board-legend");
+
+  assert.deepEqual(labels, ["Parasitismo"]);
+  assert.doesNotMatch(legend.textContent, /Ataque/);
   dom.window.close();
 });
 
