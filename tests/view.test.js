@@ -328,7 +328,7 @@ test("globally established inherited traits move to genetic legacy and return wh
     s = fixture([
       { owner: "blue", r: 4, c: 4 },
       { owner: "blue", r: 4, c: 5 },
-      { owner: "amber", r: 0, c: 0 },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),
     selectedPiece = s.pieces[0],
     ally = s.pieces[1],
@@ -629,7 +629,7 @@ test("actionable mutations appear first, bold and with concise descriptions", ()
         rank: 4,
         traits: ["Resistência", "Predação"],
       },
-      { owner: "amber", r: 3, c: 4 },
+      { owner: "amber", r: 3, c: 4, traits: ["Fotossíntese"] },
     ]),
     piece = s.pieces[0];
 
