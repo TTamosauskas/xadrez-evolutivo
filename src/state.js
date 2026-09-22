@@ -764,14 +764,17 @@ export function createState(seed = Date.now(), options = {}) {
         scenario === "earth" && (balancedPair || ownerPair)
           ? earthFounderStarts(state.geologicalStage, state.cycle)
           : null,
-      canonicalStarts = canonicalFounderStarts(
-        state,
-        balancedPair || ownerPair,
-      ),
-      starts = earthStarts ??
-        (canonicalPair && !balancedPair && !ownerPair
-          ? [canonicalStarts[0], canonicalStarts[2]]
-          : canonicalStarts);
+      starts =
+        earthStarts ??
+        (() => {
+          const canonicalStarts = canonicalFounderStarts(
+            state,
+            balancedPair || ownerPair,
+          );
+          return canonicalPair && !balancedPair && !ownerPair
+            ? [canonicalStarts[0], canonicalStarts[2]]
+            : canonicalStarts;
+        })();
     for (const [owner, r, c, slot] of starts) {
       const source = ownerPair
         ? ownerFounders[owner][slot]
