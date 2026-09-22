@@ -386,125 +386,59 @@ test("globally established inherited traits move to genetic legacy and return wh
   dom.window.close();
 });
 
-test("animal traits establish inside the non-photosynthetic branch", () => {
+test("branch-specific traits remain differential unless every piece expresses them", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4 },
       { owner: "amber", r: 0, c: 0 },
-      { owner: "blue", r: 2, c: 2 },
+      { owner: "blue", r: 2, c: 2, traits: ["Fotossíntese"] },
     ]),
     animalA = s.pieces[0],
     animalB = s.pieces[1],
     plant = s.pieces[2];
 
-  animalA.traits = ["Predação", "Multicelularismo", "Simetria Bilateral"];
-  animalB.traits = ["Predação", "Multicelularismo", "Simetria Bilateral"];
-  plant.traits = ["Fotossíntese"];
+  animalA.traits = [
+    "Respiração anaeróbia",
+    "Predação",
+    "Multicelularismo",
+    "Simetria Bilateral",
+  ];
+  animalB.traits = [
+    "Respiração anaeróbia",
+    "Predação",
+    "Multicelularismo",
+    "Simetria Bilateral",
+  ];
+  plant.traits = ["Respiração anaeróbia", "Fotossíntese", "Embriófitas"];
   animalA.ancestry = [...animalA.traits];
   animalB.ancestry = [...animalB.traits];
   plant.ancestry = [...plant.traits];
 
-  let established = establishedTraits(s);
-  assert.ok(established.has("Simetria Bilateral"));
-  assert.ok(!established.has("Multicelularismo"));
-
-  render(dom.window.document, s, { selected: animalA.id });
-  let d = dom.window.document,
-    selected = d.getElementById("selected"),
-    cell = d.querySelector(
-      `[data-r="${animalA.r}"][data-c="${animalA.c}"]`,
-    );
-  assert.match(
-    selected.querySelector(".legacy-toggle").textContent,
-    /Simetria Bilateral/,
-  );
-  assert.ok(
-    ![...cell.querySelectorAll(".trait-badge")].some(
-      (badge) => badge.dataset.trait === "Simetria Bilateral",
-    ),
-  );
-
-  animalB.traits = ["Predação", "Multicelularismo"];
-  animalB.ancestry = [...animalB.traits];
-  established = establishedTraits(s);
+  const established = establishedTraits(s);
+  assert.ok(established.has("Respiração anaeróbia"));
   assert.ok(!established.has("Simetria Bilateral"));
+  assert.ok(!established.has("Predação"));
+  assert.ok(!established.has("Fotossíntese"));
+  assert.ok(!established.has("Embriófitas"));
 
   render(dom.window.document, s, { selected: animalA.id });
-  d = dom.window.document;
-  selected = d.getElementById("selected");
-  cell = d.querySelector(
-    `[data-r="${animalA.r}"][data-c="${animalA.c}"]`,
-  );
-  assert.match(selected.textContent, /Vantagens Evolutivas/);
-  assert.match(selected.textContent, /Simetria Bilateral/);
-  assert.ok(
-    [...cell.querySelectorAll(".trait-badge")].some(
-      (badge) => badge.dataset.trait === "Simetria Bilateral",
+  const d = dom.window.document,
+    selected = d.getElementById("selected"),
+    animalCell = d.querySelector(
+      `[data-r="${animalA.r}"][data-c="${animalA.c}"]`,
     ),
-  );
-  dom.window.close();
-});
-
-test("plant traits establish inside the photosynthetic branch", () => {
-  const s = fixture([
-      { owner: "blue", r: 4, c: 4 },
-      { owner: "amber", r: 0, c: 0 },
-      { owner: "blue", r: 2, c: 2 },
-    ]),
-    plantA = s.pieces[0],
-    plantB = s.pieces[1],
-    predator = s.pieces[2];
-
-  plantA.traits = ["Fotossíntese", "Embriófitas"];
-  plantB.traits = ["Fotossíntese", "Embriófitas"];
-  predator.traits = ["Predação"];
-
-  let established = establishedTraits(s);
-  assert.ok(established.has("Embriófitas"));
-
-  plantB.traits = ["Fotossíntese"];
-  established = establishedTraits(s);
-  assert.ok(!established.has("Embriófitas"));
-});
-
-test("energy branches stay in legacy until a piece lacks both basal branches", () => {
-  const dom = setup(),
-    s = fixture([
-      { owner: "blue", r: 4, c: 4 },
-      { owner: "amber", r: 0, c: 0 },
-    ]),
-    plant = s.pieces[0],
-    predator = s.pieces[1];
-
-  plant.traits = ["Fotossíntese"];
-  predator.traits = ["Predação"];
-  plant.ancestry = [...plant.traits];
-  predator.ancestry = [...predator.traits];
-
-  let established = establishedTraits(s);
-  assert.ok(established.has("Fotossíntese"));
-  assert.ok(established.has("Predação"));
+    frameTraits = [...animalCell.querySelectorAll(".trait-badge")].map(
+      (badge) => badge.dataset.trait,
+    );
+  assert.match(selected.textContent, /Simetria Bilateral/);
+  assert.match(selected.textContent, /Predação/);
+  assert.ok(frameTraits.includes("Simetria Bilateral"));
+  assert.ok(frameTraits.includes("Predação"));
 
   render(dom.window.document, s, { selected: plant.id });
-  let selected = dom.window.document.getElementById("selected");
-  assert.match(
-    selected.querySelector(".legacy-toggle").textContent,
-    /Fotossíntese/,
-  );
-
-  const unassigned = newPiece(s, "blue", 6, 6, {
-    traits: [],
-    ancestry: [],
-  });
-  s.pieces.push(unassigned);
-  established = establishedTraits(s);
-  assert.ok(!established.has("Fotossíntese"));
-  assert.ok(!established.has("Predação"));
-
-  render(dom.window.document, s, { selected: plant.id });
-  selected = dom.window.document.getElementById("selected");
-  assert.match(selected.textContent, /Vantagens Evolutivas/);
-  assert.match(selected.textContent, /Fotossíntese/);
+  const plantSelected = dom.window.document.getElementById("selected");
+  assert.match(plantSelected.textContent, /Fotossíntese/);
+  assert.match(plantSelected.textContent, /Embriófitas/);
   dom.window.close();
 });
 
@@ -737,21 +671,35 @@ test("selected sexual pieces mark partners green and capture targets red", () =>
 
   render(dom.window.document, s, { selected: parent.id });
   const d = dom.window.document,
+    parentCell = d.querySelector(
+      `[data-r="${parent.r}"][data-c="${parent.c}"]`,
+    ),
     mateCell = d.querySelector(
       `[data-r="${mate.r}"][data-c="${mate.c}"]`,
     ),
     enemyCell = d.querySelector(
       `[data-r="${enemy.r}"][data-c="${enemy.c}"]`,
     ),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
     labels = [...d.querySelectorAll("#piece-actions button")].map(
       (button) => button.textContent,
     );
 
+  assert.ok(parentCell.classList.contains("reproduction-target"));
   assert.ok(mateCell.classList.contains("partner"));
   assert.ok(enemyCell.classList.contains("capture-target"));
   assert.doesNotMatch(labels.join("|"), /Reproduzir/);
+  assert.match(parentCell.title, /reprodução disponível/);
   assert.match(mateCell.title, /parceiro disponível/);
   assert.match(enemyCell.title, /alvo de captura/);
+  assert.match(
+    css,
+    /\.cell\.legal\.reproduction-target::after[\s\S]*border:\s*4px solid #5bd66c/,
+  );
+  assert.match(
+    css,
+    /\.cell\.legal\.capture-target::after[\s\S]*border:\s*4px solid #d54242/,
+  );
   dom.window.close();
 });
 
