@@ -154,6 +154,9 @@ export function render(
       ? partnersFor(
           state,
           state.pieces.find((p) => p.id === state.partner.id),
+          {
+            requireResource: !(state.partner.selectedIds?.length),
+          },
         )
       : state.phase === "move" &&
           actor &&
