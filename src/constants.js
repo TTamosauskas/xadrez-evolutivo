@@ -267,7 +267,7 @@ export const TRAITS = {
     "Reduz movimento e captura ao primeiro passo da trajetória e impede a segunda movimentação de Locomoção Avançada.",
   ],
   "Deficiência Sensorial": [
-    "👁️‍🗨️",
+    "😵",
     "Reduz pela metade o alcance máximo de captura à distância, com mínimo de uma casa.",
   ],
   "Filho único": [
