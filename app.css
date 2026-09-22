@@ -159,7 +159,8 @@ main {
   pointer-events: none;
 }
 .cell.built-barrier .piece,
-.cell.built-barrier .badges {
+.cell.built-barrier .trait-frame,
+.cell.built-barrier .piece-status {
   position: relative;
   z-index: 3;
 }
@@ -183,7 +184,8 @@ main {
   pointer-events: none;
 }
 .cell.decomposition .piece,
-.cell.decomposition .badges {
+.cell.decomposition .trait-frame,
+.cell.decomposition .piece-status {
   position: relative;
   z-index: 2;
 }
@@ -340,18 +342,80 @@ main {
 .piece.dysfunctional-resting {
   opacity: 0.42;
 }
-.badges {
+.trait-frame {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  left: 2px;
-  font-size: clamp(8px, 1.5vw, 13px);
-  text-align: center;
-  line-height: 1.2;
+  inset: 4px;
+  z-index: 4;
   pointer-events: none;
 }
-.badge-icon {
+.trait-badge {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  min-width: 1em;
+  min-height: 1em;
+  font-size: clamp(9px, 1.55vw, 14px);
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 1px 1px #000b);
+}
+.trait-badge.somatic-badge {
+  border-radius: 50%;
+  background: #6d384f99;
+  box-shadow: 0 0 0 1px #f2a6cb99;
+}
+.trait-slot-0 { left: 25%; top: 6%; }
+.trait-slot-1 { left: 50%; top: 6%; }
+.trait-slot-2 { left: 75%; top: 6%; }
+.trait-slot-3 { left: 94%; top: 25%; }
+.trait-slot-4 { left: 94%; top: 50%; }
+.trait-slot-5 { left: 94%; top: 75%; }
+.trait-slot-6 { left: 75%; top: 94%; }
+.trait-slot-7 { left: 50%; top: 94%; }
+.trait-slot-8 { left: 25%; top: 94%; }
+.trait-slot-9 { left: 6%; top: 75%; }
+.trait-slot-10 { left: 6%; top: 50%; }
+.trait-slot-11 { left: 6%; top: 25%; }
+.trait-overflow {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  min-width: 1.65em;
+  padding: 1px 3px;
+  border-radius: 999px;
+  background: #171b17db;
+  color: #f1ede1;
+  font-size: clamp(8px, 1.3vw, 12px);
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  text-shadow: 0 1px 1px #000;
+}
+.piece-status {
+  position: absolute;
+  z-index: 5;
+  top: 7%;
+  right: 7%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  max-width: 42%;
+  pointer-events: none;
+}
+.status-badge {
   display: inline-block;
+  padding: 1px 2px;
+  border-radius: 4px;
+  background: #171b17b8;
+  color: #f2eee3;
+  font-size: clamp(8px, 1.3vw, 12px);
+  line-height: 1;
+  white-space: nowrap;
+  text-shadow: 0 1px 1px #000;
+}
+.cell.trait-dense .piece.gigantism {
+  font-size: clamp(30px, 6vw, 58px);
 }
 .event {
   font-size: 13px;
