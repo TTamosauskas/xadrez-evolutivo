@@ -3311,9 +3311,24 @@ test("Parasitismo targets one adjacent enemy habitat and can still fertilize its
     id: parasite.id,
     targetId: firstTarget.id,
   });
-  assert.equal(s.board[4 * 8 + 4], "fertile");
+  assert.equal(s.board[4 * 8 + 4], "neutral");
   assert.equal(s.board[3 * 8 + 4], "hostile");
   assert.equal(s.board[4 * 8 + 5], "neutral");
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  assert.ok(
+    legalActions(s).some(
+      (action) =>
+        action.type === "PARASITIZE" &&
+        action.id === s.pieces[0].id &&
+        action.targetId === undefined,
+    ),
+  );
+  s = simulate(s, { type: "PARASITIZE", id: s.pieces[0].id });
+  assert.equal(s.board[36], "fertile");
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
