@@ -287,7 +287,7 @@ export function render(
       details.append(
         make(
           "span",
-          "Nenhuma mutação acionável agora.",
+          "Nenhuma ação disponível.",
           "mobile-selected-more",
         ),
       );
