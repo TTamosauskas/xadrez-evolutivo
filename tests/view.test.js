@@ -757,7 +757,7 @@ test("senescent pieces use only italic lifecycle styling and age status", () => 
   dom.window.close();
 });
 
-test("pieces with no available action show an hourglass and selected wait reason", () => {
+test("pieces with no available action fade on board and show wait badge when selected", () => {
   const dom = setup(),
     s = createState(43),
     piece = s.pieces.find((candidate) => candidate.owner === "blue");
@@ -770,11 +770,21 @@ test("pieces with no available action show an hourglass and selected wait reason
   const d = dom.window.document,
     cell = d.querySelector(
       `[data-r="${piece.r}"][data-c="${piece.c}"]`,
-    );
-  assert.match(cell.querySelector(".piece-status").textContent, /⏳/);
+    ),
+    boardPiece = cell.querySelector(".piece"),
+    selected = d.getElementById("selected"),
+    waitBadge = selected.querySelector(".selected-wait-badge"),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    waitRule = css.match(/\.cell \.piece\.waiting\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.ok(boardPiece.classList.contains("waiting"));
+  assert.doesNotMatch(cell.textContent, /⏳/);
   assert.match(cell.title, /aguardando: Metamorfose/);
-  assert.match(d.getElementById("selected").textContent, /⏳ Metamorfose/);
-  assert.match(d.getElementById("selected").textContent, /2 rodada/);
+  assert.equal(waitBadge?.textContent, "⏳");
+  assert.equal(waitBadge?.title, "Metamorfose");
+  assert.match(selected.textContent, /Metamorfose/);
+  assert.match(selected.textContent, /2 rodada/);
+  assert.match(waitRule, /opacity:\s*0\.48/);
   dom.window.close();
 });
 
