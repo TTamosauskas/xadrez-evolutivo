@@ -619,6 +619,60 @@ test("legacy toggle is omitted when there are no historical or established trait
   dom.window.close();
 });
 
+test("actionable mutations appear first, bold and with concise descriptions", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Resistência", "Predação"],
+      },
+      { owner: "amber", r: 3, c: 4 },
+    ]),
+    piece = s.pieces[0];
+
+  render(dom.window.document, s, { selected: piece.id });
+  const selected = dom.window.document.getElementById("selected"),
+    rows = [...selected.querySelectorAll(".selected-trait")],
+    predation = rows.find((row) => row.textContent.includes("Predação")),
+    resistance = rows.find((row) => row.textContent.includes("Resistência"));
+
+  assert.equal(rows[0], predation);
+  assert.ok(predation.classList.contains("actionable-trait"));
+  assert.ok(predation.querySelector("strong"));
+  assert.match(predation.textContent, /Pode capturar peças/);
+  assert.ok(!resistance.classList.contains("actionable-trait"));
+  assert.equal(resistance.querySelector("strong"), null);
+  dom.window.close();
+});
+
+test("a mutation is not highlighted when it has no legal action this turn", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Resistência", "Predação"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0];
+
+  render(dom.window.document, s, { selected: piece.id });
+  const predation = [...dom.window.document.querySelectorAll(
+    "#selected .selected-trait",
+  )].find((row) => row.textContent.includes("Predação"));
+
+  assert.ok(predation);
+  assert.ok(!predation.classList.contains("actionable-trait"));
+  assert.equal(predation.querySelector("strong"), null);
+  dom.window.close();
+});
+
 test("selected self-actions appear immediately to the left of Passar vez", () => {
   const dom = setup(),
     s = createState(24),
