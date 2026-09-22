@@ -3293,8 +3293,9 @@ test("Vivificar groups multiple legal self-actions without hidden priority", () 
       { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),
     piece = s.pieces[0];
+  s.turn = 10;
   s.board[36] = "fertile";
-  piece.stationarySinceRound = Math.max(0, round(s) - 4);
+  piece.stationarySinceRound = 0;
 
   const actions = vivificationActionsForPiece(s, piece);
   assert.ok(
