@@ -34,6 +34,7 @@ import {
   partnersFor,
   legalActions,
   actionsForPiece,
+  vivificationActionsForPiece,
   pieceActionState,
   constructionTargets,
   domesticPlacementTargets,
@@ -3281,6 +3282,33 @@ test("Haustório consumes only adjacent photosynthetic enemies without moving", 
   assertState(s);
 });
 
+test("Vivificar groups multiple legal self-actions without hidden priority", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Brotamento", "Respiração anaeróbia"],
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
+    ]),
+    piece = s.pieces[0];
+  s.turn = 10;
+  s.board[36] = "fertile";
+  piece.stationarySinceRound = 0;
+
+  const actions = vivificationActionsForPiece(s, piece);
+  assert.ok(
+    actions.some(
+      (action) =>
+        action.type === "MOVE" &&
+        action.r === piece.r &&
+        action.c === piece.c,
+    ),
+  );
+  assert.ok(actions.some((action) => action.type === "BUD"));
+});
+
 test("Parasitismo targets one adjacent enemy habitat and can still fertilize itself", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
@@ -3311,9 +3339,24 @@ test("Parasitismo targets one adjacent enemy habitat and can still fertilize its
     id: parasite.id,
     targetId: firstTarget.id,
   });
-  assert.equal(s.board[4 * 8 + 4], "fertile");
+  assert.equal(s.board[4 * 8 + 4], "neutral");
   assert.equal(s.board[3 * 8 + 4], "hostile");
   assert.equal(s.board[4 * 8 + 5], "neutral");
+
+  s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  assert.ok(
+    legalActions(s).some(
+      (action) =>
+        action.type === "PARASITIZE" &&
+        action.id === s.pieces[0].id &&
+        action.targetId === undefined,
+    ),
+  );
+  s = simulate(s, { type: "PARASITIZE", id: s.pieces[0].id });
+  assert.equal(s.board[36], "fertile");
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },

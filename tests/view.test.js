@@ -743,7 +743,7 @@ test("stationary photosynthesis is actionable even without an explicit action ta
   dom.window.close();
 });
 
-test("stationary preparation makes Brotamento actionable before the button is ready", () => {
+test("stationary preparation makes Brotamento actionable before Vivificar is ready", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -762,12 +762,12 @@ test("stationary preparation makes Brotamento actionable before the button is re
     budding = [...selected.querySelectorAll(".selected-trait")].find(
       (row) => row.textContent.includes("Brotamento"),
     ),
-    actions = [...dom.window.document.querySelectorAll(
-      "#piece-actions button",
-    )].map((button) => button.textContent);
+    cell = dom.window.document.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    );
 
   assert.ok(budding?.classList.contains("actionable-trait"));
-  assert.doesNotMatch(actions.join("|"), /Brotar/);
+  assert.ok(!cell.classList.contains("vivification-target"));
   dom.window.close();
 });
 
@@ -795,7 +795,7 @@ test("stationary environmental effects remain actionable while active", () => {
   assert.ok(actionable.has("Extremófitas"));
 });
 
-test("reproduction and targeted Parasitismo use board rings instead of action buttons", () => {
+test("Vivificar and targeted Parasitismo use green and red board rings", () => {
   const dom = setup(),
     s = createState(24),
     piece = s.pieces.find((candidate) => candidate.owner === s.current),
@@ -813,28 +813,24 @@ test("reproduction and targeted Parasitismo use board rings instead of action bu
 
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
-    actions = d.getElementById("piece-actions"),
-    labels = [...actions.querySelectorAll("button")].map(
-      (button) => button.textContent,
-    );
-  const selfCell = d.querySelector(
+    selfCell = d.querySelector(
       `[data-r="${piece.r}"][data-c="${piece.c}"]`,
     ),
     enemyCell = d.querySelector(
       `[data-r="${enemy.r}"][data-c="${enemy.c}"]`,
     ),
     legend = d.getElementById("board-legend");
-  assert.deepEqual(labels, []);
-  assert.ok(selfCell.classList.contains("reproduction-target"));
+  assert.equal(d.getElementById("piece-actions"), null);
+  assert.ok(selfCell.classList.contains("vivification-target"));
   assert.ok(enemyCell.classList.contains("attack-target"));
   assert.match(enemyCell.title, /ataque por Parasitismo/);
-  assert.match(legend.textContent, /Reprodução/);
+  assert.match(legend.textContent, /Vivificar/);
   assert.match(legend.textContent, /Ataque/);
-  assert.equal(actions.nextElementSibling?.id, "pass");
+  assert.equal(d.querySelector(".board-footer > #pass")?.id, "pass");
   dom.window.close();
 });
 
-test("self-only Parasitismo remains an action button when there is no attack target", () => {
+test("self-only Parasitismo uses Vivificar when there is no attack target", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
@@ -844,12 +840,14 @@ test("self-only Parasitismo remains an action button when there is no attack tar
 
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
-    labels = [...d.querySelectorAll("#piece-actions button")].map(
-      (button) => button.textContent,
+    cell = d.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
     ),
     legend = d.getElementById("board-legend");
 
-  assert.deepEqual(labels, ["Parasitismo"]);
+  assert.ok(cell.classList.contains("vivification-target"));
+  assert.match(cell.title, /vivificação disponível: Parasitismo/);
+  assert.match(legend.textContent, /Vivificar/);
   assert.doesNotMatch(legend.textContent, /Ataque/);
   dom.window.close();
 });
@@ -888,21 +886,18 @@ test("selected sexual pieces mark partners green and attack targets red", () => 
     enemyCell = d.querySelector(
       `[data-r="${enemy.r}"][data-c="${enemy.c}"]`,
     ),
-    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
-    labels = [...d.querySelectorAll("#piece-actions button")].map(
-      (button) => button.textContent,
-    );
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
 
-  assert.ok(parentCell.classList.contains("reproduction-target"));
+  assert.ok(parentCell.classList.contains("vivification-target"));
   assert.ok(mateCell.classList.contains("partner"));
   assert.ok(enemyCell.classList.contains("attack-target"));
-  assert.doesNotMatch(labels.join("|"), /Reproduzir/);
-  assert.match(parentCell.title, /reprodução disponível/);
+  assert.equal(d.getElementById("piece-actions"), null);
+  assert.match(parentCell.title, /vivificação disponível: Reprodução/);
   assert.match(mateCell.title, /parceiro disponível/);
   assert.match(enemyCell.title, /alvo de ataque/);
   assert.match(
     css,
-    /\.cell\.legal\.reproduction-target::after[\s\S]*border:\s*4px solid #5bd66c/,
+    /\.cell\.legal\.vivification-target::after[\s\S]*border:\s*4px solid #5bd66c/,
   );
   assert.match(
     css,
@@ -910,13 +905,13 @@ test("selected sexual pieces mark partners green and attack targets red", () => 
   );
 
   const legend = d.getElementById("board-legend");
-  assert.match(legend.textContent, /Reprodução/);
+  assert.match(legend.textContent, /Vivificar/);
   assert.match(legend.textContent, /Ataque/);
-  assert.ok(legend.querySelector(".legend-action-ring.reproduction"));
+  assert.ok(legend.querySelector(".legend-action-ring.vivify"));
   assert.ok(legend.querySelector(".legend-action-ring.attack"));
   assert.match(
     css,
-    /\.legend-action-ring\.reproduction[\s\S]*color:\s*#5bd66c/,
+    /\.legend-action-ring\.vivify[\s\S]*color:\s*#5bd66c/,
   );
   assert.match(
     css,

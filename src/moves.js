@@ -617,6 +617,14 @@ function parasitismReady(state, p) {
   );
 }
 
+export function canParasitizeSelf(state, p) {
+  return !!(
+    parasitismReady(state, p) &&
+    !fertilityPaused(state) &&
+    terrain(state, p.r, p.c) !== "fertile"
+  );
+}
+
 export function parasitismTargets(state, p) {
   if (!parasitismReady(state, p)) return [];
   return state.pieces.filter(
@@ -628,10 +636,10 @@ export function parasitismTargets(state, p) {
 }
 
 export function canParasitize(state, p) {
-  if (!parasitismReady(state, p)) return false;
-  const canFertilize =
-    !fertilityPaused(state) && terrain(state, p.r, p.c) !== "fertile";
-  return canFertilize || parasitismTargets(state, p).length > 0;
+  return (
+    canParasitizeSelf(state, p) ||
+    parasitismTargets(state, p).length > 0
+  );
 }
 
 function pieceEvaluationState(state, piece) {
@@ -703,18 +711,14 @@ export function actionsForPiece(
       r: target.r,
       c: target.c,
     })),
-    ...(() => {
-      const parasiteTargets = parasitismTargets(source, piece);
-      if (parasiteTargets.length)
-        return parasiteTargets.map((target) => ({
-          type: "PARASITIZE",
-          id: piece.id,
-          targetId: target.id,
-        }));
-      return canParasitize(source, piece)
-        ? [{ type: "PARASITIZE", id: piece.id }]
-        : [];
-    })(),
+    ...parasitismTargets(source, piece).map((target) => ({
+      type: "PARASITIZE",
+      id: piece.id,
+      targetId: target.id,
+    })),
+    ...(canParasitizeSelf(source, piece)
+      ? [{ type: "PARASITIZE", id: piece.id }]
+      : []),
     ...(canBud(source, piece) ? [{ type: "BUD", id: piece.id }] : []),
     ...(canPupate(source, piece) ? [{ type: "PUPATE", id: piece.id }] : []),
   ];
@@ -723,6 +727,20 @@ export function actionsForPiece(
 function actionsAfterPieceChange(state, piece, changes) {
   const candidate = { ...piece, ...changes };
   return actionsForPiece(state, candidate, { ignoreTurn: true });
+}
+
+export function vivificationActionsForPiece(state, piece) {
+  if (!piece) return [];
+  return actionsForPiece(state, piece).filter(
+    (action) =>
+      (action.type === "MOVE" &&
+        action.r === piece.r &&
+        action.c === piece.c) ||
+      action.type === "BUD" ||
+      action.type === "PUPATE" ||
+      (action.type === "PARASITIZE" &&
+        !Number.isInteger(action.targetId)),
+  );
 }
 
 export function pieceActionState(state, piece) {
