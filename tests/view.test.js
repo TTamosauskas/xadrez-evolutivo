@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 import { createState, clone, newPiece, round } from "../src/state.js";
-import { render } from "../src/view.js";
+import { render, traitFrameSlots } from "../src/view.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
@@ -231,16 +231,19 @@ test("hostile terrain is red and terrain tones flatten from the Devonian", () =>
   devonianDom.window.close();
 });
 
-test("active mutations form a frame around the board piece", () => {
+test("active mutations form an evenly spaced frame starting at bottom center", () => {
+  assert.deepEqual(traitFrameSlots(1), [0]);
+  assert.deepEqual(traitFrameSlots(4), [0, 3, 6, 9]);
+  assert.deepEqual(traitFrameSlots(6), [0, 2, 4, 6, 8, 10]);
+  assert.deepEqual(traitFrameSlots(12), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+
   const dom = setup(),
     s = createState(20),
     piece = s.pieces[0];
   piece.traits = [
     "Multicelularismo",
     "Predação",
-    "Locomoção Primitiva",
     "Carapaça",
-    "Camuflagem",
     "Veneno",
   ];
   render(dom.window.document, s, { selected: piece.id });
@@ -249,14 +252,22 @@ test("active mutations form a frame around the board piece", () => {
       `[data-r="${piece.r}"][data-c="${piece.c}"]`,
     ),
     frame = cell.querySelector(".trait-frame"),
-    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    classes = [...frame.querySelectorAll(".trait-badge")].map((icon) =>
+      [...icon.classList].find((name) => name.startsWith("trait-slot-")),
+    );
   assert.ok(frame);
-  assert.equal(frame.querySelectorAll(".trait-badge").length, 6);
-  assert.ok(frame.querySelector(".trait-slot-0"));
-  assert.ok(frame.querySelector(".trait-slot-5"));
+  assert.deepEqual(classes, [
+    "trait-slot-0",
+    "trait-slot-3",
+    "trait-slot-6",
+    "trait-slot-9",
+  ]);
   assert.equal(frame.querySelector(".trait-overflow"), null);
-  assert.match(css, /\.trait-slot-0[\s\S]*left:\s*25%/);
-  assert.match(css, /\.trait-slot-11[\s\S]*top:\s*25%/);
+  assert.match(css, /\.trait-slot-0\s*\{\s*left:\s*50%;\s*top:\s*94%/);
+  assert.match(css, /\.trait-slot-3\s*\{\s*left:\s*6%;\s*top:\s*50%/);
+  assert.match(css, /\.trait-slot-6\s*\{\s*left:\s*50%;\s*top:\s*6%/);
+  assert.match(css, /\.trait-slot-9\s*\{\s*left:\s*94%;\s*top:\s*50%/);
   dom.window.close();
 });
 
