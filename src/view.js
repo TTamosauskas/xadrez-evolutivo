@@ -72,6 +72,31 @@ const compactWaitStatus = ({ reason, remainingRounds } = {}) => {
     ? `⏳ ${remainingRounds} t ${label}.`
     : `⏳ ${label}.`;
 };
+
+const maxPieceWaitTurns = (state, piece, actionState) => {
+  const currentRound = round(state),
+    waits = [
+      actionState?.remainingRounds ?? 0,
+      juvenile(state, piece)
+        ? Math.max(0, piece.maturesRound - currentRound)
+        : 0,
+      (piece.nextReproductionRound ?? 0) > currentRound
+        ? piece.nextReproductionRound - currentRound
+        : 0,
+      Number.isInteger(piece.pupaUntilRound)
+        ? Math.max(0, piece.pupaUntilRound - currentRound)
+        : 0,
+      Number.isInteger(piece.regenerationRestThroughRound)
+        ? Math.max(0, piece.regenerationRestThroughRound - currentRound + 1)
+        : 0,
+    ];
+  return Math.max(0, ...waits);
+};
+
+const mobileWaitStatus = (state, piece, actionState) => {
+  const turns = maxPieceWaitTurns(state, piece, actionState);
+  return turns ? `⏳ ${turns} t` : "⏳";
+};
 const TRAIT_FRAME_LIMIT = 12;
 const TRAIT_DISPLAY_ORDER = new Map(
   Object.keys(TRAITS).map((trait, index) => [trait, index]),
@@ -266,22 +291,12 @@ export function render(
       symbol,
       doc.createTextNode(`${PIECES[actor.rank]} (${ownerName})`),
     );
-    if (actorActionState.waiting) {
-      const waitBadge = make("span", "⏳", "selected-wait-badge");
-      waitBadge.title = actorActionState.reason;
-      waitBadge.setAttribute(
-        "aria-label",
-        `Em espera: ${actorActionState.reason}`,
-      );
-      heading.append(waitBadge);
-    }
-
     const details = make("div", undefined, "mobile-selected-traits");
     if (actorActionState.waiting)
       details.append(
         make(
           "span",
-          compactWaitStatus(actorActionState),
+          mobileWaitStatus(state, actor, actorActionState),
           "mobile-actionable-trait",
         ),
       );
@@ -674,13 +689,6 @@ export function render(
       symbol,
       doc.createTextNode(` ${PIECES[actor.rank]} (${ownerName})`),
     );
-    if (actorActionState.waiting) {
-      const waitBadge = make("span", "⏳", "selected-wait-badge");
-      waitBadge.title = actorActionState.reason;
-      waitBadge.setAttribute("aria-label", `Em espera: ${actorActionState.reason}`);
-      heading.append(waitBadge);
-    }
-
     const actionableTraits = actionableTraitsForPiece(state, actor),
       traitOrder = (a, b) =>
         Number(actionableTraits.has(b)) -
