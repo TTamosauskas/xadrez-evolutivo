@@ -1076,9 +1076,35 @@ test("pieces with no available action fade on board and show wait badge when sel
   assert.match(cell.title, /aguardando: Metamorfose/);
   assert.equal(waitBadge?.textContent, "⏳");
   assert.equal(waitBadge?.title, "Metamorfose");
-  assert.match(selected.textContent, /Metamorfose/);
-  assert.match(selected.textContent, /2 rodada/);
+  assert.match(selected.textContent, /⏳ 2 t metamorfose\./);
   assert.match(waitRule, /opacity:\s*0\.48/);
+  dom.window.close();
+});
+
+test("selected-piece lifecycle countdowns use compact wait copy", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Multicelularismo", "Locomoção Primitiva", "Respiração anaeróbia"],
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
+    ]),
+    piece = s.pieces[0],
+    currentRound = round(s);
+
+  piece.maturesRound = currentRound + 1;
+  piece.nextReproductionRound = currentRound + 5;
+  s.board[piece.r * 8 + piece.c] = "fertile";
+
+  render(dom.window.document, s, { selected: piece.id });
+  const selected = dom.window.document.getElementById("selected");
+
+  assert.match(selected.textContent, /⏳ 1 t maturidade sexual\./);
+  assert.match(selected.textContent, /⏳ 5 t descanso reprodutivo\./);
+  assert.doesNotMatch(selected.textContent, /rodada\(s\) restante/);
   dom.window.close();
 });
 
@@ -1237,7 +1263,7 @@ test("dysfunctional rest uses the shared waiting fade and selected badge", () =>
     selected.querySelector(".selected-wait-badge")?.textContent,
     "⏳",
   );
-  assert.match(selected.textContent, /Descanso por Mutação Disfuncional/);
+  assert.match(selected.textContent, /⏳ mutação disfuncional\./);
   assert.match(selected.textContent, /❌ Mutação Disfuncional/);
   dom.window.close();
 });
