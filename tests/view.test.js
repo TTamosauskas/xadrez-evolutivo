@@ -2,7 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
-import { createState, clone, newPiece, round } from "../src/state.js";
+import {
+  createCampaignState,
+  createState,
+  clone,
+  newPiece,
+  round,
+} from "../src/state.js";
 import { fixture } from "./helpers.js";
 import { TRAITS } from "../src/constants.js";
 import { render, traitFrameSlots, establishedTraits } from "../src/view.js";
@@ -146,6 +152,22 @@ test("menu exposes match log and evolutionary history for consultation", () => {
     d.querySelector('#scenario option[value="arena"]').textContent,
     "Arena",
   );
+  dom.window.close();
+});
+
+test("ancestral gray King teaches Vivificar with a green ring", () => {
+  const dom = setup(),
+    s = createCampaignState(301);
+
+  render(dom.window.document, s);
+  const d = dom.window.document,
+    origin = d.querySelector(".origin-piece")?.parentElement,
+    legend = d.getElementById("board-legend");
+
+  assert.ok(origin?.classList.contains("vivification-target"));
+  assert.match(origin?.title ?? "", /Vivificar disponível/);
+  assert.match(legend.textContent, /Vivificar/);
+  assert.ok(legend.querySelector(".legend-action-ring.vivify"));
   dom.window.close();
 });
 
