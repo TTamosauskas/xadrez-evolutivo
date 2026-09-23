@@ -1263,7 +1263,7 @@ test("dysfunctional rest uses the shared waiting fade and selected badge", () =>
     selected.querySelector(".selected-wait-badge")?.textContent,
     "⏳",
   );
-  assert.match(selected.textContent, /Descanso por Mutação Disfuncional/);
+  assert.match(selected.textContent, /⏳ mutação disfuncional\./);
   assert.match(selected.textContent, /❌ Mutação Disfuncional/);
   dom.window.close();
 });
