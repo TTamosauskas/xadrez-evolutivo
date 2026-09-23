@@ -72,6 +72,27 @@ const compactWaitStatus = ({ reason, remainingRounds } = {}) => {
     ? `⏳ ${remainingRounds} t ${label}.`
     : `⏳ ${label}.`;
 };
+
+const maxPieceWaitTurns = (state, piece, actionState) => {
+  const currentRound = round(state),
+    waits = [
+      actionState?.remainingRounds ?? 0,
+      juvenile(state, piece)
+        ? Math.max(0, piece.maturesRound - currentRound)
+        : 0,
+      (piece.nextReproductionRound ?? 0) > currentRound
+        ? piece.nextReproductionRound - currentRound
+        : 0,
+      Number.isInteger(piece.pupaUntilRound)
+        ? Math.max(0, piece.pupaUntilRound - currentRound)
+        : 0,
+      Number.isInteger(piece.regenerationRestThroughRound)
+        ? Math.max(0, piece.regenerationRestThroughRound - currentRound + 1)
+        : 0,
+    ];
+  return Math.max(0, ...waits);
+};
+
 const TRAIT_FRAME_LIMIT = 12;
 const TRAIT_DISPLAY_ORDER = new Map(
   Object.keys(TRAITS).map((trait, index) => [trait, index]),
@@ -266,50 +287,51 @@ export function render(
       symbol,
       doc.createTextNode(`${PIECES[actor.rank]} (${ownerName})`),
     );
-    if (actorActionState.waiting) {
-      const waitBadge = make("span", "⏳", "selected-wait-badge");
-      waitBadge.title = actorActionState.reason;
-      waitBadge.setAttribute(
-        "aria-label",
-        `Em espera: ${actorActionState.reason}`,
-      );
-      heading.append(waitBadge);
-    }
-
-    const details = make("div", undefined, "mobile-selected-traits");
+    const details = make("div", undefined, "mobile-selected-traits"),
+      waitTurns = maxPieceWaitTurns(state, actor, actorActionState);
     if (actorActionState.waiting)
       details.append(
         make(
           "span",
-          compactWaitStatus(actorActionState),
+          waitTurns ? `⏳ ${waitTurns} t` : "⏳",
           "mobile-actionable-trait",
         ),
       );
-    else if (actionable.length) {
-      for (const trait of actionable.slice(0, 3))
+    else {
+      if (waitTurns)
         details.append(
           make(
             "span",
-            `${TRAITS[trait]?.[0] || "🧬"} ${trait}`,
+            `⏳ ${waitTurns} t`,
             "mobile-actionable-trait",
           ),
         );
-      if (actionable.length > 3)
+      if (actionable.length) {
+        for (const trait of actionable.slice(0, 3))
+          details.append(
+            make(
+              "span",
+              `${TRAITS[trait]?.[0] || "🧬"} ${trait}`,
+              "mobile-actionable-trait",
+            ),
+          );
+        if (actionable.length > 3)
+          details.append(
+            make(
+              "span",
+              `+${actionable.length - 3}`,
+              "mobile-selected-more",
+            ),
+          );
+      } else if (!waitTurns)
         details.append(
           make(
             "span",
-            `+${actionable.length - 3}`,
+            "Nenhuma ação disponível.",
             "mobile-selected-more",
           ),
         );
-    } else
-      details.append(
-        make(
-          "span",
-          "Nenhuma ação disponível.",
-          "mobile-selected-more",
-        ),
-      );
+    }
 
     mobileSummary.append(heading, details);
     mobileSummary.hidden = false;
@@ -674,13 +696,6 @@ export function render(
       symbol,
       doc.createTextNode(` ${PIECES[actor.rank]} (${ownerName})`),
     );
-    if (actorActionState.waiting) {
-      const waitBadge = make("span", "⏳", "selected-wait-badge");
-      waitBadge.title = actorActionState.reason;
-      waitBadge.setAttribute("aria-label", `Em espera: ${actorActionState.reason}`);
-      heading.append(waitBadge);
-    }
-
     const actionableTraits = actionableTraitsForPiece(state, actor),
       traitOrder = (a, b) =>
         Number(actionableTraits.has(b)) -

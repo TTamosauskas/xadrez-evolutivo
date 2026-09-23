@@ -211,7 +211,7 @@ test("mobile selected-piece summary stays below the board", () => {
   dom.window.close();
 });
 
-test("mobile summary says no action is available when nothing is actionable", () => {
+test("mobile summary uses a bare hourglass for untimed waiting", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
@@ -222,7 +222,8 @@ test("mobile summary says no action is available when nothing is actionable", ()
   render(dom.window.document, s, { selected: opponent.id });
   const summary = dom.window.document.getElementById("mobile-selected-summary");
 
-  assert.match(summary.textContent, /Nenhuma ação disponível\./);
+  assert.match(summary.textContent, /⏳/);
+  assert.doesNotMatch(summary.textContent, /Nenhuma ação disponível|Sem ação legal disponível/);
   dom.window.close();
 });
 
@@ -1051,7 +1052,7 @@ test("senescent pieces use only italic lifecycle styling and age status", () => 
   dom.window.close();
 });
 
-test("pieces with no available action fade on board and show wait badge when selected", () => {
+test("pieces with no available action fade on board without a duplicate wait badge", () => {
   const dom = setup(),
     s = createState(43),
     piece = s.pieces.find((candidate) => candidate.owner === "blue");
@@ -1067,16 +1068,17 @@ test("pieces with no available action fade on board and show wait badge when sel
     ),
     boardPiece = cell.querySelector(".piece"),
     selected = d.getElementById("selected"),
-    waitBadge = selected.querySelector(".selected-wait-badge"),
+    mobileSummary = d.getElementById("mobile-selected-summary"),
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
     waitRule = css.match(/\.cell \.piece\.waiting\s*\{([^}]*)\}/)?.[1] ?? "";
 
   assert.ok(boardPiece.classList.contains("waiting"));
   assert.doesNotMatch(cell.textContent, /⏳/);
   assert.match(cell.title, /aguardando: Metamorfose/);
-  assert.equal(waitBadge?.textContent, "⏳");
-  assert.equal(waitBadge?.title, "Metamorfose");
+  assert.equal(selected.querySelector(".selected-wait-badge"), null);
   assert.match(selected.textContent, /⏳ 2 t metamorfose\./);
+  assert.match(mobileSummary.textContent, /⏳ 2 t/);
+  assert.doesNotMatch(mobileSummary.textContent, /metamorfose/i);
   assert.match(waitRule, /opacity:\s*0\.48/);
   dom.window.close();
 });
@@ -1100,10 +1102,16 @@ test("selected-piece lifecycle countdowns use compact wait copy", () => {
   s.board[piece.r * 8 + piece.c] = "fertile";
 
   render(dom.window.document, s, { selected: piece.id });
-  const selected = dom.window.document.getElementById("selected");
+  const selected = dom.window.document.getElementById("selected"),
+    mobileSummary = dom.window.document.getElementById("mobile-selected-summary");
 
   assert.match(selected.textContent, /⏳ 1 t maturidade sexual\./);
   assert.match(selected.textContent, /⏳ 5 t descanso reprodutivo\./);
+  assert.match(mobileSummary.textContent, /⏳ 5 t/);
+  assert.doesNotMatch(
+    mobileSummary.textContent,
+    /maturidade sexual|descanso reprodutivo/i,
+  );
   assert.doesNotMatch(selected.textContent, /rodada\(s\) restante/);
   dom.window.close();
 });
@@ -1259,10 +1267,7 @@ test("dysfunctional rest uses the shared waiting fade and selected badge", () =>
   assert.ok(piece.classList.contains("waiting"));
   assert.doesNotMatch(cell.textContent, /⏳|💤/);
   assert.ok(badges.textContent.includes("❌"));
-  assert.equal(
-    selected.querySelector(".selected-wait-badge")?.textContent,
-    "⏳",
-  );
+  assert.equal(selected.querySelector(".selected-wait-badge"), null);
   assert.match(selected.textContent, /⏳ mutação disfuncional\./);
   assert.match(selected.textContent, /❌ Mutação Disfuncional/);
   dom.window.close();
