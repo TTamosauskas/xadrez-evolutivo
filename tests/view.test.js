@@ -155,14 +155,23 @@ test("menu exposes match log and evolutionary history for consultation", () => {
   dom.window.close();
 });
 
-test("ancestral gray King teaches Vivificar with a green ring", () => {
+test("ancestral gray King shows Vivificar only after selection", () => {
   const dom = setup(),
     s = createCampaignState(301);
 
   render(dom.window.document, s);
-  const d = dom.window.document,
-    origin = d.querySelector(".origin-piece")?.parentElement,
+  const d = dom.window.document;
+  let origin = d.querySelector(".origin-piece")?.parentElement,
     legend = d.getElementById("board-legend");
+
+  assert.ok(!origin?.classList.contains("vivification-target"));
+  assert.doesNotMatch(origin?.title ?? "", /Vivificar disponível/);
+  assert.doesNotMatch(legend.textContent, /Vivificar/);
+
+  s.origin.selected = true;
+  render(d, s);
+  origin = d.querySelector(".origin-piece")?.parentElement;
+  legend = d.getElementById("board-legend");
 
   assert.ok(origin?.classList.contains("vivification-target"));
   assert.match(origin?.title ?? "", /Vivificar disponível/);
