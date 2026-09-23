@@ -19,6 +19,7 @@ import {
   naturalDeathChance,
   barrierAt,
   CANONICAL_FOUNDER_CELLS,
+  earthFounderStarts,
 } from "../src/state.js";
 import {
   context,
@@ -282,6 +283,8 @@ test("ancestral gray King splits into paired photosynthetic and predatory founde
 
   const blue = s.pieces.filter((piece) => piece.owner === "blue"),
     amber = s.pieces.filter((piece) => piece.owner === "amber");
+  assert.ok(blue.every((piece) => piece.r >= 4));
+  assert.ok(amber.every((piece) => piece.r <= 3));
   for (const piece of blue) {
     assert.ok(
       amber.some(
@@ -292,6 +295,40 @@ test("ancestral gray King splits into paired photosynthetic and predatory founde
     );
   }
   assertState(s);
+});
+
+test("compact non-canonical cycle starts keep Brancas on the lower half", () => {
+  for (const [stage, cycle] of [
+    ["archean", 2],
+    ["proterozoic", 1],
+    ["ediacaran", 1],
+  ]) {
+    const starts = earthFounderStarts(stage, cycle),
+      blue = starts.filter(([owner]) => owner === "blue"),
+      amber = starts.filter(([owner]) => owner === "amber");
+    assert.ok(blue.every(([, r]) => r >= 4), `${stage} ${cycle}: Brancas`);
+    assert.ok(amber.every(([, r]) => r <= 3), `${stage} ${cycle}: Pretas`);
+  }
+});
+
+test("ancestral split keeps Brancas below across origin seeds", () => {
+  for (let seed = 1; seed <= 24; seed++) {
+    let s = createCampaignState(seed);
+    s = transition(s, { type: "ORIGIN_CLICK" });
+    s = transition(s, { type: "ORIGIN_CLICK" });
+    assert.ok(
+      s.pieces
+        .filter((piece) => piece.owner === "blue")
+        .every((piece) => piece.r >= 4),
+      `seed ${seed}: Brancas`,
+    );
+    assert.ok(
+      s.pieces
+        .filter((piece) => piece.owner === "amber")
+        .every((piece) => piece.r <= 3),
+      `seed ${seed}: Pretas`,
+    );
+  }
 });
 
 test("mutual blocking advances Conway turn by turn until one side can act", () => {
