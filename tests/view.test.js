@@ -211,7 +211,7 @@ test("mobile selected-piece summary stays below the board", () => {
   dom.window.close();
 });
 
-test("mobile summary says no action is available when nothing is actionable", () => {
+test("mobile summary uses a bare hourglass for untimed waiting", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
@@ -222,7 +222,8 @@ test("mobile summary says no action is available when nothing is actionable", ()
   render(dom.window.document, s, { selected: opponent.id });
   const summary = dom.window.document.getElementById("mobile-selected-summary");
 
-  assert.match(summary.textContent, /Nenhuma ação disponível\./);
+  assert.match(summary.textContent, /⏳/);
+  assert.doesNotMatch(summary.textContent, /Nenhuma ação disponível|Sem ação legal disponível/);
   dom.window.close();
 });
 
