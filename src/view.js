@@ -53,6 +53,25 @@ const VIVIFICATION_LABELS = Object.freeze({
 });
 const vivificationLabel = (action) =>
   VIVIFICATION_LABELS[action?.type] ?? "Vivificar";
+
+const WAIT_STATUS_LABELS = Object.freeze({
+  "Bloqueada por Domínio Ecológico": "bloqueio por Domínio Ecológico",
+  Metamorfose: "metamorfose",
+  "Recuperação por Regeneração": "regeneração",
+  "Descanso por Mutação Disfuncional": "mutação disfuncional",
+  "Dormência em terreno hostil": "dormência em terreno hostil",
+  "Maturidade sexual": "maturidade sexual",
+  "Recuperação reprodutiva": "descanso reprodutivo",
+  "Sem ação legal disponível": "nenhuma ação disponível",
+});
+const compactWaitStatus = ({ reason, remainingRounds } = {}) => {
+  if (!reason) return "";
+  if (reason === "Sem ação legal disponível") return "Nenhuma ação disponível.";
+  const label = WAIT_STATUS_LABELS[reason] ?? reason.toLocaleLowerCase("pt-BR");
+  return remainingRounds
+    ? `⏳ ${remainingRounds} t ${label}.`
+    : `⏳ ${label}.`;
+};
 const TRAIT_FRAME_LIMIT = 12;
 const TRAIT_DISPLAY_ORDER = new Map(
   Object.keys(TRAITS).map((trait, index) => [trait, index]),
@@ -262,9 +281,7 @@ export function render(
       details.append(
         make(
           "span",
-          actorActionState.reason === "Sem ação legal disponível"
-            ? "Nenhuma ação disponível."
-            : actorActionState.reason,
+          compactWaitStatus(actorActionState),
           "mobile-actionable-trait",
         ),
       );
@@ -719,7 +736,7 @@ export function render(
       statusDetails.push(
         make(
           "p",
-          `${actorActionState.reason}${actorActionState.remainingRounds ? ` · ${actorActionState.remainingRounds} rodada(s) restante(s)` : ""}.`,
+          compactWaitStatus(actorActionState),
           "selected-status",
         ),
       );
@@ -730,7 +747,7 @@ export function render(
       statusDetails.push(
         make(
           "p",
-          `Juvenil · maturidade em ${Math.max(0, actor.maturesRound - currentRound)} rodada(s).`,
+          `⏳ ${Math.max(0, actor.maturesRound - currentRound)} t maturidade sexual.`,
           "selected-status",
         ),
       );
@@ -749,7 +766,7 @@ export function render(
       statusDetails.push(
         make(
           "p",
-          `Recuperação reprodutiva · ${actor.nextReproductionRound - currentRound} rodada(s) restante(s).`,
+          `⏳ ${actor.nextReproductionRound - currentRound} t descanso reprodutivo.`,
           "selected-status",
         ),
       );
