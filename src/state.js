@@ -1065,7 +1065,9 @@ export function activateOrigin(state) {
       [1, -1],
       [0, -1],
     ],
-    primaryIndex = Math.floor(random(state) * directions.length),
+    // Mantém as Brancas na metade inferior e as Pretas na superior
+    // também na origem compacta, preservando a orientação visual do jogo.
+    primaryIndex = 4 + Math.floor(random(state) * 2),
     companionIndex = (primaryIndex + 1) % directions.length,
     oppositePrimaryIndex = (primaryIndex + 4) % directions.length,
     oppositeCompanionIndex = (companionIndex + 4) % directions.length,
