@@ -93,10 +93,6 @@ const maxPieceWaitTurns = (state, piece, actionState) => {
   return Math.max(0, ...waits);
 };
 
-const mobileWaitStatus = (state, piece, actionState) => {
-  const turns = maxPieceWaitTurns(state, piece, actionState);
-  return turns ? `⏳ ${turns} t` : "⏳";
-};
 const TRAIT_FRAME_LIMIT = 12;
 const TRAIT_DISPLAY_ORDER = new Map(
   Object.keys(TRAITS).map((trait, index) => [trait, index]),
@@ -291,40 +287,51 @@ export function render(
       symbol,
       doc.createTextNode(`${PIECES[actor.rank]} (${ownerName})`),
     );
-    const details = make("div", undefined, "mobile-selected-traits");
+    const details = make("div", undefined, "mobile-selected-traits"),
+      waitTurns = maxPieceWaitTurns(state, actor, actorActionState);
     if (actorActionState.waiting)
       details.append(
         make(
           "span",
-          mobileWaitStatus(state, actor, actorActionState),
+          waitTurns ? `⏳ ${waitTurns} t` : "⏳",
           "mobile-actionable-trait",
         ),
       );
-    else if (actionable.length) {
-      for (const trait of actionable.slice(0, 3))
+    else {
+      if (waitTurns)
         details.append(
           make(
             "span",
-            `${TRAITS[trait]?.[0] || "🧬"} ${trait}`,
+            `⏳ ${waitTurns} t`,
             "mobile-actionable-trait",
           ),
         );
-      if (actionable.length > 3)
+      if (actionable.length) {
+        for (const trait of actionable.slice(0, 3))
+          details.append(
+            make(
+              "span",
+              `${TRAITS[trait]?.[0] || "🧬"} ${trait}`,
+              "mobile-actionable-trait",
+            ),
+          );
+        if (actionable.length > 3)
+          details.append(
+            make(
+              "span",
+              `+${actionable.length - 3}`,
+              "mobile-selected-more",
+            ),
+          );
+      } else if (!waitTurns)
         details.append(
           make(
             "span",
-            `+${actionable.length - 3}`,
+            "Nenhuma ação disponível.",
             "mobile-selected-more",
           ),
         );
-    } else
-      details.append(
-        make(
-          "span",
-          "Nenhuma ação disponível.",
-          "mobile-selected-more",
-        ),
-      );
+    }
 
     mobileSummary.append(heading, details);
     mobileSummary.hidden = false;
