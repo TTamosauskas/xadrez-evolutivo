@@ -141,12 +141,26 @@ function budPlacementAvailable(state, piece) {
   return false;
 }
 
+export function buddingResource(state, piece) {
+  if (!piece || !has(piece, "Respiração anaeróbia")) return null;
+  if (terrain(state, piece.r, piece.c) === "fertile")
+    return { kind: "fertile", cell: piece.r * 8 + piece.c };
+  if (
+    has(piece, "Coletor") &&
+    (piece.seeds ?? 0) > 0 &&
+    piece.seedUsedTurn !== state.turn
+  )
+    return { kind: "seed" };
+  return null;
+}
+
 export function buddingCanProgress(state, piece) {
   return !!(
     piece &&
     has(piece, "Brotamento") &&
     reproductionReady(state, piece) &&
     !Number.isInteger(piece.pupaUntilRound) &&
+    buddingResource(state, piece) &&
     budPlacementAvailable(state, piece)
   );
 }
