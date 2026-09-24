@@ -169,6 +169,7 @@ main {
   pointer-events: none;
 }
 .cell.built-barrier .piece,
+.cell.built-barrier .piece-energy-core,
 .cell.built-barrier .trait-frame,
 .cell.built-barrier .piece-status {
   position: relative;
@@ -194,6 +195,7 @@ main {
   pointer-events: none;
 }
 .cell.decomposition .piece,
+.cell.decomposition .piece-energy-core,
 .cell.decomposition .trait-frame,
 .cell.decomposition .piece-status {
   position: relative;
@@ -330,6 +332,33 @@ main {
     drop-shadow(0 2px 1px #0007)
     drop-shadow(0 0 4px #ffffff)
     drop-shadow(0 0 10px #ffffff);
+}
+.piece-energy-core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: clamp(13px, 2.35vw, 22px);
+  height: clamp(13px, 2.35vw, 22px);
+  border: 1px solid #f1ead8b3;
+  border-radius: 50%;
+  background: #151915d9;
+  font-size: clamp(8px, 1.45vw, 14px);
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 3px #0009;
+  filter: drop-shadow(0 1px 1px #0008);
+  pointer-events: none;
+}
+.piece-energy-core.compact {
+  width: clamp(10px, 1.9vw, 17px);
+  height: clamp(10px, 1.9vw, 17px);
+  font-size: clamp(7px, 1.15vw, 11px);
+}
+.piece-energy-core.waiting {
+  opacity: 0.48;
 }
 .piece.blue {
   color: #fff8df;
@@ -1024,6 +1053,16 @@ summary {
   }
   .trait-badge {
     font-size: clamp(9px, 2.35vw, 13px);
+  }
+  .piece-energy-core {
+    width: clamp(12px, 3.3vw, 19px);
+    height: clamp(12px, 3.3vw, 19px);
+    font-size: clamp(8px, 2vw, 12px);
+  }
+  .piece-energy-core.compact {
+    width: clamp(9px, 2.5vw, 14px);
+    height: clamp(9px, 2.5vw, 14px);
+    font-size: clamp(6px, 1.6vw, 9px);
   }
   .piece-status,
   .trait-overflow {
