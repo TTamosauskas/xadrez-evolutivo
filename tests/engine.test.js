@@ -65,8 +65,12 @@ import {
   VECTOR_PATHOGEN_MORTALITY,
   VECTOR_RESISTANCE_MORTALITY_FACTOR,
   tryVectorPathogen,
+  transmitSexualPathogen,
   leaveBacterialTrail,
   exposePathogenCell,
+  SEXUAL_PATHOGEN_MORTALITY,
+  SEXUAL_PATHOGEN_DELAY,
+  SEXUAL_PATHOGEN_DURATION,
   PATHOGEN_SOMATIC_MUTATION_CHANCE,
   PRE_REPAIR_PATHOGEN_SOMATIC_MUTATION_CHANCE,
   pathogenSomaticMutationChance,
@@ -2875,6 +2879,171 @@ test("Vivíparo carries the brood for three rounds and loses it with the parent"
   s.turn = 6;
   tickReproduction(ctx);
   assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 0);
+});
+
+test("startDisease respects geological pathogen-agent debuts", () => {
+  const proterozoic = createState(1301, {
+      scenario: "earth",
+      geologicalStage: "proterozoic",
+    }),
+    seed = proterozoic.pieces[0];
+  assert.equal(
+    startDisease(proterozoic, "eco", seed, null, "bacteria"),
+    null,
+  );
+  const viral = startDisease(
+    proterozoic,
+    "eco",
+    seed,
+    null,
+    "virus",
+  );
+  assert.equal(viral?.agent, "virus");
+  assert.equal(viral?.transmission, "contact");
+
+  const ediacaran = createState(1302, {
+      scenario: "earth",
+      geologicalStage: "ediacaran",
+    }),
+    bacterial = startDisease(
+      ediacaran,
+      "eco",
+      ediacaran.pieces[0],
+      null,
+      "bacteria",
+    );
+  assert.equal(bacterial?.agent, "bacteria");
+  assert.equal(bacterial?.transmission, "trail");
+  assert.equal(
+    startDisease(
+      createState(1303, {
+        scenario: "earth",
+        geologicalStage: "ediacaran",
+      }),
+      "eco",
+      null,
+      null,
+      "fungus",
+    ),
+    null,
+  );
+});
+
+test("sexual virus does not spread by adjacency and keeps complete Resistance immunity", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Reprodução Sexuada"],
+      },
+      {
+        owner: "blue",
+        r: 4,
+        c: 5,
+        traits: ["Reprodução Sexuada", "Resistência"],
+      },
+      {
+        owner: "blue",
+        r: 5,
+        c: 4,
+        traits: ["Reprodução Sexuada"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    source = s.pieces[0],
+    resistant = s.pieces[1],
+    susceptible = s.pieces[2],
+    disease = {
+      id: s.nextDisease++,
+      source: "eco",
+      triggerOwner: null,
+      agent: "virus",
+      transmission: "sexual",
+      mode: "omnidirectional",
+      startRound: 0,
+      endRound: SEXUAL_PATHOGEN_DURATION,
+      delay: SEXUAL_PATHOGEN_DELAY,
+      mortality: SEXUAL_PATHOGEN_MORTALITY,
+      infected: [source.id],
+      survivors: [],
+      deaths: 0,
+      contaminated: [],
+    };
+  s.diseases.push(disease);
+  source.infection = { disease: disease.id, due: SEXUAL_PATHOGEN_DELAY };
+
+  s.turn = 2;
+  tickDiseases(context(s));
+  assert.equal(resistant.infection, undefined);
+  assert.equal(susceptible.infection, undefined);
+
+  s.rng = 0;
+  assert.equal(
+    transmitSexualPathogen(s, [source, resistant]),
+    0,
+  );
+  assert.equal(resistant.infection, undefined);
+
+  resistant.traits.push("Imunodeficiência");
+  s.rng = 0;
+  assert.equal(
+    transmitSexualPathogen(s, [source, resistant]),
+    1,
+  );
+  assert.equal(resistant.infection?.disease, disease.id);
+  assertState(s);
+});
+
+test("sexual pathogen transmits on a realized mating attempt even when Subfertilidade prevents offspring", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Reprodução Sexuada", "Subfertilidade"],
+      },
+      {
+        owner: "blue",
+        r: 4,
+        c: 5,
+        traits: ["Reprodução Sexuada", "Subfertilidade"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    mate = s.pieces[1],
+    disease = {
+      id: s.nextDisease++,
+      source: "eco",
+      triggerOwner: null,
+      agent: "virus",
+      transmission: "sexual",
+      mode: "omnidirectional",
+      startRound: 0,
+      endRound: SEXUAL_PATHOGEN_DURATION,
+      delay: SEXUAL_PATHOGEN_DELAY,
+      mortality: SEXUAL_PATHOGEN_MORTALITY,
+      infected: [parent.id],
+      survivors: [],
+      deaths: 0,
+      contaminated: [],
+    };
+  s.diseases.push(disease);
+  parent.infection = { disease: disease.id, due: SEXUAL_PATHOGEN_DELAY };
+  s.board[square(parent.r, parent.c)] = "fertile";
+  s.rng = 2;
+
+  const before = s.pieces.length;
+  assert.equal(
+    reproduce(context(s), parent, mate, "casa fértil", {
+      ignoreReadiness: true,
+    }),
+    0,
+  );
+  assert.equal(s.pieces.length, before);
+  assert.equal(mate.infection?.disease, disease.id);
+  assertState(s);
 });
 
 test("fungal pathogens add exactly two distant contaminated cells per active round", () => {
