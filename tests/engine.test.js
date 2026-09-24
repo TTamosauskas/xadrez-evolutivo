@@ -478,13 +478,14 @@ test("Hadean tutorial uses reproduction and immediate capture before primitive l
     1,
   );
 
-  const finalBlue = s.pieces.find((piece) => piece.owner === "blue");
-  lastAmber.r = 3;
-  lastAmber.c = 3;
+  const finalBlue = s.pieces.find((piece) => piece.owner === "blue"),
+    finalAmber = s.pieces.find((piece) => piece.owner === "amber");
+  finalAmber.r = 3;
+  finalAmber.c = 3;
   finalBlue.r = 4;
   finalBlue.c = 4;
   s.current = "amber";
-  s = simulate(s, move(lastAmber, 4, 4));
+  s = simulate(s, move(finalAmber, 4, 4));
   assert.equal(s.phase, "over");
   assert.equal(s.result.winner, "amber");
   assert.match(s.result.reason, /Extinção total/);
