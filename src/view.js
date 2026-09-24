@@ -301,7 +301,7 @@ export function render(
       symbol = make(
         "span",
         SYMBOLS[actor.owner][actor.rank],
-        `mobile-selected-symbol ${actor.owner}${geological.id === "hadean" && !energyBranch(actor) ? " hadean-protocell" : ""}${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
+        `mobile-selected-symbol ${actor.owner}${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
       );
     heading.append(
       symbol,
@@ -596,7 +596,7 @@ export function render(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${geological.id === "hadean" && !energyBranch(p) ? " hadean-protocell" : ""}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
+            `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
           ),
         );
 
