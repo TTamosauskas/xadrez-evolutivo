@@ -3,6 +3,7 @@ import {
   at,
   eggAt,
   plantSeedAt,
+  pathogenSporeAt,
   fragmentAt,
   dominantLineage,
   round,
@@ -395,7 +396,7 @@ export function render(
               ? "populacional"
               : "ecológico";
       return d.agent === "fungus"
-        ? `${agent.icon} ${agent.name} · ${origin} · mortalidade-base ${d.mortality}% · risco por exposição`
+        ? `${agent.icon} ${agent.name} · ${origin} · ${d.transmission === "spore" ? "esporos" : "ambiental"} · mortalidade-base ${d.mortality}% · risco por exposição`
         : `${agent.icon} ${agent.name} · ${origin} · ${d.mortality}% · desfecho em ${d.delay} rodadas`;
     }),
   ]
@@ -412,6 +413,7 @@ export function render(
         pathogenAgents = pathogenAgentAt(state, r, c),
         egg = eggAt(state, r, c),
         plantSeed = plantSeedAt(state, r, c),
+        pathogenSpore = pathogenSporeAt(state, r, c),
         fragment = fragmentAt(state, r, c),
         originHere = !!origin && origin.r === r && origin.c === c,
         targetEntry = targets.find((t) => t.r === r && t.c === c),
@@ -534,9 +536,12 @@ export function render(
         plantSeedLabel = plantSeed
           ? `, semente das ${OWNERS[plantSeed.owner]}, ${plantSeed.movesRemaining} rodada(s) de dispersão restante(s)`
           : "",
+        pathogenSporeLabel = pathogenSpore
+          ? `, esporo fúngico, ${pathogenSpore.movesRemaining} etapa(s) de dispersão restante(s)`
+          : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza, Respiração anaeróbia${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${fecalResidue ? ", fezes" : ""}${carcass ? ", carcaça" : ""}${captureDisturbance ? ", perturbação temporária" : ""}${lethalHazard ? ", ambiente letal" : ""}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${vivificationTarget ? selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? ", vivificação disponível: Necrofagia" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
+          : `${coord(r, c)}, ${terrain}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${fecalResidue ? ", fezes" : ""}${carcass ? ", carcaça" : ""}${captureDisturbance ? ", perturbação temporária" : ""}${lethalHazard ? ", ambiente letal" : ""}${pathogenSporeLabel}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${vivificationTarget ? selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? ", vivificação disponível: Necrofagia" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
       const accessibleLabel = fragment
         ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
         : label;
@@ -587,6 +592,8 @@ export function render(
           ),
         );
       if (plantSeed) cell.append(make("span", "🌰", "egg-mark"));
+      if (pathogenSpore)
+        cell.append(make("span", "◌", "pathogen-spore-mark"));
       if (fragment) cell.append(make("span", "𓇼", "fragment-mark"));
       if (originHere)
         cell.append(make("span", "♚", "piece origin-piece"));
