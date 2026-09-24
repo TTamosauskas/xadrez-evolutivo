@@ -241,6 +241,15 @@ function mutation(state, p, positiveOnly, excludedTraits = null) {
     p.rank = choice.rank;
     label = `Mutação de peça: ${PIECES[p.rank]}`;
   } else if (choice.geneGain) {
+    if (
+      state.scenario !== "arena" &&
+      POSITIVE.includes(choice.geneGain) &&
+      !(state.historicalTraits ?? []).includes(choice.geneGain) &&
+      !(state.cyclePositiveInnovations ?? []).includes(choice.geneGain)
+    ) {
+      state.cyclePositiveInnovations ??= [];
+      state.cyclePositiveInnovations.push(choice.geneGain);
+    }
     if (BODY_PLAN_TRAITS.has(choice.geneGain)) {
       const otherPlan =
         choice.geneGain === "Vertebrado" ? "Artrópode" : "Vertebrado";

@@ -16,6 +16,8 @@ import {
   NEGATIVE_TRAIT_RULES,
   eventWeights,
   innovationWeight,
+  cyclePositiveInnovationMultiplier,
+  CYCLE_POSITIVE_INNOVATION_MULTIPLIERS,
   missingInnovations,
   periodInnovations,
   periodCompletionInnovations,
@@ -86,6 +88,84 @@ test("every negative mutation has an explicit valid debut period", () => {
     "Mutação Disfuncional",
   ])
     assert.equal(traitUnlocked(s, trait, p), true, trait);
+});
+
+test("new positive discoveries become progressively rarer and stop after six per cycle", () => {
+  const s = createState(1004, {
+      scenario: "earth",
+      geologicalStage: "proterozoic",
+    }),
+    trait = "Brotamento",
+    fillers = [
+      "Fotossíntese",
+      "Predação",
+      "Reparo Celular",
+      "Dormência",
+      "Multicelularismo",
+      "Resistência",
+    ];
+
+  assert.deepEqual(CYCLE_POSITIVE_INNOVATION_MULTIPLIERS, [
+    1,
+    1,
+    0.6,
+    0.35,
+    0.2,
+    0.1,
+  ]);
+
+  const expected = [1, 1, 0.6, 0.35, 0.2, 0.1, 0];
+  for (let count = 0; count <= 6; count++) {
+    s.cyclePositiveInnovations = fillers.slice(0, count);
+    assert.equal(
+      cyclePositiveInnovationMultiplier(s, trait),
+      expected[count],
+      `count ${count}`,
+    );
+  }
+
+  s.cyclePositiveInnovations = [...fillers];
+  s.historicalTraits.push(trait);
+  assert.equal(cyclePositiveInnovationMultiplier(s, trait), 1);
+
+  s.historicalTraits = s.historicalTraits.filter(
+    (candidate) => candidate !== trait,
+  );
+  s.cyclePositiveInnovations = [trait, ...fillers.slice(0, 5)];
+  assert.equal(cyclePositiveInnovationMultiplier(s, trait), 1);
+
+  s.scenario = "arena";
+  s.cyclePositiveInnovations = [...fillers];
+  assert.equal(cyclePositiveInnovationMultiplier(s, trait), 1);
+});
+
+test("cycle transition resets hidden positive-innovation pressure", () => {
+  const s = createState(1005, {
+    scenario: "earth",
+    geologicalStage: "proterozoic",
+    cycle: 1,
+    totalCycles: 4,
+    historicalTraits: ["Respiração anaeróbia"],
+    cyclePositiveInnovations: [
+      "Fotossíntese",
+      "Predação",
+      "Reparo Celular",
+      "Dormência",
+      "Multicelularismo",
+      "Resistência",
+    ],
+  });
+  s.result = { winner: "blue", reason: "teste" };
+  s.phase = "over";
+
+  const next = createSuccessorState(s, 1006);
+  assert.equal(next.geologicalStage, "proterozoic");
+  assert.equal(next.cycle, 2);
+  assert.deepEqual(next.cyclePositiveInnovations, []);
+  assert.equal(
+    cyclePositiveInnovationMultiplier(next, "Brotamento"),
+    1,
+  );
 });
 
 test("period innovations follow the didactic sequence", () => {

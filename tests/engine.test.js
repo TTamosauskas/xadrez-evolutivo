@@ -2495,6 +2495,80 @@ test("photosynthetic offspring keep their hereditary energy branch", () => {
   assertState(s);
 });
 
+test("cycle innovation pressure blocks a seventh new positive mutation without blocking birth", () => {
+  const makeState = (cyclePositiveInnovations = []) => {
+    const s = fixture([
+        {
+          owner: "blue",
+          r: 4,
+          c: 4,
+          rank: 4,
+          traits: ["Predação"],
+        },
+        { owner: "amber", r: 0, c: 0, rank: 4 },
+      ]),
+      parent = s.pieces[0];
+    s.scenario = "earth";
+    s.totalCycles = 1;
+    s.cycle = 2;
+    s.geologicalStage = "archean";
+    s.historicalTraits = ["Respiração anaeróbia", "Predação"];
+    s.cyclePositiveInnovations = [...cyclePositiveInnovations];
+    s.event = {
+      ...EVENTS.find((event) => event.id === "solar"),
+      startRound: 0,
+      hazards: [],
+      snapshots: {},
+    };
+    return { s, parent };
+  };
+
+  const open = makeState(),
+    openBefore = open.s.nextId;
+  assert.equal(
+    reproduce(context(open.s), open.parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const openChild = open.s.pieces.find((piece) => piece.id >= openBefore);
+  assert.ok(openChild);
+  assert.ok(openChild.traits.includes("Transferência Horizontal"));
+  assert.deepEqual(open.s.cyclePositiveInnovations, [
+    "Transferência Horizontal",
+  ]);
+
+  const cappedTraits = [
+      "Fotossíntese",
+      "Reparo Celular",
+      "Dormência",
+      "Multicelularismo",
+      "Resistência",
+      "Regeneração",
+    ],
+    capped = makeState(cappedTraits),
+    cappedBefore = capped.s.nextId;
+  assert.equal(
+    reproduce(context(capped.s), capped.parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const cappedChild = capped.s.pieces.find(
+    (piece) => piece.id >= cappedBefore,
+  );
+  assert.ok(cappedChild);
+  assert.equal(
+    cappedChild.traits.includes("Transferência Horizontal"),
+    false,
+  );
+  assert.deepEqual(capped.s.cyclePositiveInnovations, cappedTraits);
+});
+
 test("first-cycle mutation attempts never fall back to deleterious outcomes", () => {
   const s = fixture([
       {

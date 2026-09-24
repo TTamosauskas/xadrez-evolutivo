@@ -23,6 +23,7 @@ import {
   recordHistoricalTraits,
   stageComplete,
   traitCombinationValid,
+  NEGATIVE_TRAITS,
   SOMATIC_NEGATIVE_TRAITS,
 } from "./geology.js";
 import {
@@ -823,6 +824,9 @@ export function createState(seed = Date.now(), options = {}) {
         "Respiração anaeróbia",
         ...(options.historicalTraits ?? []),
       ]),
+    ],
+    cyclePositiveInnovations: [
+      ...new Set(options.cyclePositiveInnovations ?? []),
     ],
     fossilRecord: structuredClone(options.fossilRecord ?? []),
     discoveries: cloneDiscoveries(options.discoveries),
@@ -1680,6 +1684,13 @@ export function assertState(state) {
     !Array.isArray(state.historicalTraits) ||
     state.historicalTraits.some((trait) => !TRAITS[trait]) ||
     new Set(state.historicalTraits).size !== state.historicalTraits.length ||
+    !Array.isArray(state.cyclePositiveInnovations) ||
+    state.cyclePositiveInnovations.some(
+      (trait) => !TRAITS[trait] || NEGATIVE_TRAITS.has(trait),
+    ) ||
+    new Set(state.cyclePositiveInnovations).size !==
+      state.cyclePositiveInnovations.length ||
+    state.cyclePositiveInnovations.length > 6 ||
     !Array.isArray(state.fossilRecord) ||
     state.fossilRecord.some(
       (entry) =>

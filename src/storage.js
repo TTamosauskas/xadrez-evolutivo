@@ -36,6 +36,12 @@ function restoreLegacyResidueTerrain(state) {
   }
 }
 
+function normalizeCycleInnovationPressure(state) {
+  if (!Array.isArray(state?.cyclePositiveInnovations))
+    state.cyclePositiveInnovations = [];
+  return state;
+}
+
 function migrateLegacy(data) {
   let state = structuredClone(data);
   if (
@@ -97,7 +103,7 @@ function migrateLegacy(data) {
   }
   state.version = STATE_VERSION;
   normalizeStoredGenomes(state);
-  return state;
+  return normalizeCycleInnovationPressure(state);
 }
 
 export function deserialize(raw) {
@@ -115,7 +121,7 @@ export function deserialize(raw) {
     throw Error(
       `Save incompatível com esta versão de desenvolvimento. Inicie uma nova partida na versão ${STATE_VERSION}.`,
     );
-  return assertState(data);
+  return assertState(normalizeCycleInnovationPressure(data));
 }
 
 export function save(storage, state) {
