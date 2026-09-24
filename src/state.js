@@ -824,6 +824,9 @@ export function createState(seed = Date.now(), options = {}) {
         ...(options.historicalTraits ?? []),
       ]),
     ],
+    cyclePositiveInnovations: [
+      ...new Set(options.cyclePositiveInnovations ?? []),
+    ],
     fossilRecord: structuredClone(options.fossilRecord ?? []),
     discoveries: cloneDiscoveries(options.discoveries),
     logs: [],
@@ -1680,6 +1683,13 @@ export function assertState(state) {
     !Array.isArray(state.historicalTraits) ||
     state.historicalTraits.some((trait) => !TRAITS[trait]) ||
     new Set(state.historicalTraits).size !== state.historicalTraits.length ||
+    !Array.isArray(state.cyclePositiveInnovations) ||
+    state.cyclePositiveInnovations.some(
+      (trait) => !TRAITS[trait] || NEGATIVE_TRAITS.has(trait),
+    ) ||
+    new Set(state.cyclePositiveInnovations).size !==
+      state.cyclePositiveInnovations.length ||
+    state.cyclePositiveInnovations.length > 6 ||
     !Array.isArray(state.fossilRecord) ||
     state.fossilRecord.some(
       (entry) =>
