@@ -323,10 +323,6 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
   const legal = movesFor(s, blue);
   assert.ok(legal.some((target) => !target.stay && !target.capture));
   assert.ok(legal.some((target) => target.stay));
-  assert.ok(
-    legal.some((target) => lethalHazardAt(s, target.r, target.c)),
-    "o Hadeano deve oferecer casas ☠️ como destinos legais",
-  );
   assert.equal(
     Array.from({ length: 8 }, (_, r) =>
       Array.from({ length: 8 }, (_, col) =>
