@@ -1296,6 +1296,10 @@ function executeMove(ctx, action) {
     p.hostileRiskRound = round(state) + 1;
     if (hostileHazardKills(state, p)) {
       ctx.kill(p.id, "casa hostil após captura");
+      if (capturedPieceKilled) {
+        markCarcass(state, cell);
+        markCaptureDisturbance(state, cell);
+      }
       advanceTurn(ctx);
       settle(ctx);
       return;
