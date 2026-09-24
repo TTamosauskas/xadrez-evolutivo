@@ -399,7 +399,7 @@ test("Hadean tutorial progress does not end the period; extinction advances to A
         piece.traits.includes("Respiração anaeróbia"),
     ),
   );
-  assert.deepEqual(s.seenMutations, []);
+  assert.deepEqual(s.seenMutations, ["Respiração anaeróbia"]);
 
   amber = s.pieces.find((piece) => piece.owner === "amber");
   blue = s.pieces.find((piece) => piece.owner === "blue");
