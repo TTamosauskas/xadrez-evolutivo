@@ -37,7 +37,7 @@ function setup() {
 }
 test("rendering a pathogen notice settles and never mutates game state", async () => {
   const dom = setup(),
-    s = createState(2);
+    s = createState(2, { geologicalStage: "quaternary" });
   startDisease(s);
   const before = clone(s);
   let mutations = 0;
@@ -62,7 +62,7 @@ test("rendering a pathogen notice settles and never mutates game state", async (
 });
 test("pathogen agents render centered overlays with distinct symbols", () => {
   const dom = setup(),
-    s = createState(23),
+    s = createState(23, { geologicalStage: "quaternary" }),
     virusHost = s.pieces[0],
     mixedHost = s.pieces[1];
   startDisease(s, "eco", virusHost, null, "virus");

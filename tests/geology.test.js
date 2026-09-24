@@ -9,6 +9,8 @@ import {
   applyTraitMutation,
   captureUnlocked,
   currentGeologicalStage,
+  availablePathogenAgents,
+  sexualPathogenUnlocked,
   aquaticTerrainCell,
   conwayUnlocked,
   deleteriousMutationUnlocked,
@@ -1194,6 +1196,71 @@ test("new combat specializations unlock in the intended periods and lineages", (
   };
   assert.equal(traitUnlocked(jurassic, "Visão Noturna", nocturnal), true);
   assert.equal(traitUnlocked(jurassic, "Visão Noturna", predator), false);
+});
+
+test("pathogen agents unlock progressively by geological period", () => {
+  const stateAt = (geologicalStage) =>
+    createState(1170, { geologicalStage, scenario: "earth" });
+
+  assert.deepEqual(availablePathogenAgents(stateAt("archean")), []);
+  assert.deepEqual(availablePathogenAgents(stateAt("proterozoic")), [
+    "virus",
+  ]);
+  assert.deepEqual(availablePathogenAgents(stateAt("ediacaran")), [
+    "virus",
+    "bacteria",
+  ]);
+  assert.deepEqual(availablePathogenAgents(stateAt("cambrian")), [
+    "virus",
+    "bacteria",
+    "fungus",
+  ]);
+});
+
+test("sexual pathogen route unlocks only on the cycle after Reprodução Sexuada appears", () => {
+  const s = createState(1171, {
+      scenario: "earth",
+      geologicalStage: "proterozoic",
+      totalCycles: 4,
+      historicalTraits: [
+        "Respiração anaeróbia",
+        "Reparo Celular",
+        "Multicelularismo",
+      ],
+    }),
+    carrier = newPiece(s, "blue", 4, 4, {
+      traits: [
+        "Respiração anaeróbia",
+        "Reparo Celular",
+        "Multicelularismo",
+        "Predação",
+        "Reprodução Sexuada",
+      ],
+      ancestry: [
+        "Respiração anaeróbia",
+        "Reparo Celular",
+        "Multicelularismo",
+        "Predação",
+        "Reprodução Sexuada",
+      ],
+    });
+
+  assert.equal(s.sexualPathogenUnlockTotalCycle, null);
+  registerDiscoveries(s, carrier);
+  assert.equal(s.sexualPathogenUnlockTotalCycle, 5);
+  assert.equal(sexualPathogenUnlocked(s), false);
+
+  s.totalCycles = 5;
+  assert.equal(sexualPathogenUnlocked(s), true);
+
+  const later = createState(1172, {
+    scenario: "earth",
+    geologicalStage: "ediacaran",
+    totalCycles: 6,
+    historicalTraits: ["Reprodução Sexuada"],
+  });
+  assert.equal(later.sexualPathogenUnlockTotalCycle, 6);
+  assert.equal(sexualPathogenUnlocked(later), true);
 });
 
 test("Vetor Patógeno is a Cretaceous specialization of Parasitismo", () => {

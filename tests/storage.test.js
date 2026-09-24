@@ -27,6 +27,38 @@ test("current saves without cycle innovation pressure normalize to an empty cycl
   assertState(restored);
 });
 
+test("current saves infer legacy pathogen routes and sexual-pathogen timing", () => {
+  const state = createState(15, {
+    scenario: "earth",
+    geologicalStage: "cambrian",
+    totalCycles: 7,
+    historicalTraits: ["Reprodução Sexuada"],
+  });
+  state.diseases.push({
+    id: state.nextDisease++,
+    source: "eco",
+    triggerOwner: null,
+    agent: "bacteria",
+    transmission: "trail",
+    mode: "omnidirectional",
+    startRound: 0,
+    endRound: 10,
+    delay: 3,
+    mortality: 60,
+    infected: [],
+    survivors: [],
+    deaths: 0,
+    contaminated: [],
+  });
+  delete state.diseases[0].transmission;
+  delete state.sexualPathogenUnlockTotalCycle;
+
+  const restored = deserialize(JSON.stringify(state));
+  assert.equal(restored.diseases[0].transmission, "trail");
+  assert.equal(restored.sexualPathogenUnlockTotalCycle, 7);
+  assertState(restored);
+});
+
 test("current save schema preserves active phases and temporary event data", () => {
   const state = createState(13),
     piece = state.pieces.find((candidate) => candidate.owner === "blue");

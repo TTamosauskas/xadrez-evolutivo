@@ -36,10 +36,57 @@ function restoreLegacyResidueTerrain(state) {
   }
 }
 
+function defaultPathogenTransmission(agent) {
+  return agent === "bacteria"
+    ? "trail"
+    : agent === "fungus"
+      ? "environmental"
+      : "contact";
+}
+
+function normalizePathogenEvolution(state) {
+  for (const disease of state?.diseases ?? [])
+    disease.transmission ??= defaultPathogenTransmission(disease.agent);
+
+  if (state?.sexualPathogenUnlockTotalCycle === undefined) {
+    state.sexualPathogenUnlockTotalCycle = null;
+    if (
+      state.scenario !== "arena" &&
+      (state.historicalTraits ?? []).includes("Reprodução Sexuada")
+    ) {
+      const order = [
+        "hadean",
+        "archean",
+        "proterozoic",
+        "ediacaran",
+        "cambrian",
+        "ordovician",
+        "silurian",
+        "devonian",
+        "carboniferous",
+        "permian",
+        "triassic",
+        "jurassic",
+        "cretaceous",
+        "paleogene",
+        "neogene",
+        "quaternary",
+      ];
+      const stageIndex = order.indexOf(state.geologicalStage),
+        proterozoicIndex = order.indexOf("proterozoic");
+      state.sexualPathogenUnlockTotalCycle =
+        stageIndex > proterozoicIndex
+          ? state.totalCycles
+          : (state.totalCycles ?? 1) + 1;
+    }
+  }
+  return state;
+}
+
 function normalizeCycleInnovationPressure(state) {
   if (!Array.isArray(state?.cyclePositiveInnovations))
     state.cyclePositiveInnovations = [];
-  return state;
+  return normalizePathogenEvolution(state);
 }
 
 function migrateLegacy(data) {

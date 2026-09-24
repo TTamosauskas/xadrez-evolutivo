@@ -74,7 +74,10 @@ import {
   paedogenesisReady,
   buddingResource,
 } from "./reproduction-traits.js";
-import { tryVectorPathogen } from "./disease.js";
+import {
+  transmitSexualPathogen,
+  tryVectorPathogen,
+} from "./disease.js";
 
 const NEGATIVE = [...NEGATIVE_GENETIC_TRAITS];
 const POSITIVE = Object.keys(TRAITS).filter(
@@ -1265,6 +1268,8 @@ export function reproduce(
       return brood;
     },
     failIfSubfertile = () => {
+      if (mates.length)
+        transmitSexualPathogen(state, [parent, ...mates]);
       if (!has(profile, "Subfertilidade") || random(state) >= 0.5)
         return false;
       applyCooldown();
