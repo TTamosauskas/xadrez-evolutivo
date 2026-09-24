@@ -486,15 +486,25 @@ function establishSexualFounder(child, countMutation) {
 function pairSexualFounders(brood, sexualMutants) {
   if (brood.length < 2 || !sexualMutants.length) return;
   for (const child of sexualMutants) establishSexualFounder(child, false);
-  if (brood.filter((child) => has(child, "Reprodução Sexuada")).length >= 2)
-    return;
-  const sibling = brood.find(
-    (child) =>
-      !sexualMutants.includes(child) &&
-      has(child, "Multicelularismo") &&
-      !has(child, "Reprodução Sexuada"),
+  if (brood.filter((child) => has(child, "Reprodução Sexuada")).length < 2) {
+    const sibling = brood.find(
+      (child) =>
+        !sexualMutants.includes(child) &&
+        has(child, "Multicelularismo") &&
+        !has(child, "Reprodução Sexuada"),
+    );
+    if (sibling) establishSexualFounder(sibling, true);
+  }
+  const founders = brood.filter((child) => has(child, "Reprodução Sexuada"));
+  if (founders.length < 2) return;
+  const prioritized = founders.slice(0, 2),
+    selected = new Set(prioritized);
+  brood.splice(
+    0,
+    brood.length,
+    ...prioritized,
+    ...brood.filter((child) => !selected.has(child)),
   );
-  if (sibling) establishSexualFounder(sibling, true);
 }
 
 function makeChildProfile(
