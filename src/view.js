@@ -127,7 +127,9 @@ export function establishedTraits(state) {
 export function traitFrameEntries(piece, established = new Set()) {
   const entries = [
     ...(piece?.traits ?? [])
-      .filter((trait) => !established.has(trait))
+      .filter(
+        (trait) => !established.has(trait) || trait === "Mixotrofia",
+      )
       .map((trait) => ({ trait, somatic: false })),
     ...(piece?.somaticMutations ?? []).map((trait) => ({
       trait,
