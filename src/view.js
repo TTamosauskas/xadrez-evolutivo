@@ -251,8 +251,8 @@ export function render(
   $("turn").textContent =
     state.phase === "origin"
       ? origin?.selected
-        ? "Toque novamente no Rei protocelular para iniciar o Hadeano"
-        : "Selecione o Rei protocelular do Hadeano"
+        ? "Toque novamente no Rei ancestral para dividi-lo"
+        : "Selecione o Rei ancestral cinza do Hadeano"
       : state.result
         ? state.geologicalStage === "hadean" && !state.result.winner
           ? "Hadeano concluído"
@@ -365,7 +365,7 @@ export function render(
       heading,
       make(
         "div",
-        "Toque novamente para iniciar a campanha.",
+        "Toque novamente para dividir o ancestral em um Rei branco e um Rei preto.",
         "mobile-selected-traits",
       ),
     );
@@ -973,7 +973,7 @@ export function render(
       heading,
       make(
         "p",
-        "Ancestral comum das duas linhagens. Toque novamente no Rei cinza para separar quatro Reis primordiais: um fotossintético e um predatório para cada lado.",
+        "Ancestral comum das duas linhagens. Toque novamente no Rei cinza para dividi-lo em dois Reis protocelulares: um branco e um preto, ainda sem Fotossíntese ou Predação.",
         "selected-ancestral",
       ),
     );
@@ -982,7 +982,7 @@ export function render(
       make(
         "span",
         state.phase === "origin"
-          ? "Selecione o Rei ancestral cinza para iniciar a campanha."
+          ? "Selecione o Rei ancestral cinza do Hadeano."
           : "Selecione uma peça para ver suas características.",
       ),
     );
