@@ -8,11 +8,19 @@ import {
   PATHOGEN_AGENTS,
   PATHOGEN_AGENT_IDS,
 } from "./constants.js";
-import { round, random, pick, log, notice } from "./state.js";
+import {
+  round,
+  random,
+  pick,
+  log,
+  notice,
+  fecalResidueAt,
+} from "./state.js";
 import {
   availablePathogenAgents,
   pathogenUnlocked,
   sexualPathogenUnlocked,
+  fecalPathogenUnlocked,
   negativeTraitUnlocked,
   SOMATIC_NEGATIVE_TRAITS,
 } from "./geology.js";
@@ -23,11 +31,17 @@ export const POPULATION_RESISTANCE_MORTALITY_FACTOR = 0.25;
 export const VECTOR_PATHOGEN_TRANSMISSION_CHANCE = 0.25;
 export const VECTOR_PATHOGEN_MORTALITY = 20;
 export const VECTOR_RESISTANCE_MORTALITY_FACTOR = 0.5;
-export const SEXUAL_PATHOGEN_EVENT_CHANCE = 0.25;
 export const SEXUAL_PATHOGEN_TRANSMISSION_CHANCE = 0.5;
 export const SEXUAL_PATHOGEN_MORTALITY = 15;
 export const SEXUAL_PATHOGEN_DELAY = 8;
 export const SEXUAL_PATHOGEN_DURATION = 12;
+export const FECAL_PATHOGEN_CONTACT_CHANCE = 0.5;
+export const FECAL_PATHOGEN_INGESTION_CHANCE = 1;
+export const FECAL_PATHOGEN_MORTALITY = 30;
+export const FECAL_PATHOGEN_DELAY = 5;
+export const FECAL_PATHOGEN_DURATION = 10;
+const SPECIAL_ECOLOGICAL_PROFILE_WEIGHT = 3;
+const ECOLOGICAL_PROFILE_TOTAL_WEIGHT = 12;
 export const PATHOGEN_SOMATIC_MUTATION_CHANCE = 0.25;
 export const PRE_REPAIR_PATHOGEN_SOMATIC_MUTATION_CHANCE = 0.5;
 export const pathogenSomaticMutationChance = (piece) =>
@@ -67,6 +81,76 @@ function sexualPathogenCandidates(state) {
           has(candidate, "Reprodução Sexuada"),
       ),
   );
+}
+
+const lineageReached = (piece, trait) =>
+  has(piece, trait) || (piece?.ancestry ?? []).includes(trait);
+
+export const fecalPathogenSusceptible = (piece) =>
+  !!piece &&
+  !(has(piece, "Fotossíntese") && !has(piece, "Mixotrofia"));
+
+function fecalPathogenCandidates(state) {
+  return state.pieces.filter(
+    (piece) =>
+      !piece.infection &&
+      fecalPathogenSusceptible(piece) &&
+      !fullyImmuneToEcologicalPathogen(piece) &&
+      lineageReached(piece, "Multicelularismo") &&
+      has(piece, "Predação") &&
+      ["Carnívoro", "Herbívoro", "Onívoro"].some((trait) =>
+        has(piece, trait),
+      ),
+  );
+}
+
+function weightedProfilePick(state, profiles) {
+  const total = profiles.reduce((sum, profile) => sum + profile.weight, 0);
+  if (total <= 0) return null;
+  let roll = random(state) * total;
+  for (const profile of profiles) {
+    roll -= profile.weight;
+    if (roll < 0) return profile;
+  }
+  return profiles.at(-1) ?? null;
+}
+
+export function availableEcologicalPathogenProfiles(state) {
+  const common = availablePathogenAgents(state)
+      .map((agent) => ({
+        agent,
+        transmission: defaultPathogenTransmission(agent),
+      }))
+      .filter(
+        ({ agent, transmission }) =>
+          initialCandidates(state, "eco", agent, transmission).length,
+      ),
+    special = [];
+
+  if (
+    sexualPathogenUnlocked(state) &&
+    sexualPathogenCandidates(state).length
+  )
+    special.push({ agent: "virus", transmission: "sexual" });
+  if (
+    fecalPathogenUnlocked(state) &&
+    fecalPathogenCandidates(state).length
+  )
+    special.push({ agent: "bacteria", transmission: "fecal" });
+
+  const commonTotal = Math.max(
+      0,
+      ECOLOGICAL_PROFILE_TOTAL_WEIGHT -
+        special.length * SPECIAL_ECOLOGICAL_PROFILE_WEIGHT,
+    ),
+    commonWeight = common.length ? commonTotal / common.length : 0;
+  return [
+    ...common.map((profile) => ({ ...profile, weight: commonWeight })),
+    ...special.map((profile) => ({
+      ...profile,
+      weight: SPECIAL_ECOLOGICAL_PROFILE_WEIGHT,
+    })),
+  ].filter((profile) => profile.weight > 0);
 }
 
 export function pathogenMortalityChance(piece, disease) {
@@ -154,6 +238,7 @@ export function infect(state, piece, disease) {
 
 function initialCandidates(state, source, agent, transmission) {
   if (transmission === "sexual") return sexualPathogenCandidates(state);
+  if (transmission === "fecal") return fecalPathogenCandidates(state);
   return state.pieces.filter((piece) => {
     if (agent === "fungus") return true;
     if (piece.infection) return false;
@@ -184,19 +269,25 @@ export function startDisease(
     return null;
 
   if (transmission === "sexual") {
-    if (!sexualPathogenUnlocked(state)) return null;
+    if (source !== "eco" || !sexualPathogenUnlocked(state)) return null;
     agent ??= "virus";
     if (agent !== "virus") return null;
+  } else if (transmission === "fecal") {
+    if (source !== "eco" || !fecalPathogenUnlocked(state)) return null;
+    agent ??= "bacteria";
+    if (agent !== "bacteria") return null;
   } else if (
     source === "eco" &&
     !explicitAgent &&
-    transmission === null &&
-    sexualPathogenUnlocked(state) &&
-    sexualPathogenCandidates(state).length &&
-    random(state) < SEXUAL_PATHOGEN_EVENT_CHANCE
+    transmission === null
   ) {
-    agent = "virus";
-    transmission = "sexual";
+    const profile = weightedProfilePick(
+      state,
+      availableEcologicalPathogenProfiles(state),
+    );
+    if (!profile) return null;
+    agent = profile.agent;
+    transmission = profile.transmission;
   }
 
   agent ??= pick(state, availableAgents);
@@ -205,7 +296,8 @@ export function startDisease(
 
   if (
     transmission !== defaultPathogenTransmission(agent) &&
-    !(agent === "virus" && transmission === "sexual")
+    !(agent === "virus" && transmission === "sexual") &&
+    !(agent === "bacteria" && transmission === "fecal")
   )
     return null;
 
@@ -216,6 +308,7 @@ export function startDisease(
   if (!seed) return null;
 
   const sexual = transmission === "sexual",
+    fecal = transmission === "fecal",
     disease = {
       id: state.nextDisease++,
       source,
@@ -231,21 +324,27 @@ export function startDisease(
         round(state) +
         (sexual
           ? SEXUAL_PATHOGEN_DURATION
-          : source === "vector"
-            ? 6
-            : 10),
+          : fecal
+            ? FECAL_PATHOGEN_DURATION
+            : source === "vector"
+              ? 6
+              : 10),
       delay:
         sexual
           ? SEXUAL_PATHOGEN_DELAY
-          : source === "vector"
-            ? 3
-            : 2 + Math.floor(random(state) * 5),
+          : fecal
+            ? FECAL_PATHOGEN_DELAY
+            : source === "vector"
+              ? 3
+              : 2 + Math.floor(random(state) * 5),
       mortality:
         sexual
           ? SEXUAL_PATHOGEN_MORTALITY
-          : source === "vector"
-            ? VECTOR_PATHOGEN_MORTALITY
-            : 60 + Math.floor(random(state) * 41),
+          : fecal
+            ? FECAL_PATHOGEN_MORTALITY
+            : source === "vector"
+              ? VECTOR_PATHOGEN_MORTALITY
+              : 60 + Math.floor(random(state) * 41),
       infected: [],
       survivors: [],
       deaths: 0,
@@ -271,11 +370,13 @@ export function startDisease(
     const behavior =
       transmission === "sexual"
         ? "Transmissão apenas durante Reprodução Sexuada; proximidade comum não transmite, e Resistência impede a infecção."
-        : transmission === "contact"
-          ? `Contágio ${disease.mode === "diagonal" ? "diagonal" : disease.mode === "orthogonal" ? "ortogonal" : "omnidirecional"} durante dez rodadas.`
-          : transmission === "trail"
-            ? "Criaturas infectadas deixam 🦠 nas casas que abandonam; essas casas podem contaminar novos hospedeiros."
-            : "Casas 🍄 expõem seus ocupantes a uma nova chance de mortalidade a cada rodada e dois novos focos surgem por rodada.";
+        : transmission === "fecal"
+          ? "Hospedeiros infectados podem deixar 💩 contaminadas após reprodução trófica; tocar o resíduo pode transmitir, e Coprofagia implica ingestão direta."
+          : transmission === "contact"
+            ? `Contágio ${disease.mode === "diagonal" ? "diagonal" : disease.mode === "orthogonal" ? "ortogonal" : "omnidirecional"} durante dez rodadas.`
+            : transmission === "trail"
+              ? "Criaturas infectadas deixam 🦠 nas casas que abandonam; essas casas podem contaminar novos hospedeiros."
+              : "Casas 🍄 expõem seus ocupantes a uma nova chance de mortalidade a cada rodada e dois novos focos surgem por rodada.";
     notice(state, `${def.icon} ${def.name}`, [
       `Origem: ${origin}.`,
       `Mortalidade-base do surto: ${disease.mortality}%.`,
@@ -333,6 +434,56 @@ export function transmitSexualPathogen(state, participants) {
     }
   }
   return transmitted;
+}
+
+export function fecalPathogenDiseaseIdsForHost(state, piece) {
+  if (!piece?.infection) return [];
+  const disease = state.diseases.find(
+    (candidate) =>
+      candidate.id === piece.infection.disease &&
+      candidate.transmission === "fecal",
+  );
+  return disease ? [disease.id] : [];
+}
+
+export function exposeFecalResidue(
+  state,
+  piece,
+  cell = square(piece?.r ?? -1, piece?.c ?? -1),
+  { ingestion = false } = {},
+) {
+  if (
+    !piece ||
+    !fecalPathogenSusceptible(piece) ||
+    fullyImmuneToEcologicalPathogen(piece) ||
+    piece.infection
+  )
+    return false;
+  const r = Math.floor(cell / 8),
+    col = cell % 8,
+    residue = fecalResidueAt(state, r, col);
+  if (!residue?.pathogenDiseaseIds?.length) return false;
+
+  const chance = ingestion
+    ? FECAL_PATHOGEN_INGESTION_CHANCE
+    : FECAL_PATHOGEN_CONTACT_CHANCE;
+  for (const diseaseId of residue.pathogenDiseaseIds) {
+    const disease = state.diseases.find(
+      (candidate) =>
+        candidate.id === diseaseId &&
+        candidate.agent === "bacteria" &&
+        candidate.transmission === "fecal",
+    );
+    if (!disease || random(state) >= chance) continue;
+    if (!infect(state, piece, disease)) continue;
+    recordPathogenExposure(state, piece, disease);
+    log(
+      state,
+      `${OWNERS[piece.owner]}: 🦠 exposição fecal transmitiu ${agentDefinition(disease).name}.`,
+    );
+    return true;
+  }
+  return false;
 }
 
 export function tryVectorPathogen(state, vector, agent = null) {
@@ -514,7 +665,7 @@ function resolveInfectionMortality(ctx, piece, disease) {
   const state = ctx.state;
   if (
     ["population", "vector"].includes(disease.source) ||
-    disease.transmission === "sexual"
+    ["sexual", "fecal"].includes(disease.transmission)
   ) {
     const mortality = pathogenMortalityChance(piece, disease);
     if (random(state) < mortality) {
@@ -650,6 +801,12 @@ export function tickDiseases(ctx) {
   state.diseases = state.diseases.filter((disease) => {
     if (disease.endRound >= now) return true;
     if (disease.agent === "fungus") return false;
+    if (
+      state.deathSites?.some((site) =>
+        site.pathogenDiseaseIds?.includes(disease.id),
+      )
+    )
+      return true;
     return state.pieces.some(
       (piece) => piece.infection?.disease === disease.id,
     );
