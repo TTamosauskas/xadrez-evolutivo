@@ -136,9 +136,11 @@ main {
 .cell.capture-disturbance.dark {
   background: #a84f45;
 }
-.cell.lethal-hazard,
+.cell.lethal-hazard {
+  background: #8f332f;
+}
 .cell.lethal-hazard.dark {
-  background: #6b2323;
+  background: #61211f;
 }
 .cell.terrain-single-tone.fertile,
 .cell.terrain-single-tone.fertile.dark {
