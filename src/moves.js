@@ -15,6 +15,7 @@ import {
   fertilityPaused,
   ecologicalDomainBlocked,
   organicResidueAt,
+  carcassAt,
   captureDisturbanceAt,
   lethalHazardAt,
   organicResidueHazardousTo,
@@ -55,13 +56,19 @@ export const regenerationResting = (state, p) =>
 export const decompositionImmune = (state, p) =>
   p?.decompositionImmunity?.cell === square(p.r, p.c) &&
   state.turn <= p.decompositionImmunity.throughTurn;
-export const dormant = (state, p) =>
-  has(p, "Dormência") &&
-  (terrain(state, p.r, p.c) === "hostile" ||
-    !!captureDisturbanceAt(state, p.r, p.c) ||
-    (!!organicResidueAt(state, p.r, p.c) &&
-      organicResidueHazardousTo(p))) &&
-  !decompositionImmune(state, p);
+export const dormant = (state, p) => {
+  const scavengerOnCarcass =
+    !!carcassAt(state, p.r, p.c) &&
+    (has(p, "Necrófago") || has(p, "Onívoro Oportunista"));
+  return (
+    has(p, "Dormência") &&
+    (terrain(state, p.r, p.c) === "hostile" ||
+      (!!captureDisturbanceAt(state, p.r, p.c) && !scavengerOnCarcass) ||
+      (!!organicResidueAt(state, p.r, p.c) &&
+        organicResidueHazardousTo(p))) &&
+    !decompositionImmune(state, p)
+  );
+};
 export const pupating = (state, p) =>
   Number.isInteger(p?.pupaUntilRound) && round(state) < p.pupaUntilRound;
 export const resting = (state, p) =>
@@ -105,6 +112,7 @@ export function constructionTargets(state) {
   const decomposition = new Set([
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
+      ...state.carcasses.map((entry) => entry.cell),
       ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
       ...(state.event?.lethalHazards ?? []),
     ]),
