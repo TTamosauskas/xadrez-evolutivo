@@ -86,6 +86,7 @@ import {
   GEOLOGICAL_STAGES,
   habitatProfile,
   aquaticFertilityRegime,
+  captureUnlocked,
 } from "../src/geology.js";
 import {
   cloneGenome,
@@ -488,6 +489,57 @@ test("compact non-canonical cycle starts keep Brancas on the lower half", () => 
     assert.ok(blue.every(([, r]) => r >= 4), `${stage} ${cycle}: Brancas`);
     assert.ok(amber.every(([, r]) => r <= 3), `${stage} ${cycle}: Pretas`);
   }
+});
+
+test("Hadean capture stays unlocked after the initial 2x2 population loses a piece", () => {
+  let s = createCampaignState(305);
+  s = simulate(s, { type: "ORIGIN_CLICK" });
+  s = simulate(s, { type: "ORIGIN_CLICK" });
+
+  let blue = s.pieces.find((piece) => piece.owner === "blue");
+  s = simulate(s, move(blue, blue.r, blue.c));
+  let amber = s.pieces.find((piece) => piece.owner === "amber");
+  s = simulate(s, move(amber, amber.r, amber.c));
+
+  assert.equal(s.reproductions.blue, 1);
+  assert.equal(s.reproductions.amber, 1);
+  assert.equal(s.pieces.length, 4);
+  assert.equal(captureUnlocked(s, s.pieces[0]), true);
+
+  const ambers = s.pieces.filter((piece) => piece.owner === "amber"),
+    blues = s.pieces.filter((piece) => piece.owner === "blue"),
+    attacker = ambers[0],
+    survivingAmber = ambers[1],
+    victim = blues[0],
+    survivingBlue = blues[1];
+
+  attacker.r = 3;
+  attacker.c = 3;
+  victim.r = 4;
+  victim.c = 4;
+  survivingBlue.r = 5;
+  survivingBlue.c = 5;
+  survivingAmber.r = 2;
+  survivingAmber.c = 2;
+  s.current = "amber";
+
+  s = simulate(s, move(attacker, 4, 4));
+  assert.equal(s.pieces.length, 3);
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    1,
+  );
+
+  const blueAfterLoss = s.pieces.find(
+    (piece) => piece.id === survivingBlue.id,
+  );
+  assert.equal(captureUnlocked(s, blueAfterLoss), true);
+  assert.ok(
+    movesFor(s, blueAfterLoss).some(
+      (target) => target.r === 4 && target.c === 4 && target.capture,
+    ),
+  );
+  assertState(s);
 });
 
 test("Hadean ancestral split keeps Brancas below and Pretas above across seeds", () => {
