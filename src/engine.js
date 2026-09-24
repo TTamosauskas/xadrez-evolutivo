@@ -989,8 +989,11 @@ function executeMove(ctx, action) {
     }
   if (
     !target.stay &&
-    terrain(state, target.r, target.c) === "hostile" &&
-    !landingPieceCapture
+    !landingPieceCapture &&
+    (terrain(state, target.r, target.c) === "hostile" ||
+      !!captureDisturbanceAt(state, target.r, target.c) ||
+      (!!organicResidueAt(state, target.r, target.c) &&
+        organicResidueHazardousTo(p)))
   )
     p.hostileRiskRound = round(state) + 1;
   if (!target.stay && has(p, "Mutação Disfuncional"))
