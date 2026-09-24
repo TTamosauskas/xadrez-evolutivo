@@ -855,6 +855,9 @@ export function createState(seed = Date.now(), options = {}) {
     cyclePositiveInnovations: [
       ...new Set(options.cyclePositiveInnovations ?? []),
     ],
+    cyclePathogenProfile: options.cyclePathogenProfile
+      ? { ...options.cyclePathogenProfile }
+      : null,
     fossilRecord: structuredClone(options.fossilRecord ?? []),
     discoveries: cloneDiscoveries(options.discoveries),
     logs: [],
@@ -1731,6 +1734,26 @@ export function assertState(state) {
     new Set(state.cyclePositiveInnovations).size !==
       state.cyclePositiveInnovations.length ||
     state.cyclePositiveInnovations.length > 6 ||
+    !(
+      state.cyclePathogenProfile === null ||
+      (state.cyclePathogenProfile &&
+        PATHOGEN_AGENT_IDS.includes(state.cyclePathogenProfile.agent) &&
+        PATHOGEN_TRANSMISSION_IDS.includes(
+          state.cyclePathogenProfile.transmission,
+        ) &&
+        ((state.cyclePathogenProfile.agent === "virus" &&
+          ["contact", "sexual"].includes(
+            state.cyclePathogenProfile.transmission,
+          )) ||
+          (state.cyclePathogenProfile.agent === "bacteria" &&
+            ["trail", "fecal"].includes(
+              state.cyclePathogenProfile.transmission,
+            )) ||
+          (state.cyclePathogenProfile.agent === "fungus" &&
+            ["environmental", "spore"].includes(
+              state.cyclePathogenProfile.transmission,
+            ))))
+    ) ||
     !Array.isArray(state.fossilRecord) ||
     state.fossilRecord.some(
       (entry) =>
