@@ -68,14 +68,14 @@ export const TRAITS = {
     "🦕",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
-  Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Permite capturar criaturas adversárias segundo a geometria tradicional da peça; descendentes permanecem neste ramo e, sem Locomoção Primitiva, apenas capturas são permitidas."],
+  Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Permite capturar criaturas adversárias; enquanto a linhagem ainda é unicelular, capturas inimigas também podem gerar reprodução predatória primordial. Após Multicelularismo, a reprodução pela captura depende de especializações alimentares."],
   Carnívoro: [
     "🍖",
-    "Especialização de uma linhagem com Predação: obtém reprodução predatória ao capturar criaturas não fotossintéticas e deixa de usar casas férteis.",
+    "Especialização alimentar multicelular de uma linhagem com Predação: capturas de criaturas não fotossintéticas podem gerar reprodução predatória.",
   ],
   Herbívoro: [
     "🥬",
-    "Especialização de uma linhagem com Predação: pode capturar qualquer criatura, mas só obtém reprodução predatória ao capturar seres do ramo fotossintético.",
+    "Especialização alimentar multicelular de uma linhagem com Predação: capturas de criaturas fotossintéticas podem gerar reprodução predatória.",
   ],
   Canibalismo: [
     "🐻‍❄️",
@@ -88,7 +88,7 @@ export const TRAITS = {
   "Vetor Patógeno": ["🦟", "Pode desencadear surtos virais, bacterianos ou fúngicos em criaturas adversárias adjacentes."],
   Onívoro: [
     "🐻",
-    "Especialização posterior de Carnívoro ou Herbívoro: usa casas férteis e obtém reprodução predatória contra criaturas fotossintéticas ou não fotossintéticas.",
+    "Especialização posterior de Carnívoro ou Herbívoro: capturas de criaturas fotossintéticas ou não fotossintéticas podem gerar reprodução predatória.",
   ],
   "Respiração Cutânea": [
     "🐸",
@@ -258,7 +258,7 @@ export const TRAITS = {
   Resistência: ["🧬", "Impede infecções por patógenos ecológicos e reduz em 75% a mortalidade individual causada por patógenos de pressão populacional."],
   "Reprodução Sexuada": [
     "❤️",
-    "Dois portadores reprodutivamente aptos podem cruzar quando pelo menos um deles fornece uma casa fértil ou uma semente armazenada; cada descendente recebe um alelo de cada progenitor em cada locus.",
+    "Substitui a reprodução basal individual em casas férteis e sementes por acasalamento entre dois portadores reprodutivamente aptos; rotas reprodutivas especializadas permanecem disponíveis. Quando a inovação surge em uma ninhada com pelo menos dois descendentes, estabelece dois fundadores sexuais.",
   ],
   "Precocidade Sexual": [
     "🪰",

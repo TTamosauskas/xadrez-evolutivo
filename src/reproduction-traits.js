@@ -36,6 +36,23 @@ export const PROMISCUITY_RADIUS = 3;
 export const METAMORPHOSIS_ROUNDS = 1;
 export const MARSUPIAL_CARRY_ROUNDS = 1;
 
+const lineageReached = (piece, trait) =>
+  has(piece, trait) || (piece?.ancestry ?? []).includes(trait);
+
+export const canUseBasalFertility = (piece) =>
+  !!piece &&
+  has(piece, "Respiração anaeróbia") &&
+  !has(piece, "Reprodução Sexuada");
+
+export function predatoryReproductionAvailable(attacker, victim) {
+  if (!attacker || !victim || !has(attacker, "Predação")) return false;
+  if (!lineageReached(attacker, "Multicelularismo")) return true;
+  if (has(attacker, "Onívoro")) return true;
+  return has(victim, "Fotossíntese")
+    ? has(attacker, "Herbívoro")
+    : has(attacker, "Carnívoro");
+}
+
 const HGT_BLOCKED_TRAITS = new Set([
   "Fotossíntese",
   "Predação",

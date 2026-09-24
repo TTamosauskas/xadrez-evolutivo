@@ -192,7 +192,7 @@ export function applyRegressionEffect(state, piece) {
   return hidden;
 }
 
-function mutation(state, p, positiveOnly) {
+function mutation(state, p, positiveOnly, excludedTraits = null) {
   const gains = [];
   if (p.rank === 4 && pawnMutationUnlocked(state, p))
     gains.push({ rank: 0, weight: 1 });
@@ -204,7 +204,7 @@ function mutation(state, p, positiveOnly) {
   for (const trait of genomeGainOptions(p).filter((trait) =>
     POSITIVE.includes(trait),
   ))
-    if (traitUnlocked(state, trait, p))
+    if (!excludedTraits?.has(trait) && traitUnlocked(state, trait, p))
       gains.push({
         geneGain: trait,
         weight: innovationWeight(state, trait, p),
@@ -232,7 +232,7 @@ function mutation(state, p, positiveOnly) {
     options =
       positiveOnly || !negativeAllowed ? [] : negative ? gains : losses;
   const choice = negative ? pick(state, options) : weightedPick(state, options);
-  if (!choice) return;
+  if (!choice) return null;
 
   let label;
   if (choice.rank !== undefined) {
@@ -298,6 +298,7 @@ function mutation(state, p, positiveOnly) {
   } else log(state, `${OWNERS[p.owner]}: ${label}.`);
   const discoveryId = mutationDiscoveryId(label);
   if (discoveryId) recordDiscovery(state, "mutations", discoveryId);
+  return label;
 }
 
 function sexualProfile(state, a, b) {
@@ -465,7 +466,54 @@ function chooseCellsTowardEnemy(
     .slice(0, count);
 }
 
-function makeChildProfile(state, parent, mate, profile) {
+function establishSexualFounder(child, countMutation) {
+  child.genome = forceGenomeTrait(
+    child.genome,
+    "Reprodução Sexuada",
+    "dominant",
+  );
+  syncGenomePhenotype(child);
+  child.ancestry = [
+    ...new Set([
+      ...(child.ancestry ?? child.traits ?? []),
+      "Reprodução Sexuada",
+      ...child.traits,
+    ]),
+  ];
+  if (countMutation) child.mutations++;
+}
+
+function pairSexualFounders(brood, sexualMutants) {
+  if (brood.length < 2 || !sexualMutants.length) return;
+  for (const child of sexualMutants) establishSexualFounder(child, false);
+  if (brood.filter((child) => has(child, "Reprodução Sexuada")).length < 2) {
+    const sibling = brood.find(
+      (child) =>
+        !sexualMutants.includes(child) &&
+        has(child, "Multicelularismo") &&
+        !has(child, "Reprodução Sexuada"),
+    );
+    if (sibling) establishSexualFounder(sibling, true);
+  }
+  const founders = brood.filter((child) => has(child, "Reprodução Sexuada"));
+  if (founders.length < 2) return;
+  const prioritized = founders.slice(0, 2),
+    selected = new Set(prioritized);
+  brood.splice(
+    0,
+    brood.length,
+    ...prioritized,
+    ...brood.filter((child) => !selected.has(child)),
+  );
+}
+
+function makeChildProfile(
+  state,
+  parent,
+  mate,
+  profile,
+  { excludedMutationTraits = null, onMutation = null } = {},
+) {
   const child = {
     owner: parent.owner,
     rank: profile.rank,
@@ -485,11 +533,13 @@ function makeChildProfile(state, parent, mate, profile) {
     parentIds: mate ? [parent.id, mate.id] : [parent.id],
   };
   syncGenomePhenotype(child);
+  let mutationLabel = null;
   if (random(state) < (state.event?.id === "solar" ? 1 : 1 / 3))
-    mutation(state, child, !!mate);
+    mutationLabel = mutation(state, child, !!mate, excludedMutationTraits);
   applyAirSacRankFloor(child);
   normalizeBodyPlanRank(child);
   normalizePhotosyntheticRank(child);
+  if (mutationLabel && onMutation) onMutation(child, mutationLabel);
   return child;
 }
 
@@ -1136,13 +1186,30 @@ export function reproduce(
       for (const candidate of mates) apply(candidate);
     },
     makeRequestedBrood = (count) => {
-      const brood = [];
+      const brood = [],
+        sexualMutants = [],
+        foundingSexuality =
+          !mates.length && !has(parent, "Reprodução Sexuada"),
+        excludedMutationTraits =
+          foundingSexuality && count < 2
+            ? new Set(["Reprodução Sexuada"])
+            : null;
       for (let i = 0; i < count; i++) {
         const index = mates.length ? i % mates.length : 0,
           childMate = mates[index] ?? null,
           childProfile = sexualProfiles[index] ?? profile;
-        brood.push(makeChildProfile(state, parent, childMate, childProfile));
+        brood.push(
+          makeChildProfile(state, parent, childMate, childProfile, {
+            excludedMutationTraits,
+            onMutation: (child, label) => {
+              if (foundingSexuality && label === "Reprodução Sexuada")
+                sexualMutants.push(child);
+            },
+          }),
+        );
       }
+      if (foundingSexuality && sexualMutants.length)
+        pairSexualFounders(brood, sexualMutants);
       if (brood.length)
         state.maxGenerationReached = Math.max(
           state.maxGenerationReached,

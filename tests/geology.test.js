@@ -117,6 +117,29 @@ test("basal respiration precedes photosynthesis and predation, while aerobic res
   assert.equal(has({ traits: aerobic }, "Respiração anaeróbia"), true);
 });
 
+test("Carnívoro requires a multicellular predatory lineage", () => {
+  const s = createState(114, {
+      scenario: "earth",
+      geologicalStage: "proterozoic",
+      historicalTraits: [
+        ...GEOLOGICAL_STAGES[0].required,
+        "Multicelularismo",
+        "Resistência",
+        "Regeneração",
+        "Reprodução Sexuada",
+      ],
+    }),
+    predator = {
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    };
+  assert.equal(traitUnlocked(s, "Carnívoro", predator), false);
+
+  predator.traits.push("Multicelularismo");
+  predator.ancestry.push("Multicelularismo");
+  assert.equal(traitUnlocked(s, "Carnívoro", predator), true);
+});
+
 test("Archean innovations are split across the first two cycles", () => {
   const s = createState(110),
     p = s.pieces[0];
@@ -662,16 +685,21 @@ test("campaign history from another lineage does not satisfy ancestry prerequisi
       historicalTraits: [
         "Fotossíntese",
         "Predação",
-                "Dormência",
+        "Dormência",
         "Multicelularismo",
         "Resistência",
         "Regeneração",
         "Reprodução Sexuada",
       ],
     }),
-    descendant = { traits: [], ancestry: ["Predação"] },
+    descendant = {
+      traits: ["Multicelularismo"],
+      ancestry: ["Predação", "Multicelularismo"],
+    },
+    predatoryOutsider = { traits: [], ancestry: ["Predação"] },
     outsider = { traits: [], ancestry: [] };
   assert.equal(traitUnlocked(s, "Carnívoro", descendant), true);
+  assert.equal(traitUnlocked(s, "Carnívoro", predatoryOutsider), false);
   assert.equal(traitUnlocked(s, "Carnívoro", outsider), false);
 });
 

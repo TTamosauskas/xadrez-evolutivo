@@ -203,22 +203,26 @@ test("Respiração Cutânea consumes orthogonally adjacent fertility without mov
   assertState(s);
 });
 
-test("pure carnivores cannot use Respiração Cutânea until Onívoro restores fertile resources", () => {
-  const s = fixture([
-      {
-        owner: "blue",
-        r: 4,
-        c: 4,
-        traits: ["Carnívoro", "Respiração Cutânea"],
-      },
-      { owner: "amber", r: 0, c: 0 },
-    ]),
-    parent = s.pieces[0],
+test("diet and sexual strategy do not disable Respiração Cutânea", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Carnívoro", "Respiração Cutânea", "Reprodução Sexuada"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parent = s.pieces[0],
     resource = { r: parent.r, c: parent.c + 1 };
   s.board[square(resource.r, resource.c)] = "fertile";
-  assert.ok(!movesFor(s, parent).some((target) => target.cutaneous));
-  parent.traits.push("Onívoro");
   assert.ok(movesFor(s, parent).some((target) => target.cutaneous));
+
+  s = simulate(s, move(parent, resource.r, resource.c));
+  assert.equal(s.board[square(resource.r, resource.c)], "neutral");
+  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 2);
+  assertState(s);
 });
 
 test("Sacos Aéreos impose Knight as the minimum expressed offspring rank", () => {

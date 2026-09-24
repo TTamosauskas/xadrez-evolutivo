@@ -23,6 +23,7 @@ import {
 import {
   canBud,
   canPupate,
+  canUseBasalFertility,
   connectedAlliesWithin,
   paedogenesisReady,
   parentalCareProtects,
@@ -358,21 +359,19 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           });
       }
   const collector = has(p, "Coletor"),
-    canUseFertility =
-      has(p, "Respiração anaeróbia") &&
-      (!has(p, "Carnívoro") || has(p, "Onívoro") || has(p, "Mixotrofia")),
+    basalFertility = canUseBasalFertility(p),
     canReproduce =
       reproductionReady(state, p) || paedogenesisReady(state, p);
   if (
     canReproduce &&
-    canUseFertility &&
+    basalFertility &&
     (terrain(state, p.r, p.c) === "fertile" || (collector && p.seeds > 0)) &&
     (!collector || (!has(p, "Esterilidade") && p.seedUsedTurn !== state.turn))
   )
     targets.push({ r: p.r, c: p.c, path: [], stay: true, capture: false });
   if (
     canReproduce &&
-    canUseFertility &&
+    has(p, "Respiração anaeróbia") &&
     has(p, "Respiração Cutânea") &&
     !has(p, "Fotossíntese")
   )
@@ -410,7 +409,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
   if (
     canReproduce &&
-    canUseFertility &&
+    has(p, "Respiração anaeróbia") &&
     has(p, "Traqueófitas") &&
     !has(p, "Esterilidade")
   )

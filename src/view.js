@@ -1,4 +1,4 @@
-import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square, has } from "./constants.js";
+import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square, has, energyBranch } from "./constants.js";
 import {
   at,
   eggAt,
@@ -20,11 +20,13 @@ import {
   geologicalStage,
   isNegativeTrait,
   stageProgress,
+  ENERGY_BRANCH_TRAITS,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
 import { pathogenAgentAt } from "./disease.js";
 import { traitSummary } from "./trait-presentation.js";
 import { actionableTraitsForPiece } from "./actionable-traits.js";
+import { canUseBasalFertility } from "./reproduction-traits.js";
 import {
   movesFor,
   partnersFor,
@@ -125,14 +127,18 @@ export function establishedTraits(state) {
 export function traitFrameEntries(piece, established = new Set()) {
   const entries = [
     ...(piece?.traits ?? [])
-      .filter((trait) => !established.has(trait))
+      .filter(
+        (trait) => !established.has(trait) || trait === "Mixotrofia",
+      )
       .map((trait) => ({ trait, somatic: false })),
     ...(piece?.somaticMutations ?? []).map((trait) => ({
       trait,
       somatic: true,
     })),
   ]
-    .filter(({ trait }) => TRAITS[trait])
+    .filter(
+      ({ trait }) => TRAITS[trait] && !ENERGY_BRANCH_TRAITS.has(trait),
+    )
     .sort(
       (a, b) =>
         Number(a.somatic) - Number(b.somatic) ||
@@ -415,14 +421,13 @@ export function render(
         partner = mates.some((m) => m.id === p?.id),
         fertileReproductionTarget = !!(
           actor &&
-          targetEntry &&
           !captureTarget &&
           reproductionReady(state, actor) &&
-          has(actor, "Respiração anaeróbia") &&
-          (!has(actor, "Carnívoro") ||
-            has(actor, "Onívoro") ||
-            has(actor, "Mixotrofia")) &&
-          state.board[square(r, c)] === "fertile"
+          state.board[square(r, c)] === "fertile" &&
+          ((targetEntry && canUseBasalFertility(actor)) ||
+            (p?.id === actor.id &&
+              has(actor, "Reprodução Sexuada") &&
+              mates.length))
         ),
         scavengingReproductionTarget = !!(
           actor &&
@@ -435,11 +440,10 @@ export function render(
             state.fertileTraces.some((trace) => trace.cell === square(r, c)))
         ),
         reproductionTarget = !!(
-          targetEntry &&
-          !captureTarget &&
-          (targetEntry.stay ||
-            fertileReproductionTarget ||
-            scavengingReproductionTarget)
+          fertileReproductionTarget ||
+          (targetEntry &&
+            !captureTarget &&
+            (targetEntry.stay || scavengingReproductionTarget))
         ),
         selfVivificationTarget = !!(
           actor &&
@@ -559,6 +563,18 @@ export function render(
             `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
           ),
         );
+
+        const branch = energyBranch(p);
+        if (branch) {
+          const energyCore = make(
+            "span",
+            TRAITS[branch][0],
+            `piece-energy-core ${branch === "Fotossíntese" ? "photosynthetic" : "predatory"}${juvenile(state, p) || has(p, "Nanismo") ? " compact" : ""}${actionState?.waiting ? " waiting" : ""}`,
+          );
+          energyCore.dataset.trait = branch;
+          energyCore.title = `Ramo energético: ${branch}`;
+          cell.append(energyCore);
+        }
 
         if (traitFrame.visible.length) {
           const frame = make("span", undefined, "trait-frame"),

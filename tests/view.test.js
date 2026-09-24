@@ -387,15 +387,25 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
   assert.ok(frame);
   assert.deepEqual(classes, [
     "trait-slot-0",
-    "trait-slot-3",
-    "trait-slot-6",
-    "trait-slot-9",
+    "trait-slot-4",
+    "trait-slot-8",
   ]);
   assert.equal(frame.querySelector(".trait-overflow"), null);
+  assert.ok(
+    ![...frame.querySelectorAll(".trait-badge")].some(
+      (badge) => badge.dataset.trait === "Predação",
+    ),
+  );
+  const core = cell.querySelector(".piece-energy-core");
+  assert.equal(core?.dataset.trait, "Predação");
+  assert.equal(core?.textContent, "👾");
   assert.match(css, /\.trait-slot-0\s*\{\s*left:\s*50%;\s*top:\s*94%/);
-  assert.match(css, /\.trait-slot-3\s*\{\s*left:\s*6%;\s*top:\s*50%/);
-  assert.match(css, /\.trait-slot-6\s*\{\s*left:\s*50%;\s*top:\s*6%/);
-  assert.match(css, /\.trait-slot-9\s*\{\s*left:\s*94%;\s*top:\s*50%/);
+  assert.match(css, /\.trait-slot-4\s*\{\s*left:\s*6%;\s*top:\s*25%/);
+  assert.match(css, /\.trait-slot-8\s*\{\s*left:\s*94%;\s*top:\s*25%/);
+  assert.match(
+    css,
+    /\.piece-energy-core\s*\{[\s\S]*left:\s*50%;[\s\S]*top:\s*50%;[\s\S]*transform:\s*translate\(-50%, -50%\)/,
+  );
   dom.window.close();
 });
 
@@ -432,8 +442,61 @@ test("mutation frame shows twelve phenotypes and an overflow counter", () => {
     ),
     frame = cell.querySelector(".trait-frame");
   assert.equal(frame.querySelectorAll(".trait-badge").length, 12);
-  assert.equal(frame.querySelector(".trait-overflow").textContent, "+3");
+  assert.equal(frame.querySelector(".trait-overflow").textContent, "+2");
+  assert.equal(
+    cell.querySelector(".piece-energy-core")?.dataset.trait,
+    "Predação",
+  );
   assert.ok(cell.classList.contains("trait-dense"));
+  dom.window.close();
+});
+
+test("Mixotrofia remains peripheral while the ancestral energy branch stays central", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Mixotrofia"],
+      },
+      {
+        owner: "amber",
+        r: 0,
+        c: 0,
+        traits: ["Fotossíntese", "Mixotrofia"],
+      },
+    ]),
+    predator = s.pieces[0],
+    plant = s.pieces[1];
+
+  render(dom.window.document, s, { selected: predator.id });
+  let cell = dom.window.document.querySelector(
+      `[data-r="${predator.r}"][data-c="${predator.c}"]`,
+    ),
+    frameTraits = [...cell.querySelectorAll(".trait-badge")].map(
+      (badge) => badge.dataset.trait,
+    );
+  assert.equal(
+    cell.querySelector(".piece-energy-core")?.dataset.trait,
+    "Predação",
+  );
+  assert.ok(frameTraits.includes("Mixotrofia"));
+  assert.ok(!frameTraits.includes("Predação"));
+
+  render(dom.window.document, s, { selected: plant.id });
+  cell = dom.window.document.querySelector(
+    `[data-r="${plant.r}"][data-c="${plant.c}"]`,
+  );
+  frameTraits = [...cell.querySelectorAll(".trait-badge")].map(
+    (badge) => badge.dataset.trait,
+  );
+  assert.equal(
+    cell.querySelector(".piece-energy-core")?.dataset.trait,
+    "Fotossíntese",
+  );
+  assert.ok(frameTraits.includes("Mixotrofia"));
+  assert.ok(!frameTraits.includes("Fotossíntese"));
   dom.window.close();
 });
 
@@ -547,12 +610,28 @@ test("branch-specific traits remain differential unless every piece expresses th
   assert.match(selected.textContent, /Simetria Bilateral/);
   assert.match(selected.textContent, /Predação/);
   assert.ok(frameTraits.includes("Simetria Bilateral"));
-  assert.ok(frameTraits.includes("Predação"));
+  assert.ok(!frameTraits.includes("Predação"));
+  assert.equal(
+    animalCell.querySelector(".piece-energy-core")?.dataset.trait,
+    "Predação",
+  );
 
   render(dom.window.document, s, { selected: plant.id });
-  const plantSelected = dom.window.document.getElementById("selected");
+  const plantSelected = dom.window.document.getElementById("selected"),
+    plantCell = dom.window.document.querySelector(
+      `[data-r="${plant.r}"][data-c="${plant.c}"]`,
+    ),
+    plantFrameTraits = [...plantCell.querySelectorAll(".trait-badge")].map(
+      (badge) => badge.dataset.trait,
+    );
   assert.match(plantSelected.textContent, /Fotossíntese/);
   assert.match(plantSelected.textContent, /Embriófitas/);
+  assert.ok(!plantFrameTraits.includes("Fotossíntese"));
+  assert.ok(plantFrameTraits.includes("Embriófitas"));
+  assert.equal(
+    plantCell.querySelector(".piece-energy-core")?.dataset.trait,
+    "Fotossíntese",
+  );
   dom.window.close();
 });
 
