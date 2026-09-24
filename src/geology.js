@@ -82,7 +82,7 @@ export const GEOLOGICAL_STAGES = [
     id: "hadean",
     group: "Pré-Cambriano",
     period: "Hadeano",
-    required: [],
+    required: ["Respiração anaeróbia"],
     habitat: {
       fertile: 64,
       hostile: 0,
@@ -291,7 +291,7 @@ export const GEOLOGICAL_STAGES = [
 const byId = new Map(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
 
 export const TRAIT_STAGE = {
-  "Respiração anaeróbia": "archean",
+  "Respiração anaeróbia": "hadean",
   "Reparo Celular": "archean",
   "Respiração aeróbia": "proterozoic",
   Fotossíntese: "archean",
