@@ -1510,7 +1510,7 @@ function executeMove(ctx, action) {
       markHadeanTutorialStep(state, "divided");
     if (collectorStay && born) p.seeds--;
   }
-  if (capturedPieceKilled) {
+  if (capturedPieceKilled && state.geologicalStage !== "hadean") {
     const captureCell = square(p.r, p.c),
       trophicReproduction = (predation || cannibalism) && born > 0,
       fecalReproduction =
