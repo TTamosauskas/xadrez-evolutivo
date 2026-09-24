@@ -52,6 +52,7 @@ test("current saves infer legacy pathogen routes and sexual-pathogen timing", ()
   });
   delete state.diseases[0].transmission;
   delete state.sexualPathogenUnlockTotalCycle;
+  delete state.cyclePathogenProfile;
   delete state.pathogenSpores;
   delete state.nextPathogenSpore;
 
