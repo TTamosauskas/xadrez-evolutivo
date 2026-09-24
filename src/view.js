@@ -664,8 +664,14 @@ export function render(
       boardElement.querySelector(".cell.barrier")
         ? { marker: "🟫", label: "Barreira" }
         : null,
+      boardElement.querySelector(".cell.capture-disturbance")
+        ? { marker: "🟥", label: "Perturbação" }
+        : null,
       boardElement.querySelector(".cell.decomposition")
-        ? { marker: "☠️", label: "Decomposição" }
+        ? { marker: "💩", label: "Matéria orgânica" }
+        : null,
+      boardElement.querySelector(".cell.lethal-hazard")
+        ? { marker: "☠️", label: "Letal" }
         : null,
       boardElement.querySelector(
         ".cell.vivification-target, .cell.partner",
