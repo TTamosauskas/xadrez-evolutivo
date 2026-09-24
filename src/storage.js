@@ -51,6 +51,12 @@ function normalizePathogenEvolution(state) {
   state.pathogenSpores ??= [];
   state.nextPathogenSpore ??=
     Math.max(0, ...state.pathogenSpores.map((spore) => spore.id ?? 0)) + 1;
+  if (state.cyclePathogenProfile === undefined) {
+    const existing = state.diseases?.[0] ?? null;
+    state.cyclePathogenProfile = existing
+      ? { agent: existing.agent, transmission: existing.transmission }
+      : null;
+  }
 
   if (state?.sexualPathogenUnlockTotalCycle === undefined) {
     state.sexualPathogenUnlockTotalCycle = null;
