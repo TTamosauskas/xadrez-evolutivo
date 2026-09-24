@@ -52,10 +52,14 @@ test("current saves infer legacy pathogen routes and sexual-pathogen timing", ()
   });
   delete state.diseases[0].transmission;
   delete state.sexualPathogenUnlockTotalCycle;
+  delete state.pathogenSpores;
+  delete state.nextPathogenSpore;
 
   const restored = deserialize(JSON.stringify(state));
   assert.equal(restored.diseases[0].transmission, "trail");
   assert.equal(restored.sexualPathogenUnlockTotalCycle, 7);
+  assert.deepEqual(restored.pathogenSpores, []);
+  assert.equal(restored.nextPathogenSpore, 1);
   assertState(restored);
 });
 
