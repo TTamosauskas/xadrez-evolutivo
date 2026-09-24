@@ -925,7 +925,7 @@ test("stationary photosynthesis is actionable even without an explicit action ta
   dom.window.close();
 });
 
-test("stationary preparation makes Brotamento actionable before Vivificar is ready", () => {
+test("Brotamento becomes actionable only when an explicit resource is available", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -940,16 +940,19 @@ test("stationary preparation makes Brotamento actionable before Vivificar is rea
   piece.stationarySinceRound = round(s);
 
   render(dom.window.document, s, { selected: piece.id });
-  const selected = dom.window.document.getElementById("selected"),
+  let selected = dom.window.document.getElementById("selected"),
     budding = [...selected.querySelectorAll(".selected-trait")].find(
       (row) => row.textContent.includes("Brotamento"),
-    ),
-    cell = dom.window.document.querySelector(
-      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
     );
+  assert.ok(!budding?.classList.contains("actionable-trait"));
 
+  s.board[piece.r * 8 + piece.c] = "fertile";
+  render(dom.window.document, s, { selected: piece.id });
+  selected = dom.window.document.getElementById("selected");
+  budding = [...selected.querySelectorAll(".selected-trait")].find(
+    (row) => row.textContent.includes("Brotamento"),
+  );
   assert.ok(budding?.classList.contains("actionable-trait"));
-  assert.ok(!cell.classList.contains("vivification-target"));
   dom.window.close();
 });
 
