@@ -287,8 +287,12 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
   assert.ok(s.origin);
   assert.equal(s.origin.selected, false);
   assert.equal(s.pieces.length, 0);
+  assert.equal(s.historicalTraits.includes("Respiração anaeróbia"), false);
   assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
   assert.equal(s.historicalTraits.includes("Predação"), false);
+  assert.ok(
+    !s.discoveries.mutations.includes("Respiração anaeróbia"),
+  );
   assert.deepEqual(s.hadeanTutorial, {
     moved: false,
     divided: false,
@@ -313,6 +317,9 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
         piece.traits.includes("Respiração anaeróbia"),
     ),
   );
+  assert.ok(s.historicalTraits.includes("Respiração anaeróbia"));
+  assert.ok(s.discoveries.mutations.includes("Respiração anaeróbia"));
+  assert.ok(s.seenMutations.includes("Respiração anaeróbia"));
   const blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
   assert.ok(blue.r > originCell.r);
@@ -452,15 +459,21 @@ test("Hadean tutorial progress does not end the period; extinction advances to A
   assert.equal(archean.board.filter((cell) => cell === "hostile").length, 28);
   for (const owner of ["blue", "amber"]) {
     const founders = archean.pieces.filter((piece) => piece.owner === owner);
-    assert.equal(
-      founders.filter((piece) => piece.traits.includes("Fotossíntese")).length,
-      1,
-    );
-    assert.equal(
-      founders.filter((piece) => piece.traits.includes("Predação")).length,
-      1,
+    assert.equal(founders.length, 2);
+    assert.ok(
+      founders.every(
+        (piece) =>
+          piece.mutations === 0 &&
+          piece.traits.length === 1 &&
+          piece.traits.includes("Respiração anaeróbia") &&
+          !piece.traits.includes("Fotossíntese") &&
+          !piece.traits.includes("Predação"),
+      ),
     );
   }
+  assert.ok(archean.historicalTraits.includes("Respiração anaeróbia"));
+  assert.equal(archean.historicalTraits.includes("Fotossíntese"), false);
+  assert.equal(archean.historicalTraits.includes("Predação"), false);
   assertState(archean);
 });
 
