@@ -12,6 +12,7 @@ import {
   senescent,
   pieceAge,
   naturalDeathChance,
+  deterministicDeathNextTurn,
   reproductionReady,
   ecologicalQuadrant,
   eventBarrierAt,
@@ -410,6 +411,7 @@ export function render(
           ? (p.traits ?? []).filter((trait) => !established.has(trait))
           : [],
         actionState = p ? pieceActionState(state, p) : null,
+        terminalDeath = p ? deterministicDeathNextTurn(state, p) : null,
         pathogenAgents = pathogenAgentAt(state, r, c),
         egg = eggAt(state, r, c),
         plantSeed = plantSeedAt(state, r, c),
@@ -542,9 +544,12 @@ export function render(
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza, Respiração anaeróbia${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
           : `${coord(r, c)}, ${terrain}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${fecalResidue ? ", fezes" : ""}${carcass ? ", carcaça" : ""}${captureDisturbance ? ", perturbação temporária" : ""}${lethalHazard ? ", ambiente letal" : ""}${pathogenSporeLabel}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${vivificationTarget ? selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? ", vivificação disponível: Necrofagia" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
-      const accessibleLabel = fragment
-        ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
-        : label;
+      const baseAccessibleLabel = fragment
+          ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
+          : label,
+        accessibleLabel = terminalDeath
+          ? `${baseAccessibleLabel}, morte determinada no próximo turno: ${terminalDeath}`
+          : baseAccessibleLabel;
       cell.setAttribute("aria-label", accessibleLabel);
       cell.title = accessibleLabel;
       if (
@@ -662,6 +667,12 @@ export function render(
           for (const badge of statusBadges)
             status.append(make("span", badge, "status-badge"));
           cell.append(status);
+        }
+        if (terminalDeath) {
+          const deathMark = make("span", "🤢", "terminal-death-mark");
+          deathMark.title = `Morte determinada no próximo turno: ${terminalDeath}.`;
+          deathMark.setAttribute("aria-hidden", "true");
+          cell.append(deathMark);
         }
       }
       if (pathogenAgents.length) {
