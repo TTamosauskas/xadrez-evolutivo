@@ -23,6 +23,7 @@ import {
   recordHistoricalTraits,
   stageComplete,
   traitCombinationValid,
+  NEGATIVE_TRAITS,
   SOMATIC_NEGATIVE_TRAITS,
 } from "./geology.js";
 import {
