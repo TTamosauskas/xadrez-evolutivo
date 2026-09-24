@@ -25,6 +25,7 @@ import { hiddenRecessiveTraits } from "./genetics.js";
 import { pathogenAgentAt } from "./disease.js";
 import { traitSummary } from "./trait-presentation.js";
 import { actionableTraitsForPiece } from "./actionable-traits.js";
+import { canUseBasalFertility } from "./reproduction-traits.js";
 import {
   movesFor,
   partnersFor,
@@ -415,14 +416,13 @@ export function render(
         partner = mates.some((m) => m.id === p?.id),
         fertileReproductionTarget = !!(
           actor &&
-          targetEntry &&
           !captureTarget &&
           reproductionReady(state, actor) &&
-          has(actor, "Respiração anaeróbia") &&
-          (!has(actor, "Carnívoro") ||
-            has(actor, "Onívoro") ||
-            has(actor, "Mixotrofia")) &&
-          state.board[square(r, c)] === "fertile"
+          state.board[square(r, c)] === "fertile" &&
+          ((targetEntry && canUseBasalFertility(actor)) ||
+            (p?.id === actor.id &&
+              has(actor, "Reprodução Sexuada") &&
+              mates.length))
         ),
         scavengingReproductionTarget = !!(
           actor &&
@@ -435,11 +435,10 @@ export function render(
             state.fertileTraces.some((trace) => trace.cell === square(r, c)))
         ),
         reproductionTarget = !!(
-          targetEntry &&
-          !captureTarget &&
-          (targetEntry.stay ||
-            fertileReproductionTarget ||
-            scavengingReproductionTarget)
+          fertileReproductionTarget ||
+          (targetEntry &&
+            !captureTarget &&
+            (targetEntry.stay || scavengingReproductionTarget))
         ),
         selfVivificationTarget = !!(
           actor &&
