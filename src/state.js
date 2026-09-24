@@ -814,12 +814,13 @@ export function createState(seed = Date.now(), options = {}) {
     reproductions: { blue: 0, amber: 0 },
     notices: [],
     seen: [],
-    seenMutations: [],
+    seenMutations:
+      originPrelude && (options.geologicalStage ?? "archean") === "hadean"
+        ? ["Respiração anaeróbia"]
+        : [],
     historicalTraits: [
       ...new Set([
-        ...(originPrelude && (options.geologicalStage ?? "archean") === "hadean"
-          ? []
-          : ["Respiração anaeróbia"]),
+        "Respiração anaeróbia",
         ...(options.historicalTraits ?? []),
       ]),
     ],
@@ -879,6 +880,8 @@ export function createState(seed = Date.now(), options = {}) {
       r: Math.floor(cell / 8),
       c: cell % 8,
       selected: false,
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
     };
   } else {
     const balancedPair =
@@ -938,13 +941,12 @@ export function createState(seed = Date.now(), options = {}) {
   if (options.naturalBarriers !== false && !aquaticFertilityRegime(state))
     seedNaturalBarriers(state);
   seedHabitat(state);
-  if (!(originPrelude && state.geologicalStage === "hadean"))
-    recordDiscovery(state, "mutations", "Respiração anaeróbia");
+  recordDiscovery(state, "mutations", "Respiração anaeróbia");
   if (scenario !== "arena") recordDiscovery(state, "geology", state.geologicalStage);
   log(
     state,
     originPrelude
-      ? "Hadeano · 1º Ciclo: o ancestral comum aguarda a separação das linhagens."
+      ? "Hadeano · 1º Ciclo: o ancestral comum com ⚪ Respiração anaeróbia aguarda a separação das linhagens."
       : scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} começa com duas linhagens de cada lado.`
         : state.geologicalStage === "hadean"
@@ -1181,21 +1183,12 @@ export function activateOrigin(state) {
   );
   state.board[square(blueCell.r, blueCell.c)] = "fertile";
   state.board[square(amberCell.r, amberCell.c)] = "fertile";
-  if (!state.historicalTraits.includes("Respiração anaeróbia"))
-    state.historicalTraits.push("Respiração anaeróbia");
-  recordDiscovery(state, "mutations", "Respiração anaeróbia");
-  if (!state.seenMutations.includes("Respiração anaeróbia")) {
-    state.seenMutations.push("Respiração anaeróbia");
-    notice(state, "Nova mutação", [
-      "⚪ Respiração anaeróbia: permite consumir casas férteis para sustentar a divisão basal.",
-    ]);
-  }
   state.origin = null;
   state.phase = "move";
   state.current = "blue";
   log(
     state,
-    `${geologicalLabel(state)} · 1º Ciclo: surge ⚪ Respiração anaeróbia; o ancestral comum se divide em dois Reis protocelulares, um branco e um preto, ainda sem divergência energética.`,
+    `${geologicalLabel(state)} · 1º Ciclo: o ancestral com ⚪ Respiração anaeróbia se divide em dois Reis protocelulares, um branco e um preto, ainda sem divergência energética.`,
   );
   return true;
 }
