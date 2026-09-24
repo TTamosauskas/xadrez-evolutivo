@@ -362,8 +362,10 @@ export function startDisease(
     };
   state.diseases.push(disease);
   recordDiscovery(state, "events", "pathogen");
-  if (agent === "fungus") recordPathogenExposure(state, seed, disease);
-  else if (infect(state, seed, disease))
+  if (agent === "fungus") {
+    if (!fullyImmuneToEcologicalPathogen(seed))
+      recordPathogenExposure(state, seed, disease);
+  } else if (infect(state, seed, disease))
     recordPathogenExposure(state, seed, disease);
 
   const def = agentDefinition(disease),
