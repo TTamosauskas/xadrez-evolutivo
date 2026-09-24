@@ -953,6 +953,7 @@ export function createCampaignState(
 ) {
   return createState(seed, {
     geologicalStage: "hadean",
+    originPrelude: true,
     scenario,
   });
 }
@@ -1103,6 +1104,7 @@ export function createPeriodState(
       cycle: 1,
       totalCycles: 1,
       discoveries,
+      originPrelude: true,
       scenario,
     });
   const preview = previewFounderProfiles(stageIndex),
@@ -1131,54 +1133,33 @@ export function activateOrigin(state) {
     state.origin.selected = true;
     return false;
   }
-  const directions = [
-      [-1, -1],
-      [-1, 0],
-      [-1, 1],
-      [0, 1],
-      [1, 1],
-      [1, 0],
-      [1, -1],
-      [0, -1],
-    ],
-    // Mantém as Brancas na metade inferior e as Pretas na superior
-    // também na origem compacta, preservando a orientação visual do jogo.
-    primaryIndex = 4 + Math.floor(random(state) * 2),
-    companionIndex = (primaryIndex + 1) % directions.length,
-    oppositePrimaryIndex = (primaryIndex + 4) % directions.length,
-    oppositeCompanionIndex = (companionIndex + 4) % directions.length,
-    position = (index) => ({
-      r: state.origin.r + directions[index][0],
-      c: state.origin.c + directions[index][1],
-    }),
-    bluePlant = position(primaryIndex),
-    bluePredator = position(companionIndex),
-    amberPlant = position(oppositePrimaryIndex),
-    amberPredator = position(oppositeCompanionIndex),
-    founders = [
-      ["blue", bluePlant, "Fotossíntese"],
-      ["blue", bluePredator, "Predação"],
-      ["amber", amberPlant, "Fotossíntese"],
-      ["amber", amberPredator, "Predação"],
-    ];
-  for (const [owner, cell, trait] of founders) {
-    state.pieces.push(
-      newPiece(state, owner, cell.r, cell.c, {
-        rank: 4,
-        traits: [trait],
-        ancestry: [trait],
-      }),
-    );
-    state.board[square(cell.r, cell.c)] = "fertile";
-  }
+
+  const center = { r: state.origin.r, c: state.origin.c },
+    blueCell = {
+      r: Math.min(5, center.r + 1),
+      c: center.c,
+    },
+    amberCell = {
+      r: Math.max(2, center.r - 1),
+      c: center.c,
+    };
+
+  state.pieces.push(
+    newPiece(state, "blue", blueCell.r, blueCell.c, { rank: 4 }),
+    newPiece(state, "amber", amberCell.r, amberCell.c, { rank: 4 }),
+  );
+  state.board[square(blueCell.r, blueCell.c)] = "fertile";
+  state.board[square(amberCell.r, amberCell.c)] = "fertile";
   state.origin = null;
   state.phase = "move";
+  state.current = "blue";
   log(
     state,
-    `${geologicalLabel(state)} · 1º Ciclo começa com a separação do ancestral comum; cada lado recebe dois Reis primordiais, um fotossintético e um predatório.`,
+    `${geologicalLabel(state)} · 1º Ciclo: o ancestral comum se divide em dois Reis protocelulares, um branco e um preto, ainda sem divergência energética.`,
   );
   return true;
 }
+
 export function signature(p) {
   const ancestry = [...(p.ancestry ?? p.traits ?? [])].sort().join("|");
   return `${p.rank}|${[...p.traits].sort().join("|")}|${ancestry}|${genomeSignature(p.genome)}`;
