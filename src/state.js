@@ -74,6 +74,8 @@ export const eggAt = (state, r, c) =>
   state.eggs?.find((egg) => egg.r === r && egg.c === c);
 export const plantSeedAt = (state, r, c) =>
   state.plantSeeds?.find((seed) => seed.r === r && seed.c === c);
+export const pathogenSporeAt = (state, r, c) =>
+  state.pathogenSpores?.find((spore) => spore.r === r && spore.c === c);
 export const fragmentAt = (state, r, c) =>
   state.fragments?.find((fragment) => fragment.r === r && fragment.c === c);
 export const builtBarrierAt = (state, r, c) =>
@@ -891,6 +893,8 @@ export function createState(seed = Date.now(), options = {}) {
     extremophyteFertility: [],
     diseases: [],
     nextDisease: 1,
+    nextPathogenSpore: 1,
+    pathogenSpores: [],
     nextEgg: 1,
     eggs: [],
     nextPlantSeed: 1,
@@ -1755,6 +1759,7 @@ export function assertState(state) {
     !Array.isArray(state.extremophyteFertility) ||
     !Array.isArray(state.eggs) ||
     !Array.isArray(state.plantSeeds) ||
+    !Array.isArray(state.pathogenSpores) ||
     !Array.isArray(state.fragments) ||
     !Array.isArray(state.barriers) ||
     state.barriers.some((cell) => !integer(cell, 0, 63)) ||
@@ -2092,7 +2097,29 @@ export function assertState(state) {
   }
   if (state.nextPlantSeed <= Math.max(0, ...plantSeedIds))
     throw Error("Identificadores de sementes vegetais inválidos.");
-  const eggCells = new Set(state.eggs.map((egg) => square(egg.r, egg.c)));
+  const pathogenSporeIds = new Set();
+  for (const spore of state.pathogenSpores) {
+    const disease = state.diseases.find(
+      (candidate) => candidate.id === spore.diseaseId,
+    );
+    if (
+      !integer(spore.id, 1) ||
+      pathogenSporeIds.has(spore.id) ||
+      !integer(spore.diseaseId, 1) ||
+      !disease ||
+      disease.agent !== "fungus" ||
+      disease.transmission !== "spore" ||
+      !inside(spore.r, spore.c) ||
+      !inside(spore.targetR, spore.targetC) ||
+      !integer(spore.movesRemaining, 0, 3)
+    )
+      throw Error("Esporo patogênico inválido.");
+    pathogenSporeIds.add(spore.id);
+  }
+  if (state.nextPathogenSpore <= Math.max(0, ...pathogenSporeIds))
+    throw Error("Identificadores de esporos patogênicos inválidos.");
+
+    const eggCells = new Set(state.eggs.map((egg) => square(egg.r, egg.c)));
   if (
     state.barriers.some(
       (cell) =>
