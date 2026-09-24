@@ -1184,8 +1184,12 @@ export function normalizePhotosyntheticRank(profile) {
 export function captureUnlocked(state, piece = null) {
   if (!piece) return false;
   if (currentGeologicalStage(state).id === "hadean")
-    return ["blue", "amber"].every(
-      (owner) => (state.reproductions?.[owner] ?? 0) >= 1,
+    return (
+      state.hadeanCaptureUnlocked === true ||
+      state.hadeanTutorial?.captured === true ||
+      ["blue", "amber"].every(
+        (owner) => (state.reproductions?.[owner] ?? 0) >= 1,
+      )
     );
   return (
     piece.traits?.includes("Predação") ||
