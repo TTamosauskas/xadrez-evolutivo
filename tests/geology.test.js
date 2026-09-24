@@ -13,9 +13,12 @@ import {
   conwayUnlocked,
   deleteriousMutationUnlocked,
   NEGATIVE_TRAITS,
+  NEGATIVE_TRAIT_RULES,
   eventWeights,
   innovationWeight,
   missingInnovations,
+  periodInnovations,
+  periodCompletionInnovations,
   normalizeActiveTraits,
   pawnMutationUnlocked,
   stageComplete,
@@ -47,6 +50,42 @@ test("geological timeline assigns every positive mutation to one stage", () => {
   const required = GEOLOGICAL_STAGES.flatMap((stage) => stage.required);
   assert.equal(required.length, new Set(required).size);
   for (const trait of required) assert.equal(TRAIT_STAGE[trait] !== undefined, true);
+});
+
+test("every negative mutation has an explicit valid debut period", () => {
+  const validStages = new Set(GEOLOGICAL_STAGES.map((stage) => stage.id));
+  for (const [trait, rule] of Object.entries(NEGATIVE_TRAIT_RULES)) {
+    assert.ok(rule.stage, trait);
+    assert.ok(validStages.has(rule.stage), `${trait}: ${rule.stage}`);
+  }
+
+  for (const trait of [
+    "Esterilidade",
+    "Mutação Deletéria",
+    "Mutação Disfuncional",
+  ])
+    assert.equal(NEGATIVE_TRAIT_RULES[trait].stage, "archean");
+
+  const s = createState(1001, {
+      scenario: "earth",
+      geologicalStage: "archean",
+      totalCycles: 1,
+    }),
+    p = s.pieces[0];
+  for (const trait of [
+    "Esterilidade",
+    "Mutação Deletéria",
+    "Mutação Disfuncional",
+  ])
+    assert.equal(traitUnlocked(s, trait, p), false, trait);
+
+  s.totalCycles = 2;
+  for (const trait of [
+    "Esterilidade",
+    "Mutação Deletéria",
+    "Mutação Disfuncional",
+  ])
+    assert.equal(traitUnlocked(s, trait, p), true, trait);
 });
 
 test("period innovations follow the didactic sequence", () => {
@@ -512,6 +551,15 @@ test("Archean advances only after all three innovation cycles are complete", () 
   const dormancyCarrier = third.pieces[0];
   dormancyCarrier.traits.push("Dormência");
   registerDiscoveries(third, dormancyCarrier);
+  assert.equal(stageComplete(third), false);
+  assert.ok(missingInnovations(third).includes("Transferência Horizontal"));
+
+  const transferCarrier = third.pieces.find((piece) =>
+    piece.traits.includes("Predação"),
+  );
+  assert.ok(transferCarrier);
+  transferCarrier.traits.push("Transferência Horizontal");
+  registerDiscoveries(third, transferCarrier);
   assert.equal(stageComplete(third), true);
   third.notices = [];
   third.result = { winner: "blue", reason: "teste" };
@@ -521,6 +569,41 @@ test("Archean advances only after all three innovation cycles are complete", () 
   assert.equal(proterozoic.geologicalStage, "proterozoic");
   assert.equal(proterozoic.cycle, 1);
   assert.equal(proterozoic.totalCycles, 4);
+});
+
+test("unfinished reachable optional innovations add cycles to the same period", () => {
+  const period = periodInnovations("proterozoic"),
+    prior = GEOLOGICAL_STAGES.slice(
+      0,
+      GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "proterozoic"),
+    ).flatMap((stage) => stage.required),
+    history = [
+      ...new Set([
+        ...prior,
+        ...period.filter((trait) => trait !== "Brotamento"),
+      ]),
+    ];
+  let s = createState(1002, {
+    scenario: "earth",
+    geologicalStage: "proterozoic",
+    cycle: 1,
+    totalCycles: 4,
+    historicalTraits: history,
+  });
+
+  assert.ok(periodCompletionInnovations(s).includes("Brotamento"));
+  assert.deepEqual(missingInnovations(s), ["Brotamento"]);
+  assert.equal(stageComplete(s), false);
+
+  s.result = { winner: "blue", reason: "teste" };
+  s.phase = "over";
+  s = createSuccessorState(s, 1003);
+  assert.equal(s.geologicalStage, "proterozoic");
+  assert.equal(s.cycle, 2);
+  assert.ok(missingInnovations(s).includes("Brotamento"));
+
+  s.historicalTraits.push("Brotamento");
+  assert.equal(stageComplete(s), true);
 });
 
 test("Earth canonical founders stay Kings until Primitive Locomotion is completed", () => {
@@ -1220,7 +1303,7 @@ test("Coprofagia is a Cretaceous predatory specialization incompatible with Mixo
   assert.ok(!mutated.includes("Mixotrofia"));
 });
 
-test("Paleogene is a one-cycle transition stage", () => {
+test("Paleogene waits for reachable period innovations instead of auto-completing", () => {
   const prior = GEOLOGICAL_STAGES.slice(
     0,
     GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "paleogene"),
@@ -1231,6 +1314,17 @@ test("Paleogene is a one-cycle transition stage", () => {
     historicalTraits: prior,
   });
   assert.equal(currentGeologicalStage(s).period, "Paleógeno");
+  assert.deepEqual(periodInnovations(s), [
+    "Carnivoria Botânica",
+    "Ovulação Induzida",
+    "Monogamia",
+  ]);
+  assert.deepEqual(periodCompletionInnovations(s), [
+    "Carnivoria Botânica",
+  ]);
+  assert.equal(stageComplete(s), false);
+
+  s.historicalTraits.push("Carnivoria Botânica");
   assert.equal(stageComplete(s), true);
   assert.deepEqual(eventWeights(s), {
     ...currentGeologicalStage(s).events,
