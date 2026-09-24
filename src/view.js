@@ -682,7 +682,10 @@ export function render(
         ? { marker: "🟥", label: "Perturbação" }
         : null,
       boardElement.querySelector(".cell.decomposition")
-        ? { marker: "💩", label: "Matéria orgânica" }
+        ? { marker: "💩", label: "Fezes" }
+        : null,
+      boardElement.querySelector(".cell.carcass")
+        ? { marker: "🦴", label: "Carcaça" }
         : null,
       boardElement.querySelector(".cell.lethal-hazard")
         ? { marker: "☠️", label: "Letal" }
