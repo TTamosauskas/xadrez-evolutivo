@@ -1357,6 +1357,13 @@ export function reproduce(
           round(state) + COLONY_BUD_COOLDOWN;
     }
     state.reproductions[parent.owner]++;
+    if (
+      state.geologicalStage === "hadean" &&
+      ["blue", "amber"].every(
+        (owner) => (state.reproductions?.[owner] ?? 0) >= 1,
+      )
+    )
+      state.hadeanCaptureUnlocked = true;
     tryVectorPathogen(state, parent);
     for (const candidate of mates) tryVectorPathogen(state, candidate);
     log(
