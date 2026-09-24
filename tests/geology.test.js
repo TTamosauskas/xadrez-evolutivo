@@ -225,7 +225,7 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
 });
 
 test("first Archean cycle starts with a fertile 6x6 core and hostile border", () => {
-  const s = createState(101);
+  const s = createPeriodState("archean", 101, null, "earth");
   assert.equal(s.version, 18);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
