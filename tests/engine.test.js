@@ -3153,7 +3153,7 @@ test("Chifre can kill an unarmored aggressor before capture", () => {
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === 1));
   assert.ok(s.pieces.some((piece) => piece.id === 2 && piece.r === 4 && piece.c === 4));
-  assert.ok(s.deathSites.some((site) => site.cell === 35));
+  assert.ok(s.captureDisturbances.some((entry) => entry.cell === 35));
   assertState(s);
 });
 
