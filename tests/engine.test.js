@@ -3148,6 +3148,86 @@ test("ecological pathogen selection separates agent choice from eligible routes"
   );
 });
 
+test("the first effective outbreak locks one pathogen profile for the whole cycle", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "amber", r: 0, c: 0 },
+    ]);
+  s.scenario = "earth";
+  s.geologicalStage = "devonian";
+
+  const first = startDisease(
+    s,
+    "eco",
+    s.pieces[0],
+    null,
+    "fungus",
+    "spore",
+  );
+  assert.ok(first);
+  assert.deepEqual(s.cyclePathogenProfile, {
+    agent: "fungus",
+    transmission: "spore",
+  });
+  assert.deepEqual(
+    availableEcologicalPathogenProfiles(s),
+    [{ agent: "fungus", transmission: "spore" }],
+  );
+
+  assert.equal(
+    startDisease(s, "eco", s.pieces[1], null, "virus", "contact"),
+    null,
+  );
+  assert.equal(
+    startDisease(s, "eco", s.pieces[1], null, "bacteria", "trail"),
+    null,
+  );
+
+  const repeated = startDisease(
+    s,
+    "eco",
+    s.pieces[1],
+    null,
+    "fungus",
+    "spore",
+  );
+  assert.ok(repeated);
+  assert.deepEqual(s.cyclePathogenProfile, {
+    agent: "fungus",
+    transmission: "spore",
+  });
+  assertState(s);
+});
+
+test("special cycle pathogen profiles suppress incompatible vector outbreaks", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Multicelularismo", "Vetor Patógeno"],
+      },
+      { owner: "amber", r: 4, c: 5 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    vector = s.pieces[0];
+  s.scenario = "earth";
+  s.geologicalStage = "cretaceous";
+  s.cyclePathogenProfile = {
+    agent: "fungus",
+    transmission: "spore",
+  };
+  s.rng = 0;
+
+  assert.equal(tryVectorPathogen(s, vector), null);
+  assert.equal(s.diseases.length, 0);
+  assert.deepEqual(s.cyclePathogenProfile, {
+    agent: "fungus",
+    transmission: "spore",
+  });
+  assertState(s);
+});
+
 test("infected trophic reproduction leaves feces carrying the fecal outbreak", () => {
   let s = fixture([
     {
