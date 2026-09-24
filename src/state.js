@@ -1169,8 +1169,14 @@ export function activateOrigin(state) {
     };
 
   state.pieces.push(
-    newPiece(state, "blue", blueCell.r, blueCell.c, { rank: 4 }),
-    newPiece(state, "amber", amberCell.r, amberCell.c, { rank: 4 }),
+    newPiece(state, "blue", blueCell.r, blueCell.c, {
+      rank: 4,
+      mutations: 1,
+    }),
+    newPiece(state, "amber", amberCell.r, amberCell.c, {
+      rank: 4,
+      mutations: 1,
+    }),
   );
   state.board[square(blueCell.r, blueCell.c)] = "fertile";
   state.board[square(amberCell.r, amberCell.c)] = "fertile";
