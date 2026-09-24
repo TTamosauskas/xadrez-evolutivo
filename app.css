@@ -132,6 +132,15 @@ main {
 .cell.hostile.dark {
   background: #87443d;
 }
+.cell.capture-disturbance,
+.cell.capture-disturbance.dark {
+  background: #a84f45;
+}
+.cell.lethal-hazard,
+.cell.lethal-hazard.dark {
+  background: #6b2323;
+  box-shadow: inset 0 0 0 3px #d9b2a4aa;
+}
 .cell.terrain-single-tone.fertile,
 .cell.terrain-single-tone.fertile.dark {
   background: #789754;
@@ -180,10 +189,21 @@ main {
   display: grid;
   place-items: center;
   font-size: clamp(28px, 6vw, 62px);
-  opacity: 0.18;
-  filter: grayscale(1);
+  opacity: 0.2;
   pointer-events: none;
   z-index: 1;
+}
+.lethal-mark {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  font-size: clamp(30px, 6.3vw, 66px);
+  line-height: 1;
+  opacity: 0.42;
+  filter: drop-shadow(0 2px 2px #0008);
+  pointer-events: none;
 }
 .egg-mark {
   position: relative;
@@ -194,8 +214,13 @@ main {
   pointer-events: none;
 }
 .cell.decomposition .piece,
+.cell.decomposition .piece-energy-core,
 .cell.decomposition .trait-frame,
-.cell.decomposition .piece-status {
+.cell.decomposition .piece-status,
+.cell.lethal-hazard .piece,
+.cell.lethal-hazard .piece-energy-core,
+.cell.lethal-hazard .trait-frame,
+.cell.lethal-hazard .piece-status {
   position: relative;
   z-index: 2;
 }
