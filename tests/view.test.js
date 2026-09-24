@@ -178,6 +178,8 @@ test("Hadean common ancestor is a gray King that splits after the second click",
   assert.ok(origin.classList.contains("vivification-target"));
   assert.match(origin.title ?? "", /Vivificar disponível/);
   assert.match(d.getElementById("selected").textContent, /Ancestral comum/);
+  assert.match(d.getElementById("selected").textContent, /Vantagens Evolutivas/);
+  assert.match(d.getElementById("selected").textContent, /Respiração anaeróbia/);
   assert.match(d.getElementById("selected").textContent, /um branco e um preto/);
   assert.equal(
     d.querySelectorAll("#board .piece.origin-piece").length,
@@ -988,11 +990,18 @@ test("feces and carcasses use distinct Vivificar routes", () => {
     base: "neutral",
     kind: "fecal",
   });
+  s.captureDisturbances.push({
+    cell: 36,
+    dueRound: 3,
+    base: "neutral",
+    sourceId: null,
+  });
 
   render(dom.window.document, s, { selected: piece.id });
   let target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
   assert.ok(target.classList.contains("vivification-target"));
   assert.ok(target.classList.contains("organic-residue"));
+  assert.ok(target.classList.contains("capture-disturbance"));
   assert.match(target.title, /reciclar fezes/);
   assert.match(target.textContent, /💩/);
   const css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
@@ -1015,7 +1024,7 @@ test("feces and carcasses use distinct Vivificar routes", () => {
   s.carcasses.push({ cell: 36, dueRound: 3, base: "neutral" });
   s.captureDisturbances.push({
     cell: 36,
-    dueRound: 1,
+    dueRound: 3,
     base: "neutral",
     sourceId: null,
   });
