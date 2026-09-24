@@ -1047,10 +1047,23 @@ test("lethal hazards render a skull and distinct legend entry", () => {
   s.board[27] = "hostile";
   render(dom.window.document, s);
   const cell = dom.window.document.querySelector('[data-r="3"][data-c="3"]'),
-    legend = dom.window.document.getElementById("board-legend");
+    legend = dom.window.document.getElementById("board-legend"),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
   assert.ok(cell.classList.contains("lethal-hazard"));
   assert.match(cell.textContent, /☠️/);
   assert.match(legend.textContent, /☠️Letal/);
+  assert.match(
+    css,
+    /\.cell\.lethal-hazard \{\s*background:\s*#8f332f/,
+  );
+  assert.match(
+    css,
+    /\.cell\.lethal-hazard\.dark \{\s*background:\s*#61211f/,
+  );
+  assert.doesNotMatch(
+    css,
+    /\.cell\.lethal-hazard[\s\S]{0,160}box-shadow:/,
+  );
   dom.window.close();
 });
 
