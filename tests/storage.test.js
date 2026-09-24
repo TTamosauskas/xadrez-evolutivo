@@ -19,6 +19,14 @@ test("current save schema round-trips deterministic state", () => {
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
 });
 
+test("current saves without cycle innovation pressure normalize to an empty cycle", () => {
+  const state = createState(14);
+  delete state.cyclePositiveInnovations;
+  const restored = deserialize(JSON.stringify(state));
+  assert.deepEqual(restored.cyclePositiveInnovations, []);
+  assertState(restored);
+});
+
 test("current save schema preserves active phases and temporary event data", () => {
   const state = createState(13),
     piece = state.pieces.find((candidate) => candidate.owner === "blue");
