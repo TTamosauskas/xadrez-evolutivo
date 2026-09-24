@@ -328,7 +328,10 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
   assert.equal(amber.c, originCell.c);
 
   const legal = movesFor(s, blue);
-  assert.ok(legal.some((target) => !target.stay && !target.capture));
+  assert.equal(
+    legal.some((target) => !target.stay && !target.capture),
+    false,
+  );
   assert.ok(legal.some((target) => target.stay));
   assert.equal(
     Array.from({ length: 8 }, (_, r) =>
@@ -341,7 +344,7 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
   assertState(s);
 });
 
-test("Hadean lethal cells remain legal destinations and kill organisms that enter them", () => {
+test("Hadean lethal boundary remains marked but is unreachable before primitive locomotion", () => {
   let s = createCampaignState(304);
   s = simulate(s, { type: "ORIGIN_CLICK" });
   s = simulate(s, { type: "ORIGIN_CLICK" });
@@ -349,46 +352,57 @@ test("Hadean lethal cells remain legal destinations and kill organisms that ente
   const blue = s.pieces.find((piece) => piece.owner === "blue");
   blue.r = 2;
   blue.c = 2;
-  const lethal = movesFor(s, blue).find(
-    (target) => !target.stay && lethalHazardAt(s, target.r, target.c),
+  assert.equal(lethalHazardAt(s, 1, 1), true);
+  assert.equal(lethalHazardAt(s, 1, 2), true);
+  assert.equal(
+    movesFor(s, blue).some(
+      (target) => !target.stay && lethalHazardAt(s, target.r, target.c),
+    ),
+    false,
   );
-  assert.ok(lethal, "uma casa ☠️ adjacente deve continuar jogável");
-
-  s = simulate(s, move(blue, lethal.r, lethal.c));
-
-  assert.ok(!s.pieces.some((piece) => piece.id === blue.id));
-  assert.equal(s.result?.winner, "amber");
-  assert.match(s.result?.reason ?? "", /Extinção total/);
   assert.ok(
-    s.logs.some(
-      (entry) =>
-        entry.text.includes("ambiente letal") ||
-        entry.text.includes("Extinção total"),
+    movesFor(s, blue).some(
+      (target) => target.stay && target.r === blue.r && target.c === blue.c,
     ),
   );
   assertState(s);
 });
 
-test("Hadean tutorial progress does not end the period; extinction advances to Archean", () => {
+test("Hadean tutorial uses reproduction and immediate capture before primitive locomotion", () => {
   let s = createCampaignState(302);
   s = simulate(s, { type: "ORIGIN_CLICK" });
   s = simulate(s, { type: "ORIGIN_CLICK" });
-  const blue0 = s.pieces.find((piece) => piece.owner === "blue");
-  s = simulate(s, move(blue0, 4, 3));
-  assert.equal(s.hadeanTutorial.moved, true);
 
-  let amber = s.pieces.find((piece) => piece.owner === "amber");
-  s = simulate(s, move(amber, amber.r, amber.c));
-  assert.equal(s.hadeanTutorial.divided, true);
+  let blue = s.pieces.find((piece) => piece.owner === "blue");
+  const blueTargets = movesFor(s, blue);
+  assert.ok(
+    blueTargets.some(
+      (target) => target.stay && target.r === blue.r && target.c === blue.c,
+    ),
+  );
+  assert.ok(blueTargets.every((target) => target.stay || target.capture));
   assert.equal(
-    s.pieces.filter((piece) => piece.owner === "amber").length,
+    blueTargets.some((target) => !target.stay && !target.capture),
+    false,
+  );
+
+  s = simulate(s, move(blue, blue.r, blue.c));
+  assert.equal(s.hadeanTutorial.divided, true);
+  assert.equal(s.hadeanTutorial.moved, false);
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
     2,
   );
 
-  let blue = s.pieces.find((piece) => piece.owner === "blue");
-  s = simulate(s, move(blue, blue.r, blue.c));
+  let amber = s.pieces.find((piece) => piece.owner === "amber");
+  const amberTargets = movesFor(s, amber);
   assert.equal(
-    s.pieces.filter((piece) => piece.owner === "blue").length,
+    amberTargets.some((target) => !target.stay && !target.capture),
+    false,
+  );
+  s = simulate(s, move(amber, amber.r, amber.c));
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "amber").length,
     2,
   );
   assert.ok(
@@ -405,28 +419,36 @@ test("Hadean tutorial progress does not end the period; extinction advances to A
   const others = s.pieces.filter(
     (piece) => piece.id !== amber.id && piece.id !== blue.id,
   );
-  amber.r = 3;
-  amber.c = 3;
   blue.r = 4;
   blue.c = 4;
+  amber.r = 3;
+  amber.c = 3;
   if (others[0]) {
-    others[0].r = 2;
-    others[0].c = 2;
+    others[0].r = 5;
+    others[0].c = 5;
   }
   if (others[1]) {
-    others[1].r = 5;
+    others[1].r = 4;
     others[1].c = 5;
   }
 
+  assert.equal(s.hadeanCaptureUnlocked, true);
   assert.ok(
-    movesFor(s, amber).some(
-      (target) => target.r === 4 && target.c === 4 && target.capture,
+    movesFor(s, blue).some(
+      (target) => target.r === 3 && target.c === 3 && target.capture,
     ),
   );
-  s = simulate(s, move(amber, 4, 4));
+  assert.equal(
+    movesFor(s, blue).some(
+      (target) => !target.stay && !target.capture,
+    ),
+    false,
+  );
+
+  s = simulate(s, move(blue, 3, 3));
   assert.equal(s.hadeanTutorial.captured, true);
   assert.deepEqual(s.hadeanTutorial, {
-    moved: true,
+    moved: false,
     divided: true,
     captured: true,
   });
@@ -435,16 +457,34 @@ test("Hadean tutorial progress does not end the period; extinction advances to A
   assert.equal(s.carcasses.length, 0);
   assert.equal(s.deathSites.length, 0);
 
-  const lastBlue = s.pieces.find((piece) => piece.owner === "blue");
+  const lastBlue = s.pieces.find(
+      (piece) => piece.owner === "blue" && piece.id !== blue.id,
+    ),
+    lastAmber = s.pieces.find((piece) => piece.owner === "amber");
   assert.ok(lastBlue);
-  assert.equal(s.current, "blue");
-  lastBlue.r = 2;
-  lastBlue.c = 2;
-  const lethal = movesFor(s, lastBlue).find(
-    (target) => !target.stay && lethalHazardAt(s, target.r, target.c),
+  assert.ok(lastAmber);
+  lastAmber.r = 4;
+  lastAmber.c = 4;
+  lastBlue.r = 5;
+  lastBlue.c = 5;
+  blue.r = 2;
+  blue.c = 2;
+  s.current = "amber";
+
+  s = simulate(s, move(lastAmber, 5, 5));
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    1,
   );
-  assert.ok(lethal);
-  s = simulate(s, move(lastBlue, lethal.r, lethal.c));
+
+  const finalBlue = s.pieces.find((piece) => piece.owner === "blue"),
+    finalAmber = s.pieces.find((piece) => piece.owner === "amber");
+  finalAmber.r = 3;
+  finalAmber.c = 3;
+  finalBlue.r = 4;
+  finalBlue.c = 4;
+  s.current = "amber";
+  s = simulate(s, move(finalAmber, 4, 4));
   assert.equal(s.phase, "over");
   assert.equal(s.result.winner, "amber");
   assert.match(s.result.reason, /Extinção total/);

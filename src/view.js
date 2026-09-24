@@ -271,7 +271,7 @@ export function render(
     geological = currentGeologicalStage(state),
     hadeanTutorialDone =
       geological.id === "hadean"
-        ? ["moved", "divided", "captured"].filter(
+        ? ["divided", "captured"].filter(
             (step) => state.hadeanTutorial?.[step],
           ).length
         : 0,
@@ -285,7 +285,7 @@ export function render(
       : state.scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`
         : geological.id === "hadean"
-          ? `${geological.group} · ${geological.period} · 1º Ciclo · Tutorial ${hadeanTutorialDone}/3 · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"}`
+          ? `${geological.group} · ${geological.period} · 1º Ciclo · Tutorial ${hadeanTutorialDone}/2 · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"}`
           : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
   const mobileSummary = $("mobile-selected-summary");
   mobileSummary.replaceChildren();
@@ -1072,7 +1072,7 @@ export function render(
           state.scenario === "arena"
             ? `Arena · Fase ${state.arenaPhase || state.cycle} concluída. As linhagens sobreviventes podem receber até duas substituições de Engenharia Genética.`
             : geological.id === "hadean"
-              ? `Tutorial: ${progress.discovered.length} de ${progress.required.length} fundamentos concluídos — deslocar, dividir e capturar.`
+              ? `Tutorial: ${hadeanTutorialDone} de 2 fundamentos concluídos — dividir e capturar.`
               : progress.required.length
                 ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
                 : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,

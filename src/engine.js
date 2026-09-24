@@ -190,7 +190,6 @@ function markHadeanTutorialStep(state, step) {
     return;
   state.hadeanTutorial[step] = true;
   const labels = {
-    moved: "Deslocamento",
     divided: "Divisão",
     captured: "Captura",
   };
@@ -1291,12 +1290,6 @@ function executeMove(ctx, action) {
     delete p.decompositionImmunity;
   p.r = target.r;
   p.c = target.c;
-  if (
-    state.geologicalStage === "hadean" &&
-    !target.stay &&
-    !capture
-  )
-    markHadeanTutorialStep(state, "moved");
   if (!target.stay) p.stationarySinceRound = round(state);
   exposePathogenCell(state, p);
   moveDirection(p);
