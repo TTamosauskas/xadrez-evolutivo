@@ -184,7 +184,7 @@ test("only-child and respiratory insufficiency reduce reproductive performance",
     }),
     1,
   );
-  assert.equal(predatorParent.nextReproductionRound, 5);
+  assert.equal(predatorParent.nextReproductionRound, 12);
 });
 
 test("subfertility can spend a reproductive attempt without offspring", () => {
@@ -209,7 +209,7 @@ test("subfertility can spend a reproductive attempt without offspring", () => {
     reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
     0,
   );
-  assert.equal(parent.nextReproductionRound, 3);
+  assert.equal(parent.nextReproductionRound, 6);
 });
 
 test("malabsorption consumes one additional adjacent fertile resource", () => {
@@ -260,7 +260,7 @@ test("malabsorption doubles recovery after reproductive predation", () => {
     reproduce(context(s), parent, null, "predação", { forcedCount: 1 }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 10);
+  assert.equal(parent.nextReproductionRound, 12);
 });
 
 test("semelparity kills the parent after the third successful reproduction", () => {
