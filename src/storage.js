@@ -1,10 +1,10 @@
-import { assertState } from "./state.js";
+import { assertState, createCampaignState } from "./state.js";
 import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSION = 17;
-const LEGACY_SAVE_KEY = `xadrez-evolutivo-save-v${LEGACY_SAVE_VERSION}`;
+const LEGACY_SAVE_VERSIONS = [18, 17];
+const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 function normalizeStoredGenomes(value) {
   if (!value || typeof value !== "object") return;
@@ -36,16 +36,38 @@ function restoreLegacyResidueTerrain(state) {
   }
 }
 
-function migrateV17(data) {
-  const state = structuredClone(data);
-  restoreLegacyResidueTerrain(state);
+function migrateLegacy(data) {
+  let state = structuredClone(data);
+  if (state.phase === "origin" || state.origin) {
+    const discoveries = structuredClone(state.discoveries ?? {});
+    discoveries.geology = (discoveries.geology ?? []).filter(
+      (id) => id !== "archean",
+    );
+    state = createCampaignState(
+      state.rng ?? Date.now(),
+      state.scenario ?? "earth",
+    );
+    state.discoveries = {
+      ...state.discoveries,
+      ...discoveries,
+      geology: [...new Set(["hadean", ...(discoveries.geology ?? [])])],
+      read: (discoveries.read ?? []).filter(
+        (key) => key !== "geology:archean",
+      ),
+    };
+    state.version = STATE_VERSION;
+    return state;
+  }
+  if (data.version === 17) {
+    restoreLegacyResidueTerrain(state);
+    state.deathSites = [];
+    state.fertileTraces = [];
+    state.carcasses = [];
+    state.captureDisturbances = [];
+    if (state.event) state.event.lethalHazards ??= [];
+    for (const piece of state.pieces ?? []) delete piece.decompositionImmunity;
+  }
   state.version = STATE_VERSION;
-  state.deathSites = [];
-  state.fertileTraces = [];
-  state.carcasses = [];
-  state.captureDisturbances = [];
-  if (state.event) state.event.lethalHazards ??= [];
-  for (const piece of state.pieces ?? []) delete piece.decompositionImmunity;
   normalizeStoredGenomes(state);
   return state;
 }
@@ -59,8 +81,8 @@ export function deserialize(raw) {
   } catch {
     throw Error("Arquivo de partida inválido.");
   }
-  if (data?.version === LEGACY_SAVE_VERSION)
-    return assertState(migrateV17(data));
+  if (LEGACY_SAVE_VERSIONS.includes(data?.version))
+    return assertState(migrateLegacy(data));
   if (data?.version !== STATE_VERSION)
     throw Error(
       `Save incompatível com esta versão de desenvolvimento. Inicie uma nova partida na versão ${STATE_VERSION}.`,
@@ -76,9 +98,12 @@ export function save(storage, state) {
 export function load(storage) {
   const current = storage.getItem(SAVE_KEY);
   if (current) return deserialize(current);
-  const legacy = storage.getItem(LEGACY_SAVE_KEY);
-  if (!legacy) throw Error("Nenhuma partida salva nesta versão.");
-  const migrated = deserialize(legacy);
-  storage.setItem(SAVE_KEY, JSON.stringify(migrated));
-  return migrated;
+  for (const version of LEGACY_SAVE_VERSIONS) {
+    const legacy = storage.getItem(legacySaveKey(version));
+    if (!legacy) continue;
+    const migrated = deserialize(legacy);
+    storage.setItem(SAVE_KEY, JSON.stringify(migrated));
+    return migrated;
+  }
+  throw Error("Nenhuma partida salva nesta versão.");
 }
