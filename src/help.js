@@ -117,6 +117,8 @@ function mutationCatalogLines() {
 
 function earthTimelineLines() {
   return GEOLOGICAL_STAGES.map((stage) => {
+    if (stage.id === "hadean")
+      return `${stage.group} · ${stage.period}: prólogo tutorial — deslocar → dividir → capturar`;
     const innovations = stage.required.length
       ? stage.required.map(traitLabel).join(" → ")
       : "período de transição, sem inovação obrigatória";
@@ -193,9 +195,9 @@ export function howToPlayLines() {
     ...negativeMutationRuleLines(),
 
     section("Os três cenários"),
-    "Vida na Terra: campanha histórica. A origem começa com um ancestral comum, cada período usa fundadores canônicos, primeiras aparições ficam restritas à janela geológica correspondente e eventos ecológicos recebem pesos próprios de cada período. Inovações obrigatórias guiam o avanço da linha do tempo.",
-    "Posições canônicas: Arqueano, Proterozoico e Ediacarano preservam suas dispersões aquáticas próprias. Do Cambriano em diante, quatro fundadores são distribuídos entre a1, b5, c8, d6, e3, f7, g2 e h4. Essas oito casas não compartilham linha, coluna ou diagonal; a seleção também evita saltos de Cavalo entre adversários e equilibra o espaço adjacente disponível para cada lado.",
-    "Cenários Alternativos: também começa na origem primordial, mas preserva as linhagens sobreviventes entre Ciclos. Mutações respeitam datas mínimas, dependências e incompatibilidades, porém podem surgir em períodos posteriores à sua estreia histórica; os eventos elegíveis usam pesos uniformes e podem se repetir. As fases com quatro fundadores usam o mesmo conjunto canônico balanceado de posições.",
+    "Vida na Terra: campanha histórica. O Hadeano funciona como prólogo tutorial hipotético: dois Reis protocelulares cinza ocupam um núcleo fértil 4×4 cercado por ☠️, sem mutações nem eventos aleatórios. O jogador aprende deslocamento ancestral, divisão basal e captura. Ao concluir os três fundamentos, começa o Arqueano e surgem as linhagens 🟢 fotossintética e 👾 predatória. Depois, primeiras aparições ficam restritas à janela geológica correspondente e eventos ecológicos recebem pesos próprios de cada período.",
+    "Abertura geológica: no Hadeano, apenas o núcleo 4×4 é jogável e as duas camadas externas aparecem como ☠️. No 1º Ciclo do Arqueano, o espaço habitável expande para um núcleo fértil 6×6 cercado por uma camada 🟥 hostil; no 2º Ciclo arqueano, o tabuleiro aquático torna-se integralmente fértil. Arqueano, Proterozoico e Ediacarano preservam suas dispersões aquáticas próprias. Do Cambriano em diante, quatro fundadores são distribuídos entre a1, b5, c8, d6, e3, f7, g2 e h4.",
+    "Cenários Alternativos: também começa no prólogo hadeano e, após a divergência arqueana, preserva as linhagens sobreviventes entre Ciclos. Mutações respeitam datas mínimas, dependências e incompatibilidades, porém podem surgir em períodos posteriores à sua estreia histórica; os eventos elegíveis usam pesos uniformes e podem se repetir. As fases com quatro fundadores usam o mesmo conjunto canônico balanceado de posições.",
     `Arena: cada lado começa com duas linhagens projetadas nas posições canônicas balanceadas. Cada linhagem possui orçamento de ${ARENA_TRAIT_BUDGET} mutações pagas; Respiração anaeróbia é basal e ${arenaFoundations} entram gratuitamente quando exigidos como fundações estruturais. Dependências são completadas automaticamente, ${ARENA_RECESSIVE_COUNT} características pagas começam como genes recessivos ocultos e a cronologia geológica é ignorada, mantendo pré-requisitos e incompatibilidades. Entre fases, cada lado pode realizar até duas substituições genéticas.`,
     "Modos de controle: 2 jogadores alterna os dois lados localmente; Contra o computador entrega as Pretas à IA; Computador × computador automatiza ambos os lados. A dificuldade Fácil prioriza aleatoriedade, Médio usa decisões coerentes e Difícil usa busca e contramedidas mais fortes.",
 
