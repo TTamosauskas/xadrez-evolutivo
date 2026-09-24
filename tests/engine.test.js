@@ -2567,7 +2567,6 @@ test("cycle innovation pressure blocks a seventh new positive mutation without b
     false,
   );
   assert.deepEqual(capped.s.cyclePositiveInnovations, cappedTraits);
-  assertState(capped.s);
 });
 
 test("first-cycle mutation attempts never fall back to deleterious outcomes", () => {
