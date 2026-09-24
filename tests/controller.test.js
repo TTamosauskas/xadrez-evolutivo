@@ -160,7 +160,7 @@ test("computer versus computer mode schedules AI for both colors", () => {
   c.dispose();
 });
 
-test("computer versus computer mode advances origin and notices automatically", () => {
+test("computer versus computer mode starts the Hadean tutorial and notices automatically", () => {
   const timers = new Map(),
     workers = [];
   let nextTimer = 0;
@@ -189,11 +189,9 @@ test("computer versus computer mode advances origin and notices automatically", 
   };
 
   c.configure("auto");
-  assert.equal(c.state.phase, "origin");
-  runNextTimer();
-  assert.equal(c.state.origin.selected, true);
-  runNextTimer();
+  assert.equal(c.state.geologicalStage, "hadean");
   assert.equal(c.state.phase, "move");
+  assert.equal(c.state.pieces.length, 2);
   assert.equal(workers.length, 1);
 
   c.cancel();
