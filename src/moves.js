@@ -350,8 +350,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     } else ray([...ORTH, ...DIAG], captureOnly);
   }
   const mobile =
-    (currentGeologicalStage(state).id === "hadean" ||
-      has(p, "Locomoção Primitiva")) &&
+    has(p, "Locomoção Primitiva") &&
     !has(p, "Séssil");
   if (mobile) chessTargets(false);
   else if (!has(p, "Séssil") && captureUnlocked(state, p)) chessTargets(true);
