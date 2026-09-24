@@ -254,9 +254,11 @@ export function render(
         ? "Toque novamente no Rei ancestral para iniciar"
         : "Selecione o Rei ancestral"
       : state.result
-        ? state.result.winner
-          ? `${OWNERS[state.result.winner]} venceram`
-          : "Empate"
+        ? state.geologicalStage === "hadean" && !state.result.winner
+          ? "Hadeano concluído"
+          : state.result.winner
+            ? `${OWNERS[state.result.winner]} venceram`
+            : "Empate"
         : `Vez das ${OWNERS[state.current]}${
             busy === "conway"
               ? " · habitat evoluindo…"
@@ -266,6 +268,12 @@ export function render(
           }`;
   const currentRound = round(state),
     geological = currentGeologicalStage(state),
+    hadeanTutorialDone =
+      geological.id === "hadean"
+        ? ["moved", "divided", "captured"].filter(
+            (step) => state.hadeanTutorial?.[step],
+          ).length
+        : 0,
     singleToneTerrain =
       geological.index >= geologicalStage("devonian").index,
     historicalGeneration =
@@ -275,7 +283,9 @@ export function render(
       ? "Origem da campanha · antes do 1º Ciclo"
       : state.scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`
-        : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
+        : geological.id === "hadean"
+          ? `${geological.group} · ${geological.period} · Tutorial ${hadeanTutorialDone}/3 · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"}`
+          : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
   const mobileSummary = $("mobile-selected-summary");
   mobileSummary.replaceChildren();
   mobileSummary.hidden = true;
@@ -291,7 +301,7 @@ export function render(
       symbol = make(
         "span",
         SYMBOLS[actor.owner][actor.rank],
-        `mobile-selected-symbol ${actor.owner}${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
+        `mobile-selected-symbol ${actor.owner}${geological.id === "hadean" && !energyBranch(actor) ? " hadean-protocell" : ""}${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
       );
     heading.append(
       symbol,
@@ -586,7 +596,7 @@ export function render(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
+            `piece ${p.owner}${geological.id === "hadean" && !energyBranch(p) ? " hadean-protocell" : ""}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
           ),
         );
 
@@ -1042,9 +1052,11 @@ export function render(
           "p",
           state.scenario === "arena"
             ? `Arena · Fase ${state.arenaPhase || state.cycle} concluída. As linhagens sobreviventes podem receber até duas substituições de Engenharia Genética.`
-            : progress.required.length
-              ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
-              : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
+            : geological.id === "hadean"
+              ? `Tutorial: ${progress.discovered.length} de ${progress.required.length} fundamentos concluídos — deslocar, dividir e capturar.`
+              : progress.required.length
+                ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
+                : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
           "evolutionary-end-lineages",
         );
       content.append(
@@ -1059,7 +1071,8 @@ export function render(
     } else {
       const progress =
         state.scenario === "arena" ? null : stageProgress(state);
-      $("game-over-title").textContent = "Empate";
+      $("game-over-title").textContent =
+        geological.id === "hadean" ? "Hadeano concluído" : "Empate";
       $("game-over-body").replaceChildren(
         make("p", state.result.reason || "A partida terminou empatada."),
         make(
