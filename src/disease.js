@@ -115,6 +115,19 @@ export function availableEcologicalPathogenTransmissions(
   state,
   agent,
 ) {
+  const locked = state?.cyclePathogenProfile;
+  if (locked) {
+    if (locked.agent !== agent) return [];
+    return initialCandidates(
+      state,
+      "eco",
+      locked.agent,
+      locked.transmission,
+    ).length
+      ? [locked.transmission]
+      : [];
+  }
+
   const routes = [defaultPathogenTransmission(agent)];
   if (
     agent === "virus" &&
@@ -252,6 +265,18 @@ export function startDisease(
   const availableAgents = availablePathogenAgents(state);
   if (!availableAgents.length) return null;
 
+  const lockedProfile = state.cyclePathogenProfile ?? null;
+  if (lockedProfile) {
+    if (agent !== null && agent !== lockedProfile.agent) return null;
+    if (
+      transmission !== null &&
+      transmission !== lockedProfile.transmission
+    )
+      return null;
+    agent = lockedProfile.agent;
+    transmission = lockedProfile.transmission;
+  }
+
   const explicitAgent = agent !== null;
   if (
     explicitAgent &&
@@ -361,6 +386,7 @@ export function startDisease(
           : [],
     };
   state.diseases.push(disease);
+  state.cyclePathogenProfile ??= { agent, transmission };
   recordDiscovery(state, "events", "pathogen");
   if (agent === "fungus") {
     if (!fullyImmuneToEcologicalPathogen(seed))
@@ -499,9 +525,19 @@ export function exposeFecalResidue(
 
 export function tryVectorPathogen(state, vector, agent = null) {
   if (!has(vector, "Vetor Patógeno")) return null;
+  const lockedProfile = state.cyclePathogenProfile ?? null;
+  if (
+    lockedProfile &&
+    lockedProfile.transmission !==
+      defaultPathogenTransmission(lockedProfile.agent)
+  )
+    return null;
   const availableAgents = availablePathogenAgents(state),
-    resolvedAgent =
-      agent && PATHOGEN_AGENT_IDS.includes(agent)
+    resolvedAgent = lockedProfile
+      ? agent && agent !== lockedProfile.agent
+        ? null
+        : lockedProfile.agent
+      : agent && PATHOGEN_AGENT_IDS.includes(agent)
         ? availableAgents.includes(agent)
           ? agent
           : null
