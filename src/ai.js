@@ -2,6 +2,10 @@ import { legalActions, movesFor } from "./moves.js";
 import { simulate } from "./engine.js";
 import { has, other, square, distance } from "./constants.js";
 import { eggAt, barrierAt } from "./state.js";
+import {
+  canUseBasalFertility,
+  predatoryReproductionAvailable,
+} from "./reproduction-traits.js";
 export function fallbackAction(state) {
   const actions = legalActions(state);
   return (
@@ -127,6 +131,7 @@ function priority(state, a) {
       ? 10 +
         victim.rank * 2 +
         (has(victim, "Fotossíntese") ? 8 : 0) +
+        (predatoryReproductionAvailable(p, victim) ? 6 : 0) +
         (targetTerrain === "fertile" ? 4 : 0) +
         (enemies.length <= 2 ? 30 : 0)
       : 0,
@@ -136,9 +141,7 @@ function priority(state, a) {
         : -8 - victim.rank
       : 0,
     fertileValue =
-      !victim &&
-      targetTerrain === "fertile" &&
-      (!has(p, "Carnívoro") || has(p, "Onívoro"))
+      !victim && targetTerrain === "fertile" && canUseBasalFertility(p)
         ? 4
         : 0;
   return (
