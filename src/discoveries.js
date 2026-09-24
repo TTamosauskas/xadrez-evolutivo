@@ -109,6 +109,7 @@ const mutationTopics = {
   "Percepção Espacial": ["Percepção espacial", "Integra informações sensoriais sobre posição, direção e distância; no jogo, permite orientar capturas para além da primeira casa da trajetória oficial da peça."],
   "Escavador": ["Escavação animal", "Escavações e galerias produzidas por animais já aparecem no registro fóssil do Ediacarano tardio e alteram fisicamente o substrato."],
   "Necrófago": ["Necrofagia", "Necrofagia é o consumo de matéria animal morta e integra a reciclagem de matéria nos ecossistemas."],
+  Coprofagia: ["Coprofagia", "Coprofagia é o consumo de fezes; em diferentes animais pode recuperar nutrientes e microrganismos que permaneceram no material fecal."],
   "Construtor de Nicho": ["Construção de nicho", "Construção de nicho descreve processos pelos quais organismos modificam o ambiente e alteram pressões seletivas."],
   "Carapaça": ["Carapaça", "Carapaças e estruturas rígidas externas podem oferecer suporte e proteção contra agressões e condições ambientais."],
   "Camuflagem": ["Camuflagem", "Camuflagem reduz a detectabilidade de um organismo por semelhança visual ou outros mecanismos de ocultação."],
