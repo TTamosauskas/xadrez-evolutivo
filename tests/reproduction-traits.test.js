@@ -34,6 +34,8 @@ test("Brotamento repeats on a four-round cadence and Colônia shares identity an
   const parentId = s.pieces[0].id;
   s.turn = 8;
   s.pieces[0].stationarySinceRound = 0;
+  assert.equal(canBud(s, s.pieces[0]), false);
+  s.board[36] = "fertile";
   assert.equal(canBud(s, s.pieces[0]), true);
   assert.ok(
     legalActions(s).some(
@@ -47,8 +49,11 @@ test("Brotamento repeats on a four-round cadence and Colônia shares identity an
   assert.ok(child);
   assert.equal(child.colonyId, parent.colonyId);
   assert.ok(s.colonyCooldowns[parent.colonyId] >= 8);
+  assert.equal(s.board[36], "neutral");
   assert.equal(canBud(s, parent), false);
   s.turn = 16;
+  assert.equal(canBud(s, parent), false);
+  s.board[36] = "fertile";
   assert.equal(canBud(s, parent), true);
   assertState(s);
 });
