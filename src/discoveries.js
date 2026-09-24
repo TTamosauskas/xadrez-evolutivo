@@ -16,6 +16,7 @@ const image = {
 };
 
 const geologyRows = [
+  ["hadean", "Hadeano", "O Hadeano representa a Terra mais antiga, com intensa atividade geológica e impactos; no jogo, funciona como um prólogo prebiótico hipotético antes da divergência metabólica.", "Hadeano"],
   ["archean", "Arqueano", "O Arqueano registra uma Terra muito antiga, com crosta consolidada, oceanos primitivos e evidências das primeiras formas de vida.", "Arqueano"],
   ["proterozoic", "Proterozoico", "No Proterozoico, a oxigenação do planeta avançou e a vida eucariótica e multicelular passou a ocupar um papel crescente.", "Proterozoico"],
   ["ediacaran", "Ediacarano", "O Ediacarano preserva comunidades de organismos multicelulares anteriores à grande diversificação animal do Cambriano.", "Ediacarano"],
