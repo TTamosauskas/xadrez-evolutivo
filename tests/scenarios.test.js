@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EVENTS } from "../src/constants.js";
+import { EVENTS, STATE_VERSION } from "../src/constants.js";
 import {
   eventWeights,
   innovationWeight,
