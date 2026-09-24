@@ -43,11 +43,35 @@ test("current save schema preserves active phases and temporary event data", () 
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
 });
 
-test("deserialize rejects malformed, invalid and obsolete development saves", () => {
+test("deserialize migrates v17 and rejects older or invalid saves", () => {
   assert.throws(() => deserialize("{"), /inválido/i);
 
+  const legacy = createState(4);
+  legacy.version = 17;
+  for (const piece of legacy.pieces) delete piece.genome.Coprofagia;
+  legacy.deathSites.push({
+    cell: 10,
+    dueRound: 3,
+    base: "fertile",
+  });
+  legacy.board[10] = "hostile";
+  const migrated = deserialize(JSON.stringify(legacy));
+  assert.equal(migrated.version, STATE_VERSION);
+  assert.equal(migrated.deathSites.length, 0);
+  assert.equal(migrated.carcasses.length, 0);
+  assert.equal(migrated.board[10], "fertile");
+  assert.ok(
+    migrated.pieces.every(
+      (piece) =>
+        Array.isArray(piece.genome.Coprofagia) &&
+        piece.genome.Coprofagia.every(
+          (allele) => allele.value === "ancestral",
+        ),
+    ),
+  );
+
   const obsolete = createState(4);
-  obsolete.version = STATE_VERSION - 1;
+  obsolete.version = 16;
   assert.throws(
     () => deserialize(JSON.stringify(obsolete)),
     /incompatível/i,
@@ -59,20 +83,24 @@ test("deserialize rejects malformed, invalid and obsolete development saves", ()
   assert.throws(() => deserialize(JSON.stringify(invalid)), /Ocupação/);
 });
 
-test("save and load use only the current development key", () => {
+test("load migrates the immediately previous development key and saves use v18", () => {
+  const legacy = createState(6);
+  legacy.version = 17;
+  for (const piece of legacy.pieces) delete piece.genome.Coprofagia;
   const entries = new Map([
-      ["xadrez-evolutivo-save-v16", JSON.stringify(createState(6))],
+      ["xadrez-evolutivo-save-v17", JSON.stringify(legacy)],
     ]),
     storage = {
       setItem: (key, value) => entries.set(key, value),
       getItem: (key) => entries.get(key) ?? null,
     };
 
-  assert.throws(() => load(storage), /Nenhuma partida salva nesta versão/);
+  const migrated = load(storage);
+  assert.equal(migrated.version, STATE_VERSION);
+  assert.ok(entries.has(SAVE_KEY));
 
   const state = createState(7);
   save(storage, state);
-  assert.ok(entries.has(SAVE_KEY));
   assert.deepEqual(load(storage), state);
 });
 
