@@ -342,6 +342,14 @@ test("Hadean tutorial unlocks capture after both sides divide and then founds Ar
     s.pieces.filter((piece) => piece.owner === "blue").length,
     2,
   );
+  assert.ok(
+    s.pieces.every(
+      (piece) =>
+        piece.traits.length === 1 &&
+        piece.traits.includes("Respiração anaeróbia"),
+    ),
+  );
+  assert.deepEqual(s.seenMutations, []);
 
   amber = s.pieces.find((piece) => piece.owner === "amber");
   blue = s.pieces.find((piece) => piece.owner === "blue");
