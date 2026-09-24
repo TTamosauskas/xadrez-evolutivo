@@ -313,6 +313,7 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
   assert.ok(
     s.pieces.every(
       (piece) =>
+        piece.mutations === 1 &&
         piece.traits.length === 1 &&
         piece.traits.includes("Respiração anaeróbia"),
     ),
