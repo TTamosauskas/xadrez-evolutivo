@@ -280,9 +280,28 @@ test("Archean expands from a 6x6 fertile core to the fully fertile aquatic board
   assertState(second);
 });
 
-test("Hadean tutorial uses a 4x4 fertile core with two gray basal Kings and no mutations", () => {
-  const s = createCampaignState(301);
+test("Hadean starts with one gray common ancestor that splits into two basal Kings", () => {
+  let s = createCampaignState(301);
   assert.equal(s.geologicalStage, "hadean");
+  assert.equal(s.phase, "origin");
+  assert.ok(s.origin);
+  assert.equal(s.origin.selected, false);
+  assert.equal(s.pieces.length, 0);
+  assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
+  assert.equal(s.historicalTraits.includes("Predação"), false);
+  assert.deepEqual(s.hadeanTutorial, {
+    moved: false,
+    divided: false,
+    captured: false,
+  });
+
+  const originCell = { ...s.origin };
+  s = simulate(s, { type: "ORIGIN_CLICK" });
+  assert.equal(s.phase, "origin");
+  assert.equal(s.origin.selected, true);
+  assert.equal(s.pieces.length, 0);
+
+  s = simulate(s, { type: "ORIGIN_CLICK" });
   assert.equal(s.phase, "move");
   assert.equal(s.origin, null);
   assert.equal(s.pieces.length, 2);
@@ -294,15 +313,14 @@ test("Hadean tutorial uses a 4x4 fertile core with two gray basal Kings and no m
         piece.traits.includes("Respiração anaeróbia"),
     ),
   );
-  assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
-  assert.equal(s.historicalTraits.includes("Predação"), false);
-  assert.deepEqual(s.hadeanTutorial, {
-    moved: false,
-    divided: false,
-    captured: false,
-  });
+  const blue = s.pieces.find((piece) => piece.owner === "blue"),
+    amber = s.pieces.find((piece) => piece.owner === "amber");
+  assert.ok(blue.r > originCell.r);
+  assert.ok(amber.r < originCell.r);
+  assert.equal(blue.c, originCell.c);
+  assert.equal(amber.c, originCell.c);
 
-  const legal = movesFor(s, s.pieces.find((piece) => piece.owner === "blue"));
+  const legal = movesFor(s, blue);
   assert.ok(legal.some((target) => !target.stay && !target.capture));
   assert.ok(legal.some((target) => target.stay));
   assert.ok(
@@ -324,6 +342,8 @@ test("Hadean tutorial uses a 4x4 fertile core with two gray basal Kings and no m
 
 test("Hadean tutorial unlocks capture after both sides divide and then founds Archean energy branches", () => {
   let s = createCampaignState(302);
+  s = simulate(s, { type: "ORIGIN_CLICK" });
+  s = simulate(s, { type: "ORIGIN_CLICK" });
   const blue0 = s.pieces.find((piece) => piece.owner === "blue");
   s = simulate(s, move(blue0, 4, 3));
   assert.equal(s.hadeanTutorial.moved, true);
@@ -418,9 +438,11 @@ test("compact non-canonical cycle starts keep Brancas on the lower half", () => 
   }
 });
 
-test("Hadean founders keep Brancas below and Pretas above across seeds", () => {
+test("Hadean ancestral split keeps Brancas below and Pretas above across seeds", () => {
   for (let seed = 1; seed <= 24; seed++) {
-    const s = createCampaignState(seed);
+    let s = createCampaignState(seed);
+    s = simulate(s, { type: "ORIGIN_CLICK" });
+    s = simulate(s, { type: "ORIGIN_CLICK" });
     assert.ok(
       s.pieces
         .filter((piece) => piece.owner === "blue")
