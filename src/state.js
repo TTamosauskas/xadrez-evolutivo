@@ -6,6 +6,7 @@ import {
   TRAITS,
   EVENTS,
   PATHOGEN_AGENT_IDS,
+  PATHOGEN_TRANSMISSION_IDS,
   STATE_VERSION,
 } from "./constants.js";
 import {
@@ -365,6 +366,12 @@ export function registerDiscoveries(state, piece) {
   if (!added.length) return added;
   for (const trait of added)
     recordDiscovery(state, "mutations", trait);
+  if (
+    state.scenario !== "arena" &&
+    added.includes("Reprodução Sexuada") &&
+    !Number.isInteger(state.sexualPathogenUnlockTotalCycle)
+  )
+    state.sexualPathogenUnlockTotalCycle = state.totalCycles + 1;
   return added;
 }
 
@@ -836,6 +843,8 @@ export function createState(seed = Date.now(), options = {}) {
     geologicalStage: options.geologicalStage ?? "archean",
     cycle: options.cycle ?? 1,
     totalCycles: options.totalCycles ?? 1,
+    sexualPathogenUnlockTotalCycle:
+      options.sexualPathogenUnlockTotalCycle ?? null,
     hadeanTutorial:
       options.geologicalStage === "hadean"
         ? {
@@ -1458,6 +1467,8 @@ function createEarthSuccessorState(previous, seed) {
         ...fossilEntries(previous),
       ],
       discoveries: previous.discoveries,
+      sexualPathogenUnlockTotalCycle:
+        previous.sexualPathogenUnlockTotalCycle ?? null,
       founders: { primary: preview.primary, companion: preview.companion },
       canonicalPair: true,
     });
@@ -1554,6 +1565,8 @@ export function createSuccessorState(previous, seed = Date.now()) {
       ...fossilEntries(previous),
     ],
     discoveries: previous.discoveries,
+    sexualPathogenUnlockTotalCycle:
+      previous.sexualPathogenUnlockTotalCycle ?? null,
     founder,
     founders,
     canonicalPair: true,
@@ -1652,6 +1665,10 @@ export function assertState(state) {
     !integer(state.cycle, 1) ||
     !integer(state.totalCycles, 1) ||
     state.totalCycles < state.cycle ||
+    !(
+      state.sexualPathogenUnlockTotalCycle === null ||
+      integer(state.sexualPathogenUnlockTotalCycle, 2)
+    ) ||
     !integer(state.generationOffset) ||
     !integer(state.maxGenerationReached) ||
     !integer(state.nextHabitatGeneration, 3) ||
@@ -2169,13 +2186,26 @@ export function assertState(state) {
       d.id >= state.nextDisease ||
       !integer(d.startRound) ||
       !integer(d.endRound) ||
-      !integer(d.delay, 2, 6) ||
+      !integer(
+        d.delay,
+        2,
+        d.transmission === "sexual" ? 8 : 6,
+      ) ||
       !["eco", "population", "vector"].includes(d.source) ||
       !PATHOGEN_AGENT_IDS.includes(d.agent) ||
+      !PATHOGEN_TRANSMISSION_IDS.includes(d.transmission) ||
       !integer(
         d.mortality,
-        d.source === "vector" ? 20 : 60,
-        d.source === "vector" ? 20 : 100,
+        d.transmission === "sexual"
+          ? 15
+          : d.source === "vector"
+            ? 20
+            : 60,
+        d.transmission === "sexual"
+          ? 15
+          : d.source === "vector"
+            ? 20
+            : 100,
       ) ||
       !integer(d.deaths) ||
       !["diagonal", "orthogonal", "omnidirectional"].includes(d.mode) ||
