@@ -937,7 +937,7 @@ export function createState(seed = Date.now(), options = {}) {
   log(
     state,
     originPrelude
-      ? "Origem da campanha: o ancestral comum aguarda a separação das linhagens."
+      ? "Hadeano · 1º Ciclo: o ancestral comum aguarda a separação das linhagens."
       : scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} começa com duas linhagens de cada lado.`
         : state.geologicalStage === "hadean"
@@ -1126,7 +1126,7 @@ export function createPeriodState(
 
 export function activateOrigin(state) {
   if (state.phase !== "origin" || !state.origin)
-    throw Error("Origem indisponível.");
+    throw Error("Hadeano indisponível.");
   if (!state.origin.selected) {
     state.origin.selected = true;
     return false;
