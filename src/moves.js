@@ -89,7 +89,8 @@ export function manipulationTargets(state) {
         inside(r, c) &&
         terrain(state, r, c) === "neutral" &&
         !ecologicalDomainBlocked(state, parent.owner, r, c) &&
-        !barrierAt(state, r, c)
+        !barrierAt(state, r, c) &&
+        !lethalHazardAt(state, r, c)
       )
         targets.push({ r, c });
     }
