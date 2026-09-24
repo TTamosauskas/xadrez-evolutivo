@@ -826,7 +826,7 @@ export function pieceActionState(state, piece) {
   )
     return {
       waiting: true,
-      reason: "Recuperação reprodutiva",
+      reason: "Recuperação metabólica",
       remainingRounds: piece.nextReproductionRound - currentRound,
     };
 
