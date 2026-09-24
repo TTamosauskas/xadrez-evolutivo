@@ -670,8 +670,26 @@ function resolveConwayStagnation(ctx) {
     state.conwayStagnation = { startedTurn: state.turn, level: 0 };
 }
 
+function recycleOccupiedOrganicResidue(state) {
+  let recycled = 0;
+  for (const piece of state.pieces) {
+    if (!canPhotosynthesize(piece)) continue;
+    const cell = square(piece.r, piece.c);
+    if (!hasOrganicResidue(state, cell)) continue;
+    consumeOrganicResidue(state, cell);
+    setUnderlyingTerrain(state, cell, "fertile");
+    log(
+      state,
+      `${OWNERS[piece.owner]}: 🟢 matéria orgânica reciclada tornou ${coord(piece.r, piece.c)} fértil.`,
+    );
+    recycled++;
+  }
+  return recycled;
+}
+
 function settle(ctx) {
   const state = ctx.state;
+  recycleOccupiedOrganicResidue(state);
   if (
     state.result ||
     extinction(state) ||
