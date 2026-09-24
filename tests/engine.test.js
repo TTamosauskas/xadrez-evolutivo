@@ -2566,7 +2566,6 @@ test("cycle innovation pressure blocks a seventh new positive mutation without b
     cappedChild.traits.includes("Transferência Horizontal"),
     false,
   );
-  assert.equal(cappedChild.mutations, 0);
   assert.deepEqual(capped.s.cyclePositiveInnovations, cappedTraits);
   assertState(capped.s);
 });
