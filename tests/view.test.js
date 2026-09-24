@@ -155,28 +155,34 @@ test("menu exposes match log and evolutionary history for consultation", () => {
   dom.window.close();
 });
 
-test("ancestral gray King shows Vivificar only after selection", () => {
+test("Hadean gray King shows Vivificar only after selection", () => {
   const dom = setup(),
-    s = createCampaignState(301);
+    s = createCampaignState(301),
+    piece = s.pieces.find((candidate) => candidate.owner === s.current);
 
   render(dom.window.document, s);
   const d = dom.window.document;
-  let origin = d.querySelector(".origin-piece")?.parentElement,
+  let cell = d.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    ),
     legend = d.getElementById("board-legend");
 
-  assert.ok(!origin?.classList.contains("vivification-target"));
-  assert.doesNotMatch(origin?.title ?? "", /Vivificar disponível/);
+  assert.ok(cell.querySelector(".piece.hadean-protocell"));
+  assert.ok(!cell.classList.contains("vivification-target"));
+  assert.doesNotMatch(cell.title ?? "", /Vivificar disponível/);
   assert.doesNotMatch(legend.textContent, /Vivificar/);
 
-  s.origin.selected = true;
-  render(d, s);
-  origin = d.querySelector(".origin-piece")?.parentElement;
+  render(d, s, { selected: piece.id });
+  cell = d.querySelector(
+    `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+  );
   legend = d.getElementById("board-legend");
 
-  assert.ok(origin?.classList.contains("vivification-target"));
-  assert.match(origin?.title ?? "", /Vivificar disponível/);
+  assert.ok(cell.classList.contains("vivification-target"));
+  assert.match(cell.title ?? "", /vivificação disponível: Reprodução/i);
   assert.match(legend.textContent, /Vivificar/);
   assert.ok(legend.querySelector(".legend-action-ring.vivify"));
+  assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 48);
   dom.window.close();
 });
 
@@ -1058,9 +1064,13 @@ test("Vivificar and targeted Parasitismo use green and red board rings", () => {
     "Parasitismo",
   ];
   piece.ancestry = [...piece.traits];
-  s.board[piece.r * 8 + piece.c] = "fertile";
-  enemy.r = piece.r - 1;
-  enemy.c = piece.c;
+  piece.rank = 4;
+  piece.r = 4;
+  piece.c = 4;
+  enemy.r = 3;
+  enemy.c = 4;
+  s.pieces = [piece, enemy];
+  s.board.fill("fertile");
 
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
@@ -1471,7 +1481,7 @@ test("Polegar Opositor renders colored adjacent transfer choices", () => {
   dom.window.close();
 });
 
-test("application UI can play, acknowledge reproduction, save and reset", async () => {
+test("application UI can play Hadean division, acknowledge reproduction, save and reset", async () => {
   const dom = setup(),
     w = dom.window;
   const prior = {
@@ -1484,52 +1494,34 @@ test("application UI can play, acknowledge reproduction, save and reset", async 
     await import("../src/app.js");
     const d = w.document;
     const click = (id) => d.getElementById(id).click();
-    d.querySelector(".origin-piece").parentElement.click();
-    assert.match(d.getElementById("turn").textContent, /Toque novamente/);
-    d.querySelector(".origin-piece").parentElement.click();
-    assert.equal(d.querySelectorAll(".piece").length, 4);
-    d.querySelector(".piece.amber").parentElement.click();
+
+    assert.match(d.getElementById("round").textContent, /Hadeano · Tutorial 0\/3/);
+    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 2);
+
+    const amber = d.querySelector(".piece.amber");
+    amber.parentElement.click();
     assert.match(d.getElementById("selected").textContent, /\(Preto\)/);
     assert.equal(d.querySelectorAll(".cell.legal").length, 0);
-    let turns = 0;
-    while (
-      turns < 40 &&
-      !d.getElementById("turn").textContent.includes("venceram")
-    ) {
-      if (d.querySelector("#notice-dialog[open]")) {
-        click("notice-ok");
-        continue;
-      }
-      const name = d.getElementById("turn").textContent.includes("Brancas")
-        ? "blue"
-        : "amber";
-      let targets = [];
-      for (const p of d.querySelectorAll(`.piece.${name}`)) {
-        p.parentElement.click();
-        targets = [...d.querySelectorAll(".cell.legal")];
-        if (targets.length) break;
-      }
-      if (targets.length)
-        (
-          targets.find((t) => t.classList.contains("fertile")) ?? targets[0]
-        ).click();
-      else click("pass");
-      d.querySelector(".cell.partner")?.click();
-      turns++;
-    }
-    while (d.querySelector("#notice-dialog[open]")) click("notice-ok");
+
+    const blue = d.querySelector(".piece.blue");
+    blue.parentElement.click();
+    const selectedCell = blue.parentElement;
+    assert.ok(selectedCell.classList.contains("vivification-target"));
+    selectedCell.click();
+
+    if (d.querySelector("#notice-dialog[open]")) click("notice-ok");
+    assert.ok(d.querySelectorAll(".piece.hadean-protocell").length >= 3);
+
     click("menu-button");
     click("save");
     assert.match(d.getElementById("message").textContent, /salva/);
     const saved = d.getElementById("round").textContent;
+
     click("menu-button");
     click("new");
     click("info-ok");
-    assert.match(
-      d.getElementById("round").textContent,
-      /Origem da campanha · antes do 1º Ciclo/,
-    );
-    assert.equal(d.querySelectorAll(".origin-piece").length, 1);
+    assert.match(d.getElementById("round").textContent, /Hadeano · Tutorial 0\/3/);
+    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 2);
     assert.notEqual(d.getElementById("round").textContent, saved);
   } finally {
     globalThis.document = prior.document;
