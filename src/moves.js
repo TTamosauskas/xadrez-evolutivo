@@ -14,6 +14,10 @@ import {
   reproductionReady,
   fertilityPaused,
   ecologicalDomainBlocked,
+  organicResidueAt,
+  captureDisturbanceAt,
+  lethalHazardAt,
+  organicResidueHazardousTo,
 } from "./state.js";
 import {
   captureUnlocked,
@@ -53,7 +57,10 @@ export const decompositionImmune = (state, p) =>
   state.turn <= p.decompositionImmunity.throughTurn;
 export const dormant = (state, p) =>
   has(p, "Dormência") &&
-  terrain(state, p.r, p.c) === "hostile" &&
+  (terrain(state, p.r, p.c) === "hostile" ||
+    !!captureDisturbanceAt(state, p.r, p.c) ||
+    (!!organicResidueAt(state, p.r, p.c) &&
+      organicResidueHazardousTo(p))) &&
   !decompositionImmune(state, p);
 export const pupating = (state, p) =>
   Number.isInteger(p?.pupaUntilRound) && round(state) < p.pupaUntilRound;
@@ -97,6 +104,8 @@ export function constructionTargets(state) {
   const decomposition = new Set([
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
+      ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
+      ...(state.event?.lethalHazards ?? []),
     ]),
     targets = [];
   for (let dr = -1; dr <= 1; dr++)
@@ -530,7 +539,8 @@ function emptyEggTarget(state, r, c, owner = null) {
     !at(state, r, c) &&
     !eggAt(state, r, c) &&
     !plantSeedAt(state, r, c) &&
-    !barrierAt(state, r, c)
+    !barrierAt(state, r, c) &&
+    !lethalHazardAt(state, r, c)
   );
 }
 
