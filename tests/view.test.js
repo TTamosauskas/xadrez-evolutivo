@@ -10,7 +10,7 @@ import {
   round,
 } from "../src/state.js";
 import { fixture } from "./helpers.js";
-import { TRAITS } from "../src/constants.js";
+import { TRAITS, EVENTS } from "../src/constants.js";
 import { render, traitFrameSlots, establishedTraits } from "../src/view.js";
 import { actionableTraitsForPiece } from "../src/actionable-traits.js";
 import { context } from "../src/engine.js";
