@@ -72,9 +72,11 @@ import {
   attemptHorizontalTransfer,
   canBud,
   canPupate,
+  canUseBasalFertility,
   monogamySurvivalBonus,
   paedogenesisReady,
   parentalCareProtects,
+  predatoryReproductionAvailable,
 } from "./reproduction-traits.js";
 import {
   consumeDecomposition,
@@ -1261,32 +1263,18 @@ function executeMove(ctx, action) {
   if (!capture && !scavenging) harvest(state, p, p.r, p.c);
   const collectorStay =
       !scavenging && has(p, "Coletor") && target.stay && p.seeds > 0,
-    carnivore = has(p, "Carnívoro"),
-    herbivore = has(p, "Herbívoro"),
-    omnivore = has(p, "Onívoro"),
     fertileResource =
       !scavenging &&
       ((!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay),
-    fertile =
-      fertileResource &&
-      (!carnivore || omnivore || has(p, "Mixotrofia")),
+    fertile = fertileResource && canUseBasalFertility(p),
     sexualResourceHere =
       !scavenging &&
       !capture &&
       (terrain(state, p.r, p.c) === "fertile" || collectorStay),
-    photosyntheticPrey = pieceCapture && has(victim, "Fotossíntese"),
-    primitiveLocomotionReached =
-      has(p, "Locomoção Primitiva") ||
-      (p.ancestry ?? []).includes("Locomoção Primitiva"),
-    earlyExpansionPredation =
-      has(p, "Predação") && !primitiveLocomotionReached,
     predation =
       pieceCapture &&
       victim.owner !== p.owner &&
-      (earlyExpansionPredation ||
-        omnivore ||
-        (carnivore && !photosyntheticPrey) ||
-        (herbivore && photosyntheticPrey));
+      predatoryReproductionAvailable(p, victim);
   log(
     state,
     `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
