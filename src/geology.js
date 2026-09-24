@@ -1395,6 +1395,13 @@ export function sexualPathogenUnlocked(state) {
   );
 }
 
+export function fecalPathogenUnlocked(state) {
+  if (state?.scenario === "arena") return true;
+  return (
+    currentGeologicalStage(state).index >= geologicalStage("silurian").index
+  );
+}
+
 export const CYCLE_POSITIVE_INNOVATION_MULTIPLIERS = Object.freeze([
   1,
   1,
