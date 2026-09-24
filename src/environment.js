@@ -174,6 +174,7 @@ function addNaturalBarriers(state, count, near = []) {
         ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
         ...state.deathSites.map((site) => site.cell),
         ...state.fertileTraces.map((trace) => trace.cell),
+        ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
         ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
         ...(state.event?.hazards ?? []),
       ]),
@@ -261,7 +262,12 @@ export const consumeDecomposition = consumeOrganicResidue;
 export function markOrganicResidue(state, cell) {
   const existing = deathSiteAt(state, cell),
     trace = fertileTraceAt(state, cell),
-    base = existing?.base ?? trace?.base ?? state.board[cell],
+    base =
+      existing?.base ??
+      trace?.base ??
+      (state.event?.hazards.includes(cell)
+        ? state.event.snapshots[cell] ?? "neutral"
+        : state.board[cell]),
     dueRound = round(state) + 3;
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
   state.captureDisturbances = (state.captureDisturbances ?? []).filter(
@@ -287,7 +293,9 @@ export function markCaptureDisturbance(state, cell, sourceId = null) {
   const entry = {
     cell,
     dueRound: round(state) + 1,
-    base: state.board[cell],
+    base: state.event?.hazards.includes(cell)
+      ? state.event.snapshots[cell] ?? "neutral"
+      : state.board[cell],
     sourceId,
   };
   if (existing) Object.assign(existing, entry);
@@ -318,10 +326,18 @@ function tickOrganicResidue(state) {
   }
 }
 function tickCaptureDisturbances(state) {
-  const now = round(state);
-  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
-    (entry) => now < entry.dueRound,
-  );
+  const now = round(state),
+    active = [];
+  for (const entry of state.captureDisturbances ?? []) {
+    if (now < entry.dueRound) {
+      active.push(entry);
+      continue;
+    }
+    if (state.event?.hazards.includes(entry.cell))
+      state.event.snapshots[entry.cell] = entry.base;
+    else state.board[entry.cell] = entry.base;
+  }
+  state.captureDisturbances = active;
 }
 function seedCluster(state, type) {
   const candidates = [];
@@ -464,6 +480,7 @@ function habitatDriftCandidates(state, type) {
       ...state.naturalBarriers,
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
+      ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
       ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
     ]),
     current = allCells().filter(
