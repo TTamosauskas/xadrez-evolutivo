@@ -410,6 +410,17 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
   const core = cell.querySelector(".piece-energy-core");
   assert.equal(core?.dataset.trait, "Predação");
   assert.equal(core?.textContent, "👾");
+  assert.ok(core?.classList.contains("blue"));
+  assert.ok(!cell.querySelector(".piece")?.classList.contains("reproduction-ready"));
+  assert.doesNotMatch(css, /\.piece\.reproduction-ready/);
+  assert.match(
+    css,
+    /\.piece-energy-core\.blue\s*\{[\s\S]*background:\s*#fff8df/,
+  );
+  assert.match(
+    css,
+    /\.piece-energy-core\.amber\s*\{[\s\S]*background:\s*#242623/,
+  );
   assert.match(css, /\.trait-slot-0\s*\{\s*left:\s*50%;\s*top:\s*94%/);
   assert.match(css, /\.trait-slot-4\s*\{\s*left:\s*6%;\s*top:\s*25%/);
   assert.match(css, /\.trait-slot-8\s*\{\s*left:\s*94%;\s*top:\s*25%/);
@@ -506,6 +517,7 @@ test("Mixotrofia remains peripheral while the ancestral energy branch stays cent
     cell.querySelector(".piece-energy-core")?.dataset.trait,
     "Fotossíntese",
   );
+  assert.ok(cell.querySelector(".piece-energy-core")?.classList.contains("amber"));
   assert.ok(frameTraits.includes("Mixotrofia"));
   assert.ok(!frameTraits.includes("Fotossíntese"));
   dom.window.close();
@@ -980,8 +992,18 @@ test("feces and carcasses use distinct Vivificar routes", () => {
   render(dom.window.document, s, { selected: piece.id });
   let target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
   assert.ok(target.classList.contains("vivification-target"));
+  assert.ok(target.classList.contains("organic-residue"));
   assert.match(target.title, /reciclar fezes/);
   assert.match(target.textContent, /💩/);
+  const css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+  assert.match(
+    css,
+    /\.cell\.organic-residue,[\s\S]*background:\s*#b86155/,
+  );
+  assert.match(
+    css,
+    /\.cell\.organic-residue\.dark,[\s\S]*background:\s*#87443d/,
+  );
   dom.window.close();
 
   dom = setup();
