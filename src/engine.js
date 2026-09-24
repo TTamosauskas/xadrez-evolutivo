@@ -1275,8 +1275,10 @@ function executeMove(ctx, action) {
       capturedEnemy = victim;
       state.lastSuccessfulCaptureRound = round(state);
       state.offensiveStagnation = null;
-      if (state.geologicalStage === "hadean")
+      if (state.geologicalStage === "hadean") {
+        state.hadeanCaptureUnlocked = true;
         markHadeanTutorialStep(state, "captured");
+      }
     }
     manipulation = null;
   }
