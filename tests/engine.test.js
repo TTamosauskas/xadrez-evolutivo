@@ -2985,7 +2985,7 @@ test("sexual virus does not spread by adjacency and keeps complete Resistance im
   );
   assert.equal(resistant.infection, undefined);
 
-  resistant.traits.push("Imunodeficiência");
+  resistant.somaticMutations.push("Imunodeficiência");
   s.rng = 0;
   assert.equal(
     transmitSexualPathogen(s, [source, resistant]),
