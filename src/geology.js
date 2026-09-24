@@ -1080,7 +1080,8 @@ export function traitUnlocked(state, trait, piece = null) {
         nextRequired = activeRequired.find((candidate) => !history.has(candidate)),
         parallelArcheanMetabolism =
           current.id === "archean" &&
-          (state.cycle ?? 1) === 1 &&
+          activeRequired.includes("Fotossíntese") &&
+          activeRequired.includes("Predação") &&
           ["Fotossíntese", "Predação"].includes(trait);
       if (!history.has(trait)) {
         if (!activeRequired.includes(trait)) return false;
