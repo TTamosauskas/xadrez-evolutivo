@@ -79,6 +79,20 @@ export const SOMATIC_NEGATIVE_TRAITS = new Set(
 
 export const GEOLOGICAL_STAGES = [
   {
+    id: "hadean",
+    group: "Pré-Cambriano",
+    period: "Hadeano",
+    required: [],
+    habitat: {
+      fertile: 64,
+      hostile: 0,
+      founderFertile: true,
+      naturalBarriers: [0, 0],
+      pattern: "primordial",
+    },
+    events: {},
+  },
+  {
     id: "archean",
     group: "Pré-Cambriano",
     period: "Arqueano",
@@ -962,6 +976,23 @@ export function missingInnovations(state) {
 }
 
 export function stageProgress(state) {
+  if (currentGeologicalStage(state).id === "hadean") {
+    const tutorial = state.hadeanTutorial ?? {},
+      steps = [
+        ["Deslocar", !!tutorial.moved],
+        ["Dividir", !!tutorial.divided],
+        ["Capturar", !!tutorial.captured],
+      ],
+      required = steps.map(([label]) => label),
+      discovered = steps.filter(([, done]) => done).map(([label]) => label),
+      missing = steps.filter(([, done]) => !done).map(([label]) => label);
+    return {
+      required,
+      discovered,
+      missing,
+      complete: missing.length === 0,
+    };
+  }
   const required = cycleRequiredInnovations(state),
     discovered = required.filter((trait) =>
       (state.historicalTraits ?? []).includes(trait),
@@ -978,8 +1009,9 @@ export function stageProgress(state) {
 }
 
 export function stageComplete(state) {
-  const stage = currentGeologicalStage(state),
-    minimumCycle = stage.cycles?.length ?? 1;
+  const stage = currentGeologicalStage(state);
+  if (stage.id === "hadean") return stageProgress(state).complete;
+  const minimumCycle = stage.cycles?.length ?? 1;
   return (
     (state.cycle ?? 1) >= minimumCycle &&
     missingInnovations(state).length === 0
@@ -1135,6 +1167,10 @@ export function normalizePhotosyntheticRank(profile) {
 
 export function captureUnlocked(state, piece = null) {
   if (!piece) return false;
+  if (currentGeologicalStage(state).id === "hadean")
+    return ["blue", "amber"].every(
+      (owner) => state.pieces.filter((candidate) => candidate.owner === owner).length >= 2,
+    );
   return (
     piece.traits?.includes("Predação") ||
     piece.traits?.includes("Mixotrofia") ||
@@ -1163,6 +1199,7 @@ export function innovationWeight(state, trait, piece = null) {
 }
 
 export function eventWeights(state) {
+  if (currentGeologicalStage(state).id === "hadean") return {};
   const weights = scenarioEventWeights(
     state,
     currentGeologicalStage(state).events,
