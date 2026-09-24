@@ -1578,6 +1578,15 @@ export function assertState(state) {
     !validScenario(state.scenario) ||
     !integer(state.arenaPhase ?? 0, 0) ||
     !GEOLOGICAL_STAGES.some((stage) => stage.id === state.geologicalStage) ||
+    !(
+      state.geologicalStage === "hadean"
+        ? state.hadeanTutorial &&
+          typeof state.hadeanTutorial.moved === "boolean" &&
+          typeof state.hadeanTutorial.divided === "boolean" &&
+          typeof state.hadeanTutorial.captured === "boolean"
+        : state.hadeanTutorial === null ||
+          state.hadeanTutorial === undefined
+    ) ||
     !integer(state.cycle, 1) ||
     !integer(state.totalCycles, 1) ||
     state.totalCycles < state.cycle ||
