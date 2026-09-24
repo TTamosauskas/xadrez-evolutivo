@@ -209,6 +209,7 @@ test("diet and sexual strategy do not disable Respiração Cutânea", () => {
       owner: "blue",
       r: 4,
       c: 4,
+      rank: 5,
       traits: ["Carnívoro", "Respiração Cutânea", "Reprodução Sexuada"],
     },
     { owner: "amber", r: 0, c: 0 },
