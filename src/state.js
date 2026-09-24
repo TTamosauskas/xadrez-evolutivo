@@ -262,6 +262,7 @@ export const juvenile = (state, piece) =>
   round(state) < piece.maturesRound;
 export const reproductionReady = (state, piece) =>
   !!piece &&
+  has(piece, "Respiração anaeróbia") &&
   !juvenile(state, piece) &&
   !has(piece, "Esterilidade") &&
   !(piece.pregnancies ?? []).some(
