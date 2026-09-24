@@ -568,6 +568,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Escavador",
   "Construtor de Nicho",
   "Necrófago",
+  "Coprofagia",
   "Carapaça",
   "Camuflagem",
   "Veneno",
