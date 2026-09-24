@@ -324,10 +324,11 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
   assert.ok(legal.some((target) => !target.stay && !target.capture));
   assert.ok(legal.some((target) => target.stay));
   assert.ok(
-    legal.every(
-      (target) =>
-        target.r >= 2 && target.r <= 5 && target.c >= 2 && target.c <= 5,
-    ),
+    legal.some((target) => lethalHazardAt(s, target.r, target.c)) ||
+      legal.every(
+        (target) =>
+          target.r >= 2 && target.r <= 5 && target.c >= 2 && target.c <= 5,
+      ),
   );
   assert.equal(
     Array.from({ length: 8 }, (_, r) =>
@@ -336,6 +337,34 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
       ),
     ).flat().filter(Boolean).length,
     48,
+  );
+  assertState(s);
+});
+
+test("Hadean lethal cells remain legal destinations and kill organisms that enter them", () => {
+  let s = createCampaignState(304);
+  s = simulate(s, { type: "ORIGIN_CLICK" });
+  s = simulate(s, { type: "ORIGIN_CLICK" });
+
+  const blue = s.pieces.find((piece) => piece.owner === "blue");
+  blue.r = 2;
+  blue.c = 2;
+  const lethal = movesFor(s, blue).find(
+    (target) => !target.stay && lethalHazardAt(s, target.r, target.c),
+  );
+  assert.ok(lethal, "uma casa ☠️ adjacente deve continuar jogável");
+
+  s = simulate(s, move(blue, lethal.r, lethal.c));
+
+  assert.ok(!s.pieces.some((piece) => piece.id === blue.id));
+  assert.equal(s.result?.winner, "amber");
+  assert.match(s.result?.reason ?? "", /Extinção total/);
+  assert.ok(
+    s.logs.some(
+      (entry) =>
+        entry.text.includes("ambiente letal") ||
+        entry.text.includes("Extinção total"),
+    ),
   );
   assertState(s);
 });
