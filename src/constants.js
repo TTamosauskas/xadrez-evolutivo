@@ -398,7 +398,6 @@ export const PATHOGEN_TRANSMISSION_IDS = Object.freeze([
   "contact",
   "trail",
   "environmental",
-  "vector",
   "sexual",
 ]);
 export const EVENTS = [
