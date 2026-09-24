@@ -1,4 +1,4 @@
-import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square, has } from "./constants.js";
+import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square, has, energyBranch } from "./constants.js";
 import {
   at,
   eggAt,
@@ -20,6 +20,7 @@ import {
   geologicalStage,
   isNegativeTrait,
   stageProgress,
+  ENERGY_BRANCH_TRAITS,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
 import { pathogenAgentAt } from "./disease.js";
@@ -133,7 +134,9 @@ export function traitFrameEntries(piece, established = new Set()) {
       somatic: true,
     })),
   ]
-    .filter(({ trait }) => TRAITS[trait])
+    .filter(
+      ({ trait }) => TRAITS[trait] && !ENERGY_BRANCH_TRAITS.has(trait),
+    )
     .sort(
       (a, b) =>
         Number(a.somatic) - Number(b.somatic) ||
@@ -558,6 +561,18 @@ export function render(
             `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
           ),
         );
+
+        const branch = energyBranch(p);
+        if (branch) {
+          const energyCore = make(
+            "span",
+            TRAITS[branch][0],
+            `piece-energy-core ${branch === "Fotossíntese" ? "photosynthetic" : "predatory"}${juvenile(state, p) || has(p, "Nanismo") ? " compact" : ""}${actionState?.waiting ? " waiting" : ""}`,
+          );
+          energyCore.dataset.trait = branch;
+          energyCore.title = `Ramo energético: ${branch}`;
+          cell.append(energyCore);
+        }
 
         if (traitFrame.visible.length) {
           const frame = make("span", undefined, "trait-frame"),
