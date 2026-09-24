@@ -153,11 +153,6 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   function add(r, c, path, extra = {}) {
     if (!inside(r, c) || ecologicalDomainBlocked(state, p.owner, r, c)) return;
     if (
-      currentGeologicalStage(state).id === "hadean" &&
-      lethalHazardAt(state, r, c)
-    )
-      return;
-    if (
       terrestrialRestriction &&
       !extra.stay &&
       terrain(state, r, c) !== "fertile"
