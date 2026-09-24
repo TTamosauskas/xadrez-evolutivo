@@ -98,16 +98,9 @@ test("each geological discovery can launch the first cycle with prior winners re
     assert.equal(s.geologicalStage, stage.id);
     assert.equal(s.cycle, 1);
     if (stage.id === "hadean") {
-      assert.equal(s.phase, "move");
-      assert.equal(s.pieces.length, 2);
-      assert.ok(
-        s.pieces.every(
-          (piece) =>
-            piece.rank === 4 &&
-            !piece.traits.includes("Fotossíntese") &&
-            !piece.traits.includes("Predação"),
-        ),
-      );
+      assert.equal(s.phase, "origin");
+      assert.ok(s.origin);
+      assert.equal(s.pieces.length, 0);
     } else {
       assert.equal(s.phase, "move");
       assert.equal(s.pieces.length, 4);
