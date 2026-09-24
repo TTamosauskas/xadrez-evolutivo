@@ -80,10 +80,23 @@ test("deserialize migrates v17/v18 and rejects older or invalid saves", () => {
   assert.equal(migratedOrigin.version, STATE_VERSION);
   assert.equal(migratedOrigin.geologicalStage, "hadean");
   assert.equal(migratedOrigin.cycle, 1);
-  assert.equal(migratedOrigin.phase, "move");
-  assert.equal(migratedOrigin.origin, null);
-  assert.equal(migratedOrigin.pieces.length, 2);
+  assert.equal(migratedOrigin.phase, "origin");
+  assert.ok(migratedOrigin.origin);
+  assert.equal(migratedOrigin.pieces.length, 0);
   assert.deepEqual(migratedOrigin.discoveries.geology, ["hadean"]);
+
+  const oldHadeanStart = createState(9, {
+    geologicalStage: "hadean",
+    cycle: 1,
+    totalCycles: 1,
+    scenario: "earth",
+  });
+  oldHadeanStart.version = 19;
+  const migratedHadeanStart = deserialize(JSON.stringify(oldHadeanStart));
+  assert.equal(migratedHadeanStart.version, STATE_VERSION);
+  assert.equal(migratedHadeanStart.phase, "origin");
+  assert.ok(migratedHadeanStart.origin);
+  assert.equal(migratedHadeanStart.pieces.length, 0);
 
   const obsolete = createState(4);
   obsolete.version = 16;
@@ -98,7 +111,7 @@ test("deserialize migrates v17/v18 and rejects older or invalid saves", () => {
   assert.throws(() => deserialize(JSON.stringify(invalid)), /Ocupação/);
 });
 
-test("load migrates the immediately previous development key and saves use v19", () => {
+test("load migrates legacy development keys and saves use v20", () => {
   const legacy = createState(6, {
     originPrelude: true,
     geologicalStage: "archean",

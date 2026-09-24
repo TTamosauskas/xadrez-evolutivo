@@ -155,33 +155,31 @@ test("menu exposes match log and evolutionary history for consultation", () => {
   dom.window.close();
 });
 
-test("Hadean gray King shows Vivificar only after selection", () => {
+test("Hadean common ancestor is a gray King that splits after the second click", () => {
   const dom = setup(),
-    s = createCampaignState(301),
-    piece = s.pieces.find((candidate) => candidate.owner === s.current);
+    s = createCampaignState(301);
 
   render(dom.window.document, s);
   const d = dom.window.document;
-  let cell = d.querySelector(
-      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
-    ),
+  let origin = d.querySelector(".origin-piece")?.parentElement,
     legend = d.getElementById("board-legend");
 
-  assert.ok(cell.querySelector(".piece.hadean-protocell"));
-  assert.ok(!cell.classList.contains("vivification-target"));
-  assert.doesNotMatch(cell.title ?? "", /Vivificar disponível/);
+  assert.ok(origin);
+  assert.ok(!origin.classList.contains("vivification-target"));
+  assert.doesNotMatch(origin.title ?? "", /Vivificar disponível/);
   assert.doesNotMatch(legend.textContent, /Vivificar/);
+  assert.match(d.getElementById("turn").textContent, /Rei ancestral cinza/);
 
-  render(d, s, { selected: piece.id });
-  cell = d.querySelector(
-    `[data-r="${piece.r}"][data-c="${piece.c}"]`,
-  );
+  s.origin.selected = true;
+  render(d, s);
+  origin = d.querySelector(".origin-piece")?.parentElement;
   legend = d.getElementById("board-legend");
 
-  assert.ok(cell.classList.contains("vivification-target"));
-  assert.match(cell.title ?? "", /vivificação disponível: Reprodução/i);
+  assert.ok(origin.classList.contains("vivification-target"));
+  assert.match(origin.title ?? "", /Vivificar disponível/);
+  assert.match(d.getElementById("selected").textContent, /Ancestral comum/);
+  assert.match(d.getElementById("selected").textContent, /um branco e um preto/);
   assert.match(legend.textContent, /Vivificar/);
-  assert.ok(legend.querySelector(".legend-action-ring.vivify"));
   assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 48);
   dom.window.close();
 });
@@ -1481,7 +1479,7 @@ test("Polegar Opositor renders colored adjacent transfer choices", () => {
   dom.window.close();
 });
 
-test("application UI can play Hadean division, acknowledge reproduction, save and reset", async () => {
+test("application UI starts with the Hadean common ancestor, then plays division, saves and resets", async () => {
   const dom = setup(),
     w = dom.window;
   const prior = {
@@ -1495,13 +1493,19 @@ test("application UI can play Hadean division, acknowledge reproduction, save an
     const d = w.document;
     const click = (id) => d.getElementById(id).click();
 
-    assert.match(d.getElementById("round").textContent, /Hadeano · 1º Ciclo · Tutorial 0\/3/);
-    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 2);
+    assert.match(d.getElementById("round").textContent, /Hadeano · 1º Ciclo/);
+    assert.equal(d.querySelectorAll(".origin-piece").length, 1);
+    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
 
-    const amber = d.querySelector(".piece.amber");
-    amber.parentElement.click();
-    assert.match(d.getElementById("selected").textContent, /\(Preto\)/);
-    assert.equal(d.querySelectorAll(".cell.legal").length, 0);
+    let originCell = d.querySelector(".origin-piece").parentElement;
+    originCell.click();
+    assert.match(d.getElementById("selected").textContent, /Ancestral comum/);
+    originCell = d.querySelector(".origin-piece").parentElement;
+    originCell.click();
+
+    assert.equal(d.querySelectorAll(".origin-piece").length, 0);
+    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 2);
+    assert.match(d.getElementById("round").textContent, /Tutorial 0\/3/);
 
     const blue = d.querySelector(".piece.blue");
     blue.parentElement.click();
@@ -1517,14 +1521,13 @@ test("application UI can play Hadean division, acknowledge reproduction, save an
     click("menu-button");
     click("save");
     assert.match(d.getElementById("message").textContent, /salva/);
-    const saved = d.getElementById("round").textContent;
 
     click("menu-button");
     click("new");
     click("info-ok");
-    assert.match(d.getElementById("round").textContent, /Hadeano · 1º Ciclo · Tutorial 0\/3/);
-    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 2);
-    assert.notEqual(d.getElementById("round").textContent, saved);
+    assert.match(d.getElementById("round").textContent, /Hadeano · 1º Ciclo/);
+    assert.equal(d.querySelectorAll(".origin-piece").length, 1);
+    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
   } finally {
     globalThis.document = prior.document;
     globalThis.localStorage = prior.localStorage;
