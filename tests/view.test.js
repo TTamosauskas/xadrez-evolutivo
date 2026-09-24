@@ -1652,6 +1652,28 @@ test("Domínio Ecológico mostra borda do quadrante e três marcadores de estabi
 });
 
 
+test("Hadean extinction offers the formal transition to Archean", () => {
+  const dom = setup(),
+    s = createCampaignState(404);
+  s.origin = null;
+  s.phase = "over";
+  s.result = { winner: "amber", reason: "Extinção total." };
+  s.pieces = [
+    newPiece(s, "amber", 3, 3, { rank: 4 }),
+  ];
+
+  render(dom.window.document, s, { showResult: true });
+  assert.equal(
+    dom.window.document.getElementById("game-over-new").textContent,
+    "Avançar para o Arqueano",
+  );
+  assert.match(
+    dom.window.document.getElementById("round").textContent,
+    /Hadeano · 1º Ciclo/,
+  );
+  dom.window.close();
+});
+
 test("game-over dialog can be held closed until the result delay expires", () => {
   const dom = setup(),
     s = createState(403);
