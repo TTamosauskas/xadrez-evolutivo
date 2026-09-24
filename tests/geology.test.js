@@ -1287,6 +1287,24 @@ test("fecal pathogen route begins in the Silurian", () => {
   assert.equal(fecalPathogenUnlocked(arena), true);
 });
 
+test("pathogen profile lock resets when a new cycle begins", () => {
+  const s = createState(1180, {
+    scenario: "earth",
+    geologicalStage: "devonian",
+    cycle: 1,
+    totalCycles: 8,
+  });
+  s.cyclePathogenProfile = {
+    agent: "bacteria",
+    transmission: "fecal",
+  };
+  const next = createSuccessorState(s, 1181);
+  assert.equal(next.cycle, 2);
+  assert.equal(next.totalCycles, 9);
+  assert.equal(next.cyclePathogenProfile, null);
+  assertState(next);
+});
+
 test("fungal spore route begins in the Devonian", () => {
   const silurian = createState(1177, {
       scenario: "earth",
