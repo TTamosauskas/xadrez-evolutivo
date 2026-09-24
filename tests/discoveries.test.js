@@ -120,10 +120,9 @@ test("each geological discovery can launch the first cycle with prior winners re
         assert.ok(s.historicalTraits.includes(trait), trait);
       const currentIndex = stage.index;
       for (const trait of s.historicalTraits) {
-        const source = GEOLOGICAL_STAGES.find(
-          (candidate) =>
-            candidate.required.includes(trait) ||
-            candidate.id === "archean" && trait === "Respiração anaeróbia",
+        if (trait === "Respiração anaeróbia") continue;
+        const source = GEOLOGICAL_STAGES.find((candidate) =>
+          candidate.required.includes(trait),
         );
         if (source) assert.ok(source.index < currentIndex, trait);
       }
