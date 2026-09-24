@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { TRAITS, EVENTS, has } from "../src/constants.js";
+import { TRAITS, EVENTS, has, STATE_VERSION } from "../src/constants.js";
 import {
   GEOLOGICAL_STAGES,
   TRAIT_STAGE,
