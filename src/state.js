@@ -951,7 +951,7 @@ export function createState(seed = Date.now(), options = {}) {
       : scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} começa com duas linhagens de cada lado.`
         : state.geologicalStage === "hadean"
-          ? "Pré-Cambriano · Hadeano começa com dois Reis protocelulares sem mutações: desloque, divida e capture."
+          ? "Pré-Cambriano · Hadeano começa com dois Reis protocelulares sem Locomoção Primitiva: divida e capture quando houver contato."
           : `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com um organismo de cada lado.`,
   );
   return state;
