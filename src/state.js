@@ -796,7 +796,30 @@ export function createState(seed = Date.now(), options = {}) {
     ownerFounders = options.ownerFounders ?? null,
     originPrelude = !!options.originPrelude,
     canonicalPair = !!options.canonicalPair,
-    scenario = options.scenario ?? "alternative";
+    scenario = options.scenario ?? "alternative",
+    geologicalStage = options.geologicalStage ?? "archean",
+    totalCycles = options.totalCycles ?? 1,
+    historicalTraits = [
+      ...new Set([
+        "Respiração anaeróbia",
+        ...(options.historicalTraits ?? []),
+      ]),
+    ],
+    stageIndex = GEOLOGICAL_STAGES.findIndex(
+      (stage) => stage.id === geologicalStage,
+    ),
+    proterozoicIndex = GEOLOGICAL_STAGES.findIndex(
+      (stage) => stage.id === "proterozoic",
+    ),
+    inferredSexualPathogenUnlock =
+      scenario !== "arena" &&
+      historicalTraits.includes("Reprodução Sexuada")
+        ? stageIndex > proterozoicIndex
+          ? totalCycles
+          : stageIndex === proterozoicIndex
+            ? totalCycles + 1
+            : null
+        : null;
   const state = {
     version: STATE_VERSION,
     scenario,
@@ -826,12 +849,7 @@ export function createState(seed = Date.now(), options = {}) {
       originPrelude && (options.geologicalStage ?? "archean") === "hadean"
         ? ["Respiração anaeróbia"]
         : [],
-    historicalTraits: [
-      ...new Set([
-        "Respiração anaeróbia",
-        ...(options.historicalTraits ?? []),
-      ]),
-    ],
+    historicalTraits,
     cyclePositiveInnovations: [
       ...new Set(options.cyclePositiveInnovations ?? []),
     ],
@@ -840,11 +858,12 @@ export function createState(seed = Date.now(), options = {}) {
     logs: [],
     event: null,
     previousEvent: null,
-    geologicalStage: options.geologicalStage ?? "archean",
+    geologicalStage,
     cycle: options.cycle ?? 1,
-    totalCycles: options.totalCycles ?? 1,
+    totalCycles,
     sexualPathogenUnlockTotalCycle:
-      options.sexualPathogenUnlockTotalCycle ?? null,
+      options.sexualPathogenUnlockTotalCycle ??
+      inferredSexualPathogenUnlock,
     hadeanTutorial:
       options.geologicalStage === "hadean"
         ? {
