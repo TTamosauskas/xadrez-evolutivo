@@ -1781,8 +1781,16 @@ const TERRAIN_LOG_LABEL = {
 };
 
 function logBoardChanges(previous, state) {
-  const beforeDeath = new Set((previous.deathSites ?? []).map((site) => site.cell)),
-    afterDeath = new Set((state.deathSites ?? []).map((site) => site.cell)),
+  const beforeOrganic = new Set(
+      (previous.deathSites ?? []).map((site) => site.cell),
+    ),
+    afterOrganic = new Set((state.deathSites ?? []).map((site) => site.cell)),
+    beforeDisturbance = new Set(
+      (previous.captureDisturbances ?? []).map((entry) => entry.cell),
+    ),
+    afterDisturbance = new Set(
+      (state.captureDisturbances ?? []).map((entry) => entry.cell),
+    ),
     beforeBarriers = new Set(previous.barriers ?? []),
     afterBarriers = new Set(state.barriers ?? []),
     changes = [],
@@ -1793,21 +1801,35 @@ function logBoardChanges(previous, state) {
     changedCells.add(cell);
     const r = Math.floor(cell / 8),
       c = cell % 8,
-      decomposition = afterDeath.has(cell) ? " · decomposição" : "";
+      overlay = afterOrganic.has(cell)
+        ? " · matéria orgânica"
+        : afterDisturbance.has(cell)
+          ? " · perturbação"
+          : "";
     changes.push(
-      `${coord(r, c)} ${TERRAIN_LOG_LABEL[previous.board[cell]]}→${TERRAIN_LOG_LABEL[state.board[cell]]}${decomposition}`,
+      `${coord(r, c)} ${TERRAIN_LOG_LABEL[previous.board[cell]]}→${TERRAIN_LOG_LABEL[state.board[cell]]}${overlay}`,
     );
   }
 
-  for (const cell of afterDeath)
-    if (!beforeDeath.has(cell) && !changedCells.has(cell))
+  for (const cell of afterOrganic)
+    if (!beforeOrganic.has(cell) && !changedCells.has(cell))
       changes.push(
-        `${coord(Math.floor(cell / 8), cell % 8)} · decomposição iniciada`,
+        `${coord(Math.floor(cell / 8), cell % 8)} · 💩 matéria orgânica disponível`,
       );
-  for (const cell of beforeDeath)
-    if (!afterDeath.has(cell) && !changedCells.has(cell))
+  for (const cell of beforeOrganic)
+    if (!afterOrganic.has(cell) && !changedCells.has(cell))
       changes.push(
-        `${coord(Math.floor(cell / 8), cell % 8)} · decomposição encerrada`,
+        `${coord(Math.floor(cell / 8), cell % 8)} · matéria orgânica encerrada`,
+      );
+  for (const cell of afterDisturbance)
+    if (!beforeDisturbance.has(cell) && !changedCells.has(cell))
+      changes.push(
+        `${coord(Math.floor(cell / 8), cell % 8)} · perturbação temporária`,
+      );
+  for (const cell of beforeDisturbance)
+    if (!afterDisturbance.has(cell) && !changedCells.has(cell))
+      changes.push(
+        `${coord(Math.floor(cell / 8), cell % 8)} · perturbação encerrada`,
       );
   for (const cell of afterBarriers)
     if (!beforeBarriers.has(cell))
