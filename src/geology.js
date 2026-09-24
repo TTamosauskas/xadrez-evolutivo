@@ -99,7 +99,8 @@ export const GEOLOGICAL_STAGES = [
     required: ["Fotossíntese", "Predação", "Reparo Celular", "Dormência"],
     cycles: [
       ["Fotossíntese", "Predação"],
-      ["Reparo Celular", "Dormência"],
+      ["Reparo Celular"],
+      ["Dormência"],
     ],
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2, grb: 1 },
@@ -1071,11 +1072,16 @@ export function traitUnlocked(state, trait, piece = null) {
     if (!earthTraitWindowAllows(state, current.id, requiredStage.id)) return false;
     if (current.id === requiredStage.id && current.required.includes(trait)) {
       const activeRequired = cycleRequiredInnovations(state),
-        nextRequired = activeRequired.find((candidate) => !history.has(candidate));
+        nextRequired = activeRequired.find((candidate) => !history.has(candidate)),
+        parallelArcheanMetabolism =
+          current.id === "archean" &&
+          (state.cycle ?? 1) === 1 &&
+          ["Fotossíntese", "Predação"].includes(trait);
       if (!history.has(trait)) {
         if (!activeRequired.includes(trait)) return false;
-        if (nextRequired !== trait) return false;
+        if (!parallelArcheanMetabolism && nextRequired !== trait) return false;
       } else if (
+        !parallelArcheanMetabolism &&
         nextRequired &&
         activeRequired.includes(trait) &&
         activeRequired.indexOf(trait) < activeRequired.indexOf(nextRequired)
