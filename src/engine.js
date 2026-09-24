@@ -1395,7 +1395,10 @@ function executeMove(ctx, action) {
       !scavenging &&
       !coprophagy &&
       !recycledFeces &&
-      ((!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay),
+      ((!capture &&
+        terrain(state, p.r, p.c) === "fertile" &&
+        (state.geologicalStage !== "hadean" || target.stay)) ||
+        collectorStay),
     fertile = fertileResource && canUseBasalFertility(p),
     sexualResourceHere =
       !scavenging &&
