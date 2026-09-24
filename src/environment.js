@@ -174,6 +174,7 @@ function addNaturalBarriers(state, count, near = []) {
         ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
         ...state.deathSites.map((site) => site.cell),
         ...state.fertileTraces.map((trace) => trace.cell),
+        ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
         ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
         ...(state.event?.hazards ?? []),
       ]),
@@ -236,60 +237,119 @@ function deathSiteAt(state, cell) {
 function fertileTraceAt(state, cell) {
   return state.fertileTraces.find((t) => t.cell === cell);
 }
-export function hasDecomposition(state, cell) {
+function carcassSiteAt(state, cell) {
+  return state.carcasses.find((entry) => entry.cell === cell);
+}
+export function hasOrganicResidue(state, cell) {
   return !!deathSiteAt(state, cell) || !!fertileTraceAt(state, cell);
 }
-export function consumeDecomposition(state, cell) {
+export const hasFecalResidue = hasOrganicResidue;
+export const hasDecomposition = hasOrganicResidue;
+
+export function consumeOrganicResidue(state, cell) {
   const site = deathSiteAt(state, cell),
-    trace = fertileTraceAt(state, cell),
-    base = site?.base ?? trace?.base;
+    trace = fertileTraceAt(state, cell);
   if (!site && !trace) return false;
   state.deathSites = state.deathSites.filter((d) => d.cell !== cell);
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
-  if (state.event?.hazards.includes(cell))
-    state.event.snapshots[cell] = base ?? "neutral";
-  else state.board[cell] = base ?? "neutral";
   return true;
 }
-export function markDecomposition(state, cell) {
+export const consumeFecalResidue = consumeOrganicResidue;
+export const consumeDecomposition = consumeOrganicResidue;
+
+export function markOrganicResidue(state, cell) {
   const existing = deathSiteAt(state, cell),
     trace = fertileTraceAt(state, cell),
-    eventHazard = state.event?.hazards.includes(cell),
-    visibleTerrain = state.board[cell],
     base =
-      !eventHazard && visibleTerrain === "fertile"
-        ? "fertile"
-        : existing?.base ?? trace?.base ?? visibleTerrain;
-  const dueRound = round(state) + 3;
+      existing?.base ??
+      trace?.base ??
+      (state.event?.hazards.includes(cell)
+        ? state.event.snapshots[cell] ?? "neutral"
+        : state.board[cell]),
+    dueRound = round(state) + 3;
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
+  state.carcasses = state.carcasses.filter((entry) => entry.cell !== cell);
+  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
+    (entry) => entry.cell !== cell,
+  );
+  if (existing) {
+    existing.dueRound = dueRound;
+    existing.base = base;
+    existing.kind = "fecal";
+  } else {
+    state.deathSites.push({ cell, dueRound, base, kind: "fecal" });
+  }
+}
+export const markFecalResidue = markOrganicResidue;
+export const markDecomposition = markOrganicResidue;
+
+export function markCarcass(state, cell) {
+  const existing = carcassSiteAt(state, cell),
+    base =
+      existing?.base ??
+      (state.event?.hazards.includes(cell)
+        ? state.event.snapshots[cell] ?? "neutral"
+        : state.board[cell]),
+    dueRound = round(state) + 3;
+  state.deathSites = state.deathSites.filter((site) => site.cell !== cell);
+  state.fertileTraces = state.fertileTraces.filter((trace) => trace.cell !== cell);
   if (existing) {
     existing.dueRound = dueRound;
     existing.base = base;
   } else {
-    state.deathSites.push({ cell, dueRound, base });
-  }
-  if (eventHazard) {
-    if (!Object.hasOwn(state.event.snapshots, cell))
-      state.event.snapshots[cell] = base;
-  } else {
-    state.board[cell] = base === "fertile" ? "fertile" : "hostile";
+    state.carcasses.push({ cell, dueRound, base });
   }
 }
-function tickDecomposition(state) {
+export function consumeCarcass(state, cell) {
+  if (!carcassSiteAt(state, cell)) return false;
+  state.carcasses = state.carcasses.filter((entry) => entry.cell !== cell);
+  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
+    (entry) => entry.cell !== cell,
+  );
+  return true;
+}
+
+export function markCaptureDisturbance(state, cell, sourceId = null) {
+  state.captureDisturbances ??= [];
+  const existing = state.captureDisturbances.find(
+    (entry) => entry.cell === cell,
+  );
+  const entry = {
+    cell,
+    dueRound: round(state) + 1,
+    base: state.event?.hazards.includes(cell)
+      ? state.event.snapshots[cell] ?? "neutral"
+      : state.board[cell],
+    sourceId,
+  };
+  if (existing) Object.assign(existing, entry);
+  else state.captureDisturbances.push(entry);
+}
+
+function tickOrganicResidue(state) {
   const now = round(state);
-  for (const site of [...state.deathSites]) {
-    const eventHazard = state.event?.hazards.includes(site.cell),
-      preservedFertility = site.base === "fertile";
-    if (now < site.dueRound) {
-      if (!eventHazard)
-        state.board[site.cell] = preservedFertility ? "fertile" : "hostile";
+  state.deathSites = state.deathSites.filter((site) => now < site.dueRound);
+  state.fertileTraces = state.fertileTraces.filter(
+    (trace) => now < (trace.dueRound ?? Number.MAX_SAFE_INTEGER),
+  );
+}
+function tickCarcasses(state) {
+  const now = round(state);
+  state.carcasses = state.carcasses.filter((entry) => now < entry.dueRound);
+}
+function tickCaptureDisturbances(state) {
+  const now = round(state),
+    active = [];
+  for (const entry of state.captureDisturbances ?? []) {
+    if (now < entry.dueRound) {
+      active.push(entry);
       continue;
     }
-    if (eventHazard) state.event.snapshots[site.cell] = preservedFertility ? "fertile" : "neutral";
-    else state.board[site.cell] = preservedFertility ? "fertile" : "neutral";
-    state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== site.cell);
-    state.deathSites = state.deathSites.filter((d) => d.cell !== site.cell);
+    if (state.event?.hazards.includes(entry.cell))
+      state.event.snapshots[entry.cell] = entry.base;
+    else state.board[entry.cell] = entry.base;
   }
+  state.captureDisturbances = active;
 }
 function seedCluster(state, type) {
   const candidates = [];
@@ -337,11 +397,10 @@ function advancePrimordialConway(ctx) {
   if (event)
     for (const [i, base] of Object.entries(event.snapshots))
       state.board[Number(i)] = base;
-  const deathBases = new Map();
-  for (const site of state.deathSites) {
-    deathBases.set(site.cell, state.board[site.cell]);
-    state.board[site.cell] = site.base;
-  }
+  const legacyDeathSites = state.deathSites.filter(
+    (site) => site.kind === undefined,
+  );
+  for (const site of legacyDeathSites) state.board[site.cell] = site.base;
 
   const before = [...state.board],
     hostileNeighbors = (cell) => {
@@ -379,7 +438,7 @@ function advancePrimordialConway(ctx) {
     for (const cell of shuffle(state, hostile).slice(cap))
       state.board[cell] = "neutral";
 
-  for (const site of state.deathSites) {
+  for (const site of legacyDeathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
     if (!event?.hazards.includes(site.cell))
       state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
@@ -396,7 +455,6 @@ function advancePrimordialConway(ctx) {
       const cell = square(piece.r, piece.c);
       return (
         state.board[cell] === "hostile" &&
-        !hasDecomposition(state, cell) &&
         !has(piece, "Voo") &&
         !event?.hazards.includes(cell)
       );
@@ -433,6 +491,7 @@ function habitatDriftCandidates(state, type) {
       ...state.naturalBarriers,
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
+      ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
       ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
     ]),
     current = allCells().filter(
@@ -531,12 +590,15 @@ function advancePatternedHabitat(ctx) {
   if (event)
     for (const [cell, base] of Object.entries(event.snapshots))
       state.board[Number(cell)] = base;
-  for (const site of state.deathSites) state.board[site.cell] = site.base;
+  const legacyDeathSites = state.deathSites.filter(
+    (site) => site.kind === undefined,
+  );
+  for (const site of legacyDeathSites) state.board[site.cell] = site.base;
 
   driftTerrainWithinProfile(state, "fertile", profile);
   driftTerrainWithinProfile(state, "hostile", profile);
 
-  for (const site of state.deathSites) {
+  for (const site of legacyDeathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
     if (!event?.hazards.includes(site.cell))
       state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
@@ -553,7 +615,6 @@ function advancePatternedHabitat(ctx) {
       const cell = square(piece.r, piece.c);
       return (
         state.board[cell] === "hostile" &&
-        !hasDecomposition(state, cell) &&
         !has(piece, "Voo") &&
         !event?.hazards.includes(cell)
       );
@@ -571,7 +632,10 @@ function advanceBlockedConway(ctx) {
   if (event)
     for (const [cell, base] of Object.entries(event.snapshots))
       state.board[Number(cell)] = base;
-  for (const site of state.deathSites) state.board[site.cell] = site.base;
+  const legacyDeathSites = state.deathSites.filter(
+    (site) => site.kind === undefined,
+  );
+  for (const site of legacyDeathSites) state.board[site.cell] = site.base;
 
   const before = [...state.board],
     alive = (cell, type) => {
@@ -632,7 +696,7 @@ function advanceBlockedConway(ctx) {
     }
   }
 
-  for (const site of state.deathSites) {
+  for (const site of legacyDeathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
     if (!event?.hazards.includes(site.cell))
       state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
@@ -649,7 +713,6 @@ function advanceBlockedConway(ctx) {
       const cell = square(piece.r, piece.c);
       return (
         state.board[cell] === "hostile" &&
-        !hasDecomposition(state, cell) &&
         !has(piece, "Voo") &&
         !event?.hazards.includes(cell)
       );
@@ -672,6 +735,38 @@ function markHazard(state, event, indices) {
     if (!event.hazards.includes(i)) event.hazards.push(i);
     state.board[i] = "hostile";
   }
+}
+function markLethalHazard(ctx, event, indices) {
+  const state = ctx.state,
+    lethal = [...new Set(indices)];
+  event.lethalHazards ??= [];
+  for (const cell of lethal) {
+    if (!event.hazards.includes(cell)) markHazard(state, event, [cell]);
+    if (!event.lethalHazards.includes(cell)) event.lethalHazards.push(cell);
+  }
+  const lethalSet = new Set(lethal);
+  state.deathSites = state.deathSites.filter((site) => !lethalSet.has(site.cell));
+  state.fertileTraces = state.fertileTraces.filter(
+    (trace) => !lethalSet.has(trace.cell),
+  );
+  state.carcasses = state.carcasses.filter(
+    (entry) => !lethalSet.has(entry.cell),
+  );
+  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
+    (entry) => !lethalSet.has(entry.cell),
+  );
+  for (const piece of [...state.pieces])
+    if (lethalSet.has(square(piece.r, piece.c)))
+      ctx.kill(piece.id, "ambiente letal", null, true);
+  state.eggs = state.eggs.filter(
+    (egg) => !lethalSet.has(square(egg.r, egg.c)),
+  );
+  state.plantSeeds = state.plantSeeds.filter(
+    (seed) => !lethalSet.has(square(seed.r, seed.c)),
+  );
+  state.fragments = state.fragments.filter(
+    (fragment) => !lethalSet.has(square(fragment.r, fragment.c)),
+  );
 }
 function quadrant(q) {
   return allCells().filter(
@@ -807,10 +902,10 @@ function endEvent(state) {
   if (!state.event) return;
   for (const [i, t] of Object.entries(state.event.snapshots))
     state.board[Number(i)] = t;
+  const lethal = new Set(state.event.lethalHazards ?? []);
+  for (const cell of lethal) state.board[cell] = "neutral";
   state.previousEvent = state.event.id;
   state.event = null;
-  for (const site of state.deathSites)
-    state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
 }
 export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen = true } = {}) {
   const state = ctx.state;
@@ -841,6 +936,7 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
     startRound: round(state),
     startTurn: state.turn,
     hazards: [],
+    lethalHazards: [],
     snapshots: {},
   };
   state.event = event;
@@ -857,6 +953,18 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
             i % 8 < c + 3,
         );
       markHazard(state, event, severeCells(state, core));
+      const center = square(r + 1, c + 1),
+        orthogonalCore = [
+          square(r, c + 1),
+          square(r + 1, c),
+          square(r + 1, c + 2),
+          square(r + 2, c + 1),
+        ],
+        lethalCore = [
+          center,
+          ...shuffle(state, orthogonalCore).slice(0, 3),
+        ];
+      markLethalHazard(ctx, event, lethalCore);
       const removed = removeNaturalBarriers(state, event.hazards),
         created = addNaturalBarriers(state, 2, event.hazards);
       recordBarrierChange(event, created, removed);
@@ -898,8 +1006,10 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
       break;
     case "meteor": {
       const impact = quadrant(Math.floor(random(state) * 4)),
-        blast = severeCells(state, impact);
+        blast = severeCells(state, impact),
+        impactCell = pick(state, impact);
       markHazard(state, event, blast);
+      if (impactCell !== null) markLethalHazard(ctx, event, [impactCell]);
       const removed = removeNaturalBarriers(state, blast),
         created = addNaturalBarriers(state, 1, blast);
       recordBarrierChange(event, created, removed);
@@ -1335,7 +1445,9 @@ export function tickEnvironment(ctx) {
     now = round(state);
 
   tickSevereEventTurn(state);
-  tickDecomposition(state);
+  tickOrganicResidue(state);
+  tickCarcasses(state);
+  tickCaptureDisturbances(state);
   depletePausedFertility(state);
 
   while (

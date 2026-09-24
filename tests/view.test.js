@@ -10,7 +10,7 @@ import {
   round,
 } from "../src/state.js";
 import { fixture } from "./helpers.js";
-import { TRAITS } from "../src/constants.js";
+import { TRAITS, EVENTS } from "../src/constants.js";
 import { render, traitFrameSlots, establishedTraits } from "../src/view.js";
 import { actionableTraitsForPiece } from "../src/actionable-traits.js";
 import { context } from "../src/engine.js";
@@ -155,28 +155,34 @@ test("menu exposes match log and evolutionary history for consultation", () => {
   dom.window.close();
 });
 
-test("ancestral gray King shows Vivificar only after selection", () => {
+test("Hadean gray King shows Vivificar only after selection", () => {
   const dom = setup(),
-    s = createCampaignState(301);
+    s = createCampaignState(301),
+    piece = s.pieces.find((candidate) => candidate.owner === s.current);
 
   render(dom.window.document, s);
   const d = dom.window.document;
-  let origin = d.querySelector(".origin-piece")?.parentElement,
+  let cell = d.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    ),
     legend = d.getElementById("board-legend");
 
-  assert.ok(!origin?.classList.contains("vivification-target"));
-  assert.doesNotMatch(origin?.title ?? "", /Vivificar disponível/);
+  assert.ok(cell.querySelector(".piece.hadean-protocell"));
+  assert.ok(!cell.classList.contains("vivification-target"));
+  assert.doesNotMatch(cell.title ?? "", /Vivificar disponível/);
   assert.doesNotMatch(legend.textContent, /Vivificar/);
 
-  s.origin.selected = true;
-  render(d, s);
-  origin = d.querySelector(".origin-piece")?.parentElement;
+  render(d, s, { selected: piece.id });
+  cell = d.querySelector(
+    `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+  );
   legend = d.getElementById("board-legend");
 
-  assert.ok(origin?.classList.contains("vivification-target"));
-  assert.match(origin?.title ?? "", /Vivificar disponível/);
+  assert.ok(cell.classList.contains("vivification-target"));
+  assert.match(cell.title ?? "", /vivificação disponível: Reprodução/i);
   assert.match(legend.textContent, /Vivificar/);
   assert.ok(legend.querySelector(".legend-action-ring.vivify"));
+  assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 48);
   dom.window.close();
 });
 
@@ -264,7 +270,8 @@ test("board legend only shows terrain elements currently visible", () => {
   s.board[0] = "fertile";
   s.board[1] = "hostile";
   s.barriers = [2];
-  s.deathSites = [{ cell: 3 }];
+  s.deathSites = [{ cell: 3, dueRound: 3, base: "neutral", kind: "fecal" }];
+  s.carcasses = [{ cell: 4, dueRound: 3, base: "neutral" }];
 
   render(dom.window.document, s);
   const legend = dom.window.document.getElementById("board-legend"),
@@ -276,7 +283,8 @@ test("board legend only shows terrain elements currently visible", () => {
     "🟩Casa fértil",
     "🟥Casa hostil",
     "🟫Barreira",
-    "☠️Decomposição",
+    "💩Fezes",
+    "🦴Carcaça",
   ]);
   assert.equal(legend.querySelector(".legend-action-ring"), null);
 
@@ -284,6 +292,7 @@ test("board legend only shows terrain elements currently visible", () => {
   s.board[1] = "neutral";
   s.barriers = [];
   s.deathSites = [];
+  s.carcasses = [];
   render(dom.window.document, s);
   assert.equal(legend.children.length, 0);
   dom.window.close();
@@ -837,7 +846,7 @@ test("actionable mutations appear first, bold and with concise descriptions", ()
   );
   assert.ok(predation.classList.contains("actionable-trait"));
   assert.ok(predation.querySelector("strong"));
-  assert.match(predation.textContent, /Pode capturar peças/);
+  assert.match(predation.textContent, /Se alimenta ao capturar organismos/);
   assert.ok(!resistance.classList.contains("actionable-trait"));
   assert.equal(resistance.querySelector("strong"), null);
   assert.ok(rows.indexOf(predation) < rows.indexOf(resistance));
@@ -894,7 +903,7 @@ test("stationary photosynthesis is actionable even without an explicit action ta
   assert.ok(photosynthesis.querySelector("strong"));
   assert.match(
     photosynthesis.textContent,
-    /3–6 rodadas imóvel/,
+    /Gera alimento em 3–6 rodadas/,
   );
   assert.ok(embryophytes?.classList.contains("actionable-trait"));
   dom.window.close();
@@ -952,6 +961,97 @@ test("stationary environmental effects remain actionable while active", () => {
   assert.ok(actionable.has("Extremófitas"));
 });
 
+test("feces and carcasses use distinct Vivificar routes", () => {
+  let dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Mixotrofia"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0];
+  s.deathSites.push({
+    cell: 36,
+    dueRound: 3,
+    base: "neutral",
+    kind: "fecal",
+  });
+
+  render(dom.window.document, s, { selected: piece.id });
+  let target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
+  assert.ok(target.classList.contains("vivification-target"));
+  assert.match(target.title, /reciclar fezes/);
+  assert.match(target.textContent, /💩/);
+  dom.window.close();
+
+  dom = setup();
+  s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  piece = s.pieces[0];
+  s.carcasses.push({ cell: 36, dueRound: 3, base: "neutral" });
+  s.captureDisturbances.push({
+    cell: 36,
+    dueRound: 1,
+    base: "neutral",
+    sourceId: null,
+  });
+  render(dom.window.document, s, { selected: piece.id });
+  target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
+  assert.ok(target.classList.contains("vivification-target"));
+  assert.match(target.title, /Necrofagia/);
+  assert.match(target.textContent, /🦴/);
+  dom.window.close();
+
+  dom = setup();
+  s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Multicelularismo", "Locomoção Terrestre", "Coprofagia"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  piece = s.pieces[0];
+  s.deathSites.push({
+    cell: 36,
+    dueRound: 3,
+    base: "neutral",
+    kind: "fecal",
+  });
+  render(dom.window.document, s, { selected: piece.id });
+  target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
+  assert.ok(target.classList.contains("vivification-target"));
+  assert.match(target.title, /Coprofagia/);
+  assert.match(target.textContent, /💩/);
+  dom.window.close();
+});
+
+test("lethal hazards render a skull and distinct legend entry", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 6, c: 3 },
+      { owner: "amber", r: 1, c: 4 },
+    ]);
+  s.event = {
+    ...EVENTS.find((event) => event.id === "meteor"),
+    startRound: 0,
+    startTurn: 0,
+    hazards: [27],
+    lethalHazards: [27],
+    snapshots: { 27: "neutral" },
+  };
+  s.board[27] = "hostile";
+  render(dom.window.document, s);
+  const cell = dom.window.document.querySelector('[data-r="3"][data-c="3"]'),
+    legend = dom.window.document.getElementById("board-legend");
+  assert.ok(cell.classList.contains("lethal-hazard"));
+  assert.match(cell.textContent, /☠️/);
+  assert.match(legend.textContent, /☠️Letal/);
+  dom.window.close();
+});
+
 test("Vivificar and targeted Parasitismo use green and red board rings", () => {
   const dom = setup(),
     s = createState(24),
@@ -964,9 +1064,13 @@ test("Vivificar and targeted Parasitismo use green and red board rings", () => {
     "Parasitismo",
   ];
   piece.ancestry = [...piece.traits];
-  s.board[piece.r * 8 + piece.c] = "fertile";
-  enemy.r = piece.r - 1;
-  enemy.c = piece.c;
+  piece.rank = 4;
+  piece.r = 4;
+  piece.c = 4;
+  enemy.r = 3;
+  enemy.c = 4;
+  s.pieces = [piece, enemy];
+  s.board.fill("fertile");
 
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
@@ -1377,7 +1481,7 @@ test("Polegar Opositor renders colored adjacent transfer choices", () => {
   dom.window.close();
 });
 
-test("application UI can play, acknowledge reproduction, save and reset", async () => {
+test("application UI can play Hadean division, acknowledge reproduction, save and reset", async () => {
   const dom = setup(),
     w = dom.window;
   const prior = {
@@ -1390,52 +1494,36 @@ test("application UI can play, acknowledge reproduction, save and reset", async 
     await import("../src/app.js");
     const d = w.document;
     const click = (id) => d.getElementById(id).click();
-    d.querySelector(".origin-piece").parentElement.click();
-    assert.match(d.getElementById("turn").textContent, /Toque novamente/);
-    d.querySelector(".origin-piece").parentElement.click();
-    assert.equal(d.querySelectorAll(".piece").length, 4);
-    d.querySelector(".piece.amber").parentElement.click();
+
+    assert.match(d.getElementById("round").textContent, /Hadeano · Tutorial 0\/3/);
+    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 2);
+
+    const amber = d.querySelector(".piece.amber");
+    amber.parentElement.click();
     assert.match(d.getElementById("selected").textContent, /\(Preto\)/);
     assert.equal(d.querySelectorAll(".cell.legal").length, 0);
-    let turns = 0;
-    while (
-      turns < 40 &&
-      !d.getElementById("turn").textContent.includes("venceram")
-    ) {
-      if (d.querySelector("#notice-dialog[open]")) {
-        click("notice-ok");
-        continue;
-      }
-      const name = d.getElementById("turn").textContent.includes("Brancas")
-        ? "blue"
-        : "amber";
-      let targets = [];
-      for (const p of d.querySelectorAll(`.piece.${name}`)) {
-        p.parentElement.click();
-        targets = [...d.querySelectorAll(".cell.legal")];
-        if (targets.length) break;
-      }
-      if (targets.length)
-        (
-          targets.find((t) => t.classList.contains("fertile")) ?? targets[0]
-        ).click();
-      else click("pass");
-      d.querySelector(".cell.partner")?.click();
-      turns++;
-    }
-    while (d.querySelector("#notice-dialog[open]")) click("notice-ok");
+
+    const blue = d.querySelector(".piece.blue");
+    blue.parentElement.click();
+    const selectedCell = d.querySelector(
+      `[data-r="${blue.parentElement.dataset.r}"][data-c="${blue.parentElement.dataset.c}"]`,
+    );
+    assert.ok(selectedCell.classList.contains("vivification-target"));
+    selectedCell.click();
+
+    if (d.querySelector("#notice-dialog[open]")) click("notice-ok");
+    assert.ok(d.querySelectorAll(".piece.hadean-protocell").length >= 3);
+
     click("menu-button");
     click("save");
     assert.match(d.getElementById("message").textContent, /salva/);
     const saved = d.getElementById("round").textContent;
+
     click("menu-button");
     click("new");
     click("info-ok");
-    assert.match(
-      d.getElementById("round").textContent,
-      /Origem da campanha · antes do 1º Ciclo/,
-    );
-    assert.equal(d.querySelectorAll(".origin-piece").length, 1);
+    assert.match(d.getElementById("round").textContent, /Hadeano · Tutorial 0\/3/);
+    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 2);
     assert.notEqual(d.getElementById("round").textContent, saved);
   } finally {
     globalThis.document = prior.document;

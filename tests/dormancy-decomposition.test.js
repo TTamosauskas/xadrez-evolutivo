@@ -4,7 +4,7 @@ import { fixture, move } from "./helpers.js";
 import { simulate } from "../src/engine.js";
 import { movesFor } from "../src/moves.js";
 
-test("decomposition immunity keeps a dormant predator active after capture", () => {
+test("capture disturbance immunity keeps a dormant predator active after capture", () => {
   let state = fixture([
     {
       owner: "blue",
@@ -21,7 +21,8 @@ test("decomposition immunity keeps a dormant predator active after capture", () 
   state = simulate(state, move(predator, 4, 4));
 
   const survivor = state.pieces.find((piece) => piece.id === predator.id);
-  assert.equal(state.board[36], "hostile");
+  assert.equal(state.board[36], "neutral");
+  assert.equal(state.captureDisturbances[0]?.cell, 36);
   assert.equal(survivor.decompositionImmunity.cell, 36);
   assert.ok(
     movesFor(state, survivor).some(

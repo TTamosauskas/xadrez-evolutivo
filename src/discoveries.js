@@ -16,6 +16,7 @@ const image = {
 };
 
 const geologyRows = [
+  ["hadean", "Hadeano", "O Hadeano representa a Terra mais antiga, com intensa atividade geológica e impactos; no jogo, funciona como um prólogo prebiótico hipotético antes da divergência metabólica.", "Hadeano"],
   ["archean", "Arqueano", "O Arqueano registra uma Terra muito antiga, com crosta consolidada, oceanos primitivos e evidências das primeiras formas de vida.", "Arqueano"],
   ["proterozoic", "Proterozoico", "No Proterozoico, a oxigenação do planeta avançou e a vida eucariótica e multicelular passou a ocupar um papel crescente.", "Proterozoico"],
   ["ediacaran", "Ediacarano", "O Ediacarano preserva comunidades de organismos multicelulares anteriores à grande diversificação animal do Cambriano.", "Ediacarano"],
@@ -109,6 +110,7 @@ const mutationTopics = {
   "Percepção Espacial": ["Percepção espacial", "Integra informações sensoriais sobre posição, direção e distância; no jogo, permite orientar capturas para além da primeira casa da trajetória oficial da peça."],
   "Escavador": ["Escavação animal", "Escavações e galerias produzidas por animais já aparecem no registro fóssil do Ediacarano tardio e alteram fisicamente o substrato."],
   "Necrófago": ["Necrofagia", "Necrofagia é o consumo de matéria animal morta e integra a reciclagem de matéria nos ecossistemas."],
+  Coprofagia: ["Coprofagia", "Coprofagia é o consumo de fezes; em diferentes animais pode recuperar nutrientes e microrganismos que permaneceram no material fecal."],
   "Construtor de Nicho": ["Construção de nicho", "Construção de nicho descreve processos pelos quais organismos modificam o ambiente e alteram pressões seletivas."],
   "Carapaça": ["Carapaça", "Carapaças e estruturas rígidas externas podem oferecer suporte e proteção contra agressões e condições ambientais."],
   "Camuflagem": ["Camuflagem", "Camuflagem reduz a detectabilidade de um organismo por semelhança visual ou outros mecanismos de ocultação."],

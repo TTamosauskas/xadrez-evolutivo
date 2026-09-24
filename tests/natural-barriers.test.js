@@ -4,14 +4,15 @@ import { GEOLOGICAL_STAGES, traitUnlocked } from "../src/geology.js";
 import {
   assertState,
   createState,
+  clone,
   naturalBarrierAt,
 } from "../src/state.js";
 import { movesFor } from "../src/moves.js";
 import { context, simulate } from "../src/engine.js";
-import { startEvent } from "../src/environment.js";
+import { startEvent, tickSevereEventTurn } from "../src/environment.js";
 import { reproduce, tickReproduction } from "../src/reproduction.js";
 import { fixture, move } from "./helpers.js";
-import { square } from "../src/constants.js";
+import { square, EVENTS } from "../src/constants.js";
 
 function connectedFraction(state) {
   const blocked = new Set([...state.barriers, ...state.naturalBarriers]),
@@ -349,6 +350,11 @@ test("severe ecological events make exactly 58 cells hostile and last five turns
     assert.equal(s.event.id, id);
     assert.equal(s.event.hazards.length, 58, id);
     assert.equal(
+      s.event.lethalHazards.length,
+      id === "volcano" ? 4 : id === "meteor" ? 1 : 0,
+      id,
+    );
+    assert.equal(
       s.board.filter((cell) => cell === "hostile").length,
       58,
       id,
@@ -357,3 +363,110 @@ test("severe ecological events make exactly 58 cells hostile and last five turns
     assertState(s);
   }
 });
+
+test("volcano and meteor lethal cells become neutral after the severe event", () => {
+  for (const [id, seed] of [
+    ["volcano", 611],
+    ["meteor", 612],
+  ]) {
+    const s = fixture(
+      [
+        { owner: "blue", r: 7, c: 7, traits: ["Dormência"] },
+        { owner: "amber", r: 0, c: 0, traits: ["Dormência"] },
+      ],
+      seed,
+    );
+    s.board.fill("neutral");
+    startEvent(context(s), id);
+    const lethal = [...s.event.lethalHazards];
+    assert.ok(lethal.length > 0);
+    s.turn = s.event.startTurn + 5;
+    tickSevereEventTurn(s);
+    assert.equal(s.event, null);
+    assert.ok(lethal.every((cell) => s.board[cell] === "neutral"));
+    assertState(s);
+  }
+});
+
+test("lethal event cores bypass Regeneração and destroy existing organisms", () => {
+  const seed = 620,
+    base = fixture(
+      [
+        { owner: "blue", r: 7, c: 7, traits: ["Regeneração"] },
+        { owner: "amber", r: 0, c: 0 },
+      ],
+      seed,
+    ),
+    probe = clone(base);
+  probe.board.fill("neutral");
+  startEvent(context(probe), "meteor");
+  const lethal = probe.event.lethalHazards[0],
+    target = base.pieces[0],
+    rival = base.pieces[1],
+    safe = Array.from({ length: 64 }, (_, cell) => cell).find(
+      (cell) => cell !== lethal,
+    );
+  base.board.fill("neutral");
+  target.r = Math.floor(lethal / 8);
+  target.c = lethal % 8;
+  rival.r = Math.floor(safe / 8);
+  rival.c = safe % 8;
+
+  startEvent(context(base), "meteor");
+  assert.ok(!base.pieces.some((piece) => piece.id === target.id));
+  assert.equal(target.regenerationUsed, undefined);
+  assert.ok(base.event.lethalHazards.includes(lethal));
+  assertState(base);
+});
+
+test("Voo crosses lethal cells but landing on one is fatal even with Regeneração", () => {
+  const eventFor = (cell) => ({
+    ...EVENTS.find((event) => event.id === "meteor"),
+    startRound: 0,
+    startTurn: 0,
+    hazards: [cell],
+    lethalHazards: [cell],
+    snapshots: { [cell]: "neutral" },
+  });
+
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 2,
+      rank: 3,
+      traits: ["Voo", "Regeneração"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const crossing = square(4, 3),
+    flyerId = s.pieces[0].id;
+  s.event = eventFor(crossing);
+  s.board[crossing] = "hostile";
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(
+    s.pieces.some(
+      (piece) => piece.id === flyerId && piece.r === 4 && piece.c === 4,
+    ),
+  );
+
+  s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Voo", "Regeneração"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const landing = square(4, 4),
+    doomed = s.pieces[0];
+  s.event = eventFor(landing);
+  s.board[landing] = "hostile";
+  s = simulate(s, move(doomed, 4, 4));
+  assert.ok(!s.pieces.some((piece) => piece.id === doomed.id));
+  assert.equal(doomed.regenerationUsed, undefined);
+  assertState(s);
+});
+

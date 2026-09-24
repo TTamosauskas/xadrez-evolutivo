@@ -1,4 +1,4 @@
-import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square, has, energyBranch } from "./constants.js";
+import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square, has, energyBranch, canPhotosynthesize } from "./constants.js";
 import {
   at,
   eggAt,
@@ -14,6 +14,10 @@ import {
   reproductionReady,
   ecologicalQuadrant,
   eventBarrierAt,
+  organicResidueAt,
+  carcassAt,
+  captureDisturbanceAt,
+  lethalHazardAt,
 } from "./state.js";
 import {
   currentGeologicalStage,
@@ -250,9 +254,11 @@ export function render(
         ? "Toque novamente no Rei ancestral para iniciar"
         : "Selecione o Rei ancestral"
       : state.result
-        ? state.result.winner
-          ? `${OWNERS[state.result.winner]} venceram`
-          : "Empate"
+        ? state.geologicalStage === "hadean" && !state.result.winner
+          ? "Hadeano concluído"
+          : state.result.winner
+            ? `${OWNERS[state.result.winner]} venceram`
+            : "Empate"
         : `Vez das ${OWNERS[state.current]}${
             busy === "conway"
               ? " · habitat evoluindo…"
@@ -262,6 +268,12 @@ export function render(
           }`;
   const currentRound = round(state),
     geological = currentGeologicalStage(state),
+    hadeanTutorialDone =
+      geological.id === "hadean"
+        ? ["moved", "divided", "captured"].filter(
+            (step) => state.hadeanTutorial?.[step],
+          ).length
+        : 0,
     singleToneTerrain =
       geological.index >= geologicalStage("devonian").index,
     historicalGeneration =
@@ -271,7 +283,9 @@ export function render(
       ? "Origem da campanha · antes do 1º Ciclo"
       : state.scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`
-        : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
+        : geological.id === "hadean"
+          ? `${geological.group} · ${geological.period} · Tutorial ${hadeanTutorialDone}/3 · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"}`
+          : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
   const mobileSummary = $("mobile-selected-summary");
   mobileSummary.replaceChildren();
   mobileSummary.hidden = true;
@@ -287,7 +301,7 @@ export function render(
       symbol = make(
         "span",
         SYMBOLS[actor.owner][actor.rank],
-        `mobile-selected-symbol ${actor.owner}${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
+        `mobile-selected-symbol ${actor.owner}${geological.id === "hadean" && !energyBranch(actor) ? " hadean-protocell" : ""}${has(actor, "Nanismo") ? " nanism" : ""}${has(actor, "Gigantismo") ? " gigantism" : ""}${senescent(state, actor) ? " senescent" : ""}`,
       );
     heading.append(
       symbol,
@@ -419,6 +433,17 @@ export function render(
         eventBarrier = eventBarrierAt(state, r, c),
         barrier = builtBarrier || naturalBarrier || eventBarrier,
         partner = mates.some((m) => m.id === p?.id),
+        fecalResidue = organicResidueAt(state, r, c),
+        carcass = carcassAt(state, r, c),
+        captureDisturbance = captureDisturbanceAt(state, r, c),
+        lethalHazard = lethalHazardAt(state, r, c),
+        organicRecyclingTarget = !!(
+          actor &&
+          targetEntry &&
+          !captureTarget &&
+          fecalResidue &&
+          canPhotosynthesize(actor)
+        ),
         fertileReproductionTarget = !!(
           actor &&
           !captureTarget &&
@@ -436,14 +461,23 @@ export function render(
           reproductionReady(state, actor) &&
           (has(actor, "Necrófago") ||
             has(actor, "Onívoro Oportunista")) &&
-          (state.deathSites.some((site) => site.cell === square(r, c)) ||
-            state.fertileTraces.some((trace) => trace.cell === square(r, c)))
+          !!carcass
+        ),
+        coprophagyReproductionTarget = !!(
+          actor &&
+          targetEntry &&
+          !captureTarget &&
+          reproductionReady(state, actor) &&
+          has(actor, "Coprofagia") &&
+          !!fecalResidue
         ),
         reproductionTarget = !!(
           fertileReproductionTarget ||
           (targetEntry &&
             !captureTarget &&
-            (targetEntry.stay || scavengingReproductionTarget))
+            (targetEntry.stay ||
+              scavengingReproductionTarget ||
+              coprophagyReproductionTarget))
         ),
         selfVivificationTarget = !!(
           actor &&
@@ -452,6 +486,7 @@ export function render(
         ),
         vivificationTarget =
           reproductionTarget ||
+          organicRecyclingTarget ||
           selfVivificationTarget ||
           (originHere && origin?.selected),
         nurse = nursing.some((child) => child.id === p?.id),
@@ -465,9 +500,6 @@ export function render(
           (target) => target.r === r && target.c === c,
         ),
         socialTarget = socialDefense.some((piece) => piece.id === p?.id),
-        deathSite = state.deathSites.find((d) => d.cell === square(r, c)),
-        fertileTrace = state.fertileTraces.some((t) => t.cell === square(r, c)),
-        decompositionMark = deathSite || fertileTrace,
         domainIndex = ecologicalQuadrant(r, c),
         domainQuadrant = state.ecologicalDomain?.active
           ? state.ecologicalDomain.quadrants[domainIndex]
@@ -482,7 +514,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${decompositionMark ? " decomposition" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${domainClass}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${domainClass}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -503,7 +535,7 @@ export function render(
           : "",
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrain}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${vivificationTarget ? selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
+          : `${coord(r, c)}, ${terrain}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${fecalResidue ? ", fezes" : ""}${carcass ? ", carcaça" : ""}${captureDisturbance ? ", perturbação temporária" : ""}${lethalHazard ? ", ambiente letal" : ""}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${vivificationTarget ? selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? ", vivificação disponível: Necrofagia" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
       const accessibleLabel = fragment
         ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
         : label;
@@ -525,8 +557,12 @@ export function render(
           ),
         );
       }
-      if (decompositionMark)
-        cell.append(make("span", "☠️", "decomposition-mark"));
+      if (fecalResidue)
+        cell.append(make("span", "💩", "decomposition-mark organic-residue-mark"));
+      if (carcass)
+        cell.append(make("span", "🦴", "decomposition-mark carcass-mark"));
+      if (lethalHazard)
+        cell.append(make("span", "☠️", "lethal-mark"));
       if (builtBarrier)
         cell.append(make("span", "", "barrier-mark"));
       if (egg)
@@ -560,7 +596,7 @@ export function render(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
+            `piece ${p.owner}${geological.id === "hadean" && !energyBranch(p) ? " hadean-protocell" : ""}${reproductionReady(state, p) ? " reproduction-ready" : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
           ),
         );
 
@@ -652,8 +688,17 @@ export function render(
       boardElement.querySelector(".cell.barrier")
         ? { marker: "🟫", label: "Barreira" }
         : null,
+      boardElement.querySelector(".cell.capture-disturbance")
+        ? { marker: "🟥", label: "Perturbação" }
+        : null,
       boardElement.querySelector(".cell.decomposition")
-        ? { marker: "☠️", label: "Decomposição" }
+        ? { marker: "💩", label: "Fezes" }
+        : null,
+      boardElement.querySelector(".cell.carcass")
+        ? { marker: "🦴", label: "Carcaça" }
+        : null,
+      boardElement.querySelector(".cell.lethal-hazard")
+        ? { marker: "☠️", label: "Letal" }
         : null,
       boardElement.querySelector(
         ".cell.vivification-target, .cell.partner",
@@ -1007,9 +1052,11 @@ export function render(
           "p",
           state.scenario === "arena"
             ? `Arena · Fase ${state.arenaPhase || state.cycle} concluída. As linhagens sobreviventes podem receber até duas substituições de Engenharia Genética.`
-            : progress.required.length
-              ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
-              : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
+            : geological.id === "hadean"
+              ? `Tutorial: ${progress.discovered.length} de ${progress.required.length} fundamentos concluídos — deslocar, dividir e capturar.`
+              : progress.required.length
+                ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
+                : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
           "evolutionary-end-lineages",
         );
       content.append(
@@ -1024,7 +1071,8 @@ export function render(
     } else {
       const progress =
         state.scenario === "arena" ? null : stageProgress(state);
-      $("game-over-title").textContent = "Empate";
+      $("game-over-title").textContent =
+        geological.id === "hadean" ? "Hadeano concluído" : "Empate";
       $("game-over-body").replaceChildren(
         make("p", state.result.reason || "A partida terminou empatada."),
         make(

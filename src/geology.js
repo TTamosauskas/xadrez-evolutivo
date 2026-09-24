@@ -79,6 +79,20 @@ export const SOMATIC_NEGATIVE_TRAITS = new Set(
 
 export const GEOLOGICAL_STAGES = [
   {
+    id: "hadean",
+    group: "Pré-Cambriano",
+    period: "Hadeano",
+    required: [],
+    habitat: {
+      fertile: 64,
+      hostile: 0,
+      founderFertile: true,
+      naturalBarriers: [0, 0],
+      pattern: "primordial",
+    },
+    events: {},
+  },
+  {
     id: "archean",
     group: "Pré-Cambriano",
     period: "Arqueano",
@@ -313,6 +327,7 @@ export const TRAIT_STAGE = {
   Escavador: "ediacaran",
   "Construtor de Nicho": "ediacaran",
   Necrófago: "ediacaran",
+  Coprofagia: "cretaceous",
   Carapaça: "cambrian",
   Camuflagem: "cambrian",
   Veneno: "cambrian",
@@ -455,6 +470,10 @@ export const TRAIT_DEPENDENCIES = {
   "Carnivoria Botânica": { lineage: ["Angiospermas"] },
   Carnívoro: { lineage: ["Predação", "Multicelularismo"] },
   Herbívoro: { lineage: ["Predação", "Multicelularismo"] },
+  Necrófago: { lineage: ["Predação", "Multicelularismo"] },
+  Coprofagia: {
+    lineage: ["Predação", "Multicelularismo", "Locomoção Terrestre"],
+  },
   "Pele grossa": { lineage: ["Herbívoro"] },
   Garras: { lineage: ["Carnívoro"] },
   Canibalismo: { lineage: ["Carnívoro"] },
@@ -563,6 +582,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Escavador",
   "Construtor de Nicho",
   "Necrófago",
+  "Coprofagia",
   "Carapaça",
   "Camuflagem",
   "Veneno",
@@ -674,6 +694,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Vetor Patógeno",
   "Onívoro",
   "Necrófago",
+  "Coprofagia",
   "Ovíparo",
   "Ovíparos Amniotas",
   "Ovovivíparo",
@@ -719,6 +740,8 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Fragmentação: "shared",
   Colônia: "shared",
   "Séssil": "shared",
+  Necrófago: "predation",
+  Coprofagia: "predation",
   "Onívoro Oportunista": "predation",
   "Acasalamento Preferencial": "predation",
   Promiscuidade: "predation",
@@ -732,6 +755,8 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
 
 export const TRAIT_INCOMPATIBILITIES = Object.freeze({
   Fragmentação: ["Vertebrado", "Artrópode", "Ooteca"],
+  Coprofagia: ["Mixotrofia"],
+  Mixotrofia: ["Coprofagia"],
   Vertebrado: ["Fragmentação"],
   "Artrópode": ["Fragmentação"],
   Ooteca: ["Fragmentação"],
@@ -951,6 +976,23 @@ export function missingInnovations(state) {
 }
 
 export function stageProgress(state) {
+  if (currentGeologicalStage(state).id === "hadean") {
+    const tutorial = state.hadeanTutorial ?? {},
+      steps = [
+        ["Deslocar", !!tutorial.moved],
+        ["Dividir", !!tutorial.divided],
+        ["Capturar", !!tutorial.captured],
+      ],
+      required = steps.map(([label]) => label),
+      discovered = steps.filter(([, done]) => done).map(([label]) => label),
+      missing = steps.filter(([, done]) => !done).map(([label]) => label);
+    return {
+      required,
+      discovered,
+      missing,
+      complete: missing.length === 0,
+    };
+  }
   const required = cycleRequiredInnovations(state),
     discovered = required.filter((trait) =>
       (state.historicalTraits ?? []).includes(trait),
@@ -967,8 +1009,9 @@ export function stageProgress(state) {
 }
 
 export function stageComplete(state) {
-  const stage = currentGeologicalStage(state),
-    minimumCycle = stage.cycles?.length ?? 1;
+  const stage = currentGeologicalStage(state);
+  if (stage.id === "hadean") return stageProgress(state).complete;
+  const minimumCycle = stage.cycles?.length ?? 1;
   return (
     (state.cycle ?? 1) >= minimumCycle &&
     missingInnovations(state).length === 0
@@ -1124,6 +1167,10 @@ export function normalizePhotosyntheticRank(profile) {
 
 export function captureUnlocked(state, piece = null) {
   if (!piece) return false;
+  if (currentGeologicalStage(state).id === "hadean")
+    return ["blue", "amber"].every(
+      (owner) => state.pieces.filter((candidate) => candidate.owner === owner).length >= 2,
+    );
   return (
     piece.traits?.includes("Predação") ||
     piece.traits?.includes("Mixotrofia") ||
@@ -1152,6 +1199,7 @@ export function innovationWeight(state, trait, piece = null) {
 }
 
 export function eventWeights(state) {
+  if (currentGeologicalStage(state).id === "hadean") return {};
   const weights = scenarioEventWeights(
     state,
     currentGeologicalStage(state).events,

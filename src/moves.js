@@ -14,6 +14,11 @@ import {
   reproductionReady,
   fertilityPaused,
   ecologicalDomainBlocked,
+  organicResidueAt,
+  carcassAt,
+  captureDisturbanceAt,
+  lethalHazardAt,
+  organicResidueHazardousTo,
 } from "./state.js";
 import {
   captureUnlocked,
@@ -51,10 +56,19 @@ export const regenerationResting = (state, p) =>
 export const decompositionImmune = (state, p) =>
   p?.decompositionImmunity?.cell === square(p.r, p.c) &&
   state.turn <= p.decompositionImmunity.throughTurn;
-export const dormant = (state, p) =>
-  has(p, "Dormência") &&
-  terrain(state, p.r, p.c) === "hostile" &&
-  !decompositionImmune(state, p);
+export const dormant = (state, p) => {
+  const scavengerOnCarcass =
+    !!carcassAt(state, p.r, p.c) &&
+    (has(p, "Necrófago") || has(p, "Onívoro Oportunista"));
+  return (
+    has(p, "Dormência") &&
+    (terrain(state, p.r, p.c) === "hostile" ||
+      (!!captureDisturbanceAt(state, p.r, p.c) && !scavengerOnCarcass) ||
+      (!!organicResidueAt(state, p.r, p.c) &&
+        organicResidueHazardousTo(p))) &&
+    !decompositionImmune(state, p)
+  );
+};
 export const pupating = (state, p) =>
   Number.isInteger(p?.pupaUntilRound) && round(state) < p.pupaUntilRound;
 export const resting = (state, p) =>
@@ -82,7 +96,8 @@ export function manipulationTargets(state) {
         inside(r, c) &&
         terrain(state, r, c) === "neutral" &&
         !ecologicalDomainBlocked(state, parent.owner, r, c) &&
-        !barrierAt(state, r, c)
+        !barrierAt(state, r, c) &&
+        !lethalHazardAt(state, r, c)
       )
         targets.push({ r, c });
     }
@@ -97,6 +112,9 @@ export function constructionTargets(state) {
   const decomposition = new Set([
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
+      ...state.carcasses.map((entry) => entry.cell),
+      ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
+      ...(state.event?.lethalHazards ?? []),
     ]),
     targets = [];
   for (let dr = -1; dr <= 1; dr++)
@@ -134,6 +152,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       !has(p, "Locomoção Terrestre");
   function add(r, c, path, extra = {}) {
     if (!inside(r, c) || ecologicalDomainBlocked(state, p.owner, r, c)) return;
+    if (
+      currentGeologicalStage(state).id === "hadean" &&
+      lethalHazardAt(state, r, c)
+    )
+      return;
     if (
       terrestrialRestriction &&
       !extra.stay &&
@@ -331,7 +354,10 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       }
     } else ray([...ORTH, ...DIAG], captureOnly);
   }
-  const mobile = has(p, "Locomoção Primitiva") && !has(p, "Séssil");
+  const mobile =
+    (currentGeologicalStage(state).id === "hadean" ||
+      has(p, "Locomoção Primitiva")) &&
+    !has(p, "Séssil");
   if (mobile) chessTargets(false);
   else if (!has(p, "Séssil") && captureUnlocked(state, p)) chessTargets(true);
   if (
@@ -530,7 +556,8 @@ function emptyEggTarget(state, r, c, owner = null) {
     !at(state, r, c) &&
     !eggAt(state, r, c) &&
     !plantSeedAt(state, r, c) &&
-    !barrierAt(state, r, c)
+    !barrierAt(state, r, c) &&
+    !lethalHazardAt(state, r, c)
   );
 }
 

@@ -329,6 +329,21 @@ export function expressGenome(
     }
     traits = normalizeActiveTraits(next, energyPreference);
   }
+  if (traits.includes("Coprofagia") && traits.includes("Mixotrofia")) {
+    const previous = new Set(previousTraits ?? []),
+      keep =
+        previous.has("Coprofagia") !== previous.has("Mixotrofia")
+          ? previous.has("Coprofagia")
+            ? "Coprofagia"
+            : "Mixotrofia"
+          : locusStrength(genome.Coprofagia) > locusStrength(genome.Mixotrofia)
+            ? "Coprofagia"
+            : "Mixotrofia";
+    traits = traits.filter(
+      (trait) =>
+        trait !== (keep === "Coprofagia" ? "Mixotrofia" : "Coprofagia"),
+    );
+  }
   return traitCombinationValid(traits)
     ? traits
     : normalizeActiveTraits(traits, energyPreference);

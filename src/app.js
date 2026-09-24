@@ -579,7 +579,9 @@ $("game-over-new").addEventListener("click", () => {
     ? "Transição Evolutiva"
     : "Extinção em Massa";
   $("mass-extinction-copy").textContent = advances
-    ? `As principais inovações de ${stage.period} foram descobertas. Inicia-se ${next.group} · ${next.period}.`
+    ? stage.id === "hadean"
+      ? `Os fundamentos do Hadeano foram aprendidos. O ambiente se estabiliza e inicia-se ${next.group} · ${next.period}, com a divergência entre 🟢 Fotossíntese e 👾 Predação.`
+      : `As principais inovações de ${stage.period} foram descobertas. Inicia-se ${next.group} · ${next.period}.`
     : progress.required.length
       ? `A vida persiste em ${stage.period}. ${progress.discovered.length} de ${progress.required.length} inovação(ões) foram descobertas.`
       : `A vida completa seu ciclo em ${stage.period} e está pronta para a próxima transição.`;

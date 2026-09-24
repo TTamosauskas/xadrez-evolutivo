@@ -357,6 +357,7 @@ const CONTEXT_AFFINITIES = {
   Camuflagem: ["Locomoção Articulada"],
   Veneno: ["Carnívoro"],
   Necrófago: ["Predação"],
+  Coprofagia: ["Locomoção Terrestre"],
   Ooteca: ["Ovíparo"],
   Mimetismo: ["Camuflagem"],
   Sociabilidade: ["Incubação"],

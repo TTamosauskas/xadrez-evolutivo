@@ -20,6 +20,7 @@ import {
   barrierAt,
   CANONICAL_FOUNDER_CELLS,
   earthFounderStarts,
+  lethalHazardAt,
 } from "../src/state.js";
 import {
   context,
@@ -180,8 +181,31 @@ test("first generation-3 habitat update preserves every geological preset", () =
   }
 });
 
-test("aquatic stages stay fully fertile and outside Conway until Ordovician", () => {
-  for (const stage of ["archean", "proterozoic", "ediacaran", "cambrian", "ordovician"]) {
+test("early aquatic stages stay outside Conway while Hadean and early Archean keep compact habitat overlays", () => {
+  const hadean = createCampaignState(898);
+  assert.equal(aquaticFertilityRegime(hadean), true);
+  assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 64);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) =>
+        lethalHazardAt(hadean, r, col),
+      ),
+    ).flat().filter(Boolean).length,
+    48,
+  );
+  assert.deepEqual(hadean.naturalBarriers, []);
+
+  const archean = createState(899, {
+    geologicalStage: "archean",
+    cycle: 1,
+    naturalBarriers: true,
+  });
+  assert.equal(aquaticFertilityRegime(archean), true);
+  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 36);
+  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 28);
+  assert.deepEqual(archean.naturalBarriers, []);
+
+  for (const stage of ["proterozoic", "ediacaran", "cambrian", "ordovician"]) {
     const s = createState(899, {
       geologicalStage: stage,
       naturalBarriers: true,
@@ -206,6 +230,8 @@ test("aquatic stages stay fully fertile and outside Conway until Ordovician", ()
   });
   assert.equal(aquaticFertilityRegime(silurian), false);
   assert.ok(silurian.board.some((cell) => cell !== "fertile"));
+  assertState(hadean);
+  assertState(archean);
   assertState(silurian);
 });
 
@@ -232,42 +258,140 @@ test("consumed aquatic fertility returns after three turns", () => {
   assertState(s);
 });
 
-test("early aquatic habitats stay fully fertile through Ordovician", () => {
-  for (const stage of ["archean", "proterozoic", "ediacaran", "cambrian", "ordovician"]) {
-    const s = createState(811, {
-      geologicalStage: stage,
+test("Archean expands from a 6x6 fertile core to the fully fertile aquatic board", () => {
+  const first = createState(811, {
+      geologicalStage: "archean",
+      cycle: 1,
+      naturalBarriers: true,
+    }),
+    second = createState(812, {
+      geologicalStage: "archean",
+      cycle: 2,
+      totalCycles: 2,
       naturalBarriers: true,
     });
-    assert.equal(s.board.filter((cell) => cell === "fertile").length, 64);
-    assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
-    assert.equal(s.naturalBarriers.length, 0);
-    assertState(s);
-  }
+  assert.equal(first.board.filter((cell) => cell === "fertile").length, 36);
+  assert.equal(first.board.filter((cell) => cell === "hostile").length, 28);
+  assert.equal(second.board.filter((cell) => cell === "fertile").length, 64);
+  assert.equal(second.board.filter((cell) => cell === "hostile").length, 0);
+  assert.equal(first.naturalBarriers.length, 0);
+  assert.equal(second.naturalBarriers.length, 0);
+  assertState(first);
+  assertState(second);
 });
 
-test("ancestral gray King splits into paired photosynthetic and predatory founders", () => {
-  let s = createCampaignState(301);
-  assert.equal(s.phase, "origin");
-  assert.equal(s.pieces.length, 0);
-  assert.ok([27, 28, 35, 36].includes(s.origin.r * 8 + s.origin.c));
-
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  assert.equal(s.origin.selected, true);
-  assert.equal(s.pieces.length, 0);
-  const origin = { r: s.origin.r, c: s.origin.c };
-
-  s = transition(s, { type: "ORIGIN_CLICK" });
+test("Hadean tutorial uses a 4x4 fertile core with two gray basal Kings and no mutations", () => {
+  const s = createCampaignState(301);
+  assert.equal(s.geologicalStage, "hadean");
   assert.equal(s.phase, "move");
   assert.equal(s.origin, null);
-  assert.equal(s.pieces.length, 4);
+  assert.equal(s.pieces.length, 2);
   assert.ok(s.pieces.every((piece) => piece.rank === 4));
   assert.ok(
-    s.pieces.every((piece) => piece.traits.includes("Respiração anaeróbia")),
+    s.pieces.every(
+      (piece) =>
+        piece.traits.length === 1 &&
+        piece.traits.includes("Respiração anaeróbia"),
+    ),
+  );
+  assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
+  assert.equal(s.historicalTraits.includes("Predação"), false);
+  assert.deepEqual(s.hadeanTutorial, {
+    moved: false,
+    divided: false,
+    captured: false,
+  });
+
+  const legal = movesFor(s, s.pieces.find((piece) => piece.owner === "blue"));
+  assert.ok(legal.some((target) => !target.stay && !target.capture));
+  assert.ok(legal.some((target) => target.stay));
+  assert.ok(
+    legal.every(
+      (target) =>
+        target.r >= 2 && target.r <= 5 && target.c >= 2 && target.c <= 5,
+    ),
+  );
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) =>
+        lethalHazardAt(s, r, col),
+      ),
+    ).flat().filter(Boolean).length,
+    48,
+  );
+  assertState(s);
+});
+
+test("Hadean tutorial unlocks capture after both sides divide and then founds Archean energy branches", () => {
+  let s = createCampaignState(302);
+  const blue0 = s.pieces.find((piece) => piece.owner === "blue");
+  s = simulate(s, move(blue0, 4, 3));
+  assert.equal(s.hadeanTutorial.moved, true);
+
+  let amber = s.pieces.find((piece) => piece.owner === "amber");
+  s = simulate(s, move(amber, amber.r, amber.c));
+  assert.equal(s.hadeanTutorial.divided, true);
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "amber").length,
+    2,
   );
 
+  let blue = s.pieces.find((piece) => piece.owner === "blue");
+  s = simulate(s, move(blue, blue.r, blue.c));
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    2,
+  );
+  assert.ok(
+    s.pieces.every(
+      (piece) =>
+        piece.traits.length === 1 &&
+        piece.traits.includes("Respiração anaeróbia"),
+    ),
+  );
+  assert.deepEqual(s.seenMutations, []);
+
+  amber = s.pieces.find((piece) => piece.owner === "amber");
+  blue = s.pieces.find((piece) => piece.owner === "blue");
+  const others = s.pieces.filter(
+    (piece) => piece.id !== amber.id && piece.id !== blue.id,
+  );
+  amber.r = 3;
+  amber.c = 3;
+  blue.r = 4;
+  blue.c = 4;
+  if (others[0]) {
+    others[0].r = 2;
+    others[0].c = 2;
+  }
+  if (others[1]) {
+    others[1].r = 5;
+    others[1].c = 5;
+  }
+
+  assert.ok(
+    movesFor(s, amber).some(
+      (target) => target.r === 4 && target.c === 4 && target.capture,
+    ),
+  );
+  s = simulate(s, move(amber, 4, 4));
+  assert.equal(s.hadeanTutorial.captured, true);
+  assert.equal(s.phase, "over");
+  assert.equal(s.result.winner, null);
+  assert.match(s.result.reason, /Hadeano concluído/);
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.deathSites.length, 0);
+
+  const archean = createSuccessorState(s, 303);
+  assert.equal(archean.geologicalStage, "archean");
+  assert.equal(archean.cycle, 1);
+  assert.equal(archean.totalCycles, 1);
+  assert.equal(archean.hadeanTutorial, null);
+  assert.equal(archean.pieces.length, 4);
+  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 36);
+  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 28);
   for (const owner of ["blue", "amber"]) {
-    const founders = s.pieces.filter((piece) => piece.owner === owner);
-    assert.equal(founders.length, 2);
+    const founders = archean.pieces.filter((piece) => piece.owner === owner);
     assert.equal(
       founders.filter((piece) => piece.traits.includes("Fotossíntese")).length,
       1,
@@ -276,27 +400,8 @@ test("ancestral gray King splits into paired photosynthetic and predatory founde
       founders.filter((piece) => piece.traits.includes("Predação")).length,
       1,
     );
-    for (const piece of founders) {
-      const vector = [piece.r - origin.r, piece.c - origin.c];
-      assert.equal(Math.max(Math.abs(vector[0]), Math.abs(vector[1])), 1);
-      assert.equal(s.board[piece.r * 8 + piece.c], "fertile");
-    }
   }
-
-  const blue = s.pieces.filter((piece) => piece.owner === "blue"),
-    amber = s.pieces.filter((piece) => piece.owner === "amber");
-  assert.ok(blue.every((piece) => piece.r >= 4));
-  assert.ok(amber.every((piece) => piece.r <= 3));
-  for (const piece of blue) {
-    assert.ok(
-      amber.some(
-        (opposite) =>
-          opposite.r - origin.r === -(piece.r - origin.r) &&
-          opposite.c - origin.c === -(piece.c - origin.c),
-      ),
-    );
-  }
-  assertState(s);
+  assertState(archean);
 });
 
 test("compact non-canonical cycle starts keep Brancas on the lower half", () => {
@@ -313,11 +418,9 @@ test("compact non-canonical cycle starts keep Brancas on the lower half", () => 
   }
 });
 
-test("ancestral split keeps Brancas below across origin seeds", () => {
+test("Hadean founders keep Brancas below and Pretas above across seeds", () => {
   for (let seed = 1; seed <= 24; seed++) {
-    let s = createCampaignState(seed);
-    s = transition(s, { type: "ORIGIN_CLICK" });
-    s = transition(s, { type: "ORIGIN_CLICK" });
+    const s = createCampaignState(seed);
     assert.ok(
       s.pieces
         .filter((piece) => piece.owner === "blue")
@@ -1538,7 +1641,13 @@ test("basal predation keeps one replacement birth above the population threshold
 
 test("predation creates at most one descendant and none once population pressure starts", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Multicelularismo", "Carnívoro"],
+    },
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -1616,7 +1725,7 @@ test("Multicelularismo gates childhood and introduces progressive senescence", (
   assertState(s);
 });
 
-test("natural death is certain at age 48, bypasses Regeneração and leaves decomposition", () => {
+test("natural death is certain at age 48, bypasses Regeneração and leaves no trophic residue", () => {
   const s = fixture([
       {
         owner: "blue",
@@ -1634,7 +1743,8 @@ test("natural death is certain at age 48, bypasses Regeneração and leaves deco
   assert.equal(applyNaturalDeaths(context(s)), 1);
   assert.ok(!s.pieces.some((piece) => piece.id === elder.id));
   assert.equal(elder.regenerationUsed, undefined);
-  assert.ok(s.deathSites.some((site) => site.cell === 36));
+  assert.equal(s.deathSites.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
   assert.ok(s.logs.some((entry) => entry.text.includes("morte natural aos 48")));
   assertState(s);
 });
@@ -1913,193 +2023,197 @@ test("Onívoro uses fertile cells and gains predatory reproduction from either p
   }
   assertState(s);
 });
-test("Necrófago consumes red and green decomposition to reproduce", () => {
-  let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago", "Voo"] },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s.board[36] = "hostile";
-  s.deathSites.push({ cell: 36, dueRound: 3, base: "neutral" });
-  s.rng = 1000;
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
-  assert.equal(s.deathSites.length, 0);
-  assert.equal(s.board[36], "neutral");
-
-  s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s.board[36] = "fertile";
-  s.fertileTraces.push({ cell: 36, clearAfterTurn: 0, base: "neutral" });
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
-  assert.equal(s.fertileTraces.length, 0);
-  assert.equal(s.board[36], "neutral");
-  assertState(s);
+test("Necrófago consumes carcass without changing its underlying terrain", () => {
+  for (const terrainType of ["hostile", "fertile"]) {
+    let s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 3,
+        rank: 3,
+        traits: ["Necrófago", ...(terrainType === "hostile" ? ["Voo"] : [])],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]);
+    s.board[36] = terrainType;
+    s.carcasses.push({
+      cell: 36,
+      dueRound: 3,
+      base: terrainType,
+    });
+    s.rng = 1000;
+    s = simulate(s, move(s.pieces[0], 4, 4));
+    assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
+    assert.equal(s.carcasses.length, 0);
+    assert.equal(s.board[36], terrainType);
+    assertState(s);
+  }
 });
-test("Necrófago cannot consume the carcass created by its own capture immediately", () => {
+
+test("capture without trophic reproduction leaves a one-round disturbance", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
-  assert.equal(s.deathSites.length, 1);
-  assert.equal(s.board[36], "hostile");
+  const attacker = s.pieces.find((piece) => piece.id === 1),
+    disturbance = s.captureDisturbances[0];
+  assert.equal(s.deathSites.length, 0);
+  assert.equal(s.carcasses[0]?.cell, 36);
+  assert.equal(s.carcasses[0]?.dueRound, 3);
+  assert.equal(disturbance.cell, 36);
+  assert.equal(disturbance.dueRound, 1);
+  assert.equal(disturbance.sourceId, attacker.id);
+  assert.equal(s.board[36], "neutral");
+  assert.equal(attacker.decompositionImmunity.cell, 36);
+
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.ok(s.pieces.some((piece) => piece.id === attacker.id));
   assertState(s);
 });
-test("capture on fertile terrain preserves fertility while decomposition remains available", () => {
+
+test("capture disturbance preserves fertile terrain underneath", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
-
   s = simulate(s, move(s.pieces[0], 4, 4));
-  const attacker = s.pieces.find((piece) => piece.id === 1),
-    site = s.deathSites[0];
-  assert.equal(site.cell, 36);
-  assert.equal(site.base, "fertile");
-  assert.equal(site.dueRound, 3);
+  assert.equal(s.deathSites.length, 0);
+  assert.equal(s.carcasses[0]?.cell, 36);
+  assert.equal(s.carcasses[0]?.base, "fertile");
+  assert.equal(s.captureDisturbances[0]?.cell, 36);
+  assert.equal(s.captureDisturbances[0]?.base, "fertile");
   assert.equal(s.board[36], "fertile");
-  assert.equal(attacker.decompositionImmunity, undefined);
+  assertState(s);
+});
+
+test("successful multicellular predatory reproduction leaves feces for three rounds", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parentId = s.pieces[0].id;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  const site = s.deathSites[0];
+  assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
+  assert.equal(site?.cell, 36);
+  assert.equal(site?.kind, "fecal");
+  assert.equal(site?.dueRound, 3);
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.equal(s.board[36], "neutral");
 
   s.turn = 4;
   tickEnvironment(context(s));
-  assert.equal(s.board[36], "fertile");
   assert.equal(s.deathSites.length, 1);
-
   s.turn = 6;
   tickEnvironment(context(s));
-  assert.equal(s.board[36], "fertile");
   assert.equal(s.deathSites.length, 0);
-  assert.equal(s.fertileTraces.length, 0);
+  assert.equal(s.board[36], "neutral");
   assertState(s);
 });
 
-test("Necrófago consumes fertile decomposition without consuming the fertile terrain", () => {
+test("photosynthetic occupancy recycles feces during settlement", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
+    { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  s.board[36] = "fertile";
-  s.deathSites.push({ cell: 36, dueRound: 3, base: "fertile" });
+  s.deathSites.push({
+    cell: 36,
+    dueRound: 3,
+    base: "neutral",
+    kind: "fecal",
+  });
+  assert.equal(s.board[36], "neutral");
 
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
+  s = simulate(s, { type: "PASS" });
+
   assert.equal(s.deathSites.length, 0);
   assert.equal(s.board[36], "fertile");
+  assert.ok(
+    s.logs.some((entry) => entry.text.includes("fezes recicladas")),
+  );
   assertState(s);
 });
 
-test("capture on hostile terrain resolves the victim before hostile landing risk", () => {
+test("Mixotrofia automatically recycles feces into fertility on entry", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Mixotrofia"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.deathSites.push({
+    cell: 36,
+    dueRound: 3,
+    base: "neutral",
+    kind: "fecal",
+  });
+  const before = s.pieces.filter((piece) => piece.owner === "blue").length;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.deathSites.length, 0);
+  assert.equal(s.board[36], "fertile");
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    before,
+  );
+  assert.ok(
+    s.logs.some((entry) => entry.text.includes("fezes recicladas")),
+  );
+  assertState(s);
+});
+
+test("Coprofagia consumes feces for exactly one descendant without consuming fertile terrain", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 4,
       c: 3,
       rank: 3,
-      traits: ["Predação", "Locomoção"],
+      traits: [
+        "Multicelularismo",
+        "Locomoção Terrestre",
+        "Coprofagia",
+      ],
     },
-    { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  const attackerId = s.pieces[0].id,
-    victimId = s.pieces[1].id;
-  s.board[36] = "hostile";
-  s.rng = 1;
-
+  s.board[36] = "fertile";
+  s.deathSites.push({
+    cell: 36,
+    dueRound: 3,
+    base: "fertile",
+    kind: "fecal",
+  });
+  const before = s.pieces.filter((piece) => piece.owner === "blue").length;
   s = simulate(s, move(s.pieces[0], 4, 4));
-
-  assert.ok(!s.pieces.some((piece) => piece.id === victimId));
-  assert.ok(!s.pieces.some((piece) => piece.id === attackerId));
-  assert.ok(
-    s.logs.some(
-      (entry) =>
-        entry.text.includes("Pretas perderam uma peça por captura"),
-    ),
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    before + 1,
   );
-  assert.ok(
-    s.logs.some(
-      (entry) =>
-        entry.text.includes("Brancas perderam uma peça por casa hostil após captura"),
-    ),
-  );
-  assertState(s);
-});
-
-test("capture creates hostile decomposition, protects attacker and restores neutral terrain after three rounds", () => {
-  let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3 },
-    { owner: "amber", r: 4, c: 4 },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  const attacker = s.pieces.find((p) => p.id === 1),
-    site = s.deathSites[0];
-  assert.equal(site.cell, 36);
-  assert.equal(site.dueRound, 3);
-  assert.equal(s.board[36], "hostile");
-  assert.equal(attacker.decompositionImmunity.cell, 36);
-  assert.equal(attacker.decompositionImmunity.throughTurn, 3);
-  assert.ok(
-    s.logs.some(
-      (entry) =>
-        entry.text.startsWith("🗺️ Tabuleiro:") &&
-        entry.text.includes("decomposição"),
-    ),
-  );
-
-  s.rng = 1;
-  s = simulate(s, { type: "PASS" });
-  assert.ok(s.pieces.some((p) => p.id === attacker.id));
-  assert.equal(s.turn, 2);
-  s = simulate(s, { type: "PASS" });
-  assert.ok(s.pieces.some((p) => p.id === attacker.id));
-  s.rng = 1;
-  s = simulate(s, { type: "PASS" });
-  assert.ok(!s.pieces.some((p) => p.id === attacker.id));
-
-  s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3 },
-    { owner: "amber", r: 4, c: 4 },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  s.turn = 4;
-  tickEnvironment(context(s));
-  assert.equal(s.board[36], "hostile");
-  assert.equal(s.deathSites.length, 1);
-  s.turn = 6;
-  tickEnvironment(context(s));
-  assert.equal(s.board[36], "neutral");
   assert.equal(s.deathSites.length, 0);
+  assert.equal(s.board[36], "fertile");
   assertState(s);
 });
-test("capture decomposition never bypasses immunity during Conway habitat updates", () => {
+
+test("Necrófago removes the red disturbance when consuming its carcass", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3 },
-    { owner: "amber", r: 4, c: 4 },
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  s.nextHabitatGeneration = 3;
-  s.maxGenerationReached = 3;
-
+  s.carcasses.push({ cell: 36, dueRound: 3, base: "neutral" });
+  s.captureDisturbances.push({
+    cell: 36,
+    dueRound: 1,
+    base: "neutral",
+    sourceId: null,
+  });
   s = simulate(s, move(s.pieces[0], 4, 4));
-  const attackerId = 1;
-  assert.ok(s.pieces.some((p) => p.id === attackerId));
-  assert.equal(s.board[36], "hostile");
-  assert.equal(s.deathSites[0].cell, 36);
-
-  s = simulate(s, { type: "PASS" });
-  assert.ok(
-    s.pieces.some((p) => p.id === attackerId),
-    "Conway must not kill a piece on a temporary decomposition overlay",
-  );
-  assert.equal(s.board[36], "hostile");
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
   assertState(s);
 });
 
@@ -2786,7 +2900,7 @@ test("Espinhos has a one-in-ten chance to kill the aggressor on a capture attemp
   s = simulate(s, move(attacker, 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === attacker.id));
   assert.ok(s.pieces.some((piece) => piece.id === defender.id));
-  assert.ok(s.deathSites.some((site) => site.cell === 35));
+  assert.ok(s.captureDisturbances.some((entry) => entry.cell === 35));
   assertState(s);
 });
 
@@ -3107,7 +3221,7 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
   const survivor = s.pieces.find((piece) => piece.id === king.id);
   assert.deepEqual([survivor.r, survivor.c], [4, 4]);
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
-  assert.ok(s.deathSites.some((site) => site.cell === 36));
+  assert.ok(s.captureDisturbances.some((entry) => entry.cell === 36));
   assert.equal(survivor.decompositionImmunity.cell, 36);
   assertState(s);
 
@@ -3206,7 +3320,7 @@ test("Chifre can kill an unarmored aggressor before capture", () => {
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === 1));
   assert.ok(s.pieces.some((piece) => piece.id === 2 && piece.r === 4 && piece.c === 4));
-  assert.ok(s.deathSites.some((site) => site.cell === 35));
+  assert.ok(s.captureDisturbances.some((entry) => entry.cell === 35));
   assertState(s);
 });
 

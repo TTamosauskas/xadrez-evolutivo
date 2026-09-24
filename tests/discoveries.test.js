@@ -14,19 +14,20 @@ import {
 } from "../src/discoveries.js";
 import {
   assertState,
+  createCampaignState,
   createPeriodState,
   createState,
   createSuccessorState,
 } from "../src/state.js";
 
-test("new campaigns start with an unread Archean discovery", () => {
-  const state = createState(201);
-  assert.deepEqual(state.discoveries.geology, ["archean"]);
+test("new campaigns start with an unread Hadean discovery", () => {
+  const state = createCampaignState(201);
+  assert.deepEqual(state.discoveries.geology, ["hadean"]);
   assert.equal(unreadDiscoveries(state), 2);
-  assert.equal(isDiscoveryUnread(state, "geology", "archean"), true);
-  assert.equal(markDiscoveryRead(state, "geology", "archean"), true);
+  assert.equal(isDiscoveryUnread(state, "geology", "hadean"), true);
+  assert.equal(markDiscoveryRead(state, "geology", "hadean"), true);
   assert.equal(unreadDiscoveries(state), 1);
-  assert.equal(markDiscoveryRead(state, "geology", "archean"), false);
+  assert.equal(markDiscoveryRead(state, "geology", "hadean"), false);
 });
 
 test("discoveries are unique and counted by category", () => {
@@ -44,18 +45,17 @@ test("discoveries are unique and counted by category", () => {
   );
 });
 
-test("advancing geological stage creates a new unread era entry", () => {
-  const state = createState(203);
-  markDiscoveryRead(state, "geology", "archean");
-  state.cycle = 2;
-  state.historicalTraits = [...GEOLOGICAL_STAGES[0].required];
-  state.result = { winner: "blue", reason: "teste" };
+test("advancing from Hadean creates a new unread Archean entry", () => {
+  const state = createCampaignState(203);
+  markDiscoveryRead(state, "geology", "hadean");
+  state.hadeanTutorial = { moved: true, divided: true, captured: true };
+  state.result = { winner: null, reason: "teste" };
   state.phase = "over";
   const next = createSuccessorState(state, 204);
-  assert.equal(next.geologicalStage, "proterozoic");
-  assert.deepEqual(next.discoveries.geology, ["archean", "proterozoic"]);
-  assert.equal(isDiscoveryUnread(next, "geology", "archean"), false);
-  assert.equal(isDiscoveryUnread(next, "geology", "proterozoic"), true);
+  assert.equal(next.geologicalStage, "archean");
+  assert.deepEqual(next.discoveries.geology, ["hadean", "archean"]);
+  assert.equal(isDiscoveryUnread(next, "geology", "hadean"), false);
+  assert.equal(isDiscoveryUnread(next, "geology", "archean"), true);
 });
 
 test("catalog covers every geological stage event and named mutation", () => {
@@ -93,9 +93,17 @@ test("each geological discovery can launch the first cycle with prior winners re
     const s = createPeriodState(stage.id, 300 + index);
     assert.equal(s.geologicalStage, stage.id);
     assert.equal(s.cycle, 1);
-    if (index === 0) {
-      assert.equal(s.phase, "origin");
-      assert.equal(s.pieces.length, 0);
+    if (stage.id === "hadean") {
+      assert.equal(s.phase, "move");
+      assert.equal(s.pieces.length, 2);
+      assert.ok(
+        s.pieces.every(
+          (piece) =>
+            piece.rank === 4 &&
+            !piece.traits.includes("Fotossíntese") &&
+            !piece.traits.includes("Predação"),
+        ),
+      );
     } else {
       assert.equal(s.phase, "move");
       assert.equal(s.pieces.length, 4);
@@ -112,10 +120,9 @@ test("each geological discovery can launch the first cycle with prior winners re
         assert.ok(s.historicalTraits.includes(trait), trait);
       const currentIndex = stage.index;
       for (const trait of s.historicalTraits) {
-        const source = GEOLOGICAL_STAGES.find(
-          (candidate) =>
-            candidate.required.includes(trait) ||
-            candidate.id === "archean" && trait === "Respiração anaeróbia",
+        if (trait === "Respiração anaeróbia") continue;
+        const source = GEOLOGICAL_STAGES.find((candidate) =>
+          candidate.required.includes(trait),
         );
         if (source) assert.ok(source.index < currentIndex, trait);
       }
@@ -129,6 +136,10 @@ test("every geological period offers at least one severe stagnation event", asyn
   for (const [index, stage] of GEOLOGICAL_STAGES.entries()) {
     const s = createPeriodState(stage.id, 500 + index),
       event = severeEventForStage(s);
+    if (stage.id === "hadean") {
+      assert.equal(event, null);
+      continue;
+    }
     assert.ok(event, stage.id);
     assert.ok(["ice", "volcano", "meteor", "grb", "warming"].includes(event.id), stage.id);
     assert.ok((stage.events[event.id] ?? 0) > 0, stage.id);

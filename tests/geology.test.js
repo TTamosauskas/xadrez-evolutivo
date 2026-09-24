@@ -53,6 +53,7 @@ test("period innovations follow the didactic sequence", () => {
   const required = Object.fromEntries(
     GEOLOGICAL_STAGES.map((stage) => [stage.id, stage.required]),
   );
+  assert.deepEqual(required.hadean, []);
   assert.deepEqual(required.archean, [
     "Fotossíntese",
     "Predação",
@@ -223,14 +224,14 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
   assert.ok(eventWeights(proterozoic).pathogen > 0);
 });
 
-test("Archean starts green and stationary", () => {
-  const s = createState(101);
-  assert.equal(s.version, 17);
+test("first Archean cycle starts with a fertile 6x6 core and hostile border", () => {
+  const s = createPeriodState("archean", 101, null, "earth");
+  assert.equal(s.version, 18);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
-  assert.equal(fertile, 64);
-  assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 0);
+  assert.equal(fertile, 36);
+  assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 28);
   assert.deepEqual(s.naturalBarriers, []);
   const actions = movesFor(s, s.pieces[0]);
   assert.ok(actions.length > 0);
@@ -1085,6 +1086,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     "Respiração Cutânea",
     "Sacos Aéreos",
     "Necrófago",
+    "Coprofagia",
     "Ovíparo",
     "Ovíparos Amniotas",
     "Vivíparo",
@@ -1115,6 +1117,7 @@ test("switching into Fotossíntese removes animal-only traits", () => {
     "Carnívoro",
     "Onívoro",
     "Necrófago",
+    "Coprofagia",
     "Voo",
     "Chifre",
     "Construtor de Nicho",
@@ -1124,6 +1127,47 @@ test("switching into Fotossíntese removes animal-only traits", () => {
   assert.deepEqual(applyTraitMutation(animal, "Fotossíntese"), [
     "Fotossíntese",
   ]);
+});
+
+test("Coprofagia is a Cretaceous predatory specialization incompatible with Mixotrofia", () => {
+  const s = createState(118, {
+      geologicalStage: "cretaceous",
+      historicalTraits: ["Predação", "Multicelularismo", "Locomoção Terrestre"],
+    }),
+    eligible = {
+      traits: ["Predação", "Multicelularismo", "Locomoção Terrestre"],
+      ancestry: ["Predação", "Multicelularismo", "Locomoção Terrestre"],
+    },
+    aquatic = {
+      traits: ["Predação", "Multicelularismo"],
+      ancestry: ["Predação", "Multicelularismo"],
+    },
+    mixotroph = {
+      traits: [
+        "Predação",
+        "Multicelularismo",
+        "Locomoção Terrestre",
+        "Mixotrofia",
+      ],
+      ancestry: [
+        "Predação",
+        "Multicelularismo",
+        "Locomoção Terrestre",
+        "Mixotrofia",
+      ],
+    };
+
+  assert.equal(TRAIT_STAGE.Coprofagia, "cretaceous");
+  assert.equal(traitUnlocked(s, "Coprofagia", eligible), true);
+  assert.equal(traitUnlocked(s, "Coprofagia", aquatic), false);
+  assert.equal(traitUnlocked(s, "Coprofagia", mixotroph), false);
+
+  const mutated = applyTraitMutation(
+    ["Predação", "Multicelularismo", "Locomoção Terrestre", "Mixotrofia"],
+    "Coprofagia",
+  );
+  assert.ok(mutated.includes("Coprofagia"));
+  assert.ok(!mutated.includes("Mixotrofia"));
 });
 
 test("Paleogene is a one-cycle transition stage", () => {
@@ -1254,9 +1298,10 @@ test("Parasitismo becomes available in the Cambrian only outside the photosynthe
 test("Multicelularismo is required for complex traits and cannot be lost while they remain", () => {
   const s = createState(143, {
       geologicalStage: "ediacaran",
-      historicalTraits: GEOLOGICAL_STAGES.slice(0, 3).flatMap(
-        (stage) => stage.required,
-      ),
+      historicalTraits: GEOLOGICAL_STAGES.slice(
+        0,
+        GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "ediacaran") + 1,
+      ).flatMap((stage) => stage.required),
     }),
     simple = { traits: ["Predação"], ancestry: ["Predação"] },
     complex = {

@@ -86,6 +86,29 @@ export const barrierAt = (state, r, c) =>
   naturalBarrierAt(state, r, c) ||
   eventBarrierAt(state, r, c);
 export const terrain = (state, r, c) => state.board[square(r, c)];
+export const organicResidueAt = (state, r, c) => {
+  const cell = square(r, c);
+  return (
+    state.deathSites?.find((site) => site.cell === cell) ??
+    state.fertileTraces?.find((trace) => trace.cell === cell) ??
+    null
+  );
+};
+export const fecalResidueAt = organicResidueAt;
+export const carcassAt = (state, r, c) =>
+  state.carcasses?.find((entry) => entry.cell === square(r, c)) ?? null;
+export const captureDisturbanceAt = (state, r, c) =>
+  state.captureDisturbances?.find((entry) => entry.cell === square(r, c)) ??
+  null;
+export const hadeanPlayableCell = (r, c) =>
+  r >= 2 && r <= 5 && c >= 2 && c <= 5;
+export const lethalHazardAt = (state, r, c) =>
+  (state.geologicalStage === "hadean" && !hadeanPlayableCell(r, c)) ||
+  (state.event?.lethalHazards?.includes(square(r, c)) ?? false);
+export const organicResidueHazardousTo = (piece) =>
+  !!piece &&
+  !canPhotosynthesize(piece) &&
+  !has(piece, "Coprofagia");
 export const round = (state) => Math.floor(state.turn / 2);
 export const ECOLOGICAL_DOMAIN_START_TURN = 200;
 export const ECOLOGICAL_DOMAIN_REQUIRED_TURNS = 3;
@@ -144,6 +167,8 @@ export function restoreAquaticFertility(state) {
       state.barriers?.includes(entry.cell) ||
       state.naturalBarriers?.includes(entry.cell) ||
       state.deathSites?.some((site) => site.cell === entry.cell) ||
+      state.carcasses?.some((site) => site.cell === entry.cell) ||
+      state.captureDisturbances?.some((item) => item.cell === entry.cell) ||
       state.event?.hazards?.includes(entry.cell)
     )
       return true;
@@ -571,6 +596,16 @@ function seedSilurianCoast(state, profile, founderCells) {
 function seedHabitat(state) {
   const profile = habitatProfile(state),
     pattern = profile.pattern ?? "mosaic";
+  if (state.geologicalStage === "hadean") {
+    state.board.fill("fertile");
+    return;
+  }
+  if (state.geologicalStage === "archean" && state.cycle === 1) {
+    state.board.fill("hostile");
+    for (let r = 1; r <= 6; r++)
+      for (let c = 1; c <= 6; c++) state.board[square(r, c)] = "fertile";
+    return;
+  }
   if (aquaticFertilityRegime(state)) {
     state.board.fill("fertile");
     return;
@@ -717,7 +752,12 @@ export function canonicalFounderStarts(state, slots = true) {
 }
 
 export function earthFounderStarts(geologicalStage, cycle = 1) {
-  if (geologicalStage === "archean" && cycle >= 2)
+  if (geologicalStage === "hadean")
+    return [
+      ["blue", 5, 2, null],
+      ["amber", 2, 5, null],
+    ];
+  if (geologicalStage === "archean")
     return [
       ["blue", 4, 2, "primary"],
       ["blue", 4, 3, "companion"],
@@ -785,6 +825,15 @@ export function createState(seed = Date.now(), options = {}) {
     geologicalStage: options.geologicalStage ?? "archean",
     cycle: options.cycle ?? 1,
     totalCycles: options.totalCycles ?? 1,
+    hadeanTutorial:
+      options.geologicalStage === "hadean"
+        ? {
+            moved: false,
+            divided: false,
+            captured: false,
+            ...(options.hadeanTutorial ?? {}),
+          }
+        : null,
     generationOffset: options.generationOffset ?? 0,
     maxGenerationReached: 0,
     nextHabitatGeneration: 3,
@@ -796,6 +845,8 @@ export function createState(seed = Date.now(), options = {}) {
     offensiveStagnation: null,
     deathSites: [],
     fertileTraces: [],
+    carcasses: [],
+    captureDisturbances: [],
     fertilityRecovery: [],
     extremophyteFertility: [],
     diseases: [],
@@ -832,9 +883,11 @@ export function createState(seed = Date.now(), options = {}) {
         ownerFounders?.amber?.primary &&
         ownerFounders?.amber?.companion,
       earthStarts =
-        scenario === "earth" && (balancedPair || ownerPair)
+        state.geologicalStage === "hadean" && scenario !== "arena"
           ? earthFounderStarts(state.geologicalStage, state.cycle)
-          : null,
+          : scenario === "earth" && (balancedPair || ownerPair)
+            ? earthFounderStarts(state.geologicalStage, state.cycle)
+            : null,
       starts =
         earthStarts ??
         (() => {
@@ -869,7 +922,9 @@ export function createState(seed = Date.now(), options = {}) {
                 mutations: 0,
                 generation: 0,
               }
-            : {},
+            : state.geologicalStage === "hadean"
+              ? { rank: 4 }
+              : {},
         ),
       );
     }
@@ -885,7 +940,9 @@ export function createState(seed = Date.now(), options = {}) {
       ? "Origem da campanha: o ancestral comum aguarda a separação das linhagens."
       : scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} começa com duas linhagens de cada lado.`
-        : `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com um organismo de cada lado.`,
+        : state.geologicalStage === "hadean"
+          ? "Pré-Cambriano · Hadeano começa com dois Reis protocelulares sem mutações: desloque, divida e capture."
+          : `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com um organismo de cada lado.`,
   );
   return state;
 }
@@ -894,7 +951,10 @@ export function createCampaignState(
   seed = Date.now(),
   scenario = DEFAULT_SCENARIO,
 ) {
-  return createState(seed, { originPrelude: true, scenario });
+  return createState(seed, {
+    geologicalStage: "hadean",
+    scenario,
+  });
 }
 
 function earthFounderRecessives(historicalTraits, activeTraits, plant) {
@@ -918,9 +978,19 @@ function previewFounderProfiles(stageIndex) {
     primitiveLocomotionStageIndex = GEOLOGICAL_STAGES.findIndex((entry) =>
       entry.required.includes("Locomoção Primitiva"),
     ),
+    archeanStageIndex = GEOLOGICAL_STAGES.findIndex(
+      (entry) => entry.id === "archean",
+    ),
+    ordovicianStageIndex = GEOLOGICAL_STAGES.findIndex(
+      (entry) => entry.id === "ordovician",
+    ),
+    cambrianStageIndex = GEOLOGICAL_STAGES.findIndex(
+      (entry) => entry.id === "cambrian",
+    ),
     prePrimitiveLocomotion = stageIndex <= primitiveLocomotionStageIndex;
   if (curated) {
-    const inheritedRepair = stageIndex > 0 ? ["Reparo Celular"] : [],
+    const inheritedRepair =
+        stageIndex > archeanStageIndex ? ["Reparo Celular"] : [],
       inheritedBilateral =
         stageIndex > GEOLOGICAL_STAGES.findIndex((entry) => entry.id === "ediacaran")
           ? ["Simetria Bilateral"]
@@ -984,9 +1054,14 @@ function previewFounderProfiles(stageIndex) {
   const derivedRanks = [1, 2, 3, 5],
     animalRank = prePrimitiveLocomotion
       ? 4
-      : stageIndex <= 3
+      : stageIndex <= cambrianStageIndex
         ? 0
-        : derivedRanks[Math.min(derivedRanks.length - 1, stageIndex - 4)];
+        : derivedRanks[
+            Math.min(
+              derivedRanks.length - 1,
+              Math.max(0, stageIndex - ordovicianStageIndex),
+            )
+          ];
   return {
     historicalTraits: [...new Set(historicalTraits)],
     primary: {
@@ -1022,9 +1097,8 @@ export function createPeriodState(
     (stage) => stage.id === geologicalStage,
   );
   if (stageIndex < 0) throw Error("Período geológico inválido.");
-  if (stageIndex === 0)
+  if (geologicalStage === "hadean")
     return createState(seed, {
-      originPrelude: true,
       geologicalStage,
       cycle: 1,
       totalCycles: 1,
@@ -1032,10 +1106,12 @@ export function createPeriodState(
       scenario,
     });
   const preview = previewFounderProfiles(stageIndex),
-    completedCycles = GEOLOGICAL_STAGES.slice(0, stageIndex).reduce(
-      (sum, stage) => sum + (stage.cycles?.length ?? 1),
-      0,
-    );
+    completedCycles = GEOLOGICAL_STAGES.slice(0, stageIndex)
+      .filter((stage) => stage.id !== "hadean")
+      .reduce(
+        (sum, stage) => sum + (stage.cycles?.length ?? 1),
+        0,
+      );
   return createState(seed, {
     scenario,
     geologicalStage,
@@ -1342,7 +1418,10 @@ function createEarthSuccessorState(previous, seed) {
       : priorStage,
     advanced = candidate.id !== priorStage.id,
     cycle = advanced ? 1 : previous.cycle + 1,
-    totalCycles = previous.totalCycles + 1,
+    totalCycles =
+      priorStage.id === "hadean"
+        ? 1
+        : previous.totalCycles + 1,
     stageIndex = GEOLOGICAL_STAGES.findIndex((stage) => stage.id === candidate.id),
     preview = previewFounderProfiles(stageIndex),
     state = createState(seed, {
@@ -1377,6 +1456,42 @@ export function createSuccessorState(previous, seed = Date.now()) {
     return createEarthSuccessorState(previous, seed);
   if (previous.scenario === "arena")
     return createArenaSuccessorState(previous, null, seed);
+  if (
+    currentGeologicalStage(previous).id === "hadean" &&
+    stageComplete(previous)
+  ) {
+    const candidate = nextGeologicalStage("hadean"),
+      stageIndex = GEOLOGICAL_STAGES.findIndex(
+        (stage) => stage.id === candidate.id,
+      ),
+      preview = previewFounderProfiles(stageIndex),
+      state = createState(seed, {
+        scenario: previous.scenario,
+        geologicalStage: candidate.id,
+        cycle: 1,
+        totalCycles: 1,
+        generationOffset:
+          previous.generationOffset + previous.maxGenerationReached + 1,
+        historicalTraits: [
+          ...new Set([
+            ...previous.historicalTraits,
+            ...preview.historicalTraits,
+          ]),
+        ],
+        fossilRecord: [
+          ...(previous.fossilRecord ?? []),
+          ...fossilEntries(previous),
+        ],
+        discoveries: previous.discoveries,
+        founders: { primary: preview.primary, companion: preview.companion },
+        canonicalPair: true,
+      });
+    log(
+      state,
+      "Transição Evolutiva: o ambiente hadeano se estabilizou; surgem as linhagens arqueanas fotossintética e predatória.",
+    );
+    return state;
+  }
   const winner = previous.result?.winner ?? null,
     selected = dominantLineage(previous, winner),
     founder = founderProfile(previous, selected.piece),
@@ -1504,6 +1619,15 @@ export function assertState(state) {
     !validScenario(state.scenario) ||
     !integer(state.arenaPhase ?? 0, 0) ||
     !GEOLOGICAL_STAGES.some((stage) => stage.id === state.geologicalStage) ||
+    !(
+      state.geologicalStage === "hadean"
+        ? state.hadeanTutorial &&
+          typeof state.hadeanTutorial.moved === "boolean" &&
+          typeof state.hadeanTutorial.divided === "boolean" &&
+          typeof state.hadeanTutorial.captured === "boolean"
+        : state.hadeanTutorial === null ||
+          state.hadeanTutorial === undefined
+    ) ||
     !integer(state.cycle, 1) ||
     !integer(state.totalCycles, 1) ||
     state.totalCycles < state.cycle ||
@@ -1558,6 +1682,11 @@ export function assertState(state) {
     !validDiscoveries(state.discoveries) ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
+    !Array.isArray(state.carcasses) ||
+    !(
+      state.captureDisturbances === undefined ||
+      Array.isArray(state.captureDisturbances)
+    ) ||
     !Array.isArray(state.fertilityRecovery) ||
     !Array.isArray(state.extremophyteFertility) ||
     !Array.isArray(state.eggs) ||
@@ -1597,6 +1726,27 @@ export function assertState(state) {
         !["neutral", "fertile", "hostile"].includes(d.base),
     ) ||
     new Set(state.deathSites.map((d) => d.cell)).size !== state.deathSites.length ||
+    state.carcasses.some(
+      (entry) =>
+        !integer(entry.cell, 0, 63) ||
+        !integer(entry.dueRound, 1) ||
+        !["neutral", "fertile", "hostile"].includes(entry.base),
+    ) ||
+    new Set(state.carcasses.map((entry) => entry.cell)).size !==
+      state.carcasses.length ||
+    (state.captureDisturbances ?? []).some(
+      (entry) =>
+        !integer(entry.cell, 0, 63) ||
+        !integer(entry.dueRound, 1) ||
+        !["neutral", "fertile", "hostile"].includes(entry.base) ||
+        !(
+          entry.sourceId === null ||
+          entry.sourceId === undefined ||
+          integer(entry.sourceId, 1)
+        ),
+    ) ||
+    new Set((state.captureDisturbances ?? []).map((entry) => entry.cell)).size !==
+      (state.captureDisturbances ?? []).length ||
     !(
       state.eggPlacement === null ||
       (state.eggPlacement &&
@@ -2037,6 +2187,14 @@ export function assertState(state) {
       !integer(e.startRound) ||
       !Array.isArray(e.hazards) ||
       e.hazards.some((i) => !integer(i, 0, 63)) ||
+      !(
+        e.lethalHazards === undefined ||
+        (Array.isArray(e.lethalHazards) &&
+          e.lethalHazards.every(
+            (i) => integer(i, 0, 63) && e.hazards.includes(i),
+          ) &&
+          new Set(e.lethalHazards).size === e.lethalHazards.length)
+      ) ||
       !e.snapshots ||
       Object.entries(e.snapshots).some(
         ([i, t]) =>
