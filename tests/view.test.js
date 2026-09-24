@@ -1495,7 +1495,7 @@ test("application UI can play Hadean division, acknowledge reproduction, save an
     const d = w.document;
     const click = (id) => d.getElementById(id).click();
 
-    assert.match(d.getElementById("round").textContent, /Hadeano · Tutorial 0\/3/);
+    assert.match(d.getElementById("round").textContent, /Hadeano · 1º Ciclo · Tutorial 0\/3/);
     assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 2);
 
     const amber = d.querySelector(".piece.amber");
@@ -1522,7 +1522,7 @@ test("application UI can play Hadean division, acknowledge reproduction, save an
     click("menu-button");
     click("new");
     click("info-ok");
-    assert.match(d.getElementById("round").textContent, /Hadeano · Tutorial 0\/3/);
+    assert.match(d.getElementById("round").textContent, /Hadeano · 1º Ciclo · Tutorial 0\/3/);
     assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 2);
     assert.notEqual(d.getElementById("round").textContent, saved);
   } finally {

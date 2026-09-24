@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 18;
+export const STATE_VERSION = 19;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {

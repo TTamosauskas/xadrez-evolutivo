@@ -23,6 +23,10 @@ import {
 test("new campaigns start with an unread Hadean discovery", () => {
   const state = createCampaignState(201);
   assert.deepEqual(state.discoveries.geology, ["hadean"]);
+  assert.deepEqual(
+    discoveredContent(state, "geology").map((entry) => entry.title),
+    ["Hadeano"],
+  );
   assert.equal(unreadDiscoveries(state), 2);
   assert.equal(isDiscoveryUnread(state, "geology", "hadean"), true);
   assert.equal(markDiscoveryRead(state, "geology", "hadean"), true);

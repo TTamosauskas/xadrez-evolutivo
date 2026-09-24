@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { TRAITS, EVENTS, has } from "../src/constants.js";
+import { TRAITS, EVENTS, has, STATE_VERSION } from "../src/constants.js";
 import {
   GEOLOGICAL_STAGES,
   TRAIT_STAGE,
@@ -226,7 +226,7 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
 
 test("first Archean cycle starts with a fertile 6x6 core and hostile border", () => {
   const s = createPeriodState("archean", 101, null, "earth");
-  assert.equal(s.version, 18);
+  assert.equal(s.version, STATE_VERSION);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
