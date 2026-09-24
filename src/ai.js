@@ -5,6 +5,7 @@ import {
   eggAt,
   barrierAt,
   organicResidueAt,
+  carcassAt,
   captureDisturbanceAt,
   lethalHazardAt,
 } from "./state.js";
@@ -150,16 +151,33 @@ function priority(state, a) {
       !victim && targetTerrain === "fertile" && canUseBasalFertility(p)
         ? 4
         : 0,
-    organicValue =
+    fecalValue =
       p && targetCell !== null && organicResidueAt(state, a.r, a.c)
         ? canPhotosynthesize(p)
           ? 8
-          : has(p, "Necrófago") || has(p, "Onívoro Oportunista")
-            ? 7
+          : has(p, "Coprofagia")
+            ? 6
             : -8
         : 0,
+    carcassValue =
+      p && targetCell !== null && carcassAt(state, a.r, a.c)
+        ? has(p, "Necrófago")
+          ? 8
+          : has(p, "Onívoro Oportunista")
+            ? 6
+            : 0
+        : 0,
+    scavengerSafe =
+      p &&
+      targetCell !== null &&
+      !!carcassAt(state, a.r, a.c) &&
+      (has(p, "Necrófago") || has(p, "Onívoro Oportunista")),
     disturbancePenalty =
-      targetCell !== null && captureDisturbanceAt(state, a.r, a.c) ? 8 : 0,
+      targetCell !== null &&
+      captureDisturbanceAt(state, a.r, a.c) &&
+      !scavengerSafe
+        ? 8
+        : 0,
     lethalPenalty =
       targetCell !== null && lethalHazardAt(state, a.r, a.c) ? 10000 : 0;
   return (
@@ -167,7 +185,8 @@ function priority(state, a) {
     captureValue +
     cannibalValue +
     fertileValue +
-    organicValue +
+    fecalValue +
+    carcassValue +
     (egg && egg.owner !== state.current ? 6 + egg.brood.length : 0) -
     (targetTerrain === "hostile" && !has(p, "Dormência") ? 8 : 0) -
     disturbancePenalty -
