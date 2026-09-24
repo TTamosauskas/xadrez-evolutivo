@@ -1365,6 +1365,23 @@ export function pathogenUnlocked(state) {
   return currentGeologicalStage(state).index >= geologicalStage("proterozoic").index;
 }
 
+export const CYCLE_POSITIVE_INNOVATION_MULTIPLIERS = Object.freeze([
+  1,
+  1,
+  0.6,
+  0.35,
+  0.2,
+  0.1,
+]);
+
+export function cyclePositiveInnovationMultiplier(state, trait) {
+  if (state?.scenario === "arena") return 1;
+  const history = new Set(state?.historicalTraits ?? []),
+    cycleInnovations = state?.cyclePositiveInnovations ?? [];
+  if (history.has(trait) || cycleInnovations.includes(trait)) return 1;
+  return CYCLE_POSITIVE_INNOVATION_MULTIPLIERS[cycleInnovations.length] ?? 0;
+}
+
 export function innovationWeight(state, trait, piece = null) {
   const current = currentGeologicalStage(state),
     deps = TRAIT_DEPENDENCIES[trait],
@@ -1380,10 +1397,12 @@ export function innovationWeight(state, trait, piece = null) {
       TRAIT_STAGE[trait] === current.id &&
       !history.has(trait) &&
       periodCompletionInnovations(state).includes(trait);
-  return scenarioInnovationWeight(state, trait, piece, {
-    required: current.required.includes(trait) || completionTarget,
-    dependencyMatched,
-  });
+  return (
+    scenarioInnovationWeight(state, trait, piece, {
+      required: current.required.includes(trait) || completionTarget,
+      dependencyMatched,
+    }) * cyclePositiveInnovationMultiplier(state, trait)
+  );
 }
 
 export function eventWeights(state) {
