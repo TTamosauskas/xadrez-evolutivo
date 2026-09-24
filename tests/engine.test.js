@@ -369,7 +369,7 @@ test("Hadean lethal cells remain legal destinations and kill organisms that ente
   assertState(s);
 });
 
-test("Hadean tutorial unlocks capture after both sides divide and then founds Archean energy branches", () => {
+test("Hadean tutorial progress does not end the period; extinction advances to Archean", () => {
   let s = createCampaignState(302);
   s = simulate(s, { type: "ORIGIN_CLICK" });
   s = simulate(s, { type: "ORIGIN_CLICK" });
@@ -425,11 +425,29 @@ test("Hadean tutorial unlocks capture after both sides divide and then founds Ar
   );
   s = simulate(s, move(amber, 4, 4));
   assert.equal(s.hadeanTutorial.captured, true);
-  assert.equal(s.phase, "over");
-  assert.equal(s.result.winner, null);
-  assert.match(s.result.reason, /Hadeano concluído/);
+  assert.deepEqual(s.hadeanTutorial, {
+    moved: true,
+    divided: true,
+    captured: true,
+  });
+  assert.equal(s.phase, "move");
+  assert.equal(s.result, null);
   assert.equal(s.carcasses.length, 0);
   assert.equal(s.deathSites.length, 0);
+
+  const lastBlue = s.pieces.find((piece) => piece.owner === "blue");
+  assert.ok(lastBlue);
+  assert.equal(s.current, "blue");
+  lastBlue.r = 2;
+  lastBlue.c = 2;
+  const lethal = movesFor(s, lastBlue).find(
+    (target) => !target.stay && lethalHazardAt(s, target.r, target.c),
+  );
+  assert.ok(lethal);
+  s = simulate(s, move(lastBlue, lethal.r, lethal.c));
+  assert.equal(s.phase, "over");
+  assert.equal(s.result.winner, "amber");
+  assert.match(s.result.reason, /Extinção total/);
 
   const archean = createSuccessorState(s, 303);
   assert.equal(archean.geologicalStage, "archean");
