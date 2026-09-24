@@ -840,7 +840,7 @@ test("actionable mutations appear first, bold and with concise descriptions", ()
   );
   assert.ok(predation.classList.contains("actionable-trait"));
   assert.ok(predation.querySelector("strong"));
-  assert.match(predation.textContent, /Pode capturar peças/);
+  assert.match(predation.textContent, /Se alimenta ao capturar organismos/);
   assert.ok(!resistance.classList.contains("actionable-trait"));
   assert.equal(resistance.querySelector("strong"), null);
   assert.ok(rows.indexOf(predation) < rows.indexOf(resistance));
@@ -897,7 +897,7 @@ test("stationary photosynthesis is actionable even without an explicit action ta
   assert.ok(photosynthesis.querySelector("strong"));
   assert.match(
     photosynthesis.textContent,
-    /3–6 rodadas imóvel/,
+    /Gera alimento em 3–6 rodadas/,
   );
   assert.ok(embryophytes?.classList.contains("actionable-trait"));
   dom.window.close();
