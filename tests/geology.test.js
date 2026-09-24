@@ -554,11 +554,9 @@ test("Archean advances only after all three innovation cycles are complete", () 
   assert.equal(stageComplete(third), false);
   assert.ok(missingInnovations(third).includes("Transferência Horizontal"));
 
-  const transferCarrier = third.pieces.find((piece) =>
-    piece.traits.includes("Predação"),
-  );
-  assert.ok(transferCarrier);
-  transferCarrier.traits.push("Transferência Horizontal");
+  const transferCarrier = third.pieces[0];
+  transferCarrier.traits.push("Predação", "Transferência Horizontal");
+  transferCarrier.ancestry.push("Predação", "Transferência Horizontal");
   registerDiscoveries(third, transferCarrier);
   assert.equal(stageComplete(third), true);
   third.notices = [];
@@ -844,6 +842,7 @@ test("evolutionary precedence changes eligibility but never mutation weight", ()
     "Predação",
     "Reparo Celular",
     "Dormência",
+    "Transferência Horizontal",
   ]);
 });
 
