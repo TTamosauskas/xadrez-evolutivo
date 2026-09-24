@@ -1849,6 +1849,10 @@ function logBoardChanges(previous, state) {
       (previous.deathSites ?? []).map((site) => site.cell),
     ),
     afterOrganic = new Set((state.deathSites ?? []).map((site) => site.cell)),
+    beforeCarcasses = new Set(
+      (previous.carcasses ?? []).map((entry) => entry.cell),
+    ),
+    afterCarcasses = new Set((state.carcasses ?? []).map((entry) => entry.cell)),
     beforeDisturbance = new Set(
       (previous.captureDisturbances ?? []).map((entry) => entry.cell),
     ),
@@ -1866,10 +1870,12 @@ function logBoardChanges(previous, state) {
     const r = Math.floor(cell / 8),
       c = cell % 8,
       overlay = afterOrganic.has(cell)
-        ? " · matéria orgânica"
-        : afterDisturbance.has(cell)
-          ? " · perturbação"
-          : "";
+        ? " · fezes"
+        : afterCarcasses.has(cell)
+          ? " · carcaça"
+          : afterDisturbance.has(cell)
+            ? " · perturbação"
+            : "";
     changes.push(
       `${coord(r, c)} ${TERRAIN_LOG_LABEL[previous.board[cell]]}→${TERRAIN_LOG_LABEL[state.board[cell]]}${overlay}`,
     );
@@ -1878,12 +1884,22 @@ function logBoardChanges(previous, state) {
   for (const cell of afterOrganic)
     if (!beforeOrganic.has(cell) && !changedCells.has(cell))
       changes.push(
-        `${coord(Math.floor(cell / 8), cell % 8)} · 💩 matéria orgânica disponível`,
+        `${coord(Math.floor(cell / 8), cell % 8)} · 💩 fezes disponíveis`,
       );
   for (const cell of beforeOrganic)
     if (!afterOrganic.has(cell) && !changedCells.has(cell))
       changes.push(
-        `${coord(Math.floor(cell / 8), cell % 8)} · matéria orgânica encerrada`,
+        `${coord(Math.floor(cell / 8), cell % 8)} · fezes encerradas`,
+      );
+  for (const cell of afterCarcasses)
+    if (!beforeCarcasses.has(cell) && !changedCells.has(cell))
+      changes.push(
+        `${coord(Math.floor(cell / 8), cell % 8)} · 🦴 carcaça disponível`,
+      );
+  for (const cell of beforeCarcasses)
+    if (!afterCarcasses.has(cell) && !changedCells.has(cell))
+      changes.push(
+        `${coord(Math.floor(cell / 8), cell % 8)} · carcaça encerrada`,
       );
   for (const cell of afterDisturbance)
     if (!beforeDisturbance.has(cell) && !changedCells.has(cell))
