@@ -617,7 +617,7 @@ function diseasesOnCell(state, piece) {
   return state.diseases.filter(
     (disease) =>
       activeDisease(disease, now) &&
-      ["trail", "environmental"].includes(disease.transmission) &&
+      ["trail", "environmental", "spore"].includes(disease.transmission) &&
       disease.contaminated?.includes(cell),
   );
 }
@@ -625,6 +625,11 @@ function diseasesOnCell(state, piece) {
 export function exposePathogenCell(state, piece) {
   let exposed = false;
   for (const disease of diseasesOnCell(state, piece)) {
+    if (
+      disease.source === "eco" &&
+      fullyImmuneToEcologicalPathogen(piece)
+    )
+      continue;
     exposed = true;
     recordPathogenExposure(state, piece, disease);
     if (disease.agent === "bacteria") infect(state, piece, disease);
@@ -963,7 +968,7 @@ export function tickDiseases(ctx) {
       for (const piece of state.pieces)
         if (disease.contaminated?.includes(square(piece.r, piece.c))) {
           if (
-            disease.agent === "fungus" &&
+            disease.source === "eco" &&
             fullyImmuneToEcologicalPathogen(piece)
           )
             continue;
