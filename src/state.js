@@ -86,6 +86,24 @@ export const barrierAt = (state, r, c) =>
   naturalBarrierAt(state, r, c) ||
   eventBarrierAt(state, r, c);
 export const terrain = (state, r, c) => state.board[square(r, c)];
+export const organicResidueAt = (state, r, c) => {
+  const cell = square(r, c);
+  return (
+    state.deathSites?.find((site) => site.cell === cell) ??
+    state.fertileTraces?.find((trace) => trace.cell === cell) ??
+    null
+  );
+};
+export const captureDisturbanceAt = (state, r, c) =>
+  state.captureDisturbances?.find((entry) => entry.cell === square(r, c)) ??
+  null;
+export const lethalHazardAt = (state, r, c) =>
+  state.event?.lethalHazards?.includes(square(r, c)) ?? false;
+export const organicResidueHazardousTo = (piece) =>
+  !!piece &&
+  !canPhotosynthesize(piece) &&
+  !has(piece, "Necrófago") &&
+  !has(piece, "Onívoro Oportunista");
 export const round = (state) => Math.floor(state.turn / 2);
 export const ECOLOGICAL_DOMAIN_START_TURN = 200;
 export const ECOLOGICAL_DOMAIN_REQUIRED_TURNS = 3;
@@ -144,6 +162,7 @@ export function restoreAquaticFertility(state) {
       state.barriers?.includes(entry.cell) ||
       state.naturalBarriers?.includes(entry.cell) ||
       state.deathSites?.some((site) => site.cell === entry.cell) ||
+      state.captureDisturbances?.some((item) => item.cell === entry.cell) ||
       state.event?.hazards?.includes(entry.cell)
     )
       return true;
@@ -796,6 +815,7 @@ export function createState(seed = Date.now(), options = {}) {
     offensiveStagnation: null,
     deathSites: [],
     fertileTraces: [],
+    captureDisturbances: [],
     fertilityRecovery: [],
     extremophyteFertility: [],
     diseases: [],
@@ -1558,6 +1578,10 @@ export function assertState(state) {
     !validDiscoveries(state.discoveries) ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
+    !(
+      state.captureDisturbances === undefined ||
+      Array.isArray(state.captureDisturbances)
+    ) ||
     !Array.isArray(state.fertilityRecovery) ||
     !Array.isArray(state.extremophyteFertility) ||
     !Array.isArray(state.eggs) ||
@@ -1597,6 +1621,19 @@ export function assertState(state) {
         !["neutral", "fertile", "hostile"].includes(d.base),
     ) ||
     new Set(state.deathSites.map((d) => d.cell)).size !== state.deathSites.length ||
+    (state.captureDisturbances ?? []).some(
+      (entry) =>
+        !integer(entry.cell, 0, 63) ||
+        !integer(entry.dueRound, 1) ||
+        !["neutral", "fertile", "hostile"].includes(entry.base) ||
+        !(
+          entry.sourceId === null ||
+          entry.sourceId === undefined ||
+          integer(entry.sourceId, 1)
+        ),
+    ) ||
+    new Set((state.captureDisturbances ?? []).map((entry) => entry.cell)).size !==
+      (state.captureDisturbances ?? []).length ||
     !(
       state.eggPlacement === null ||
       (state.eggPlacement &&
@@ -2037,6 +2074,14 @@ export function assertState(state) {
       !integer(e.startRound) ||
       !Array.isArray(e.hazards) ||
       e.hazards.some((i) => !integer(i, 0, 63)) ||
+      !(
+        e.lethalHazards === undefined ||
+        (Array.isArray(e.lethalHazards) &&
+          e.lethalHazards.every(
+            (i) => integer(i, 0, 63) && e.hazards.includes(i),
+          ) &&
+          new Set(e.lethalHazards).size === e.lethalHazards.length)
+      ) ||
       !e.snapshots ||
       Object.entries(e.snapshots).some(
         ([i, t]) =>
