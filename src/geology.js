@@ -1402,6 +1402,13 @@ export function fecalPathogenUnlocked(state) {
   );
 }
 
+export function sporePathogenUnlocked(state) {
+  if (state?.scenario === "arena") return true;
+  return (
+    currentGeologicalStage(state).index >= geologicalStage("devonian").index
+  );
+}
+
 export const CYCLE_POSITIVE_INNOVATION_MULTIPLIERS = Object.freeze([
   1,
   1,
