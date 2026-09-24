@@ -43,7 +43,7 @@ test("current save schema preserves active phases and temporary event data", () 
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
 });
 
-test("deserialize migrates v17 and rejects older or invalid saves", () => {
+test("deserialize migrates v17/v18 and rejects older or invalid saves", () => {
   assert.throws(() => deserialize("{"), /inválido/i);
 
   const legacy = createState(4);
@@ -70,6 +70,21 @@ test("deserialize migrates v17 and rejects older or invalid saves", () => {
     ),
   );
 
+  const oldOrigin = createState(8, {
+    originPrelude: true,
+    geologicalStage: "archean",
+    scenario: "earth",
+  });
+  oldOrigin.version = 18;
+  const migratedOrigin = deserialize(JSON.stringify(oldOrigin));
+  assert.equal(migratedOrigin.version, STATE_VERSION);
+  assert.equal(migratedOrigin.geologicalStage, "hadean");
+  assert.equal(migratedOrigin.cycle, 1);
+  assert.equal(migratedOrigin.phase, "move");
+  assert.equal(migratedOrigin.origin, null);
+  assert.equal(migratedOrigin.pieces.length, 2);
+  assert.deepEqual(migratedOrigin.discoveries.geology, ["hadean"]);
+
   const obsolete = createState(4);
   obsolete.version = 16;
   assert.throws(
@@ -83,12 +98,15 @@ test("deserialize migrates v17 and rejects older or invalid saves", () => {
   assert.throws(() => deserialize(JSON.stringify(invalid)), /Ocupação/);
 });
 
-test("load migrates the immediately previous development key and saves use v18", () => {
-  const legacy = createState(6);
-  legacy.version = 17;
-  for (const piece of legacy.pieces) delete piece.genome.Coprofagia;
+test("load migrates the immediately previous development key and saves use v19", () => {
+  const legacy = createState(6, {
+    originPrelude: true,
+    geologicalStage: "archean",
+    scenario: "earth",
+  });
+  legacy.version = 18;
   const entries = new Map([
-      ["xadrez-evolutivo-save-v17", JSON.stringify(legacy)],
+      ["xadrez-evolutivo-save-v18", JSON.stringify(legacy)],
     ]),
     storage = {
       setItem: (key, value) => entries.set(key, value),
@@ -97,6 +115,8 @@ test("load migrates the immediately previous development key and saves use v18",
 
   const migrated = load(storage);
   assert.equal(migrated.version, STATE_VERSION);
+  assert.equal(migrated.geologicalStage, "hadean");
+  assert.equal(migrated.cycle, 1);
   assert.ok(entries.has(SAVE_KEY));
 
   const state = createState(7);
