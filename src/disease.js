@@ -833,7 +833,6 @@ export function advanceFungalSpores(ctx, disease, exposures = new Set()) {
         state,
         `🍄 Esporo fúngico germinou em ${String.fromCharCode(65 + spore.c)}${8 - spore.r}.`,
       );
-      fungalSporeContact(state, disease, spore, exposures);
     }
     state.pathogenSpores = state.pathogenSpores.filter(
       (candidate) => candidate.id !== spore.id,
@@ -961,6 +960,11 @@ export function tickDiseases(ctx) {
     )
       for (const piece of state.pieces)
         if (disease.contaminated?.includes(square(piece.r, piece.c))) {
+          if (
+            disease.agent === "fungus" &&
+            fullyImmuneToEcologicalPathogen(piece)
+          )
+            continue;
           exposures.add(piece);
           if (disease.agent === "bacteria") infect(state, piece, disease);
           else if (!disease.infected.includes(piece.id))
