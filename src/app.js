@@ -586,7 +586,9 @@ $("game-over-new").addEventListener("click", () => {
       ? `A vida persiste em ${stage.period}. ${progress.discovered.length} de ${progress.required.length} inovação(ões) foram descobertas.`
       : `A vida completa seu ciclo em ${stage.period} e está pronta para a próxima transição.`;
   $("mass-extinction-continue").textContent = advances
-    ? "Iniciar 1º Ciclo"
+    ? stage.id === "hadean"
+      ? "Iniciar Arqueano · 1º Ciclo"
+      : "Iniciar 1º Ciclo"
     : `Iniciar ${state.cycle + 1}º Ciclo`;
   $("mass-extinction-dialog").showModal();
 });
