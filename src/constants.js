@@ -115,7 +115,7 @@ export const TRAITS = {
   Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],
   "Ovulação Induzida": [
     "🐇",
-    "Reduz em uma rodada a recuperação reprodutiva própria da peça, até o mínimo de uma rodada.",
+    "Reduz em uma rodada a recuperação metabólica após reprodução, até o mínimo de uma rodada.",
   ],
   "Respiração anaeróbia": [
     "⚪",
