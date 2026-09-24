@@ -27,10 +27,19 @@ test("new campaigns start with an unread Hadean discovery", () => {
     discoveredContent(state, "geology").map((entry) => entry.title),
     ["Hadeano"],
   );
-  assert.deepEqual(state.discoveries.mutations, []);
-  assert.equal(unreadDiscoveries(state), 1);
+  assert.deepEqual(state.discoveries.mutations, ["Respiração anaeróbia"]);
+  assert.equal(unreadDiscoveries(state), 2);
   assert.equal(isDiscoveryUnread(state, "geology", "hadean"), true);
+  assert.equal(
+    isDiscoveryUnread(state, "mutations", "Respiração anaeróbia"),
+    true,
+  );
   assert.equal(markDiscoveryRead(state, "geology", "hadean"), true);
+  assert.equal(unreadDiscoveries(state), 1);
+  assert.equal(
+    markDiscoveryRead(state, "mutations", "Respiração anaeróbia"),
+    true,
+  );
   assert.equal(unreadDiscoveries(state), 0);
   assert.equal(markDiscoveryRead(state, "geology", "hadean"), false);
 });
