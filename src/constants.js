@@ -115,7 +115,7 @@ export const TRAITS = {
   Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],
   "Ovulação Induzida": [
     "🐇",
-    "Reduz em uma rodada a recuperação metabólica após reprodução, até o mínimo de uma rodada.",
+    "Na reprodução sexuada, reduz em uma rodada a recuperação metabólica do portador, até o mínimo de uma rodada.",
   ],
   "Respiração anaeróbia": [
     "⚪",
@@ -295,7 +295,7 @@ export const TRAITS = {
   ],
   "Má absorção Alimentar": [
     "🐼",
-    "Ao consumir uma casa fértil para reproduzir, consome também uma segunda casa fértil adjacente, quando houver; reprodução por predação exige o dobro do intervalo de recuperação.",
+    "Ao consumir uma casa fértil para reproduzir, consome também uma segunda casa fértil adjacente, quando houver; recursos alimentares como presa, ovo, carcaça e fezes dobram sua recuperação metabólica.",
   ],
   Semelparidade: [
     "🐙",
@@ -323,7 +323,7 @@ export const TRAITS = {
   ],
   Brotamento: [
     "🪸",
-    "Após quatro rodadas completas sem mudar de casa, um adulto pode gastar a ação para produzir um único descendente por brotamento; cada indivíduo brota uma única vez.",
+    "Após quatro rodadas completas sem mudar de casa, um adulto metabolicamente apto pode gastar uma casa fértil sob si ou uma semente de Coletor para produzir um único descendente; cada indivíduo brota uma única vez.",
   ],
   Colônia: [
     "🧫",
@@ -367,7 +367,7 @@ export const TRAITS = {
   ],
   "Acasalamento Múltiplo": [
     "🦭",
-    "Permite dois parceiros na mesma reprodução; a ninhada potencial combina duas subninhadas biparentais e os três participantes recebem intervalo reprodutivo dobrado.",
+    "Permite dois parceiros na mesma reprodução; a ninhada potencial combina duas subninhadas biparentais e o custo de recuperação metabólica dos três participantes é dobrado, antes das pressões ecológicas.",
   ],
   Metamorfose: [
     "🦋",

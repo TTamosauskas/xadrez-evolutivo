@@ -510,7 +510,9 @@ export const TRAIT_DEPENDENCIES = {
   "Incubação": { lineage: ["Ovíparo"] },
   Lactação: { lineage: ["Incubação"] },
   Vivíparo: { lineage: ["Ovíparos Amniotas"] },
-  "Ovulação Induzida": { lineage: ["Vivíparo"] },
+  "Ovulação Induzida": {
+    lineage: ["Vivíparo", "Reprodução Sexuada"],
+  },
   "Visão Noturna": { lineage: ["Notívago"] },
   Ovífagia: { lineage: ["Ovíparo"] },
   Onívoro: { lineageAny: ["Carnívoro", "Herbívoro"] },

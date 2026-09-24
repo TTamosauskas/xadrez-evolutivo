@@ -182,10 +182,10 @@ test("successful reproduction uses metabolic recovery and induced ovulation shor
     }),
     1,
   );
-  assert.equal(inducedParent.nextReproductionRound, 5);
-  induced.turn = 8;
-  assert.equal(reproductionReady(induced, inducedParent), false);
+  assert.equal(inducedParent.nextReproductionRound, 6);
   induced.turn = 10;
+  assert.equal(reproductionReady(induced, inducedParent), false);
+  induced.turn = 12;
   assert.equal(reproductionReady(induced, inducedParent), true);
   assertState(induced);
 });
@@ -374,6 +374,8 @@ test("new life-history traits unlock in their intended optional periods", () => 
   s.geologicalStage = "paleogene";
   s.historicalTraits = historyBefore("paleogene");
   p.traits = ["Multicelularismo", "Vivíparo"];
+  assert.equal(traitUnlocked(s, "Ovulação Induzida", p), false);
+  p.traits.push("Reprodução Sexuada");
   assert.equal(traitUnlocked(s, "Ovulação Induzida", p), true);
 
   for (const stage of GEOLOGICAL_STAGES)

@@ -178,6 +178,8 @@ test("Hadean common ancestor is a gray King that splits after the second click",
   assert.ok(origin.classList.contains("vivification-target"));
   assert.match(origin.title ?? "", /Vivificar disponível/);
   assert.match(d.getElementById("selected").textContent, /Ancestral comum/);
+  assert.match(d.getElementById("selected").textContent, /Vantagens Evolutivas/);
+  assert.match(d.getElementById("selected").textContent, /Respiração anaeróbia/);
   assert.match(d.getElementById("selected").textContent, /um branco e um preto/);
   assert.equal(
     d.querySelectorAll("#board .piece.origin-piece").length,
@@ -923,7 +925,7 @@ test("stationary photosynthesis is actionable even without an explicit action ta
   dom.window.close();
 });
 
-test("stationary preparation makes Brotamento actionable before Vivificar is ready", () => {
+test("Brotamento becomes actionable only when an explicit resource is available", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -938,16 +940,19 @@ test("stationary preparation makes Brotamento actionable before Vivificar is rea
   piece.stationarySinceRound = round(s);
 
   render(dom.window.document, s, { selected: piece.id });
-  const selected = dom.window.document.getElementById("selected"),
+  let selected = dom.window.document.getElementById("selected"),
     budding = [...selected.querySelectorAll(".selected-trait")].find(
       (row) => row.textContent.includes("Brotamento"),
-    ),
-    cell = dom.window.document.querySelector(
-      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
     );
+  assert.ok(!budding?.classList.contains("actionable-trait"));
 
+  s.board[piece.r * 8 + piece.c] = "fertile";
+  render(dom.window.document, s, { selected: piece.id });
+  selected = dom.window.document.getElementById("selected");
+  budding = [...selected.querySelectorAll(".selected-trait")].find(
+    (row) => row.textContent.includes("Brotamento"),
+  );
   assert.ok(budding?.classList.contains("actionable-trait"));
-  assert.ok(!cell.classList.contains("vivification-target"));
   dom.window.close();
 });
 
@@ -988,11 +993,18 @@ test("feces and carcasses use distinct Vivificar routes", () => {
     base: "neutral",
     kind: "fecal",
   });
+  s.captureDisturbances.push({
+    cell: 36,
+    dueRound: 3,
+    base: "neutral",
+    sourceId: null,
+  });
 
   render(dom.window.document, s, { selected: piece.id });
   let target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
   assert.ok(target.classList.contains("vivification-target"));
   assert.ok(target.classList.contains("organic-residue"));
+  assert.ok(target.classList.contains("capture-disturbance"));
   assert.match(target.title, /reciclar fezes/);
   assert.match(target.textContent, /💩/);
   const css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
@@ -1015,7 +1027,7 @@ test("feces and carcasses use distinct Vivificar routes", () => {
   s.carcasses.push({ cell: 36, dueRound: 3, base: "neutral" });
   s.captureDisturbances.push({
     cell: 36,
-    dueRound: 1,
+    dueRound: 3,
     base: "neutral",
     sourceId: null,
   });

@@ -252,6 +252,9 @@ export function consumeOrganicResidue(state, cell) {
   if (!site && !trace) return false;
   state.deathSites = state.deathSites.filter((d) => d.cell !== cell);
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
+  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
+    (entry) => entry.cell !== cell,
+  );
   return true;
 }
 export const consumeFecalResidue = consumeOrganicResidue;
@@ -269,9 +272,7 @@ export function markOrganicResidue(state, cell) {
     dueRound = round(state) + 3;
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
   state.carcasses = state.carcasses.filter((entry) => entry.cell !== cell);
-  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
-    (entry) => entry.cell !== cell,
-  );
+  markCaptureDisturbance(state, cell, null, 3);
   if (existing) {
     existing.dueRound = dueRound;
     existing.base = base;
@@ -299,6 +300,7 @@ export function markCarcass(state, cell) {
   } else {
     state.carcasses.push({ cell, dueRound, base });
   }
+  markCaptureDisturbance(state, cell, null, 3);
 }
 export function consumeCarcass(state, cell) {
   if (!carcassSiteAt(state, cell)) return false;
@@ -309,19 +311,27 @@ export function consumeCarcass(state, cell) {
   return true;
 }
 
-export function markCaptureDisturbance(state, cell, sourceId = null) {
+export function markCaptureDisturbance(
+  state,
+  cell,
+  sourceId = null,
+  durationRounds = 1,
+) {
   state.captureDisturbances ??= [];
   const existing = state.captureDisturbances.find(
-    (entry) => entry.cell === cell,
-  );
-  const entry = {
-    cell,
-    dueRound: round(state) + 1,
-    base: state.event?.hazards.includes(cell)
-      ? state.event.snapshots[cell] ?? "neutral"
-      : state.board[cell],
-    sourceId,
-  };
+      (entry) => entry.cell === cell,
+    ),
+    dueRound = round(state) + durationRounds,
+    entry = {
+      cell,
+      dueRound: existing ? Math.max(existing.dueRound, dueRound) : dueRound,
+      base:
+        existing?.base ??
+        (state.event?.hazards.includes(cell)
+          ? state.event.snapshots[cell] ?? "neutral"
+          : state.board[cell]),
+      sourceId: sourceId ?? existing?.sourceId ?? null,
+    };
   if (existing) Object.assign(existing, entry);
   else state.captureDisturbances.push(entry);
 }

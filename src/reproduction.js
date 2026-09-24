@@ -72,6 +72,7 @@ import {
   FRAGMENT_LIFETIME,
   MARSUPIAL_CARRY_ROUNDS,
   paedogenesisReady,
+  buddingResource,
 } from "./reproduction-traits.js";
 import { tryVectorPathogen } from "./disease.js";
 
@@ -1044,6 +1045,30 @@ export function resolveSemelparityDeath(ctx, piece) {
   return ctx.kill(piece.id, "Semelparidade após três reproduções", null, true);
 }
 
+const TROPHIC_REPRODUCTION_RESOURCES = new Set([
+  "prey",
+  "egg",
+  "carcass",
+  "feces",
+]);
+
+function reproductionResourceKind(reason, options = {}) {
+  if (options.resourceKind) return options.resourceKind;
+  if (reason === "predação" || reason === "canibalismo") return "prey";
+  if (reason === "ovifagia") return "egg";
+  if (reason === "necrofagia") return "carcass";
+  if (reason === "coprofagia") return "feces";
+  if (
+    options.fertileReproduction ||
+    options.resourceReproduction ||
+    reason === "casa fértil" ||
+    reason === "Respiração Cutânea" ||
+    reason === "Traqueófitas"
+  )
+    return "fertile";
+  return "stored";
+}
+
 export function reproduce(
   ctx,
   parent,
@@ -1096,6 +1121,7 @@ export function reproduce(
   const sexualProfiles = mates.map((candidate) =>
       sexualProfile(state, parent, candidate),
     ),
+    resourceKind = reproductionResourceKind(reason, options),
     profile = sexualProfiles[0] ?? parent,
     plant = has(profile, "Fotossíntese"),
     seedPlant =
@@ -1153,17 +1179,20 @@ export function reproduce(
         : Math.min(populationLimit, competitivePressure.limit),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece) => {
-      const predatory = reason === "predação";
-      let base = metabolicReproductionCooldown(piece);
-      if (has(piece, "Ovulação Induzida"))
-        base = Math.max(1, base - 1);
+      let metabolic = metabolicReproductionCooldown(piece);
+      if (mates.length && has(piece, "Ovulação Induzida"))
+        metabolic = Math.max(1, metabolic - 1);
       if (has(piece, "Insuficiência Respiratória"))
-        base *= 2;
-      if (has(piece, "Má absorção Alimentar") && predatory)
-        base *= 2;
+        metabolic *= 2;
+      if (
+        has(piece, "Má absorção Alimentar") &&
+        TROPHIC_REPRODUCTION_RESOURCES.has(resourceKind)
+      )
+        metabolic *= 2;
+      if (mates.length > 1) metabolic *= 2;
       return (
         round(state) +
-        base +
+        metabolic +
         populationReproductionCooldown(
           activePopulation(state),
           pressureLatched,
@@ -1173,12 +1202,9 @@ export function reproduce(
       );
     },
     applyCooldown = () => {
-      const now = round(state),
-        factor = mates.length > 1 ? 2 : 1,
-        apply = (piece) => {
-          const target = cooldown(piece);
-          piece.nextReproductionRound = now + (target - now) * factor;
-        };
+      const apply = (piece) => {
+        piece.nextReproductionRound = cooldown(piece);
+      };
       apply(parent);
       for (const candidate of mates) apply(candidate);
     },
@@ -1235,6 +1261,7 @@ export function reproduce(
       applyCooldown();
       if (Number.isInteger(options.resourceCell))
         consumeReproductionResource(state, parent, options.resourceCell);
+      else options.onFailedAttempt?.();
       log(
         state,
         `${OWNERS[parent.owner]}: 😩 Subfertilidade impediu a geração de prole por ${reason}.`,
@@ -1359,11 +1386,28 @@ export function reproduce(
 }
 
 export function bud(ctx, parent) {
-  return reproduce(ctx, parent, null, "Brotamento", {
+  const resource = buddingResource(ctx.state, parent);
+  if (!resource) return 0;
+  const spendResource = () => {
+    if (resource.kind === "fertile")
+      return consumeReproductionResource(ctx.state, parent, resource.cell);
+    if (resource.kind === "seed" && (parent.seeds ?? 0) > 0) {
+      parent.seeds--;
+      parent.seedUsedTurn = ctx.state.turn;
+      return 1;
+    }
+    return 0;
+  };
+  const born = reproduce(ctx, parent, null, "Brotamento", {
     forcedCount: 1,
     immediateDevelopment: true,
     budding: true,
+    resourceKind: resource.kind,
+    resourceCell: resource.kind === "fertile" ? resource.cell : undefined,
+    onFailedAttempt: resource.kind === "seed" ? spendResource : undefined,
   });
+  if (born) spendResource();
+  return born;
 }
 
 function reducedFragmentRank(rank) {

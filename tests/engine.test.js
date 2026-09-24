@@ -286,12 +286,11 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
   assert.ok(s.origin);
   assert.equal(s.origin.selected, false);
   assert.equal(s.pieces.length, 0);
-  assert.equal(s.historicalTraits.includes("Respiração anaeróbia"), false);
+  assert.equal(s.historicalTraits.includes("Respiração anaeróbia"), true);
   assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
   assert.equal(s.historicalTraits.includes("Predação"), false);
-  assert.ok(
-    !s.discoveries.mutations.includes("Respiração anaeróbia"),
-  );
+  assert.ok(s.discoveries.mutations.includes("Respiração anaeróbia"));
+  assert.deepEqual(s.origin.traits, ["Respiração anaeróbia"]);
   assert.deepEqual(s.hadeanTutorial, {
     moved: false,
     divided: false,
@@ -1325,7 +1324,7 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(inducedPawn.nextReproductionRound, round(s) + 2);
+  assert.equal(inducedPawn.nextReproductionRound, round(s) + 3);
   assertState(s);
 });
 
@@ -1365,6 +1364,40 @@ test("predatory reproduction uses the same metabolic recovery profile", () => {
     forcedCount: 1,
   }), 1);
   assert.equal(predator.nextReproductionRound, round(s) + 5);
+  assertState(s);
+});
+
+test("metabolic recovery blocks predatory reproduction but preserves capture", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Predação", "Carnívoro"],
+    },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const predator = s.pieces[0],
+    victimId = s.pieces[1].id,
+    before = s.pieces.filter((piece) => piece.owner === "blue").length;
+  predator.nextReproductionRound = round(s) + 3;
+
+  assert.ok(
+    movesFor(s, predator).some(
+      (target) => target.r === 4 && target.c === 4 && target.capture,
+    ),
+  );
+
+  s = simulate(s, move(predator, 4, 4));
+  assert.ok(!s.pieces.some((piece) => piece.id === victimId));
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    before,
+  );
+  assert.equal(s.carcasses[0]?.cell, 36);
+  assert.equal(s.captureDisturbances[0]?.dueRound, 3);
   assertState(s);
 });
 
@@ -2134,7 +2167,7 @@ test("Necrófago consumes carcass without changing its underlying terrain", () =
   }
 });
 
-test("capture without trophic reproduction leaves a one-round disturbance", () => {
+test("capture without trophic reproduction keeps disturbance for the carcass lifetime", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
     { owner: "amber", r: 4, c: 4 },
@@ -2147,13 +2180,19 @@ test("capture without trophic reproduction leaves a one-round disturbance", () =
   assert.equal(s.carcasses[0]?.cell, 36);
   assert.equal(s.carcasses[0]?.dueRound, 3);
   assert.equal(disturbance.cell, 36);
-  assert.equal(disturbance.dueRound, 1);
+  assert.equal(disturbance.dueRound, 3);
   assert.equal(disturbance.sourceId, attacker.id);
   assert.equal(s.board[36], "neutral");
   assert.equal(attacker.decompositionImmunity.cell, 36);
 
   s = simulate(s, { type: "PASS" });
+  assert.equal(s.captureDisturbances.length, 1);
+  s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
   assert.equal(s.captureDisturbances.length, 0);
+  assert.equal(s.carcasses.length, 0);
   assert.ok(s.pieces.some((piece) => piece.id === attacker.id));
   assertState(s);
 });
@@ -2188,7 +2227,8 @@ test("successful multicellular predatory reproduction leaves feces for three rou
   assert.equal(site?.cell, 36);
   assert.equal(site?.kind, "fecal");
   assert.equal(site?.dueRound, 3);
-  assert.equal(s.captureDisturbances.length, 0);
+  assert.equal(s.captureDisturbances[0]?.cell, 36);
+  assert.equal(s.captureDisturbances[0]?.dueRound, 3);
   assert.equal(s.board[36], "neutral");
 
   s.turn = 4;
@@ -2197,6 +2237,7 @@ test("successful multicellular predatory reproduction leaves feces for three rou
   s.turn = 6;
   tickEnvironment(context(s));
   assert.equal(s.deathSites.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
   assert.equal(s.board[36], "neutral");
   assertState(s);
 });

@@ -535,7 +535,7 @@ export function render(
           ? `, semente das ${OWNERS[plantSeed.owner]}, ${plantSeed.movesRemaining} rodada(s) de dispersão restante(s)`
           : "",
         label = originHere
-          ? `${coord(r, c)}, Rei ancestral cinza${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
+          ? `${coord(r, c)}, Rei ancestral cinza, Respiração anaeróbia${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
           : `${coord(r, c)}, ${terrain}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${fecalResidue ? ", fezes" : ""}${carcass ? ", carcaça" : ""}${captureDisturbance ? ", perturbação temporária" : ""}${lethalHazard ? ", ambiente letal" : ""}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${vivificationTarget ? selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? ", vivificação disponível: Necrofagia" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}`;
       const accessibleLabel = fragment
         ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
@@ -965,18 +965,36 @@ export function render(
     }
     $("selected").replaceChildren(...selectedContent);
   } else if (origin?.selected) {
-    const heading = make("div", undefined, "selected-piece-heading");
+    const heading = make("div", undefined, "selected-piece-heading"),
+      trait = make("div", undefined, "trait selected-trait");
     heading.append(
       make("span", "♚", "piece origin-piece selected-piece-symbol"),
       doc.createTextNode(" Rei ancestral"),
+    );
+    const traitTitle = make("span");
+    traitTitle.append(
+      make("span", TRAITS["Respiração anaeróbia"][0], ""),
+      doc.createTextNode(" Respiração anaeróbia"),
+    );
+    trait.append(
+      traitTitle,
+      make(
+        "small",
+        traitSummary(
+          "Respiração anaeróbia",
+          TRAITS["Respiração anaeróbia"][1],
+        ),
+      ),
     );
     $("selected").replaceChildren(
       heading,
       make(
         "p",
-        "Ancestral comum das duas linhagens. Toque novamente no Rei cinza para dividi-lo em dois Reis protocelulares: um branco e um preto, ainda sem Fotossíntese ou Predação.",
+        "Ancestral comum das duas linhagens. Já possui metabolismo anaeróbio; toque novamente no Rei cinza para dividi-lo em dois Reis protocelulares, um branco e um preto, ainda sem Fotossíntese ou Predação.",
         "selected-ancestral",
       ),
+      make("div", "Vantagens Evolutivas", "selected-group-heading"),
+      trait,
     );
   } else {
     $("selected").replaceChildren(
