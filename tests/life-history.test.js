@@ -182,10 +182,10 @@ test("successful reproduction uses metabolic recovery and induced ovulation shor
     }),
     1,
   );
-  assert.equal(inducedParent.nextReproductionRound, 5);
-  induced.turn = 8;
-  assert.equal(reproductionReady(induced, inducedParent), false);
+  assert.equal(inducedParent.nextReproductionRound, 6);
   induced.turn = 10;
+  assert.equal(reproductionReady(induced, inducedParent), false);
+  induced.turn = 12;
   assert.equal(reproductionReady(induced, inducedParent), true);
   assertState(induced);
 });
