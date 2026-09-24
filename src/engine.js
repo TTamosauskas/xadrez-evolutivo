@@ -137,6 +137,7 @@ export function context(state) {
         reproduce(ctx, dead, null, "Ooteca", {
           immediateDevelopment: true,
           ignoreReadiness: true,
+          resourceKind: "stored",
         });
       scatterSeeds(state, dead);
       log(state, `${OWNERS[dead.owner]} perderam uma peça por ${reason}.`);
@@ -916,6 +917,7 @@ function executeMove(ctx, action) {
     const born = reproduce(ctx, p, null, "Respiração Cutânea", {
       resourceReproduction: true,
       resourceCell: resource,
+      resourceKind: "fertile",
     });
     if (born) {
       consumeReproductionResource(state, p, resource);
@@ -935,6 +937,7 @@ function executeMove(ctx, action) {
     const born = reproduce(ctx, p, null, "Traqueófitas", {
       resourceReproduction: true,
       resourceCell: resource,
+      resourceKind: "fertile",
     });
     if (born) {
       consumeReproductionResource(state, p, resource);
@@ -1241,7 +1244,9 @@ function executeMove(ctx, action) {
     if (killed) {
       state.lastSuccessfulCaptureRound = round(state);
       state.offensiveStagnation = null;
-      born = reproduce(ctx, p, null, "predação");
+      born = reproduce(ctx, p, null, "predação", {
+        resourceKind: "prey",
+      });
       if (!born) {
         markCarcass(state, victimCell);
         markCaptureDisturbance(state, victimCell);
@@ -1447,6 +1452,7 @@ function executeMove(ctx, action) {
         paedogenic || !has(p, "Ovífagia") ? 1 : egg.brood.length,
       immediateDevelopment: true,
       paedogenesis: paedogenic,
+      resourceKind: "egg",
     });
     log(
       state,
@@ -1458,6 +1464,7 @@ function executeMove(ctx, action) {
         paedogenic || !has(p, "Necrófago") ? 1 : undefined,
       immediateDevelopment: paedogenic,
       paedogenesis: paedogenic,
+      resourceKind: "carcass",
     });
     if (born) consumeCarcass(state, cell);
   } else if (coprophagy) {
@@ -1465,10 +1472,14 @@ function executeMove(ctx, action) {
       forcedCount: 1,
       immediateDevelopment: paedogenic,
       paedogenesis: paedogenic,
+      resourceKind: "feces",
     });
     if (born) consumeOrganicResidue(state, cell);
   } else if (cannibalism) {
-    born = reproduce(ctx, p, null, "canibalismo", { forcedCount: 1 });
+    born = reproduce(ctx, p, null, "canibalismo", {
+      forcedCount: 1,
+      resourceKind: "prey",
+    });
     if (born)
       log(
         state,
@@ -1485,6 +1496,11 @@ function executeMove(ctx, action) {
         forcedCount: paedogenic ? 1 : undefined,
         immediateDevelopment: paedogenic,
         paedogenesis: paedogenic,
+        resourceKind: predation
+          ? "prey"
+          : collectorStay
+            ? "seed"
+            : "fertile",
       },
     );
     if (
@@ -1720,6 +1736,7 @@ function choosePartner(ctx, id) {
     {
       fertileReproduction: resource.kind === "fertile",
       additionalMate: secondMate,
+      resourceKind: resource.kind,
     },
   );
   state.partner = null;
