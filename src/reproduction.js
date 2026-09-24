@@ -1374,7 +1374,12 @@ function reducedFragmentRank(rank) {
 }
 
 export function fragmentOnCapture(ctx, dead) {
-  if (!dead || !has(dead, "Fragmentação")) return 0;
+  if (
+    !dead ||
+    !has(dead, "Fragmentação") ||
+    !has(dead, "Respiração anaeróbia")
+  )
+    return 0;
   const state = ctx.state,
     cells = [];
   for (let dr = -1; dr <= 1; dr++)
