@@ -1538,7 +1538,13 @@ test("basal predation keeps one replacement birth above the population threshold
 
 test("predation creates at most one descendant and none once population pressure starts", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Multicelularismo", "Carnívoro"],
+    },
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -1914,7 +1920,7 @@ test("Onívoro uses fertile cells and gains predatory reproduction from either p
   }
   assertState(s);
 });
-test("Necrófago consumes organic residue without changing its underlying terrain", () => {
+test("Necrófago consumes carcass without changing its underlying terrain", () => {
   for (const terrainType of ["hostile", "fertile"]) {
     let s = fixture([
       {
@@ -1927,16 +1933,15 @@ test("Necrófago consumes organic residue without changing its underlying terrai
       { owner: "amber", r: 0, c: 0 },
     ]);
     s.board[36] = terrainType;
-    s.deathSites.push({
+    s.carcasses.push({
       cell: 36,
       dueRound: 3,
       base: terrainType,
-      kind: "organic",
     });
     s.rng = 1000;
     s = simulate(s, move(s.pieces[0], 4, 4));
     assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
-    assert.equal(s.deathSites.length, 0);
+    assert.equal(s.carcasses.length, 0);
     assert.equal(s.board[36], terrainType);
     assertState(s);
   }
@@ -1952,6 +1957,8 @@ test("capture without trophic reproduction leaves a one-round disturbance", () =
   const attacker = s.pieces.find((piece) => piece.id === 1),
     disturbance = s.captureDisturbances[0];
   assert.equal(s.deathSites.length, 0);
+  assert.equal(s.carcasses[0]?.cell, 36);
+  assert.equal(s.carcasses[0]?.dueRound, 3);
   assert.equal(disturbance.cell, 36);
   assert.equal(disturbance.dueRound, 1);
   assert.equal(disturbance.sourceId, attacker.id);
@@ -1973,13 +1980,15 @@ test("capture disturbance preserves fertile terrain underneath", () => {
   s.board[36] = "fertile";
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.equal(s.deathSites.length, 0);
+  assert.equal(s.carcasses[0]?.cell, 36);
+  assert.equal(s.carcasses[0]?.base, "fertile");
   assert.equal(s.captureDisturbances[0]?.cell, 36);
   assert.equal(s.captureDisturbances[0]?.base, "fertile");
   assert.equal(s.board[36], "fertile");
   assertState(s);
 });
 
-test("successful predatory reproduction leaves organic residue for three rounds", () => {
+test("successful multicellular predatory reproduction leaves feces for three rounds", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
     { owner: "amber", r: 4, c: 4 },
@@ -1990,7 +1999,7 @@ test("successful predatory reproduction leaves organic residue for three rounds"
   const site = s.deathSites[0];
   assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
   assert.equal(site?.cell, 36);
-  assert.equal(site?.kind, "organic");
+  assert.equal(site?.kind, "fecal");
   assert.equal(site?.dueRound, 3);
   assert.equal(s.captureDisturbances.length, 0);
   assert.equal(s.board[36], "neutral");
@@ -2005,7 +2014,7 @@ test("successful predatory reproduction leaves organic residue for three rounds"
   assertState(s);
 });
 
-test("photosynthetic occupancy recycles organic residue during settlement", () => {
+test("photosynthetic occupancy recycles feces during settlement", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
     { owner: "amber", r: 0, c: 0 },
@@ -2014,7 +2023,7 @@ test("photosynthetic occupancy recycles organic residue during settlement", () =
     cell: 36,
     dueRound: 3,
     base: "neutral",
-    kind: "organic",
+    kind: "fecal",
   });
   assert.equal(s.board[36], "neutral");
 
@@ -2023,12 +2032,12 @@ test("photosynthetic occupancy recycles organic residue during settlement", () =
   assert.equal(s.deathSites.length, 0);
   assert.equal(s.board[36], "fertile");
   assert.ok(
-    s.logs.some((entry) => entry.text.includes("matéria orgânica reciclada")),
+    s.logs.some((entry) => entry.text.includes("fezes recicladas")),
   );
   assertState(s);
 });
 
-test("Mixotrofia automatically recycles organic residue into fertility on entry", () => {
+test("Mixotrofia automatically recycles feces into fertility on entry", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Mixotrofia"] },
     { owner: "amber", r: 0, c: 0 },
@@ -2037,7 +2046,7 @@ test("Mixotrofia automatically recycles organic residue into fertility on entry"
     cell: 36,
     dueRound: 3,
     base: "neutral",
-    kind: "organic",
+    kind: "fecal",
   });
   const before = s.pieces.filter((piece) => piece.owner === "blue").length;
   s = simulate(s, move(s.pieces[0], 4, 4));
@@ -2048,14 +2057,24 @@ test("Mixotrofia automatically recycles organic residue into fertility on entry"
     before,
   );
   assert.ok(
-    s.logs.some((entry) => entry.text.includes("matéria orgânica reciclada")),
+    s.logs.some((entry) => entry.text.includes("fezes recicladas")),
   );
   assertState(s);
 });
 
-test("Necrófago consumes fertile organic residue without consuming fertile terrain", () => {
+test("Coprofagia consumes feces for exactly one descendant without consuming fertile terrain", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: [
+        "Multicelularismo",
+        "Locomoção Terrestre",
+        "Coprofagia",
+      ],
+    },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
@@ -2063,13 +2082,35 @@ test("Necrófago consumes fertile organic residue without consuming fertile terr
     cell: 36,
     dueRound: 3,
     base: "fertile",
-    kind: "organic",
+    kind: "fecal",
   });
-
+  const before = s.pieces.filter((piece) => piece.owner === "blue").length;
   s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    before + 1,
+  );
   assert.equal(s.deathSites.length, 0);
   assert.equal(s.board[36], "fertile");
+  assertState(s);
+});
+
+test("Necrófago removes the red disturbance when consuming its carcass", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.carcasses.push({ cell: 36, dueRound: 3, base: "neutral" });
+  s.captureDisturbances.push({
+    cell: 36,
+    dueRound: 1,
+    base: "neutral",
+    sourceId: null,
+  });
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
   assertState(s);
 });
 
