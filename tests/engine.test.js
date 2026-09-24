@@ -96,6 +96,7 @@ import {
   EVENTS,
   TRAITS,
   PIECE_LIFE_HISTORY,
+  has,
   square,
 } from "../src/constants.js";
 
@@ -596,7 +597,7 @@ test("sexual partners require the trait on both parents and can use the mate's f
   assertState(s);
 });
 
-test("pure carnivores can use their own fertile square for sexual reproduction", () => {
+test("Reprodução Sexuada replaces carnivore basal fertility with partner reproduction", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -1803,6 +1804,44 @@ test("generation milestones drive habitat and queue ecological events", () => {
   );
   assertState(s);
 });
+test("Multicelularismo ends primordial predatory reproduction even after later trait loss", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: [] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const multicellularPredator = s.pieces[0].id;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
+  assert.ok(s.pieces.some((p) => p.id === multicellularPredator));
+
+  s = createState(916, {
+    geologicalStage: "proterozoic",
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Fotossíntese",
+      "Predação",
+      "Reparo Celular",
+      "Dormência",
+      "Multicelularismo",
+    ],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("neutral");
+  const regressed = newPiece(s, "blue", 4, 3, {
+      traits: ["Predação"],
+      ancestry: ["Predação", "Multicelularismo"],
+    }),
+    victim = newPiece(s, "amber", 4, 4),
+    survivor = newPiece(s, "amber", 0, 0);
+  s.pieces.push(regressed, victim, survivor);
+  s = simulate(s, move(regressed, 4, 4));
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
+  assertState(s);
+});
+
 test("diet controls predatory reproduction without blocking capture", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
@@ -1858,10 +1897,12 @@ test("diet controls predatory reproduction without blocking capture", () => {
   ]);
   s.board[36] = "fertile";
   assert.ok(
-    !movesFor(s, s.pieces[0]).some(
+    movesFor(s, s.pieces[0]).some(
       (target) => target.r === 4 && target.c === 4 && target.stay,
     ),
   );
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
   assertState(s);
 });
 
