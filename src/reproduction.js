@@ -902,15 +902,11 @@ export function pieceLifeHistory(profile) {
   );
 }
 
-export function respiratoryReproductionCooldown(profile) {
-  const base = pieceLifeHistory(profile).respiration;
+export function metabolicReproductionCooldown(profile) {
+  const base = pieceLifeHistory(profile).metabolism;
   return has(profile, "Respiração aeróbia")
     ? Math.max(1, base - 1)
     : base;
-}
-
-export function predatoryReproductionCooldown(profile) {
-  return pieceLifeHistory(profile).predation;
 }
 
 export function sexualMaturityRounds(profile) {
@@ -1062,6 +1058,11 @@ export function reproduce(
         .map((candidate) => [candidate.id, candidate]),
     ).values()];
   if (
+    !has(parent, "Respiração anaeróbia") ||
+    mates.some((candidate) => !has(candidate, "Respiração anaeróbia"))
+  )
+    return 0;
+  if (
     mates.length &&
     (!has(parent, "Reprodução Sexuada") ||
       mates.some((candidate) => !has(candidate, "Reprodução Sexuada")))
@@ -1152,17 +1153,11 @@ export function reproduce(
         : Math.min(populationLimit, competitivePressure.limit),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece) => {
-      const respiratory =
-          options.resourceReproduction || options.fertileReproduction,
-        predatory = reason === "predação";
-      let base = respiratory
-        ? respiratoryReproductionCooldown(piece)
-        : predatory
-          ? predatoryReproductionCooldown(piece)
-          : 3;
+      const predatory = reason === "predação";
+      let base = metabolicReproductionCooldown(piece);
       if (has(piece, "Ovulação Induzida"))
         base = Math.max(1, base - 1);
-      if (has(piece, "Insuficiência Respiratória") && respiratory)
+      if (has(piece, "Insuficiência Respiratória"))
         base *= 2;
       if (has(piece, "Má absorção Alimentar") && predatory)
         base *= 2;
