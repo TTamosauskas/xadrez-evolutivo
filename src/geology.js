@@ -452,6 +452,9 @@ export function activeTraitFamily(trait) {
 export const TRAIT_DEPENDENCIES = {
   Multicelularismo: { lineage: ["Reparo Celular"] },
   "Simetria Bilateral": { lineage: ["Multicelularismo"] },
+  "Reprodução Sexuada": {
+    lineage: ["Respiração anaeróbia", "Multicelularismo"],
+  },
   "Respiração aeróbia": {
     lineage: ["Respiração anaeróbia"],
     historical: ["Fotossíntese"],

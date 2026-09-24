@@ -142,7 +142,7 @@ test("cellular repair halves negative mutation pressure to the current baseline"
   );
 });
 
-test("successful reproduction has a three-round cooldown and induced ovulation shortens it to two", () => {
+test("successful reproduction uses metabolic recovery and induced ovulation shortens it", () => {
   const normal = fixture([
       { owner: "blue", r: 4, c: 4, rank: 5 },
       { owner: "amber", r: 0, c: 0 },
@@ -153,14 +153,14 @@ test("successful reproduction has a three-round cooldown and induced ovulation s
     reproduce(context(normal), parent, null, "teste", { forcedCount: 1 }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 3);
+  assert.equal(parent.nextReproductionRound, 6);
   assert.equal(
     reproduce(context(normal), parent, null, "teste", { forcedCount: 1 }),
     0,
   );
-  normal.turn = 4;
+  normal.turn = 10;
   assert.equal(reproductionReady(normal, parent), false);
-  normal.turn = 6;
+  normal.turn = 12;
   assert.equal(reproductionReady(normal, parent), true);
 
   const induced = fixture([
@@ -182,10 +182,10 @@ test("successful reproduction has a three-round cooldown and induced ovulation s
     }),
     1,
   );
-  assert.equal(inducedParent.nextReproductionRound, 2);
-  induced.turn = 2;
+  assert.equal(inducedParent.nextReproductionRound, 5);
+  induced.turn = 8;
   assert.equal(reproductionReady(induced, inducedParent), false);
-  induced.turn = 4;
+  induced.turn = 10;
   assert.equal(reproductionReady(induced, inducedParent), true);
   assertState(induced);
 });
@@ -263,7 +263,7 @@ test("Canibalismo captures an allied piece and replaces it with exactly one juve
   assert.equal(juvenile(s, children[0]), true);
   assert.equal(
     s.pieces.find((piece) => piece.id === attackerId).nextReproductionRound,
-    3,
+    5,
   );
   assert.ok(s.deathSites.some((site) => site.cell === square(4, 4)));
   assertState(s);

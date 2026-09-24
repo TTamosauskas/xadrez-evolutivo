@@ -77,8 +77,7 @@ import {
   populationReproductionLimit,
   populationReproductionCooldown,
   predationBirthLimit,
-  respiratoryReproductionCooldown,
-  predatoryReproductionCooldown,
+  metabolicReproductionCooldown,
   sexualMaturityRounds,
 } from "../src/reproduction.js";
 import { crowdingPenalty } from "../src/ai.js";
@@ -1242,23 +1241,20 @@ test("population pressure governs fertility, pathogens and severe climate", () =
   assert.equal(photosynthesisDelayTurns(state), 6);
 });
 
-test("piece life history defines brood, respiration, predation and sexual maturity", () => {
+test("piece life history defines brood, metabolic recovery and sexual maturity", () => {
   assert.deepEqual(
-    PIECE_LIFE_HISTORY.map(
-      ({ brood, respiration, predation, maturity }) => [
-        brood,
-        respiration,
-        predation,
-        maturity,
-      ],
-    ),
+    PIECE_LIFE_HISTORY.map(({ brood, metabolism, maturity }) => [
+      brood,
+      metabolism,
+      maturity,
+    ]),
     [
-      [4, 3, 2, 1],
-      [3, 4, 3, 2],
-      [2, 4, 3, 2],
-      [2, 5, 4, 3],
-      [1, 5, 4, 3],
-      [1, 6, 5, 4],
+      [4, 3, 1],
+      [3, 4, 2],
+      [2, 4, 2],
+      [2, 5, 3],
+      [1, 5, 3],
+      [1, 6, 4],
     ],
   );
 
@@ -1270,16 +1266,12 @@ test("piece life history defines brood, respiration, predation and sexual maturi
         traits: ["Respiração anaeróbia", "Precocidade Sexual"],
       };
     assert.equal(
-      respiratoryReproductionCooldown(profile),
-      PIECE_LIFE_HISTORY[rank].respiration,
+      metabolicReproductionCooldown(profile),
+      PIECE_LIFE_HISTORY[rank].metabolism,
     );
     assert.equal(
-      respiratoryReproductionCooldown(aerobic),
-      Math.max(1, PIECE_LIFE_HISTORY[rank].respiration - 1),
-    );
-    assert.equal(
-      predatoryReproductionCooldown(profile),
-      PIECE_LIFE_HISTORY[rank].predation,
+      metabolicReproductionCooldown(aerobic),
+      Math.max(1, PIECE_LIFE_HISTORY[rank].metabolism - 1),
     );
     assert.equal(
       sexualMaturityRounds(profile),
@@ -1292,7 +1284,7 @@ test("piece life history defines brood, respiration, predation and sexual maturi
   }
 });
 
-test("fertile reproduction uses the piece respiratory recovery profile", () => {
+test("fertile reproduction uses the piece metabolic recovery profile", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração anaeróbia"] },
     { owner: "amber", r: 0, c: 0 },
@@ -1337,7 +1329,7 @@ test("fertile reproduction uses the piece respiratory recovery profile", () => {
   assertState(s);
 });
 
-test("predatory recovery scales with piece rank", () => {
+test("predatory reproduction uses the same metabolic recovery profile", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 0, traits: ["Predação"] },
     { owner: "amber", r: 3, c: 3, rank: 0 },
@@ -1346,10 +1338,26 @@ test("predatory recovery scales with piece rank", () => {
   assert.equal(reproduce(context(s), predator, null, "predação", {
     forcedCount: 1,
   }), 1);
-  assert.equal(predator.nextReproductionRound, round(s) + 2);
+  assert.equal(predator.nextReproductionRound, round(s) + 3);
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Predação"] },
+    { owner: "amber", r: 0, c: 0, rank: 0 },
+  ]);
+  predator = s.pieces[0];
+  assert.equal(reproduce(context(s), predator, null, "predação", {
+    forcedCount: 1,
+  }), 1);
+  assert.equal(predator.nextReproductionRound, round(s) + 6);
+
+  s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Predação", "Respiração aeróbia"],
+    },
     { owner: "amber", r: 0, c: 0, rank: 0 },
   ]);
   predator = s.pieces[0];

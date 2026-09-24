@@ -1304,11 +1304,11 @@ test("selected-piece lifecycle countdowns use compact wait copy", () => {
     mobileSummary = dom.window.document.getElementById("mobile-selected-summary");
 
   assert.match(selected.textContent, /⏳ 1 t maturidade sexual\./);
-  assert.match(selected.textContent, /⏳ 5 t descanso reprodutivo\./);
+  assert.match(selected.textContent, /⏳ 5 t recuperação metabólica\./);
   assert.match(mobileSummary.textContent, /⏳ 5 t/);
   assert.doesNotMatch(
     mobileSummary.textContent,
-    /maturidade sexual|descanso reprodutivo/i,
+    /maturidade sexual|recuperação metabólica/i,
   );
   assert.doesNotMatch(selected.textContent, /rodada\(s\) restante/);
   dom.window.close();

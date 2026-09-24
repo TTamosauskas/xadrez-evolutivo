@@ -68,7 +68,7 @@ const WAIT_STATUS_LABELS = Object.freeze({
   "Descanso por Mutação Disfuncional": "mutação disfuncional",
   "Dormência em terreno hostil": "dormência em terreno hostil",
   "Maturidade sexual": "maturidade sexual",
-  "Recuperação reprodutiva": "descanso reprodutivo",
+  "Recuperação metabólica": "recuperação metabólica",
   "Sem ação legal disponível": "nenhuma ação disponível",
 });
 const compactWaitStatus = ({ reason, remainingRounds } = {}) => {
@@ -838,12 +838,12 @@ export function render(
       );
     if (
       (actor.nextReproductionRound ?? 0) > currentRound &&
-      actorActionState.reason !== "Recuperação reprodutiva"
+      actorActionState.reason !== "Recuperação metabólica"
     )
       statusDetails.push(
         make(
           "p",
-          `⏳ ${actor.nextReproductionRound - currentRound} t descanso reprodutivo.`,
+          `⏳ ${actor.nextReproductionRound - currentRound} t recuperação metabólica.`,
           "selected-status",
         ),
       );

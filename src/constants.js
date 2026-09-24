@@ -7,12 +7,12 @@ export const SYMBOLS = {
   amber: ["♟", "♞", "♝", "♜", "♚", "♛"],
 };
 export const PIECE_LIFE_HISTORY = Object.freeze([
-  Object.freeze({ brood: 4, respiration: 3, predation: 2, maturity: 1 }),
-  Object.freeze({ brood: 3, respiration: 4, predation: 3, maturity: 2 }),
-  Object.freeze({ brood: 2, respiration: 4, predation: 3, maturity: 2 }),
-  Object.freeze({ brood: 2, respiration: 5, predation: 4, maturity: 3 }),
-  Object.freeze({ brood: 1, respiration: 5, predation: 4, maturity: 3 }),
-  Object.freeze({ brood: 1, respiration: 6, predation: 5, maturity: 4 }),
+  Object.freeze({ brood: 4, metabolism: 3, maturity: 1 }),
+  Object.freeze({ brood: 3, metabolism: 4, maturity: 2 }),
+  Object.freeze({ brood: 2, metabolism: 4, maturity: 2 }),
+  Object.freeze({ brood: 2, metabolism: 5, maturity: 3 }),
+  Object.freeze({ brood: 1, metabolism: 5, maturity: 3 }),
+  Object.freeze({ brood: 1, metabolism: 6, maturity: 4 }),
 ]);
 export const BIRTH_RATES = Object.freeze(
   PIECE_LIFE_HISTORY.map((profile) => profile.brood),
@@ -119,11 +119,11 @@ export const TRAITS = {
   ],
   "Respiração anaeróbia": [
     "⚪",
-    "Metabolismo sem oxigênio. Permite consumir uma casa fértil pré-existente; a recuperação reprodutiva depende do tipo de peça.",
+    "Metabolismo energético basal sem oxigênio. Habilita o estado metabólico necessário para toda reprodução; a reprodução basal usa uma casa fértil pré-existente como recurso.",
   ],
   "Respiração aeróbia": [
     "🔵",
-    "Metabolismo mais eficiente com oxigênio. Reduz em uma rodada a recuperação respiratória própria da peça.",
+    "Metabolismo mais eficiente com oxigênio. Mantém a capacidade metabólica basal e reduz em uma rodada a recuperação metabólica após qualquer reprodução.",
   ],
   Fotossíntese: [
     "🟢",
@@ -271,7 +271,7 @@ export const TRAITS = {
   Esterilidade: ["🚫", "Impede a reprodução."],
   "Insuficiência Respiratória": [
     "😮‍💨",
-    "Dobra o intervalo metabólico da reprodução, tornando a recuperação respiratória mais lenta.",
+    "Dobra o intervalo de recuperação metabólica após qualquer reprodução.",
   ],
   Imunodeficiência: [
     "🤢",

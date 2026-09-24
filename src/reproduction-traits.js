@@ -81,6 +81,7 @@ export function paedogenesisReady(state, piece) {
   return !!(
     piece &&
     has(piece, "Pedogênese") &&
+    has(piece, "Respiração anaeróbia") &&
     juvenile(state, piece) &&
     !piece.paedogenesisUsed &&
     !has(piece, "Esterilidade") &&
