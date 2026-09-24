@@ -955,7 +955,7 @@ test("stationary environmental effects remain actionable while active", () => {
 test("organic residue is Vivificar for photosynthetic recyclers and scavengers", () => {
   let dom = setup(),
     s = fixture([
-      { owner: "blue", r: 4, c: 3, traits: ["Mixotrofia"] },
+      { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Mixotrofia"] },
       { owner: "amber", r: 0, c: 0 },
     ]),
     piece = s.pieces[0];
