@@ -258,8 +258,7 @@ test("alternative and arena scenarios use period-independent uniform ecological 
 
   const earth = createCampaignState(5, "earth"),
     weights = eventWeights(earth);
-  assert.ok(Object.keys(weights).length < EVENTS.length);
-  assert.ok(Object.values(weights).some((weight) => weight !== 1));
+  assert.deepEqual(weights, {});
 });
 
 test("Arena completes Carnívoro with its multicellular foundation", () => {
