@@ -1510,7 +1510,8 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.equal(d.querySelectorAll(".origin-piece").length, 0);
     assert.equal(d.querySelectorAll(".piece.blue").length, 1);
     assert.equal(d.querySelectorAll(".piece.amber").length, 1);
-    assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 0);
+    assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 2);
+    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
     assert.match(d.getElementById("round").textContent, /Tutorial 0\/3/);
 
     const blue = d.querySelector(".piece.blue");
@@ -1534,7 +1535,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     click("info-ok");
     assert.match(d.getElementById("round").textContent, /Hadeano · 1º Ciclo/);
     assert.equal(d.querySelectorAll(".origin-piece").length, 1);
-    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
+    assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 0);
   } finally {
     globalThis.document = prior.document;
     globalThis.localStorage = prior.localStorage;
