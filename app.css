@@ -402,16 +402,6 @@ main {
     0 -1px #2d3031;
   filter: drop-shadow(0 3px 2px #0008);
 }
-.piece.hadean-protocell,
-.mobile-selected-symbol.hadean-protocell {
-  color: #8f9698;
-  text-shadow:
-    1px 0 #2d3031,
-    -1px 0 #2d3031,
-    0 1px #2d3031,
-    0 -1px #2d3031;
-  filter: drop-shadow(0 3px 2px #0008);
-}
 .cell .piece.juvenile {
   font-size: clamp(14px, 3.3vw, 34px);
 }
