@@ -1505,7 +1505,9 @@ test("application UI can play Hadean division, acknowledge reproduction, save an
 
     const blue = d.querySelector(".piece.blue");
     blue.parentElement.click();
-    const selectedCell = blue.parentElement;
+    const selectedCell = d.querySelector(
+      `[data-r="${blue.parentElement.dataset.r}"][data-c="${blue.parentElement.dataset.c}"]`,
+    );
     assert.ok(selectedCell.classList.contains("vivification-target"));
     selectedCell.click();
 
