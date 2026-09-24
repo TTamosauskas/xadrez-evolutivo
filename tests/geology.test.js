@@ -225,7 +225,7 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
 
 test("Archean starts green and stationary", () => {
   const s = createState(101);
-  assert.equal(s.version, 17);
+  assert.equal(s.version, 18);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
