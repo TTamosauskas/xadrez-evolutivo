@@ -757,7 +757,7 @@ export function earthFounderStarts(geologicalStage, cycle = 1) {
       ["blue", 5, 2, null],
       ["amber", 2, 5, null],
     ];
-  if (geologicalStage === "archean" && cycle >= 2)
+  if (geologicalStage === "archean")
     return [
       ["blue", 4, 2, "primary"],
       ["blue", 4, 3, "companion"],
@@ -1106,10 +1106,12 @@ export function createPeriodState(
       scenario,
     });
   const preview = previewFounderProfiles(stageIndex),
-    completedCycles = GEOLOGICAL_STAGES.slice(0, stageIndex).reduce(
-      (sum, stage) => sum + (stage.cycles?.length ?? 1),
-      0,
-    );
+    completedCycles = GEOLOGICAL_STAGES.slice(0, stageIndex)
+      .filter((stage) => stage.id !== "hadean")
+      .reduce(
+        (sum, stage) => sum + (stage.cycles?.length ?? 1),
+        0,
+      );
   return createState(seed, {
     scenario,
     geologicalStage,
@@ -1416,7 +1418,10 @@ function createEarthSuccessorState(previous, seed) {
       : priorStage,
     advanced = candidate.id !== priorStage.id,
     cycle = advanced ? 1 : previous.cycle + 1,
-    totalCycles = previous.totalCycles + 1,
+    totalCycles =
+      priorStage.id === "hadean"
+        ? 1
+        : previous.totalCycles + 1,
     stageIndex = GEOLOGICAL_STAGES.findIndex((stage) => stage.id === candidate.id),
     preview = previewFounderProfiles(stageIndex),
     state = createState(seed, {
@@ -1451,6 +1456,42 @@ export function createSuccessorState(previous, seed = Date.now()) {
     return createEarthSuccessorState(previous, seed);
   if (previous.scenario === "arena")
     return createArenaSuccessorState(previous, null, seed);
+  if (
+    currentGeologicalStage(previous).id === "hadean" &&
+    stageComplete(previous)
+  ) {
+    const candidate = nextGeologicalStage("hadean"),
+      stageIndex = GEOLOGICAL_STAGES.findIndex(
+        (stage) => stage.id === candidate.id,
+      ),
+      preview = previewFounderProfiles(stageIndex),
+      state = createState(seed, {
+        scenario: previous.scenario,
+        geologicalStage: candidate.id,
+        cycle: 1,
+        totalCycles: 1,
+        generationOffset:
+          previous.generationOffset + previous.maxGenerationReached + 1,
+        historicalTraits: [
+          ...new Set([
+            ...previous.historicalTraits,
+            ...preview.historicalTraits,
+          ]),
+        ],
+        fossilRecord: [
+          ...(previous.fossilRecord ?? []),
+          ...fossilEntries(previous),
+        ],
+        discoveries: previous.discoveries,
+        founders: { primary: preview.primary, companion: preview.companion },
+        canonicalPair: true,
+      });
+    log(
+      state,
+      "Transição Evolutiva: o ambiente hadeano se estabilizou; surgem as linhagens arqueanas fotossintética e predatória.",
+    );
+    return state;
+  }
   const winner = previous.result?.winner ?? null,
     selected = dominantLineage(previous, winner),
     founder = founderProfile(previous, selected.piece),
