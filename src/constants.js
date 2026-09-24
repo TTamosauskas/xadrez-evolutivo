@@ -96,7 +96,7 @@ export const TRAITS = {
   ],
   Necrófago: [
     "🐺",
-    "Reproduz consumindo uma casa marcada com ☠️, vermelha ou verde.",
+    "Reproduz consumindo matéria orgânica 💩 deixada por uma captura que gerou descendência.",
   ],
   Ovíparo: ["🥒", "A reprodução deposita um ovo ⚪ móvel que busca terreno fértil para eclodir após pelo menos três rodadas."],
   "Ovíparos Amniotas": [
@@ -391,13 +391,13 @@ export const PATHOGEN_AGENTS = Object.freeze({
 });
 export const PATHOGEN_AGENT_IDS = Object.freeze(Object.keys(PATHOGEN_AGENTS));
 export const EVENTS = [
-  ["volcano", "🌋", "Erupção Vulcânica", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, e Conway fica suspenso."],
+  ["volcano", "🌋", "Erupção Vulcânica", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, com um pequeno núcleo ☠️ de lava letal; Conway fica suspenso."],
   ["ice", "❄️", "Era Glacial", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, e Conway fica suspenso."],
   ["pathogen", "☣️", "Surto Patogênico", "Um surto viral, bacteriano ou fúngico pressiona as populações durante várias rodadas."],
   ["solar", "🌄", "Tempestade Solar", "Todo nascimento sofre mutação durante 10 rodadas."],
   ["drought", "🏜️", "Seca Severa", "A quantidade de casas férteis fica limitada à metade durante 10 rodadas."],
   ["sea", "🌊", "Elevação do Mar", "As bordas do tabuleiro permanecem hostis durante 10 rodadas."],
-  ["meteor", "☄️", "Meteoro", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, e Conway fica suspenso."],
+  ["meteor", "☄️", "Meteoro", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, com uma casa ☠️ no ponto de impacto; Conway fica suspenso."],
   ["grb", "💥", "Explosões de raios gama (GRBs)", "Evento severo: uma chuva de radiação torna 58 casas hostis durante 5 turnos, e Conway fica suspenso."],
   ["warming", "🌡️", "Aquecimento Global", "Evento severo: casas hostis são espalhadas pelo tabuleiro até ocupar 90% dele durante 5 turnos, e Conway fica suspenso."],
   ["desert", "🌵", "Desertificação", "As casas férteis diminuem gradualmente durante 10 rodadas, até restar uma."],
