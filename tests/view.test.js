@@ -1526,6 +1526,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 2);
     assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
     assert.match(d.getElementById("round").textContent, /Tutorial 0\/3/);
+    if (d.querySelector("#notice-dialog[open]")) click("notice-ok");
 
     const blue = d.querySelector(".piece.blue");
     blue.parentElement.click();
@@ -1656,6 +1657,7 @@ test("Hadean extinction offers the formal transition to Archean", () => {
   const dom = setup(),
     s = createCampaignState(404);
   s.origin = null;
+  s.historicalTraits = ["Respiração anaeróbia"];
   s.phase = "over";
   s.result = { winner: "amber", reason: "Extinção total." };
   s.pieces = [
