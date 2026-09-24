@@ -107,8 +107,27 @@ test("each geological discovery can launch the first cycle with prior winners re
       for (const owner of ["blue", "amber"]) {
         const founders = s.pieces.filter((piece) => piece.owner === owner);
         assert.equal(founders.length, 2);
-        assert.equal(founders.filter((piece) => piece.traits.includes("Fotossíntese")).length, 1);
-        assert.equal(founders.filter((piece) => !piece.traits.includes("Fotossíntese")).length, 1);
+        if (stage.id === "archean") {
+          assert.ok(
+            founders.every(
+              (piece) =>
+                piece.mutations === 0 &&
+                piece.traits.length === 1 &&
+                piece.traits.includes("Respiração anaeróbia"),
+            ),
+          );
+        } else {
+          assert.equal(
+            founders.filter((piece) => piece.traits.includes("Fotossíntese"))
+              .length,
+            1,
+          );
+          assert.equal(
+            founders.filter((piece) => !piece.traits.includes("Fotossíntese"))
+              .length,
+            1,
+          );
+        }
       }
       const priorRequired = GEOLOGICAL_STAGES.slice(0, index).flatMap(
         (prior) => prior.required,
