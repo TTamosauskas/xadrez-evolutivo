@@ -1,7 +1,13 @@
 import { legalActions, movesFor } from "./moves.js";
 import { simulate } from "./engine.js";
-import { has, other, square, distance } from "./constants.js";
-import { eggAt, barrierAt } from "./state.js";
+import { has, other, square, distance, canPhotosynthesize } from "./constants.js";
+import {
+  eggAt,
+  barrierAt,
+  organicResidueAt,
+  captureDisturbanceAt,
+  lethalHazardAt,
+} from "./state.js";
 import {
   canUseBasalFertility,
   predatoryReproductionAvailable,
@@ -143,14 +149,29 @@ function priority(state, a) {
     fertileValue =
       !victim && targetTerrain === "fertile" && canUseBasalFertility(p)
         ? 4
-        : 0;
+        : 0,
+    organicValue =
+      p && targetCell !== null && organicResidueAt(state, a.r, a.c)
+        ? canPhotosynthesize(p)
+          ? 8
+          : has(p, "Necrófago") || has(p, "Onívoro Oportunista")
+            ? 7
+            : -8
+        : 0,
+    disturbancePenalty =
+      targetCell !== null && captureDisturbanceAt(state, a.r, a.c) ? 8 : 0,
+    lethalPenalty =
+      targetCell !== null && lethalHazardAt(state, a.r, a.c) ? 10000 : 0;
   return (
     hunt +
     captureValue +
     cannibalValue +
     fertileValue +
+    organicValue +
     (egg && egg.owner !== state.current ? 6 + egg.brood.length : 0) -
-    (targetTerrain === "hostile" && !has(p, "Dormência") ? 8 : 0)
+    (targetTerrain === "hostile" && !has(p, "Dormência") ? 8 : 0) -
+    disturbancePenalty -
+    lethalPenalty
   );
 }
 function evaluate(state, owner) {
