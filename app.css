@@ -150,6 +150,14 @@ main {
 .cell.terrain-single-tone.hostile.dark {
   background: #a84f45;
 }
+.cell.organic-residue,
+.cell.terrain-single-tone.organic-residue {
+  background: #b86155;
+}
+.cell.organic-residue.dark,
+.cell.terrain-single-tone.organic-residue.dark {
+  background: #87443d;
+}
 .cell.barrier,
 .cell.barrier.dark,
 .cell.barrier:hover {
@@ -349,12 +357,6 @@ main {
   font-family: "DejaVu Sans", "Segoe UI Symbol", serif;
   filter: drop-shadow(0 2px 1px #0007);
 }
-.piece.reproduction-ready {
-  filter:
-    drop-shadow(0 2px 1px #0007)
-    drop-shadow(0 0 4px #ffffff)
-    drop-shadow(0 0 10px #ffffff);
-}
 .piece-energy-core {
   position: absolute;
   left: 50%;
@@ -373,6 +375,14 @@ main {
   box-shadow: 0 1px 3px #0009;
   filter: drop-shadow(0 1px 1px #0008);
   pointer-events: none;
+}
+.piece-energy-core.blue {
+  border-color: #403b31;
+  background: #fff8df;
+}
+.piece-energy-core.amber {
+  border-color: #f7eace99;
+  background: #242623;
 }
 .piece-energy-core.compact {
   width: clamp(10px, 1.9vw, 17px);
