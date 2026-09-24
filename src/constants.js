@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 17;
+export const STATE_VERSION = 18;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -96,7 +96,11 @@ export const TRAITS = {
   ],
   Necrófago: [
     "🐺",
-    "Reproduz consumindo matéria orgânica 💩 deixada por uma captura que gerou descendência.",
+    "Reproduz consumindo uma carcaça 🦴 deixada por uma captura que matou sem gerar descendência.",
+  ],
+  Coprofagia: [
+    "💩",
+    "Especialização alimentar de organismos não fotossintéticos: consome fezes 💩 deixadas por alimentação predatória para gerar no máximo um descendente.",
   ],
   Ovíparo: ["🥒", "A reprodução deposita um ovo ⚪ móvel que busca terreno fértil para eclodir após pelo menos três rodadas."],
   "Ovíparos Amniotas": [
@@ -335,7 +339,7 @@ export const TRAITS = {
   ],
   "Onívoro Oportunista": [
     "🐷",
-    "Especialização de Onívoro: permite aproveitar carniça e ovos como rotas reprodutivas de baixa eficiência quando faltam as especializações correspondentes.",
+    "Especialização de Onívoro: permite aproveitar carcaças 🦴 e ovos como rotas reprodutivas de baixa eficiência quando faltam as especializações correspondentes.",
   ],
   "Acasalamento Preferencial": [
     "🦚",
