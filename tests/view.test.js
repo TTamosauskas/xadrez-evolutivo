@@ -264,7 +264,8 @@ test("board legend only shows terrain elements currently visible", () => {
   s.board[0] = "fertile";
   s.board[1] = "hostile";
   s.barriers = [2];
-  s.deathSites = [{ cell: 3, dueRound: 3, base: "neutral", kind: "organic" }];
+  s.deathSites = [{ cell: 3, dueRound: 3, base: "neutral", kind: "fecal" }];
+  s.carcasses = [{ cell: 4, dueRound: 3, base: "neutral" }];
 
   render(dom.window.document, s);
   const legend = dom.window.document.getElementById("board-legend"),
@@ -276,7 +277,8 @@ test("board legend only shows terrain elements currently visible", () => {
     "🟩Casa fértil",
     "🟥Casa hostil",
     "🟫Barreira",
-    "💩Matéria orgânica",
+    "💩Fezes",
+    "🦴Carcaça",
   ]);
   assert.equal(legend.querySelector(".legend-action-ring"), null);
 
@@ -284,6 +286,7 @@ test("board legend only shows terrain elements currently visible", () => {
   s.board[1] = "neutral";
   s.barriers = [];
   s.deathSites = [];
+  s.carcasses = [];
   render(dom.window.document, s);
   assert.equal(legend.children.length, 0);
   dom.window.close();
@@ -952,7 +955,7 @@ test("stationary environmental effects remain actionable while active", () => {
   assert.ok(actionable.has("Extremófitas"));
 });
 
-test("organic residue is Vivificar for photosynthetic recyclers and scavengers", () => {
+test("feces and carcasses use distinct Vivificar routes", () => {
   let dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Mixotrofia"] },
@@ -963,13 +966,13 @@ test("organic residue is Vivificar for photosynthetic recyclers and scavengers",
     cell: 36,
     dueRound: 3,
     base: "neutral",
-    kind: "organic",
+    kind: "fecal",
   });
 
   render(dom.window.document, s, { selected: piece.id });
   let target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
   assert.ok(target.classList.contains("vivification-target"));
-  assert.match(target.title, /reciclar matéria orgânica/);
+  assert.match(target.title, /reciclar fezes/);
   assert.match(target.textContent, /💩/);
   dom.window.close();
 
@@ -979,16 +982,43 @@ test("organic residue is Vivificar for photosynthetic recyclers and scavengers",
     { owner: "amber", r: 0, c: 0 },
   ]);
   piece = s.pieces[0];
-  s.deathSites.push({
+  s.carcasses.push({ cell: 36, dueRound: 3, base: "neutral" });
+  s.captureDisturbances.push({
     cell: 36,
-    dueRound: 3,
+    dueRound: 1,
     base: "neutral",
-    kind: "organic",
+    sourceId: null,
   });
   render(dom.window.document, s, { selected: piece.id });
   target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
   assert.ok(target.classList.contains("vivification-target"));
   assert.match(target.title, /Necrofagia/);
+  assert.match(target.textContent, /🦴/);
+  dom.window.close();
+
+  dom = setup();
+  s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Multicelularismo", "Locomoção Terrestre", "Coprofagia"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  piece = s.pieces[0];
+  s.deathSites.push({
+    cell: 36,
+    dueRound: 3,
+    base: "neutral",
+    kind: "fecal",
+  });
+  render(dom.window.document, s, { selected: piece.id });
+  target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
+  assert.ok(target.classList.contains("vivification-target"));
+  assert.match(target.title, /Coprofagia/);
+  assert.match(target.textContent, /💩/);
   dom.window.close();
 });
 
