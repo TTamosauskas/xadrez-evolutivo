@@ -1686,7 +1686,7 @@ export function assertState(state) {
     state.totalCycles < state.cycle ||
     !(
       state.sexualPathogenUnlockTotalCycle === null ||
-      integer(state.sexualPathogenUnlockTotalCycle, 2)
+      integer(state.sexualPathogenUnlockTotalCycle, 1)
     ) ||
     !integer(state.generationOffset) ||
     !integer(state.maxGenerationReached) ||
