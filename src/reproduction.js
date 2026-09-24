@@ -242,6 +242,7 @@ function mutation(state, p, positiveOnly, excludedTraits = null) {
     label = `Mutação de peça: ${PIECES[p.rank]}`;
   } else if (choice.geneGain) {
     if (
+      state.scenario !== "arena" &&
       POSITIVE.includes(choice.geneGain) &&
       !(state.historicalTraits ?? []).includes(choice.geneGain) &&
       !(state.cyclePositiveInnovations ?? []).includes(choice.geneGain)
