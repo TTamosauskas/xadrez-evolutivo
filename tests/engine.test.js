@@ -2198,6 +2198,98 @@ test("first-cycle mutation attempts never fall back to deleterious outcomes", ()
   assertState(s);
 });
 
+function sexualInnovationState(seed) {
+  const s = createState(seed, {
+    scenario: "earth",
+    geologicalStage: "proterozoic",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: [
+      ...GEOLOGICAL_STAGES[0].required,
+      "Multicelularismo",
+      "Resistência",
+      "Regeneração",
+    ],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("neutral");
+  const traits = [
+      "Respiração anaeróbia",
+      "Predação",
+      "Reparo Celular",
+      "Multicelularismo",
+      "Resistência",
+      "Regeneração",
+      "Respiração aeróbia",
+    ],
+    parent = newPiece(s, "blue", 4, 4, {
+      rank: 0,
+      traits,
+      ancestry: traits,
+    }),
+    rival = newPiece(s, "amber", 0, 0);
+  s.pieces.push(parent, rival);
+  s.event = {
+    ...EVENTS.find((event) => event.id === "solar"),
+    startRound: 0,
+    hazards: [],
+    snapshots: {},
+  };
+  return { s, parent };
+}
+
+test("first Reprodução Sexuada innovation establishes two founders in a multi-child brood", () => {
+  const { s, parent } = sexualInnovationState(1201),
+    before = s.nextId;
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 4,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    4,
+  );
+  const children = s.pieces.filter(
+      (piece) => piece.owner === "blue" && piece.id >= before,
+    ),
+    sexual = children.filter((child) => has(child, "Reprodução Sexuada"));
+  assert.equal(sexual.length, 2);
+  assert.ok(
+    sexual.every((child) => child.ancestry.includes("Reprodução Sexuada")),
+  );
+  assert.ok(sexual.every((child) => child.mutations >= 1));
+  assert.equal(
+    s.seenMutations.filter((label) => label === "Reprodução Sexuada").length,
+    1,
+  );
+  assert.ok(s.historicalTraits.includes("Reprodução Sexuada"));
+  assertState(s);
+});
+
+test("unit broods cannot originate Reprodução Sexuada", () => {
+  for (let seed = 1210; seed < 1220; seed++) {
+    const { s, parent } = sexualInnovationState(seed),
+      before = s.nextId;
+    assert.equal(
+      reproduce(context(s), parent, null, "teste", {
+        forcedCount: 1,
+        ignoreReadiness: true,
+        immediateDevelopment: true,
+      }),
+      1,
+    );
+    const child = s.pieces.find(
+      (piece) => piece.owner === "blue" && piece.id >= before,
+    );
+    assert.ok(child);
+    assert.equal(has(child, "Reprodução Sexuada"), false);
+    assert.equal(s.historicalTraits.includes("Reprodução Sexuada"), false);
+    assertState(s);
+  }
+});
+
 test("mutation modal only queues outcomes that have not appeared before", () => {
   const allLabels = [
     ...Object.keys(TRAITS),
