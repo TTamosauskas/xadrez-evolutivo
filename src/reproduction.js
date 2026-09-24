@@ -31,6 +31,7 @@ import {
   reproductionReady,
   ecologicalDomainBlocked,
   consumeFertileTerrain,
+  lethalHazardAt,
 } from "./state.js";
 import {
   BASAL_GENETIC_TRAIT,
@@ -336,6 +337,7 @@ function occupied(state, r, c, profile = null) {
     eggAt(state, r, c) ||
     plantSeedAt(state, r, c) ||
     fragmentAt(state, r, c) ||
+    lethalHazardAt(state, r, c) ||
     (barrierAt(state, r, c) && !has(profile, "Trepadeira"))
   );
 }
