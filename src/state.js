@@ -264,13 +264,16 @@ export function deterministicDeathNextTurn(state, piece) {
   if (!piece) return null;
 
   const now = round(state),
-    reachesNextRound = state.turn % 2 === 1;
+    reachesNextRound = state.turn % 2 === 1,
+    regenerationAvailable =
+      has(piece, "Regeneração") && !piece.regenerationUsed;
 
   if (piece.semelparityDeathPending) {
     const pregnancies = piece.pregnancies ?? [];
     if (!pregnancies.length) return "Semelparidade";
     if (
       reachesNextRound &&
+      !ecologicalDomainBlocked(state, piece.owner, piece.r, piece.c) &&
       pregnancies.some(
         (pregnancy) =>
           pregnancy.kind !== "ovoviviparous" &&
@@ -280,6 +283,15 @@ export function deterministicDeathNextTurn(state, piece) {
       return "Semelparidade";
   }
 
+  if (
+    piece.owner === state.current &&
+    piece.venom &&
+    piece.venom.remaining <= 1 &&
+    piece.venom.infectedTurn < state.turn &&
+    !regenerationAvailable
+  )
+    return "Veneno";
+
   if (!reachesNextRound) return null;
 
   if (
@@ -288,8 +300,6 @@ export function deterministicDeathNextTurn(state, piece) {
   )
     return "morte natural";
 
-  const regenerationAvailable =
-    has(piece, "Regeneração") && !piece.regenerationUsed;
   if (
     has(piece, "Mutação Deletéria") &&
     Number.isInteger(piece.deleteriousDue) &&
