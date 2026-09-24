@@ -1085,6 +1085,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     "Respiração Cutânea",
     "Sacos Aéreos",
     "Necrófago",
+    "Coprofagia",
     "Ovíparo",
     "Ovíparos Amniotas",
     "Vivíparo",
@@ -1115,6 +1116,7 @@ test("switching into Fotossíntese removes animal-only traits", () => {
     "Carnívoro",
     "Onívoro",
     "Necrófago",
+    "Coprofagia",
     "Voo",
     "Chifre",
     "Construtor de Nicho",
@@ -1124,6 +1126,47 @@ test("switching into Fotossíntese removes animal-only traits", () => {
   assert.deepEqual(applyTraitMutation(animal, "Fotossíntese"), [
     "Fotossíntese",
   ]);
+});
+
+test("Coprofagia is a Cretaceous predatory specialization incompatible with Mixotrofia", () => {
+  const s = createState(118, {
+      geologicalStage: "cretaceous",
+      historicalTraits: ["Predação", "Multicelularismo", "Locomoção Terrestre"],
+    }),
+    eligible = {
+      traits: ["Predação", "Multicelularismo", "Locomoção Terrestre"],
+      ancestry: ["Predação", "Multicelularismo", "Locomoção Terrestre"],
+    },
+    aquatic = {
+      traits: ["Predação", "Multicelularismo"],
+      ancestry: ["Predação", "Multicelularismo"],
+    },
+    mixotroph = {
+      traits: [
+        "Predação",
+        "Multicelularismo",
+        "Locomoção Terrestre",
+        "Mixotrofia",
+      ],
+      ancestry: [
+        "Predação",
+        "Multicelularismo",
+        "Locomoção Terrestre",
+        "Mixotrofia",
+      ],
+    };
+
+  assert.equal(TRAIT_STAGE.Coprofagia, "cretaceous");
+  assert.equal(traitUnlocked(s, "Coprofagia", eligible), true);
+  assert.equal(traitUnlocked(s, "Coprofagia", aquatic), false);
+  assert.equal(traitUnlocked(s, "Coprofagia", mixotroph), false);
+
+  const mutated = applyTraitMutation(
+    ["Predação", "Multicelularismo", "Locomoção Terrestre", "Mixotrofia"],
+    "Coprofagia",
+  );
+  assert.ok(mutated.includes("Coprofagia"));
+  assert.ok(!mutated.includes("Mixotrofia"));
 });
 
 test("Paleogene is a one-cycle transition stage", () => {
