@@ -374,6 +374,8 @@ test("new life-history traits unlock in their intended optional periods", () => 
   s.geologicalStage = "paleogene";
   s.historicalTraits = historyBefore("paleogene");
   p.traits = ["Multicelularismo", "Vivíparo"];
+  assert.equal(traitUnlocked(s, "Ovulação Induzida", p), false);
+  p.traits.push("Reprodução Sexuada");
   assert.equal(traitUnlocked(s, "Ovulação Induzida", p), true);
 
   for (const stage of GEOLOGICAL_STAGES)
