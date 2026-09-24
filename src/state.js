@@ -841,6 +841,7 @@ export function createState(seed = Date.now(), options = {}) {
             ...(options.hadeanTutorial ?? {}),
           }
         : null,
+    hadeanCaptureUnlocked: options.hadeanCaptureUnlocked ?? false,
     generationOffset: options.generationOffset ?? 0,
     maxGenerationReached: 0,
     nextHabitatGeneration: 3,
@@ -1638,7 +1639,9 @@ export function assertState(state) {
         ? state.hadeanTutorial &&
           typeof state.hadeanTutorial.moved === "boolean" &&
           typeof state.hadeanTutorial.divided === "boolean" &&
-          typeof state.hadeanTutorial.captured === "boolean"
+          typeof state.hadeanTutorial.captured === "boolean" &&
+          (state.hadeanCaptureUnlocked === undefined ||
+            typeof state.hadeanCaptureUnlocked === "boolean")
         : state.hadeanTutorial === null ||
           state.hadeanTutorial === undefined
     ) ||
