@@ -51,6 +51,13 @@ test("Como Jogar covers all scenarios, ecological events and Earth required inno
   assert.ok(text.includes("Simetria Bilateral"));
   assert.ok(text.includes("🟥 Casas hostis"));
   assert.equal(text.includes("⬛ Casas hostis"), false);
+  assert.ok(
+    text.includes(
+      "Antes de 🔀 Locomoção Primitiva, inclusive no Hadeano e no início do Arqueano",
+    ),
+  );
+  assert.ok(text.includes("⚪ Respiração anaeróbia → dividir → capturar"));
+  assert.equal(text.includes("deslocar → dividir → capturar"), false);
 });
 
 test("Como Jogar orders positive mutations by the Vida na Terra chronology", () => {
