@@ -1185,7 +1185,7 @@ export function captureUnlocked(state, piece = null) {
   if (!piece) return false;
   if (currentGeologicalStage(state).id === "hadean")
     return ["blue", "amber"].every(
-      (owner) => state.pieces.filter((candidate) => candidate.owner === owner).length >= 2,
+      (owner) => (state.reproductions?.[owner] ?? 0) >= 1,
     );
   return (
     piece.traits?.includes("Predação") ||
