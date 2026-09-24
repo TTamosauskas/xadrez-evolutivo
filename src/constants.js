@@ -400,6 +400,7 @@ export const PATHOGEN_TRANSMISSION_IDS = Object.freeze([
   "environmental",
   "sexual",
   "fecal",
+  "spore",
 ]);
 export const EVENTS = [
   ["volcano", "🌋", "Erupção Vulcânica", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, com um pequeno núcleo ☠️ de lava letal; Conway fica suspenso."],

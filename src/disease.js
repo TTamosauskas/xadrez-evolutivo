@@ -15,12 +15,15 @@ import {
   log,
   notice,
   fecalResidueAt,
+  barrierAt,
+  lethalHazardAt,
 } from "./state.js";
 import {
   availablePathogenAgents,
   pathogenUnlocked,
   sexualPathogenUnlocked,
   fecalPathogenUnlocked,
+  sporePathogenUnlocked,
   negativeTraitUnlocked,
   SOMATIC_NEGATIVE_TRAITS,
 } from "./geology.js";
@@ -40,8 +43,12 @@ export const FECAL_PATHOGEN_INGESTION_CHANCE = 1;
 export const FECAL_PATHOGEN_MORTALITY = 30;
 export const FECAL_PATHOGEN_DELAY = 5;
 export const FECAL_PATHOGEN_DURATION = 10;
-const SPECIAL_ECOLOGICAL_PROFILE_WEIGHT = 3;
-const ECOLOGICAL_PROFILE_TOTAL_WEIGHT = 12;
+export const FUNGAL_SPORE_CONTACT_CHANCE = 0.35;
+export const FUNGAL_SPORE_GERMINATION_CHANCE = 0.6;
+export const FUNGAL_SPORE_MORTALITY = 45;
+export const FUNGAL_SPORE_DURATION = 10;
+export const FUNGAL_SPORE_LIFETIME = 3;
+export const FUNGAL_SPORE_MAX_ACTIVE = 4;
 export const PATHOGEN_SOMATIC_MUTATION_CHANCE = 0.25;
 export const PRE_REPAIR_PATHOGEN_SOMATIC_MUTATION_CHANCE = 0.5;
 export const pathogenSomaticMutationChance = (piece) =>
@@ -104,53 +111,37 @@ function fecalPathogenCandidates(state) {
   );
 }
 
-function weightedProfilePick(state, profiles) {
-  const total = profiles.reduce((sum, profile) => sum + profile.weight, 0);
-  if (total <= 0) return null;
-  let roll = random(state) * total;
-  for (const profile of profiles) {
-    roll -= profile.weight;
-    if (roll < 0) return profile;
-  }
-  return profiles.at(-1) ?? null;
-}
-
-export function availableEcologicalPathogenProfiles(state) {
-  const common = availablePathogenAgents(state)
-      .map((agent) => ({
-        agent,
-        transmission: defaultPathogenTransmission(agent),
-      }))
-      .filter(
-        ({ agent, transmission }) =>
-          initialCandidates(state, "eco", agent, transmission).length,
-      ),
-    special = [];
-
+export function availableEcologicalPathogenTransmissions(
+  state,
+  agent,
+) {
+  const routes = [defaultPathogenTransmission(agent)];
   if (
+    agent === "virus" &&
     sexualPathogenUnlocked(state) &&
     sexualPathogenCandidates(state).length
   )
-    special.push({ agent: "virus", transmission: "sexual" });
+    routes.push("sexual");
   if (
+    agent === "bacteria" &&
     fecalPathogenUnlocked(state) &&
     fecalPathogenCandidates(state).length
   )
-    special.push({ agent: "bacteria", transmission: "fecal" });
+    routes.push("fecal");
+  if (agent === "fungus" && sporePathogenUnlocked(state))
+    routes.push("spore");
+  return routes.filter(
+    (transmission) =>
+      initialCandidates(state, "eco", agent, transmission).length,
+  );
+}
 
-  const commonTotal = Math.max(
-      0,
-      ECOLOGICAL_PROFILE_TOTAL_WEIGHT -
-        special.length * SPECIAL_ECOLOGICAL_PROFILE_WEIGHT,
+export function availableEcologicalPathogenProfiles(state) {
+  return availablePathogenAgents(state).flatMap((agent) =>
+    availableEcologicalPathogenTransmissions(state, agent).map(
+      (transmission) => ({ agent, transmission }),
     ),
-    commonWeight = common.length ? commonTotal / common.length : 0;
-  return [
-    ...common.map((profile) => ({ ...profile, weight: commonWeight })),
-    ...special.map((profile) => ({
-      ...profile,
-      weight: SPECIAL_ECOLOGICAL_PROFILE_WEIGHT,
-    })),
-  ].filter((profile) => profile.weight > 0);
+  );
 }
 
 export function pathogenMortalityChance(piece, disease) {
@@ -276,18 +267,25 @@ export function startDisease(
     if (source !== "eco" || !fecalPathogenUnlocked(state)) return null;
     agent ??= "bacteria";
     if (agent !== "bacteria") return null;
+  } else if (transmission === "spore") {
+    if (source !== "eco" || !sporePathogenUnlocked(state)) return null;
+    agent ??= "fungus";
+    if (agent !== "fungus") return null;
   } else if (
     source === "eco" &&
     !explicitAgent &&
     transmission === null
   ) {
-    const profile = weightedProfilePick(
-      state,
-      availableEcologicalPathogenProfiles(state),
+    const viableAgents = availableAgents.filter(
+      (candidate) =>
+        availableEcologicalPathogenTransmissions(state, candidate).length,
     );
-    if (!profile) return null;
-    agent = profile.agent;
-    transmission = profile.transmission;
+    agent = pick(state, viableAgents);
+    if (!agent) return null;
+    transmission = pick(
+      state,
+      availableEcologicalPathogenTransmissions(state, agent),
+    );
   }
 
   agent ??= pick(state, availableAgents);
@@ -297,7 +295,8 @@ export function startDisease(
   if (
     transmission !== defaultPathogenTransmission(agent) &&
     !(agent === "virus" && transmission === "sexual") &&
-    !(agent === "bacteria" && transmission === "fecal")
+    !(agent === "bacteria" && transmission === "fecal") &&
+    !(agent === "fungus" && transmission === "spore")
   )
     return null;
 
@@ -309,6 +308,7 @@ export function startDisease(
 
   const sexual = transmission === "sexual",
     fecal = transmission === "fecal",
+    spore = transmission === "spore",
     disease = {
       id: state.nextDisease++,
       source,
@@ -326,37 +326,46 @@ export function startDisease(
           ? SEXUAL_PATHOGEN_DURATION
           : fecal
             ? FECAL_PATHOGEN_DURATION
-            : source === "vector"
-              ? 6
-              : 10),
+            : spore
+              ? FUNGAL_SPORE_DURATION
+              : source === "vector"
+                ? 6
+                : 10),
       delay:
         sexual
           ? SEXUAL_PATHOGEN_DELAY
           : fecal
             ? FECAL_PATHOGEN_DELAY
-            : source === "vector"
+            : spore
               ? 3
-              : 2 + Math.floor(random(state) * 5),
+              : source === "vector"
+                ? 3
+                : 2 + Math.floor(random(state) * 5),
       mortality:
         sexual
           ? SEXUAL_PATHOGEN_MORTALITY
           : fecal
             ? FECAL_PATHOGEN_MORTALITY
-            : source === "vector"
-              ? VECTOR_PATHOGEN_MORTALITY
-              : 60 + Math.floor(random(state) * 41),
+            : spore
+              ? FUNGAL_SPORE_MORTALITY
+              : source === "vector"
+                ? VECTOR_PATHOGEN_MORTALITY
+                : 60 + Math.floor(random(state) * 41),
       infected: [],
       survivors: [],
       deaths: 0,
       contaminated:
-        transmission === "environmental" && agent === "fungus"
+        agent === "fungus" &&
+        ["environmental", "spore"].includes(transmission)
           ? [square(seed.r, seed.c)]
           : [],
     };
   state.diseases.push(disease);
   recordDiscovery(state, "events", "pathogen");
-  if (agent === "fungus") recordPathogenExposure(state, seed, disease);
-  else if (infect(state, seed, disease))
+  if (agent === "fungus") {
+    if (!fullyImmuneToEcologicalPathogen(seed))
+      recordPathogenExposure(state, seed, disease);
+  } else if (infect(state, seed, disease))
     recordPathogenExposure(state, seed, disease);
 
   const def = agentDefinition(disease),
@@ -372,11 +381,13 @@ export function startDisease(
         ? "Transmissão apenas durante Reprodução Sexuada; proximidade comum não transmite, e Resistência impede a infecção."
         : transmission === "fecal"
           ? "Hospedeiros infectados podem deixar 💩 contaminadas após reprodução trófica; tocar o resíduo pode transmitir, e Coprofagia implica ingestão direta."
-          : transmission === "contact"
-            ? `Contágio ${disease.mode === "diagonal" ? "diagonal" : disease.mode === "orthogonal" ? "ortogonal" : "omnidirecional"} durante dez rodadas.`
-            : transmission === "trail"
-              ? "Criaturas infectadas deixam 🦠 nas casas que abandonam; essas casas podem contaminar novos hospedeiros."
-              : "Casas 🍄 expõem seus ocupantes a uma nova chance de mortalidade a cada rodada e dois novos focos surgem por rodada.";
+          : transmission === "spore"
+            ? "Focos 🍄 liberam esporos ◌ que se dispersam por até três rodadas; o contato pode causar exposição e esporos maduros podem germinar em novos focos."
+            : transmission === "contact"
+              ? `Contágio ${disease.mode === "diagonal" ? "diagonal" : disease.mode === "orthogonal" ? "ortogonal" : "omnidirecional"} durante dez rodadas.`
+              : transmission === "trail"
+                ? "Criaturas infectadas deixam 🦠 nas casas que abandonam; essas casas podem contaminar novos hospedeiros."
+                : "Casas 🍄 expõem seus ocupantes a uma nova chance de mortalidade a cada rodada e dois novos focos surgem por rodada.";
     notice(state, `${def.icon} ${def.name}`, [
       `Origem: ${origin}.`,
       `Mortalidade-base do surto: ${disease.mortality}%.`,
@@ -606,7 +617,7 @@ function diseasesOnCell(state, piece) {
   return state.diseases.filter(
     (disease) =>
       activeDisease(disease, now) &&
-      ["trail", "environmental"].includes(disease.transmission) &&
+      ["trail", "environmental", "spore"].includes(disease.transmission) &&
       disease.contaminated?.includes(cell),
   );
 }
@@ -614,6 +625,11 @@ function diseasesOnCell(state, piece) {
 export function exposePathogenCell(state, piece) {
   let exposed = false;
   for (const disease of diseasesOnCell(state, piece)) {
+    if (
+      disease.source === "eco" &&
+      fullyImmuneToEcologicalPathogen(piece)
+    )
+      continue;
     exposed = true;
     recordPathogenExposure(state, piece, disease);
     if (disease.agent === "bacteria") infect(state, piece, disease);
@@ -659,6 +675,177 @@ function spreadFungus(state, disease) {
     added = chooseDistantCells(state, cells, anchors, 2);
   for (const cell of added) disease.contaminated.push(square(cell.r, cell.c));
   return added.length;
+}
+
+function fungalSporeGerminable(state, disease, r, c) {
+  if (
+    !inside(r, c) ||
+    barrierAt(state, r, c) ||
+    lethalHazardAt(state, r, c) ||
+    state.board[square(r, c)] === "hostile"
+  )
+    return false;
+  return !disease.contaminated?.includes(square(r, c));
+}
+
+function fungalSporeTarget(state, disease) {
+  const anchors = (disease.contaminated ?? []).map((cell) => ({
+      r: Math.floor(cell / 8),
+      c: cell % 8,
+    })),
+    occupiedSpores = new Set(
+      (state.pathogenSpores ?? []).map((spore) => square(spore.r, spore.c)),
+    ),
+    cells = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (
+        fungalSporeGerminable(state, disease, r, c) &&
+        !occupiedSpores.has(square(r, c))
+      )
+        cells.push({ r, c });
+  return chooseDistantCells(state, cells, anchors, 1)[0] ?? null;
+}
+
+export function emitFungalSpores(state, disease) {
+  if (
+    !disease ||
+    disease.agent !== "fungus" ||
+    disease.transmission !== "spore" ||
+    !activeDisease(disease, round(state))
+  )
+    return 0;
+
+  const current = state.pathogenSpores.filter(
+      (spore) => spore.diseaseId === disease.id,
+    ),
+    slots = Math.max(0, FUNGAL_SPORE_MAX_ACTIVE - current.length);
+  if (!slots) return 0;
+
+  const focusPool = [...(disease.contaminated ?? [])];
+  let emitted = 0;
+  while (emitted < slots && focusPool.length) {
+    const focus = pick(state, focusPool),
+      focusIndex = focusPool.indexOf(focus);
+    focusPool.splice(focusIndex, 1);
+    const target = fungalSporeTarget(state, disease);
+    if (!target) continue;
+    const r = Math.floor(focus / 8),
+      c = focus % 8;
+    state.pathogenSpores.push({
+      id: state.nextPathogenSpore++,
+      diseaseId: disease.id,
+      r,
+      c,
+      targetR: target.r,
+      targetC: target.c,
+      movesRemaining: FUNGAL_SPORE_LIFETIME,
+    });
+    emitted++;
+  }
+  return emitted;
+}
+
+function stepFungalSpore(state, spore) {
+  if (spore.movesRemaining <= 0) return false;
+  const occupied = new Set(
+      state.pathogenSpores
+        .filter((candidate) => candidate.id !== spore.id)
+        .map((candidate) => square(candidate.r, candidate.c)),
+    ),
+    candidates = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = spore.r + dr,
+        c = spore.c + dc;
+      if (
+        !inside(r, c) ||
+        barrierAt(state, r, c) ||
+        lethalHazardAt(state, r, c) ||
+        occupied.has(square(r, c))
+      )
+        continue;
+      candidates.push({ r, c });
+    }
+  if (!candidates.length) {
+    spore.movesRemaining = 0;
+    return false;
+  }
+  const target = { r: spore.targetR, c: spore.targetC },
+    bestDistance = Math.min(
+      ...candidates.map((candidate) => distance(candidate, target)),
+    ),
+    chosen = pick(
+      state,
+      candidates.filter(
+        (candidate) => distance(candidate, target) === bestDistance,
+      ),
+    );
+  spore.r = chosen.r;
+  spore.c = chosen.c;
+  spore.movesRemaining--;
+  return true;
+}
+
+function fungalSporeContact(state, disease, spore, exposures) {
+  const piece = state.pieces.find(
+    (candidate) => candidate.r === spore.r && candidate.c === spore.c,
+  );
+  if (
+    !piece ||
+    fullyImmuneToEcologicalPathogen(piece) ||
+    random(state) >= FUNGAL_SPORE_CONTACT_CHANCE
+  )
+    return false;
+  exposures.add(piece);
+  if (!disease.infected.includes(piece.id)) disease.infected.push(piece.id);
+  return true;
+}
+
+export function advanceFungalSpores(ctx, disease, exposures = new Set()) {
+  const state = ctx.state;
+  if (
+    !disease ||
+    disease.agent !== "fungus" ||
+    disease.transmission !== "spore" ||
+    !activeDisease(disease, round(state))
+  )
+    return { moved: 0, germinated: 0 };
+
+  let moved = 0,
+    germinated = 0;
+  for (const spore of state.pathogenSpores.filter(
+    (candidate) => candidate.diseaseId === disease.id,
+  )) {
+    fungalSporeContact(state, disease, spore, exposures);
+    if (stepFungalSpore(state, spore)) moved++;
+    fungalSporeContact(state, disease, spore, exposures);
+
+    if (spore.movesRemaining > 0) continue;
+    const canGerminate = fungalSporeGerminable(
+      state,
+      disease,
+      spore.r,
+      spore.c,
+    );
+    if (
+      canGerminate &&
+      random(state) < FUNGAL_SPORE_GERMINATION_CHANCE
+    ) {
+      disease.contaminated ??= [];
+      disease.contaminated.push(square(spore.r, spore.c));
+      germinated++;
+      log(
+        state,
+        `🍄 Esporo fúngico germinou em ${String.fromCharCode(65 + spore.c)}${8 - spore.r}.`,
+      );
+    }
+    state.pathogenSpores = state.pathogenSpores.filter(
+      (candidate) => candidate.id !== spore.id,
+    );
+  }
+  return { moved, germinated };
 }
 
 function resolveInfectionMortality(ctx, piece, disease) {
@@ -765,27 +952,43 @@ export function tickDiseases(ctx) {
       spreadFungus(state, disease);
 
     if (
+      disease.agent === "fungus" &&
+      disease.transmission === "spore" &&
       active &&
-      ["trail", "environmental"].includes(disease.transmission)
+      now > disease.startRound
+    ) {
+      emitFungalSpores(state, disease);
+      advanceFungalSpores(ctx, disease, exposures);
+    }
+
+    if (
+      active &&
+      ["trail", "environmental", "spore"].includes(disease.transmission)
     )
       for (const piece of state.pieces)
         if (disease.contaminated?.includes(square(piece.r, piece.c))) {
+          if (
+            disease.source === "eco" &&
+            fullyImmuneToEcologicalPathogen(piece)
+          )
+            continue;
           exposures.add(piece);
           if (disease.agent === "bacteria") infect(state, piece, disease);
           else if (!disease.infected.includes(piece.id))
             disease.infected.push(piece.id);
         }
 
+    const freshExposures = new Set();
     for (const piece of [...exposures])
-      if (state.pieces.some((candidate) => candidate.id === piece.id))
-        recordPathogenExposure(state, piece, disease);
+      if (
+        state.pieces.some((candidate) => candidate.id === piece.id) &&
+        recordPathogenExposure(state, piece, disease)
+      )
+        freshExposures.add(piece);
 
     if (disease.agent === "fungus" && active) {
-      for (const piece of [...exposures])
-        if (
-          state.pieces.some((candidate) => candidate.id === piece.id) &&
-          disease.contaminated?.includes(square(piece.r, piece.c))
-        )
+      for (const piece of freshExposures)
+        if (state.pieces.some((candidate) => candidate.id === piece.id))
           resolveFungalExposure(ctx, piece, disease);
       continue;
     }
@@ -811,6 +1014,10 @@ export function tickDiseases(ctx) {
       (piece) => piece.infection?.disease === disease.id,
     );
   });
+  const diseaseIds = new Set(state.diseases.map((disease) => disease.id));
+  state.pathogenSpores = state.pathogenSpores.filter((spore) =>
+    diseaseIds.has(spore.diseaseId),
+  );
 }
 
 export function pathogenAgentAt(state, r, c) {

@@ -48,6 +48,10 @@ function normalizePathogenEvolution(state) {
   for (const disease of state?.diseases ?? [])
     disease.transmission ??= defaultPathogenTransmission(disease.agent);
 
+  state.pathogenSpores ??= [];
+  state.nextPathogenSpore ??=
+    Math.max(0, ...state.pathogenSpores.map((spore) => spore.id ?? 0)) + 1;
+
   if (state?.sexualPathogenUnlockTotalCycle === undefined) {
     state.sexualPathogenUnlockTotalCycle = null;
     if (

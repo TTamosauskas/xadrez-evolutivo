@@ -72,6 +72,15 @@ import {
   exposeFecalResidue,
   fecalPathogenDiseaseIdsForHost,
   availableEcologicalPathogenProfiles,
+  availableEcologicalPathogenTransmissions,
+  emitFungalSpores,
+  advanceFungalSpores,
+  FUNGAL_SPORE_CONTACT_CHANCE,
+  FUNGAL_SPORE_GERMINATION_CHANCE,
+  FUNGAL_SPORE_MORTALITY,
+  FUNGAL_SPORE_DURATION,
+  FUNGAL_SPORE_LIFETIME,
+  FUNGAL_SPORE_MAX_ACTIVE,
   FECAL_PATHOGEN_CONTACT_CHANCE,
   FECAL_PATHOGEN_INGESTION_CHANCE,
   FECAL_PATHOGEN_MORTALITY,
@@ -3071,7 +3080,7 @@ test("sexual pathogen transmits on a realized mating attempt even when Subfertil
   assert.equal(observed, true);
 });
 
-test("Silurian ecological outbreaks can use a weighted bacterial fecal profile", () => {
+test("ecological pathogen selection separates agent choice from eligible routes", () => {
   const s = fixture([
       {
         owner: "blue",
@@ -3092,18 +3101,35 @@ test("Silurian ecological outbreaks can use a weighted bacterial fecal profile",
   s.historicalTraits.push("Reprodução Sexuada");
   s.sexualPathogenUnlockTotalCycle = s.totalCycles;
 
-  const profiles = availableEcologicalPathogenProfiles(s),
-    fecal = profiles.find((profile) => profile.transmission === "fecal"),
-    sexual = profiles.find((profile) => profile.transmission === "sexual"),
-    classic = profiles.filter((profile) =>
-      ["contact", "trail", "environmental"].includes(profile.transmission),
-    );
+  assert.deepEqual(
+    availableEcologicalPathogenTransmissions(s, "virus"),
+    ["contact", "sexual"],
+  );
+  assert.deepEqual(
+    availableEcologicalPathogenTransmissions(s, "bacteria"),
+    ["trail", "fecal"],
+  );
+  assert.deepEqual(
+    availableEcologicalPathogenTransmissions(s, "fungus"),
+    ["environmental"],
+  );
 
-  assert.equal(fecal?.agent, "bacteria");
-  assert.equal(fecal?.weight, 3);
-  assert.equal(sexual?.agent, "virus");
-  assert.equal(sexual?.weight, 3);
-  assert.deepEqual(classic.map((profile) => profile.weight), [2, 2, 2]);
+  const silurianProfiles = availableEcologicalPathogenProfiles(s)
+    .map(({ agent, transmission }) => `${agent}:${transmission}`)
+    .sort();
+  assert.deepEqual(silurianProfiles, [
+    "bacteria:fecal",
+    "bacteria:trail",
+    "fungus:environmental",
+    "virus:contact",
+    "virus:sexual",
+  ]);
+
+  s.geologicalStage = "devonian";
+  assert.deepEqual(
+    availableEcologicalPathogenTransmissions(s, "fungus"),
+    ["environmental", "spore"],
+  );
 
   const disease = startDisease(
     s,
@@ -3119,29 +3145,6 @@ test("Silurian ecological outbreaks can use a weighted bacterial fecal profile",
   assert.equal(
     disease?.endRound - disease?.startRound,
     FECAL_PATHOGEN_DURATION,
-  );
-
-  const cambrian = fixture([
-    {
-      owner: "blue",
-      r: 4,
-      c: 4,
-      traits: ["Carnívoro"],
-    },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  cambrian.scenario = "earth";
-  cambrian.geologicalStage = "cambrian";
-  assert.equal(
-    startDisease(
-      cambrian,
-      "eco",
-      cambrian.pieces[0],
-      null,
-      "bacteria",
-      "fecal",
-    ),
-    null,
   );
 });
 
@@ -3323,6 +3326,164 @@ test("fecal reservoirs keep an ended outbreak alive until the feces disappear", 
   s.captureDisturbances = [];
   tickDiseases(context(s));
   assert.equal(s.diseases.some((item) => item.id === disease.id), false);
+  assertState(s);
+});
+
+test("fungal spore outbreaks disperse mobile spores from the Devonian onward", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Resistência"] },
+      { owner: "amber", r: 0, c: 0, traits: ["Resistência"] },
+    ]);
+  s.scenario = "earth";
+  s.geologicalStage = "devonian";
+  const disease = startDisease(
+    s,
+    "eco",
+    s.pieces[0],
+    null,
+    "fungus",
+    "spore",
+  );
+  assert.ok(disease);
+  assert.equal(disease.transmission, "spore");
+  assert.equal(disease.mortality, FUNGAL_SPORE_MORTALITY);
+  assert.equal(
+    disease.endRound - disease.startRound,
+    FUNGAL_SPORE_DURATION,
+  );
+  assert.equal(FUNGAL_SPORE_CONTACT_CHANCE, 0.35);
+  assert.equal(FUNGAL_SPORE_GERMINATION_CHANCE, 0.6);
+  assert.equal(FUNGAL_SPORE_LIFETIME, 3);
+  assert.equal(FUNGAL_SPORE_MAX_ACTIVE, 4);
+
+  s.turn = 2;
+  tickDiseases(context(s));
+  assert.equal(s.pathogenSpores.length, 1);
+  assert.equal(s.pathogenSpores[0].diseaseId, disease.id);
+  assert.equal(s.pathogenSpores[0].movesRemaining, 2);
+  assertState(s);
+
+  const silurian = fixture([
+    { owner: "blue", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  silurian.scenario = "earth";
+  silurian.geologicalStage = "silurian";
+  assert.equal(
+    startDisease(
+      silurian,
+      "eco",
+      silurian.pieces[0],
+      null,
+      "fungus",
+      "spore",
+    ),
+    null,
+  );
+});
+
+test("fungal spore emission is capped at four simultaneous particles", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Resistência"] },
+      { owner: "amber", r: 0, c: 0, traits: ["Resistência"] },
+    ]);
+  s.scenario = "earth";
+  s.geologicalStage = "devonian";
+  const disease = startDisease(
+    s,
+    "eco",
+    s.pieces[0],
+    null,
+    "fungus",
+    "spore",
+  );
+  disease.contaminated = [0, 7, 27, 36, 56, 63];
+  s.pathogenSpores = [];
+
+  assert.equal(emitFungalSpores(s, disease), FUNGAL_SPORE_MAX_ACTIVE);
+  assert.equal(s.pathogenSpores.length, FUNGAL_SPORE_MAX_ACTIVE);
+  assert.ok(
+    s.pathogenSpores.every(
+      (spore) => spore.movesRemaining === FUNGAL_SPORE_LIFETIME,
+    ),
+  );
+  assertState(s);
+});
+
+test("mature fungal spores germinate into new foci and disappear", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Resistência"] },
+      { owner: "amber", r: 0, c: 0, traits: ["Resistência"] },
+    ]);
+  s.scenario = "earth";
+  s.geologicalStage = "devonian";
+  const disease = startDisease(
+      s,
+      "eco",
+      s.pieces[0],
+      null,
+      "fungus",
+      "spore",
+    ),
+    sporeId = s.nextPathogenSpore++;
+  s.pathogenSpores.push({
+    id: sporeId,
+    diseaseId: disease.id,
+    r: 2,
+    c: 2,
+    targetR: 2,
+    targetC: 2,
+    movesRemaining: 0,
+  });
+  s.rng = 0;
+
+  const result = advanceFungalSpores(context(s), disease);
+  assert.equal(result.germinated, 1);
+  assert.ok(disease.contaminated.includes(square(2, 2)));
+  assert.equal(
+    s.pathogenSpores.some((spore) => spore.id === sporeId),
+    false,
+  );
+  assertState(s);
+});
+
+test("Resistance blocks fungal spore exposure completely", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Resistência"] },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    resistant = s.pieces[0];
+  s.scenario = "earth";
+  s.geologicalStage = "devonian";
+  const disease = startDisease(
+      s,
+      "eco",
+      resistant,
+      null,
+      "fungus",
+      "spore",
+    ),
+    sporeId = s.nextPathogenSpore++;
+  disease.contaminated = [];
+  resistant.pathogenExposureRounds = {};
+  resistant.pathogenMutationDiseases = [];
+  resistant.somaticMutations = [];
+  s.pathogenSpores.push({
+    id: sporeId,
+    diseaseId: disease.id,
+    r: resistant.r,
+    c: resistant.c,
+    targetR: 5,
+    targetC: 5,
+    movesRemaining: 1,
+  });
+  s.rng = 0;
+
+  advanceFungalSpores(context(s), disease);
+  assert.deepEqual(resistant.pathogenExposureRounds, {});
+  assert.deepEqual(resistant.pathogenMutationDiseases, []);
+  assert.deepEqual(resistant.somaticMutations, []);
+  assert.ok(s.pieces.some((piece) => piece.id === resistant.id));
   assertState(s);
 });
 

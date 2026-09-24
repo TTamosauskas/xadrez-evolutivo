@@ -68,6 +68,23 @@ test("pathogen agents render centered overlays with distinct symbols", () => {
   startDisease(s, "eco", virusHost, null, "virus");
   startDisease(s, "eco", mixedHost, null, "fungus");
   startDisease(s, "eco", mixedHost, null, "bacteria");
+  const sporeDisease = startDisease(
+    s,
+    "eco",
+    mixedHost,
+    null,
+    "fungus",
+    "spore",
+  );
+  s.pathogenSpores.push({
+    id: s.nextPathogenSpore++,
+    diseaseId: sporeDisease.id,
+    r: 6,
+    c: 6,
+    targetR: 7,
+    targetC: 7,
+    movesRemaining: 2,
+  });
 
   render(dom.window.document, s);
 
@@ -76,10 +93,18 @@ test("pathogen agents render centered overlays with distinct symbols", () => {
     ),
     mixedCell = dom.window.document.querySelector(
       `[data-r="${mixedHost.r}"][data-c="${mixedHost.c}"]`,
+    ),
+    sporeCell = dom.window.document.querySelector(
+      '[data-r="6"][data-c="6"]',
     );
   assert.equal(virusCell.querySelector(".pathogen-virus")?.textContent, "☀︎");
   assert.equal(mixedCell.querySelector(".pathogen-bacteria")?.textContent, "🦠");
   assert.equal(mixedCell.querySelector(".pathogen-fungus")?.textContent, "🍄");
+  assert.equal(
+    sporeCell.querySelector(".pathogen-spore-mark")?.textContent,
+    "◌",
+  );
+  assert.match(sporeCell.getAttribute("aria-label"), /esporo fúngico/);
   assert.ok(virusCell.querySelector(".pathogen-overlay"));
   dom.window.close();
 });
