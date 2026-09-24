@@ -385,11 +385,10 @@ function advancePrimordialConway(ctx) {
   if (event)
     for (const [i, base] of Object.entries(event.snapshots))
       state.board[Number(i)] = base;
-  const deathBases = new Map();
-  for (const site of state.deathSites) {
-    deathBases.set(site.cell, state.board[site.cell]);
-    state.board[site.cell] = site.base;
-  }
+  const legacyDeathSites = state.deathSites.filter(
+    (site) => site.kind === undefined,
+  );
+  for (const site of legacyDeathSites) state.board[site.cell] = site.base;
 
   const before = [...state.board],
     hostileNeighbors = (cell) => {
@@ -427,7 +426,7 @@ function advancePrimordialConway(ctx) {
     for (const cell of shuffle(state, hostile).slice(cap))
       state.board[cell] = "neutral";
 
-  for (const site of state.deathSites) {
+  for (const site of legacyDeathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
     if (!event?.hazards.includes(site.cell))
       state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
@@ -579,12 +578,15 @@ function advancePatternedHabitat(ctx) {
   if (event)
     for (const [cell, base] of Object.entries(event.snapshots))
       state.board[Number(cell)] = base;
-  for (const site of state.deathSites) state.board[site.cell] = site.base;
+  const legacyDeathSites = state.deathSites.filter(
+    (site) => site.kind === undefined,
+  );
+  for (const site of legacyDeathSites) state.board[site.cell] = site.base;
 
   driftTerrainWithinProfile(state, "fertile", profile);
   driftTerrainWithinProfile(state, "hostile", profile);
 
-  for (const site of state.deathSites) {
+  for (const site of legacyDeathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
     if (!event?.hazards.includes(site.cell))
       state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
@@ -618,7 +620,10 @@ function advanceBlockedConway(ctx) {
   if (event)
     for (const [cell, base] of Object.entries(event.snapshots))
       state.board[Number(cell)] = base;
-  for (const site of state.deathSites) state.board[site.cell] = site.base;
+  const legacyDeathSites = state.deathSites.filter(
+    (site) => site.kind === undefined,
+  );
+  for (const site of legacyDeathSites) state.board[site.cell] = site.base;
 
   const before = [...state.board],
     alive = (cell, type) => {
@@ -679,7 +684,7 @@ function advanceBlockedConway(ctx) {
     }
   }
 
-  for (const site of state.deathSites) {
+  for (const site of legacyDeathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
     if (!event?.hazards.includes(site.cell))
       state.board[site.cell] = site.base === "fertile" ? "fertile" : "hostile";
