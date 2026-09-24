@@ -173,6 +173,23 @@ test("Archean opens energy branches in cycle 1, repair in cycle 2 and dormancy i
   assert.equal(traitUnlocked(s, "Dormência", p), true);
 });
 
+test("Archean cycle 1 excludes later optional mutations", () => {
+  const s = createState(111, {
+      scenario: "earth",
+      geologicalStage: "archean",
+      cycle: 1,
+      historicalTraits: ["Respiração anaeróbia"],
+    }),
+    predator = {
+      traits: ["Respiração anaeróbia", "Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    };
+
+  assert.equal(traitUnlocked(s, "Transferência Horizontal", predator), false);
+  s.cycle = 2;
+  assert.equal(traitUnlocked(s, "Transferência Horizontal", predator), true);
+});
+
 test("Archean keeps unfinished metabolic branches active before later-cycle innovations", () => {
   const s = createState(112, {
       scenario: "earth",
