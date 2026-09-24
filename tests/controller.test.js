@@ -190,7 +190,17 @@ test("computer versus computer mode starts the Hadean tutorial and notices autom
 
   c.configure("auto");
   assert.equal(c.state.geologicalStage, "hadean");
+  assert.equal(c.state.phase, "origin");
+  assert.ok(c.state.origin);
+  assert.equal(c.state.pieces.length, 0);
+  assert.equal(workers.length, 0);
+
+  runNextTimer();
+  assert.equal(c.state.phase, "origin");
+  assert.equal(c.state.origin.selected, true);
+  runNextTimer();
   assert.equal(c.state.phase, "move");
+  assert.equal(c.state.origin, null);
   assert.equal(c.state.pieces.length, 2);
   assert.equal(workers.length, 1);
 
