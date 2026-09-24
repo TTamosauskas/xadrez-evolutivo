@@ -422,6 +422,16 @@ export function render(
         eventBarrier = eventBarrierAt(state, r, c),
         barrier = builtBarrier || naturalBarrier || eventBarrier,
         partner = mates.some((m) => m.id === p?.id),
+        organicResidue = organicResidueAt(state, r, c),
+        captureDisturbance = captureDisturbanceAt(state, r, c),
+        lethalHazard = lethalHazardAt(state, r, c),
+        organicRecyclingTarget = !!(
+          actor &&
+          targetEntry &&
+          !captureTarget &&
+          organicResidue &&
+          canPhotosynthesize(actor)
+        ),
         fertileReproductionTarget = !!(
           actor &&
           !captureTarget &&
@@ -468,16 +478,6 @@ export function render(
           (target) => target.r === r && target.c === c,
         ),
         socialTarget = socialDefense.some((piece) => piece.id === p?.id),
-        organicResidue = organicResidueAt(state, r, c),
-        captureDisturbance = captureDisturbanceAt(state, r, c),
-        lethalHazard = lethalHazardAt(state, r, c),
-        organicRecyclingTarget = !!(
-          actor &&
-          targetEntry &&
-          !captureTarget &&
-          organicResidue &&
-          canPhotosynthesize(actor)
-        ),
         domainIndex = ecologicalQuadrant(r, c),
         domainQuadrant = state.ecologicalDomain?.active
           ? state.ecologicalDomain.quadrants[domainIndex]
