@@ -12,6 +12,7 @@ import {
   availablePathogenAgents,
   sexualPathogenUnlocked,
   fecalPathogenUnlocked,
+  sporePathogenUnlocked,
   aquaticTerrainCell,
   conwayUnlocked,
   deleteriousMutationUnlocked,
@@ -1284,6 +1285,23 @@ test("fecal pathogen route begins in the Silurian", () => {
 
   const arena = createState(1176, { scenario: "arena" });
   assert.equal(fecalPathogenUnlocked(arena), true);
+});
+
+test("fungal spore route begins in the Devonian", () => {
+  const silurian = createState(1177, {
+      scenario: "earth",
+      geologicalStage: "silurian",
+    }),
+    devonian = createState(1178, {
+      scenario: "earth",
+      geologicalStage: "devonian",
+    });
+
+  assert.equal(sporePathogenUnlocked(silurian), false);
+  assert.equal(sporePathogenUnlocked(devonian), true);
+
+  const arena = createState(1179, { scenario: "arena" });
+  assert.equal(sporePathogenUnlocked(arena), true);
 });
 
 test("Vetor Patógeno is a Cretaceous specialization of Parasitismo", () => {
