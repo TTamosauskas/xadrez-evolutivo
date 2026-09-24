@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [18, 17];
+const LEGACY_SAVE_VERSIONS = [19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 function normalizeStoredGenomes(value) {
@@ -38,6 +38,34 @@ function restoreLegacyResidueTerrain(state) {
 
 function migrateLegacy(data) {
   let state = structuredClone(data);
+  if (
+    data.version === 19 &&
+    state.geologicalStage === "hadean" &&
+    state.phase === "move" &&
+    !state.origin &&
+    state.turn === 0 &&
+    state.pieces?.length === 2 &&
+    state.pieces.every(
+      (piece) =>
+        piece.rank === 4 &&
+        piece.traits?.length === 1 &&
+        piece.traits.includes("Respiração anaeróbia"),
+    ) &&
+    !Object.values(state.hadeanTutorial ?? {}).some(Boolean)
+  ) {
+    const discoveries = structuredClone(state.discoveries ?? {});
+    state = createCampaignState(
+      state.rng ?? Date.now(),
+      state.scenario ?? "earth",
+    );
+    state.discoveries = {
+      ...state.discoveries,
+      ...discoveries,
+      geology: [...new Set(["hadean", ...(discoveries.geology ?? [])])],
+    };
+    state.version = STATE_VERSION;
+    return state;
+  }
   if (state.phase === "origin" || state.origin) {
     const discoveries = structuredClone(state.discoveries ?? {});
     discoveries.geology = (discoveries.geology ?? []).filter(
