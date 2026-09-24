@@ -251,8 +251,8 @@ export function render(
   $("turn").textContent =
     state.phase === "origin"
       ? origin?.selected
-        ? "Toque novamente no Rei ancestral para iniciar"
-        : "Selecione o Rei ancestral"
+        ? "Toque novamente no Rei protocelular para iniciar o Hadeano"
+        : "Selecione o Rei protocelular do Hadeano"
       : state.result
         ? state.geologicalStage === "hadean" && !state.result.winner
           ? "Hadeano concluído"
@@ -280,11 +280,11 @@ export function render(
       state.generationOffset + state.maxGenerationReached + 1;
   $("round").textContent =
     state.phase === "origin"
-      ? "Origem da campanha · antes do 1º Ciclo"
+      ? "Pré-Cambriano · Hadeano · 1º Ciclo"
       : state.scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`
         : geological.id === "hadean"
-          ? `${geological.group} · ${geological.period} · Tutorial ${hadeanTutorialDone}/3 · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"}`
+          ? `${geological.group} · ${geological.period} · 1º Ciclo · Tutorial ${hadeanTutorialDone}/3 · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"}`
           : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
   const mobileSummary = $("mobile-selected-summary");
   mobileSummary.replaceChildren();
