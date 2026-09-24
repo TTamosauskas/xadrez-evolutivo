@@ -214,11 +214,9 @@ main {
   pointer-events: none;
 }
 .cell.decomposition .piece,
-.cell.decomposition .piece-energy-core,
 .cell.decomposition .trait-frame,
 .cell.decomposition .piece-status,
 .cell.lethal-hazard .piece,
-.cell.lethal-hazard .piece-energy-core,
 .cell.lethal-hazard .trait-frame,
 .cell.lethal-hazard .piece-status {
   position: relative;
