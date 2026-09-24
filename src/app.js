@@ -580,13 +580,15 @@ $("game-over-new").addEventListener("click", () => {
     : "Extinção em Massa";
   $("mass-extinction-copy").textContent = advances
     ? stage.id === "hadean"
-      ? `Os fundamentos do Hadeano foram aprendidos. O ambiente se estabiliza e inicia-se ${next.group} · ${next.period}, com a divergência entre 🟢 Fotossíntese e 👾 Predação.`
+      ? `Uma das linhagens protocelulares foi extinta. O Hadeano termina e inicia-se ${next.group} · ${next.period} · 1º Ciclo, com a divergência entre 🟢 Fotossíntese e 👾 Predação.`
       : `As principais inovações de ${stage.period} foram descobertas. Inicia-se ${next.group} · ${next.period}.`
     : progress.required.length
       ? `A vida persiste em ${stage.period}. ${progress.discovered.length} de ${progress.required.length} inovação(ões) foram descobertas.`
       : `A vida completa seu ciclo em ${stage.period} e está pronta para a próxima transição.`;
   $("mass-extinction-continue").textContent = advances
-    ? "Iniciar 1º Ciclo"
+    ? stage.id === "hadean"
+      ? "Iniciar Arqueano · 1º Ciclo"
+      : "Iniciar 1º Ciclo"
     : `Iniciar ${state.cycle + 1}º Ciclo`;
   $("mass-extinction-dialog").showModal();
 });

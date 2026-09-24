@@ -195,23 +195,6 @@ function markHadeanTutorialStep(state, step) {
   };
   log(state, "🌋 Tutorial Hadeano: " + labels[step] + " concluído.");
 }
-function completeHadeanTutorial(state) {
-  if (
-    state.geologicalStage !== "hadean" ||
-    state.result ||
-    !state.hadeanTutorial ||
-    !["moved", "divided", "captured"].every(
-      (step) => state.hadeanTutorial[step],
-    )
-  )
-    return false;
-  finishGame(
-    state,
-    null,
-    "Hadeano concluído: deslocamento, divisão e captura foram aprendidos.",
-  );
-  return true;
-}
 function extinction(state) {
   const blue = state.pieces.some((p) => p.owner === "blue"),
     amber = state.pieces.some((p) => p.owner === "amber");
@@ -733,7 +716,6 @@ function recycleOccupiedOrganicResidue(state) {
 function settle(ctx) {
   const state = ctx.state;
   recycleOccupiedOrganicResidue(state);
-  if (completeHadeanTutorial(state)) return;
   if (
     state.result ||
     extinction(state) ||

@@ -24,6 +24,7 @@ import {
   geologicalStage,
   isNegativeTrait,
   stageProgress,
+  stageComplete,
   ENERGY_BRANCH_TRAITS,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
@@ -1086,6 +1087,10 @@ export function render(
         ),
       );
     }
+    $("game-over-new").textContent =
+      geological.id === "hadean" && stageComplete(state)
+        ? "Avançar para o Arqueano"
+        : "Encerrar ciclo";
     if (!gameOverDialog.open) gameOverDialog.showModal();
   } else if (gameOverDialog.open) {
     gameOverDialog.close();

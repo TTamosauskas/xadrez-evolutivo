@@ -1009,9 +1009,8 @@ export function stageProgress(state) {
 }
 
 export function stageComplete(state) {
-  const stage = currentGeologicalStage(state);
-  if (stage.id === "hadean") return stageProgress(state).complete;
-  const minimumCycle = stage.cycles?.length ?? 1;
+  const stage = currentGeologicalStage(state),
+    minimumCycle = stage.cycles?.length ?? 1;
   return (
     (state.cycle ?? 1) >= minimumCycle &&
     missingInnovations(state).length === 0
