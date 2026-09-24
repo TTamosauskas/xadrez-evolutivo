@@ -815,7 +815,12 @@ export function createState(seed = Date.now(), options = {}) {
     seen: [],
     seenMutations: [],
     historicalTraits: [
-      ...new Set(["Respiração anaeróbia", ...(options.historicalTraits ?? [])]),
+      ...new Set([
+        ...(originPrelude && (options.geologicalStage ?? "archean") === "hadean"
+          ? []
+          : ["Respiração anaeróbia"]),
+        ...(options.historicalTraits ?? []),
+      ]),
     ],
     fossilRecord: structuredClone(options.fossilRecord ?? []),
     discoveries: cloneDiscoveries(options.discoveries),
@@ -932,7 +937,8 @@ export function createState(seed = Date.now(), options = {}) {
   if (options.naturalBarriers !== false && !aquaticFertilityRegime(state))
     seedNaturalBarriers(state);
   seedHabitat(state);
-  recordDiscovery(state, "mutations", "Respiração anaeróbia");
+  if (!(originPrelude && state.geologicalStage === "hadean"))
+    recordDiscovery(state, "mutations", "Respiração anaeróbia");
   if (scenario !== "arena") recordDiscovery(state, "geology", state.geologicalStage);
   log(
     state,
@@ -989,6 +995,24 @@ function previewFounderProfiles(stageIndex) {
       (entry) => entry.id === "cambrian",
     ),
     prePrimitiveLocomotion = stageIndex <= primitiveLocomotionStageIndex;
+  if (stage?.id === "archean") {
+    const basal = ["Respiração anaeróbia"];
+    return {
+      historicalTraits: [...basal],
+      primary: {
+        rank: 4,
+        traits: [],
+        ancestry: [],
+        recessiveTraits: [],
+      },
+      companion: {
+        rank: 4,
+        traits: [],
+        ancestry: [],
+        recessiveTraits: [],
+      },
+    };
+  }
   if (curated) {
     const inheritedRepair =
         stageIndex > archeanStageIndex ? ["Reparo Celular"] : [],
@@ -1145,17 +1169,32 @@ export function activateOrigin(state) {
     };
 
   state.pieces.push(
-    newPiece(state, "blue", blueCell.r, blueCell.c, { rank: 4 }),
-    newPiece(state, "amber", amberCell.r, amberCell.c, { rank: 4 }),
+    newPiece(state, "blue", blueCell.r, blueCell.c, {
+      rank: 4,
+      mutations: 1,
+    }),
+    newPiece(state, "amber", amberCell.r, amberCell.c, {
+      rank: 4,
+      mutations: 1,
+    }),
   );
   state.board[square(blueCell.r, blueCell.c)] = "fertile";
   state.board[square(amberCell.r, amberCell.c)] = "fertile";
+  if (!state.historicalTraits.includes("Respiração anaeróbia"))
+    state.historicalTraits.push("Respiração anaeróbia");
+  recordDiscovery(state, "mutations", "Respiração anaeróbia");
+  if (!state.seenMutations.includes("Respiração anaeróbia")) {
+    state.seenMutations.push("Respiração anaeróbia");
+    notice(state, "Nova mutação", [
+      "⚪ Respiração anaeróbia: permite consumir casas férteis para sustentar a divisão basal.",
+    ]);
+  }
   state.origin = null;
   state.phase = "move";
   state.current = "blue";
   log(
     state,
-    `${geologicalLabel(state)} · 1º Ciclo: o ancestral comum se divide em dois Reis protocelulares, um branco e um preto, ainda sem divergência energética.`,
+    `${geologicalLabel(state)} · 1º Ciclo: surge ⚪ Respiração anaeróbia; o ancestral comum se divide em dois Reis protocelulares, um branco e um preto, ainda sem divergência energética.`,
   );
   return true;
 }
@@ -1469,7 +1508,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       });
     log(
       state,
-      "Transição Evolutiva: o ambiente hadeano se estabilizou; surgem as linhagens arqueanas fotossintética e predatória.",
+      "Transição Evolutiva: inicia-se o Arqueano · 1º Ciclo. As linhagens começam apenas com Respiração anaeróbia basal; Fotossíntese e Predação ficam abertas como caminhos metabólicos alternativos.",
     );
     return state;
   }

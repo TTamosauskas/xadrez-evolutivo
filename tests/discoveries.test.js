@@ -27,10 +27,11 @@ test("new campaigns start with an unread Hadean discovery", () => {
     discoveredContent(state, "geology").map((entry) => entry.title),
     ["Hadeano"],
   );
-  assert.equal(unreadDiscoveries(state), 2);
+  assert.deepEqual(state.discoveries.mutations, []);
+  assert.equal(unreadDiscoveries(state), 1);
   assert.equal(isDiscoveryUnread(state, "geology", "hadean"), true);
   assert.equal(markDiscoveryRead(state, "geology", "hadean"), true);
-  assert.equal(unreadDiscoveries(state), 1);
+  assert.equal(unreadDiscoveries(state), 0);
   assert.equal(markDiscoveryRead(state, "geology", "hadean"), false);
 });
 
@@ -52,6 +53,8 @@ test("discoveries are unique and counted by category", () => {
 test("advancing from Hadean creates a new unread Archean entry", () => {
   const state = createCampaignState(203);
   markDiscoveryRead(state, "geology", "hadean");
+  state.historicalTraits.push("Respiração anaeróbia");
+  recordDiscovery(state, "mutations", "Respiração anaeróbia");
   state.hadeanTutorial = { moved: true, divided: true, captured: true };
   state.result = { winner: null, reason: "teste" };
   state.phase = "over";
@@ -107,8 +110,27 @@ test("each geological discovery can launch the first cycle with prior winners re
       for (const owner of ["blue", "amber"]) {
         const founders = s.pieces.filter((piece) => piece.owner === owner);
         assert.equal(founders.length, 2);
-        assert.equal(founders.filter((piece) => piece.traits.includes("Fotossíntese")).length, 1);
-        assert.equal(founders.filter((piece) => !piece.traits.includes("Fotossíntese")).length, 1);
+        if (stage.id === "archean") {
+          assert.ok(
+            founders.every(
+              (piece) =>
+                piece.mutations === 0 &&
+                piece.traits.length === 1 &&
+                piece.traits.includes("Respiração anaeróbia"),
+            ),
+          );
+        } else {
+          assert.equal(
+            founders.filter((piece) => piece.traits.includes("Fotossíntese"))
+              .length,
+            1,
+          );
+          assert.equal(
+            founders.filter((piece) => !piece.traits.includes("Fotossíntese"))
+              .length,
+            1,
+          );
+        }
       }
       const priorRequired = GEOLOGICAL_STAGES.slice(0, index).flatMap(
         (prior) => prior.required,

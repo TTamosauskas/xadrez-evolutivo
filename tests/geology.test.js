@@ -53,7 +53,7 @@ test("period innovations follow the didactic sequence", () => {
   const required = Object.fromEntries(
     GEOLOGICAL_STAGES.map((stage) => [stage.id, stage.required]),
   );
-  assert.deepEqual(required.hadean, []);
+  assert.deepEqual(required.hadean, ["Respiração anaeróbia"]);
   assert.deepEqual(required.archean, [
     "Fotossíntese",
     "Predação",
@@ -95,20 +95,24 @@ test("period innovations follow the didactic sequence", () => {
   ]);
 });
 
-test("basal respiration precedes photosynthesis and predation, while aerobic respiration starts in the Proterozoic", () => {
-  const s = createState(109),
+test("Hadean anaerobic respiration precedes the parallel Archean energy branches", () => {
+  const s = createState(109, {
+      scenario: "earth",
+      geologicalStage: "archean",
+      cycle: 1,
+      historicalTraits: ["Respiração anaeróbia"],
+    }),
     p = s.pieces[0];
 
+  assert.equal(TRAIT_STAGE["Respiração anaeróbia"], "hadean");
   assert.ok(p.traits.includes("Respiração anaeróbia"));
   assert.ok(p.ancestry.includes("Respiração anaeróbia"));
   assert.ok(s.historicalTraits.includes("Respiração anaeróbia"));
   assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
-  assert.equal(traitUnlocked(s, "Predação", p), false);
+  assert.equal(traitUnlocked(s, "Predação", p), true);
   assert.equal(traitUnlocked(s, "Respiração aeróbia", p), false);
 
   s.historicalTraits.push("Fotossíntese");
-  assert.equal(traitUnlocked(s, "Predação", p), true);
-
   s.geologicalStage = "proterozoic";
   s.cycle = 1;
   assert.equal(traitUnlocked(s, "Respiração aeróbia", p), true);
@@ -141,38 +145,69 @@ test("Carnívoro requires a multicellular predatory lineage", () => {
   assert.equal(traitUnlocked(s, "Carnívoro", predator), true);
 });
 
-test("Archean innovations are split across the first two cycles", () => {
-  const s = createState(110),
+test("Archean opens energy branches in cycle 1, repair in cycle 2 and dormancy in cycle 3", () => {
+  const s = createState(110, {
+      scenario: "earth",
+      geologicalStage: "archean",
+      cycle: 1,
+      historicalTraits: ["Respiração anaeróbia"],
+    }),
     p = s.pieces[0];
-  assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
-  assert.equal(traitUnlocked(s, "Predação", p), false);
-  assert.equal(traitUnlocked(s, "Dormência", p), false);
 
-  s.historicalTraits.push("Fotossíntese");
+  assert.deepEqual(GEOLOGICAL_STAGES.find((stage) => stage.id === "archean").cycles, [
+    ["Fotossíntese", "Predação"],
+    ["Reparo Celular"],
+    ["Dormência"],
+  ]);
+  assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
   assert.equal(traitUnlocked(s, "Predação", p), true);
-  s.historicalTraits.push("Predação");
   assert.equal(traitUnlocked(s, "Reparo Celular", p), false);
   assert.equal(traitUnlocked(s, "Dormência", p), false);
 
+  s.historicalTraits.push("Fotossíntese", "Predação");
   s.cycle = 2;
   assert.equal(traitUnlocked(s, "Reparo Celular", p), true);
   assert.equal(traitUnlocked(s, "Dormência", p), false);
+
   s.historicalTraits.push("Reparo Celular");
+  s.cycle = 3;
   assert.equal(traitUnlocked(s, "Dormência", p), true);
 });
 
-test("Archean keeps the first wave active in later cycles until it is complete", () => {
-  const s = createState(112, { cycle: 2 }),
+test("Archean cycle 1 excludes later optional mutations", () => {
+  const s = createState(111, {
+      scenario: "earth",
+      geologicalStage: "archean",
+      cycle: 1,
+      historicalTraits: ["Respiração anaeróbia"],
+    }),
+    predator = {
+      traits: ["Respiração anaeróbia", "Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    };
+
+  assert.equal(traitUnlocked(s, "Transferência Horizontal", predator), false);
+  s.cycle = 2;
+  assert.equal(traitUnlocked(s, "Transferência Horizontal", predator), true);
+});
+
+test("Archean keeps unfinished metabolic branches active before later-cycle innovations", () => {
+  const s = createState(112, {
+      scenario: "earth",
+      geologicalStage: "archean",
+      cycle: 2,
+      historicalTraits: ["Respiração anaeróbia"],
+    }),
     p = s.pieces[0];
+
   assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
-  assert.equal(traitUnlocked(s, "Dormência", p), false);
-  s.historicalTraits.push("Fotossíntese");
   assert.equal(traitUnlocked(s, "Predação", p), true);
-  s.historicalTraits.push("Predação");
+  assert.equal(traitUnlocked(s, "Reparo Celular", p), false);
+  assert.equal(traitUnlocked(s, "Dormência", p), false);
+
+  s.historicalTraits.push("Fotossíntese", "Predação");
   assert.equal(traitUnlocked(s, "Reparo Celular", p), true);
   assert.equal(traitUnlocked(s, "Dormência", p), false);
-  s.historicalTraits.push("Reparo Celular");
-  assert.equal(traitUnlocked(s, "Dormência", p), true);
 });
 
 test("cellular repair and bilateral symmetry gate complex body plans", () => {
@@ -439,7 +474,7 @@ test("registering a new evolutionary discovery does not open a Marco Evolutivo m
   assert.ok(!s.notices.some((notice) => notice.title === "Marco Evolutivo"));
 });
 
-test("Archean advances only after both innovation cycles are complete", () => {
+test("Archean advances only after all three innovation cycles are complete", () => {
   let s = createState(103);
   const photosynthetic = s.pieces[0],
     predatory = s.pieces[1];
@@ -452,30 +487,40 @@ test("Archean advances only after both innovation cycles are complete", () => {
   s.result = { winner: "blue", reason: "teste" };
   s.phase = "over";
 
-  let next = createSuccessorState(s, 104);
-  assert.equal(next.geologicalStage, "archean");
-  assert.equal(next.cycle, 2);
-  assert.deepEqual(next.historicalTraits, [
+  let second = createSuccessorState(s, 104);
+  assert.equal(second.geologicalStage, "archean");
+  assert.equal(second.cycle, 2);
+  assert.deepEqual(second.historicalTraits, [
     "Respiração anaeróbia",
     "Fotossíntese",
     "Predação",
   ]);
 
-  const secondCarrier = next.pieces[0];
-  secondCarrier.traits.push("Reparo Celular");
-  registerDiscoveries(next, secondCarrier);
-  assert.equal(stageComplete(next), false);
-  secondCarrier.traits.push("Dormência");
-  registerDiscoveries(next, secondCarrier);
-  assert.equal(stageComplete(next), true);
-  next.notices = [];
-  next.result = { winner: "blue", reason: "teste" };
-  next.phase = "over";
+  const repairCarrier = second.pieces[0];
+  repairCarrier.traits.push("Reparo Celular");
+  registerDiscoveries(second, repairCarrier);
+  assert.equal(stageComplete(second), false);
+  second.notices = [];
+  second.result = { winner: "blue", reason: "teste" };
+  second.phase = "over";
 
-  const proterozoic = createSuccessorState(next, 105);
+  let third = createSuccessorState(second, 105);
+  assert.equal(third.geologicalStage, "archean");
+  assert.equal(third.cycle, 3);
+  assert.ok(third.historicalTraits.includes("Reparo Celular"));
+
+  const dormancyCarrier = third.pieces[0];
+  dormancyCarrier.traits.push("Dormência");
+  registerDiscoveries(third, dormancyCarrier);
+  assert.equal(stageComplete(third), true);
+  third.notices = [];
+  third.result = { winner: "blue", reason: "teste" };
+  third.phase = "over";
+
+  const proterozoic = createSuccessorState(third, 106);
   assert.equal(proterozoic.geologicalStage, "proterozoic");
   assert.equal(proterozoic.cycle, 1);
-  assert.equal(proterozoic.totalCycles, 3);
+  assert.equal(proterozoic.totalCycles, 4);
 });
 
 test("Earth canonical founders stay Kings until Primitive Locomotion is completed", () => {
@@ -719,16 +764,21 @@ test("evolutionary precedence changes eligibility but never mutation weight", ()
   ]);
 });
 
-test("a discovered required innovation pauses new appearances until the next one is discovered", () => {
-  const s = createState(114),
+test("the first Archean metabolic innovations remain parallel rather than serial", () => {
+  const s = createState(114, {
+      scenario: "earth",
+      geologicalStage: "archean",
+      cycle: 1,
+      historicalTraits: ["Respiração anaeróbia"],
+    }),
     p = {
       traits: ["Respiração anaeróbia"],
       ancestry: ["Respiração anaeróbia"],
     };
-  s.historicalTraits = ["Fotossíntese"];
-  assert.equal(traitUnlocked(s, "Fotossíntese", p), false);
+
+  assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
   assert.equal(traitUnlocked(s, "Predação", p), true);
-  s.historicalTraits.push("Predação");
+  s.historicalTraits.push("Fotossíntese");
   assert.equal(traitUnlocked(s, "Fotossíntese", p), true);
   assert.equal(traitUnlocked(s, "Predação", p), true);
 });
