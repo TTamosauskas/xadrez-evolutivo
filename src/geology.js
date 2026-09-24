@@ -102,6 +102,9 @@ export const GEOLOGICAL_STAGES = [
       ["Reparo Celular"],
       ["Dormência"],
     ],
+    optionalCycles: {
+      "Transferência Horizontal": 2,
+    },
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2, grb: 1 },
   },
@@ -454,10 +457,7 @@ export const TRAIT_DEPENDENCIES = {
     historical: ["Fotossíntese"],
   },
   Fotossíntese: { lineage: ["Respiração anaeróbia"] },
-  Predação: {
-    lineage: ["Respiração anaeróbia"],
-    historical: ["Fotossíntese"],
-  },
+  Predação: { lineage: ["Respiração anaeróbia"] },
   Embriófitas: { lineage: ["Fotossíntese"] },
   Traqueófitas: { lineage: ["Embriófitas"] },
   Espinhos: { lineage: ["Traqueófitas"] },
@@ -1070,6 +1070,11 @@ export function traitUnlocked(state, trait, piece = null) {
   if (state.scenario !== "arena") {
     if (current.index < requiredStage.index) return false;
     if (!earthTraitWindowAllows(state, current.id, requiredStage.id)) return false;
+    if (
+      current.id === requiredStage.id &&
+      (current.optionalCycles?.[trait] ?? 1) > (state.cycle ?? 1)
+    )
+      return false;
     if (current.id === requiredStage.id && current.required.includes(trait)) {
       const activeRequired = cycleRequiredInnovations(state),
         nextRequired = activeRequired.find((candidate) => !history.has(candidate)),
