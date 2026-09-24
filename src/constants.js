@@ -394,6 +394,13 @@ export const PATHOGEN_AGENTS = Object.freeze({
   fungus: { icon: "🍄", name: "Fungos Patógenos" },
 });
 export const PATHOGEN_AGENT_IDS = Object.freeze(Object.keys(PATHOGEN_AGENTS));
+export const PATHOGEN_TRANSMISSION_IDS = Object.freeze([
+  "contact",
+  "trail",
+  "environmental",
+  "vector",
+  "sexual",
+]);
 export const EVENTS = [
   ["volcano", "🌋", "Erupção Vulcânica", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, com um pequeno núcleo ☠️ de lava letal; Conway fica suspenso."],
   ["ice", "❄️", "Era Glacial", "Evento severo: 90% do tabuleiro fica hostil durante 5 turnos, e Conway fica suspenso."],
