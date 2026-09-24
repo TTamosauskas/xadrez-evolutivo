@@ -180,6 +180,38 @@ function finishGame(state, winner, reason) {
   state.socialDefense = null;
   log(state, reason);
 }
+function markHadeanTutorialStep(state, step) {
+  if (
+    state.geologicalStage !== "hadean" ||
+    !state.hadeanTutorial ||
+    state.hadeanTutorial[step]
+  )
+    return;
+  state.hadeanTutorial[step] = true;
+  const labels = {
+    moved: "Deslocamento",
+    divided: "Divisão",
+    captured: "Captura",
+  };
+  log(state, "🌋 Tutorial Hadeano: " + labels[step] + " concluído.");
+}
+function completeHadeanTutorial(state) {
+  if (
+    state.geologicalStage !== "hadean" ||
+    state.result ||
+    !state.hadeanTutorial ||
+    !["moved", "divided", "captured"].every(
+      (step) => state.hadeanTutorial[step],
+    )
+  )
+    return false;
+  finishGame(
+    state,
+    null,
+    "Hadeano concluído: deslocamento, divisão e captura foram aprendidos.",
+  );
+  return true;
+}
 function extinction(state) {
   const blue = state.pieces.some((p) => p.owner === "blue"),
     amber = state.pieces.some((p) => p.owner === "amber");
@@ -701,6 +733,7 @@ function recycleOccupiedOrganicResidue(state) {
 function settle(ctx) {
   const state = ctx.state;
   recycleOccupiedOrganicResidue(state);
+  if (completeHadeanTutorial(state)) return;
   if (
     state.result ||
     extinction(state) ||
@@ -1255,6 +1288,8 @@ function executeMove(ctx, action) {
       capturedEnemy = victim;
       state.lastSuccessfulCaptureRound = round(state);
       state.offensiveStagnation = null;
+      if (state.geologicalStage === "hadean")
+        markHadeanTutorialStep(state, "captured");
     }
     manipulation = null;
   }
@@ -1267,6 +1302,12 @@ function executeMove(ctx, action) {
     delete p.decompositionImmunity;
   p.r = target.r;
   p.c = target.c;
+  if (
+    state.geologicalStage === "hadean" &&
+    !target.stay &&
+    !capture
+  )
+    markHadeanTutorialStep(state, "moved");
   if (!target.stay) p.stationarySinceRound = round(state);
   exposePathogenCell(state, p);
   moveDirection(p);
@@ -1461,6 +1502,12 @@ function executeMove(ctx, action) {
         paedogenesis: paedogenic,
       },
     );
+    if (
+      born > 0 &&
+      state.geologicalStage === "hadean" &&
+      fertile
+    )
+      markHadeanTutorialStep(state, "divided");
     if (collectorStay && born) p.seeds--;
   }
   if (capturedPieceKilled) {
