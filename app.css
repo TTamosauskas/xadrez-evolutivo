@@ -169,7 +169,6 @@ main {
   pointer-events: none;
 }
 .cell.built-barrier .piece,
-.cell.built-barrier .piece-energy-core,
 .cell.built-barrier .trait-frame,
 .cell.built-barrier .piece-status {
   position: relative;
@@ -195,7 +194,6 @@ main {
   pointer-events: none;
 }
 .cell.decomposition .piece,
-.cell.decomposition .piece-energy-core,
 .cell.decomposition .trait-frame,
 .cell.decomposition .piece-status {
   position: relative;
