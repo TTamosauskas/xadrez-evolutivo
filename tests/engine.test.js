@@ -2005,6 +2005,29 @@ test("successful predatory reproduction leaves organic residue for three rounds"
   assertState(s);
 });
 
+test("photosynthetic occupancy recycles organic residue during settlement", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, traits: ["Fotossíntese"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.deathSites.push({
+    cell: 36,
+    dueRound: 3,
+    base: "neutral",
+    kind: "organic",
+  });
+  assert.equal(s.board[36], "neutral");
+
+  s = simulate(s, { type: "PASS" });
+
+  assert.equal(s.deathSites.length, 0);
+  assert.equal(s.board[36], "fertile");
+  assert.ok(
+    s.logs.some((entry) => entry.text.includes("matéria orgânica reciclada")),
+  );
+  assertState(s);
+});
+
 test("Mixotrofia automatically recycles organic residue into fertility on entry", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Mixotrofia"] },
