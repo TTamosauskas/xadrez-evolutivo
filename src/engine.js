@@ -359,6 +359,14 @@ function hostileHazardKills(state, piece) {
   if (random(state) >= 1 / 2) return false;
   return !has(piece, "Carapaça") || random(state) >= 1 / 4;
 }
+const canConsumeCarcass = (piece) =>
+  !!piece && (has(piece, "Necrófago") || has(piece, "Onívoro Oportunista"));
+const carcassDisturbanceHazardousTo = (state, piece, r, c) =>
+  !!captureDisturbanceAt(state, r, c) &&
+  !(carcassAt(state, r, c) && canConsumeCarcass(piece));
+const multicellularLineage = (piece) =>
+  has(piece, "Multicelularismo") ||
+  (piece?.ancestry ?? []).includes("Multicelularismo");
 
 function nocturnalRound(state) {
   return (round(state) + 1) % 2 === 0;
@@ -572,7 +580,7 @@ function advanceTurn(ctx) {
     for (const p of [...state.pieces])
       if (
         (terrain(state, p.r, p.c) === "hostile" ||
-          !!captureDisturbanceAt(state, p.r, p.c) ||
+          carcassDisturbanceHazardousTo(state, p, p.r, p.c) ||
           (!!organicResidueAt(state, p.r, p.c) &&
             organicResidueHazardousTo(p))) &&
         !dormant(state, p) &&
@@ -683,7 +691,7 @@ function recycleOccupiedOrganicResidue(state) {
     setUnderlyingTerrain(state, cell, "fertile");
     log(
       state,
-      `${OWNERS[piece.owner]}: 🟢 matéria orgânica reciclada tornou ${coord(piece.r, piece.c)} fértil.`,
+      `${OWNERS[piece.owner]}: 🟢 fezes recicladas tornaram ${coord(piece.r, piece.c)} fértil.`,
     );
     recycled++;
   }
@@ -933,6 +941,7 @@ function executeMove(ctx, action) {
       !target.stay &&
       !state.event?.hazards.includes(landingCell) &&
       !hasOrganicResidue(state, landingCell) &&
+      !carcassAt(state, target.r, target.c) &&
       !state.captureDisturbances?.some((entry) => entry.cell === landingCell);
   let manipulation =
     stableLanding &&
@@ -977,7 +986,7 @@ function executeMove(ctx, action) {
   for (const [r, c] of target.path)
     if (
       (terrain(state, r, c) === "hostile" ||
-        !!captureDisturbanceAt(state, r, c) ||
+        carcassDisturbanceHazardousTo(state, p, r, c) ||
         (!!organicResidueAt(state, r, c) &&
           organicResidueHazardousTo(p))) &&
       !(
@@ -1012,7 +1021,7 @@ function executeMove(ctx, action) {
     !target.stay &&
     !landingPieceCapture &&
     (terrain(state, target.r, target.c) === "hostile" ||
-      !!captureDisturbanceAt(state, target.r, target.c) ||
+      carcassDisturbanceHazardousTo(state, p, target.r, target.c) ||
       (!!organicResidueAt(state, target.r, target.c) &&
         organicResidueHazardousTo(p)))
   )
@@ -1046,6 +1055,7 @@ function executeMove(ctx, action) {
   ) {
     const origin = square(p.r, p.c);
     ctx.kill(p.id, "defesa por Espinhos", victim);
+    markCarcass(state, origin);
     markCaptureDisturbance(state, origin);
     log(
       state,
@@ -1063,6 +1073,7 @@ function executeMove(ctx, action) {
   ) {
     const origin = square(p.r, p.c);
     ctx.kill(p.id, "defesa por Chifre", victim);
+    markCarcass(state, origin);
     markCaptureDisturbance(state, origin);
     log(
       state,
@@ -1084,6 +1095,7 @@ function executeMove(ctx, action) {
       const redirected = pick(state, adjacent),
         redirectedCell = square(redirected.r, redirected.c);
       ctx.kill(redirected.id, "Mimetismo", null, true);
+      markCarcass(state, redirectedCell);
       markCaptureDisturbance(state, redirectedCell);
       log(
         state,
@@ -1215,8 +1227,10 @@ function executeMove(ctx, action) {
       state.lastSuccessfulCaptureRound = round(state);
       state.offensiveStagnation = null;
       born = reproduce(ctx, p, null, "predação");
-      if (born > 0) markOrganicResidue(state, victimCell);
-      else markCaptureDisturbance(state, victimCell);
+      if (!born) {
+        markCarcass(state, victimCell);
+        markCaptureDisturbance(state, victimCell);
+      }
       log(
         state,
         `${OWNERS[p.owner]}: ${botanicalPredation === "Haustório" ? "🪝" : "👄"} ${botanicalPredation} consumiu uma criatura em ${coord(victim.r, victim.c)} sem deslocamento.`,
@@ -1261,7 +1275,7 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     (landingTerrain === "hostile" ||
-      !!captureDisturbanceAt(state, p.r, p.c) ||
+      carcassDisturbanceHazardousTo(state, p, p.r, p.c) ||
       (!!organicResidueAt(state, p.r, p.c) &&
         organicResidueHazardousTo(p))) &&
     !has(p, "Dormência") &&
@@ -1300,36 +1314,48 @@ function executeMove(ctx, action) {
       `${OWNERS[p.owner]}: 🦫 Construtor de Nicho neutralizou ${coord(p.r, p.c)}.`,
     );
   }
-  const organicHere = hasOrganicResidue(state, cell),
-    recycledOrganic =
-      !capture && organicHere && canPhotosynthesize(p);
-  if (recycledOrganic) {
+  const fecesHere = hasOrganicResidue(state, cell),
+    carcassHere = !!carcassAt(state, p.r, p.c),
+    recycledFeces =
+      !capture && fecesHere && canPhotosynthesize(p);
+  if (recycledFeces) {
     consumeOrganicResidue(state, cell);
     if (state.event?.hazards.includes(cell))
       state.event.snapshots[cell] = "fertile";
     else state.board[cell] = "fertile";
     log(
       state,
-      `${OWNERS[p.owner]}: 🟢 matéria orgânica reciclada tornou ${coord(p.r, p.c)} fértil.`,
+      `${OWNERS[p.owner]}: 🟢 fezes recicladas tornaram ${coord(p.r, p.c)} fértil.`,
     );
   }
   const scavenging =
       !capture &&
-      !recycledOrganic &&
-      (has(p, "Necrófago") || has(p, "Onívoro Oportunista")) &&
-      hasOrganicResidue(state, cell);
-  if (!capture && !scavenging && !recycledOrganic)
+      !recycledFeces &&
+      carcassHere &&
+      canConsumeCarcass(p),
+    coprophagy =
+      !capture &&
+      !recycledFeces &&
+      fecesHere &&
+      has(p, "Coprofagia");
+  if (!capture && !scavenging && !coprophagy && !recycledFeces)
     harvest(state, p, p.r, p.c);
   const collectorStay =
-      !scavenging && has(p, "Coletor") && target.stay && p.seeds > 0,
+      !scavenging &&
+      !coprophagy &&
+      has(p, "Coletor") &&
+      target.stay &&
+      p.seeds > 0,
     fertileResource =
       !scavenging &&
-      !recycledOrganic &&
+      !coprophagy &&
+      !recycledFeces &&
       ((!capture && terrain(state, p.r, p.c) === "fertile") || collectorStay),
     fertile = fertileResource && canUseBasalFertility(p),
     sexualResourceHere =
       !scavenging &&
-      !recycledOrganic &&
+      !coprophagy &&
+      !recycledFeces &&
       !capture &&
       (terrain(state, p.r, p.c) === "fertile" || collectorStay),
     predation =
@@ -1403,6 +1429,13 @@ function executeMove(ctx, action) {
       immediateDevelopment: paedogenic,
       paedogenesis: paedogenic,
     });
+    if (born) consumeCarcass(state, cell);
+  } else if (coprophagy) {
+    born = reproduce(ctx, p, null, "coprofagia", {
+      forcedCount: 1,
+      immediateDevelopment: paedogenic,
+      paedogenesis: paedogenic,
+    });
     if (born) consumeOrganicResidue(state, cell);
   } else if (cannibalism) {
     born = reproduce(ctx, p, null, "canibalismo", { forcedCount: 1 });
@@ -1428,21 +1461,27 @@ function executeMove(ctx, action) {
   }
   if (capturedPieceKilled) {
     const captureCell = square(p.r, p.c),
-      trophicReproduction = (predation || cannibalism) && born > 0;
-    if (trophicReproduction) markOrganicResidue(state, captureCell);
-    else markCaptureDisturbance(state, captureCell, p.id);
+      trophicReproduction = (predation || cannibalism) && born > 0,
+      fecalReproduction =
+        trophicReproduction &&
+        multicellularLineage(p);
+    if (fecalReproduction) markOrganicResidue(state, captureCell);
+    else if (!trophicReproduction) {
+      markCarcass(state, captureCell);
+      markCaptureDisturbance(state, captureCell, p.id);
+    }
     p.decompositionImmunity = {
       cell: captureCell,
       throughTurn: state.turn + 2,
     };
-    if (trophicReproduction && canPhotosynthesize(p)) {
+    if (fecalReproduction && canPhotosynthesize(p)) {
       consumeOrganicResidue(state, captureCell);
       if (state.event?.hazards.includes(captureCell))
         state.event.snapshots[captureCell] = "fertile";
       else state.board[captureCell] = "fertile";
       log(
         state,
-        `${OWNERS[p.owner]}: 🟢 matéria orgânica reciclada tornou ${coord(p.r, p.c)} fértil.`,
+        `${OWNERS[p.owner]}: 🟢 fezes recicladas tornaram ${coord(p.r, p.c)} fértil.`,
       );
     }
   }
