@@ -1361,8 +1361,38 @@ export function captureUnlocked(state, piece = null) {
   );
 }
 
+export const PATHOGEN_AGENT_STAGE = Object.freeze({
+  virus: "proterozoic",
+  bacteria: "ediacaran",
+  fungus: "cambrian",
+});
+
+export function pathogenAgentUnlocked(state, agent) {
+  const stageId = PATHOGEN_AGENT_STAGE[agent];
+  if (!stageId) return false;
+  if (state?.scenario === "arena") return true;
+  return (
+    currentGeologicalStage(state).index >= geologicalStage(stageId).index
+  );
+}
+
+export function availablePathogenAgents(state) {
+  return Object.keys(PATHOGEN_AGENT_STAGE).filter((agent) =>
+    pathogenAgentUnlocked(state, agent),
+  );
+}
+
 export function pathogenUnlocked(state) {
-  return currentGeologicalStage(state).index >= geologicalStage("proterozoic").index;
+  return availablePathogenAgents(state).length > 0;
+}
+
+export function sexualPathogenUnlocked(state) {
+  return !!(
+    state?.scenario !== "arena" &&
+    (state?.historicalTraits ?? []).includes("Reprodução Sexuada") &&
+    Number.isInteger(state?.sexualPathogenUnlockTotalCycle) &&
+    (state?.totalCycles ?? 0) >= state.sexualPathogenUnlockTotalCycle
+  );
 }
 
 export const CYCLE_POSITIVE_INNOVATION_MULTIPLIERS = Object.freeze([
