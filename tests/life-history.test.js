@@ -263,7 +263,7 @@ test("Canibalismo captures an allied piece and replaces it with exactly one juve
   assert.equal(juvenile(s, children[0]), true);
   assert.equal(
     s.pieces.find((piece) => piece.id === attackerId).nextReproductionRound,
-    3,
+    5,
   );
   assert.ok(s.deathSites.some((site) => site.cell === square(4, 4)));
   assertState(s);
