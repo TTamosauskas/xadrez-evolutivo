@@ -66,7 +66,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Garras: "Anula a proteção de Pele grossa.",
   "Visão Noturna": "Anula a evasão de Notívago.",
   Resistência: "Impede infecção ecológica e reduz em 75% a mortalidade patogênica populacional.",
-  "Reprodução Sexuada": "Substitui a reprodução basal individual em fertilidade por cruzamento com parceiro compatível e recombinação de alelos.",
+  "Reprodução Sexuada": "Pode cruzar com parceiro compatível e recombinar alelos; substitui a reprodução basal individual em fertilidade.",
   "Precocidade Sexual": "Reduz em 1 rodada a maturidade sexual.",
   Esterilidade: "Impede a reprodução.",
   "Insuficiência Respiratória": "Dobra a recuperação da reprodução respiratória.",
