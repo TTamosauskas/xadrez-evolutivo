@@ -989,6 +989,24 @@ function previewFounderProfiles(stageIndex) {
       (entry) => entry.id === "cambrian",
     ),
     prePrimitiveLocomotion = stageIndex <= primitiveLocomotionStageIndex;
+  if (stage?.id === "archean") {
+    const basal = ["Respiração anaeróbia"];
+    return {
+      historicalTraits: [...basal],
+      primary: {
+        rank: 4,
+        traits: [],
+        ancestry: [],
+        recessiveTraits: [],
+      },
+      companion: {
+        rank: 4,
+        traits: [],
+        ancestry: [],
+        recessiveTraits: [],
+      },
+    };
+  }
   if (curated) {
     const inheritedRepair =
         stageIndex > archeanStageIndex ? ["Reparo Celular"] : [],
@@ -1469,7 +1487,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       });
     log(
       state,
-      "Transição Evolutiva: o ambiente hadeano se estabilizou; surgem as linhagens arqueanas fotossintética e predatória.",
+      "Transição Evolutiva: inicia-se o Arqueano · 1º Ciclo. As linhagens começam apenas com Respiração anaeróbia basal; Fotossíntese e Predação ficam abertas como caminhos metabólicos alternativos.",
     );
     return state;
   }
