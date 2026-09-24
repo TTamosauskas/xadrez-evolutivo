@@ -53,6 +53,8 @@ test("discoveries are unique and counted by category", () => {
 test("advancing from Hadean creates a new unread Archean entry", () => {
   const state = createCampaignState(203);
   markDiscoveryRead(state, "geology", "hadean");
+  state.historicalTraits.push("Respiração anaeróbia");
+  recordDiscovery(state, "mutations", "Respiração anaeróbia");
   state.hadeanTutorial = { moved: true, divided: true, captured: true };
   state.result = { winner: null, reason: "teste" };
   state.phase = "over";
