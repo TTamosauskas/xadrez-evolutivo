@@ -1,4 +1,5 @@
 import {
+  EARTH_FOUNDER_GENOMES,
   earthTraitWindowAllows,
   scenarioEventWeights,
   scenarioHabitatProfile,
@@ -6,9 +7,9 @@ import {
 } from "./scenarios.js";
 
 export const NEGATIVE_TRAIT_RULES = Object.freeze({
-  Esterilidade: { stage: null, somatic: true },
-  "Mutação Deletéria": { stage: null, somatic: true },
-  "Mutação Disfuncional": { stage: null, somatic: true },
+  Esterilidade: { stage: "archean", somatic: true },
+  "Mutação Deletéria": { stage: "archean", somatic: true },
+  "Mutação Disfuncional": { stage: "archean", somatic: true },
   "Insuficiência Respiratória": {
     stage: "proterozoic",
     lineage: ["Multicelularismo"],
@@ -960,6 +961,168 @@ export function geologicalLabel(state) {
   return `${stage.group} · ${stage.period}`;
 }
 
+export function periodInnovations(stateOrStage) {
+  const stage =
+    typeof stateOrStage === "string"
+      ? geologicalStage(stateOrStage)
+      : currentGeologicalStage(stateOrStage),
+    assigned = Object.entries(TRAIT_STAGE)
+      .filter(([, stageId]) => stageId === stage.id)
+      .map(([trait]) => trait);
+  return [
+    ...stage.required,
+    ...assigned.filter((trait) => !stage.required.includes(trait)),
+  ];
+}
+
+function lineageHas(piece, trait) {
+  return (
+    (piece?.traits ?? []).includes(trait) ||
+    (piece?.ancestry ?? []).includes(trait)
+  );
+}
+
+function canonicalPeriodLineages(state) {
+  if (state?.scenario !== "earth") return [];
+  const stage = currentGeologicalStage(state),
+    curated = EARTH_FOUNDER_GENOMES[stage.id];
+  if (!curated) return [];
+  const inheritedRepair =
+      stage.index > geologicalStage("archean").index
+        ? ["Reparo Celular"]
+        : [],
+    inheritedBilateral =
+      stage.index > geologicalStage("ediacaran").index
+        ? ["Simetria Bilateral"]
+        : [],
+    plant = [...new Set([...curated.plant, ...inheritedRepair])],
+    animal = [
+      ...new Set([
+        ...curated.animal,
+        ...inheritedRepair,
+        ...inheritedBilateral,
+      ]),
+    ];
+  return [
+    {
+      traits: normalizeActiveTraits(plant, "Fotossíntese"),
+      ancestry: plant,
+    },
+    {
+      traits: normalizeActiveTraits(animal, "Predação"),
+      ancestry: animal,
+    },
+  ];
+}
+
+function periodTraitReachableOnPiece(state, trait, piece, visiting = new Set()) {
+  if (!piece) return false;
+  if (lineageHas(piece, trait)) return true;
+  const current = currentGeologicalStage(state);
+  if (TRAIT_STAGE[trait] !== current.id || visiting.has(trait)) return false;
+
+  const active = piece.traits ?? [],
+    nextVisiting = new Set(visiting).add(trait);
+
+  if (
+    ENERGY_BRANCH_TRAITS.has(trait) &&
+    [...ENERGY_BRANCH_TRAITS].some(
+      (candidate) => candidate !== trait && active.includes(candidate),
+    )
+  )
+    return false;
+  if (
+    BODY_PLAN_TRAITS.has(trait) &&
+    [...BODY_PLAN_TRAITS].some(
+      (candidate) => candidate !== trait && active.includes(candidate),
+    )
+  )
+    return false;
+  if (traitSupersededByActive(active, trait)) return false;
+  if (
+    (TRAIT_INCOMPATIBILITIES[trait] ?? []).some((candidate) =>
+      active.includes(candidate),
+    )
+  )
+    return false;
+  if (
+    active.includes("Fotossíntese") &&
+    trait !== "Predação" &&
+    PLANT_INCOMPATIBLE_TRAITS.has(trait)
+  )
+    return false;
+  if (
+    PLANT_DERIVED_TRAITS.has(trait) &&
+    !active.includes("Fotossíntese")
+  )
+    return false;
+
+  const canReachLineage = (dependency) =>
+    lineageHas(piece, dependency) ||
+    (TRAIT_STAGE[dependency] === current.id &&
+      periodTraitReachableOnPiece(
+        state,
+        dependency,
+        piece,
+        nextVisiting,
+      ));
+
+  if (
+    MULTICELLULAR_DEPENDENT_TRAITS.has(trait) &&
+    !active.includes("Multicelularismo") &&
+    !canReachLineage("Multicelularismo")
+  )
+    return false;
+
+  const deps = TRAIT_DEPENDENCIES[trait];
+  if ((deps?.lineage ?? []).some((dependency) => !canReachLineage(dependency)))
+    return false;
+  if (
+    deps?.lineageAny?.length &&
+    !deps.lineageAny.some((dependency) => canReachLineage(dependency))
+  )
+    return false;
+
+  const history = new Set(state.historicalTraits ?? []);
+  if (
+    (deps?.historical ?? []).some(
+      (dependency) =>
+        !history.has(dependency) &&
+        TRAIT_STAGE[dependency] !== current.id,
+    )
+  )
+    return false;
+
+  if (
+    (trait === "Carnívoro" && active.includes("Herbívoro")) ||
+    (trait === "Herbívoro" && active.includes("Carnívoro"))
+  )
+    return false;
+  return true;
+}
+
+export function periodTraitReachable(state, trait) {
+  if ((state.historicalTraits ?? []).includes(trait)) return true;
+  const candidates = [
+    ...(state.pieces ?? []),
+    ...canonicalPeriodLineages(state),
+  ];
+  return candidates.some((piece) =>
+    periodTraitReachableOnPiece(state, trait, piece),
+  );
+}
+
+export function periodCompletionInnovations(state) {
+  const stage = currentGeologicalStage(state),
+    history = new Set(state.historicalTraits ?? []);
+  return periodInnovations(state).filter(
+    (trait) =>
+      stage.required.includes(trait) ||
+      history.has(trait) ||
+      periodTraitReachable(state, trait),
+  );
+}
+
 export function cycleRequiredInnovations(state) {
   const stage = currentGeologicalStage(state);
   if (!stage.cycles?.length) return [...stage.required];
@@ -976,16 +1139,16 @@ export function cycleRequiredInnovations(state) {
 }
 
 export function missingInnovations(state) {
-  const stage = currentGeologicalStage(state),
-    discovered = new Set(state.historicalTraits ?? []);
-  return stage.required.filter((trait) => !discovered.has(trait));
+  const discovered = new Set(state.historicalTraits ?? []);
+  return periodCompletionInnovations(state).filter(
+    (trait) => !discovered.has(trait),
+  );
 }
 
 export function stageProgress(state) {
   if (currentGeologicalStage(state).id === "hadean") {
     const tutorial = state.hadeanTutorial ?? {},
       steps = [
-        ["Deslocar", !!tutorial.moved],
         ["Dividir", !!tutorial.divided],
         ["Capturar", !!tutorial.captured],
       ],
@@ -999,7 +1162,7 @@ export function stageProgress(state) {
       complete: missing.length === 0,
     };
   }
-  const required = cycleRequiredInnovations(state),
+  const required = periodCompletionInnovations(state),
     discovered = required.filter((trait) =>
       (state.historicalTraits ?? []).includes(trait),
     ),
@@ -1211,9 +1374,14 @@ export function innovationWeight(state, trait, piece = null) {
     ]),
     dependencyMatched =
       !!deps?.lineage?.length &&
-      deps.lineage.every((dependency) => lineage.has(dependency));
+      deps.lineage.every((dependency) => lineage.has(dependency)),
+    history = new Set(state.historicalTraits ?? []),
+    completionTarget =
+      TRAIT_STAGE[trait] === current.id &&
+      !history.has(trait) &&
+      periodCompletionInnovations(state).includes(trait);
   return scenarioInnovationWeight(state, trait, piece, {
-    required: current.required.includes(trait),
+    required: current.required.includes(trait) || completionTarget,
     dependencyMatched,
   });
 }
