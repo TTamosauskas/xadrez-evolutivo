@@ -337,7 +337,7 @@ test("Arena starts with four engineered founders and ignores geological chronolo
     },
     6,
   );
-  assert.equal(state.version, 18);
+  assert.equal(state.version, STATE_VERSION);
   assert.equal(state.scenario, "arena");
   assert.equal(state.arenaPhase, 1);
   assert.equal(state.pieces.length, 4);
