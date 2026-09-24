@@ -9,6 +9,8 @@ import {
   terrain,
   reproductionReady,
   photosynthesisAvailable,
+  organicResidueAt,
+  carcassAt,
 } from "./state.js";
 import { movesFor, actionsForPiece, dormant } from "./moves.js";
 import {
@@ -136,13 +138,8 @@ export function actionableTraitsForPiece(state, piece) {
       "Respiração aeróbia",
       "Respiração anaeróbia",
     ]),
-    hasDecompositionAt = (r, c) => {
-      const cell = square(r, c);
-      return (
-        state.deathSites.some((site) => site.cell === cell) ||
-        state.fertileTraces.some((trace) => trace.cell === cell)
-      );
-    };
+    hasDetritusAt = (r, c) =>
+      !!organicResidueAt(state, r, c) || !!carcassAt(state, r, c);
 
   if (
     locomotionTrait &&
@@ -224,13 +221,19 @@ export function actionableTraitsForPiece(state, piece) {
         actionable.add("Coletor");
     }
 
-    if (reproductiveReady && hasDecompositionAt(target.r, target.c)) {
+    if (reproductiveReady && carcassAt(state, target.r, target.c)) {
       const scavengerTrait = firstExplicitTrait(piece, [
         "Necrófago",
         "Onívoro Oportunista",
       ]);
       if (scavengerTrait) actionable.add(scavengerTrait);
     }
+    if (
+      reproductiveReady &&
+      organicResidueAt(state, target.r, target.c) &&
+      (piece.traits ?? []).includes("Coprofagia")
+    )
+      actionable.add("Coprofagia");
 
     if (
       (piece.traits ?? []).includes("Locomoção Terrestre") &&
@@ -285,7 +288,7 @@ export function actionableTraitsForPiece(state, piece) {
         target.stay ||
         target.capture ||
         target.eggCapture ||
-        hasDecompositionAt(target.r, target.c),
+        hasDetritusAt(target.r, target.c),
     )
   )
     actionable.add("Pedogênese");
