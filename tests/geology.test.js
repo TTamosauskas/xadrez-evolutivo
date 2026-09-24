@@ -685,16 +685,21 @@ test("campaign history from another lineage does not satisfy ancestry prerequisi
       historicalTraits: [
         "Fotossíntese",
         "Predação",
-                "Dormência",
+        "Dormência",
         "Multicelularismo",
         "Resistência",
         "Regeneração",
         "Reprodução Sexuada",
       ],
     }),
-    descendant = { traits: [], ancestry: ["Predação"] },
+    descendant = {
+      traits: ["Multicelularismo"],
+      ancestry: ["Predação", "Multicelularismo"],
+    },
+    predatoryOutsider = { traits: [], ancestry: ["Predação"] },
     outsider = { traits: [], ancestry: [] };
   assert.equal(traitUnlocked(s, "Carnívoro", descendant), true);
+  assert.equal(traitUnlocked(s, "Carnívoro", predatoryOutsider), false);
   assert.equal(traitUnlocked(s, "Carnívoro", outsider), false);
 });
 
