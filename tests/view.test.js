@@ -66,8 +66,11 @@ test("pathogen agents render centered overlays with distinct symbols", () => {
     virusHost = s.pieces[0],
     mixedHost = s.pieces[1];
   startDisease(s, "eco", virusHost, null, "virus");
+  s.cyclePathogenProfile = null;
   startDisease(s, "eco", mixedHost, null, "fungus");
+  s.cyclePathogenProfile = null;
   startDisease(s, "eco", mixedHost, null, "bacteria");
+  s.cyclePathogenProfile = null;
   const sporeDisease = startDisease(
     s,
     "eco",
