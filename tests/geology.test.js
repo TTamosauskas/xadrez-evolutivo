@@ -117,6 +117,29 @@ test("basal respiration precedes photosynthesis and predation, while aerobic res
   assert.equal(has({ traits: aerobic }, "Respiração anaeróbia"), true);
 });
 
+test("Carnívoro requires a multicellular predatory lineage", () => {
+  const s = createState(114, {
+      scenario: "earth",
+      geologicalStage: "proterozoic",
+      historicalTraits: [
+        ...GEOLOGICAL_STAGES[0].required,
+        "Multicelularismo",
+        "Resistência",
+        "Regeneração",
+        "Reprodução Sexuada",
+      ],
+    }),
+    predator = {
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    };
+  assert.equal(traitUnlocked(s, "Carnívoro", predator), false);
+
+  predator.traits.push("Multicelularismo");
+  predator.ancestry.push("Multicelularismo");
+  assert.equal(traitUnlocked(s, "Carnívoro", predator), true);
+});
+
 test("Archean innovations are split across the first two cycles", () => {
   const s = createState(110),
     p = s.pieces[0];
