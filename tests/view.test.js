@@ -180,7 +180,7 @@ test("Hadean common ancestor is a gray King that splits after the second click",
   assert.match(d.getElementById("selected").textContent, /Ancestral comum/);
   assert.match(d.getElementById("selected").textContent, /um branco e um preto/);
   assert.equal(
-    d.querySelectorAll(".piece.origin-piece").length,
+    d.querySelectorAll("#board .piece.origin-piece").length,
     1,
   );
   assert.match(legend.textContent, /Vivificar/);
