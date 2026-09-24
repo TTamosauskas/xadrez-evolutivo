@@ -8,6 +8,7 @@ import {
   clone,
   newPiece,
   round,
+  deterministicDeathNextTurn,
 } from "../src/state.js";
 import { fixture } from "./helpers.js";
 import { TRAITS, EVENTS } from "../src/constants.js";
@@ -1307,9 +1308,111 @@ test("senescent pieces use only italic lifecycle styling and age status", () => 
   assert.match(piece.parentElement.title, /senescente, idade 25/);
   assert.doesNotMatch(status?.textContent ?? "", /⌛|⏳/);
   assert.match(d.getElementById("selected").textContent, /Senescente · idade 25/);
+  assert.equal(piece.parentElement.querySelector(".terminal-death-mark"), null);
   assert.match(rule, /font-style:\s*italic/);
   assert.doesNotMatch(rule, /transform|opacity|font-size/);
   dom.window.close();
+});
+
+test("imminent deterministic deaths render a centered top 🤢 marker", () => {
+  const dom = setup(),
+    s = createState(44),
+    doomed = s.pieces[0],
+    protectedPiece = s.pieces[1];
+
+  s.turn = 1;
+  s.current = "amber";
+  doomed.traits = [...new Set([...doomed.traits, "Mutação Deletéria"])];
+  doomed.deleteriousDue = 1;
+  protectedPiece.traits = [
+    ...new Set([
+      ...protectedPiece.traits,
+      "Mutação Deletéria",
+      "Regeneração",
+    ]),
+  ];
+  protectedPiece.deleteriousDue = 1;
+  protectedPiece.regenerationUsed = false;
+
+  assert.equal(
+    deterministicDeathNextTurn(s, doomed),
+    "Mutação Deletéria",
+  );
+  assert.equal(deterministicDeathNextTurn(s, protectedPiece), null);
+
+  render(dom.window.document, s);
+  const doomedCell = dom.window.document.querySelector(
+      `[data-r="${doomed.r}"][data-c="${doomed.c}"]`,
+    ),
+    protectedCell = dom.window.document.querySelector(
+      `[data-r="${protectedPiece.r}"][data-c="${protectedPiece.c}"]`,
+    ),
+    marker = doomedCell.querySelector(".terminal-death-mark"),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    deathRule =
+      css.match(/\.terminal-death-mark\s*\{([^}]*)\}/)?.[1] ?? "",
+    pathogenRule =
+      css.match(/\.pathogen-overlay\s*\{([^}]*)\}/)?.[1] ?? "",
+    deathZ = Number(deathRule.match(/z-index:\s*(\d+)/)?.[1] ?? 0),
+    pathogenZ = Number(
+      pathogenRule.match(/z-index:\s*(\d+)/)?.[1] ?? 0,
+    );
+
+  assert.equal(marker?.textContent, "🤢");
+  assert.equal(marker?.getAttribute("aria-hidden"), "true");
+  assert.match(
+    doomedCell.getAttribute("aria-label"),
+    /morte determinada no próximo turno: Mutação Deletéria/,
+  );
+  assert.equal(protectedCell.querySelector(".terminal-death-mark"), null);
+  assert.match(deathRule, /top:\s*1%/);
+  assert.match(deathRule, /left:\s*50%/);
+  assert.match(deathRule, /translateX\(-50%\)/);
+  assert.ok(deathZ > pathogenZ);
+  dom.window.close();
+});
+
+test("death prediction covers natural maximum age, deferred Semelparidade and terminal Veneno", () => {
+  const natural = createState(45),
+    elder = natural.pieces[0];
+  elder.traits = [
+    "Multicelularismo",
+    "Locomoção Primitiva",
+    "Predação",
+  ];
+  elder.bornRound = 0;
+  natural.turn = 47;
+  natural.current = "amber";
+  assert.equal(deterministicDeathNextTurn(natural, elder), "morte natural");
+
+  const semelparous = createState(46),
+    parent = semelparous.pieces[0];
+  semelparous.turn = 1;
+  semelparous.current = "amber";
+  parent.semelparityDeathPending = true;
+  parent.pregnancies = [
+    {
+      kind: "viviparous",
+      dueRound: 1,
+      brood: [{}],
+      dispersal: "local",
+    },
+  ];
+  assert.equal(
+    deterministicDeathNextTurn(semelparous, parent),
+    "Semelparidade",
+  );
+
+  const poisoned = createState(47),
+    victim = poisoned.pieces.find((piece) => piece.owner === "blue");
+  poisoned.turn = 2;
+  poisoned.current = "blue";
+  victim.venom = { remaining: 1, infectedTurn: 1 };
+  assert.equal(deterministicDeathNextTurn(poisoned, victim), "Veneno");
+
+  victim.traits = [...new Set([...victim.traits, "Regeneração"])];
+  victim.regenerationUsed = false;
+  assert.equal(deterministicDeathNextTurn(poisoned, victim), null);
 });
 
 test("pieces with no available action fade on board without a duplicate wait badge", () => {
