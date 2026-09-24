@@ -260,6 +260,46 @@ export function naturalDeathChance(state, piece) {
   if (age < profile.maximum) return 0.2;
   return 1;
 }
+export function deterministicDeathNextTurn(state, piece) {
+  if (!piece) return null;
+
+  const now = round(state),
+    reachesNextRound = state.turn % 2 === 1;
+
+  if (piece.semelparityDeathPending) {
+    const pregnancies = piece.pregnancies ?? [];
+    if (!pregnancies.length) return "Semelparidade";
+    if (
+      reachesNextRound &&
+      pregnancies.some(
+        (pregnancy) =>
+          pregnancy.kind !== "ovoviviparous" &&
+          pregnancy.dueRound <= now + 1,
+      )
+    )
+      return "Semelparidade";
+  }
+
+  if (!reachesNextRound) return null;
+
+  if (
+    multicellular(piece) &&
+    pieceAge(state, piece) + 1 >= naturalAgeProfile(piece).maximum
+  )
+    return "morte natural";
+
+  const regenerationAvailable =
+    has(piece, "Regeneração") && !piece.regenerationUsed;
+  if (
+    has(piece, "Mutação Deletéria") &&
+    Number.isInteger(piece.deleteriousDue) &&
+    piece.deleteriousDue <= now + 1 &&
+    !regenerationAvailable
+  )
+    return "Mutação Deletéria";
+
+  return null;
+}
 export const juvenile = (state, piece) =>
   multicellular(piece) &&
   Number.isInteger(piece.maturesRound) &&
