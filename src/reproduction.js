@@ -1439,6 +1439,7 @@ function fragmentCellFree(state, fragment, r, c) {
     !eggAt(state, r, c) &&
     !plantSeedAt(state, r, c) &&
     !barrierAt(state, r, c) &&
+    !lethalHazardAt(state, r, c) &&
     !state.fragments.some(
       (other) =>
         other.id !== fragment.id && other.r === r && other.c === c,
@@ -1630,6 +1631,7 @@ export function tickReproduction(ctx) {
     if (
       at(state, seed.r, seed.c) ||
       eggAt(state, seed.r, seed.c) ||
+      lethalHazardAt(state, seed.r, seed.c) ||
       (barrierAt(state, seed.r, seed.c) &&
         !has(seed.profile, "Trepadeira"))
     )
