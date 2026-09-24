@@ -815,7 +815,12 @@ export function createState(seed = Date.now(), options = {}) {
     seen: [],
     seenMutations: [],
     historicalTraits: [
-      ...new Set(["Respiração anaeróbia", ...(options.historicalTraits ?? [])]),
+      ...new Set([
+        ...(originPrelude && (options.geologicalStage ?? "archean") === "hadean"
+          ? []
+          : ["Respiração anaeróbia"]),
+        ...(options.historicalTraits ?? []),
+      ]),
     ],
     fossilRecord: structuredClone(options.fossilRecord ?? []),
     discoveries: cloneDiscoveries(options.discoveries),
@@ -932,7 +937,8 @@ export function createState(seed = Date.now(), options = {}) {
   if (options.naturalBarriers !== false && !aquaticFertilityRegime(state))
     seedNaturalBarriers(state);
   seedHabitat(state);
-  recordDiscovery(state, "mutations", "Respiração anaeróbia");
+  if (!(originPrelude && state.geologicalStage === "hadean"))
+    recordDiscovery(state, "mutations", "Respiração anaeróbia");
   if (scenario !== "arena") recordDiscovery(state, "geology", state.geologicalStage);
   log(
     state,
@@ -1168,12 +1174,21 @@ export function activateOrigin(state) {
   );
   state.board[square(blueCell.r, blueCell.c)] = "fertile";
   state.board[square(amberCell.r, amberCell.c)] = "fertile";
+  if (!state.historicalTraits.includes("Respiração anaeróbia"))
+    state.historicalTraits.push("Respiração anaeróbia");
+  recordDiscovery(state, "mutations", "Respiração anaeróbia");
+  if (!state.seenMutations.includes("Respiração anaeróbia")) {
+    state.seenMutations.push("Respiração anaeróbia");
+    notice(state, "Nova mutação", [
+      "⚪ Respiração anaeróbia: permite consumir casas férteis para sustentar a divisão basal.",
+    ]);
+  }
   state.origin = null;
   state.phase = "move";
   state.current = "blue";
   log(
     state,
-    `${geologicalLabel(state)} · 1º Ciclo: o ancestral comum se divide em dois Reis protocelulares, um branco e um preto, ainda sem divergência energética.`,
+    `${geologicalLabel(state)} · 1º Ciclo: surge ⚪ Respiração anaeróbia; o ancestral comum se divide em dois Reis protocelulares, um branco e um preto, ainda sem divergência energética.`,
   );
   return true;
 }
