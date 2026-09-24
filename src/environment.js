@@ -237,26 +237,24 @@ function deathSiteAt(state, cell) {
 function fertileTraceAt(state, cell) {
   return state.fertileTraces.find((t) => t.cell === cell);
 }
+function carcassSiteAt(state, cell) {
+  return state.carcasses.find((entry) => entry.cell === cell);
+}
 export function hasOrganicResidue(state, cell) {
   return !!deathSiteAt(state, cell) || !!fertileTraceAt(state, cell);
 }
+export const hasFecalResidue = hasOrganicResidue;
 export const hasDecomposition = hasOrganicResidue;
 
 export function consumeOrganicResidue(state, cell) {
   const site = deathSiteAt(state, cell),
-    trace = fertileTraceAt(state, cell),
-    legacy = !!site && site.kind === undefined,
-    base = site?.base ?? trace?.base;
+    trace = fertileTraceAt(state, cell);
   if (!site && !trace) return false;
   state.deathSites = state.deathSites.filter((d) => d.cell !== cell);
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
-  if (legacy) {
-    if (state.event?.hazards.includes(cell))
-      state.event.snapshots[cell] = base ?? "neutral";
-    else state.board[cell] = base ?? "neutral";
-  }
   return true;
 }
+export const consumeFecalResidue = consumeOrganicResidue;
 export const consumeDecomposition = consumeOrganicResidue;
 
 export function markOrganicResidue(state, cell) {
@@ -270,23 +268,49 @@ export function markOrganicResidue(state, cell) {
         : state.board[cell]),
     dueRound = round(state) + 3;
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
+  state.carcasses = state.carcasses.filter((entry) => entry.cell !== cell);
   state.captureDisturbances = (state.captureDisturbances ?? []).filter(
     (entry) => entry.cell !== cell,
   );
   if (existing) {
     existing.dueRound = dueRound;
     existing.base = base;
-    existing.kind = "organic";
+    existing.kind = "fecal";
   } else {
-    state.deathSites.push({ cell, dueRound, base, kind: "organic" });
+    state.deathSites.push({ cell, dueRound, base, kind: "fecal" });
   }
 }
+export const markFecalResidue = markOrganicResidue;
 export const markDecomposition = markOrganicResidue;
+
+export function markCarcass(state, cell) {
+  const existing = carcassSiteAt(state, cell),
+    base =
+      existing?.base ??
+      (state.event?.hazards.includes(cell)
+        ? state.event.snapshots[cell] ?? "neutral"
+        : state.board[cell]),
+    dueRound = round(state) + 3;
+  state.deathSites = state.deathSites.filter((site) => site.cell !== cell);
+  state.fertileTraces = state.fertileTraces.filter((trace) => trace.cell !== cell);
+  if (existing) {
+    existing.dueRound = dueRound;
+    existing.base = base;
+  } else {
+    state.carcasses.push({ cell, dueRound, base });
+  }
+}
+export function consumeCarcass(state, cell) {
+  if (!carcassSiteAt(state, cell)) return false;
+  state.carcasses = state.carcasses.filter((entry) => entry.cell !== cell);
+  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
+    (entry) => entry.cell !== cell,
+  );
+  return true;
+}
 
 export function markCaptureDisturbance(state, cell, sourceId = null) {
   state.captureDisturbances ??= [];
-  state.deathSites = state.deathSites.filter((site) => site.cell !== cell);
-  state.fertileTraces = state.fertileTraces.filter((trace) => trace.cell !== cell);
   const existing = state.captureDisturbances.find(
     (entry) => entry.cell === cell,
   );
@@ -304,26 +328,14 @@ export function markCaptureDisturbance(state, cell, sourceId = null) {
 
 function tickOrganicResidue(state) {
   const now = round(state);
-  for (const site of [...state.deathSites]) {
-    if (site.kind === undefined) {
-      const eventHazard = state.event?.hazards.includes(site.cell),
-        preservedFertility = site.base === "fertile";
-      if (now < site.dueRound) {
-        if (!eventHazard)
-          state.board[site.cell] = preservedFertility ? "fertile" : "hostile";
-        continue;
-      }
-      if (eventHazard)
-        state.event.snapshots[site.cell] = preservedFertility
-          ? "fertile"
-          : "neutral";
-      else state.board[site.cell] = preservedFertility ? "fertile" : "neutral";
-    } else if (now < site.dueRound) continue;
-    state.fertileTraces = state.fertileTraces.filter(
-      (t) => t.cell !== site.cell,
-    );
-    state.deathSites = state.deathSites.filter((d) => d.cell !== site.cell);
-  }
+  state.deathSites = state.deathSites.filter((site) => now < site.dueRound);
+  state.fertileTraces = state.fertileTraces.filter(
+    (trace) => now < (trace.dueRound ?? Number.MAX_SAFE_INTEGER),
+  );
+}
+function tickCarcasses(state) {
+  const now = round(state);
+  state.carcasses = state.carcasses.filter((entry) => now < entry.dueRound);
 }
 function tickCaptureDisturbances(state) {
   const now = round(state),
@@ -736,6 +748,9 @@ function markLethalHazard(ctx, event, indices) {
   state.deathSites = state.deathSites.filter((site) => !lethalSet.has(site.cell));
   state.fertileTraces = state.fertileTraces.filter(
     (trace) => !lethalSet.has(trace.cell),
+  );
+  state.carcasses = state.carcasses.filter(
+    (entry) => !lethalSet.has(entry.cell),
   );
   state.captureDisturbances = (state.captureDisturbances ?? []).filter(
     (entry) => !lethalSet.has(entry.cell),
@@ -1431,6 +1446,7 @@ export function tickEnvironment(ctx) {
 
   tickSevereEventTurn(state);
   tickOrganicResidue(state);
+  tickCarcasses(state);
   tickCaptureDisturbances(state);
   depletePausedFertility(state);
 
