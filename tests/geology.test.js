@@ -53,6 +53,7 @@ test("period innovations follow the didactic sequence", () => {
   const required = Object.fromEntries(
     GEOLOGICAL_STAGES.map((stage) => [stage.id, stage.required]),
   );
+  assert.deepEqual(required.hadean, []);
   assert.deepEqual(required.archean, [
     "Fotossíntese",
     "Predação",
@@ -223,14 +224,14 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
   assert.ok(eventWeights(proterozoic).pathogen > 0);
 });
 
-test("Archean starts green and stationary", () => {
+test("first Archean cycle starts with a fertile 6x6 core and hostile border", () => {
   const s = createState(101);
   assert.equal(s.version, 18);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
   const fertile = s.board.filter((terrain) => terrain === "fertile").length;
-  assert.equal(fertile, 64);
-  assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 0);
+  assert.equal(fertile, 36);
+  assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 28);
   assert.deepEqual(s.naturalBarriers, []);
   const actions = movesFor(s, s.pieces[0]);
   assert.ok(actions.length > 0);
@@ -1297,9 +1298,10 @@ test("Parasitismo becomes available in the Cambrian only outside the photosynthe
 test("Multicelularismo is required for complex traits and cannot be lost while they remain", () => {
   const s = createState(143, {
       geologicalStage: "ediacaran",
-      historicalTraits: GEOLOGICAL_STAGES.slice(0, 3).flatMap(
-        (stage) => stage.required,
-      ),
+      historicalTraits: GEOLOGICAL_STAGES.slice(
+        0,
+        GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "ediacaran") + 1,
+      ).flatMap((stage) => stage.required),
     }),
     simple = { traits: ["Predação"], ancestry: ["Predação"] },
     complex = {
