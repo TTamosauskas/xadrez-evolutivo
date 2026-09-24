@@ -24,6 +24,7 @@ import {
   geologicalStage,
   isNegativeTrait,
   stageProgress,
+  stageComplete,
   ENERGY_BRANCH_TRAITS,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
