@@ -12,6 +12,7 @@ import {
   ARENA_TRAIT_BUDGET,
   arenaGenomeValid,
   arenaInterventionCount,
+  completeArenaGenome,
   arenaRecessivePairs,
   arenaTraitCost,
 } from "../src/arena.js";
@@ -259,6 +260,13 @@ test("alternative and arena scenarios use period-independent uniform ecological 
     weights = eventWeights(earth);
   assert.ok(Object.keys(weights).length < EVENTS.length);
   assert.ok(Object.values(weights).some((weight) => weight !== 1));
+});
+
+test("Arena completes Carnívoro with its multicellular foundation", () => {
+  const completed = completeArenaGenome(["Predação", "Carnívoro"], "Carnívoro");
+  assert.ok(completed.includes("Predação"));
+  assert.ok(completed.includes("Multicelularismo"));
+  assert.ok(completed.includes("Carnívoro"));
 });
 
 test("all built-in Arena archetypes respect the six-mutation budget and admit two safe recessives", () => {
