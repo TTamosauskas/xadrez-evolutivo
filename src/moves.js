@@ -153,6 +153,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   function add(r, c, path, extra = {}) {
     if (!inside(r, c) || ecologicalDomainBlocked(state, p.owner, r, c)) return;
     if (
+      currentGeologicalStage(state).id === "hadean" &&
+      lethalHazardAt(state, r, c)
+    )
+      return;
+    if (
       terrestrialRestriction &&
       !extra.stay &&
       terrain(state, r, c) !== "fertile"
@@ -349,7 +354,10 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       }
     } else ray([...ORTH, ...DIAG], captureOnly);
   }
-  const mobile = has(p, "Locomoção Primitiva") && !has(p, "Séssil");
+  const mobile =
+    (currentGeologicalStage(state).id === "hadean" ||
+      has(p, "Locomoção Primitiva")) &&
+    !has(p, "Séssil");
   if (mobile) chessTargets(false);
   else if (!has(p, "Séssil") && captureUnlocked(state, p)) chessTargets(true);
   if (
