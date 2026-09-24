@@ -1086,6 +1086,10 @@ export function render(
         ),
       );
     }
+    $("game-over-new").textContent =
+      geological.id === "hadean" && stageComplete(state)
+        ? "Avançar para o Arqueano"
+        : "Encerrar ciclo";
     if (!gameOverDialog.open) gameOverDialog.showModal();
   } else if (gameOverDialog.open) {
     gameOverDialog.close();
