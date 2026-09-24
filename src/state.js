@@ -2246,7 +2246,9 @@ export function assertState(state) {
           ? 8
           : d.transmission === "fecal"
             ? 5
-            : 6,
+            : d.transmission === "spore"
+              ? 3
+              : 6,
       ) ||
       !["eco", "population", "vector"].includes(d.source) ||
       !PATHOGEN_AGENT_IDS.includes(d.agent) ||
@@ -2257,16 +2259,20 @@ export function assertState(state) {
           ? 15
           : d.transmission === "fecal"
             ? 30
-            : d.source === "vector"
-              ? 20
-              : 60,
+            : d.transmission === "spore"
+              ? 45
+              : d.source === "vector"
+                ? 20
+                : 60,
         d.transmission === "sexual"
           ? 15
           : d.transmission === "fecal"
             ? 30
-            : d.source === "vector"
-              ? 20
-              : 100,
+            : d.transmission === "spore"
+              ? 45
+              : d.source === "vector"
+                ? 20
+                : 100,
       ) ||
       !integer(d.deaths) ||
       !["diagonal", "orthogonal", "omnidirectional"].includes(d.mode) ||
