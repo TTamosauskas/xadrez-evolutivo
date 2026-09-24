@@ -94,6 +94,9 @@ export const organicResidueAt = (state, r, c) => {
     null
   );
 };
+export const fecalResidueAt = organicResidueAt;
+export const carcassAt = (state, r, c) =>
+  state.carcasses?.find((entry) => entry.cell === square(r, c)) ?? null;
 export const captureDisturbanceAt = (state, r, c) =>
   state.captureDisturbances?.find((entry) => entry.cell === square(r, c)) ??
   null;
@@ -102,8 +105,7 @@ export const lethalHazardAt = (state, r, c) =>
 export const organicResidueHazardousTo = (piece) =>
   !!piece &&
   !canPhotosynthesize(piece) &&
-  !has(piece, "Necrófago") &&
-  !has(piece, "Onívoro Oportunista");
+  !has(piece, "Coprofagia");
 export const round = (state) => Math.floor(state.turn / 2);
 export const ECOLOGICAL_DOMAIN_START_TURN = 200;
 export const ECOLOGICAL_DOMAIN_REQUIRED_TURNS = 3;
@@ -162,6 +164,7 @@ export function restoreAquaticFertility(state) {
       state.barriers?.includes(entry.cell) ||
       state.naturalBarriers?.includes(entry.cell) ||
       state.deathSites?.some((site) => site.cell === entry.cell) ||
+      state.carcasses?.some((site) => site.cell === entry.cell) ||
       state.captureDisturbances?.some((item) => item.cell === entry.cell) ||
       state.event?.hazards?.includes(entry.cell)
     )
@@ -815,6 +818,7 @@ export function createState(seed = Date.now(), options = {}) {
     offensiveStagnation: null,
     deathSites: [],
     fertileTraces: [],
+    carcasses: [],
     captureDisturbances: [],
     fertilityRecovery: [],
     extremophyteFertility: [],
@@ -1578,6 +1582,7 @@ export function assertState(state) {
     !validDiscoveries(state.discoveries) ||
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
+    !Array.isArray(state.carcasses) ||
     !(
       state.captureDisturbances === undefined ||
       Array.isArray(state.captureDisturbances)
@@ -1621,6 +1626,14 @@ export function assertState(state) {
         !["neutral", "fertile", "hostile"].includes(d.base),
     ) ||
     new Set(state.deathSites.map((d) => d.cell)).size !== state.deathSites.length ||
+    state.carcasses.some(
+      (entry) =>
+        !integer(entry.cell, 0, 63) ||
+        !integer(entry.dueRound, 1) ||
+        !["neutral", "fertile", "hostile"].includes(entry.base),
+    ) ||
+    new Set(state.carcasses.map((entry) => entry.cell)).size !==
+      state.carcasses.length ||
     (state.captureDisturbances ?? []).some(
       (entry) =>
         !integer(entry.cell, 0, 63) ||
