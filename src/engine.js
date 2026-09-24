@@ -27,6 +27,7 @@ import {
   ecologicalQuadrant,
   createEcologicalDomain,
   organicResidueAt,
+  carcassAt,
   captureDisturbanceAt,
   lethalHazardAt,
   organicResidueHazardousTo,
@@ -85,6 +86,8 @@ import {
 import {
   consumeOrganicResidue,
   hasOrganicResidue,
+  consumeCarcass,
+  markCarcass,
   markOrganicResidue,
   markCaptureDisturbance,
   advanceConway,
