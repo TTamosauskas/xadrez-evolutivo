@@ -11,6 +11,7 @@ import {
   currentGeologicalStage,
   availablePathogenAgents,
   sexualPathogenUnlocked,
+  fecalPathogenUnlocked,
   aquaticTerrainCell,
   conwayUnlocked,
   deleteriousMutationUnlocked,
@@ -1261,6 +1262,28 @@ test("sexual pathogen route unlocks only on the cycle after Reprodução Sexuada
   });
   assert.equal(later.sexualPathogenUnlockTotalCycle, 6);
   assert.equal(sexualPathogenUnlocked(later), true);
+});
+
+test("fecal pathogen route begins in the Silurian", () => {
+  const cambrian = createState(1173, {
+      scenario: "earth",
+      geologicalStage: "cambrian",
+    }),
+    ordovician = createState(1174, {
+      scenario: "earth",
+      geologicalStage: "ordovician",
+    }),
+    silurian = createState(1175, {
+      scenario: "earth",
+      geologicalStage: "silurian",
+    });
+
+  assert.equal(fecalPathogenUnlocked(cambrian), false);
+  assert.equal(fecalPathogenUnlocked(ordovician), false);
+  assert.equal(fecalPathogenUnlocked(silurian), true);
+
+  const arena = createState(1176, { scenario: "arena" });
+  assert.equal(fecalPathogenUnlocked(arena), true);
 });
 
 test("Vetor Patógeno is a Cretaceous specialization of Parasitismo", () => {

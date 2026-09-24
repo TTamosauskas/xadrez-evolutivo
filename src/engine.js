@@ -71,6 +71,8 @@ import {
   infect,
   leaveBacterialTrail,
   exposePathogenCell,
+  exposeFecalResidue,
+  fecalPathogenDiseaseIdsForHost,
 } from "./disease.js";
 import { aquaticFertilityRegime, conwayUnlocked } from "./geology.js";
 import {
@@ -1343,8 +1345,16 @@ function executeMove(ctx, action) {
   }
   const fecesHere = hasOrganicResidue(state, cell),
     carcassHere = !!carcassAt(state, p.r, p.c),
+    coprophagyContact =
+      !capture &&
+      fecesHere &&
+      has(p, "Coprofagia"),
     recycledFeces =
       !capture && fecesHere && canPhotosynthesize(p);
+  if (!capture && fecesHere)
+    exposeFecalResidue(state, p, cell, {
+      ingestion: coprophagyContact,
+    });
   if (recycledFeces) {
     consumeOrganicResidue(state, cell);
     if (state.event?.hazards.includes(cell))
@@ -1361,10 +1371,8 @@ function executeMove(ctx, action) {
       carcassHere &&
       canConsumeCarcass(p),
     coprophagy =
-      !capture &&
       !recycledFeces &&
-      fecesHere &&
-      has(p, "Coprofagia");
+      coprophagyContact;
   if (!capture && !scavenging && !coprophagy && !recycledFeces)
     harvest(state, p, p.r, p.c);
   const collectorStay =
@@ -1512,7 +1520,12 @@ function executeMove(ctx, action) {
       fecalReproduction =
         trophicReproduction &&
         multicellularLineage(p);
-    if (fecalReproduction) markOrganicResidue(state, captureCell);
+    if (fecalReproduction)
+      markOrganicResidue(
+        state,
+        captureCell,
+        fecalPathogenDiseaseIdsForHost(state, p),
+      );
     else if (!trophicReproduction) {
       markCarcass(state, captureCell);
       markCaptureDisturbance(state, captureCell, p.id);

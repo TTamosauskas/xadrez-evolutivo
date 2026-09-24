@@ -260,7 +260,11 @@ export function consumeOrganicResidue(state, cell) {
 export const consumeFecalResidue = consumeOrganicResidue;
 export const consumeDecomposition = consumeOrganicResidue;
 
-export function markOrganicResidue(state, cell) {
+export function markOrganicResidue(
+  state,
+  cell,
+  pathogenDiseaseIds = [],
+) {
   const existing = deathSiteAt(state, cell),
     trace = fertileTraceAt(state, cell),
     base =
@@ -269,7 +273,13 @@ export function markOrganicResidue(state, cell) {
       (state.event?.hazards.includes(cell)
         ? state.event.snapshots[cell] ?? "neutral"
         : state.board[cell]),
-    dueRound = round(state) + 3;
+    dueRound = round(state) + 3,
+    diseaseIds = [
+      ...new Set([
+        ...(existing?.pathogenDiseaseIds ?? []),
+        ...pathogenDiseaseIds.filter(Number.isInteger),
+      ]),
+    ];
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
   state.carcasses = state.carcasses.filter((entry) => entry.cell !== cell);
   markCaptureDisturbance(state, cell, null, 3);
@@ -277,8 +287,15 @@ export function markOrganicResidue(state, cell) {
     existing.dueRound = dueRound;
     existing.base = base;
     existing.kind = "fecal";
+    existing.pathogenDiseaseIds = diseaseIds;
   } else {
-    state.deathSites.push({ cell, dueRound, base, kind: "fecal" });
+    state.deathSites.push({
+      cell,
+      dueRound,
+      base,
+      kind: "fecal",
+      pathogenDiseaseIds: diseaseIds,
+    });
   }
 }
 export const markFecalResidue = markOrganicResidue;

@@ -1787,7 +1787,14 @@ export function assertState(state) {
       (d) =>
         !integer(d.cell, 0, 63) ||
         !integer(d.dueRound, 1) ||
-        !["neutral", "fertile", "hostile"].includes(d.base),
+        !["neutral", "fertile", "hostile"].includes(d.base) ||
+        !(
+          d.pathogenDiseaseIds === undefined ||
+          (Array.isArray(d.pathogenDiseaseIds) &&
+            d.pathogenDiseaseIds.every((id) => integer(id, 1)) &&
+            new Set(d.pathogenDiseaseIds).size ===
+              d.pathogenDiseaseIds.length)
+        ),
     ) ||
     new Set(state.deathSites.map((d) => d.cell)).size !== state.deathSites.length ||
     state.carcasses.some(
@@ -2208,7 +2215,11 @@ export function assertState(state) {
       !integer(
         d.delay,
         2,
-        d.transmission === "sexual" ? 8 : 6,
+        d.transmission === "sexual"
+          ? 8
+          : d.transmission === "fecal"
+            ? 5
+            : 6,
       ) ||
       !["eco", "population", "vector"].includes(d.source) ||
       !PATHOGEN_AGENT_IDS.includes(d.agent) ||
@@ -2217,14 +2228,18 @@ export function assertState(state) {
         d.mortality,
         d.transmission === "sexual"
           ? 15
-          : d.source === "vector"
-            ? 20
-            : 60,
+          : d.transmission === "fecal"
+            ? 30
+            : d.source === "vector"
+              ? 20
+              : 60,
         d.transmission === "sexual"
           ? 15
-          : d.source === "vector"
-            ? 20
-            : 100,
+          : d.transmission === "fecal"
+            ? 30
+            : d.source === "vector"
+              ? 20
+              : 100,
       ) ||
       !integer(d.deaths) ||
       !["diagonal", "orthogonal", "omnidirectional"].includes(d.mode) ||
@@ -2237,6 +2252,12 @@ export function assertState(state) {
       throw Error("Doença inválida.");
     diseaseIds.add(d.id);
   }
+  if (
+    state.deathSites.some((site) =>
+      (site.pathogenDiseaseIds ?? []).some((id) => !diseaseIds.has(id)),
+    )
+  )
+    throw Error("Referência patogênica fecal inválida.");
   for (const p of state.pieces) {
     if (
       p.decompositionImmunity &&

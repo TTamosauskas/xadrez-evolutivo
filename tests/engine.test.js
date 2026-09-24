@@ -53,6 +53,7 @@ import {
   advanceConway,
   fertilityDepletionRate,
   offensiveActionCount,
+  markOrganicResidue,
 } from "../src/environment.js";
 import {
   startDisease,
@@ -68,6 +69,14 @@ import {
   transmitSexualPathogen,
   leaveBacterialTrail,
   exposePathogenCell,
+  exposeFecalResidue,
+  fecalPathogenDiseaseIdsForHost,
+  availableEcologicalPathogenProfiles,
+  FECAL_PATHOGEN_CONTACT_CHANCE,
+  FECAL_PATHOGEN_INGESTION_CHANCE,
+  FECAL_PATHOGEN_MORTALITY,
+  FECAL_PATHOGEN_DELAY,
+  FECAL_PATHOGEN_DURATION,
   SEXUAL_PATHOGEN_MORTALITY,
   SEXUAL_PATHOGEN_DELAY,
   SEXUAL_PATHOGEN_DURATION,
@@ -3060,6 +3069,261 @@ test("sexual pathogen transmits on a realized mating attempt even when Subfertil
     observed = true;
   }
   assert.equal(observed, true);
+});
+
+test("Silurian ecological outbreaks can use a weighted bacterial fecal profile", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Carnívoro", "Reprodução Sexuada"],
+      },
+      {
+        owner: "blue",
+        r: 4,
+        c: 5,
+        traits: ["Reprodução Sexuada"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]);
+  s.scenario = "earth";
+  s.geologicalStage = "silurian";
+  s.historicalTraits.push("Reprodução Sexuada");
+  s.sexualPathogenUnlockTotalCycle = s.totalCycles;
+
+  const profiles = availableEcologicalPathogenProfiles(s),
+    fecal = profiles.find((profile) => profile.transmission === "fecal"),
+    sexual = profiles.find((profile) => profile.transmission === "sexual"),
+    classic = profiles.filter((profile) =>
+      ["contact", "trail", "environmental"].includes(profile.transmission),
+    );
+
+  assert.equal(fecal?.agent, "bacteria");
+  assert.equal(fecal?.weight, 3);
+  assert.equal(sexual?.agent, "virus");
+  assert.equal(sexual?.weight, 3);
+  assert.deepEqual(classic.map((profile) => profile.weight), [2, 2, 2]);
+
+  const disease = startDisease(
+    s,
+    "eco",
+    s.pieces[0],
+    null,
+    "bacteria",
+    "fecal",
+  );
+  assert.equal(disease?.transmission, "fecal");
+  assert.equal(disease?.mortality, FECAL_PATHOGEN_MORTALITY);
+  assert.equal(disease?.delay, FECAL_PATHOGEN_DELAY);
+  assert.equal(
+    disease?.endRound - disease?.startRound,
+    FECAL_PATHOGEN_DURATION,
+  );
+
+  const cambrian = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: ["Carnívoro"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  cambrian.scenario = "earth";
+  cambrian.geologicalStage = "cambrian";
+  assert.equal(
+    startDisease(
+      cambrian,
+      "eco",
+      cambrian.pieces[0],
+      null,
+      "bacteria",
+      "fecal",
+    ),
+    null,
+  );
+});
+
+test("infected trophic reproduction leaves feces carrying the fecal outbreak", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Carnívoro"],
+    },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.scenario = "earth";
+  s.geologicalStage = "silurian";
+  const source = s.pieces[0],
+    disease = startDisease(
+      s,
+      "eco",
+      source,
+      null,
+      "bacteria",
+      "fecal",
+    );
+  assert.ok(disease);
+  assert.deepEqual(fecalPathogenDiseaseIdsForHost(s, source), [
+    disease.id,
+  ]);
+
+  s = simulate(s, move(source, 4, 4));
+  const residue = s.deathSites.find((site) => site.cell === 36);
+  assert.equal(residue?.kind, "fecal");
+  assert.deepEqual(residue?.pathogenDiseaseIds, [disease.id]);
+  assertState(s);
+});
+
+test("fecal residue infects on touch, Coprofagia guarantees exposure, and Resistance is complete", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 3 },
+      {
+        owner: "blue",
+        r: 3,
+        c: 3,
+        traits: ["Resistência"],
+      },
+      {
+        owner: "blue",
+        r: 2,
+        c: 3,
+        traits: ["Fotossíntese"],
+      },
+      {
+        owner: "blue",
+        r: 1,
+        c: 3,
+        traits: ["Coprofagia"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    susceptible = s.pieces[0],
+    resistant = s.pieces[1],
+    photosynthetic = s.pieces[2],
+    coprophage = s.pieces[3],
+    disease = {
+      id: s.nextDisease++,
+      source: "eco",
+      triggerOwner: null,
+      agent: "bacteria",
+      transmission: "fecal",
+      mode: "omnidirectional",
+      startRound: 0,
+      endRound: FECAL_PATHOGEN_DURATION,
+      delay: FECAL_PATHOGEN_DELAY,
+      mortality: FECAL_PATHOGEN_MORTALITY,
+      infected: [],
+      survivors: [],
+      deaths: 0,
+      contaminated: [],
+    };
+  s.diseases.push(disease);
+  markOrganicResidue(s, 36, [disease.id]);
+
+  assert.equal(FECAL_PATHOGEN_CONTACT_CHANCE, 0.5);
+  assert.equal(FECAL_PATHOGEN_INGESTION_CHANCE, 1);
+
+  s.rng = 0;
+  assert.equal(exposeFecalResidue(s, susceptible, 36), true);
+  assert.equal(susceptible.infection?.disease, disease.id);
+
+  assert.equal(exposeFecalResidue(s, resistant, 36), false);
+  assert.equal(resistant.infection, undefined);
+
+  assert.equal(exposeFecalResidue(s, photosynthetic, 36), false);
+  assert.equal(photosynthetic.infection, undefined);
+
+  coprophage.pathogenMutationDiseases.push(disease.id);
+  s.rng = 0xffffffff;
+  assert.equal(
+    exposeFecalResidue(s, coprophage, 36, { ingestion: true }),
+    true,
+  );
+  assert.equal(coprophage.infection?.disease, disease.id);
+  assertState(s);
+});
+
+test("Coprofagia consumes contaminated feces after guaranteed fecal exposure", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 3,
+      rank: 3,
+      traits: ["Coprofagia"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const eaterId = s.pieces[0].id,
+    disease = {
+      id: s.nextDisease++,
+      source: "eco",
+      triggerOwner: null,
+      agent: "bacteria",
+      transmission: "fecal",
+      mode: "omnidirectional",
+      startRound: 0,
+      endRound: FECAL_PATHOGEN_DURATION,
+      delay: FECAL_PATHOGEN_DELAY,
+      mortality: FECAL_PATHOGEN_MORTALITY,
+      infected: [],
+      survivors: [],
+      deaths: 0,
+      contaminated: [],
+    };
+  s.diseases.push(disease);
+  markOrganicResidue(s, 36, [disease.id]);
+  const eater = s.pieces.find((piece) => piece.id === eaterId);
+  eater.pathogenMutationDiseases.push(disease.id);
+
+  const before = s.pieces.length;
+  s = simulate(s, move(eater, 4, 4));
+  const moved = s.pieces.find((piece) => piece.id === eaterId);
+  assert.equal(moved.infection?.disease, disease.id);
+  assert.equal(s.deathSites.some((site) => site.cell === 36), false);
+  assert.ok(s.pieces.length > before);
+  assertState(s);
+});
+
+test("fecal reservoirs keep an ended outbreak alive until the feces disappear", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 3 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    disease = {
+      id: s.nextDisease++,
+      source: "eco",
+      triggerOwner: null,
+      agent: "bacteria",
+      transmission: "fecal",
+      mode: "omnidirectional",
+      startRound: 0,
+      endRound: 0,
+      delay: FECAL_PATHOGEN_DELAY,
+      mortality: FECAL_PATHOGEN_MORTALITY,
+      infected: [],
+      survivors: [],
+      deaths: 0,
+      contaminated: [],
+    };
+  s.diseases.push(disease);
+  markOrganicResidue(s, 36, [disease.id]);
+  s.turn = 2;
+
+  tickDiseases(context(s));
+  assert.ok(s.diseases.some((item) => item.id === disease.id));
+
+  s.deathSites = [];
+  s.captureDisturbances = [];
+  tickDiseases(context(s));
+  assert.equal(s.diseases.some((item) => item.id === disease.id), false);
+  assertState(s);
 });
 
 test("fungal pathogens add exactly two distant contaminated cells per active round", () => {
