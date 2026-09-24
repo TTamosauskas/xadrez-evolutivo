@@ -680,7 +680,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Vetor Patógeno",
   "Onívoro",
   "Necrófago",
-  Coprofagia,
+  "Coprofagia",
   "Ovíparo",
   "Ovíparos Amniotas",
   "Ovovivíparo",
