@@ -504,6 +504,7 @@ test("Hadean capture stays unlocked after the initial 2x2 population loses a pie
   assert.equal(s.reproductions.blue, 1);
   assert.equal(s.reproductions.amber, 1);
   assert.equal(s.pieces.length, 4);
+  assert.equal(s.hadeanCaptureUnlocked, true);
   assert.equal(captureUnlocked(s, s.pieces[0]), true);
 
   const ambers = s.pieces.filter((piece) => piece.owner === "amber"),
@@ -533,12 +534,28 @@ test("Hadean capture stays unlocked after the initial 2x2 population loses a pie
   const blueAfterLoss = s.pieces.find(
     (piece) => piece.id === survivingBlue.id,
   );
+  blueAfterLoss.nextReproductionRound = round(s) + 4;
+  s.reproductions = { blue: 0, amber: 0 };
+
+  assert.equal(s.hadeanCaptureUnlocked, true);
   assert.equal(captureUnlocked(s, blueAfterLoss), true);
   assert.ok(
     movesFor(s, blueAfterLoss).some(
       (target) => target.r === 4 && target.c === 4 && target.capture,
     ),
   );
+  assertState(s);
+});
+
+test("legacy Hadean states keep capture unlocked after a recorded capture", () => {
+  let s = createCampaignState(306);
+  s = simulate(s, { type: "ORIGIN_CLICK" });
+  s = simulate(s, { type: "ORIGIN_CLICK" });
+  delete s.hadeanCaptureUnlocked;
+  s.hadeanTutorial.captured = true;
+  s.reproductions = { blue: 0, amber: 0 };
+
+  assert.equal(captureUnlocked(s, s.pieces[0]), true);
   assertState(s);
 });
 
