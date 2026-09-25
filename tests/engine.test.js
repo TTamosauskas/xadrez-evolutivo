@@ -4195,6 +4195,55 @@ test("Predação is required for ordinary captures", () => {
   assert.ok(movesFor(s, attacker).some((target) => target.c === 4));
 });
 
+test("Multicelularismo blocks direct predation by unicellular attackers", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4 },
+    { owner: "amber", r: 4, c: 4, rank: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const attacker = s.pieces[0],
+    target = s.pieces[1];
+
+  attacker.traits = attacker.traits.filter(
+    (trait) => trait !== "Multicelularismo",
+  );
+  assert.ok(target.traits.includes("Multicelularismo"));
+  assert.ok(
+    !movesFor(s, attacker).some(
+      (cell) => cell.r === target.r && cell.c === target.c && cell.capture,
+    ),
+  );
+
+  target.traits = target.traits.filter(
+    (trait) => trait !== "Multicelularismo",
+  );
+  assert.ok(
+    movesFor(s, attacker).some(
+      (cell) => cell.r === target.r && cell.c === target.c && cell.capture,
+    ),
+  );
+
+  target.traits.push("Multicelularismo");
+  attacker.traits.push("Multicelularismo");
+  assert.ok(
+    movesFor(s, attacker).some(
+      (cell) => cell.r === target.r && cell.c === target.c && cell.capture,
+    ),
+  );
+
+  s = simulate(s, move(attacker, target.r, target.c));
+  assert.ok(!s.pieces.some((piece) => piece.id === target.id));
+  assert.ok(
+    s.pieces.some(
+      (piece) =>
+        piece.id === attacker.id &&
+        piece.r === target.r &&
+        piece.c === target.c,
+    ),
+  );
+  assertState(s);
+});
+
 test("Predação uses traditional piece capture geometry before Locomoção", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4 },
