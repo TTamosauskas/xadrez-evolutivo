@@ -1,4 +1,5 @@
 import {
+  clone,
   createCampaignState,
   createPeriodState,
   createSuccessorState,
@@ -103,6 +104,13 @@ try {
 $("scenario").value = selectedScenario;
 $("mode").value = controller.mode;
 $("difficulty").value = controller.difficulty;
+
+let cycleStartState = clone(controller.state);
+function replaceCycleState(next) {
+  controller.replace(next);
+  cycleStartState = clone(next);
+}
+
 function dispatch(action) {
   const revision = controller.state.revision;
   const previousSelection = selected;
@@ -463,7 +471,7 @@ function finishArenaFlow() {
     flow.kind === "setup"
       ? createArenaState({ blue, amber })
       : createArenaSuccessorState(previous, { blue, amber });
-  controller.replace(next);
+  replaceCycleState(next);
   controller.pause(false);
 }
 
@@ -477,7 +485,7 @@ function openArenaSetup() {
         Date.now() + 1,
       );
     selected = null;
-    controller.replace(createArenaState({ blue, amber }));
+    replaceCycleState(createArenaState({ blue, amber }));
     controller.pause(false);
     return;
   }
@@ -516,7 +524,7 @@ function openArenaEngineering() {
         Date.now() + 1,
       );
     selected = null;
-    controller.replace(createArenaSuccessorState(previous, { blue, amber }));
+    replaceCycleState(createArenaSuccessorState(previous, { blue, amber }));
     controller.pause(false);
     return;
   }
@@ -557,6 +565,20 @@ $("arena-dialog").addEventListener("cancel", (event) => {
 
 $("game-over-board").addEventListener("click", () => {
   if ($("game-over-dialog").open) $("game-over-dialog").close();
+});
+$("game-over-retry").addEventListener("click", () => {
+  if ($("game-over-dialog").open) $("game-over-dialog").close();
+  if ($("notice-dialog").open) $("notice-dialog").close();
+  const discoveries = clone(controller.state.discoveries),
+    next = clone(cycleStartState);
+  next.discoveries = discoveries;
+  selected = null;
+  replaceCycleState(next);
+  report(
+    next.scenario === "arena"
+      ? `Arena · Fase ${next.arenaPhase || next.cycle} reiniciada.`
+      : `Reiniciado o ${next.cycle}º Ciclo de ${currentGeologicalStage(next).period}.`,
+  );
 });
 $("game-over-new").addEventListener("click", () => {
   if ($("game-over-dialog").open) $("game-over-dialog").close();
@@ -600,7 +622,7 @@ $("mass-extinction-continue").addEventListener("click", () => {
   }
   const next = createSuccessorState(controller.state);
   selected = null;
-  controller.replace(next);
+  replaceCycleState(next);
 });
 $("mass-extinction-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
@@ -744,7 +766,7 @@ $("discovery-play").addEventListener("click", () => {
   if ($("discoveries-dialog").open) $("discoveries-dialog").close();
   if ($("menu-dialog").open) $("menu-dialog").close();
   selected = null;
-  controller.replace(next);
+  replaceCycleState(next);
   controller.pause(false);
   report(`Iniciado o 1º Ciclo de ${currentGeologicalStage(next).period}.`);
 });
@@ -850,7 +872,7 @@ $("new").addEventListener("click", () =>
         openArenaSetup();
         return;
       }
-      controller.replace(createCampaignState(Date.now(), selectedScenario));
+      replaceCycleState(createCampaignState(Date.now(), selectedScenario));
     },
   ),
 );
@@ -874,7 +896,7 @@ $("import-file").addEventListener("change", async (event) => {
     selected = null;
     selectedScenario = state.scenario;
     $("scenario").value = selectedScenario;
-    controller.replace(state);
+    replaceCycleState(state);
     report("Partida importada.");
   } catch (error) {
     report(`Falha ao importar: ${error.message}`);
