@@ -106,8 +106,12 @@ export const captureDisturbanceAt = (state, r, c) =>
   null;
 export const hadeanPlayableCell = (r, c) =>
   r >= 2 && r <= 5 && c >= 2 && c <= 5;
+const outerBoardCell = (r, c) => r === 0 || r === 7 || c === 0 || c === 7;
 export const lethalHazardAt = (state, r, c) =>
   (state.geologicalStage === "hadean" && !hadeanPlayableCell(r, c)) ||
+  (state.geologicalStage === "archean" &&
+    state.cycle === 1 &&
+    outerBoardCell(r, c)) ||
   (state.event?.lethalHazards?.includes(square(r, c)) ?? false);
 export const organicResidueHazardousTo = (piece) =>
   !!piece &&
@@ -663,10 +667,24 @@ function seedHabitat(state) {
     state.board.fill("fertile");
     return;
   }
-  if (state.geologicalStage === "archean" && state.cycle === 1) {
-    state.board.fill("hostile");
-    for (let r = 1; r <= 6; r++)
-      for (let c = 1; c <= 6; c++) state.board[square(r, c)] = "fertile";
+  if (state.geologicalStage === "archean") {
+    if (state.cycle === 1) {
+      state.board.fill("neutral");
+      for (let r = 1; r <= 6; r++)
+        for (let c = 1; c <= 6; c++)
+          state.board[square(r, c)] =
+            r === 1 || r === 6 || c === 1 || c === 6
+              ? "hostile"
+              : "fertile";
+      return;
+    }
+    if (state.cycle === 2) {
+      state.board.fill("hostile");
+      for (let r = 1; r <= 6; r++)
+        for (let c = 1; c <= 6; c++) state.board[square(r, c)] = "fertile";
+      return;
+    }
+    state.board.fill("fertile");
     return;
   }
   if (aquaticFertilityRegime(state)) {
@@ -814,19 +832,74 @@ export function canonicalFounderStarts(state, slots = true) {
   ];
 }
 
-export function earthFounderStarts(geologicalStage, cycle = 1) {
+const ARCHEAN_FOUNDER_LAYOUTS = Object.freeze({
+  1: Object.freeze([
+    Object.freeze({
+      blue: Object.freeze([[4, 2], [4, 3]]),
+      amber: Object.freeze([[3, 4], [3, 5]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[5, 3], [4, 2]]),
+      amber: Object.freeze([[2, 4], [3, 5]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[5, 2], [5, 4]]),
+      amber: Object.freeze([[2, 5], [2, 3]]),
+    }),
+  ]),
+  2: Object.freeze([
+    Object.freeze({
+      blue: Object.freeze([[5, 2], [5, 3]]),
+      amber: Object.freeze([[2, 5], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[6, 2], [5, 3]]),
+      amber: Object.freeze([[1, 5], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[5, 1], [4, 2]]),
+      amber: Object.freeze([[2, 6], [3, 5]]),
+    }),
+  ]),
+  3: Object.freeze([
+    Object.freeze({
+      blue: Object.freeze([[6, 2], [5, 3]]),
+      amber: Object.freeze([[1, 5], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[6, 1], [5, 3]]),
+      amber: Object.freeze([[1, 6], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[6, 3], [5, 1]]),
+      amber: Object.freeze([[1, 4], [2, 6]]),
+    }),
+  ]),
+});
+
+function archeanFounderStarts(state, cycle = 1) {
+  const band = cycle <= 1 ? 1 : cycle === 2 ? 2 : 3,
+    layouts = ARCHEAN_FOUNDER_LAYOUTS[band],
+    layout = state ? pick(state, layouts) : layouts[0],
+    reverseSlots = state ? pick(state, [false, true]) : false,
+    blue = reverseSlots ? [...layout.blue].reverse() : layout.blue,
+    amber = reverseSlots ? [...layout.amber].reverse() : layout.amber;
+  return [
+    ["blue", blue[0][0], blue[0][1], "primary"],
+    ["blue", blue[1][0], blue[1][1], "companion"],
+    ["amber", amber[0][0], amber[0][1], "primary"],
+    ["amber", amber[1][0], amber[1][1], "companion"],
+  ];
+}
+
+export function earthFounderStarts(geologicalStage, cycle = 1, state = null) {
   if (geologicalStage === "hadean")
     return [
       ["blue", 5, 2, null],
       ["amber", 2, 5, null],
     ];
   if (geologicalStage === "archean")
-    return [
-      ["blue", 4, 2, "primary"],
-      ["blue", 4, 3, "companion"],
-      ["amber", 3, 4, "primary"],
-      ["amber", 3, 5, "companion"],
-    ];
+    return archeanFounderStarts(state, cycle);
   if (geologicalStage === "proterozoic")
     return [
       ["blue", 5, 2, "primary"],
@@ -985,10 +1058,12 @@ export function createState(seed = Date.now(), options = {}) {
         ownerFounders?.amber?.companion,
       earthStarts =
         state.geologicalStage === "hadean" && scenario !== "arena"
-          ? earthFounderStarts(state.geologicalStage, state.cycle)
-          : scenario === "earth" && (balancedPair || ownerPair)
-            ? earthFounderStarts(state.geologicalStage, state.cycle)
-            : null,
+          ? earthFounderStarts(state.geologicalStage, state.cycle, state)
+          : state.geologicalStage === "archean" && scenario !== "arena"
+            ? earthFounderStarts(state.geologicalStage, state.cycle, state)
+            : scenario === "earth" && (balancedPair || ownerPair)
+              ? earthFounderStarts(state.geologicalStage, state.cycle, state)
+              : null,
       starts =
         earthStarts ??
         (() => {
