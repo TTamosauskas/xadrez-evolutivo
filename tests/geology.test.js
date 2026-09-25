@@ -42,6 +42,7 @@ import {
   newPiece,
   registerDiscoveries,
   restoreAquaticFertility,
+  lethalHazardAt,
 } from "../src/state.js";
 import { movesFor } from "../src/moves.js";
 import { context } from "../src/engine.js";
@@ -382,18 +383,31 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
   assert.ok(eventWeights(proterozoic).pathogen > 0);
 });
 
-test("first Archean cycle starts with a fertile 6x6 core and hostile border", () => {
+test("first Archean cycle keeps a fertile 4x4 core between hostile and lethal rings", () => {
   const s = createPeriodState("archean", 101, null, "earth");
   assert.equal(s.version, STATE_VERSION);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
-  const fertile = s.board.filter((terrain) => terrain === "fertile").length;
-  assert.equal(fertile, 36);
-  assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 28);
+  assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 16);
+  assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 20);
+  assert.equal(s.board.filter((terrain) => terrain === "neutral").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) => lethalHazardAt(s, r, col)),
+    ).flat().filter(Boolean).length,
+    28,
+  );
   assert.deepEqual(s.naturalBarriers, []);
+  assert.ok(
+    s.pieces.every(
+      (piece) =>
+        s.board[piece.r * 8 + piece.c] === "fertile" &&
+        !lethalHazardAt(s, piece.r, piece.c),
+    ),
+  );
   const actions = movesFor(s, s.pieces[0]);
   assert.ok(actions.length > 0);
-  assert.ok(actions.every((target) => target.stay));
+  assert.ok(actions.every((target) => target.stay || target.capture));
 });
 
 test("Silurian is a stable coast and Devonian starts Conway terrain evolution", () => {
