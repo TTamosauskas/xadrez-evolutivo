@@ -184,6 +184,26 @@ test("menu exposes match log and evolutionary history for consultation", () => {
   dom.window.close();
 });
 
+test("single-player defeat offers a retry of the same cycle", () => {
+  const dom = setup(),
+    s = createState(17),
+    d = dom.window.document,
+    retry = d.getElementById("game-over-retry");
+
+  assert.equal(retry.textContent, "Tentar outra vez");
+  s.result = { winner: "amber", reason: "As Brancas foram superadas." };
+  render(d, s, { mode: "single" });
+  assert.equal(retry.hidden, false);
+
+  render(d, s, { mode: "multi" });
+  assert.equal(retry.hidden, true);
+
+  s.result = { winner: "blue", reason: "As Pretas foram superadas." };
+  render(d, s, { mode: "single" });
+  assert.equal(retry.hidden, true);
+  dom.window.close();
+});
+
 test("Hadean common ancestor is a gray King that splits after the second click", () => {
   const dom = setup(),
     s = createCampaignState(301);
