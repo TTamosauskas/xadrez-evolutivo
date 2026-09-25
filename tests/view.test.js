@@ -525,7 +525,7 @@ test("non-contextual phenotype inventory stays in the selected panel instead of 
   dom.window.close();
 });
 
-test("Mixotrofia remains peripheral while the ancestral energy branch stays central", () => {
+test("energy branch stays central even when Mixotrofia is not contextually active", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -555,7 +555,7 @@ test("Mixotrofia remains peripheral while the ancestral energy branch stays cent
     cell.querySelector(".piece-energy-core")?.dataset.trait,
     "Predação",
   );
-  assert.ok(frameTraits.includes("Mixotrofia"));
+  assert.ok(!frameTraits.includes("Mixotrofia"));
   assert.ok(!frameTraits.includes("Predação"));
 
   render(dom.window.document, s, { selected: plant.id });
@@ -570,7 +570,7 @@ test("Mixotrofia remains peripheral while the ancestral energy branch stays cent
     "Fotossíntese",
   );
   assert.ok(cell.querySelector(".piece-energy-core")?.classList.contains("amber"));
-  assert.ok(frameTraits.includes("Mixotrofia"));
+  assert.ok(!frameTraits.includes("Mixotrofia"));
   assert.ok(!frameTraits.includes("Fotossíntese"));
   dom.window.close();
 });
@@ -863,8 +863,7 @@ test("selected legend separates active traits from ancestry behind a closed togg
     `[data-r="${piece.r}"][data-c="${piece.c}"]`,
   );
   const boardIcons = cell.querySelector(".trait-frame").textContent;
-  assert.match(boardIcons, /🐻/);
-  assert.doesNotMatch(boardIcons, /🦁/);
+  assert.doesNotMatch(boardIcons, /🐻|🦁/);
   dom.window.close();
 });
 
