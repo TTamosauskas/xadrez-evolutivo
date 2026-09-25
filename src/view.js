@@ -1024,7 +1024,11 @@ export function render(
       ),
     );
   }
-  const gameOverDialog = $("game-over-dialog");
+  const gameOverDialog = $("game-over-dialog"),
+    retryButton = $("game-over-retry");
+  retryButton.hidden = !(
+    state.result?.winner === "amber" && mode === "single"
+  );
   if (state.result && showResult) {
     const winner = state.result.winner;
     if (winner) {
