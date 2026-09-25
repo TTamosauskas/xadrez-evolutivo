@@ -263,7 +263,7 @@ test("malabsorption doubles recovery after reproductive predation", () => {
   assert.equal(parent.nextReproductionRound, 12);
 });
 
-test("semelparity kills the parent after the third successful reproduction", () => {
+test("semelparity kills the parent after the first successful reproduction", () => {
   const s = fixture([
       {
         owner: "blue",
@@ -276,15 +276,12 @@ test("semelparity kills the parent after the third successful reproduction", () 
     ]),
     parent = s.pieces[0],
     id = parent.id;
-  for (let n = 0; n < 3; n++) {
-    const current = s.pieces.find((piece) => piece.id === id);
-    assert.ok(current);
-    assert.equal(
-      reproduce(context(s), current, null, "teste", { forcedCount: 1 }),
-      1,
-    );
-    if (n < 2) s.turn = current.nextReproductionRound * 2;
-  }
+
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
+    1,
+  );
+  assert.equal(parent.lifetimeReproductions, 1);
   assert.equal(s.pieces.some((piece) => piece.id === id), false);
 });
 
@@ -303,7 +300,6 @@ test("viviparous semelparity waits for the final brood before death", () => {
           "Vivíparo",
           "Semelparidade",
         ],
-        lifetimeReproductions: 2,
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
