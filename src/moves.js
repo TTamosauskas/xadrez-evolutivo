@@ -190,6 +190,13 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       !botanicalPredation
     )
       return;
+    if (
+      victim &&
+      has(victim, "Multicelularismo") &&
+      !has(p, "Multicelularismo") &&
+      !botanicalPredation
+    )
+      return;
     if (builtBarrier && !has(p, "Escavador")) return;
     if (
       (naturalBarrier || eventBarrier) &&
