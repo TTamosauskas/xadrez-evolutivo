@@ -202,6 +202,7 @@ function markHadeanTutorialStep(state, step) {
   log(state, "🌋 Tutorial Hadeano: " + labels[step] + " concluído.");
 }
 function extinction(state) {
+  if (state.result) return true;
   const blue = state.pieces.some((p) => p.owner === "blue"),
     amber = state.pieces.some((p) => p.owner === "amber");
   if (!blue || !amber) {
