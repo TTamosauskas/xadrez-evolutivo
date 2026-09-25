@@ -2660,6 +2660,86 @@ test("photosynthetic offspring keep their hereditary energy branch", () => {
   assertState(s);
 });
 
+test("Archean opening guarantee fixes the missing energy branch on an eligible basal descendant", () => {
+  const s = createState(1196, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia", "Fotossíntese"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+  s.turn = 2;
+
+  const parent = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    }),
+    rival = newPiece(s, "amber", 2, 5, {
+      rank: 4,
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+    });
+  s.pieces.push(parent, rival);
+
+  const before = s.nextId;
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const child = s.pieces.find((piece) => piece.id >= before);
+  assert.ok(child);
+  assert.ok(child.traits.includes("Predação"));
+  assert.equal(child.traits.includes("Fotossíntese"), false);
+  assert.ok(s.historicalTraits.includes("Predação"));
+  assert.equal(s.openingMutationSatisfied.blue, true);
+  assert.ok(s.energyBranchRepresentatives.Predação?.traits.includes("Predação"));
+  assertState(s);
+});
+
+test("same-branch offspring do not spend the guarantee reserved for the missing Archean branch", () => {
+  const s = createState(1195, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia", "Fotossíntese"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+  s.turn = 2;
+  const parent = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+    }),
+    rival = newPiece(s, "amber", 2, 5, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    });
+  s.pieces.push(parent, rival);
+
+  reproduce(context(s), parent, null, "teste", {
+    forcedCount: 1,
+    ignoreReadiness: true,
+    immediateDevelopment: true,
+  });
+  assert.equal(s.openingMutationSatisfied.blue, false);
+  assert.equal(s.historicalTraits.includes("Predação"), false);
+  assertState(s);
+});
+
 test("opening mutation guarantee is independent per side from the second round onward", () => {
   const s = createState(1197, {
     scenario: "earth",
