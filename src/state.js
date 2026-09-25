@@ -980,6 +980,10 @@ export function createState(seed = Date.now(), options = {}) {
     cyclePositiveInnovations: [
       ...new Set(options.cyclePositiveInnovations ?? []),
     ],
+    openingMutationSatisfied: {
+      blue: options.openingMutationSatisfied?.blue === true,
+      amber: options.openingMutationSatisfied?.amber === true,
+    },
     cyclePathogenProfile: options.cyclePathogenProfile
       ? { ...options.cyclePathogenProfile }
       : null,
@@ -1863,6 +1867,9 @@ export function assertState(state) {
     new Set(state.cyclePositiveInnovations).size !==
       state.cyclePositiveInnovations.length ||
     state.cyclePositiveInnovations.length > 6 ||
+    !state.openingMutationSatisfied ||
+    typeof state.openingMutationSatisfied.blue !== "boolean" ||
+    typeof state.openingMutationSatisfied.amber !== "boolean" ||
     !(
       state.cyclePathogenProfile === null ||
       (state.cyclePathogenProfile &&
