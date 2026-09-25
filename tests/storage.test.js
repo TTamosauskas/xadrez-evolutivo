@@ -20,6 +20,26 @@ test("current save schema round-trips deterministic state", () => {
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
 });
 
+test("current saves retire Locomoção Avançada from state and genome", () => {
+  const state = createState(11),
+    piece = state.pieces[0];
+  piece.traits.push("Locomoção Avançada");
+  piece.ancestry.push("Locomoção Avançada");
+  piece.genome["Locomoção Avançada"] = [
+    { value: "derived", dominance: "dominant" },
+    { value: "derived", dominance: "dominant" },
+  ];
+  state.historicalTraits.push("Locomoção Avançada");
+  state.seenMutations.push("Locomoção Avançada");
+  state.cyclePositiveInnovations.push("Locomoção Avançada");
+  state.chain = piece.id;
+
+  const restored = deserialize(JSON.stringify(state));
+  assert.equal(JSON.stringify(restored).includes("Locomoção Avançada"), false);
+  assert.equal(restored.chain, null);
+  assertState(restored);
+});
+
 test("current saves without energy-branch memory normalize safely", () => {
   const state = createState(12);
   delete state.energyBranchRepresentatives;

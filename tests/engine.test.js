@@ -875,20 +875,6 @@ test("notices pause actions; acknowledgment is ordered and idempotent", () => {
   const next = transition(s, { type: "ACK_NOTICE", id: first });
   assert.equal(transition(next, { type: "ACK_NOTICE", id: first }), next);
 });
-test("Locomoção Avançada has exactly two actions and restricts the second to the same piece", () => {
-  let s = fixture([
-    { owner: "blue", r: 6, c: 3, traits: ["Locomoção Avançada"] },
-    { owner: "blue", r: 6, c: 4 },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s = simulate(s, move(s.pieces[0], 5, 3));
-  assert.equal(s.turn, 0);
-  assert.equal(s.chain, 1);
-  assert.equal(movesFor(s, s.pieces[1]).length, 0);
-  s = simulate(s, move(s.pieces[0], 4, 3));
-  assert.equal(s.turn, 1);
-  assert.equal(s.chain, null);
-});
 test("sexual partner preserves Multicelularismo and survives save/restore", () => {
   let s = fixture([
     {
@@ -1023,13 +1009,13 @@ test("sexual reproduction keeps fixed energy branches separated without Mixotrof
   assertState(s);
 });
 
-test("dysfunctional movement rests the following full round and suppresses Locomoção Avançada", () => {
+test("dysfunctional movement rests the following full round", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 6,
       c: 3,
-      traits: ["Mutação Disfuncional", "Locomoção Avançada"],
+      traits: ["Mutação Disfuncional"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -1043,7 +1029,7 @@ test("dysfunctional movement rests the following full round and suppresses Locom
 });
 test("collector gathers once and can spend a seed only once in its turn", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Coletor", "Locomoção Avançada"] },
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Coletor"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
@@ -1051,8 +1037,8 @@ test("collector gathers once and can spend a seed only once in its turn", () => 
   s = simulate(s, move(s.pieces[0], 4, 4));
   const p = s.pieces.find((p) => p.id === 1);
   assert.equal(p.seeds, 1);
-  assert.equal(s.chain, 1);
-  assert.ok(!movesFor(s, p).some((t) => t.stay));
+  assert.equal(s.chain, null);
+  assert.equal(s.turn, 1);
   assertState(s);
 });
 test("venom excludes capture turn and kills after two later own turns", () => {
@@ -4763,7 +4749,6 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
         "Locomoção Primitiva",
         "Locomoção Articulada",
         "Locomoção Terrestre",
-        "Locomoção Avançada",
       ].includes(trait),
   );
   assert.ok(movesFor(s, king).some((target) => target.r === 4 && target.c === 4));
@@ -4791,7 +4776,6 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
         "Locomoção Primitiva",
         "Locomoção Articulada",
         "Locomoção Terrestre",
-        "Locomoção Avançada",
       ].includes(trait),
   );
   const targets = movesFor(s, pawn);
@@ -4813,7 +4797,6 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
         "Locomoção Primitiva",
         "Locomoção Articulada",
         "Locomoção Terrestre",
-        "Locomoção Avançada",
       ].includes(trait),
   );
   s = simulate(s, move(predator, 4, 4));

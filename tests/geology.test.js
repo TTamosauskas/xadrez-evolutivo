@@ -211,7 +211,7 @@ test("period innovations follow the didactic sequence", () => {
   ]);
   assert.deepEqual(required.ordovician, ["Ovíparo"]);
   assert.deepEqual(required.silurian, ["Locomoção Terrestre", "Coletor"]);
-  assert.deepEqual(required.devonian, ["Locomoção Avançada", "Onívoro"]);
+  assert.deepEqual(required.devonian, ["Onívoro"]);
   assert.deepEqual(required.carboniferous, ["Ovíparos Amniotas", "Ooteca", "Voo"]);
   assert.deepEqual(required.permian, ["Incubação"]);
   assert.deepEqual(required.triassic, ["Vivíparo", "Notívago"]);
@@ -886,8 +886,6 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
     "Locomoção Articulada",
     "Locomoção Terrestre",
   );
-  assert.equal(traitUnlocked(s, "Locomoção Avançada", p), true);
-  s.historicalTraits.push("Locomoção Avançada");
   p.ancestry.push("Carnívoro");
   assert.equal(traitUnlocked(s, "Onívoro", p), true);
 
@@ -1010,7 +1008,6 @@ test("active phenotype families replace older expressions without erasing ancest
     "Locomoção Primitiva",
     "Locomoção Articulada",
     "Locomoção Terrestre",
-    "Locomoção Avançada",
     "Embriófitas",
     "Traqueófitas",
     "Gimnospermas",
@@ -1023,14 +1020,13 @@ test("active phenotype families replace older expressions without erasing ancest
   assert.ok(ACTIVE_TRAIT_FAMILIES.length >= 6);
   assert.ok(active.includes("Predação"));
   assert.ok(active.includes("Onívoro"));
-  assert.ok(active.includes("Locomoção Avançada"));
+  assert.ok(active.includes("Locomoção Terrestre"));
   assert.ok(active.includes("Angiospermas"));
   assert.ok(active.includes("Eusocialidade"));
   for (const suppressed of [
     "Carnívoro",
     "Herbívoro",
     "Locomoção Articulada",
-    "Locomoção Terrestre",
     "Embriófitas",
     "Traqueófitas",
     "Gimnospermas",
@@ -1053,15 +1049,11 @@ test("active phenotype families replace older expressions without erasing ancest
 });
 
 test("later active phenotypes retain capabilities of the form they replaced", () => {
-  const advanced = { traits: ["Locomoção Avançada"] },
-    vascularSeedPlant = { traits: ["Gimnospermas"] },
+  const vascularSeedPlant = { traits: ["Gimnospermas"] },
     flowering = { traits: ["Angiospermas"] },
     omnivore = { traits: ["Onívoro"] },
     eusocial = { traits: ["Eusocialidade"] };
 
-  assert.equal(has(advanced, "Locomoção Terrestre"), true);
-  assert.equal(has(advanced, "Locomoção Articulada"), true);
-  assert.equal(has(advanced, "Locomoção Primitiva"), true);
   assert.equal(has(vascularSeedPlant, "Embriófitas"), true);
   assert.equal(has(vascularSeedPlant, "Traqueófitas"), true);
   assert.equal(has(flowering, "Embriófitas"), true);
@@ -1148,7 +1140,6 @@ test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either 
   s.historicalTraits = GEOLOGICAL_STAGES.slice(0, 6).flatMap(
     (stage) => stage.required,
   );
-  s.historicalTraits.push("Locomoção Avançada");
   const herbivore = {
       traits: ["Multicelularismo", "Predação", "Herbívoro"],
       ancestry: ["Predação", "Herbívoro"],
@@ -1167,8 +1158,8 @@ test("new combat specializations unlock in the intended periods and lineages", (
       return GEOLOGICAL_STAGES.slice(0, index).flatMap((stage) => stage.required);
     },
     predator = {
-      traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Avançada"],
-      ancestry: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Locomoção Avançada"],
+      traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado"],
+      ancestry: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"],
     },
     herbivore = {
       traits: ["Multicelularismo", "Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"],

@@ -155,7 +155,7 @@ test("each geological discovery can launch the first cycle with prior winners re
         if (source) assert.ok(source.index < currentIndex, trait);
       }
     }
-    assertState(s);
+    assert.doesNotThrow(() => assertState(s), stage.id);
   }
 });
 

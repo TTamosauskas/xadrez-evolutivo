@@ -952,7 +952,7 @@ function executeMove(ctx, action) {
     return;
   }
   const second = state.chain === p.id,
-    locomotion = has(p, "Locomoção Avançada"),
+    locomotion = false,
     botanicalPredation = target.botanicalPredation ?? null,
     landingCell = square(target.r, target.c),
     landingTerrain = terrain(state, target.r, target.c),
@@ -1688,7 +1688,7 @@ function resolveDirectPartner(ctx, action) {
     id: p.id,
     selectedIds: [],
     second,
-    locomotion: has(p, "Locomoção Avançada"),
+    locomotion: false,
     collectorStay: false,
     predation: false,
     manipulation: null,

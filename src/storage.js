@@ -9,6 +9,30 @@ const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 const LEGACY_TRAIT_NAMES = Object.freeze({
   "Mutação Deletéria": "Mutação Letal",
 });
+const RETIRED_TRAITS = new Set(["Locomoção Avançada"]);
+
+function removeRetiredTraits(value) {
+  if (Array.isArray(value)) {
+    for (let i = value.length - 1; i >= 0; i--) {
+      const child = value[i];
+      if (typeof child === "string" && RETIRED_TRAITS.has(child))
+        value.splice(i, 1);
+      else removeRetiredTraits(child);
+    }
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  for (const trait of RETIRED_TRAITS) delete value[trait];
+  for (const [key, child] of Object.entries(value)) {
+    if (key === "locomotion" && typeof child === "boolean") {
+      value[key] = false;
+      continue;
+    }
+    if (typeof child === "string" && RETIRED_TRAITS.has(child))
+      delete value[key];
+    else removeRetiredTraits(child);
+  }
+}
 
 function normalizeLegacyTraitNames(value) {
   if (Array.isArray(value)) {
@@ -122,6 +146,9 @@ function normalizePathogenEvolution(state) {
 
 function normalizeCycleInnovationPressure(state) {
   normalizeLegacyTraitNames(state);
+  removeRetiredTraits(state);
+  normalizeStoredGenomes(state);
+  state.chain = null;
   for (const piece of state?.pieces ?? [])
     piece.lifetimeOffspring ??= 0;
   if (!Array.isArray(state?.cyclePositiveInnovations))
