@@ -121,7 +121,7 @@ test("nanism forces pawn form", () => {
   assert.equal(p.rank, 0);
 });
 
-test("only-child and respiratory insufficiency reduce reproductive performance", () => {
+test("only-child is a lifetime one-offspring limit and respiratory insufficiency slows recovery", () => {
   const only = fixture([
       {
         owner: "blue",
@@ -137,6 +137,13 @@ test("only-child and respiratory insufficiency reduce reproductive performance",
     reproduce(context(only), onlyParent, null, "teste", { forcedCount: 4 }),
     1,
   );
+  assert.equal(onlyParent.lifetimeOffspring, 1);
+  only.turn = onlyParent.nextReproductionRound * 2;
+  assert.equal(
+    reproduce(context(only), onlyParent, null, "teste", { forcedCount: 4 }),
+    0,
+  );
+  assert.ok(only.pieces.some((piece) => piece.id === onlyParent.id));
 
   const respiratory = fixture([
       {
@@ -185,6 +192,45 @@ test("only-child and respiratory insufficiency reduce reproductive performance",
     1,
   );
   assert.equal(predatorParent.nextReproductionRound, 12);
+});
+
+test("only-child sexual partner becomes unavailable after one descendant", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Reprodução Sexuada"],
+      },
+      {
+        owner: "blue",
+        r: 4,
+        c: 5,
+        traits: ["Reprodução Sexuada", "Filho único"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    mate = s.pieces[1];
+
+  assert.equal(
+    reproduce(context(s), parent, mate, "teste", {
+      forcedCount: 4,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  assert.equal(mate.lifetimeOffspring, 1);
+  assert.ok(s.pieces.some((piece) => piece.id === mate.id));
+  assert.equal(
+    reproduce(context(s), parent, mate, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    0,
+  );
 });
 
 test("subfertility can spend a reproductive attempt without offspring", () => {
