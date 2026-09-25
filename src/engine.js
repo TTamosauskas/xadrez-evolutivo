@@ -142,8 +142,7 @@ export function context(state) {
           resourceKind: "stored",
         });
       scatterSeeds(state, dead);
-      if (!state.pieces.some((piece) => piece.owner === dead.owner))
-        state.lastExtinctionPiece = clone(dead);
+      state.lastDeathPiece = clone(dead);
       log(state, `${OWNERS[dead.owner]} perderam uma peça por ${reason}.`);
       return true;
     },
@@ -177,7 +176,7 @@ function finishGame(state, winner, reason, extinctionFounder = null) {
   state.result = extinctionFounder
     ? { winner, reason, extinctionFounder: clone(extinctionFounder) }
     : { winner, reason };
-  delete state.lastExtinctionPiece;
+  delete state.lastDeathPiece;
   state.phase = "over";
   state.chain = null;
   state.partner = null;
@@ -207,7 +206,7 @@ function extinction(state) {
     amber = state.pieces.some((p) => p.owner === "amber");
   if (!blue || !amber) {
     const simultaneous = !blue && !amber,
-      extinctionFounder = simultaneous ? state.lastExtinctionPiece ?? null : null,
+      extinctionFounder = simultaneous ? state.lastDeathPiece ?? null : null,
       winner = blue
         ? "blue"
         : amber
