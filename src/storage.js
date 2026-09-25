@@ -3,8 +3,35 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
+
+const LEGACY_TRAIT_NAMES = Object.freeze({
+  "Mutação Deletéria": "Mutação Letal",
+});
+
+function normalizeLegacyTraitNames(value) {
+  if (Array.isArray(value)) {
+    for (let i = 0; i < value.length; i++) {
+      const child = value[i];
+      if (typeof child === "string" && LEGACY_TRAIT_NAMES[child])
+        value[i] = LEGACY_TRAIT_NAMES[child];
+      else normalizeLegacyTraitNames(child);
+    }
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  for (const [legacy, current] of Object.entries(LEGACY_TRAIT_NAMES))
+    if (Object.hasOwn(value, legacy)) {
+      if (!Object.hasOwn(value, current)) value[current] = value[legacy];
+      delete value[legacy];
+    }
+  for (const [key, child] of Object.entries(value)) {
+    if (typeof child === "string" && LEGACY_TRAIT_NAMES[child])
+      value[key] = LEGACY_TRAIT_NAMES[child];
+    else normalizeLegacyTraitNames(child);
+  }
+}
 
 function normalizeStoredGenomes(value) {
   if (!value || typeof value !== "object") return;
@@ -94,6 +121,9 @@ function normalizePathogenEvolution(state) {
 }
 
 function normalizeCycleInnovationPressure(state) {
+  normalizeLegacyTraitNames(state);
+  for (const piece of state?.pieces ?? [])
+    piece.lifetimeOffspring ??= 0;
   if (!Array.isArray(state?.cyclePositiveInnovations))
     state.cyclePositiveInnovations = [];
   return normalizePathogenEvolution(state);
@@ -159,6 +189,7 @@ function migrateLegacy(data) {
     for (const piece of state.pieces ?? []) delete piece.decompositionImmunity;
   }
   state.version = STATE_VERSION;
+  normalizeLegacyTraitNames(state);
   normalizeStoredGenomes(state);
   return normalizeCycleInnovationPressure(state);
 }
