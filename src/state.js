@@ -835,16 +835,16 @@ export function canonicalFounderStarts(state, slots = true) {
 const ARCHEAN_FOUNDER_LAYOUTS = Object.freeze({
   1: Object.freeze([
     Object.freeze({
-      blue: Object.freeze([[4, 2], [4, 3]]),
-      amber: Object.freeze([[3, 4], [3, 5]]),
+      blue: Object.freeze([[5, 2], [5, 3]]),
+      amber: Object.freeze([[2, 5], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[5, 2], [4, 2]]),
+      amber: Object.freeze([[2, 5], [3, 5]]),
     }),
     Object.freeze({
       blue: Object.freeze([[5, 3], [4, 2]]),
       amber: Object.freeze([[2, 4], [3, 5]]),
-    }),
-    Object.freeze({
-      blue: Object.freeze([[5, 2], [5, 4]]),
-      amber: Object.freeze([[2, 5], [2, 3]]),
     }),
   ]),
   2: Object.freeze([
@@ -1061,7 +1061,7 @@ export function createState(seed = Date.now(), options = {}) {
           ? earthFounderStarts(state.geologicalStage, state.cycle, state)
           : state.geologicalStage === "archean" &&
               scenario !== "arena" &&
-              (balancedPair || ownerPair)
+              (balancedPair || ownerPair || !founder)
             ? earthFounderStarts(state.geologicalStage, state.cycle, state)
             : scenario === "earth" && (balancedPair || ownerPair)
               ? earthFounderStarts(state.geologicalStage, state.cycle, state)
