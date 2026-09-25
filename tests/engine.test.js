@@ -2660,6 +2660,110 @@ test("photosynthetic offspring keep their hereditary energy branch", () => {
   assertState(s);
 });
 
+test("opening mutation guarantee is independent per side from the second round onward", () => {
+  const s = createState(1197, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+  s.turn = 2;
+
+  const blue = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    }),
+    amber = newPiece(s, "amber", 2, 5, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    });
+  s.pieces.push(blue, amber);
+
+  const blueBefore = s.nextId;
+  assert.equal(
+    reproduce(context(s), blue, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const blueChild = s.pieces.find((piece) => piece.id >= blueBefore);
+  assert.ok(blueChild);
+  assert.equal(blueChild.mutations, 1);
+  assert.equal(s.openingMutationSatisfied.blue, true);
+  assert.equal(s.openingMutationSatisfied.amber, false);
+
+  const amberBefore = s.nextId;
+  assert.equal(
+    reproduce(context(s), amber, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const amberChild = s.pieces.find((piece) => piece.id >= amberBefore);
+  assert.ok(amberChild);
+  assert.equal(amberChild.mutations, 1);
+  assert.equal(s.openingMutationSatisfied.amber, true);
+  assertState(s);
+});
+
+test("a natural opening mutation consumes the later guarantee for that side", () => {
+  const s = createState(1198, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+  const parent = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    }),
+    rival = newPiece(s, "amber", 2, 5, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    });
+  s.pieces.push(parent, rival);
+  s.event = {
+    ...EVENTS.find((event) => event.id === "solar"),
+    startRound: 0,
+    hazards: [],
+    snapshots: {},
+  };
+
+  const before = s.nextId;
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const child = s.pieces.find((piece) => piece.id >= before);
+  assert.ok(child);
+  assert.equal(child.mutations, 1);
+  assert.equal(s.openingMutationSatisfied.blue, true);
+  assert.equal(s.openingMutationSatisfied.amber, false);
+  assertState(s);
+});
+
 test("cycle innovation pressure blocks a seventh new positive mutation without blocking birth", () => {
   const makeState = (cyclePositiveInnovations = []) => {
     const s = fixture([
