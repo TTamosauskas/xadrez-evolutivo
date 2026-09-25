@@ -298,6 +298,7 @@ export const TRAIT_STAGE = {
   "Respiração anaeróbia": "hadean",
   "Reparo Celular": "archean",
   "Respiração aeróbia": "proterozoic",
+  "Respiração Pulmonar": "devonian",
   Fotossíntese: "archean",
   Embriófitas: "ordovician",
   Traqueófitas: "silurian",
@@ -458,6 +459,10 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Respiração anaeróbia"],
     historical: ["Fotossíntese"],
   },
+  "Respiração Pulmonar": {
+    lineage: ["Respiração aeróbia"],
+    active: ["Vertebrado"],
+  },
   Fotossíntese: { lineage: ["Respiração anaeróbia"] },
   Predação: { lineage: ["Respiração anaeróbia"] },
   Embriófitas: { lineage: ["Fotossíntese"] },
@@ -501,7 +506,7 @@ export const TRAIT_DEPENDENCIES = {
   "Visão Binocular": { lineage: ["Predação"] },
   Velocidade: { lineage: ["Locomoção Terrestre"] },
   Notívago: { lineage: ["Locomoção Articulada"] },
-  "Sacos Aéreos": { lineage: ["Locomoção Terrestre"] },
+  "Sacos Aéreos": { lineage: ["Respiração Pulmonar", "Locomoção Terrestre"] },
   Voo: { lineage: ["Locomoção Terrestre"] },
   "Ovíparos Amniotas": { lineage: ["Ovíparo"] },
   Ovovivíparo: { lineage: ["Ovíparos Amniotas"] },
@@ -600,6 +605,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Garras",
   "Onívoro",
   "Respiração Cutânea",
+  "Respiração Pulmonar",
   "Voo",
   "Ovíparo",
   "Ovíparos Amniotas",
@@ -683,6 +689,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Escavador",
   "Escalador",
   "Respiração Cutânea",
+  "Respiração Pulmonar",
   "Visão Binocular",
   "Velocidade",
   "Notívago",
@@ -738,6 +745,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
 
 export const TRAIT_BRANCH_SCOPE = Object.freeze({
   "Transferência Horizontal": "predation",
+  "Respiração Pulmonar": "predation",
   Brotamento: "shared",
   Fragmentação: "shared",
   Colônia: "shared",
@@ -760,7 +768,8 @@ export const TRAIT_INCOMPATIBILITIES = Object.freeze({
   Coprofagia: ["Mixotrofia"],
   Mixotrofia: ["Coprofagia"],
   Vertebrado: ["Fragmentação"],
-  "Artrópode": ["Fragmentação"],
+  "Artrópode": ["Fragmentação", "Respiração Pulmonar"],
+  "Respiração Pulmonar": ["Artrópode"],
   Ooteca: ["Fragmentação"],
   Pedogênese: ["Precocidade Sexual"],
   "Precocidade Sexual": ["Pedogênese"],
@@ -1268,6 +1277,12 @@ export function traitUnlocked(state, trait, piece = null) {
   )
     return false;
   if (deps?.lineage?.some((dependency) => !lineage.has(dependency)))
+    return false;
+  if (
+    deps?.active?.some(
+      (dependency) => !piece?.traits?.includes(dependency),
+    )
+  )
     return false;
   if (
     deps?.lineageAny?.length &&
