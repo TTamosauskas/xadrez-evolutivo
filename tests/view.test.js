@@ -13,7 +13,10 @@ import {
 import { fixture } from "./helpers.js";
 import { TRAITS, EVENTS } from "../src/constants.js";
 import { render, traitFrameSlots, establishedTraits } from "../src/view.js";
-import { actionableTraitsForPiece } from "../src/actionable-traits.js";
+import {
+  actionableTraitsForPiece,
+  contextualTraitsForBoard,
+} from "../src/actionable-traits.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
@@ -488,6 +491,44 @@ test("contextual mutations form an evenly spaced frame while the energy branch s
     "Predação",
   );
   dom.window.close();
+});
+
+test("causal frame suppresses Voo when Escalador already explains the same barrier traversal", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 3,
+        rank: 5,
+        traits: ["Escalador", "Voo"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0];
+  s.naturalBarriers.push(4 * 8 + 4);
+
+  const contextual = contextualTraitsForBoard(s).get(piece.id);
+  assert.ok(contextual.has("Escalador"));
+  assert.equal(contextual.has("Voo"), false);
+});
+
+test("causal frame keeps Locomoção Terrestre and Voo when they explain different parts of the same route", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 2,
+        rank: 5,
+        traits: ["Voo"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0];
+  s.board[4 * 8 + 3] = "hostile";
+
+  const contextual = contextualTraitsForBoard(s).get(piece.id);
+  assert.ok(contextual.has("Locomoção Terrestre"));
+  assert.ok(contextual.has("Voo"));
 });
 
 test("non-contextual phenotype inventory stays in the selected panel instead of the board frame", () => {

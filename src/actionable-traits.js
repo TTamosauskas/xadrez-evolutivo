@@ -12,6 +12,7 @@ import {
   organicResidueAt,
   carcassAt,
   round,
+  lethalHazardAt,
 } from "./state.js";
 import {
   movesFor,
@@ -426,6 +427,97 @@ function camouflageBlocksCurrentAttack(state, victim, attackers) {
   });
 }
 
+const CAUSAL_ACTION_TRAITS = Object.freeze([
+  "Escalador",
+  "Voo",
+  "Locomoção Terrestre",
+  "Percepção Espacial",
+  "Visão Binocular",
+]);
+
+function stateWithPiece(state, piece) {
+  return {
+    ...state,
+    pieces: state.pieces.map((candidate) =>
+      candidate.id === piece.id ? piece : candidate,
+    ),
+  };
+}
+
+function withoutActiveTrait(piece, trait) {
+  return {
+    ...piece,
+    traits: (piece.traits ?? []).filter((candidate) => candidate !== trait),
+    somaticMutations: (piece.somaticMutations ?? []).filter(
+      (candidate) => candidate !== trait,
+    ),
+  };
+}
+
+function moveFingerprint(target) {
+  return JSON.stringify({
+    r: target.r,
+    c: target.c,
+    path: target.path ?? [],
+    capture: !!target.capture,
+    cannibal: !!target.cannibal,
+    eggCapture: target.eggCapture ?? null,
+    botanicalPredation: target.botanicalPredation ?? null,
+    stay: !!target.stay,
+    cutaneous: !!target.cutaneous,
+    vascular: !!target.vascular,
+  });
+}
+
+function legalPossibilityFingerprint(state, piece) {
+  return JSON.stringify(
+    movesFor(state, piece).map(moveFingerprint).sort(),
+  );
+}
+
+function flightHasIndependentEnvironmentalEffect(state, piece) {
+  if (!has(piece, "Voo")) return false;
+  return movesFor(state, piece).some((target) =>
+    (target.path ?? []).some(([r, c]) => {
+      const landing = r === target.r && c === target.c;
+      return (
+        !landing &&
+        (terrain(state, r, c) === "hostile" ||
+          lethalHazardAt(state, r, c))
+      );
+    }),
+  );
+}
+
+function pruneRedundantActionTraits(state, piece, contextual) {
+  if (!piece || !contextual?.size) return contextual;
+
+  let workingPiece = piece,
+    workingState = state;
+  for (const trait of CAUSAL_ACTION_TRAITS) {
+    if (!contextual.has(trait) || !has(workingPiece, trait)) continue;
+
+    // Voo também altera o risco ambiental de trajetórias hostis/letais,
+    // mesmo quando outra mutação já oferece o mesmo destino legal.
+    if (
+      trait === "Voo" &&
+      flightHasIndependentEnvironmentalEffect(workingState, workingPiece)
+    )
+      continue;
+
+    const baseline = legalPossibilityFingerprint(workingState, workingPiece),
+      candidatePiece = withoutActiveTrait(workingPiece, trait),
+      candidateState = stateWithPiece(workingState, candidatePiece),
+      candidate = legalPossibilityFingerprint(candidateState, candidatePiece);
+
+    if (candidate !== baseline) continue;
+    contextual.delete(trait);
+    workingPiece = candidatePiece;
+    workingState = candidateState;
+  }
+  return contextual;
+}
+
 function markCaptureContext(state, attacker, victim, byId) {
   const attackerTraits = byId.get(attacker.id),
     victimTraits = byId.get(victim.id);
@@ -509,6 +601,7 @@ export function contextualTraitsForBoard(state) {
     )
       for (const trait of actionableTraitsForPiece(state, piece))
         traits.add(trait);
+    pruneRedundantActionTraits(state, piece, traits);
   }
 
   if (state.result || state.phase !== "move") return byId;
