@@ -74,6 +74,7 @@ test("Como Jogar covers all scenarios, ecological events and Earth required inno
   assert.ok(text.includes("chegar à 2ª rodada"));
   assert.ok(text.includes("próximo descendente com alguma mutação elegível"));
   assert.equal(text.includes("deslocar → dividir → capturar"), false);
+  assert.equal(text.includes("Locomoção Avançada"), false);
 });
 
 test("Como Jogar orders positive mutations by the Vida na Terra chronology", () => {
