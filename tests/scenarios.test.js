@@ -26,6 +26,8 @@ import {
   earthFounderStarts,
   CANONICAL_FOUNDER_CELLS,
   canonicalFounderStarts,
+  dominantLineage,
+  registerDiscoveries,
   newPiece,
 } from "../src/state.js";
 import { deserialize } from "../src/storage.js";
@@ -159,6 +161,135 @@ test("Vida na Terra disperses aquatic founders progressively through early geolo
       (piece) => archeanCycle2.board[piece.r * 8 + piece.c] === "fertile",
     ),
   );
+});
+
+test("derived lineages outrank larger basal clone groups when choosing a founder", () => {
+  const s = createState(706, {
+    geologicalStage: "archean",
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  const weakA = newPiece(s, "blue", 4, 2, {
+      rank: 4,
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+      generation: 1,
+    }),
+    weakB = newPiece(s, "blue", 4, 3, {
+      rank: 4,
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+      generation: 1,
+    }),
+    derived = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: ["Predação", "Reparo Celular"],
+      ancestry: ["Respiração anaeróbia", "Predação", "Reparo Celular"],
+      generation: 2,
+    });
+  s.pieces.push(weakA, weakB, derived);
+
+  const selected = dominantLineage(
+    s,
+    "blue",
+    (piece) => piece.traits.includes("Predação"),
+  );
+  assert.equal(selected.piece.id, derived.id);
+  assert.equal(selected.count, 1);
+});
+
+test("Vida na Terra carries living and remembered energy branches into the next Archean cycle", () => {
+  const prior = createState(707, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Fotossíntese",
+      "Predação",
+    ],
+    naturalBarriers: false,
+  });
+  prior.pieces = [];
+  prior.nextId = 1;
+  prior.energyBranchRepresentatives = {
+    Fotossíntese: null,
+    Predação: null,
+  };
+
+  const extinctPlant = newPiece(prior, "blue", 4, 2, {
+      rank: 4,
+      traits: ["Fotossíntese", "Reparo Celular"],
+      ancestry: [
+        "Respiração anaeróbia",
+        "Fotossíntese",
+        "Reparo Celular",
+      ],
+      generation: 3,
+    }),
+    livingPredator = newPiece(prior, "amber", 3, 5, {
+      rank: 4,
+      traits: ["Predação", "Transferência Horizontal"],
+      ancestry: [
+        "Respiração anaeróbia",
+        "Predação",
+        "Transferência Horizontal",
+      ],
+      generation: 4,
+    });
+  prior.pieces.push(extinctPlant, livingPredator);
+  registerDiscoveries(prior, extinctPlant);
+  registerDiscoveries(prior, livingPredator);
+  prior.pieces = [livingPredator];
+  prior.result = { winner: "amber", reason: "Extinção total." };
+  prior.phase = "over";
+
+  const next = createSuccessorState(prior, 708),
+    plants = next.pieces.filter((piece) => piece.traits.includes("Fotossíntese")),
+    predators = next.pieces.filter((piece) => piece.traits.includes("Predação"));
+
+  assert.equal(next.geologicalStage, "archean");
+  assert.equal(next.cycle, 2);
+  assert.equal(plants.length, 2);
+  assert.equal(predators.length, 2);
+  assert.ok(plants.every((piece) => piece.traits.includes("Reparo Celular")));
+  assert.ok(
+    predators.every((piece) =>
+      piece.traits.includes("Transferência Horizontal"),
+    ),
+  );
+  assert.ok(next.historicalTraits.includes("Fotossíntese"));
+  assert.ok(next.historicalTraits.includes("Predação"));
+});
+
+test("first Archean successor supplies a missing fundamental branch as a final fixation fallback", () => {
+  const prior = createState(709, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia", "Fotossíntese"],
+    naturalBarriers: false,
+  });
+  prior.pieces = prior.pieces.filter((piece) =>
+    piece.traits.includes("Fotossíntese"),
+  );
+  prior.result = { winner: "blue", reason: "Extinção total." };
+  prior.phase = "over";
+
+  const next = createSuccessorState(prior, 710);
+  assert.equal(
+    next.pieces.filter((piece) => piece.traits.includes("Fotossíntese")).length,
+    2,
+  );
+  assert.equal(
+    next.pieces.filter((piece) => piece.traits.includes("Predação")).length,
+    2,
+  );
+  assert.ok(next.historicalTraits.includes("Fotossíntese"));
+  assert.ok(next.historicalTraits.includes("Predação"));
 });
 
 test("canonical founder pool prevents immediate queen and knight captures", () => {
