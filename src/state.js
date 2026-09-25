@@ -1380,6 +1380,13 @@ const lineagePositiveTraits = (piece) =>
     (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
   ).length;
 
+const lineagePositiveGenome = (piece) =>
+  new Set(
+    genomeCarriedTraits(piece?.genome).filter(
+      (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
+    ),
+  ).size;
+
 const lineagePositiveAncestry = (piece) =>
   new Set(
     (piece?.ancestry ?? piece?.traits ?? []).filter(
@@ -1390,9 +1397,9 @@ const lineagePositiveAncestry = (piece) =>
 function compareLineageStrength(a, b) {
   return (
     lineagePositiveTraits(b) - lineagePositiveTraits(a) ||
+    lineagePositiveGenome(b) - lineagePositiveGenome(a) ||
     lineagePositiveAncestry(b) - lineagePositiveAncestry(a) ||
-    (b?.generation ?? 0) - (a?.generation ?? 0) ||
-    (b?.mutations ?? 0) - (a?.mutations ?? 0)
+    (b?.generation ?? 0) - (a?.generation ?? 0)
   );
 }
 
