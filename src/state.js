@@ -1547,7 +1547,7 @@ function createEarthSuccessorState(previous, seed) {
     preview = previewFounderProfiles(stageIndex),
     extinctionFounder = founderProfile(previous.result?.extinctionFounder),
     extinctionFounderIsPhotosynthetic =
-      extinctionFounder?.traits.includes("Fotossíntese") ?? false,
+      extinctionFounder ? canPhotosynthesize(extinctionFounder) : false,
     founders = extinctionFounder
       ? {
           primary: extinctionFounder,
@@ -1603,6 +1603,15 @@ export function createSuccessorState(previous, seed = Date.now()) {
         (stage) => stage.id === candidate.id,
       ),
       preview = previewFounderProfiles(stageIndex),
+      extinctionFounder = founderProfile(previous.result?.extinctionFounder),
+      founders = extinctionFounder
+        ? {
+            primary: extinctionFounder,
+            companion: canPhotosynthesize(extinctionFounder)
+              ? preview.companion
+              : preview.primary,
+          }
+        : { primary: preview.primary, companion: preview.companion },
       state = createState(seed, {
         scenario: previous.scenario,
         geologicalStage: candidate.id,
@@ -1621,7 +1630,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
           ...fossilEntries(previous),
         ],
         discoveries: previous.discoveries,
-        founders: { primary: preview.primary, companion: preview.companion },
+        founders,
         canonicalPair: true,
       });
     log(
