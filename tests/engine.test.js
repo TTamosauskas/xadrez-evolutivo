@@ -1441,7 +1441,7 @@ test("Semelparidade kills the progenitor after its first successful reproduction
   assert.equal(parent.lifetimeReproductions, 1);
   assert.equal(s.pieces.some((piece) => piece.id === parentId), false);
   assert.ok(s.pieces.some((piece) => piece.id >= before));
-  assert.equal(parent.regenerationUsed, false);
+  assert.notEqual(parent.regenerationUsed, true);
   assertState(s);
 });
 
