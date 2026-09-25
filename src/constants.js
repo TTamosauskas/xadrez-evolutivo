@@ -299,7 +299,7 @@ export const TRAITS = {
   ],
   Semelparidade: [
     "🐙",
-    "Após completar três reproduções bem-sucedidas, o progenitor morre; Regeneração não evita essa morte.",
+    "Permite apenas uma reprodução bem-sucedida durante toda a vida. Após reproduzir, o organismo morre; Regeneração não evita essa morte.",
   ],
   "Regressão Evolutiva": [
     "🦤",

@@ -1416,6 +1416,97 @@ test("piece life history defines brood, metabolic recovery and sexual maturity",
   }
 });
 
+test("Semelparidade kills the progenitor after its first successful reproduction", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Semelparidade", "Regeneração"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    parentId = parent.id,
+    before = s.nextId;
+
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  assert.equal(parent.lifetimeReproductions, 1);
+  assert.equal(s.pieces.some((piece) => piece.id === parentId), false);
+  assert.ok(s.pieces.some((piece) => piece.id >= before));
+  assert.notEqual(parent.regenerationUsed, true);
+  assertState(s);
+});
+
+test("Subfertilidade failure does not consume the single Semelparidade reproduction", () => {
+  let observed = false;
+  for (let seed = 1; seed <= 256 && !observed; seed++) {
+    const s = fixture(
+        [
+          {
+            owner: "blue",
+            r: 4,
+            c: 4,
+            traits: ["Semelparidade", "Subfertilidade"],
+          },
+          { owner: "amber", r: 0, c: 0 },
+        ],
+        seed,
+      ),
+      parent = s.pieces[0],
+      produced = reproduce(context(s), parent, null, "teste", {
+        forcedCount: 1,
+        ignoreReadiness: true,
+        immediateDevelopment: true,
+      });
+
+    if (
+      produced === 0 &&
+      s.logs.some((entry) => entry.text.includes("Subfertilidade impediu"))
+    ) {
+      observed = true;
+      assert.ok(s.pieces.some((piece) => piece.id === parent.id));
+      assert.equal(parent.lifetimeReproductions, 0);
+      assert.equal(parent.semelparityDeathPending, false);
+      assertState(s);
+    }
+  }
+  assert.equal(observed, true);
+});
+
+test("Semelparidade defers death while viviparous offspring are gestating", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Semelparidade", "Vivíparo"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0];
+
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+    }),
+    1,
+  );
+  assert.ok(s.pieces.some((piece) => piece.id === parent.id));
+  assert.equal(parent.lifetimeReproductions, 1);
+  assert.equal(parent.semelparityDeathPending, true);
+  assert.equal(parent.pregnancies.length, 1);
+  assertState(s);
+});
+
 test("fertile reproduction uses the piece metabolic recovery profile", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração anaeróbia"] },
