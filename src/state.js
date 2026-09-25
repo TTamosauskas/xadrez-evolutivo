@@ -1308,9 +1308,15 @@ export function dominantLineage(state, owner = null, predicate = null) {
       b.piece.generation - a.piece.generation ||
       signature(a.piece).localeCompare(signature(b.piece), "pt-BR"),
   )[0];
-  return selected
-    ? { ...selected, total: pieces.length }
-    : { piece: null, count: 0, total: pieces.length };
+  if (selected) return { ...selected, total: pieces.length };
+  const extinctionFounder = state.result?.extinctionFounder;
+  if (
+    extinctionFounder &&
+    (!owner || extinctionFounder.owner === owner) &&
+    (!predicate || predicate(extinctionFounder))
+  )
+    return { piece: extinctionFounder, count: 1, total: 1 };
+  return { piece: null, count: 0, total: pieces.length };
 }
 function fossilEntries(previous) {
   return ["blue", "amber"].flatMap((owner) => {
@@ -1331,7 +1337,7 @@ function fossilEntries(previous) {
   });
 }
 
-function founderProfile(previous, piece) {
+export function founderProfile(piece) {
   if (!piece) return null;
   const excluded = new Set(["Esterilidade", "Mutação Letal"]),
     genome = withoutGenomeTraits(piece.genome, [...excluded]),
@@ -1383,6 +1389,15 @@ function arenaSurvivorEntries(state, owner) {
     )
     .slice(0, 2)
     .map(({ piece }) => ({ source: piece, genome: cleanArenaGenome(piece) }));
+  const extinctionFounder =
+    state.result?.extinctionFounder?.owner === owner
+      ? state.result.extinctionFounder
+      : null;
+  if (extinctionFounder)
+    selected.unshift({
+      source: extinctionFounder,
+      genome: cleanArenaGenome(extinctionFounder),
+    });
   const fallback = state.arenaFounders?.[owner]
     ? [
         state.arenaFounders[owner].primary,
@@ -1530,6 +1545,17 @@ function createEarthSuccessorState(previous, seed) {
         : previous.totalCycles + 1,
     stageIndex = GEOLOGICAL_STAGES.findIndex((stage) => stage.id === candidate.id),
     preview = previewFounderProfiles(stageIndex),
+    extinctionFounder = founderProfile(previous.result?.extinctionFounder),
+    extinctionFounderIsPhotosynthetic =
+      extinctionFounder?.traits.includes("Fotossíntese") ?? false,
+    founders = extinctionFounder
+      ? {
+          primary: extinctionFounder,
+          companion: extinctionFounderIsPhotosynthetic
+            ? preview.companion
+            : preview.primary,
+        }
+      : { primary: preview.primary, companion: preview.companion },
     state = createState(seed, {
       scenario: "earth",
       geologicalStage: candidate.id,
@@ -1547,14 +1573,18 @@ function createEarthSuccessorState(previous, seed) {
       discoveries: previous.discoveries,
       sexualPathogenUnlockTotalCycle:
         previous.sexualPathogenUnlockTotalCycle ?? null,
-      founders: { primary: preview.primary, companion: preview.companion },
+      founders,
       canonicalPair: true,
     });
   log(
     state,
-    advanced
-      ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period} com linhagens canônicas do período.`
-      : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo com fundadores canônicos.`,
+    extinctionFounder
+      ? advanced
+        ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period}; a última linhagem extinta vencedora funda a nova geração ao lado da contraparte histórica.`
+        : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo; a última linhagem extinta vencedora funda a nova geração ao lado da contraparte histórica.`
+      : advanced
+        ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period} com linhagens canônicas do período.`
+        : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo com fundadores canônicos.`,
   );
   return state;
 }
@@ -1602,7 +1632,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
   }
   const winner = previous.result?.winner ?? null,
     selected = dominantLineage(previous, winner),
-    founder = founderProfile(previous, selected.piece),
+    founder = founderProfile(selected.piece),
     founderIsPhotosynthetic = founder?.traits.includes("Fotossíntese") ?? false,
     counterpart = dominantLineage(
       previous,
@@ -1615,7 +1645,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       counterpart.piece &&
       (!selected.piece ||
         signature(counterpart.piece) !== signature(selected.piece))
-        ? founderProfile(previous, counterpart.piece)
+        ? founderProfile(counterpart.piece)
         : null,
     founders =
       founder && companion
@@ -2433,7 +2463,16 @@ export function assertState(state) {
     (state.result &&
       (!["blue", "amber", null].includes(state.result.winner) ||
         typeof state.result.reason !== "string" ||
-        state.phase !== "over"))
+        state.phase !== "over" ||
+        (state.result.extinctionFounder &&
+          (state.result.extinctionFounder.owner !== state.result.winner ||
+            !Number.isInteger(state.result.extinctionFounder.rank) ||
+            state.result.extinctionFounder.rank < 0 ||
+            state.result.extinctionFounder.rank > 5 ||
+            !Array.isArray(state.result.extinctionFounder.traits) ||
+            state.result.extinctionFounder.traits.some((trait) => !TRAITS[trait]) ||
+            !Array.isArray(state.result.extinctionFounder.ancestry) ||
+            !validGenome(state.result.extinctionFounder.genome)))))
   )
     throw Error("Resultado inválido.");
 
