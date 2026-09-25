@@ -128,6 +128,52 @@ test("Vida na Terra disperses aquatic founders progressively through early geolo
   ]);
 });
 
+test("Vida na Terra carries the last extinct winner into the next generation", () => {
+  const state = createState(706, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    founders: {
+      primary: {
+        rank: 4,
+        traits: ["Predação"],
+        ancestry: ["Respiração anaeróbia", "Predação"],
+      },
+      companion: {
+        rank: 4,
+        traits: [],
+        ancestry: ["Respiração anaeróbia"],
+      },
+    },
+    canonicalPair: true,
+  });
+  const winner = state.pieces.find((piece) =>
+    piece.traits.includes("Predação"),
+  );
+  state.pieces = [];
+  state.result = {
+    winner: winner.owner,
+    reason: "Extinção total.",
+    extinctionFounder: structuredClone(winner),
+  };
+  state.phase = "over";
+
+  const next = createSuccessorState(state, 707);
+  assert.equal(next.geologicalStage, "archean");
+  assert.equal(next.cycle, 2);
+  assert.equal(
+    next.pieces.filter((piece) => piece.traits.includes("Predação")).length,
+    2,
+  );
+  assert.ok(
+    next.logs.some((entry) =>
+      entry.text.includes("última linhagem extinta vencedora"),
+    ),
+  );
+});
+
 test("canonical founder pool prevents immediate queen and knight captures", () => {
   assert.deepEqual(
     CANONICAL_FOUNDER_CELLS.map(({ label }) => label),
