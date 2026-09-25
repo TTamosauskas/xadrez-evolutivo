@@ -171,20 +171,27 @@ export function traitFrameEntries(piece, established = new Set()) {
 function evolutionarySummary(state, owner) {
   const established = establishedTraits(state),
     pieces = state.pieces.filter((p) => p.owner === owner),
-    lineages = new Set(pieces.map(signature)),
     selected = dominantLineage(state, owner),
     representative = selected.piece,
+    extinctionFounder =
+      pieces.length === 0 &&
+      state.result?.extinctionFounder?.owner === owner &&
+      !!representative,
+    lineages = extinctionFounder ? 1 : new Set(pieces.map(signature)).size,
     rank = representative?.rank ?? 0,
-    piecePercent = pieces.length
-      ? Math.round((selected.count / pieces.length) * 100)
-      : 0,
+    piecePercent = extinctionFounder
+      ? 100
+      : pieces.length
+        ? Math.round((selected.count / pieces.length) * 100)
+        : 0,
     traits = (representative?.traits ?? [])
       .filter((trait) => !established.has(trait))
       .slice(0, 3)
       .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
 
   return {
-    lineages: lineages.size,
+    lineages,
+    extinctionFounder,
     pieceName: PIECES[rank],
     pieceSymbol: SYMBOLS[owner][rank],
     piecePercent,
@@ -1051,11 +1058,13 @@ export function render(
           state.result.reason || `As ${OWNERS[loser]} foram superadas.`;
       }
 
-      const lineageText = `${summary.lineages} ${
-        summary.lineages === 1
-          ? "linhagem sobrevivente"
-          : "linhagens sobreviventes"
-      }`;
+      const lineageText = summary.extinctionFounder
+        ? "A última peça a morrer definiu a linhagem fundadora da próxima geração."
+        : `${summary.lineages} ${
+            summary.lineages === 1
+              ? "linhagem sobrevivente"
+              : "linhagens sobreviventes"
+          }`;
       const content = make("div", undefined, "evolutionary-end-summary");
       const lineages = make("p", lineageText, "evolutionary-end-lineages");
       const selection = make("div", undefined, "evolutionary-end-section");
