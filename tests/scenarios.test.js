@@ -43,12 +43,42 @@ test("new campaigns default to Vida na Terra while low-level legacy states stay 
 });
 
 test("Vida na Terra disperses aquatic founders progressively through early geological stages", () => {
-  assert.deepEqual(earthFounderStarts("archean", 2), [
-    ["blue", 4, 2, "primary"],
-    ["blue", 4, 3, "companion"],
-    ["amber", 3, 4, "primary"],
-    ["amber", 3, 5, "companion"],
-  ]);
+  const seeds = [1, 500, 1500],
+    distance = (starts) => {
+      const blue = starts.filter(([owner]) => owner === "blue"),
+        amber = starts.filter(([owner]) => owner === "amber");
+      return Math.min(
+        ...blue.flatMap(([, br, bc]) =>
+          amber.map(([, ar, ac]) => Math.max(Math.abs(br - ar), Math.abs(bc - ac))),
+        ),
+      );
+    };
+
+  for (const cycle of [1, 2, 3]) {
+    const layouts = seeds.map((rng) =>
+      earthFounderStarts("archean", cycle, { rng }),
+    );
+    assert.equal(
+      new Set(layouts.map((layout) => JSON.stringify(layout))).size,
+      3,
+      `Arqueano · ${cycle}º Ciclo deve variar com a semente`,
+    );
+    for (const layout of layouts) {
+      assert.equal(new Set(layout.map(([, r, c]) => `${r},${c}`)).size, 4);
+      assert.equal(layout.filter(([owner]) => owner === "blue").length, 2);
+      assert.equal(layout.filter(([owner]) => owner === "amber").length, 2);
+      const min = cycle === 1 ? 2 : 1,
+        max = cycle === 1 ? 5 : 6;
+      assert.ok(
+        layout.every(([, r, col]) => r >= min && r <= max && col >= min && col <= max),
+      );
+    }
+  }
+  assert.ok(
+    distance(earthFounderStarts("archean", 1, { rng: 1 })) <
+      distance(earthFounderStarts("archean", 3, { rng: 1500 })),
+  );
+
   assert.deepEqual(earthFounderStarts("proterozoic", 1), [
     ["blue", 5, 2, "primary"],
     ["blue", 5, 3, "companion"],
@@ -120,12 +150,15 @@ test("Vida na Terra disperses aquatic founders progressively through early geolo
   const archeanCycle2 = createSuccessorState(prior, 705);
   assert.equal(archeanCycle2.geologicalStage, "archean");
   assert.equal(archeanCycle2.cycle, 2);
-  assert.deepEqual(coords(archeanCycle2), [
-    ["blue", 4, 2],
-    ["blue", 4, 3],
-    ["amber", 3, 4],
-    ["amber", 3, 5],
-  ]);
+  const expectedCycle2 = earthFounderStarts("archean", 2, { rng: 705 }).map(
+    ([owner, r, col]) => [owner, r, col],
+  );
+  assert.deepEqual(coords(archeanCycle2), expectedCycle2);
+  assert.ok(
+    archeanCycle2.pieces.every(
+      (piece) => archeanCycle2.board[piece.r * 8 + piece.c] === "fertile",
+    ),
+  );
 });
 
 test("canonical founder pool prevents immediate queen and knight captures", () => {
