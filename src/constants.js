@@ -121,6 +121,10 @@ export const TRAITS = {
     "🔵",
     "Metabolismo mais eficiente com oxigênio. Mantém a capacidade metabólica basal e reduz em uma rodada a recuperação metabólica após qualquer reprodução.",
   ],
+  "Respiração Pulmonar": [
+    "🫁",
+    "Especialização respiratória de vertebrados aeróbios. Elimina o custo metabólico adicional associado à Locomoção Terrestre sem substituir Respiração Cutânea.",
+  ],
   Fotossíntese: [
     "🟢",
     "Define um ramo energético hereditário incompatível com Predação. Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas; descendentes permanecem neste ramo.",
@@ -430,6 +434,7 @@ export const square = (r, c) => r * 8 + c;
 export const coord = (r, c) => `${String.fromCharCode(65 + c)}${8 - r}`;
 const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Respiração aeróbia": ["Respiração anaeróbia"],
+  "Respiração Pulmonar": ["Respiração aeróbia", "Respiração anaeróbia"],
   "Locomoção Articulada": ["Locomoção Primitiva"],
   "Locomoção Terrestre": ["Locomoção Articulada", "Locomoção Primitiva"],
   "Vetor Patógeno": ["Parasitismo"],
