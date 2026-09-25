@@ -2714,7 +2714,7 @@ test("first-cycle mutation attempts never fall back to deleterious outcomes", ()
   const child = s.pieces.find((piece) => piece.id >= before);
   assert.equal(child.mutations, 0);
   assert.ok(
-    ["Esterilidade", "Mutação Deletéria", "Mutação Disfuncional"].every(
+    ["Esterilidade", "Mutação Letal", "Mutação Disfuncional"].every(
       (trait) => !child.traits.includes(trait),
     ),
   );
@@ -2856,7 +2856,7 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
       r: 4,
       c: 2,
       rank: 3,
-      traits: ["Voo", "Necrófago", "Esterilidade", "Mutação Deletéria"],
+      traits: ["Voo", "Necrófago", "Esterilidade", "Mutação Letal"],
       mutations: 7,
       generation: 9,
       deleteriousDue: 20,
@@ -2866,7 +2866,7 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
       r: 4,
       c: 3,
       rank: 3,
-      traits: ["Voo", "Necrófago", "Esterilidade", "Mutação Deletéria"],
+      traits: ["Voo", "Necrófago", "Esterilidade", "Mutação Letal"],
       mutations: 4,
       generation: 8,
       deleteriousDue: 20,
@@ -2913,7 +2913,7 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
         p.traits.includes("Voo") &&
         p.traits.includes("Necrófago") &&
         !p.traits.includes("Esterilidade") &&
-        !p.traits.includes("Mutação Deletéria"),
+        !p.traits.includes("Mutação Letal"),
     ),
   );
   assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 1);
