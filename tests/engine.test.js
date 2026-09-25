@@ -109,6 +109,7 @@ import {
   habitatProfile,
   aquaticFertilityRegime,
   captureUnlocked,
+  contactCaptureUnlocked,
 } from "../src/geology.js";
 import {
   cloneGenome,
@@ -4268,7 +4269,89 @@ test("Polegar Opositor can decline transfer and ignores temporary decomposition"
 });
 
 
-test("Predação is required for ordinary captures", () => {
+test("Archean basal organisms capture on contact without Predação but do not reproduce from prey", () => {
+  let s = createState(4270, {
+    geologicalStage: "archean",
+    historicalTraits: ["Respiração anaeróbia"],
+    naturalBarriers: false,
+  });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  const attacker = newPiece(s, "blue", 4, 4, {
+      rank: 4,
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
+    }),
+    victim = newPiece(s, "amber", 3, 3, {
+      rank: 4,
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
+    }),
+    survivor = newPiece(s, "amber", 0, 0, {
+      rank: 4,
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
+    });
+  s.pieces.push(attacker, victim, survivor);
+
+  assert.equal(captureUnlocked(s, attacker), false);
+  assert.equal(contactCaptureUnlocked(attacker), true);
+  const targets = movesFor(s, attacker);
+  assert.ok(
+    targets.some(
+      (target) =>
+        target.r === victim.r &&
+        target.c === victim.c &&
+        target.capture,
+    ),
+  );
+  assert.equal(
+    targets.some((target) => !target.capture && !target.stay),
+    false,
+  );
+
+  s = simulate(s, move(attacker, victim.r, victim.c));
+  assert.ok(!s.pieces.some((piece) => piece.id === victim.id));
+  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 1);
+  assert.ok(!s.pieces.some((piece) => piece.parentId === attacker.id));
+  assertState(s);
+});
+
+test("Predação converts a pre-Locomotion contact capture into primordial reproduction", () => {
+  let s = createState(4271, {
+    geologicalStage: "archean",
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    naturalBarriers: false,
+  });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  const predator = newPiece(s, "blue", 4, 4, {
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    }),
+    victim = newPiece(s, "amber", 3, 3, {
+      rank: 4,
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
+    }),
+    survivor = newPiece(s, "amber", 0, 0, {
+      rank: 4,
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
+    });
+  s.pieces.push(predator, victim, survivor);
+
+  s = simulate(s, move(predator, victim.r, victim.c));
+  assert.ok(!s.pieces.some((piece) => piece.id === victim.id));
+  assert.ok(s.pieces.some((piece) => piece.parentId === predator.id));
+  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
+  assertState(s);
+});
+
+test("Predação is required for ordinary post-Locomotion captures", () => {
   const s = fixture([
     { owner: "blue", r: 4, c: 0, rank: 3 },
     { owner: "amber", r: 4, c: 4 },
