@@ -1059,7 +1059,9 @@ export function createState(seed = Date.now(), options = {}) {
       earthStarts =
         state.geologicalStage === "hadean" && scenario !== "arena"
           ? earthFounderStarts(state.geologicalStage, state.cycle, state)
-          : state.geologicalStage === "archean" && scenario !== "arena"
+          : state.geologicalStage === "archean" &&
+              scenario !== "arena" &&
+              (balancedPair || ownerPair)
             ? earthFounderStarts(state.geologicalStage, state.cycle, state)
             : scenario === "earth" && (balancedPair || ownerPair)
               ? earthFounderStarts(state.geologicalStage, state.cycle, state)
