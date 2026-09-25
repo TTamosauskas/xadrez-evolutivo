@@ -549,8 +549,16 @@ function makeChildProfile(
   };
   syncGenomePhenotype(child);
   let mutationLabel = null;
-  if (random(state) < (state.event?.id === "solar" ? 1 : 1 / 3))
+  const openingGuarantee =
+      round(state) >= 1 &&
+      state.openingMutationSatisfied?.[parent.owner] === false,
+    mutationAttempt =
+      openingGuarantee ||
+      random(state) < (state.event?.id === "solar" ? 1 : 1 / 3);
+  if (mutationAttempt)
     mutationLabel = mutation(state, child, !!mate, excludedMutationTraits);
+  if (mutationLabel && state.openingMutationSatisfied)
+    state.openingMutationSatisfied[parent.owner] = true;
   applyAirSacRankFloor(child);
   normalizeBodyPlanRank(child);
   normalizePhotosyntheticRank(child);
