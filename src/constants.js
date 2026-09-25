@@ -24,7 +24,7 @@ export const TRAITS = {
   ],
   Multicelularismo: [
     "🫧",
-    "Introduz um ciclo de vida individual e habilita características multicelulares complexas. Em linhagens animais anteriores à Simetria Bilateral, senescência e morte natural ocorrem aproximadamente duas vezes mais cedo.",
+    "Multicelularismo impede Predação direta por organismos unicelulares. Patógenos continuam capazes de afetar organismos multicelulares.",
   ],
   "Simetria Bilateral": [
     "⏸",
