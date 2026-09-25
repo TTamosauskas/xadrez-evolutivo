@@ -197,7 +197,13 @@ export function applyRegressionEffect(state, piece) {
   return hidden;
 }
 
-function mutation(state, p, positiveOnly, excludedTraits = null) {
+function mutation(
+  state,
+  p,
+  positiveOnly,
+  excludedTraits = null,
+  forcedGeneGain = null,
+) {
   const gains = [];
   if (p.rank === 4 && pawnMutationUnlocked(state, p))
     gains.push({ rank: 0, weight: 1 });
@@ -228,15 +234,21 @@ function mutation(state, p, positiveOnly, excludedTraits = null) {
     )
       losses.push({ geneGain: trait });
 
-  const negativeAllowed =
+  const forcedChoice = forcedGeneGain
+      ? gains.find((option) => option.geneGain === forcedGeneGain) ?? null
+      : null,
+    negativeAllowed =
       !positiveOnly && deleteriousMutationUnlocked(state),
     negative =
-      negativeAllowed && random(state) < negativeMutationChance(p);
+      !forcedChoice &&
+      negativeAllowed &&
+      random(state) < negativeMutationChance(p);
   let options = negative ? losses : gains;
   if (!options.length)
     options =
       positiveOnly || !negativeAllowed ? [] : negative ? gains : losses;
-  const choice = negative ? pick(state, options) : weightedPick(state, options);
+  const choice = forcedChoice ??
+    (negative ? pick(state, options) : weightedPick(state, options));
   if (!choice) return null;
 
   let label;
@@ -522,6 +534,31 @@ function pairSexualFounders(brood, sexualMutants) {
   );
 }
 
+function missingArcheanEnergyBranch(state) {
+  if (
+    state.scenario !== "earth" ||
+    state.geologicalStage !== "archean" ||
+    state.cycle !== 1
+  )
+    return null;
+  const history = new Set(state.historicalTraits ?? []),
+    photosynthesis = history.has("Fotossíntese"),
+    predation = history.has("Predação");
+  if (photosynthesis === predation) return null;
+  return photosynthesis ? "Predação" : "Fotossíntese";
+}
+
+function complementaryArcheanEnergyBranch(state, child) {
+  const missing = missingArcheanEnergyBranch(state);
+  if (
+    !missing ||
+    has(child, "Fotossíntese") ||
+    has(child, "Predação")
+  )
+    return null;
+  return traitUnlocked(state, missing, child) ? missing : null;
+}
+
 function makeChildProfile(
   state,
   parent,
@@ -549,15 +586,28 @@ function makeChildProfile(
   };
   syncGenomePhenotype(child);
   let mutationLabel = null;
-  const openingGuarantee =
+  const missingEnergyBranch = missingArcheanEnergyBranch(state),
+    complementaryBranch = complementaryArcheanEnergyBranch(state, child),
+    openingGuarantee =
       round(state) >= 1 &&
-      state.openingMutationSatisfied?.[parent.owner] === false,
+      state.openingMutationSatisfied?.[parent.owner] === false &&
+      (!missingEnergyBranch || !!complementaryBranch),
     mutationAttempt =
       openingGuarantee ||
       random(state) < (state.event?.id === "solar" ? 1 : 1 / 3);
   if (mutationAttempt)
-    mutationLabel = mutation(state, child, !!mate, excludedMutationTraits);
-  if (mutationLabel && state.openingMutationSatisfied)
+    mutationLabel = mutation(
+      state,
+      child,
+      !!mate,
+      excludedMutationTraits,
+      complementaryBranch,
+    );
+  if (
+    mutationLabel &&
+    state.openingMutationSatisfied &&
+    (!missingEnergyBranch || mutationLabel === missingEnergyBranch)
+  )
     state.openingMutationSatisfied[parent.owner] = true;
   applyAirSacRankFloor(child);
   normalizeBodyPlanRank(child);

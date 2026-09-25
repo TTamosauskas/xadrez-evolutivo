@@ -20,6 +20,17 @@ test("current save schema round-trips deterministic state", () => {
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
 });
 
+test("current saves without energy-branch memory normalize safely", () => {
+  const state = createState(12);
+  delete state.energyBranchRepresentatives;
+  const restored = deserialize(JSON.stringify(state));
+  assert.deepEqual(restored.energyBranchRepresentatives, {
+    Fotossíntese: null,
+    Predação: null,
+  });
+  assertState(restored);
+});
+
 test("current saves without opening mutation state avoid retroactive guarantees", () => {
   const state = createState(13);
   delete state.openingMutationSatisfied;

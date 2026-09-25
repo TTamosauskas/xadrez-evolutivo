@@ -132,6 +132,15 @@ function normalizeCycleInnovationPressure(state) {
     typeof state.openingMutationSatisfied.amber !== "boolean"
   )
     state.openingMutationSatisfied = { blue: true, amber: true };
+  if (
+    !state?.energyBranchRepresentatives ||
+    !("Fotossíntese" in state.energyBranchRepresentatives) ||
+    !("Predação" in state.energyBranchRepresentatives)
+  )
+    state.energyBranchRepresentatives = {
+      Fotossíntese: null,
+      Predação: null,
+    };
   return normalizePathogenEvolution(state);
 }
 
