@@ -416,7 +416,7 @@ test("diet and amniote traits use the intended compact icons", () => {
   assert.equal(TRAITS["Ovíparos Amniotas"][0], "🥚");
 });
 
-test("active mutations form an evenly spaced frame starting at bottom center", () => {
+test("contextual mutations form an evenly spaced frame while the energy branch stays central", () => {
   assert.deepEqual(traitFrameSlots(1), [0]);
   assert.deepEqual(traitFrameSlots(4), [0, 3, 6, 9]);
   assert.deepEqual(traitFrameSlots(6), [0, 2, 4, 6, 8, 10]);
@@ -428,14 +428,11 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
   piece.traits = [
     "Multicelularismo",
     "Predação",
+    "Dormência",
     "Carapaça",
     "Veneno",
   ];
-  for (const other of s.pieces)
-    if (other.id !== piece.id) other.traits = ["Fotossíntese"];
-  s.pieces.find((other) => other.id !== piece.id).traits = [
-    "Respiração anaeróbia",
-  ];
+  s.board[piece.r * 8 + piece.c] = "hostile";
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
     cell = d.querySelector(
@@ -443,27 +440,24 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
     ),
     frame = cell.querySelector(".trait-frame"),
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
-    classes = [...frame.querySelectorAll(".trait-badge")].map((icon) =>
-      [...icon.classList].find((name) => name.startsWith("trait-slot-")),
-    );
+    badges = [...frame.querySelectorAll(".trait-badge")];
   assert.ok(frame);
-  assert.deepEqual(classes, [
-    "trait-slot-0",
-    "trait-slot-4",
-    "trait-slot-8",
-  ]);
-  assert.equal(frame.querySelector(".trait-overflow"), null);
-  assert.ok(
-    ![...frame.querySelectorAll(".trait-badge")].some(
-      (badge) => badge.dataset.trait === "Predação",
+  assert.deepEqual(badges.map((badge) => badge.dataset.trait), ["Dormência"]);
+  assert.deepEqual(
+    badges.map((icon) =>
+      [...icon.classList].find((name) => name.startsWith("trait-slot-")),
     ),
+    ["trait-slot-0"],
   );
+  assert.equal(frame.querySelector(".trait-overflow"), null);
+  assert.ok(!badges.some((badge) => badge.dataset.trait === "Predação"));
+  assert.ok(!badges.some((badge) => badge.dataset.trait === "Carapaça"));
+  assert.ok(!badges.some((badge) => badge.dataset.trait === "Veneno"));
+
   const core = cell.querySelector(".piece-energy-core");
   assert.equal(core?.dataset.trait, "Predação");
   assert.equal(core?.textContent, "👾");
   assert.ok(core?.classList.contains("blue"));
-  assert.ok(!cell.querySelector(".piece")?.classList.contains("reproduction-ready"));
-  assert.doesNotMatch(css, /\.piece\.reproduction-ready/);
   assert.match(
     css,
     /\.piece-energy-core\.blue\s*\{[\s\S]*background:\s*#fff8df/,
@@ -473,16 +467,30 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
     /\.piece-energy-core\.amber\s*\{[\s\S]*background:\s*#242623/,
   );
   assert.match(css, /\.trait-slot-0\s*\{\s*left:\s*50%;\s*top:\s*94%/);
-  assert.match(css, /\.trait-slot-4\s*\{\s*left:\s*6%;\s*top:\s*25%/);
-  assert.match(css, /\.trait-slot-8\s*\{\s*left:\s*94%;\s*top:\s*25%/);
   assert.match(
     css,
     /\.piece-energy-core\s*\{[\s\S]*left:\s*50%;[\s\S]*top:\s*50%;[\s\S]*transform:\s*translate\(-50%, -50%\)/,
   );
+
+  s.board[piece.r * 8 + piece.c] = "neutral";
+  render(dom.window.document, s, { selected: piece.id });
+  const refreshed = d.querySelector(
+    `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+  );
+  assert.equal(
+    [...refreshed.querySelectorAll(".trait-badge")].some(
+      (badge) => badge.dataset.trait === "Dormência",
+    ),
+    false,
+  );
+  assert.equal(
+    refreshed.querySelector(".piece-energy-core")?.dataset.trait,
+    "Predação",
+  );
   dom.window.close();
 });
 
-test("mutation frame shows twelve phenotypes and an overflow counter", () => {
+test("non-contextual phenotype inventory stays in the selected panel instead of the board frame", () => {
   const dom = setup(),
     s = createState(201),
     piece = s.pieces[0];
@@ -492,39 +500,32 @@ test("mutation frame shows twelve phenotypes and an overflow counter", () => {
     "Multicelularismo",
     "Predação",
     "Simetria Bilateral",
-    "Locomoção Primitiva",
     "Vertebrado",
-    "Locomoção Articulada",
-    "Percepção Espacial",
-    "Carnívoro",
-    "Ovíparo",
-    "Carapaça",
-    "Camuflagem",
-    "Veneno",
     "Resistência",
   ];
-  for (const other of s.pieces)
-    if (other.id !== piece.id) other.traits = ["Fotossíntese"];
-  s.pieces.find((other) => other.id !== piece.id).traits = [
-    "Respiração anaeróbia",
-  ];
+  s.current = "amber";
 
-  render(dom.window.document, s);
+  render(dom.window.document, s, { selected: piece.id });
   const cell = dom.window.document.querySelector(
       `[data-r="${piece.r}"][data-c="${piece.c}"]`,
     ),
-    frame = cell.querySelector(".trait-frame");
-  assert.equal(frame.querySelectorAll(".trait-badge").length, 12);
-  assert.equal(frame.querySelector(".trait-overflow").textContent, "+2");
+    frameTraits = [...cell.querySelectorAll(".trait-badge")].map(
+      (badge) => badge.dataset.trait,
+    ),
+    selected = dom.window.document.getElementById("selected");
+  assert.deepEqual(frameTraits, []);
+  assert.match(selected.textContent, /Simetria Bilateral/);
+  assert.match(selected.textContent, /Vertebrado/);
+  assert.match(selected.textContent, /Resistência/);
   assert.equal(
     cell.querySelector(".piece-energy-core")?.dataset.trait,
     "Predação",
   );
-  assert.ok(cell.classList.contains("trait-dense"));
+  assert.ok(!cell.classList.contains("trait-dense"));
   dom.window.close();
 });
 
-test("Mixotrofia remains peripheral while the ancestral energy branch stays central", () => {
+test("energy branch stays central while Mixotrofia follows contextual activity", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -569,7 +570,7 @@ test("Mixotrofia remains peripheral while the ancestral energy branch stays cent
     "Fotossíntese",
   );
   assert.ok(cell.querySelector(".piece-energy-core")?.classList.contains("amber"));
-  assert.ok(frameTraits.includes("Mixotrofia"));
+  assert.ok(!frameTraits.includes("Mixotrofia"));
   assert.ok(!frameTraits.includes("Fotossíntese"));
   dom.window.close();
 });
@@ -629,10 +630,11 @@ test("globally established inherited traits move to genetic legacy and return wh
     `[data-r="${selectedPiece.r}"][data-c="${selectedPiece.c}"]`,
   );
   assert.match(selected.textContent, /Carapaça/);
-  assert.ok(
+  assert.equal(
     [...cell.querySelectorAll(".trait-badge")].some(
       (badge) => badge.dataset.trait === "Carapaça",
     ),
+    false,
   );
   dom.window.close();
 });
@@ -683,7 +685,7 @@ test("branch-specific traits remain differential unless every piece expresses th
     );
   assert.match(selected.textContent, /Simetria Bilateral/);
   assert.match(selected.textContent, /Predação/);
-  assert.ok(frameTraits.includes("Simetria Bilateral"));
+  assert.ok(!frameTraits.includes("Simetria Bilateral"));
   assert.ok(!frameTraits.includes("Predação"));
   assert.equal(
     animalCell.querySelector(".piece-energy-core")?.dataset.trait,
@@ -701,7 +703,6 @@ test("branch-specific traits remain differential unless every piece expresses th
   assert.match(plantSelected.textContent, /Fotossíntese/);
   assert.match(plantSelected.textContent, /Embriófitas/);
   assert.ok(!plantFrameTraits.includes("Fotossíntese"));
-  assert.ok(plantFrameTraits.includes("Embriófitas"));
   assert.equal(
     plantCell.querySelector(".piece-energy-core")?.dataset.trait,
     "Fotossíntese",
@@ -725,18 +726,20 @@ test("somatic disadvantages stay individual even when an inherited trait is esta
   const selected = dom.window.document.getElementById("selected");
   assert.match(selected.textContent, /Desvantagens Evolutivas/);
   assert.match(selected.textContent, /Imunodeficiência · somática/);
-  assert.ok(
+  assert.equal(
     dom.window.document.querySelector(".trait-badge.somatic-badge"),
+    null,
   );
   dom.window.close();
 });
 
-test("somatic mutations are visually distinct in the mutation frame", () => {
+test("active somatic effects remain visually distinct in the contextual frame", () => {
   const dom = setup(),
     s = createState(202),
     piece = s.pieces[0];
   piece.traits = ["Respiração anaeróbia", "Multicelularismo"];
-  piece.somaticMutations = ["Imunodeficiência"];
+  piece.somaticMutations = ["Mutação Disfuncional"];
+  piece.lastMoveRound = 1;
 
   render(dom.window.document, s);
   const cell = dom.window.document.querySelector(
@@ -744,8 +747,8 @@ test("somatic mutations are visually distinct in the mutation frame", () => {
     ),
     somatic = cell.querySelector(".trait-badge.somatic-badge");
   assert.ok(somatic);
-  assert.equal(somatic.dataset.trait, "Imunodeficiência");
-  assert.equal(somatic.textContent, "🤢");
+  assert.equal(somatic.dataset.trait, "Mutação Disfuncional");
+  assert.equal(somatic.textContent, "❌");
   dom.window.close();
 });
 
@@ -860,8 +863,7 @@ test("selected legend separates active traits from ancestry behind a closed togg
     `[data-r="${piece.r}"][data-c="${piece.c}"]`,
   );
   const boardIcons = cell.querySelector(".trait-frame").textContent;
-  assert.match(boardIcons, /🐻/);
-  assert.doesNotMatch(boardIcons, /🦁/);
+  assert.doesNotMatch(boardIcons, /🐻|🦁/);
   dom.window.close();
 });
 
