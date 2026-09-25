@@ -264,6 +264,74 @@ test("Vida na Terra carries living and remembered energy branches into the next 
   assert.ok(next.historicalTraits.includes("Predação"));
 });
 
+test("a stronger recorded branch representative outranks weaker surviving copies", () => {
+  const prior = createState(711, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 2,
+    totalCycles: 2,
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Fotossíntese",
+      "Predação",
+      "Reparo Celular",
+    ],
+    naturalBarriers: false,
+  });
+  prior.pieces = [];
+  prior.nextId = 1;
+  prior.energyBranchRepresentatives = {
+    Fotossíntese: null,
+    Predação: null,
+  };
+
+  const derivedPredator = newPiece(prior, "blue", 4, 2, {
+      rank: 4,
+      traits: ["Predação", "Reparo Celular"],
+      ancestry: [
+        "Respiração anaeróbia",
+        "Predação",
+        "Reparo Celular",
+      ],
+      generation: 3,
+    }),
+    weakPredatorA = newPiece(prior, "amber", 3, 5, {
+      rank: 4,
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+      generation: 4,
+    }),
+    weakPredatorB = newPiece(prior, "amber", 3, 4, {
+      rank: 4,
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+      generation: 4,
+    }),
+    plant = newPiece(prior, "blue", 5, 3, {
+      rank: 4,
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+      generation: 2,
+    });
+
+  prior.pieces.push(derivedPredator, weakPredatorA, weakPredatorB, plant);
+  registerDiscoveries(prior, derivedPredator);
+  registerDiscoveries(prior, weakPredatorA);
+  registerDiscoveries(prior, weakPredatorB);
+  registerDiscoveries(prior, plant);
+
+  // The powerful predator dies, while two simpler predatory copies survive.
+  prior.pieces = [weakPredatorA, weakPredatorB, plant];
+  prior.result = { winner: "amber", reason: "Extinção total." };
+  prior.phase = "over";
+
+  const next = createSuccessorState(prior, 712),
+    predators = next.pieces.filter((piece) => piece.traits.includes("Predação"));
+
+  assert.equal(predators.length, 2);
+  assert.ok(predators.every((piece) => piece.traits.includes("Reparo Celular")));
+});
+
 test("first Archean successor supplies a missing fundamental branch as a final fixation fallback", () => {
   const prior = createState(709, {
     scenario: "earth",
