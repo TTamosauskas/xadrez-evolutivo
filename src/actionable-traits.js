@@ -364,7 +364,7 @@ function sociableGroup(state, victim) {
 function addActiveStateTraits(state, piece, traits) {
   const actionState = pieceActionState(state, piece),
     waitingTrait = ACTIVE_WAIT_TRAITS[actionState.reason];
-  if (waitingTrait && (piece.traits ?? []).includes(waitingTrait))
+  if (waitingTrait && has(piece, waitingTrait))
     traits.add(waitingTrait);
 
   const cell = square(piece.r, piece.c);
