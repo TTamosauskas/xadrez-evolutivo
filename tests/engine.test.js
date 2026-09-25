@@ -540,6 +540,61 @@ test("Hadean tutorial uses reproduction and immediate capture before primitive l
   assertState(archean);
 });
 
+test("simultaneous total extinction is won by the lineage whose last piece dies last", () => {
+  const resolve = (order) => {
+    let state = createState(304, {
+      scenario: "alternative",
+      geologicalStage: "archean",
+      historicalTraits: [
+        "Respiração anaeróbia",
+        "Fotossíntese",
+        "Predação",
+      ],
+      naturalBarriers: false,
+    });
+    state.board.fill("neutral");
+    state.pieces = [];
+    state.nextId = 1;
+    state.turn = 1;
+    state.current = "blue";
+
+    const blue = newPiece(state, "blue", 6, 6, {
+        rank: 4,
+        traits: ["Fotossíntese"],
+        ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+      }),
+      amber = newPiece(state, "amber", 1, 1, {
+        rank: 4,
+        traits: ["Predação"],
+        ancestry: ["Respiração anaeróbia", "Predação"],
+      });
+    for (const piece of [blue, amber]) {
+      piece.somaticMutations = ["Mutação Letal"];
+      piece.deleteriousDue = 1;
+    }
+    state.pieces = order.map((owner) => (owner === "blue" ? blue : amber));
+
+    return simulate(state, { type: "PASS" });
+  };
+
+  const amberLast = resolve(["blue", "amber"]);
+  assert.equal(amberLast.pieces.length, 0);
+  assert.equal(amberLast.result.winner, "amber");
+  assert.equal(amberLast.result.extinctionFounder.owner, "amber");
+  assert.ok(amberLast.result.extinctionFounder.traits.includes("Predação"));
+
+  const next = createSuccessorState(amberLast, 305);
+  assert.ok(next.pieces.length > 0);
+  assert.ok(next.pieces.every((piece) => piece.traits.includes("Predação")));
+
+  const blueLast = resolve(["amber", "blue"]);
+  assert.equal(blueLast.result.winner, "blue");
+  assert.equal(blueLast.result.extinctionFounder.owner, "blue");
+  assert.ok(blueLast.result.extinctionFounder.traits.includes("Fotossíntese"));
+  assertState(amberLast);
+  assertState(blueLast);
+});
+
 test("compact non-canonical cycle starts keep Brancas on the lower half", () => {
   for (const [stage, cycle] of [
     ["archean", 2],
