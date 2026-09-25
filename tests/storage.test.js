@@ -40,6 +40,37 @@ test("current saves retire Locomoção Avançada from state and genome", () => {
   assertState(restored);
 });
 
+test("current saves rename Garras to Presas across traits, genome and discoveries", () => {
+  const state = createState(17),
+    piece = state.pieces[0],
+    pair = [
+      { value: "derived", dominance: "dominant" },
+      { value: "derived", dominance: "dominant" },
+    ];
+  piece.traits.push("Garras");
+  piece.ancestry.push("Garras");
+  piece.genome.Garras = pair;
+  delete piece.genome.Presas;
+  state.historicalTraits.push("Garras");
+  state.seenMutations.push("Garras");
+  state.cyclePositiveInnovations.push("Garras");
+  state.discoveries.mutations.push("Garras");
+  state.discoveries.read.push("mutations:Garras");
+
+  const restored = deserialize(JSON.stringify(state)),
+    restoredPiece = restored.pieces.find((candidate) => candidate.id === piece.id);
+  assert.equal(JSON.stringify(restored).includes('"Garras"'), false);
+  assert.ok(restoredPiece.traits.includes("Presas"));
+  assert.ok(restoredPiece.ancestry.includes("Presas"));
+  assert.ok(restoredPiece.genome.Presas.some((allele) => allele.value === "derived"));
+  assert.ok(restored.historicalTraits.includes("Presas"));
+  assert.ok(restored.seenMutations.includes("Presas"));
+  assert.ok(restored.cyclePositiveInnovations.includes("Presas"));
+  assert.ok(restored.discoveries.mutations.includes("Presas"));
+  assert.ok(restored.discoveries.read.includes("mutations:Presas"));
+  assertState(restored);
+});
+
 test("current saves without the pulmonary locus normalize safely", () => {
   const state = createState(16);
   for (const piece of state.pieces)
