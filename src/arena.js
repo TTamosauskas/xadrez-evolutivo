@@ -48,7 +48,7 @@ const COUNTERS = {
   Camuflagem: "Visão Binocular",
   Notívago: "Visão Noturna",
   Velocidade: "Velocidade",
-  "Pele grossa": "Garras",
+  "Pele grossa": "Presas",
   Ovíparo: "Ovífagia",
   "Ovíparos Amniotas": "Ovífagia",
   Ovovivíparo: "Ovífagia",
