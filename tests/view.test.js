@@ -1322,12 +1322,12 @@ test("imminent deterministic deaths render a centered top 🤢 marker", () => {
 
   s.turn = 1;
   s.current = "amber";
-  doomed.traits = [...new Set([...doomed.traits, "Mutação Deletéria"])];
+  doomed.traits = [...new Set([...doomed.traits, "Mutação Letal"])];
   doomed.deleteriousDue = 1;
   protectedPiece.traits = [
     ...new Set([
       ...protectedPiece.traits,
-      "Mutação Deletéria",
+      "Mutação Letal",
       "Regeneração",
     ]),
   ];
@@ -1336,7 +1336,7 @@ test("imminent deterministic deaths render a centered top 🤢 marker", () => {
 
   assert.equal(
     deterministicDeathNextTurn(s, doomed),
-    "Mutação Deletéria",
+    "Mutação Letal",
   );
   assert.equal(deterministicDeathNextTurn(s, protectedPiece), null);
 
@@ -1362,7 +1362,7 @@ test("imminent deterministic deaths render a centered top 🤢 marker", () => {
   assert.equal(marker?.getAttribute("aria-hidden"), "true");
   assert.match(
     doomedCell.getAttribute("aria-label"),
-    /morte determinada no próximo turno: Mutação Deletéria/,
+    /morte determinada no próximo turno: Mutação Letal/,
   );
   assert.equal(protectedCell.querySelector(".terminal-death-mark"), null);
   assert.match(deathRule, /top:\s*1%/);
