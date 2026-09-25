@@ -827,14 +827,14 @@ test("selected legend separates active traits from ancestry behind a closed togg
   const dom = setup(),
     s = createState(22),
     piece = s.pieces[0];
-  piece.traits = ["Multicelularismo", "Predação", "Onívoro", "Locomoção Avançada"];
+  piece.traits = ["Multicelularismo", "Predação", "Onívoro", "Locomoção Terrestre"];
   piece.ancestry = [
     "Multicelularismo",
     "Predação",
     "Carnívoro",
     "Onívoro",
     "Locomoção Primitiva",
-    "Locomoção Avançada",
+    "Locomoção Terrestre",
   ];
 
   render(dom.window.document, s, { selected: piece.id });
@@ -845,7 +845,7 @@ test("selected legend separates active traits from ancestry behind a closed togg
 
   assert.match(selected.textContent, /Vantagens Evolutivas/);
   assert.match(selected.textContent, /Onívoro/);
-  assert.match(selected.textContent, /Locomoção Avançada/);
+  assert.match(selected.textContent, /Locomoção Terrestre/);
   assert.ok(toggle);
   assert.equal(toggle.open, false);
   assert.match(summary.textContent, /Legado Genético \(2\)/);
@@ -853,7 +853,7 @@ test("selected legend separates active traits from ancestry behind a closed togg
   assert.match(toggle.textContent, /Locomoção/);
   assert.doesNotMatch(
     toggle.querySelector(".ancestry-list").textContent,
-    /Onívoro|Locomoção Avançada/,
+    /Onívoro|Locomoção Terrestre/,
   );
 
   const cell = d.querySelector(
