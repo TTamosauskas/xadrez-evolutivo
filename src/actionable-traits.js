@@ -469,23 +469,10 @@ function moveFingerprint(target) {
   });
 }
 
-function actionFingerprint(action) {
-  return JSON.stringify({
-    type: action.type,
-    id: action.id ?? null,
-    parentId: action.parentId ?? null,
-    childId: action.childId ?? null,
-    targetId: action.targetId ?? null,
-    r: action.r ?? null,
-    c: action.c ?? null,
-  });
-}
-
 function legalPossibilityFingerprint(state, piece) {
-  return JSON.stringify({
-    moves: movesFor(state, piece).map(moveFingerprint).sort(),
-    actions: actionsForPiece(state, piece).map(actionFingerprint).sort(),
-  });
+  return JSON.stringify(
+    movesFor(state, piece).map(moveFingerprint).sort(),
+  );
 }
 
 function flightHasIndependentEnvironmentalEffect(state, piece) {
