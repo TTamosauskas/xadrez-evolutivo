@@ -55,10 +55,6 @@ export const TRAITS = {
     "Permite direcionar capturas além da primeira casa da trajetória oficial da peça. Para Cavalos, o destino do salto conta como a primeira e única casa da trajetória.",
   ],
   Escavador: ["🦡", "Pode perfurar barreiras."],
-  "Locomoção Avançada": [
-    "🐎",
-    "Especialização posterior da Locomoção Terrestre; permite uma segunda movimentação no mesmo turno.",
-  ],
   Escalador: [
     "🐐",
     "Permite ocupar e atravessar barreiras naturais marrons sem destruí-las.",
@@ -279,7 +275,7 @@ export const TRAITS = {
   ],
   "Deficiência Motora": [
     "🐾",
-    "Reduz movimento e captura ao primeiro passo da trajetória e impede a segunda movimentação de Locomoção Avançada.",
+    "Reduz movimento e captura ao primeiro passo da trajetória.",
   ],
   "Deficiência Sensorial": [
     "😵",
@@ -436,11 +432,6 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Respiração aeróbia": ["Respiração anaeróbia"],
   "Locomoção Articulada": ["Locomoção Primitiva"],
   "Locomoção Terrestre": ["Locomoção Articulada", "Locomoção Primitiva"],
-  "Locomoção Avançada": [
-    "Locomoção Terrestre",
-    "Locomoção Articulada",
-    "Locomoção Primitiva",
-  ],
   "Vetor Patógeno": ["Parasitismo"],
   Onívoro: ["Carnívoro", "Herbívoro"],
   Traqueófitas: ["Embriófitas"],
