@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 20;
+export const STATE_VERSION = 21;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -287,7 +287,7 @@ export const TRAITS = {
   ],
   "Filho único": [
     "☝️",
-    "Limita cada reprodução bem-sucedida a uma única prole, mesmo quando outros efeitos aumentariam a ninhada.",
+    "Permite gerar apenas um descendente durante toda a vida. Depois disso, o organismo permanece vivo, mas não pode mais reproduzir.",
   ],
   Subfertilidade: [
     "😩",
@@ -378,7 +378,7 @@ export const TRAITS = {
     "Depois de uma reprodução bem-sucedida em casa fértil, fica preparada; ao morrer, libera uma prole nas casas livres ao redor.",
   ],
   Veneno: ["🫟", "Condena o agressor à morte após dois turnos próprios."],
-  "Mutação Deletéria": ["💀", "A peça morre após três rodadas completas."],
+  "Mutação Letal": ["💀", "A peça morre após três rodadas completas."],
   "Mutação Disfuncional": [
     "❌",
     "Depois de se mover, descansa na rodada seguinte.",
