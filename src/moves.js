@@ -22,6 +22,7 @@ import {
 } from "./state.js";
 import {
   captureUnlocked,
+  contactCaptureUnlocked,
   currentGeologicalStage,
   geologicalStage,
 } from "./geology.js";
@@ -176,7 +177,12 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         victim?.owner === p.owner &&
         victim.id !== p.id &&
         has(p, "Canibalismo") &&
-        reproductionReady(state, p);
+        reproductionReady(state, p),
+      contactCapture =
+        victim?.owner !== undefined &&
+        victim.owner !== p.owner &&
+        distance(p, victim) === 1 &&
+        contactCaptureUnlocked(p);
     if (
       fragment ||
       (victim?.owner === p.owner && !cannibal) ||
@@ -187,6 +193,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       victim &&
       victim.owner !== p.owner &&
       !captureUnlocked(state, p) &&
+      !contactCapture &&
       !botanicalPredation
     )
       return;
@@ -360,7 +367,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     has(p, "Locomoção Primitiva") &&
     !has(p, "Séssil");
   if (mobile) chessTargets(false);
-  else if (!has(p, "Séssil") && captureUnlocked(state, p)) chessTargets(true);
+  else if (
+    !has(p, "Séssil") &&
+    (captureUnlocked(state, p) || contactCaptureUnlocked(p))
+  )
+    chessTargets(true);
   if (
     has(p, "Fotossíntese") &&
     (has(p, "Haustório") || has(p, "Carnivoria Botânica"))
