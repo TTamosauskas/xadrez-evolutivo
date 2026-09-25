@@ -885,9 +885,17 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
     "Vertebrado",
     "Locomoção Articulada",
     "Locomoção Terrestre",
+    "Respiração aeróbia",
   );
   p.ancestry.push("Carnívoro");
   assert.equal(traitUnlocked(s, "Onívoro", p), true);
+
+  p.traits = ["Multicelularismo", "Predação", "Vertebrado"];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), true);
+  p.traits = ["Multicelularismo", "Predação", "Artrópode"];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), false);
+  p.traits = ["Multicelularismo", "Predação"];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), false);
 
   s.geologicalStage = "triassic";
   p.ancestry.push("Ovíparos Amniotas");
@@ -1432,6 +1440,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     "Escavador",
     "Escalador",
     "Respiração Cutânea",
+    "Respiração Pulmonar",
     "Sacos Aéreos",
     "Necrófago",
     "Coprofagia",
