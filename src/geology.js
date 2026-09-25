@@ -1344,6 +1344,14 @@ export function normalizePhotosyntheticRank(profile) {
   return profile;
 }
 
+export function contactCaptureUnlocked(piece = null) {
+  if (!piece) return false;
+  return (
+    !piece.traits?.includes("Locomoção Primitiva") &&
+    !(piece.ancestry ?? []).includes("Locomoção Primitiva")
+  );
+}
+
 export function captureUnlocked(state, piece = null) {
   if (!piece) return false;
   if (currentGeologicalStage(state).id === "hadean")
