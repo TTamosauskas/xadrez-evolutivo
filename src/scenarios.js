@@ -198,7 +198,7 @@ export const EARTH_FOUNDER_GENOMES = {
       "Ovíparos Amniotas",
       "Incubação",
       "Carnívoro",
-      "Garras",
+      "Presas",
     ],
     rank: 3,
   },
