@@ -8,6 +8,7 @@ const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
   "Mutação Deletéria": "Mutação Letal",
+  Garras: "Presas",
 });
 const RETIRED_TRAITS = new Set(["Locomoção Avançada"]);
 
@@ -146,6 +147,10 @@ function normalizePathogenEvolution(state) {
 
 function normalizeCycleInnovationPressure(state) {
   normalizeLegacyTraitNames(state);
+  if (Array.isArray(state?.discoveries?.read))
+    state.discoveries.read = state.discoveries.read.map((key) =>
+      key === "mutations:Garras" ? "mutations:Presas" : key,
+    );
   removeRetiredTraits(state);
   normalizeStoredGenomes(state);
   state.chain = null;
