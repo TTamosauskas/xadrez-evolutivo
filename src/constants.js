@@ -24,7 +24,7 @@ export const TRAITS = {
   ],
   Multicelularismo: [
     "🫧",
-    "Multicelularismo impede Predação direta por organismos unicelulares. Patógenos continuam capazes de afetar organismos multicelulares.",
+    "Multicelularismo impede Predação direta por organismos unicelulares.",
   ],
   "Simetria Bilateral": [
     "⏸",
