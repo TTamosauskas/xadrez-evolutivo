@@ -525,7 +525,7 @@ test("non-contextual phenotype inventory stays in the selected panel instead of 
   dom.window.close();
 });
 
-test("energy branch stays central even when Mixotrofia is not contextually active", () => {
+test("energy branch stays central while Mixotrofia follows contextual activity", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -555,7 +555,7 @@ test("energy branch stays central even when Mixotrofia is not contextually activ
     cell.querySelector(".piece-energy-core")?.dataset.trait,
     "Predação",
   );
-  assert.ok(!frameTraits.includes("Mixotrofia"));
+  assert.ok(frameTraits.includes("Mixotrofia"));
   assert.ok(!frameTraits.includes("Predação"));
 
   render(dom.window.document, s, { selected: plant.id });
