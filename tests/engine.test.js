@@ -1431,6 +1431,18 @@ test("piece life history defines brood, metabolic recovery and sexual maturity",
   for (let rank = 0; rank < PIECE_LIFE_HISTORY.length; rank++) {
     const profile = { rank, traits: ["Respiração anaeróbia"] },
       aerobic = { rank, traits: ["Respiração aeróbia"] },
+      terrestrial = {
+        rank,
+        traits: ["Respiração aeróbia", "Locomoção Terrestre"],
+      },
+      pulmonary = {
+        rank,
+        traits: [
+          "Respiração aeróbia",
+          "Locomoção Terrestre",
+          "Respiração Pulmonar",
+        ],
+      },
       precocious = {
         rank,
         traits: ["Respiração anaeróbia", "Precocidade Sexual"],
@@ -1441,6 +1453,14 @@ test("piece life history defines brood, metabolic recovery and sexual maturity",
     );
     assert.equal(
       metabolicReproductionCooldown(aerobic),
+      Math.max(1, PIECE_LIFE_HISTORY[rank].metabolism - 1),
+    );
+    assert.equal(
+      metabolicReproductionCooldown(terrestrial),
+      PIECE_LIFE_HISTORY[rank].metabolism,
+    );
+    assert.equal(
+      metabolicReproductionCooldown(pulmonary),
       Math.max(1, PIECE_LIFE_HISTORY[rank].metabolism - 1),
     );
     assert.equal(
@@ -1556,7 +1576,7 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(anaerobicQueen.nextReproductionRound, round(s) + 6);
+  assert.equal(anaerobicQueen.nextReproductionRound, round(s) + 7);
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração aeróbia"] },
@@ -1568,7 +1588,7 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(aerobicQueen.nextReproductionRound, round(s) + 5);
+  assert.equal(aerobicQueen.nextReproductionRound, round(s) + 6);
 
   s = fixture([
     {
@@ -1586,7 +1606,7 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(inducedPawn.nextReproductionRound, round(s) + 3);
+  assert.equal(inducedPawn.nextReproductionRound, round(s) + 4);
   assertState(s);
 });
 
@@ -1599,10 +1619,26 @@ test("predatory reproduction uses the same metabolic recovery profile", () => {
   assert.equal(reproduce(context(s), predator, null, "predação", {
     forcedCount: 1,
   }), 1);
-  assert.equal(predator.nextReproductionRound, round(s) + 3);
+  assert.equal(predator.nextReproductionRound, round(s) + 4);
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Predação"] },
+    { owner: "amber", r: 0, c: 0, rank: 0 },
+  ]);
+  predator = s.pieces[0];
+  assert.equal(reproduce(context(s), predator, null, "predação", {
+    forcedCount: 1,
+  }), 1);
+  assert.equal(predator.nextReproductionRound, round(s) + 7);
+
+  s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Predação", "Respiração aeróbia"],
+    },
     { owner: "amber", r: 0, c: 0, rank: 0 },
   ]);
   predator = s.pieces[0];
@@ -1617,7 +1653,11 @@ test("predatory reproduction uses the same metabolic recovery profile", () => {
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Predação", "Respiração aeróbia"],
+      traits: [
+        "Predação",
+        "Respiração aeróbia",
+        "Respiração Pulmonar",
+      ],
     },
     { owner: "amber", r: 0, c: 0, rank: 0 },
   ]);
