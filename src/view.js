@@ -183,7 +183,6 @@ export function traitFrameEntries(
 
 function evolutionarySummary(state, owner) {
   const established = establishedTraits(state),
-    contextualTraits = contextualTraitsForBoard(state),
     pieces = state.pieces.filter((p) => p.owner === owner),
     lineages = new Set(pieces.map(signature)),
     selected = dominantLineage(state, owner),
@@ -233,7 +232,8 @@ export function render(
       state.notices.length > 0 ||
       mode === "auto" ||
       (mode === "single" && state.current === "amber"),
-    established = establishedTraits(state);
+    established = establishedTraits(state),
+    contextualTraits = contextualTraitsForBoard(state);
   const targets =
     state.phase === "move" && actor && actor.owner === state.current
       ? movesFor(state, actor)
