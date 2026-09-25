@@ -224,8 +224,17 @@ test("early aquatic stages stay outside Conway while Hadean and early Archean ke
     naturalBarriers: true,
   });
   assert.equal(aquaticFertilityRegime(archean), true);
-  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 36);
-  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 28);
+  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 16);
+  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 20);
+  assert.equal(archean.board.filter((cell) => cell === "neutral").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) =>
+        lethalHazardAt(archean, r, col),
+      ),
+    ).flat().filter(Boolean).length,
+    28,
+  );
   assert.deepEqual(archean.naturalBarriers, []);
 
   for (const stage of ["proterozoic", "ediacaran", "cambrian", "ordovician"]) {
@@ -281,7 +290,7 @@ test("consumed aquatic fertility returns after three turns", () => {
   assertState(s);
 });
 
-test("Archean expands from a 6x6 fertile core to the fully fertile aquatic board", () => {
+test("Archean opens habitat one ring per cycle before becoming fully fertile", () => {
   const first = createState(811, {
       geologicalStage: "archean",
       cycle: 1,
@@ -292,15 +301,46 @@ test("Archean expands from a 6x6 fertile core to the fully fertile aquatic board
       cycle: 2,
       totalCycles: 2,
       naturalBarriers: true,
+    }),
+    third = createState(813, {
+      geologicalStage: "archean",
+      cycle: 3,
+      totalCycles: 3,
+      naturalBarriers: true,
     });
-  assert.equal(first.board.filter((cell) => cell === "fertile").length, 36);
-  assert.equal(first.board.filter((cell) => cell === "hostile").length, 28);
-  assert.equal(second.board.filter((cell) => cell === "fertile").length, 64);
-  assert.equal(second.board.filter((cell) => cell === "hostile").length, 0);
-  assert.equal(first.naturalBarriers.length, 0);
-  assert.equal(second.naturalBarriers.length, 0);
-  assertState(first);
-  assertState(second);
+
+  assert.equal(first.board.filter((cell) => cell === "fertile").length, 16);
+  assert.equal(first.board.filter((cell) => cell === "hostile").length, 20);
+  assert.equal(first.board.filter((cell) => cell === "neutral").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) => lethalHazardAt(first, r, col)),
+    ).flat().filter(Boolean).length,
+    28,
+  );
+  for (let r = 0; r < 8; r++)
+    for (let col = 0; col < 8; col++) {
+      const ring = Math.min(r, col, 7 - r, 7 - col);
+      if (ring === 0) assert.equal(lethalHazardAt(first, r, col), true);
+      else if (ring === 1) assert.equal(first.board[r * 8 + col], "hostile");
+      else assert.equal(first.board[r * 8 + col], "fertile");
+    }
+
+  assert.equal(second.board.filter((cell) => cell === "fertile").length, 36);
+  assert.equal(second.board.filter((cell) => cell === "hostile").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) => lethalHazardAt(second, r, col)),
+    ).flat().filter(Boolean).length,
+    0,
+  );
+
+  assert.equal(third.board.filter((cell) => cell === "fertile").length, 64);
+  assert.equal(third.board.filter((cell) => cell === "hostile").length, 0);
+  for (const state of [first, second, third]) {
+    assert.equal(state.naturalBarriers.length, 0);
+    assertState(state);
+  }
 });
 
 test("Hadean starts with one gray common ancestor that splits into two basal Kings", () => {
@@ -518,8 +558,17 @@ test("Hadean tutorial uses reproduction and immediate capture before primitive l
   assert.equal(archean.totalCycles, 1);
   assert.equal(archean.hadeanTutorial, null);
   assert.equal(archean.pieces.length, 4);
-  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 36);
-  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 28);
+  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 16);
+  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 20);
+  assert.equal(archean.board.filter((cell) => cell === "neutral").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) =>
+        lethalHazardAt(archean, r, col),
+      ),
+    ).flat().filter(Boolean).length,
+    28,
+  );
   for (const owner of ["blue", "amber"]) {
     const founders = archean.pieces.filter((piece) => piece.owner === owner);
     assert.equal(founders.length, 2);
