@@ -124,6 +124,7 @@ const mutationTopics = {
   "Escalador": ["Escalada animal", "Muitos animais desenvolveram adaptações de aderência, equilíbrio e força que permitem ocupar encostas, rochas e outros relevos íngremes."],
   "Onívoro": ["Onivoria", "Onivoria combina alimentos de diferentes níveis tróficos e pode ampliar a flexibilidade alimentar."],
   "Respiração Cutânea": ["Respiração cutânea", "Respiração cutânea realiza trocas gasosas através da pele e é importante em vários grupos animais, especialmente anfíbios."],
+  "Respiração Pulmonar": ["Pulmão", "Pulmões são órgãos especializados em trocas gasosas aéreas; no jogo, representam a adaptação respiratória de vertebrados aeróbios que elimina o custo metabólico adicional da vida terrestre."],
   "Ovíparo": ["Oviparidade", "Oviparidade é uma estratégia reprodutiva em que o desenvolvimento embrionário ocorre em ovos postos no ambiente."],
   "Ovíparos Amniotas": ["Ovo amniótico", "O ovo amniótico reúne membranas extraembrionárias que reduziram a dependência reprodutiva de ambientes aquáticos em amniotas."],
   "Ovovivíparo": ["Ovoviviparidade", "Na ovoviviparidade, os ovos ficam retidos no corpo do progenitor durante parte ou todo o desenvolvimento embrionário antes da postura ou liberação."],
