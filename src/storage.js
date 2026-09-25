@@ -126,6 +126,12 @@ function normalizeCycleInnovationPressure(state) {
     piece.lifetimeOffspring ??= 0;
   if (!Array.isArray(state?.cyclePositiveInnovations))
     state.cyclePositiveInnovations = [];
+  if (
+    !state?.openingMutationSatisfied ||
+    typeof state.openingMutationSatisfied.blue !== "boolean" ||
+    typeof state.openingMutationSatisfied.amber !== "boolean"
+  )
+    state.openingMutationSatisfied = { blue: true, amber: true };
   return normalizePathogenEvolution(state);
 }
 
