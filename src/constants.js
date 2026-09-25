@@ -61,7 +61,7 @@ export const TRAITS = {
   ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
   "Sacos Aéreos": [
-    "🦕",
+    "🦖",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
   Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Permite capturar criaturas adversárias; enquanto a linhagem ainda é unicelular, capturas inimigas também podem gerar reprodução predatória primordial. Após Multicelularismo, a reprodução pela captura depende de especializações alimentares."],
@@ -248,10 +248,10 @@ export const TRAITS = {
     "Em rodadas pares, tem 50% de chance de escapar de uma captura. Visão Noturna do agressor anula essa proteção.",
   ],
   "Pele grossa": [
-    "🐘",
-    "Tem 25% de chance de resistir a uma captura. Garras do agressor anulam essa proteção.",
+    "🦏",
+    "Tem 25% de chance de resistir a uma captura. Presas do agressor anulam essa proteção.",
   ],
-  Garras: [
+  Presas: [
     "▽",
     "Neutraliza a proteção oferecida por Pele grossa.",
   ],
