@@ -1668,9 +1668,14 @@ function earthBranchFounder(previous, branch, fallback) {
       previous,
       null,
       (piece) => piece.traits?.includes(branch),
-    ),
+    ).piece,
     remembered = previous.energyBranchRepresentatives?.[branch] ?? null,
-    source = living.piece ?? remembered;
+    source =
+      living && remembered
+        ? compareLineageStrength(living, remembered) <= 0
+          ? living
+          : remembered
+        : living ?? remembered;
   return founderProfile(previous, source) ?? fallback;
 }
 
