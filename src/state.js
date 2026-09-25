@@ -230,8 +230,10 @@ export function photosynthesisAvailable(state, piece) {
   );
 }
 export const PRE_BILATERAL_SENESCENCE_AGE = 13;
+export const PRE_BILATERAL_NATURAL_INFERTILITY_AGE = 16;
 export const PRE_BILATERAL_MAX_NATURAL_AGE = 24;
 export const SENESCENCE_AGE = 25;
+export const NATURAL_INFERTILITY_AGE = 30;
 export const MAX_NATURAL_AGE = 48;
 export const multicellular = (piece) =>
   !!piece && (piece.traits ?? []).includes("Multicelularismo");
@@ -254,6 +256,13 @@ export function naturalAgeProfile(piece) {
 export const senescent = (state, piece) =>
   multicellular(piece) &&
   pieceAge(state, piece) >= naturalAgeProfile(piece).senescence;
+export const naturalInfertilityAge = (piece) =>
+  bilateralLongevity(piece)
+    ? NATURAL_INFERTILITY_AGE
+    : PRE_BILATERAL_NATURAL_INFERTILITY_AGE;
+export const naturallyInfertile = (state, piece) =>
+  multicellular(piece) &&
+  pieceAge(state, piece) >= naturalInfertilityAge(piece);
 export function naturalDeathChance(state, piece) {
   if (!multicellular(piece)) return 0;
   const age = pieceAge(state, piece),
@@ -322,6 +331,7 @@ export const reproductionReady = (state, piece) =>
   !!piece &&
   has(piece, "Respiração anaeróbia") &&
   !juvenile(state, piece) &&
+  !naturallyInfertile(state, piece) &&
   !has(piece, "Esterilidade") &&
   (!has(piece, "Filho único") || (piece.lifetimeOffspring ?? 0) < 1) &&
   !(piece.pregnancies ?? []).some(

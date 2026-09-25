@@ -15,6 +15,8 @@ import {
   photosynthesisDelayTurns,
   juvenile,
   senescent,
+  naturallyInfertile,
+  reproductionReady,
   pieceAge,
   naturalDeathChance,
   barrierAt,
@@ -2113,6 +2115,98 @@ test("Multicelularismo gates childhood and introduces progressive senescence", (
   assert.equal(naturalDeathChance(s, multicellular), 0.2);
   s.turn = 96;
   assert.equal(naturalDeathChance(s, multicellular), 1);
+  assertState(s);
+});
+
+test("natural infertility begins at age 16 pre-bilateral and 30 for bilateral or photosynthetic lineages", () => {
+  const s = fixture([]),
+    preBilateral = newPiece(s, "blue", 4, 4, {
+      traits: ["Multicelularismo"],
+      bornRound: 0,
+      maturesRound: 0,
+    }),
+    bilateral = newPiece(s, "amber", 0, 0, {
+      traits: ["Multicelularismo", "Simetria Bilateral"],
+      bornRound: 0,
+      maturesRound: 0,
+    }),
+    photosynthetic = newPiece(s, "blue", 5, 5, {
+      traits: ["Multicelularismo", "Fotossíntese"],
+      bornRound: 0,
+      maturesRound: 0,
+    }),
+    unicellular = newPiece(s, "amber", 1, 1, {
+      bornRound: 0,
+      maturesRound: 0,
+    });
+  s.pieces.push(preBilateral, bilateral, photosynthetic, unicellular);
+
+  s.turn = 30;
+  assert.equal(pieceAge(s, preBilateral), 15);
+  assert.equal(naturallyInfertile(s, preBilateral), false);
+  assert.equal(reproductionReady(s, preBilateral), true);
+
+  s.turn = 32;
+  assert.equal(pieceAge(s, preBilateral), 16);
+  assert.equal(naturallyInfertile(s, preBilateral), true);
+  assert.equal(reproductionReady(s, preBilateral), false);
+
+  s.turn = 58;
+  assert.equal(pieceAge(s, bilateral), 29);
+  assert.equal(naturallyInfertile(s, bilateral), false);
+  assert.equal(naturallyInfertile(s, photosynthetic), false);
+  assert.equal(reproductionReady(s, bilateral), true);
+  assert.equal(reproductionReady(s, photosynthetic), true);
+
+  s.turn = 60;
+  assert.equal(pieceAge(s, bilateral), 30);
+  assert.equal(naturallyInfertile(s, bilateral), true);
+  assert.equal(naturallyInfertile(s, photosynthetic), true);
+  assert.equal(reproductionReady(s, bilateral), false);
+  assert.equal(reproductionReady(s, photosynthetic), false);
+
+  s.turn = 120;
+  assert.equal(naturallyInfertile(s, unicellular), false);
+  assert.equal(reproductionReady(s, unicellular), true);
+  assertState(s);
+});
+
+test("natural infertility does not cancel a viviparous pregnancy already in progress", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Multicelularismo", "Simetria Bilateral", "Vivíparo"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0];
+
+  s.turn = 58;
+  parent.bornRound = 0;
+  parent.maturesRound = 0;
+  parent.nextReproductionRound = 0;
+  assert.equal(pieceAge(s, parent), 29);
+  assert.equal(reproductionReady(s, parent), true);
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+    }),
+    1,
+  );
+  assert.equal(parent.pregnancies.length, 1);
+
+  const before = s.pieces.length;
+  s.turn = 64;
+  assert.equal(pieceAge(s, parent), 32);
+  assert.equal(naturallyInfertile(s, parent), true);
+  assert.equal(reproductionReady(s, parent), false);
+  tickReproduction(context(s));
+
+  assert.equal(parent.pregnancies.length, 0);
+  assert.ok(s.pieces.length > before);
   assertState(s);
 });
 
