@@ -4182,7 +4182,8 @@ test("Predação is required for ordinary captures", () => {
     { owner: "blue", r: 4, c: 0, rank: 3 },
     { owner: "amber", r: 4, c: 4 },
   ]);
-  const attacker = s.pieces[0];
+  const attacker = s.pieces[0],
+    victim = s.pieces[1];
   attacker.traits = [
     "Locomoção Primitiva",
     "Vertebrado",
@@ -4190,6 +4191,9 @@ test("Predação is required for ordinary captures", () => {
     "Percepção Espacial",
     "Carnívoro",
   ];
+  victim.traits = victim.traits.filter(
+    (trait) => trait !== "Multicelularismo",
+  );
   assert.ok(!movesFor(s, attacker).some((target) => target.c === 4));
   attacker.traits.push("Predação");
   assert.ok(movesFor(s, attacker).some((target) => target.c === 4));
