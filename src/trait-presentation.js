@@ -98,7 +98,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Metamorfose: "Juvenil artrópode pode empupar por 1 rodada e subir uma forma.",
   Ooteca: "Após reprodução fértil, a morte pode liberar 1 prole ao redor.",
   Veneno: "O agressor morre após 2 turnos próprios.",
-  "Mutação Deletéria": "Morre após 3 rodadas.",
+  "Mutação Letal": "Morre após 3 rodadas.",
   "Mutação Disfuncional": "Após mover, descansa na rodada seguinte.",
   Coletor: "Armazena fertilidade e pode usá-la para reproduzir parado.",
 });
