@@ -316,12 +316,15 @@ export function expressGenome(
         lineageOk = (deps?.lineage ?? []).every((dependency) =>
           dependencySatisfied(trait, dependency, active, carried),
         ),
+        activeOk = (deps?.active ?? []).every((dependency) =>
+          active.has(dependency),
+        ),
         lineageAnyOk =
           !deps?.lineageAny?.length ||
           deps.lineageAny.some((dependency) =>
             dependencySatisfied(trait, dependency, active, carried),
           );
-      if (!lineageOk || !lineageAnyOk) {
+      if (!lineageOk || !activeOk || !lineageAnyOk) {
         changed = true;
         continue;
       }
