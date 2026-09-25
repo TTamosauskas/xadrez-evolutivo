@@ -160,6 +160,7 @@ test("cycle transition resets hidden positive-innovation pressure", () => {
       "Resistência",
     ],
   });
+  s.openingMutationSatisfied = { blue: true, amber: true };
   s.result = { winner: "blue", reason: "teste" };
   s.phase = "over";
 
@@ -167,6 +168,10 @@ test("cycle transition resets hidden positive-innovation pressure", () => {
   assert.equal(next.geologicalStage, "proterozoic");
   assert.equal(next.cycle, 2);
   assert.deepEqual(next.cyclePositiveInnovations, []);
+  assert.deepEqual(next.openingMutationSatisfied, {
+    blue: false,
+    amber: false,
+  });
   assert.equal(
     cyclePositiveInnovationMultiplier(next, "Brotamento"),
     1,
