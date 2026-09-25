@@ -1196,9 +1196,9 @@ test("new combat specializations unlock in the intended periods and lineages", (
     historicalTraits: historyBefore("permian"),
   });
   assert.equal(traitUnlocked(permian, "Pele grossa", herbivore), true);
-  assert.equal(traitUnlocked(permian, "Garras", carnivore), true);
+  assert.equal(traitUnlocked(permian, "Presas", carnivore), true);
   assert.equal(traitUnlocked(permian, "Pele grossa", carnivore), false);
-  assert.equal(traitUnlocked(permian, "Garras", herbivore), false);
+  assert.equal(traitUnlocked(permian, "Presas", herbivore), false);
 
   const triassic = createState(184, {
     geologicalStage: "triassic",
