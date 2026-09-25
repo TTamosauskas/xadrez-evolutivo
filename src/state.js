@@ -301,12 +301,12 @@ export function deterministicDeathNextTurn(state, piece) {
     return "morte natural";
 
   if (
-    has(piece, "Mutação Deletéria") &&
+    has(piece, "Mutação Letal") &&
     Number.isInteger(piece.deleteriousDue) &&
     piece.deleteriousDue <= now + 1 &&
     !regenerationAvailable
   )
-    return "Mutação Deletéria";
+    return "Mutação Letal";
 
   return null;
 }
@@ -319,6 +319,7 @@ export const reproductionReady = (state, piece) =>
   has(piece, "Respiração anaeróbia") &&
   !juvenile(state, piece) &&
   !has(piece, "Esterilidade") &&
+  (!has(piece, "Filho único") || (piece.lifetimeOffspring ?? 0) < 1) &&
   !(piece.pregnancies ?? []).some(
     (pregnancy) => pregnancy.kind === "ovoviviparous",
   ) &&
@@ -384,6 +385,7 @@ export function newPiece(state, owner, r, c, source = {}) {
       pathogenMutationDiseases: [],
       pathogenExposureRounds: {},
       lifetimeReproductions: source.lifetimeReproductions ?? 0,
+      lifetimeOffspring: source.lifetimeOffspring ?? 0,
       semelparityDeathPending: source.semelparityDeathPending ?? false,
       stationarySinceRound: source.stationarySinceRound ?? bornRound,
       budded: source.budded ?? false,
@@ -1331,7 +1333,7 @@ function fossilEntries(previous) {
 
 function founderProfile(previous, piece) {
   if (!piece) return null;
-  const excluded = new Set(["Esterilidade", "Mutação Deletéria"]),
+  const excluded = new Set(["Esterilidade", "Mutação Letal"]),
     genome = withoutGenomeTraits(piece.genome, [...excluded]),
     profile = {
       rank: piece.rank,
@@ -1348,7 +1350,7 @@ function cleanArenaGenome(piece) {
   const excluded = new Set([
     "Respiração anaeróbia",
     "Esterilidade",
-    "Mutação Deletéria",
+    "Mutação Letal",
     "Mutação Disfuncional",
   ]);
   const preferred = piece?.traits?.includes("Fotossíntese")
@@ -2062,6 +2064,7 @@ export function assertState(state) {
       !integer(p.maturesRound) ||
       !integer(p.nextReproductionRound) ||
       !integer(p.lifetimeReproductions ?? 0, 0) ||
+      !integer(p.lifetimeOffspring ?? 0, 0) ||
       typeof (p.semelparityDeathPending ?? false) !== "boolean" ||
       ![1, -1].includes(p.pawnDir) ||
       (p.regenerationUsed !== undefined &&
@@ -2381,7 +2384,7 @@ export function assertState(state) {
       (!integer(p.venom.remaining, 1, 2) || !integer(p.venom.infectedTurn))
     )
       throw Error("Veneno inválido.");
-    if (has(p, "Mutação Deletéria") && !integer(p.deleteriousDue))
+    if (has(p, "Mutação Letal") && !integer(p.deleteriousDue))
       throw Error("Tempo de vida inválido.");
   }
   if (state.event) {

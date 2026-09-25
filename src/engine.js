@@ -592,8 +592,8 @@ function advanceTurn(ctx) {
     restoreExtremophyteFertility(state);
     tickDiseases(ctx);
     for (const p of [...state.pieces])
-      if (has(p, "Mutação Deletéria") && p.deleteriousDue <= round(state))
-        ctx.kill(p.id, "Mutação Deletéria");
+      if (has(p, "Mutação Letal") && p.deleteriousDue <= round(state))
+        ctx.kill(p.id, "Mutação Letal");
     for (const p of [...state.pieces])
       if (
         (terrain(state, p.r, p.c) === "hostile" ||

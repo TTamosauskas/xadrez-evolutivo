@@ -575,7 +575,7 @@ function spawnChild(state, profile, r, c) {
   child.maturesRound = has(child, "Multicelularismo")
     ? round(state) + sexualMaturityRounds(child)
     : round(state);
-  if (has(child, "Mutação Deletéria"))
+  if (has(child, "Mutação Letal"))
     child.deleteriousDue = round(state) + 3;
   state.pieces.push(child);
   registerDiscoveries(state, child);
@@ -1036,6 +1036,44 @@ export function consumeReproductionResource(state, parent, cell) {
   return consumed;
 }
 
+function onlyChildExhausted(piece) {
+  return (
+    !!piece &&
+    has(piece, "Filho único") &&
+    (piece.lifetimeOffspring ?? 0) >= 1
+  );
+}
+
+function lifetimeOffspringLimit(parent, mates, wanted) {
+  if (!Number.isFinite(wanted) || wanted <= 0) return Math.max(0, wanted);
+  const parentLimit = has(parent, "Filho único")
+      ? Math.max(0, 1 - (parent.lifetimeOffspring ?? 0))
+      : Infinity,
+    mateUse = new Map();
+  let allowed = 0;
+  for (let i = 0; i < wanted; i++) {
+    if (allowed >= parentLimit) break;
+    const mate = mates.length ? mates[i % mates.length] : null;
+    if (mate && has(mate, "Filho único")) {
+      const used = mateUse.get(mate.id) ?? 0,
+        remaining = Math.max(0, 1 - (mate.lifetimeOffspring ?? 0));
+      if (used >= remaining) break;
+      mateUse.set(mate.id, used + 1);
+    }
+    allowed++;
+  }
+  return allowed;
+}
+
+function recordLifetimeOffspring(parent, mates, produced) {
+  if (!produced) return;
+  parent.lifetimeOffspring = (parent.lifetimeOffspring ?? 0) + produced;
+  for (let i = 0; i < produced && mates.length; i++) {
+    const mate = mates[i % mates.length];
+    mate.lifetimeOffspring = (mate.lifetimeOffspring ?? 0) + 1;
+  }
+}
+
 function recordSemelparity(ctx, piece, deferDeath = false) {
   if (!piece || !has(piece, "Semelparidade")) return false;
   piece.lifetimeReproductions = (piece.lifetimeReproductions ?? 0) + 1;
@@ -1095,7 +1133,8 @@ export function reproduce(
     ).values()];
   if (
     !has(parent, "Respiração anaeróbia") ||
-    mates.some((candidate) => !has(candidate, "Respiração anaeróbia"))
+    mates.some((candidate) => !has(candidate, "Respiração anaeróbia")) ||
+    [parent, ...mates].some(onlyChildExhausted)
   )
     return 0;
   if (
@@ -1170,10 +1209,10 @@ export function reproduce(
         ? sexualProfiles.reduce((sum, candidate) => sum + outputFor(candidate), 0)
         : outputFor(profile)) +
         eusocialBonus(state, parent),
-    baseWanted =
-      has(parent, "Filho único") || paedogenic
-        ? Math.min(1, naturalWanted)
-        : naturalWanted,
+    lifetimeWanted = lifetimeOffspringLimit(parent, mates, naturalWanted),
+    baseWanted = paedogenic
+      ? Math.min(1, lifetimeWanted)
+      : lifetimeWanted,
     populationLimit =
       reason === "predação"
         ? preLocomotionPredation
@@ -1349,6 +1388,7 @@ export function reproduce(
   }
 
   if (produced) {
+    recordLifetimeOffspring(parent, mates, produced);
     if (has(parent, "Ooteca") && options.fertileReproduction)
       parent.oothecaPrimed = true;
     applyCooldown();

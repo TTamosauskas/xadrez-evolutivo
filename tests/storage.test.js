@@ -12,6 +12,7 @@ import {
   assertState,
 } from "../src/state.js";
 import { STATE_VERSION } from "../src/constants.js";
+import { genomeFromTraits } from "../src/genetics.js";
 
 test("current save schema round-trips deterministic state", () => {
   const state = createState(3);
@@ -92,8 +93,45 @@ test("current save schema preserves active phases and temporary event data", () 
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
 });
 
-test("deserialize migrates v17/v18 and rejects older or invalid saves", () => {
+test("deserialize migrates v17-v20 and rejects older or invalid saves", () => {
   assert.throws(() => deserialize("{"), /inválido/i);
+
+  const renamed = createState(20),
+    renamedPiece = renamed.pieces[0];
+  renamedPiece.traits = [...new Set([...renamedPiece.traits, "Mutação Letal"])];
+  renamedPiece.ancestry = [...new Set([...renamedPiece.ancestry, "Mutação Letal"])];
+  renamedPiece.genome = genomeFromTraits(renamedPiece.traits);
+  renamedPiece.deleteriousDue = 6;
+  renamedPiece.lifetimeOffspring = undefined;
+  renamed.seenMutations = ["Mutação Deletéria"];
+  renamedPiece.traits = renamedPiece.traits.map((trait) =>
+    trait === "Mutação Letal" ? "Mutação Deletéria" : trait,
+  );
+  renamedPiece.ancestry = renamedPiece.ancestry.map((trait) =>
+    trait === "Mutação Letal" ? "Mutação Deletéria" : trait,
+  );
+  renamedPiece.genome["Mutação Deletéria"] =
+    renamedPiece.genome["Mutação Letal"];
+  delete renamedPiece.genome["Mutação Letal"];
+  renamed.version = 20;
+
+  const migratedRename = deserialize(JSON.stringify(renamed)),
+    migratedPiece = migratedRename.pieces.find(
+      (piece) => piece.id === renamedPiece.id,
+    );
+  assert.equal(migratedRename.version, STATE_VERSION);
+  assert.ok(migratedPiece.traits.includes("Mutação Letal"));
+  assert.equal(migratedPiece.traits.includes("Mutação Deletéria"), false);
+  assert.ok(
+    migratedPiece.genome["Mutação Letal"].some(
+      (allele) => allele.value === "derived",
+    ),
+  );
+  assert.equal(Object.hasOwn(migratedPiece.genome, "Mutação Deletéria"), false);
+  assert.equal(migratedPiece.deleteriousDue, 6);
+  assert.equal(migratedPiece.lifetimeOffspring, 0);
+  assert.deepEqual(migratedRename.seenMutations, ["Mutação Letal"]);
+  assertState(migratedRename);
 
   const legacy = createState(4);
   legacy.version = 17;
@@ -160,7 +198,7 @@ test("deserialize migrates v17/v18 and rejects older or invalid saves", () => {
   assert.throws(() => deserialize(JSON.stringify(invalid)), /Ocupação/);
 });
 
-test("load migrates legacy development keys and saves use v20", () => {
+test("load migrates legacy development keys and saves use v21", () => {
   const legacy = createState(6, {
     originPrelude: true,
     geologicalStage: "archean",

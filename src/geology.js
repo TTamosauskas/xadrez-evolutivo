@@ -8,7 +8,7 @@ import {
 
 export const NEGATIVE_TRAIT_RULES = Object.freeze({
   Esterilidade: { stage: "archean", somatic: true },
-  "Mutação Deletéria": { stage: "archean", somatic: true },
+  "Mutação Letal": { stage: "archean", somatic: true },
   "Mutação Disfuncional": { stage: "archean", somatic: true },
   "Insuficiência Respiratória": {
     stage: "proterozoic",

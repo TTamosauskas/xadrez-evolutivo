@@ -67,7 +67,7 @@ test("every negative mutation has an explicit valid debut period", () => {
 
   for (const trait of [
     "Esterilidade",
-    "Mutação Deletéria",
+    "Mutação Letal",
     "Mutação Disfuncional",
   ])
     assert.equal(NEGATIVE_TRAIT_RULES[trait].stage, "archean");
@@ -80,7 +80,7 @@ test("every negative mutation has an explicit valid debut period", () => {
     p = s.pieces[0];
   for (const trait of [
     "Esterilidade",
-    "Mutação Deletéria",
+    "Mutação Letal",
     "Mutação Disfuncional",
   ])
     assert.equal(traitUnlocked(s, trait, p), false, trait);
@@ -88,7 +88,7 @@ test("every negative mutation has an explicit valid debut period", () => {
   s.totalCycles = 2;
   for (const trait of [
     "Esterilidade",
-    "Mutação Deletéria",
+    "Mutação Letal",
     "Mutação Disfuncional",
   ])
     assert.equal(traitUnlocked(s, trait, p), true, trait);

@@ -151,7 +151,7 @@ const mutationTopics = {
   Imunodeficiência: ["Imunodeficiência", "Imunodeficiências comprometem componentes da resposta imune e aumentam a suscetibilidade a infecções; no jogo, anulam a proteção de Resistência enquanto estão expressas."],
   "Deficiência Motora": ["Deficiência motora", "Alterações neuromusculares podem reduzir a capacidade de deslocamento; no jogo, limitam movimento e captura ao primeiro passo funcional da trajetória."],
   "Deficiência Sensorial": ["Deficiência sensorial", "Perdas sensoriais reduzem a aquisição de informação sobre o ambiente; no jogo, diminuem o alcance de capturas à distância."],
-  "Filho único": ["Fecundidade", "Fecundidade descreve a capacidade potencial de produzir descendentes; no jogo, esta mutação limita cada reprodução bem-sucedida a uma única prole."],
+  "Filho único": ["Fecundidade vitalícia", "No jogo, esta mutação limita o portador a um único descendente durante toda a vida; depois disso, ele permanece vivo, mas não pode mais reproduzir."],
   Subfertilidade: ["Subfertilidade", "Subfertilidade é a redução da capacidade reprodutiva sem esterilidade completa; no jogo, metade das tentativas pode terminar sem prole."],
   "Má absorção Alimentar": ["Má absorção", "Síndromes de má absorção reduzem o aproveitamento de nutrientes ingeridos; no jogo, a mesma reprodução exige um recurso fértil adicional quando disponível e a recuperação após reprodução por predação leva o dobro do intervalo."],
   Semelparidade: ["Semelparidade", "Semelparidade, em sentido biológico, concentra o investimento reprodutivo antes da morte; o jogo usa uma variante abstrata em que o custo fatal ocorre após três reproduções bem-sucedidas."],
@@ -159,7 +159,7 @@ const mutationTopics = {
   Nanismo: ["Nanismo", "Nanismo descreve fenótipos de crescimento corporal reduzido; no jogo, força a forma funcional de Peão e reduz o tamanho visual da peça."],
   Gigantismo: ["Gigantismo", "Gigantismo descreve aumento extremo de tamanho corporal; no jogo, amplia o tamanho visual e impõe um custo de mobilidade."],
   "Mutação Mutadora": ["Fenótipo mutador", "Fenótipos mutadores apresentam taxas de mutação elevadas, frequentemente por alterações em mecanismos de manutenção do genoma; no jogo, aumentam a chance de mutações negativas."],
-  "Mutação Deletéria": ["Mutação deletéria", "Uma mutação deletéria reduz algum componente de aptidão do organismo em determinado contexto."],
+  "Mutação Letal": ["Mutação letal", "Uma mutação letal compromete a sobrevivência do portador; no jogo, a morte ocorre após três rodadas completas."],
   "Mutação Disfuncional": ["Mutação", "Mutações alteram o material genético; seus efeitos podem ser neutros, vantajosos ou prejudiciais conforme o contexto."],
 };
 

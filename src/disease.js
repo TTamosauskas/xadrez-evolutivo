@@ -214,7 +214,7 @@ export function recordPathogenExposure(state, piece, disease) {
 
   piece.somaticMutations.push(trait);
   piece.pathogenMutationDiseases.push(disease.id);
-  if (trait === "Mutação Deletéria") piece.deleteriousDue = now + 3;
+  if (trait === "Mutação Letal") piece.deleteriousDue = now + 3;
   log(
     state,
     `${OWNERS[piece.owner]}: 🧬 exposição a ${agentDefinition(disease).name} induziu ${trait} somática.`,
