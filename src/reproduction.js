@@ -1039,12 +1039,11 @@ export function consumeReproductionResource(state, parent, cell) {
 function recordSemelparity(ctx, piece, deferDeath = false) {
   if (!piece || !has(piece, "Semelparidade")) return false;
   piece.lifetimeReproductions = (piece.lifetimeReproductions ?? 0) + 1;
-  if (piece.lifetimeReproductions < 3) return false;
   if (deferDeath) {
     piece.semelparityDeathPending = true;
     return true;
   }
-  return ctx.kill(piece.id, "Semelparidade após três reproduções", null, true);
+  return ctx.kill(piece.id, "Semelparidade após reprodução única", null, true);
 }
 
 export function resolveSemelparityDeath(ctx, piece) {
@@ -1054,7 +1053,7 @@ export function resolveSemelparityDeath(ctx, piece) {
   )
     return false;
   piece.semelparityDeathPending = false;
-  return ctx.kill(piece.id, "Semelparidade após três reproduções", null, true);
+  return ctx.kill(piece.id, "Semelparidade após reprodução única", null, true);
 }
 
 const TROPHIC_REPRODUCTION_RESOURCES = new Set([
