@@ -4466,7 +4466,7 @@ test("Velocidade evades captures unless the aggressor also has Velocidade", () =
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
 });
 
-test("Pele grossa resists captures unless the aggressor has Garras", () => {
+test("Pele grossa resists captures unless the aggressor has Presas", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4 },
     { owner: "amber", r: 4, c: 4, traits: ["Pele grossa"] },
@@ -4478,7 +4478,7 @@ test("Pele grossa resists captures unless the aggressor has Garras", () => {
   assert.ok(s.logs.some((entry) => entry.text.includes("Pele grossa resistiu")));
 
   s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Garras"] },
+    { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Presas"] },
     { owner: "amber", r: 4, c: 4, traits: ["Pele grossa"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
