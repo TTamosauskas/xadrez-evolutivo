@@ -128,19 +128,30 @@ test("only-child is a lifetime one-offspring limit and respiratory insufficiency
         r: 4,
         c: 4,
         rank: 0,
-        traits: ["Reparo Celular", "Multicelularismo", "Filho único"],
+        traits: [
+          "Reparo Celular",
+          "Multicelularismo",
+          "Vivíparo",
+          "Filho único",
+        ],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
     onlyParent = only.pieces[0];
   assert.equal(
-    reproduce(context(only), onlyParent, null, "teste", { forcedCount: 4 }),
+    reproduce(context(only), onlyParent, null, "teste", {
+      forcedCount: 4,
+      immediateDevelopment: true,
+    }),
     1,
   );
   assert.equal(onlyParent.lifetimeOffspring, 1);
   only.turn = onlyParent.nextReproductionRound * 2;
   assert.equal(
-    reproduce(context(only), onlyParent, null, "teste", { forcedCount: 4 }),
+    reproduce(context(only), onlyParent, null, "teste", {
+      forcedCount: 4,
+      immediateDevelopment: true,
+    }),
     0,
   );
   assert.ok(only.pieces.some((piece) => piece.id === onlyParent.id));
@@ -206,7 +217,7 @@ test("only-child sexual partner becomes unavailable after one descendant", () =>
         owner: "blue",
         r: 4,
         c: 5,
-        traits: ["Reprodução Sexuada", "Filho único"],
+        traits: ["Reprodução Sexuada", "Vivíparo", "Filho único"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
