@@ -40,6 +40,20 @@ test("current saves retire Locomoção Avançada from state and genome", () => {
   assertState(restored);
 });
 
+test("current saves without the pulmonary locus normalize safely", () => {
+  const state = createState(16);
+  for (const piece of state.pieces)
+    delete piece.genome["Respiração Pulmonar"];
+
+  const restored = deserialize(JSON.stringify(state));
+  for (const piece of restored.pieces)
+    assert.deepEqual(piece.genome["Respiração Pulmonar"], [
+      { value: "ancestral", dominance: "neutral" },
+      { value: "ancestral", dominance: "neutral" },
+    ]);
+  assertState(restored);
+});
+
 test("current saves without energy-branch memory normalize safely", () => {
   const state = createState(12);
   delete state.energyBranchRepresentatives;
