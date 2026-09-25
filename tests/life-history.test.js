@@ -153,14 +153,14 @@ test("successful reproduction uses metabolic recovery and induced ovulation shor
     reproduce(context(normal), parent, null, "teste", { forcedCount: 1 }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 6);
+  assert.equal(parent.nextReproductionRound, 7);
   assert.equal(
     reproduce(context(normal), parent, null, "teste", { forcedCount: 1 }),
     0,
   );
   normal.turn = 10;
   assert.equal(reproductionReady(normal, parent), false);
-  normal.turn = 12;
+  normal.turn = 14;
   assert.equal(reproductionReady(normal, parent), true);
 
   const induced = fixture([
@@ -182,10 +182,10 @@ test("successful reproduction uses metabolic recovery and induced ovulation shor
     }),
     1,
   );
-  assert.equal(inducedParent.nextReproductionRound, 6);
+  assert.equal(inducedParent.nextReproductionRound, 7);
   induced.turn = 10;
   assert.equal(reproductionReady(induced, inducedParent), false);
-  induced.turn = 12;
+  induced.turn = 14;
   assert.equal(reproductionReady(induced, inducedParent), true);
   assertState(induced);
 });
@@ -263,7 +263,7 @@ test("Canibalismo captures an allied piece and replaces it with exactly one juve
   assert.equal(juvenile(s, children[0]), true);
   assert.equal(
     s.pieces.find((piece) => piece.id === attackerId).nextReproductionRound,
-    5,
+    6,
   );
   assert.ok(s.deathSites.some((site) => site.cell === square(4, 4)));
   assertState(s);
