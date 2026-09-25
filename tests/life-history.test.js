@@ -379,8 +379,9 @@ test("new life-history traits unlock in their intended optional periods", () => 
     "Vertebrado",
     "Locomoção Articulada",
     "Locomoção Terrestre",
-    "Respiração Pulmonar",
   ];
+  assert.equal(traitUnlocked(s, "Sacos Aéreos", p), false);
+  p.ancestry.push("Respiração Pulmonar");
   assert.equal(traitUnlocked(s, "Sacos Aéreos", p), true);
 
   s.geologicalStage = "paleogene";
