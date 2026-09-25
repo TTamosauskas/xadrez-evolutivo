@@ -49,6 +49,9 @@ test("Como Jogar covers all scenarios, ecological events and Earth required inno
   assert.ok(text.includes("Domínio Ecológico"));
   assert.ok(text.includes("Reparo Celular"));
   assert.ok(text.includes("Simetria Bilateral"));
+  assert.ok(text.includes("naturalmente inférteis aos 16"));
+  assert.ok(text.includes("infertilidade natural aos 30"));
+  assert.ok(text.includes("proles já iniciadas continuam"));
   assert.ok(text.includes("🟥 Casas hostis"));
   assert.equal(text.includes("⬛ Casas hostis"), false);
   assert.ok(
