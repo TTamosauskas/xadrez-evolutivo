@@ -974,10 +974,14 @@ export function pieceLifeHistory(profile) {
 }
 
 export function metabolicReproductionCooldown(profile) {
-  const base = pieceLifeHistory(profile).metabolism;
-  return has(profile, "Respiração aeróbia")
-    ? Math.max(1, base - 1)
-    : base;
+  const base = pieceLifeHistory(profile).metabolism,
+    aerobic = has(profile, "Respiração aeróbia") ? -1 : 0,
+    terrestrialCost =
+      has(profile, "Locomoção Terrestre") &&
+      !has(profile, "Respiração Pulmonar")
+        ? 1
+        : 0;
+  return Math.max(1, base + aerobic + terrestrialCost);
 }
 
 export function sexualMaturityRounds(profile) {

@@ -885,9 +885,17 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
     "Vertebrado",
     "Locomoção Articulada",
     "Locomoção Terrestre",
+    "Respiração aeróbia",
   );
   p.ancestry.push("Carnívoro");
   assert.equal(traitUnlocked(s, "Onívoro", p), true);
+
+  p.traits = ["Multicelularismo", "Predação", "Vertebrado"];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), true);
+  p.traits = ["Multicelularismo", "Predação", "Artrópode"];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), false);
+  p.traits = ["Multicelularismo", "Predação"];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), false);
 
   s.geologicalStage = "triassic";
   p.ancestry.push("Ovíparos Amniotas");
@@ -1188,9 +1196,9 @@ test("new combat specializations unlock in the intended periods and lineages", (
     historicalTraits: historyBefore("permian"),
   });
   assert.equal(traitUnlocked(permian, "Pele grossa", herbivore), true);
-  assert.equal(traitUnlocked(permian, "Garras", carnivore), true);
+  assert.equal(traitUnlocked(permian, "Presas", carnivore), true);
   assert.equal(traitUnlocked(permian, "Pele grossa", carnivore), false);
-  assert.equal(traitUnlocked(permian, "Garras", herbivore), false);
+  assert.equal(traitUnlocked(permian, "Presas", herbivore), false);
 
   const triassic = createState(184, {
     geologicalStage: "triassic",
@@ -1432,6 +1440,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     "Escavador",
     "Escalador",
     "Respiração Cutânea",
+    "Respiração Pulmonar",
     "Sacos Aéreos",
     "Necrófago",
     "Coprofagia",

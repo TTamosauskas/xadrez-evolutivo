@@ -1175,12 +1175,12 @@ function executeMove(ctx, action) {
     pieceCapture &&
     victim.owner !== p.owner &&
     has(victim, "Pele grossa") &&
-    !has(p, "Garras") &&
+    !has(p, "Presas") &&
     random(state) < 1 / 4
   ) {
     log(
       state,
-      `${OWNERS[victim.owner]}: 🐘 Pele grossa resistiu à captura em ${coord(victim.r, victim.c)}.`,
+      `${OWNERS[victim.owner]}: 🦏 Pele grossa resistiu à captura em ${coord(victim.r, victim.c)}.`,
     );
     advanceTurn(ctx);
     settle(ctx);

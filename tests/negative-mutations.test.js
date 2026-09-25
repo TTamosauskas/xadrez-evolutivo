@@ -178,7 +178,7 @@ test("only-child is a lifetime one-offspring limit and respiratory insufficiency
     }),
     1,
   );
-  assert.equal(respiratoryParent.nextReproductionRound, 12);
+  assert.equal(respiratoryParent.nextReproductionRound, 14);
 
   const predator = fixture([
       {
@@ -202,7 +202,7 @@ test("only-child is a lifetime one-offspring limit and respiratory insufficiency
     }),
     1,
   );
-  assert.equal(predatorParent.nextReproductionRound, 12);
+  assert.equal(predatorParent.nextReproductionRound, 14);
 });
 
 test("only-child sexual partner becomes unavailable after one descendant", () => {
@@ -266,7 +266,7 @@ test("subfertility can spend a reproductive attempt without offspring", () => {
     reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
     0,
   );
-  assert.equal(parent.nextReproductionRound, 6);
+  assert.equal(parent.nextReproductionRound, 7);
 });
 
 test("malabsorption consumes one additional adjacent fertile resource", () => {
@@ -317,7 +317,7 @@ test("malabsorption doubles recovery after reproductive predation", () => {
     reproduce(context(s), parent, null, "predação", { forcedCount: 1 }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 12);
+  assert.equal(parent.nextReproductionRound, 14);
 });
 
 test("semelparity kills the parent after the first successful reproduction", () => {

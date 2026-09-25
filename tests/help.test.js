@@ -49,6 +49,9 @@ test("Como Jogar covers all scenarios, ecological events and Earth required inno
   assert.ok(text.includes("Domínio Ecológico"));
   assert.ok(text.includes("Reparo Celular"));
   assert.ok(text.includes("Simetria Bilateral"));
+  assert.ok(text.includes("🫁 Respiração Pulmonar"));
+  assert.ok(text.includes("elimina esse custo"));
+  assert.ok(text.includes("sem substituir Respiração Cutânea"));
   assert.ok(text.includes("naturalmente inférteis aos 16"));
   assert.ok(text.includes("infertilidade natural aos 30"));
   assert.ok(text.includes("proles já iniciadas continuam"));
@@ -107,6 +110,7 @@ test("Como Jogar orders positive mutations by the Vida na Terra chronology", () 
     if (!current) continue;
     for (const dependency of [
       ...(deps.lineage ?? []),
+      ...(deps.active ?? []),
       ...(deps.lineageAny ?? []),
       ...(deps.historical ?? []),
     ]) {

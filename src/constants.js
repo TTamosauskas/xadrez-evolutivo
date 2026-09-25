@@ -61,7 +61,7 @@ export const TRAITS = {
   ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
   "Sacos Aéreos": [
-    "🦕",
+    "🦖",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
   Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Permite capturar criaturas adversárias; enquanto a linhagem ainda é unicelular, capturas inimigas também podem gerar reprodução predatória primordial. Após Multicelularismo, a reprodução pela captura depende de especializações alimentares."],
@@ -120,6 +120,10 @@ export const TRAITS = {
   "Respiração aeróbia": [
     "🔵",
     "Metabolismo mais eficiente com oxigênio. Mantém a capacidade metabólica basal e reduz em uma rodada a recuperação metabólica após qualquer reprodução.",
+  ],
+  "Respiração Pulmonar": [
+    "🫁",
+    "Especialização respiratória de vertebrados aeróbios. Elimina o custo metabólico adicional associado à Locomoção Terrestre sem substituir Respiração Cutânea.",
   ],
   Fotossíntese: [
     "🟢",
@@ -244,10 +248,10 @@ export const TRAITS = {
     "Em rodadas pares, tem 50% de chance de escapar de uma captura. Visão Noturna do agressor anula essa proteção.",
   ],
   "Pele grossa": [
-    "🐘",
-    "Tem 25% de chance de resistir a uma captura. Garras do agressor anulam essa proteção.",
+    "🦏",
+    "Tem 25% de chance de resistir a uma captura. Presas do agressor anulam essa proteção.",
   ],
-  Garras: [
+  Presas: [
     "▽",
     "Neutraliza a proteção oferecida por Pele grossa.",
   ],
@@ -430,6 +434,7 @@ export const square = (r, c) => r * 8 + c;
 export const coord = (r, c) => `${String.fromCharCode(65 + c)}${8 - r}`;
 const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Respiração aeróbia": ["Respiração anaeróbia"],
+  "Respiração Pulmonar": ["Respiração aeróbia", "Respiração anaeróbia"],
   "Locomoção Articulada": ["Locomoção Primitiva"],
   "Locomoção Terrestre": ["Locomoção Articulada", "Locomoção Primitiva"],
   "Vetor Patógeno": ["Parasitismo"],
