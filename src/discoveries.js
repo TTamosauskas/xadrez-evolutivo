@@ -118,7 +118,7 @@ const mutationTopics = {
   "Velocidade": ["Velocidade animal", "Maior desempenho locomotor pode favorecer fuga de predadores e perseguição de presas; no jogo, Velocidade cria uma evasão que é anulada por um agressor igualmente veloz."],
   Notívago: ["Noturnidade", "Noturnidade é a concentração de atividade durante a noite; no jogo, essa estratégia aumenta a evasão em rodadas noturnas."],
   "Pele grossa": ["Pele", "Tecidos tegumentares espessos podem reduzir danos mecânicos e mordidas; no jogo, Pele grossa oferece resistência probabilística à captura."],
-  Garras: ["Garra", "Garras são estruturas queratinizadas usadas em tração, manipulação, defesa e captura; no jogo, neutralizam a resistência de Pele grossa."],
+  Presas: ["Dente canino", "Presas são dentes alongados especializados em perfuração, contenção e ataque; no jogo, neutralizam a resistência de Pele grossa."],
   "Veneno": ["Veneno", "Venenos são substâncias tóxicas produzidas por organismos e podem atuar em defesa, competição ou captura de presas."],
   "Coletor": ["Forrageamento", "Forrageamento reúne comportamentos de busca, obtenção e transporte de recursos necessários à sobrevivência e reprodução."],
   "Escalador": ["Escalada animal", "Muitos animais desenvolveram adaptações de aderência, equilíbrio e força que permitem ocupar encostas, rochas e outros relevos íngremes."],
