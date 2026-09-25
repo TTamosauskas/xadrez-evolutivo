@@ -355,6 +355,10 @@ test("new life-history traits unlock in their intended optional periods", () => 
   p.traits = ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"];
   assert.equal(traitUnlocked(s, "Respiração Cutânea", p), true);
 
+  p.traits.push("Respiração aeróbia", "Locomoção Terrestre");
+  p.ancestry = [...p.traits];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), true);
+
   s.geologicalStage = "carboniferous";
   s.historicalTraits = historyBefore("carboniferous");
   p.traits = ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Ovíparo"];
@@ -367,8 +371,16 @@ test("new life-history traits unlock in their intended optional periods", () => 
 
   s.geologicalStage = "triassic";
   s.historicalTraits = historyBefore("triassic");
-  p.traits = ["Multicelularismo", "Predação"];
-  p.ancestry = ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"];
+  p.traits = ["Multicelularismo", "Predação", "Vertebrado"];
+  p.ancestry = [
+    "Predação",
+    "Respiração aeróbia",
+    "Locomoção Primitiva",
+    "Vertebrado",
+    "Locomoção Articulada",
+    "Locomoção Terrestre",
+    "Respiração Pulmonar",
+  ];
   assert.equal(traitUnlocked(s, "Sacos Aéreos", p), true);
 
   s.geologicalStage = "paleogene";
@@ -386,6 +398,7 @@ test("new life-history traits unlock in their intended optional periods", () => 
           "Canibalismo",
           "Lactação",
           "Respiração Cutânea",
+          "Respiração Pulmonar",
           "Sacos Aéreos",
           "Ovovivíparo",
           "Ovulação Induzida",
