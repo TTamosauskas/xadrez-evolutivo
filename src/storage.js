@@ -157,6 +157,7 @@ function normalizeCycleInnovationPressure(state) {
   removeRetiredTraits(state);
   normalizeStoredGenomes(state);
   state.chain = null;
+  state.serotoninReposition ??= null;
   for (const piece of state?.pieces ?? [])
     piece.lifetimeOffspring ??= 0;
   if (!Array.isArray(state?.cyclePositiveInnovations))
