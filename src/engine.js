@@ -5,6 +5,7 @@ import {
   at,
   eggAt,
   plantSeedAt,
+  fragmentAt,
   barrierAt,
   terrain,
   round,
@@ -48,6 +49,7 @@ import {
   eggPlacementTargets,
   domesticPlacementTargets,
   socialDefenseTargets,
+  serotoninRepositionTargets,
   ovoviviparousPlacementTargets,
   canParasitize,
   canParasitizeSelf,
@@ -76,7 +78,12 @@ import {
   exposeFecalResidue,
   fecalPathogenDiseaseIdsForHost,
 } from "./disease.js";
-import { aquaticFertilityRegime, conwayUnlocked } from "./geology.js";
+import {
+  aquaticFertilityRegime,
+  conwayUnlocked,
+  currentGeologicalStage,
+  geologicalStage,
+} from "./geology.js";
 import {
   attemptHorizontalTransfer,
   canBud,
@@ -195,6 +202,7 @@ function finishGame(state, winner, reason, extinctionFounder = null) {
   state.eggPlacement = null;
   state.domesticPlacement = null;
   state.socialDefense = null;
+  state.serotoninReposition = null;
   log(state, reason);
 }
 function markHadeanTutorialStep(state, step) {
@@ -420,6 +428,152 @@ function nocturnalRound(state) {
   return (round(state) + 1) % 2 === 0;
 }
 
+function reactiveRelocation(ctx, piece, r, c, reason) {
+  const state = ctx.state,
+    origin = square(piece.r, piece.c),
+    destination = square(r, c);
+  leaveBacterialTrail(state, piece, origin);
+  if (
+    piece.decompositionImmunity &&
+    piece.decompositionImmunity.cell !== destination
+  )
+    delete piece.decompositionImmunity;
+  piece.r = r;
+  piece.c = c;
+  piece.stationarySinceRound = round(state);
+  if (has(piece, "Mutação Disfuncional"))
+    piece.lastMoveRound = round(state) + 1;
+  exposePathogenCell(state, piece);
+  moveDirection(piece);
+
+  if (lethalHazardAt(state, r, c)) {
+    ctx.kill(piece.id, reason + " em ambiente letal", null, true);
+    return false;
+  }
+
+  const hazardous =
+    terrain(state, r, c) === "hostile" ||
+    carcassDisturbanceHazardousTo(state, piece, r, c) ||
+    (!!organicResidueAt(state, r, c) && organicResidueHazardousTo(piece));
+  if (
+    hazardous &&
+    !has(piece, "Dormência") &&
+    !(
+      piece.decompositionImmunity &&
+      piece.decompositionImmunity.cell === destination &&
+      state.turn <= piece.decompositionImmunity.throughTurn
+    )
+  ) {
+    notice(
+      state,
+      "Casas hostis",
+      ["Casas vermelhas oferecem perigo de morte."],
+      "hostile",
+    );
+    piece.hostileRiskRound = round(state) + 1;
+    if (hostileHazardKills(state, piece)) {
+      ctx.kill(piece.id, reason + " em casa hostil");
+      return false;
+    }
+  }
+  return true;
+}
+
+function adrenalineEscapeCells(state, victim) {
+  const terrestrialRestriction =
+      currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+      !has(victim, "Locomoção Terrestre"),
+    cells = [];
+  for (const [dr, dc] of [
+    [-1, -1],
+    [-1, 1],
+    [1, -1],
+    [1, 1],
+  ]) {
+    const r = victim.r + dr,
+      c = victim.c + dc;
+    if (
+      !inside(r, c) ||
+      at(state, r, c) ||
+      eggAt(state, r, c) ||
+      plantSeedAt(state, r, c) ||
+      fragmentAt(state, r, c) ||
+      barrierAt(state, r, c) ||
+      lethalHazardAt(state, r, c) ||
+      ecologicalDomainBlocked(state, victim.owner, r, c) ||
+      (terrestrialRestriction && terrain(state, r, c) !== "fertile")
+    )
+      continue;
+    cells.push({ r, c });
+  }
+  return cells;
+}
+
+function triggerAdrenalineEscape(ctx, attacker, victim) {
+  const state = ctx.state,
+    cells = adrenalineEscapeCells(state, victim);
+  if (!cells.length || random(state) >= 1 / 6) return false;
+
+  const target = pick(state, cells),
+    victimOrigin = { r: victim.r, c: victim.c };
+  reactiveRelocation(
+    ctx,
+    victim,
+    target.r,
+    target.c,
+    "fuga por Adrenalina",
+  );
+  if (state.pieces.some((piece) => piece.id === attacker.id))
+    reactiveRelocation(
+      ctx,
+      attacker,
+      victimOrigin.r,
+      victimOrigin.c,
+      "avanço após fuga por Adrenalina",
+    );
+
+  log(
+    state,
+    `${OWNERS[victim.owner]}: 🚨 Adrenalina permitiu fuga para ${coord(target.r, target.c)}; o agressor avançou para ${coord(victimOrigin.r, victimOrigin.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Adrenalina",
+    `🚨 Adrenalina permitiu a fuga para ${coord(target.r, target.c)}.`,
+    { pieceId: victim.id, outcome: "escaped-capture" },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+  return true;
+}
+
+function offerSerotoninReposition(ctx, attacker, defense) {
+  const state = ctx.state;
+  if (!has(attacker, "Serotonina")) return false;
+  state.serotoninReposition = {
+    id: attacker.id,
+    defense,
+  };
+  state.phase = "serotonin-reposition";
+  state.chain = null;
+  if (serotoninRepositionTargets(state).length) {
+    log(
+      state,
+      `${OWNERS[attacker.owner]}: 😊 Serotonina permite adaptar a posição após ${defense}.`,
+    );
+    return true;
+  }
+  state.serotoninReposition = null;
+  state.phase = "move";
+  return false;
+}
+
+function finishFrustratedCapture(ctx, attacker, defense) {
+  if (offerSerotoninReposition(ctx, attacker, defense)) return;
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function underlyingTerrain(state, cell) {
   if (state.event?.hazards.includes(cell))
     return state.event.snapshots[cell] ?? "neutral";
@@ -635,6 +789,7 @@ function advanceTurn(ctx) {
   state.building = null;
   state.domesticPlacement = null;
   state.socialDefense = null;
+  state.serotoninReposition = null;
   state.phase = "move";
   for (const p of [...state.pieces])
     if (p.owner === acting && p.venom && p.venom.infectedTurn < before) {
@@ -803,6 +958,7 @@ function settle(ctx) {
     state.phase === "egg-placement" ||
     state.phase === "domestic-placement" ||
     state.phase === "social-defense" ||
+    state.phase === "serotonin-reposition" ||
     state.phase === "collapse"
   )
     return;
@@ -1156,8 +1312,7 @@ function executeMove(ctx, action) {
       "🐠 Cuidado Parental protegeu a cria.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    advanceTurn(ctx);
-    settle(ctx);
+    finishFrustratedCapture(ctx, p, "Cuidado Parental");
     return;
   }
   if (
@@ -1293,10 +1448,15 @@ function executeMove(ctx, action) {
         "🌙 Notívago evitou a captura.",
         { pieceId: victim.id, outcome: "prevented-capture" },
       );
-      advanceTurn(ctx);
-      settle(ctx);
+      finishFrustratedCapture(ctx, p, "Notívago");
       return;
     }
+  } else if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Adrenalina")
+  ) {
+    if (triggerAdrenalineEscape(ctx, p, victim)) return;
   } else if (
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -1314,8 +1474,7 @@ function executeMove(ctx, action) {
       "💨 Velocidade evitou a captura.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    advanceTurn(ctx);
-    settle(ctx);
+    finishFrustratedCapture(ctx, p, "Velocidade");
     return;
   }
   if (
@@ -1347,8 +1506,7 @@ function executeMove(ctx, action) {
       "🦏 Pele grossa bloqueou a captura.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    advanceTurn(ctx);
-    settle(ctx);
+    finishFrustratedCapture(ctx, p, "Pele grossa");
     return;
   }
   if (
@@ -1367,8 +1525,7 @@ function executeMove(ctx, action) {
       "🪵 Madeira bloqueou a captura.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    advanceTurn(ctx);
-    settle(ctx);
+    finishFrustratedCapture(ctx, p, "Madeira");
     return;
   }
   if (
@@ -1387,8 +1544,7 @@ function executeMove(ctx, action) {
       "🐧 Monogamia ajudou a evitar a captura.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    advanceTurn(ctx);
-    settle(ctx);
+    finishFrustratedCapture(ctx, p, "Monogamia");
     return;
   }
   if (
@@ -1408,8 +1564,7 @@ function executeMove(ctx, action) {
       "🐧 Cuidado biparental absorveu a captura.",
       { pieceId: victim.id, outcome: "guarded-offspring" },
     );
-    advanceTurn(ctx);
-    settle(ctx);
+    finishFrustratedCapture(ctx, p, "cuidado biparental");
     return;
   }
   if (
@@ -1995,6 +2150,50 @@ function resolveDomesticPlacement(ctx, action) {
   }
 }
 
+function resolveSerotoninReposition(ctx, action) {
+  const state = ctx.state,
+    pending = state.serotoninReposition,
+    piece = state.pieces.find((candidate) => candidate.id === pending?.id);
+  if (!pending || !piece)
+    throw Error("Reposicionamento serotoninérgico indisponível.");
+
+  if (action.type === "SKIP_SEROTONIN_REPOSITION") {
+    state.serotoninReposition = null;
+    state.phase = "move";
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+
+  const target = serotoninRepositionTargets(state).find(
+    (candidate) => candidate.r === action.r && candidate.c === action.c,
+  );
+  if (!target) throw Error("Escolha uma casa destacada para reposicionar.");
+
+  const origin = { r: piece.r, c: piece.c };
+  state.serotoninReposition = null;
+  state.phase = "move";
+  reactiveRelocation(
+    ctx,
+    piece,
+    target.r,
+    target.c,
+    "reposicionamento por Serotonina",
+  );
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 😊 Serotonina reposicionou a criatura de ${coord(origin.r, origin.c)} para ${coord(target.r, target.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Serotonina",
+    "😊 Serotonina permitiu adaptar a estratégia após a captura frustrada.",
+    { pieceId: piece.id, outcome: "adaptive-reposition" },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveSocialDefense(ctx, action) {
   const state = ctx.state,
     pending = state.socialDefense,
@@ -2220,6 +2419,13 @@ export function transition(previous, action) {
     state.phase === "social-defense"
   )
     resolveSocialDefense(ctx, action);
+  else if (
+    ["SEROTONIN_REPOSITION", "SKIP_SEROTONIN_REPOSITION"].includes(
+      action.type,
+    ) &&
+    state.phase === "serotonin-reposition"
+  )
+    resolveSerotoninReposition(ctx, action);
   else if (
     ["MANIPULATE", "SKIP_MANIPULATION"].includes(action.type) &&
     state.phase === "manipulate"
