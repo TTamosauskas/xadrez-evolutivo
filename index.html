@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="theme-color" content="#191c19" />
     <title>Invenit: o Xadrez Evolutivo</title>
+    <link rel="stylesheet" href="vendor/toastify.css" />
     <link rel="stylesheet" href="app.css" />
   </head>
   <body>
@@ -35,13 +36,6 @@
             class="mobile-selected-summary"
             aria-label="Resumo da peça selecionada"
             hidden
-          ></div>
-          <div
-            id="passive-toasts"
-            class="passive-toasts"
-            role="status"
-            aria-live="polite"
-            aria-atomic="false"
           ></div>
         </div>
         <div class="board-footer">
@@ -182,6 +176,7 @@
         ><button id="info-ok">Entendi</button>
       </div>
     </dialog>
+    <script src="vendor/toastify.js"></script>
     <script type="module" src="src/app.js"></script>
   </body>
 </html>

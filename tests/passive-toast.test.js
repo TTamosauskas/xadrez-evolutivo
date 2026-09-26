@@ -2,73 +2,107 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { JSDOM } from "jsdom";
 import { readFileSync } from "node:fs";
+import Toastify from "toastify-js";
 import { createPassiveEffectToastPresenter } from "../src/passive-toast.js";
 import { Controller } from "../src/controller.js";
 import { fixture } from "./helpers.js";
 
-test("passive toast waits until blocking dialogs close before starting its timer", () => {
-  const dom = new JSDOM(
-      '<div id="passive-toasts"></div><dialog id="notice-dialog" open></dialog>',
-    ),
-    timers = new Map();
-  let nextTimer = 0;
-  const presenter = createPassiveEffectToastPresenter(dom.window.document, {
-      setTimer: (fn, delay) => {
-        const id = ++nextTimer;
-        timers.set(id, { fn, delay });
-        return id;
+function createToastifyMock(doc) {
+  const calls = [];
+  const toastify = (options) => {
+    const instance = {
+      options,
+      toastElement: null,
+      showToast() {
+        const element = doc.createElement("div");
+        element.className = `toastify on ${options.className ?? ""}`;
+        element.textContent = options.text;
+        element.setAttribute("aria-live", options.ariaLive);
+        doc.body.append(element);
+        this.toastElement = element;
+        calls.push(this);
+        return this;
       },
-      clearTimer: (id) => timers.delete(id),
-      duration: 2600,
-      fadeDuration: 180,
+      hideToast() {
+        this.toastElement?.remove();
+        options.callback?.();
+      },
+    };
+    return instance;
+  };
+
+  return {
+    toastify,
+    calls,
+    dismiss(index = 0) {
+      const instance = calls[index];
+      instance.toastElement?.remove();
+      instance.options.callback?.();
+    },
+  };
+}
+
+test("Toastify waits until blocking dialogs close before showing an effect", () => {
+  const dom = new JSDOM('<dialog id="notice-dialog" open></dialog>'),
+    mock = createToastifyMock(dom.window.document),
+    presenter = createPassiveEffectToastPresenter(dom.window.document, {
+      toastify: mock.toastify,
     }),
     effect = {
       id: 1,
       trait: "Pele grossa",
       text: "🦏 Pele grossa bloqueou a captura.",
     },
-    region = dom.window.document.getElementById("passive-toasts"),
     dialog = dom.window.document.getElementById("notice-dialog");
 
   presenter.show(effect);
-  assert.equal(region.children.length, 0);
+  assert.equal(mock.calls.length, 0);
   assert.equal(presenter.pendingCount(), 1);
-  assert.equal(timers.size, 0);
+  assert.equal(presenter.visibleCount(), 0);
 
   dialog.removeAttribute("open");
   dialog.dispatchEvent(new dom.window.Event("close"));
+
+  assert.equal(mock.calls.length, 1);
   assert.equal(presenter.pendingCount(), 0);
-  assert.equal(region.children.length, 1);
-  assert.equal(region.firstElementChild.textContent, effect.text);
-  assert.equal([...timers.values()][0].delay, 2600);
+  assert.equal(presenter.visibleCount(), 1);
+  assert.deepEqual(
+    {
+      text: mock.calls[0].options.text,
+      duration: mock.calls[0].options.duration,
+      close: mock.calls[0].options.close,
+      gravity: mock.calls[0].options.gravity,
+      position: mock.calls[0].options.position,
+      stopOnFocus: mock.calls[0].options.stopOnFocus,
+      className: mock.calls[0].options.className,
+      ariaLive: mock.calls[0].options.ariaLive,
+    },
+    {
+      text: effect.text,
+      duration: 6000,
+      close: true,
+      gravity: "top",
+      position: "center",
+      stopOnFocus: true,
+      className: "xe-passive-toast",
+      ariaLive: "polite",
+    },
+  );
+  assert.equal(mock.calls[0].toastElement.dataset.effectId, "1");
+  assert.equal(mock.calls[0].toastElement.dataset.trait, "Pele grossa");
+  assert.equal(mock.calls[0].toastElement.getAttribute("role"), "status");
 
-  const durationTimer = [...timers.entries()][0];
-  timers.delete(durationTimer[0]);
-  durationTimer[1].fn();
-  assert.ok(region.firstElementChild.classList.contains("leaving"));
-  const fadeTimer = [...timers.entries()][0];
-  assert.equal(fadeTimer[1].delay, 180);
-
-  timers.delete(fadeTimer[0]);
-  fadeTimer[1].fn();
-  assert.equal(region.children.length, 0);
   presenter.destroy();
   dom.window.close();
 });
 
-test("passive toast presenter shows at most two effects and queues the rest", () => {
-  const dom = new JSDOM('<div id="passive-toasts"></div>'),
-    timers = new Map();
-  let nextTimer = 0;
-  const presenter = createPassiveEffectToastPresenter(dom.window.document, {
-      setTimer: (fn, delay) => {
-        const id = ++nextTimer;
-        timers.set(id, { fn, delay });
-        return id;
-      },
-      clearTimer: (id) => timers.delete(id),
-    }),
-    region = dom.window.document.getElementById("passive-toasts");
+test("Toastify presenter limits visible effects and releases its queue on dismiss", () => {
+  const dom = new JSDOM(),
+    mock = createToastifyMock(dom.window.document),
+    presenter = createPassiveEffectToastPresenter(dom.window.document, {
+      toastify: mock.toastify,
+      maxVisible: 2,
+    });
 
   for (let id = 1; id <= 3; id++)
     presenter.show({
@@ -77,57 +111,53 @@ test("passive toast presenter shows at most two effects and queues the rest", ()
       text: `efeito ${id}`,
     });
 
-  assert.equal(region.children.length, 2);
+  assert.equal(mock.calls.length, 2);
+  assert.equal(presenter.visibleCount(), 2);
   assert.equal(presenter.pendingCount(), 1);
   assert.deepEqual(
-    [...region.children].map((toast) => toast.textContent),
+    mock.calls.map((toast) => toast.options.text),
     ["efeito 1", "efeito 2"],
   );
+
+  mock.dismiss(0);
+  assert.equal(mock.calls.length, 3);
+  assert.equal(presenter.visibleCount(), 2);
+  assert.equal(presenter.pendingCount(), 0);
+  assert.equal(mock.calls[2].options.text, "efeito 3");
 
   presenter.destroy();
   dom.window.close();
 });
 
-
-test("passive toast is structurally anchored over the board", () => {
+test("Toastify assets load before the app and mobile styling stays viewport-wide", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8"),
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
     dom = new JSDOM(html),
     d = dom.window.document,
-    stage = d.querySelector(".board-stage"),
-    board = d.getElementById("board"),
-    summary = d.getElementById("mobile-selected-summary"),
-    region = d.getElementById("passive-toasts");
+    styles = [...d.querySelectorAll('link[rel="stylesheet"]')].map((link) =>
+      link.getAttribute("href"),
+    ),
+    scripts = [...d.querySelectorAll("script")].map((script) =>
+      script.getAttribute("src"),
+    );
 
-  assert.ok(stage);
-  assert.equal(board.parentElement, stage);
-  assert.equal(board.nextElementSibling, summary);
-  assert.equal(region.parentElement, stage);
-  assert.match(css, /\.board-stage\s*\{\s*position:\s*relative;/);
+  assert.deepEqual(styles.slice(0, 2), ["vendor/toastify.css", "app.css"]);
+  assert.deepEqual(scripts.slice(-2), ["vendor/toastify.js", "src/app.js"]);
+  assert.equal(d.getElementById("passive-toasts"), null);
+  assert.match(css, /\.toastify\.xe-passive-toast\s*\{/);
+  assert.match(css, /max-width:\s*min\(calc\(100vw - 24px\), 680px\)/);
   assert.match(
     css,
-    /\.passive-toasts\s*\{[\s\S]*position:\s*absolute;[\s\S]*top:\s*10px;[\s\S]*left:\s*50%;/,
-  );
-  assert.doesNotMatch(
-    css,
-    /\.passive-toasts\s*\{[\s\S]{0,180}position:\s*fixed;/,
+    /@media \(max-width: 600px\)[\s\S]*width:\s*calc\(100vw - 24px\)/,
   );
   dom.window.close();
 });
 
-test("realized passive effect reaches the toast DOM from engine through Controller", () => {
-  const dom = new JSDOM(
-      '<div class="board-stage"><div id="board"></div><div id="mobile-selected-summary"></div><div id="passive-toasts"></div></div>',
-    ),
-    presenterTimers = new Map();
-  let nextPresenterTimer = 0;
-  const presenter = createPassiveEffectToastPresenter(dom.window.document, {
-      setTimer: (fn, delay) => {
-        const id = ++nextPresenterTimer;
-        presenterTimers.set(id, { fn, delay });
-        return id;
-      },
-      clearTimer: (id) => presenterTimers.delete(id),
+test("realized passive effect reaches Toastify from engine through Controller", () => {
+  const dom = new JSDOM(),
+    mock = createToastifyMock(dom.window.document),
+    presenter = createPassiveEffectToastPresenter(dom.window.document, {
+      toastify: mock.toastify,
     }),
     state = fixture([
       { owner: "blue", r: 4, c: 3, rank: 4 },
@@ -159,12 +189,89 @@ test("realized passive effect reaches the toast DOM from engine through Controll
     true,
   );
 
-  const toast = dom.window.document.querySelector(".passive-toast");
+  assert.equal(mock.calls.length, 1);
+  const toast = mock.calls[0].toastElement;
   assert.ok(toast);
   assert.equal(toast.dataset.trait, "Pele grossa");
   assert.equal(toast.textContent, "🦏 Pele grossa bloqueou a captura.");
-  assert.ok(presenterTimers.size > 0);
 
   presenter.destroy();
   dom.window.close();
+});
+
+test("presenter fails early when the Toastify bundle is absent", () => {
+  const dom = new JSDOM();
+  assert.throws(
+    () =>
+      createPassiveEffectToastPresenter(dom.window.document, {
+        toastify: undefined,
+      }),
+    /Toastify precisa estar carregado/,
+  );
+  dom.window.close();
+});
+
+test("the real Toastify bundle mounts an accessible fixed toast in the document body", async () => {
+  const toastifyCss = readFileSync(
+      new URL("../node_modules/toastify-js/src/toastify.css", import.meta.url),
+      "utf8",
+    ),
+    appCss = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    dom = new JSDOM(
+      `<style>${toastifyCss}${appCss}</style><main><div id="board"></div></main>`,
+      { pretendToBeVisual: true },
+    ),
+    prior = {
+      document: globalThis.document,
+      window: globalThis.window,
+      Node: globalThis.Node,
+      HTMLElement: globalThis.HTMLElement,
+      ShadowRoot: globalThis.ShadowRoot,
+      screen: globalThis.screen,
+    };
+
+  globalThis.document = dom.window.document;
+  globalThis.window = dom.window;
+  globalThis.Node = dom.window.Node;
+  globalThis.HTMLElement = dom.window.HTMLElement;
+  globalThis.ShadowRoot = dom.window.ShadowRoot;
+  globalThis.screen = dom.window.screen;
+
+  try {
+    const presenter = createPassiveEffectToastPresenter(dom.window.document, {
+      toastify: Toastify,
+    });
+    presenter.show({
+      id: 7,
+      trait: "Visão Binocular",
+      text: "👀 Visão Binocular detectou Camuflagem.",
+    });
+
+    const toast = dom.window.document.querySelector(
+      "body > .toastify.xe-passive-toast.toastify-center.toastify-top",
+    );
+    assert.ok(toast);
+    assert.equal(toast.innerText.includes("Visão Binocular"), true);
+    assert.equal(toast.getAttribute("role"), "status");
+    assert.equal(toast.getAttribute("aria-live"), "polite");
+    assert.equal(toast.dataset.effectId, "7");
+    assert.equal(toast.dataset.trait, "Visão Binocular");
+    assert.equal(toast.style.top, "15px");
+    assert.ok(toast.querySelector('button[aria-label="Fechar notificação"]'));
+    assert.equal(dom.window.getComputedStyle(toast).position, "fixed");
+    assert.equal(dom.window.getComputedStyle(toast).backgroundColor, "rgb(32, 38, 31)");
+    assert.equal(presenter.visibleCount(), 1);
+
+    presenter.destroy();
+    await new Promise((resolve) => dom.window.setTimeout(resolve, 450));
+    assert.equal(dom.window.document.querySelector(".toastify"), null);
+  } finally {
+    globalThis.document = prior.document;
+    globalThis.window = prior.window;
+    globalThis.Node = prior.Node;
+    globalThis.HTMLElement = prior.HTMLElement;
+    globalThis.ShadowRoot = prior.ShadowRoot;
+    globalThis.screen = prior.screen;
+    dom.window.close();
+  }
 });

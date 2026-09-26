@@ -1,72 +1,76 @@
 export function createPassiveEffectToastPresenter(
   doc,
-  {
-    setTimer = (...args) => setTimeout(...args),
-    clearTimer = (id) => clearTimeout(id),
-    duration = 2600,
-    fadeDuration = 180,
-    maxVisible = 2,
-  } = {},
+  { toastify = globalThis.Toastify, duration = 6000, maxVisible = 2 } = {},
 ) {
-  const region = doc.getElementById("passive-toasts"),
-    queue = [],
-    timers = new Map();
+  const queue = [],
+    visible = new Set(),
+    dialogs = [...doc.querySelectorAll("dialog")];
+  let destroyed = false;
+
+  if (typeof toastify !== "function")
+    throw new Error("Toastify precisa estar carregado antes da aplicação.");
 
   const blocked = () => !!doc.querySelector("dialog[open]");
 
-  function removeToast(toast) {
-    const timer = timers.get(toast);
-    if (timer !== undefined) clearTimer(timer);
-    timers.delete(toast);
-    toast.remove();
-    flush();
-  }
-
   function present(effect) {
-    if (!region || !effect?.text) return;
-    const toast = doc.createElement("div");
-    toast.className = "passive-toast";
-    toast.dataset.effectId = String(effect.id ?? "");
-    toast.dataset.trait = effect.trait ?? "";
-    toast.textContent = effect.text;
-    region.append(toast);
-    const timer = setTimer(() => {
-      if (!toast.isConnected) return;
-      toast.classList.add("leaving");
-      const fadeTimer = setTimer(() => removeToast(toast), fadeDuration);
-      timers.set(toast, fadeTimer);
-    }, duration);
-    timers.set(toast, timer);
+    let toast;
+    toast = toastify({
+      text: effect.text,
+      duration,
+      close: true,
+      gravity: "top",
+      position: "center",
+      stopOnFocus: true,
+      escapeMarkup: true,
+      ariaLive: "polite",
+      className: "xe-passive-toast",
+      offset: {
+        x: 0,
+        y: "calc(env(safe-area-inset-top, 0px) + 8px)",
+      },
+      callback: () => {
+        visible.delete(toast);
+        if (!destroyed) flush();
+      },
+    }).showToast();
+
+    visible.add(toast);
+    if (toast.toastElement) {
+      toast.toastElement.dataset.effectId = String(effect.id ?? "");
+      toast.toastElement.dataset.trait = effect.trait ?? "";
+      toast.toastElement.setAttribute("role", "status");
+      toast.toastElement
+        .querySelector(".toast-close")
+        ?.setAttribute("aria-label", "Fechar notificação");
+    }
   }
 
   function flush() {
-    if (!region || blocked()) return;
-    while (queue.length && region.children.length < maxVisible)
-      present(queue.shift());
+    if (destroyed || blocked()) return;
+    while (queue.length && visible.size < maxVisible) present(queue.shift());
   }
 
   function show(effect) {
-    if (!effect?.text) return;
+    if (destroyed || !effect?.text) return;
     queue.push(effect);
     flush();
   }
 
-  const dialogs = [...doc.querySelectorAll("dialog")],
-    onDialogClose = () => flush();
-  for (const dialog of dialogs)
-    dialog.addEventListener("close", onDialogClose);
+  const onDialogClose = () => flush();
+  for (const dialog of dialogs) dialog.addEventListener("close", onDialogClose);
 
   return {
     show,
     flush,
     pendingCount: () => queue.length,
+    visibleCount: () => visible.size,
     destroy() {
+      destroyed = true;
       for (const dialog of dialogs)
         dialog.removeEventListener("close", onDialogClose);
-      for (const timer of timers.values()) clearTimer(timer);
-      timers.clear();
       queue.length = 0;
-      region?.replaceChildren();
+      for (const toast of visible) toast.hideToast?.();
+      visible.clear();
     },
   };
 }

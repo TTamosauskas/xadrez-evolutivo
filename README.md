@@ -1,6 +1,6 @@
 # Xadrez Evolutivo
 
-Jogo de xadrez, reprodução e seleção natural, em português. Aplicação estática em módulos ES, sem dependências de produção.
+Jogo de xadrez, reprodução e seleção natural, em português. Aplicação estática em módulos ES, com Toastify empacotado localmente para as notificações.
 
 ## Executar
 

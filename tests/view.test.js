@@ -309,15 +309,25 @@ test("status counter includes turns and historical generation", () => {
   dom.window.close();
 });
 
-test("renders one board occupant per piece and exactly one stylesheet and module entry", () => {
+test("renders one board occupant per piece and loads Toastify before the app", () => {
   const dom = setup(),
     s = createState(2);
   render(dom.window.document, s);
   const d = dom.window.document;
   assert.equal(d.querySelectorAll(".cell").length, 64);
   assert.equal(d.querySelectorAll(".piece").length, s.pieces.length);
-  assert.equal(d.querySelectorAll("script").length, 1);
-  assert.equal(d.querySelectorAll("link[rel=stylesheet]").length, 1);
+  assert.deepEqual(
+    [...d.querySelectorAll("script")].map((script) =>
+      script.getAttribute("src"),
+    ),
+    ["vendor/toastify.js", "src/app.js"],
+  );
+  assert.deepEqual(
+    [...d.querySelectorAll("link[rel=stylesheet]")].map((link) =>
+      link.getAttribute("href"),
+    ),
+    ["vendor/toastify.css", "app.css"],
+  );
   dom.window.close();
 });
 test("board legend only shows terrain elements currently visible", () => {
@@ -1734,9 +1744,25 @@ test("application UI starts with the Hadean common ancestor, then plays division
   const prior = {
     document: globalThis.document,
     localStorage: globalThis.localStorage,
+    Toastify: globalThis.Toastify,
   };
   globalThis.document = w.document;
   globalThis.localStorage = w.localStorage;
+  globalThis.Toastify = (options) => ({
+    toastElement: null,
+    showToast() {
+      const toast = w.document.createElement("div");
+      toast.className = `toastify on ${options.className ?? ""}`;
+      toast.textContent = options.text;
+      w.document.body.append(toast);
+      this.toastElement = toast;
+      return this;
+    },
+    hideToast() {
+      this.toastElement?.remove();
+      options.callback?.();
+    },
+  });
   try {
     await import("../src/app.js");
     const d = w.document;
@@ -1785,6 +1811,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
   } finally {
     globalThis.document = prior.document;
     globalThis.localStorage = prior.localStorage;
+    globalThis.Toastify = prior.Toastify;
     dom.window.close();
   }
 });
