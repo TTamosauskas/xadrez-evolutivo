@@ -4444,7 +4444,7 @@ test("Traqueófitas reproduces by consuming an adjacent fertile square without m
   assertState(s);
 });
 
-test("Gimnospermas turns offspring into seeds that disperse for three rounds before germinating", () => {
+test("Gimnospermas matures seeds for three rounds, sprouts, then establishes", () => {
   const s = fixture([
       {
         owner: "blue",
@@ -4463,6 +4463,7 @@ test("Gimnospermas turns offspring into seeds that disperse for three rounds bef
     ctx = context(s),
     parent = s.pieces[0];
 
+  s.board.fill("fertile");
   assert.equal(reproduce(ctx, parent), 2);
   assert.equal(s.plantSeeds.length, 2);
   assert.equal(s.plantSeeds[0].movesRemaining, 3);
@@ -4470,11 +4471,15 @@ test("Gimnospermas turns offspring into seeds that disperse for three rounds bef
 
   s.turn = 2;
   tickReproduction(ctx);
-  assert.ok(s.plantSeeds.every((seed) => seed.movesRemaining === 2));
+  assert.ok(s.plantSeeds.every((seed) => seed.age === 1));
   s.turn = 4;
   tickReproduction(ctx);
-  assert.ok(s.plantSeeds.every((seed) => seed.movesRemaining === 1));
+  assert.ok(s.plantSeeds.every((seed) => seed.age === 2));
   s.turn = 6;
+  tickReproduction(ctx);
+  assert.ok(s.plantSeeds.every((seed) => seed.sprouting));
+  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 1);
+  s.turn = 8;
   tickReproduction(ctx);
   assert.equal(s.plantSeeds.length, 0);
   assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 3);
