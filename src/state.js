@@ -1381,6 +1381,7 @@ export function createPassiveToastTestState(
       "Reparo Celular",
       "Multicelularismo",
       "Predação",
+      "Ingestão",
       "Simetria Bilateral",
       "Vertebrado",
       "Locomoção Primitiva",
@@ -1430,6 +1431,7 @@ export function createPassiveToastTestState(
       0,
       older([
         "Reprodução Sexuada",
+        "Herbívoro",
         "Ovíparo",
         "Ovíparos Amniotas",
         "Vivíparo",
