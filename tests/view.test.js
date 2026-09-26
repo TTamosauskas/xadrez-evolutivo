@@ -1241,7 +1241,7 @@ test("Vivificar and targeted Parasitismo use green and red board rings", () => {
   assert.ok(enemyCell.classList.contains("attack-target"));
   assert.match(enemyCell.title, /ataque por Parasitismo/);
   assert.match(legend.textContent, /Vivificar/);
-  assert.match(legend.textContent, /Ataque/);
+  assert.match(legend.textContent, /Captura \+ Reprodução/);
   assert.equal(d.querySelector(".board-footer > #pass")?.id, "pass");
   dom.window.close();
 });
@@ -1474,7 +1474,7 @@ test("selected sexual pieces mark partners green and attack targets red", () => 
 
   const legend = d.getElementById("board-legend");
   assert.match(legend.textContent, /Vivificar/);
-  assert.match(legend.textContent, /Ataque/);
+  assert.match(legend.textContent, /Captura \+ Reprodução/);
   assert.ok(legend.querySelector(".legend-action-ring.vivify"));
   assert.ok(
     legend.querySelector(".legend-action-ring.capture-reproduction"),
