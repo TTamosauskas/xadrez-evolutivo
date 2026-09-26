@@ -130,6 +130,7 @@ export function animateMovementTrace(
         : null;
   finalPiece?.classList.add("movement-trace-hidden");
   finalCarcass?.classList.add("movement-trace-hidden");
+  board.classList.add("movement-animating");
 
   const overlay = doc.createElement("span"),
     start = centerOf(originCell),
@@ -149,6 +150,7 @@ export function animateMovementTrace(
       knightCorrection: trace.knightCorrection === true,
     });
   if (!plan) {
+    board.classList.remove("movement-animating");
     finalPiece?.classList.remove("movement-trace-hidden");
     finalCarcass?.classList.remove("movement-trace-hidden");
     return false;
@@ -162,6 +164,7 @@ export function animateMovementTrace(
 
   const cleanup = () => {
     overlay.remove();
+    board.classList.remove("movement-animating");
     finalPiece?.classList.remove("movement-trace-hidden");
     finalCarcass?.classList.remove("movement-trace-hidden");
   };
