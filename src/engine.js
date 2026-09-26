@@ -495,16 +495,40 @@ function matureExtremophytes(state) {
   }
 }
 
-function photosynthesisExtraCell(state, p) {
-  if (!has(p, "Embriófitas")) return null;
-  const empty = [],
+function photosynthesisExtraCells(state, p) {
+  if (
+    !has(p, "Fotossíntese") ||
+    !has(p, "Multicelularismo") ||
+    p.rank === 0
+  )
+    return [];
+
+  const limits = {
+      1: 3,
+      2: 4,
+      3: 4,
+      4: 2,
+      5: 5,
+    },
+    limit = limits[p.rank] ?? 0;
+  if (!limit) return [];
+
+  const DIAGONAL = new Set(["-1,-1", "-1,1", "1,-1", "1,1"]),
+    ORTHOGONAL = new Set(["-1,0", "1,0", "0,-1", "0,1"]),
+    empty = [],
     occupied = [];
+
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++) {
       if (!dr && !dc) continue;
+      const key = `${dr},${dc}`;
+      if (p.rank === 2 && !DIAGONAL.has(key)) continue;
+      if (p.rank === 3 && !ORTHOGONAL.has(key)) continue;
+
       const r = p.r + dr,
         c = p.c + dc;
       if (!inside(r, c) || terrain(state, r, c) !== "neutral") continue;
+
       const piece = at(state, r, c);
       if (has(p, "Angiospermas") && piece?.owner === p.owner)
         occupied.push({ r, c });
@@ -516,7 +540,10 @@ function photosynthesisExtraCell(state, p) {
       )
         empty.push({ r, c });
     }
-  return pick(state, occupied.length ? occupied : empty);
+
+  const preferred = shuffle(state, occupied),
+    remaining = shuffle(state, empty);
+  return [...preferred, ...remaining].slice(0, limit);
 }
 
 function recordPhotosynthesis(state, owner) {
@@ -574,14 +601,14 @@ function maturePhotosynthesis(state, owner) {
       ready
     ) {
       state.board[cell] = "fertile";
-      const extra = photosynthesisExtraCell(state, p);
-      if (extra) {
+      const extras = photosynthesisExtraCells(state, p);
+      for (const extra of extras) {
         state.board[square(extra.r, extra.c)] = "fertile";
         log(
           state,
           has(p, "Angiospermas") && at(state, extra.r, extra.c)?.owner === p.owner
             ? `${OWNERS[p.owner]}: 🌸 Angiospermas tornou ${coord(extra.r, extra.c)} fértil.`
-            : `${OWNERS[p.owner]}: 🌱 Embriófitas tornou ${coord(extra.r, extra.c)} fértil.`,
+            : `${OWNERS[p.owner]}: 🟢 arquitetura vegetal tornou ${coord(extra.r, extra.c)} fértil.`,
         );
       }
       delete p.photosynthesisCell;
