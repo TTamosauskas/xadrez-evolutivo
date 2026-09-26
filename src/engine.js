@@ -815,8 +815,7 @@ function advanceTurn(ctx) {
     acting = state.current,
     before = state.turn;
   restoreExtremophyteFertility(state);
-  state.chain = null;
-  state.chainTrait = null;
+  clearLocomotionChain(state);
   state.partner = null;
   state.manipulation = null;
   state.building = null;
@@ -1123,6 +1122,7 @@ function finishMovement(
       second,
       locomotion,
       build,
+      movementContinuation: continuation,
     };
     state.phase = "manipulate";
     state.chain = null;
@@ -1604,7 +1604,7 @@ function executeMove(ctx, action) {
       { r: target.r, c: target.c },
     ]);
     clearLocomotionChain(state);
-    const survived = reactiveRelocation(
+    reactiveRelocation(
       ctx,
       p,
       target.r,
