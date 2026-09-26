@@ -113,6 +113,12 @@ main {
   color: #161713;
 }
 
+.toastify.xe-passive-toast--neutral {
+  border: 2px solid #858a83;
+  background: #5d625c;
+  color: #f7f4ea;
+}
+
 .toastify.xe-passive-toast .toast-close {
   position: absolute;
   top: 4px;
