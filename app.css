@@ -481,6 +481,17 @@ main {
   filter: drop-shadow(0 1px 1px #000b);
 }
 
+.feeding-suggestion {
+  position: absolute;
+  z-index: 8;
+  bottom: 4%;
+  right: 5%;
+  font-size: clamp(10px, 1.6vw, 15px);
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px #000b);
+}
+
 .cortex-suggestion {
   position: absolute;
   z-index: 9;
