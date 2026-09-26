@@ -33,6 +33,7 @@ import {
   ecologicalDomainBlocked,
   consumeFertileTerrain,
   lethalHazardAt,
+  photosynthesisDelayTurns,
 } from "./state.js";
 import {
   BASAL_GENETIC_TRAIT,
@@ -663,6 +664,8 @@ function spawnChild(state, profile, r, c) {
   ) {
     child.photosynthesisCell = square(r, c);
     child.photosynthesisSinceTurn = state.turn;
+    child.photosynthesisReadyTurn =
+      state.turn + photosynthesisDelayTurns(state, child);
   }
   state.pieces.push(child);
   registerDiscoveries(state, child);

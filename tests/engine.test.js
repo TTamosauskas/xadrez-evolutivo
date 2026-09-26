@@ -439,7 +439,7 @@ test("Hadean lethal boundary remains unreachable while photosynthetic founders w
   assertState(s);
 });
 
-test("Hadean photosynthesis matures after metabolic rest and newborn cells start neutral", () => {
+test("Hadean photosynthesis wait grows by turn and freezes for each maturation", () => {
   let s = createCampaignState(302);
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ORIGIN_CLICK" });
@@ -448,44 +448,61 @@ test("Hadean photosynthesis matures after metabolic rest and newborn cells start
 
   let blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
-  const delay = photosynthesisDelayTurns(s, blue);
-  assert.equal(delay, 2);
+  assert.equal(s.hadeanTutorial.dividedAtTurn, 0);
+  assert.equal(photosynthesisDelayTurns(s, blue), 2);
+  assert.equal(blue.photosynthesisReadyTurn - blue.photosynthesisSinceTurn, 2);
+  assert.equal(amber.photosynthesisReadyTurn - amber.photosynthesisSinceTurn, 2);
   assert.equal(s.board[square(blue.r, blue.c)], "neutral");
   assert.equal(s.board[square(amber.r, amber.c)], "neutral");
   assert.equal(movesFor(s, blue).length, 0);
 
-  let passes = 0;
-  while (
-    s.board[square(blue.r, blue.c)] !== "fertile" &&
-    passes <= delay + 2
-  ) {
-    s = simulate(s, { type: "PASS" });
-    passes++;
-    blue = s.pieces.find((piece) => piece.id === blue.id);
-    amber = s.pieces.find((piece) => piece.id === amber.id);
-  }
+  s = simulate(s, { type: "PASS" });
+  amber = s.pieces.find((piece) => piece.id === amber.id);
+  assert.equal(s.turn, 1);
+  assert.equal(photosynthesisDelayTurns(s, amber), 4);
+  assert.equal(amber.photosynthesisReadyTurn, 2);
+
+  s = simulate(s, { type: "PASS" });
+  blue = s.pieces.find((piece) => piece.id === blue.id);
+  assert.equal(s.turn, 2);
   assert.equal(s.board[square(blue.r, blue.c)], "fertile");
-  assert.ok(passes >= delay);
 
   while (s.current !== "blue")
     s = simulate(s, { type: "PASS" });
   blue = s.pieces.find((piece) => piece.id === blue.id);
-  const beforeIds = new Set(s.pieces.map((piece) => piece.id));
+  const beforeIds = new Set(s.pieces.map((piece) => piece.id)),
+    parentCell = square(blue.r, blue.c);
   s = simulate(s, move(blue, blue.r, blue.c));
+
   const child = s.pieces.find(
-    (piece) => piece.owner === "blue" && !beforeIds.has(piece.id),
-  );
+      (piece) => piece.owner === "blue" && !beforeIds.has(piece.id),
+    ),
+    parent = s.pieces.find((piece) => piece.id === blue.id);
   assert.ok(child);
   assert.ok(child.traits.includes("Fotossíntese"));
   assert.equal(s.board[square(child.r, child.c)], "neutral");
   assert.ok(Number.isInteger(child.photosynthesisSinceTurn));
+  assert.ok(Number.isInteger(child.photosynthesisReadyTurn));
   assert.equal(
-    s.fertilityRecovery.some(
-      (entry) => entry.cell === square(blue.r, blue.c),
-    ),
+    child.photosynthesisReadyTurn - child.photosynthesisSinceTurn,
+    6,
+  );
+  assert.equal(
+    parent.photosynthesisReadyTurn - parent.photosynthesisSinceTurn,
+    6,
+  );
+  assert.equal(
+    s.fertilityRecovery.some((entry) => entry.cell === parentCell),
     false,
   );
-  assert.equal(s.board[square(blue.r, blue.c)], "neutral");
+  assert.equal(s.board[parentCell], "neutral");
+
+  const late = clone(s);
+  late.turn = late.hadeanTutorial.dividedAtTurn + 50;
+  assert.equal(
+    photosynthesisDelayTurns(late, child),
+    metabolicReproductionCooldown(child) * 2,
+  );
   assertState(s);
 });
 

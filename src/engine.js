@@ -584,11 +584,22 @@ function recordPhotosynthesis(state, owner) {
     ) {
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
+      delete p.photosynthesisReadyTurn;
       continue;
     }
     if (p.photosynthesisCell !== cell) {
       p.photosynthesisCell = cell;
       p.photosynthesisSinceTurn = state.turn;
+      if (state.geologicalStage === "hadean")
+        p.photosynthesisReadyTurn =
+          state.turn + photosynthesisDelayTurns(state, p);
+      else delete p.photosynthesisReadyTurn;
+    } else if (
+      state.geologicalStage === "hadean" &&
+      !Number.isInteger(p.photosynthesisReadyTurn)
+    ) {
+      p.photosynthesisReadyTurn =
+        state.turn + photosynthesisDelayTurns(state, p);
     }
   }
 }
@@ -604,12 +615,18 @@ function maturePhotosynthesis(state, owner) {
     ) {
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
+      delete p.photosynthesisReadyTurn;
       continue;
     }
+    const ready =
+      state.geologicalStage === "hadean"
+        ? Number.isInteger(p.photosynthesisReadyTurn) &&
+          state.turn >= p.photosynthesisReadyTurn
+        : Number.isInteger(p.photosynthesisSinceTurn) &&
+          state.turn - p.photosynthesisSinceTurn >= delay;
     if (
       p.photosynthesisCell === cell &&
-      Number.isInteger(p.photosynthesisSinceTurn) &&
-      state.turn - p.photosynthesisSinceTurn >= delay
+      ready
     ) {
       state.board[cell] = "fertile";
       const extra = photosynthesisExtraCell(state, p);
@@ -624,6 +641,7 @@ function maturePhotosynthesis(state, owner) {
       }
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
+      delete p.photosynthesisReadyTurn;
       log(
         state,
         barrierAt(state, p.r, p.c) && has(p, "Trepadeira")
