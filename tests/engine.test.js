@@ -2603,6 +2603,7 @@ test("capture without trophic reproduction keeps disturbance for the carcass lif
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
+  s.pieces[0].nextReproductionRound = round(s) + 10;
   s = simulate(s, move(s.pieces[0], 4, 4));
   const attacker = s.pieces.find((piece) => piece.id === 1),
     disturbance = s.captureDisturbances[0];
@@ -2634,6 +2635,7 @@ test("capture disturbance preserves fertile terrain underneath", () => {
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
+  s.pieces[0].nextReproductionRound = round(s) + 10;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.equal(s.deathSites.length, 0);
   assert.equal(s.carcasses[0]?.cell, 36);
