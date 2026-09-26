@@ -349,16 +349,17 @@ export function emitPassiveEffect(
   { pieceId = null, outcome = null, value = null, theme = null } = {},
 ) {
   if (!TRAITS[trait] || typeof text !== "string" || !text) return;
-  state.passiveEffects.push({
+  const effect = {
     id: state.nextPassiveEffect++,
     turn: state.turn,
     trait,
     pieceId: Number.isInteger(pieceId) ? pieceId : null,
     outcome: typeof outcome === "string" ? outcome : null,
     value: Number.isFinite(value) ? value : null,
-    theme: typeof theme === "string" ? theme : null,
     text,
-  });
+  };
+  if (typeof theme === "string") effect.theme = theme;
+  state.passiveEffects.push(effect);
   if (state.passiveEffects.length > 24) state.passiveEffects.shift();
 }
 export function notice(state, title, lines, key = null) {
