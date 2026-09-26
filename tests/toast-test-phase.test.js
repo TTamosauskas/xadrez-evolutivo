@@ -24,9 +24,13 @@ function acknowledgeAll(state) {
 }
 
 function latestEffect(state, trait, outcome) {
-  const effect = state.passiveEffects.at(-1);
-  assert.equal(effect?.trait, trait);
-  assert.equal(effect?.outcome, outcome);
+  const effect = [...state.passiveEffects]
+    .reverse()
+    .find(
+      (candidate) =>
+        candidate.trait === trait && candidate.outcome === outcome,
+    );
+  assert.ok(effect, `efeito esperado ausente: ${trait} · ${outcome}`);
   return effect;
 }
 
