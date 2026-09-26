@@ -462,6 +462,9 @@ export function render(
           corticalSuggestions?.defensive?.r === r &&
           corticalSuggestions?.defensive?.c === c,
         target = !!targetEntry || serotoninTarget,
+        jumpTarget = !!targetEntry?.jump,
+        jetTarget = !!targetEntry?.jet,
+        echolocationTarget = !!targetEntry?.echolocation,
         captureTarget = !!(
           targetEntry?.capture || targetEntry?.eggCapture
         ),
@@ -585,7 +588,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}${domainClass}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${state.board[square(r, c)]}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}${domainClass}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -640,6 +643,14 @@ export function render(
         cell.append(make("span", "🦴", "decomposition-mark carcass-mark"));
       if (lethalHazard)
         cell.append(make("span", "☠️", "lethal-mark"));
+      if (jumpTarget || jetTarget || echolocationTarget)
+        cell.append(
+          make(
+            "span",
+            jumpTarget ? "🐎" : jetTarget ? "🦑" : "🦇",
+            "locomotion-suggestion",
+          ),
+        );
       if (cortexOffensive || cortexDefensive)
         cell.append(
           make(
@@ -821,6 +832,15 @@ export function render(
         : null,
       boardElement.querySelector(".cell.serotonin-reposition-target")
         ? { marker: "😊", label: "Flexibilidade comportamental" }
+        : null,
+      boardElement.querySelector(".cell.jump-target")
+        ? { marker: "🐎", label: "Pulo" }
+        : null,
+      boardElement.querySelector(".cell.jet-target")
+        ? { marker: "🦑", label: "Jatopropulsão" }
+        : null,
+      boardElement.querySelector(".cell.echolocation-target")
+        ? { marker: "🦇", label: "Ecolocalização" }
         : null,
       boardElement.querySelector(".cell.cortex-offensive-target")
         ? { marker: "🤔", label: "Melhor posição ofensiva" }
