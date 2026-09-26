@@ -1367,14 +1367,16 @@ test("selected sexual pieces mark partners green and attack targets red", () => 
   assert.match(legend.textContent, /Vivificar/);
   assert.match(legend.textContent, /Ataque/);
   assert.ok(legend.querySelector(".legend-action-ring.vivify"));
-  assert.ok(legend.querySelector(".legend-action-ring.attack"));
+  assert.ok(
+    legend.querySelector(".legend-action-ring.predatory-reproduction"),
+  );
   assert.match(
     css,
     /\.legend-action-ring\.vivify[\s\S]*color:\s*#5bd66c/,
   );
   assert.match(
     css,
-    /\.legend-action-ring\.attack[\s\S]*color:\s*#d54242/,
+    /\.legend-action-ring\.predatory-reproduction[\s\S]*color:\s*#d54242/,
   );
   dom.window.close();
 });
