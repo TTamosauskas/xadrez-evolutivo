@@ -98,7 +98,7 @@ test("Toastify waits until blocking dialogs close before showing an effect", () 
   dom.window.close();
 });
 
-test("new mutations use the terrain theme of the square where they manifest", () => {
+test("new mutations use the same lineage color as other toasts", () => {
   const dom = new JSDOM(),
     mock = createToastifyMock(dom.window.document),
     presenter = createPassiveEffectToastPresenter(dom.window.document, {
@@ -110,16 +110,14 @@ test("new mutations use the terrain theme of the square where they manifest", ()
     owner: "amber",
     trait: "Chifre",
     outcome: "new-mutation",
-    theme: "terrain-hostile-dark",
     text: "🧬 Nova mutação: 🫎 Chifre.",
   });
 
   assert.equal(
     mock.calls[0].options.className,
-    "xe-passive-toast xe-passive-toast--terrain-hostile-dark",
+    "xe-passive-toast xe-passive-toast--black",
   );
-  assert.equal(mock.calls[0].toastElement.dataset.owner, "terrain");
-  assert.equal(mock.calls[0].toastElement.dataset.theme, "terrain-hostile-dark");
+  assert.equal(mock.calls[0].toastElement.dataset.owner, "amber");
   assert.equal(mock.calls[0].toastElement.dataset.trait, "Chifre");
 
   presenter.destroy();
