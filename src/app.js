@@ -239,6 +239,14 @@ $("board").addEventListener("click", (event) => {
     return;
   }
   const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
+  const movementTarget =
+    actor?.owner === state.current
+      ? movesFor(state, actor).find((target) => target.r === r && target.c === c)
+      : null;
+  if (movementTarget?.lateralSwapId) {
+    dispatch({ type: "MOVE", id: actor.id, r, c });
+    return;
+  }
   if (actor?.id === p?.id && actor?.owner === state.current) {
     const vivificationActions = vivificationActionsForPiece(state, actor);
     if (vivificationActions.length) {
