@@ -1080,7 +1080,7 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   s.rng = 1;
   s.board[43] = "hostile";
   s.board[35] = "hostile";
-  const lost = simulate(s, move(s.pieces[0], 3, 3));
+  const lost = transition(s, move(s.pieces[0], 3, 3));
   assert.ok(!lost.pieces.some((p) => p.id === 1));
   assert.deepEqual(
     lost.notices.find((entry) => entry.title === "Casas hostis")?.lines,
@@ -1592,7 +1592,7 @@ test("fertile reproduction shows the concise tutorial copy only on its first occ
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[28] = "fertile";
-  s = simulate(s, move(s.pieces[0], 3, 4));
+  s = transition(s, move(s.pieces[0], 3, 4));
   const first = s.notices.find((entry) => entry.title === "Reprodução");
   assert.deepEqual(first?.lines, [
     "Casas verdes podem gerar prole com as características dos pais.",
