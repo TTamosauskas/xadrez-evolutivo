@@ -4751,6 +4751,45 @@ test("Archean basal organisms capture on contact without Predação but do not r
   assertState(s);
 });
 
+test("Archean Predação cannot vivify on a fertile square", () => {
+  const s = createState(4272, {
+    geologicalStage: "archean",
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    naturalBarriers: false,
+  });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  const predator = newPiece(s, "blue", 4, 4, {
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    }),
+    rival = newPiece(s, "amber", 0, 0, {
+      rank: 4,
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
+    });
+  s.pieces.push(predator, rival);
+  s.board[square(predator.r, predator.c)] = "fertile";
+
+  const targets = movesFor(s, predator);
+  assert.equal(
+    targets.some(
+      (target) =>
+        target.r === predator.r &&
+        target.c === predator.c &&
+        target.stay &&
+        !target.capture,
+    ),
+    false,
+  );
+
+  const before = s.pieces.filter((piece) => piece.owner === "blue").length;
+  assert.equal(before, 1);
+  assertState(s);
+});
+
 test("Predação converts a pre-Locomotion contact capture into primordial reproduction", () => {
   let s = createState(4271, {
     geologicalStage: "archean",
