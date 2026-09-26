@@ -1370,6 +1370,12 @@ function executeMove(ctx, action) {
       (t) => t.r === action.r && t.c === action.c,
     ),
     target =
+      matchingTargets.find(
+        (t) =>
+          t.lateralSwapId ||
+          t.escalationSwapId ||
+          t.bioadhesionSwapId,
+      ) ??
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
