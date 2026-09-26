@@ -1293,8 +1293,13 @@ function executeMove(ctx, action) {
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
+  const movementDistance = distance(p, target),
+    jumpedPiece = target.jumpedPieceId
+      ? state.pieces.find((piece) => piece.id === target.jumpedPieceId)
+      : null;
   state.movementTrace =
-    !target.stay && (target.path?.length ?? 0) > 1
+    !target.stay &&
+    ((target.path?.length ?? 0) > 1 || movementDistance > 1)
       ? {
           pieceId: p.id,
           owner: p.owner,
@@ -1309,7 +1314,13 @@ function executeMove(ctx, action) {
               ? "jump"
               : target.echolocation
                 ? "echolocation"
-                : "move",
+                : p.rank === 1 && movementDistance > 1
+                  ? "knight"
+                  : "move",
+          jumpedCell: jumpedPiece
+            ? { r: jumpedPiece.r, c: jumpedPiece.c }
+            : null,
+          knightCorrection: target.knightCorrection === true,
         }
       : null;
   if (target.cutaneous) {
