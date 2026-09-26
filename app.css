@@ -113,47 +113,6 @@ main {
   color: #161713;
 }
 
-.toastify.xe-passive-toast--terrain-neutral-light {
-  border: 2px solid #67513c;
-  background: #c5b595;
-  color: #161713;
-}
-.toastify.xe-passive-toast--terrain-neutral-dark {
-  border: 2px solid #5f513d;
-  background: #877456;
-  color: #f7f4ea;
-}
-.toastify.xe-passive-toast--terrain-fertile-light {
-  border: 2px solid #56683e;
-  background: #8da968;
-  color: #161713;
-}
-.toastify.xe-passive-toast--terrain-fertile-dark {
-  border: 2px solid #405331;
-  background: #5f7846;
-  color: #f7f4ea;
-}
-.toastify.xe-passive-toast--terrain-hostile-light {
-  border: 2px solid #7f4038;
-  background: #b86155;
-  color: #161713;
-}
-.toastify.xe-passive-toast--terrain-hostile-dark {
-  border: 2px solid #62312d;
-  background: #87443d;
-  color: #f7f4ea;
-}
-.toastify.xe-passive-toast--terrain-fertile-single {
-  border: 2px solid #506638;
-  background: #789754;
-  color: #161713;
-}
-.toastify.xe-passive-toast--terrain-hostile-single {
-  border: 2px solid #75362f;
-  background: #a84f45;
-  color: #f7f4ea;
-}
-
 .toastify.xe-passive-toast .toast-close {
   position: absolute;
   top: 4px;
