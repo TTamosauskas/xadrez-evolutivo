@@ -20,6 +20,7 @@ import {
   pieceAge,
   naturalDeathChance,
   barrierAt,
+  notice,
   CANONICAL_FOUNDER_CELLS,
   earthFounderStarts,
   lethalHazardAt,
@@ -554,8 +555,24 @@ test("Hadean tutorial uses reproduction and immediate capture before primitive l
   assert.equal(s.result.winner, "amber");
   assert.match(s.result.reason, /Extinção total/);
 
+  s.seen = [...new Set([...s.seen, "reproduction", "hostile"])];
   const archean = createSuccessorState(s, 303);
   assert.equal(archean.geologicalStage, "archean");
+  assert.ok(archean.seen.includes("reproduction"));
+  assert.ok(archean.seen.includes("hostile"));
+  notice(
+    archean,
+    "Reprodução",
+    ["Casas verdes podem gerar prole com as características dos pais."],
+    "reproduction",
+  );
+  notice(
+    archean,
+    "Casas hostis",
+    ["Casas vermelhas oferecem perigo de morte."],
+    "hostile",
+  );
+  assert.equal(archean.notices.length, 0);
   assert.equal(archean.cycle, 1);
   assert.equal(archean.totalCycles, 1);
   assert.equal(archean.hadeanTutorial, null);
@@ -1065,6 +1082,10 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   s.board[35] = "hostile";
   const lost = simulate(s, move(s.pieces[0], 3, 3));
   assert.ok(!lost.pieces.some((p) => p.id === 1));
+  assert.deepEqual(
+    lost.notices.find((entry) => entry.title === "Casas hostis")?.lines,
+    ["Casas vermelhas oferecem perigo de morte."],
+  );
 
   s.pieces[0].traits = [
     "Locomoção Primitiva",
@@ -1563,6 +1584,37 @@ test("Semelparidade defers death while viviparous offspring are gestating", () =
   assert.equal(parent.semelparityDeathPending, true);
   assert.equal(parent.pregnancies.length, 1);
   assertState(s);
+});
+
+test("fertile reproduction shows the concise tutorial copy only on its first occurrence", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 0 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[28] = "fertile";
+  s = simulate(s, move(s.pieces[0], 3, 4));
+  const first = s.notices.find((entry) => entry.title === "Reprodução");
+  assert.deepEqual(first?.lines, [
+    "Casas verdes podem gerar prole com as características dos pais.",
+  ]);
+  assert.ok(s.seen.includes("reproduction"));
+
+  while (s.notices.length)
+    s = transition(s, {
+      type: "ACK_NOTICE",
+      id: s.notices[0].id,
+      revision: s.revision,
+    });
+  notice(
+    s,
+    "Reprodução",
+    ["Casas verdes podem gerar prole com as características dos pais."],
+    "reproduction",
+  );
+  assert.equal(
+    s.notices.some((entry) => entry.title === "Reprodução"),
+    false,
+  );
 });
 
 test("fertile reproduction uses the piece metabolic recovery profile", () => {
@@ -3204,6 +3256,7 @@ test("mutation toast only announces outcomes that have not appeared before", () 
   );
   assert.ok(mutationToast);
   assert.match(mutationToast.text, /^🧬 Nova mutação: /);
+  assert.match(mutationToast.theme, /^terrain-neutral-(light|dark)$/);
   assert.ok(!s.notices.some((n) => n.title === "Novas mutações"));
   assertState(s);
 });
