@@ -14,17 +14,18 @@ function exactTraits(piece, traits) {
 }
 
 function animalTraits(extra = [], bodyPlan = "Vertebrado") {
+  const locomotion = extra.includes("Bipedalismo")
+    ? "Bipedalismo"
+    : "Locomoção Terrestre";
   return [
     "Reparo Celular",
     "Multicelularismo",
     "Predação",
     "Ingestão",
     "Simetria Bilateral",
-    "Locomoção Primitiva",
     bodyPlan,
-    "Locomoção Articulada",
-    "Locomoção Terrestre",
-    ...extra,
+    locomotion,
+    ...extra.filter((trait) => trait !== "Bipedalismo"),
   ];
 }
 
