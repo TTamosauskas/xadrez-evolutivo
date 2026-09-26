@@ -195,8 +195,7 @@ function finishGame(state, winner, reason, extinctionFounder = null) {
     : { winner, reason };
   delete state.lastDeathPiece;
   state.phase = "over";
-  state.chain = null;
-  state.chainTrait = null;
+  clearLocomotionChain(state);
   state.partner = null;
   state.manipulation = null;
   state.building = null;
@@ -816,8 +815,7 @@ function advanceTurn(ctx) {
     acting = state.current,
     before = state.turn;
   restoreExtremophyteFertility(state);
-  state.chain = null;
-  state.chainTrait = null;
+  clearLocomotionChain(state);
   state.partner = null;
   state.manipulation = null;
   state.building = null;
@@ -844,6 +842,9 @@ function advanceTurn(ctx) {
   recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
+  state.trails = (state.trails ?? []).filter(
+    (trail) => trail.expiresRound >= round(state),
+  );
   tickSevereEventTurn(state);
   restoreAquaticFertility(state);
   state.fertileTraces = state.fertileTraces.filter(
@@ -1014,29 +1015,87 @@ function settle(ctx) {
   log(state, `${OWNERS[blocked]} passaram automaticamente por bloqueio.`);
   advanceTurn(ctx);
 }
-function completeMove(ctx, p, second, locomotion) {
+function clearLocomotionChain(state) {
+  state.chain = null;
+  state.chainTrait = null;
+  state.chainOptions = [];
+  state.chainOrigin = null;
+}
+
+function recordMovementTrail(state, piece, cells) {
+  if (!has(piece, "Trilhas") || !Array.isArray(cells) || !cells.length) return;
+  state.trails ??= [];
+  const expiresRound = round(state) + 1;
+  for (const point of cells) {
+    const cell = Number.isInteger(point)
+      ? point
+      : square(point.r, point.c);
+    const existing = state.trails.find(
+      (trail) => trail.owner === piece.owner && trail.cell === cell,
+    );
+    if (existing) existing.expiresRound = expiresRound;
+    else state.trails.push({ owner: piece.owner, cell, expiresRound });
+  }
+}
+
+function offerLocomotionContinuation(
+  state,
+  piece,
+  {
+    second = false,
+    bipedalism = false,
+    tigmotaxia = false,
+    sliding = false,
+    recoilOrigin = null,
+  } = {},
+) {
+  if (
+    second ||
+    !piece ||
+    has(piece, "Mutação Disfuncional") ||
+    has(piece, "Deficiência Motora") ||
+    !state.pieces.some((candidate) => candidate.id === piece.id)
+  )
+    return false;
+
+  const options = [];
+  if (bipedalism && has(piece, "Bipedalismo")) options.push("Bipedalismo");
+  if (tigmotaxia && has(piece, "Tigmotaxia")) options.push("Tigmotaxia");
+  if (sliding && has(piece, "Deslizamento")) options.push("Deslizamento");
+  if (recoilOrigin && has(piece, "Recuo") && has(piece, "Velocidade"))
+    options.push("Recuo");
+  if (!options.length) return false;
+
+  state.chain = piece.id;
+  state.chainOptions = [...new Set(options)];
+  state.chainTrait =
+    state.chainOptions.length === 1
+      ? state.chainOptions[0]
+      : "Locomoção Especial";
+  state.chainOrigin = recoilOrigin ? { ...recoilOrigin } : null;
+  if (movesFor(state, piece).length) return true;
+  clearLocomotionChain(state);
+  return false;
+}
+
+function completeMove(
+  ctx,
+  p,
+  second,
+  locomotion,
+  continuation = {},
+) {
   const state = ctx.state;
   if (extinction(state)) return;
   checkPopulationClimate(ctx);
   if (
-    locomotion &&
-    !second &&
-    !has(p, "Mutação Disfuncional") &&
-    !has(p, "Deficiência Motora") &&
-    state.pieces.some((x) => x.id === p.id) &&
-    movesFor(state, p).some(
-      (target) =>
-        !target.capture &&
-        !target.eggCapture &&
-        !target.seedCapture &&
-        !target.stay &&
-        !at(state, target.r, target.c),
-    )
-  ) {
-    state.chain = p.id;
-    state.chainTrait = "Bipedalismo";
+    offerLocomotionContinuation(state, p, {
+      second,
+      bipedalism: locomotion,
+      ...continuation,
+    })
+  )
     return;
-  }
   advanceTurn(ctx);
   settle(ctx);
 }
@@ -1048,6 +1107,7 @@ function finishMovement(
   second,
   locomotion,
   build = false,
+  continuation = {},
 ) {
   const state = ctx.state;
   if (
@@ -1062,6 +1122,7 @@ function finishMovement(
       second,
       locomotion,
       build,
+      movementContinuation: continuation,
     };
     state.phase = "manipulate";
     state.chain = null;
@@ -1075,7 +1136,12 @@ function finishMovement(
     has(p, "Antropização") &&
     state.pieces.some((piece) => piece.id === p.id)
   ) {
-    state.building = { id: p.id, second, locomotion };
+    state.building = {
+      id: p.id,
+      second,
+      locomotion,
+      movementContinuation: continuation,
+    };
     state.phase = "build";
     state.chain = null;
   state.chainTrait = null;
@@ -1083,13 +1149,19 @@ function finishMovement(
     state.building = null;
     state.phase = "move";
   }
-  completeMove(ctx, p, second, locomotion);
+  completeMove(ctx, p, second, locomotion, continuation);
 }
 
 function deferReproductionPlacement(
   state,
   p,
-  { manipulation = null, second = false, locomotion = false, build = false } = {},
+  {
+    manipulation = null,
+    second = false,
+    locomotion = false,
+    build = false,
+    movementContinuation = {},
+  } = {},
 ) {
   const pending =
     state.phase === "domestic-placement"
@@ -1104,9 +1176,9 @@ function deferReproductionPlacement(
     second,
     locomotion,
     build,
+    movementContinuation,
   };
-  state.chain = null;
-  state.chainTrait = null;
+  clearLocomotionChain(state);
   return true;
 }
 function resolveManipulation(ctx, action) {
@@ -1135,6 +1207,7 @@ function resolveManipulation(ctx, action) {
     pending.second,
     pending.locomotion,
     pending.build ?? false,
+    pending.movementContinuation ?? {},
   );
 }
 
@@ -1157,7 +1230,13 @@ function resolveBuilding(ctx, action) {
   }
   state.building = null;
   state.phase = "move";
-  completeMove(ctx, p, pending.second, pending.locomotion);
+  completeMove(
+    ctx,
+    p,
+    pending.second,
+    pending.locomotion,
+    pending.movementContinuation ?? {},
+  );
 }
 
 function sociableGroup(state, victim) {
@@ -1311,7 +1390,13 @@ function executeMove(ctx, action) {
           outcome: "moved",
           kind: target.crawler
             ? "crawler"
-            : target.jet
+            : target.serpentine
+              ? "serpentine"
+              : target.trail
+                ? "trail"
+                : target.lateral
+                  ? "lateral"
+                  : target.jet
               ? "jet"
               : target.jump
               ? "jump"
@@ -1370,6 +1455,7 @@ function executeMove(ctx, action) {
     locomotion =
       has(p, "Bipedalismo") &&
       !second &&
+      !target.noContinuation &&
       !target.capture &&
       !target.eggCapture &&
       !target.seedCapture &&
@@ -1417,6 +1503,12 @@ function executeMove(ctx, action) {
       !second &&
       has(p, "Manada") &&
       !target.crawler &&
+      !target.lateral &&
+      !target.serpentine &&
+      !target.trail &&
+      !target.tigmotaxis &&
+      !target.sliding &&
+      !target.recoil &&
       !target.capture &&
       !target.eggCapture &&
       !target.seedCapture &&
@@ -1504,6 +1596,81 @@ function executeMove(ctx, action) {
     p.hostileRiskRound = round(state) + 1;
   if (!target.stay && has(p, "Mutação Disfuncional"))
     p.lastMoveRound = round(state) + 1;
+
+  if (target.recoil) {
+    const recoilFrom = { r: p.r, c: p.c };
+    recordMovementTrail(state, p, [
+      recoilFrom,
+      { r: target.r, c: target.c },
+    ]);
+    clearLocomotionChain(state);
+    reactiveRelocation(
+      ctx,
+      p,
+      target.r,
+      target.c,
+      "recuo após captura",
+    );
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🐆 Recuo retornou de ${coord(recoilFrom.r, recoilFrom.c)} para ${coord(target.r, target.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Recuo",
+      "🐆 Recuo devolveu o predador à posição de origem.",
+      { pieceId: p.id, outcome: "returned-after-capture" },
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+
+  if (target.lateralSwapId) {
+    const ally = state.pieces.find(
+      (piece) =>
+        piece.id === target.lateralSwapId &&
+        piece.owner === p.owner &&
+        piece.id !== p.id,
+    );
+    if (!ally) throw Error("Troca lateral indisponível.");
+    const origin = { r: p.r, c: p.c },
+      allyOrigin = { r: ally.r, c: ally.c };
+    recordMovementTrail(state, p, [
+      origin,
+      ...target.path.map(([r, c]) => ({ r, c })),
+    ]);
+    reactiveRelocation(
+      ctx,
+      ally,
+      origin.r,
+      origin.c,
+      "troca por Movimento Lateral",
+    );
+    if (state.pieces.some((piece) => piece.id === p.id))
+      reactiveRelocation(
+        ctx,
+        p,
+        allyOrigin.r,
+        allyOrigin.c,
+        "troca por Movimento Lateral",
+      );
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🦀 Movimento Lateral trocou duas criaturas entre ${coord(origin.r, origin.c)} e ${coord(allyOrigin.r, allyOrigin.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Movimento Lateral",
+      "🦀 Movimento Lateral permitiu trocar de posição com um aliado.",
+      { pieceId: p.id, outcome: "allied-position-swap" },
+    );
+    clearLocomotionChain(state);
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+
   const victim = at(state, target.r, target.c),
     egg = eggAt(state, target.r, target.c),
     plantSeed = plantSeedAt(state, target.r, target.c),
@@ -1891,6 +2058,10 @@ function executeMove(ctx, action) {
   if (eggCapture) state.eggs = state.eggs.filter((x) => x.id !== egg.id);
   if (seedCapture)
     state.plantSeeds = state.plantSeeds.filter((x) => x.id !== plantSeed.id);
+  recordMovementTrail(state, p, [
+    moveOrigin,
+    ...target.path.map(([r, c]) => ({ r, c })),
+  ]);
   leaveBacterialTrail(state, p, square(p.r, p.c));
   if (
     p.decompositionImmunity &&
@@ -1913,6 +2084,42 @@ function executeMove(ctx, action) {
       "🐌 Rastejante contornou o limite do habitat.",
       { pieceId: p.id, outcome: "crossed-board-edge" },
     );
+  }
+  if (target.lateral) {
+    log(state, `${OWNERS[p.owner]}: 🦀 Movimento Lateral alcançou ${coord(p.r, p.c)}.`);
+    emitPassiveEffect(state, "Movimento Lateral", "🦀 Movimento Lateral percorreu a linha.", {
+      pieceId: p.id,
+      outcome: "lateral-movement",
+    });
+  }
+  if (target.serpentine) {
+    log(state, `${OWNERS[p.owner]}: ⚕️ Serpenteamento percorreu uma trajetória sinuosa até ${coord(p.r, p.c)}.`);
+    emitPassiveEffect(state, "Serpenteamento", "⚕️ Serpenteamento contornou a geometria comum.", {
+      pieceId: p.id,
+      outcome: "serpentine-movement",
+      value: target.path.length,
+    });
+  }
+  if (target.trail) {
+    log(state, `${OWNERS[p.owner]}: ⋯ Trilhas conduziu a criatura até ${coord(p.r, p.c)} e ampliou a rede.`);
+    emitPassiveEffect(state, "Trilhas", "⋯ Trilhas foi percorrida e renovada.", {
+      pieceId: p.id,
+      outcome: "extended-trail",
+    });
+  }
+  if (target.tigmotaxis) {
+    log(state, `${OWNERS[p.owner]}: 🪳 Tigmotaxia continuou o movimento pela borda até ${coord(p.r, p.c)}.`);
+    emitPassiveEffect(state, "Tigmotaxia", "🪳 Tigmotaxia contornou o canto.", {
+      pieceId: p.id,
+      outcome: "corner-continuation",
+    });
+  }
+  if (target.sliding) {
+    log(state, `${OWNERS[p.owner]}: 🦦 Deslizamento continuou até ${coord(p.r, p.c)}.`);
+    emitPassiveEffect(state, "Deslizamento", "🦦 Deslizamento acrescentou um passo após a casa fértil.", {
+      pieceId: p.id,
+      outcome: "fertile-slide",
+    });
   }
   if (
     herdFollowers.length &&
@@ -2188,15 +2395,42 @@ function executeMove(ctx, action) {
     }
   }
   if (capturedEnemy) attemptHorizontalTransfer(state, p, capturedEnemy);
-  const build =
-    born > 0 && consumedFertile && has(p, "Antropização");
+  const recoilOrigin =
+      capturedPieceKilled &&
+      capturedEnemy &&
+      has(p, "Recuo") &&
+      has(p, "Velocidade") &&
+      distance(moveOrigin, target) === 1
+        ? moveOrigin
+        : null,
+    movementContinuation = {
+      tigmotaxia:
+        born === 0 &&
+        !second &&
+        !target.noContinuation &&
+        !capture &&
+        !target.stay &&
+        (p.r === 0 || p.r === 7) &&
+        (p.c === 0 || p.c === 7),
+      sliding:
+        born === 0 &&
+        !second &&
+        !target.noContinuation &&
+        !capture &&
+        !target.stay &&
+        landingTerrain === "fertile",
+      recoilOrigin,
+    },
+    build =
+      born > 0 && consumedFertile && has(p, "Antropização");
   if (
     born > 0 &&
     deferReproductionPlacement(state, p, {
       manipulation,
       second,
-      locomotion: born > 0 ? false : locomotion,
+      locomotion: false,
       build,
+      movementContinuation,
     })
   )
     return;
@@ -2207,6 +2441,7 @@ function executeMove(ctx, action) {
     second,
     born > 0 ? false : locomotion,
     build,
+    movementContinuation,
   );
 }
 function resolveBudding(ctx, action) {
@@ -2458,6 +2693,7 @@ function resolveDomesticPlacement(ctx, action) {
       continuation.second ?? false,
       continuation.locomotion ?? false,
       continuation.build ?? false,
+      continuation.movementContinuation ?? {},
     );
   else {
     advanceTurn(ctx);

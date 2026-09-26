@@ -298,6 +298,23 @@ main {
   position: relative;
   z-index: 3;
 }
+.trail-mark {
+  position: absolute;
+  z-index: 1;
+  left: 7%;
+  bottom: 5%;
+  font-size: clamp(12px, 2vw, 20px);
+  line-height: 1;
+  opacity: 0.62;
+  pointer-events: none;
+  letter-spacing: -0.18em;
+}
+.trail-mark.blue {
+  text-shadow: 0 0 2px #fff8;
+}
+.trail-mark.amber {
+  filter: drop-shadow(0 1px 1px #0008);
+}
 .decomposition-mark {
   position: absolute;
   inset: 0;
