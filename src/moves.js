@@ -36,6 +36,7 @@ import {
   parentalCareProtects,
   sortPreferredMates,
 } from "./reproduction-traits.js";
+import { specialLocomotionTargets } from "./locomotion.js";
 const ORTH = [
     [-1, 0],
     [1, 0],
@@ -400,8 +401,26 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   const mobile =
     has(p, "Locomoção Primitiva") &&
     !has(p, "Séssil");
-  if (mobile) chessTargets(false);
-  else if (
+  if (mobile) {
+    chessTargets(false);
+    const baseTargets = [...targets];
+    for (const special of specialLocomotionTargets(state, p, baseTargets)) {
+      if (
+        targets.some(
+          (target) =>
+            target.r === special.r &&
+            target.c === special.c &&
+            !!target.capture === !!special.capture,
+        )
+      )
+        continue;
+      const extra = { ...special };
+      delete extra.r;
+      delete extra.c;
+      delete extra.path;
+      add(special.r, special.c, special.path, extra);
+    }
+  } else if (
     !has(p, "Séssil") &&
     (captureUnlocked(state, p) || contactCaptureUnlocked(p))
   )
@@ -497,6 +516,14 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
             capture: false,
           });
       }
+  if (state.chain === p.id && state.chainTrait === "Bipedalismo")
+    return targets.filter(
+      (target) =>
+        !target.capture &&
+        !target.eggCapture &&
+        !target.stay &&
+        !at(state, target.r, target.c),
+    );
   return targets;
 }
 export function sexualReproductionResource(state, parent, mate) {
@@ -752,6 +779,14 @@ export function actionsForPiece(
       : has(piece, "Acasalamento Preferencial")
         ? partnersFor(source, piece).slice(0, 1)
         : partnersFor(source, piece);
+
+  if (source.chain === piece.id && source.chainTrait === "Bipedalismo")
+    return movesFor(source, piece).map((target) => ({
+      type: "MOVE",
+      id: piece.id,
+      r: target.r,
+      c: target.c,
+    }));
 
   return [
     ...movesFor(source, piece).map((target) => ({
