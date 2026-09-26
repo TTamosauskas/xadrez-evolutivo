@@ -159,6 +159,41 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Córtex Pré-Frontal");
 
   if (
+    has(piece, "Bipedalismo") &&
+    (state.chain === piece.id ||
+      targets.some(
+        (target) =>
+          !target.capture &&
+          !target.eggCapture &&
+          !target.stay &&
+          !at(state, target.r, target.c),
+      ))
+  )
+    actionable.add("Bipedalismo");
+  if (targets.some((target) => target.jump)) actionable.add("Pulo");
+  if (targets.some((target) => target.jet)) actionable.add("Jatopropulsão");
+  if (targets.some((target) => target.echolocation))
+    actionable.add("Ecolocalização");
+  if (
+    has(piece, "Manada") &&
+    state.pieces.some(
+      (ally) =>
+        ally.id !== piece.id &&
+        ally.owner === piece.owner &&
+        has(ally, "Manada") &&
+        distance(ally, piece) === 1,
+    ) &&
+    targets.some(
+      (target) =>
+        !target.capture &&
+        !target.eggCapture &&
+        !target.stay &&
+        !at(state, target.r, target.c),
+    )
+  )
+    actionable.add("Manada");
+
+  if (
     has(piece, "Serotonina") &&
     targets.some((target) => {
       if (!target.capture) return false;
@@ -244,6 +279,11 @@ export function actionableTraitsForPiece(state, piece) {
         (piece.traits ?? []).includes("Velocidade")
       )
         actionable.add("Velocidade");
+      if (
+        has(victim, "Movimento proteano") &&
+        has(piece, "Interceptação preditiva")
+      )
+        actionable.add("Interceptação preditiva");
       if (
         has(victim, "Pele grossa") &&
         (piece.traits ?? []).includes("Presas")
@@ -629,6 +669,12 @@ function markCaptureContext(state, attacker, victim, byId) {
 
     const nocturnalEvasion =
       nocturnal && !has(attacker, "Visão Noturna");
+    if (!nocturnalEvasion && has(victim, "Movimento proteano")) {
+      victimTraits.add("Movimento proteano");
+      if (has(attacker, "Interceptação preditiva"))
+        attackerTraits.add("Interceptação preditiva");
+    }
+
     if (!nocturnalEvasion && has(victim, "Adrenalina"))
       victimTraits.add("Adrenalina");
 
