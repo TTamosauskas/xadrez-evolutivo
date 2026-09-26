@@ -69,10 +69,27 @@ try {
 const report = (text) => {
   $("message").textContent = text;
 };
+const showPassiveEffectToast = (effect) => {
+  const region = $("passive-toasts");
+  if (!region || !effect?.text) return;
+  while (region.children.length >= 2) region.firstElementChild?.remove();
+  const toast = document.createElement("div");
+  toast.className = "passive-toast";
+  toast.dataset.effectId = String(effect.id ?? "");
+  toast.dataset.trait = effect.trait ?? "";
+  toast.textContent = effect.text;
+  region.append(toast);
+  setTimeout(() => {
+    if (!toast.isConnected) return;
+    toast.classList.add("leaving");
+    setTimeout(() => toast.remove(), 180);
+  }, 2000);
+};
 const controller = new Controller(
   createCampaignState(Date.now(), selectedScenario),
   {
     report,
+    toast: showPassiveEffectToast,
     render: (state, busy, showResult = true) => {
       if (selected && !state.pieces.some((p) => p.id === selected))
         selected = null;
