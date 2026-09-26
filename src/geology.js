@@ -1358,7 +1358,11 @@ export function normalizePhotosyntheticRank(profile) {
 
 export function contactCaptureUnlocked(piece = null) {
   if (!piece) return false;
+  const predatory =
+    piece.traits?.includes("Predação") ||
+    piece.traits?.includes("Mixotrofia");
   return (
+    predatory &&
     !piece.traits?.includes("Locomoção Primitiva") &&
     !(piece.ancestry ?? []).includes("Locomoção Primitiva")
   );
