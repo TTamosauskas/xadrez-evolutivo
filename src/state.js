@@ -1665,9 +1665,15 @@ export function dominantLineage(state, owner = null, predicate = null) {
       b.count - a.count ||
       signature(a.piece).localeCompare(signature(b.piece), "pt-BR"),
   )[0];
-  return selected
-    ? { ...selected, total: pieces.length }
-    : { piece: null, count: 0, total: pieces.length };
+  if (selected) return { ...selected, total: pieces.length };
+  const extinctionFounder = state.result?.extinctionFounder;
+  if (
+    extinctionFounder &&
+    (!owner || extinctionFounder.owner === owner) &&
+    (!predicate || predicate(extinctionFounder))
+  )
+    return { piece: extinctionFounder, count: 1, total: 1 };
+  return { piece: null, count: 0, total: pieces.length };
 }
 function fossilEntries(previous) {
   return ["blue", "amber"].flatMap((owner) => {
@@ -1740,6 +1746,15 @@ function arenaSurvivorEntries(state, owner) {
     )
     .slice(0, 2)
     .map(({ piece }) => ({ source: piece, genome: cleanArenaGenome(piece) }));
+  const extinctionFounder =
+      state.result?.extinctionFounder?.owner === owner
+        ? state.result.extinctionFounder
+        : null;
+  if (extinctionFounder)
+    selected.unshift({
+      source: extinctionFounder,
+      genome: cleanArenaGenome(extinctionFounder),
+    });
   const fallback = state.arenaFounders?.[owner]
     ? [
         state.arenaFounders[owner].primary,
@@ -1921,20 +1936,48 @@ function createEarthSuccessorState(previous, seed) {
       priorStage.id === "archean" && !preview.companion.traits.includes("Predação")
         ? archeanBranchFallback("Predação")
         : preview.companion,
-    founders = preserveBranches
-      ? {
-          primary: earthBranchFounder(
-            previous,
-            "Fotossíntese",
-            primaryFallback,
-          ),
-          companion: earthBranchFounder(
-            previous,
-            "Predação",
-            companionFallback,
-          ),
-        }
-      : { primary: preview.primary, companion: preview.companion },
+    extinctionFounder = founderProfile(
+      previous,
+      previous.result?.extinctionFounder,
+    ),
+    extinctionFounderIsPhotosynthetic =
+      extinctionFounder ? canPhotosynthesize(extinctionFounder) : false,
+    founders = extinctionFounder
+      ? extinctionFounderIsPhotosynthetic
+        ? {
+            primary: extinctionFounder,
+            companion: preserveBranches
+              ? earthBranchFounder(
+                  previous,
+                  "Predação",
+                  companionFallback,
+                )
+              : preview.companion,
+          }
+        : {
+            primary: preserveBranches
+              ? earthBranchFounder(
+                  previous,
+                  "Fotossíntese",
+                  primaryFallback,
+                )
+              : preview.primary,
+            companion: extinctionFounder,
+          }
+      : preserveBranches
+        ? {
+            primary: earthBranchFounder(
+              previous,
+              "Fotossíntese",
+              primaryFallback,
+            ),
+            companion: earthBranchFounder(
+              previous,
+              "Predação",
+              companionFallback,
+            ),
+          }
+        : { primary: preview.primary, companion: preview.companion },
     state = createState(seed, {
       scenario: "earth",
       geologicalStage: candidate.id,
@@ -1964,11 +2007,15 @@ function createEarthSuccessorState(previous, seed) {
     });
   log(
     state,
-    priorStage.id === "archean" && !advanced
-      ? `Vida na Terra: Arqueano continua no ${cycle}º Ciclo preservando as linhagens fotossintética e predatória mais derivadas.`
-      : advanced
-        ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period} preservando as linhagens evolutivas dos ramos fundamentais.`
-        : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo com os ramos mais derivados como fundadores.`,
+    extinctionFounder
+      ? advanced
+        ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period}; a última linhagem extinta vencedora funda a nova geração ao lado da contraparte histórica.`
+        : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo; a última linhagem extinta vencedora funda a nova geração ao lado da contraparte histórica.`
+      : priorStage.id === "archean" && !advanced
+        ? `Vida na Terra: Arqueano continua no ${cycle}º Ciclo preservando as linhagens fotossintética e predatória mais derivadas.`
+        : advanced
+          ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period} preservando as linhagens evolutivas dos ramos fundamentais.`
+          : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo com os ramos mais derivados como fundadores.`,
   );
   return state;
 }
@@ -1987,6 +2034,18 @@ export function createSuccessorState(previous, seed = Date.now()) {
         (stage) => stage.id === candidate.id,
       ),
       preview = previewFounderProfiles(stageIndex),
+      extinctionFounder = founderProfile(
+        previous,
+        previous.result?.extinctionFounder,
+      ),
+      founders = extinctionFounder
+        ? {
+            primary: extinctionFounder,
+            companion: canPhotosynthesize(extinctionFounder)
+              ? preview.companion
+              : preview.primary,
+          }
+        : { primary: preview.primary, companion: preview.companion },
       state = createState(seed, {
         scenario: previous.scenario,
         geologicalStage: candidate.id,
@@ -2006,7 +2065,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
         ],
         discoveries: previous.discoveries,
         seen: previous.seen,
-        founders: { primary: preview.primary, companion: preview.companion },
+        founders,
         canonicalPair: true,
       });
     log(
@@ -2899,7 +2958,18 @@ export function assertState(state) {
     (state.result &&
       (!["blue", "amber", null].includes(state.result.winner) ||
         typeof state.result.reason !== "string" ||
-        state.phase !== "over"))
+        state.phase !== "over" ||
+        (state.result.extinctionFounder &&
+          (state.result.extinctionFounder.owner !== state.result.winner ||
+            !Number.isInteger(state.result.extinctionFounder.rank) ||
+            state.result.extinctionFounder.rank < 0 ||
+            state.result.extinctionFounder.rank > 5 ||
+            !Array.isArray(state.result.extinctionFounder.traits) ||
+            state.result.extinctionFounder.traits.some(
+              (trait) => !TRAITS[trait],
+            ) ||
+            !Array.isArray(state.result.extinctionFounder.ancestry) ||
+            !validGenome(state.result.extinctionFounder.genome)))))
   )
     throw Error("Resultado inválido.");
 
