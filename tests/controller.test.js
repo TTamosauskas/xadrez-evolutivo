@@ -48,9 +48,12 @@ test("controller forwards realized passive effects and suppresses them in auto m
       state.rng = 0;
       return state;
     },
-    controllerOptions = (toasts) => ({
-      render: () => {},
-      toast: (effect) => toasts.push(effect),
+    controllerOptions = (toasts, sequence = null) => ({
+      render: () => sequence?.push("render"),
+      toast: (effect) => {
+        sequence?.push("toast");
+        toasts.push(effect);
+      },
       workerFactory: () => ({
         postMessage() {},
         terminate() {},
@@ -60,7 +63,11 @@ test("controller forwards realized passive effects and suppresses them in auto m
     });
 
   const visible = [],
-    human = new Controller(makeState(), controllerOptions(visible));
+    sequence = [],
+    human = new Controller(
+      makeState(),
+      controllerOptions(visible, sequence),
+    );
   assert.equal(
     human.dispatch({
       type: "MOVE",
@@ -74,6 +81,8 @@ test("controller forwards realized passive effects and suppresses them in auto m
   assert.equal(visible.length, 1);
   assert.equal(visible[0].trait, "Pele grossa");
   assert.equal(visible[0].outcome, "prevented-capture");
+  assert.ok(sequence.indexOf("render") >= 0);
+  assert.ok(sequence.indexOf("toast") > sequence.lastIndexOf("render"));
 
   const hidden = [],
     automatic = new Controller(makeState(), controllerOptions(hidden));
