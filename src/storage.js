@@ -156,7 +156,19 @@ function normalizeCycleInnovationPressure(state) {
     );
   removeRetiredTraits(state);
   normalizeStoredGenomes(state);
-  state.chain = null;
+  state.chainTrait ??= null;
+  if (
+    state.chainTrait !== "Bipedalismo" ||
+    !state.pieces?.some(
+      (piece) =>
+        piece.id === state.chain &&
+        piece.owner === state.current &&
+        (piece.traits ?? []).includes("Bipedalismo"),
+    )
+  ) {
+    state.chain = null;
+    state.chainTrait = null;
+  }
   state.serotoninReposition ??= null;
   for (const piece of state?.pieces ?? [])
     piece.lifetimeOffspring ??= 0;
