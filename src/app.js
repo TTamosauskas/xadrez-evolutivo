@@ -878,7 +878,7 @@ $("toast-test-phase").addEventListener("click", () =>
       "3. Brancas: em C5, selecione a peça com 👁️ Visão Noturna e capture D5, que possui 🌙 Notívago.",
       "4. Pretas: em H4, selecione a peça com 🐚 Carapaça e capture H3, que possui 🫎 Chifre.",
       "5. Brancas: em A6, selecione a Torre com 👀 Visão Binocular e capture E6, que possui 😶‍🌫️ Camuflagem.",
-      "6. Pretas: em C3, selecione a peça atacante e tente capturar D3. A cria é protegida pelo progenitor 🐠 Cuidado Parental em D4.",
+      "6. Pretas: em C3, selecione a peça atacante e tente capturar D3. A cria possui uma carga garantida de proteção biparental 🐧 de Monogamia.",
       "Cada ação deve produzir um toast no topo do próprio tabuleiro. Se uma reprodução abrir um aviso de mutação, feche o aviso: o toast ficará na fila e aparecerá em seguida.",
     ],
     () => {
