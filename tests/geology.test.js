@@ -194,7 +194,7 @@ test("period innovations follow the didactic sequence", () => {
     "Resistência",
     "Regeneração",
     "Reprodução Sexuada",
-    "Carnívoro",
+    "Ingestão",
   ]);
   assert.deepEqual(required.ediacaran, [
     "Simetria Bilateral",
@@ -251,7 +251,7 @@ test("Hadean anaerobic respiration precedes the parallel Archean energy branches
   assert.equal(has({ traits: aerobic }, "Respiração anaeróbia"), true);
 });
 
-test("Carnívoro requires a multicellular predatory lineage", () => {
+test("Ingestão gates multicellular predation and Carnívoro builds on it", () => {
   const s = createState(114, {
       scenario: "earth",
       geologicalStage: "proterozoic",
@@ -271,6 +271,10 @@ test("Carnívoro requires a multicellular predatory lineage", () => {
 
   predator.traits.push("Multicelularismo");
   predator.ancestry.push("Multicelularismo");
+  assert.equal(traitUnlocked(s, "Ingestão", predator), true);
+  assert.equal(traitUnlocked(s, "Carnívoro", predator), false);
+  predator.traits.push("Ingestão");
+  predator.ancestry.push("Ingestão");
   assert.equal(traitUnlocked(s, "Carnívoro", predator), true);
 });
 
@@ -512,6 +516,7 @@ test("Locomoção Terrestre is the Silurian gate for dry movement and capture", 
       traits: [
         "Multicelularismo",
         "Predação",
+        "Ingestão",
         "Locomoção Primitiva",
         "Vertebrado",
         "Locomoção Articulada",
@@ -929,8 +934,8 @@ test("campaign history from another lineage does not satisfy ancestry prerequisi
       ],
     }),
     descendant = {
-      traits: ["Multicelularismo"],
-      ancestry: ["Predação", "Multicelularismo"],
+      traits: ["Multicelularismo", "Ingestão"],
+      ancestry: ["Predação", "Multicelularismo", "Ingestão"],
     },
     predatoryOutsider = { traits: [], ancestry: ["Predação"] },
     outsider = { traits: [], ancestry: [] };
@@ -1136,8 +1141,8 @@ test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either 
       historicalTraits: prior,
     }),
     predator = {
-      traits: ["Multicelularismo", "Predação"],
-      ancestry: ["Predação"],
+      traits: ["Multicelularismo", "Predação", "Ingestão"],
+      ancestry: ["Predação", "Multicelularismo", "Ingestão"],
     };
 
   assert.equal(traitUnlocked(s, "Herbívoro", predator), true);
@@ -1149,12 +1154,12 @@ test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either 
     (stage) => stage.required,
   );
   const herbivore = {
-      traits: ["Multicelularismo", "Predação", "Herbívoro"],
-      ancestry: ["Predação", "Herbívoro"],
+      traits: ["Multicelularismo", "Predação", "Ingestão", "Herbívoro"],
+      ancestry: ["Predação", "Multicelularismo", "Ingestão", "Herbívoro"],
     },
     carnivore = {
-      traits: ["Multicelularismo", "Predação", "Carnívoro"],
-      ancestry: ["Predação", "Carnívoro"],
+      traits: ["Multicelularismo", "Predação", "Ingestão", "Carnívoro"],
+      ancestry: ["Predação", "Multicelularismo", "Ingestão", "Carnívoro"],
     };
   assert.equal(traitUnlocked(s, "Onívoro", herbivore), true);
   assert.equal(traitUnlocked(s, "Onívoro", carnivore), true);
@@ -1539,16 +1544,10 @@ test("Paleogene waits for reachable period innovations instead of auto-completin
   });
   assert.equal(currentGeologicalStage(s).period, "Paleógeno");
   assert.deepEqual(periodInnovations(s), [
-    "Carnivoria Botânica",
     "Ovulação Induzida",
     "Monogamia",
   ]);
-  assert.deepEqual(periodCompletionInnovations(s), [
-    "Carnivoria Botânica",
-  ]);
-  assert.equal(stageComplete(s), false);
-
-  s.historicalTraits.push("Carnivoria Botânica");
+  assert.deepEqual(periodCompletionInnovations(s), []);
   assert.equal(stageComplete(s), true);
   assert.deepEqual(eventWeights(s), {
     ...currentGeologicalStage(s).events,
