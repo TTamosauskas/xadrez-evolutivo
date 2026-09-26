@@ -1029,6 +1029,7 @@ export function createState(seed = Date.now(), options = {}) {
     domesticPlacement: null,
     socialDefense: null,
     serotoninReposition: null,
+    movementTrace: null,
     nextId: 1,
     nextNotice: 1,
     nextPassiveEffect: 1,
