@@ -7,6 +7,7 @@ import {
   EVENTS,
   PATHOGEN_AGENT_IDS,
   PATHOGEN_TRANSMISSION_IDS,
+  PIECE_LIFE_HISTORY,
   STATE_VERSION,
 } from "./constants.js";
 import {
@@ -38,6 +39,7 @@ import {
   genomeFromLegacyProfile,
   genomeSignature,
   hiddenRecessiveTraits,
+  forceGenomeTrait,
   syncGenomePhenotype,
   validGenome,
   withoutGenomeTraits,
@@ -151,7 +153,10 @@ export function consumeFertileTerrain(state, cell) {
   state.board[cell] = "neutral";
   const r = Math.floor(cell / 8),
     c = cell % 8;
-  if (aquaticTerrainCell(state, r, c)) {
+  if (
+    state.geologicalStage !== "hadean" &&
+    aquaticTerrainCell(state, r, c)
+  ) {
     state.fertilityRecovery ??= [];
     const dueTurn = state.turn + 3,
       existing = state.fertilityRecovery.find((entry) => entry.cell === cell);
@@ -188,6 +193,22 @@ export function restoreAquaticFertility(state) {
 }
 
 export function photosynthesisDelayTurns(state, piece = null) {
+  if (state.geologicalStage === "hadean" && piece) {
+    const life =
+        PIECE_LIFE_HISTORY[piece.rank] ??
+        PIECE_LIFE_HISTORY[0],
+      aerobic = has(piece, "Respiração aeróbia") ? -1 : 0,
+      terrestrialCost =
+        has(piece, "Locomoção Terrestre") &&
+        !has(piece, "Respiração Pulmonar")
+          ? 1
+          : 0,
+      metabolicRounds = Math.max(
+        1,
+        life.metabolism + aerobic + terrestrialCost,
+      );
+    return metabolicRounds * 2;
+  }
   const population = activePopulation(state),
     preArticulated =
       piece &&
@@ -200,6 +221,8 @@ export function photosynthesisDelayTurns(state, piece = null) {
 }
 
 export function photosynthesisHasSpace(state, piece) {
+  if (state.geologicalStage === "hadean")
+    return !!piece && hadeanPlayableCell(piece.r, piece.c);
   let free = 0;
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++) {
@@ -695,7 +718,9 @@ function seedHabitat(state) {
   const profile = habitatProfile(state),
     pattern = profile.pattern ?? "mosaic";
   if (state.geologicalStage === "hadean") {
-    state.board.fill("fertile");
+    state.board.fill("neutral");
+    if (state.origin)
+      state.board[square(state.origin.r, state.origin.c)] = "fertile";
     return;
   }
   if (state.geologicalStage === "archean") {
@@ -1049,6 +1074,17 @@ export function createState(seed = Date.now(), options = {}) {
           }
         : null,
     hadeanCaptureUnlocked: options.hadeanCaptureUnlocked ?? false,
+    hadeanPredationGranted:
+      options.geologicalStage === "hadean"
+        ? {
+            blue:
+              options.hadeanPredationGranted?.blue === true ||
+              options.hadeanCaptureUnlocked === true,
+            amber:
+              options.hadeanPredationGranted?.amber === true ||
+              options.hadeanCaptureUnlocked === true,
+          }
+        : null,
     generationOffset: options.generationOffset ?? 0,
     maxGenerationReached: 0,
     nextHabitatGeneration: 3,
@@ -1547,6 +1583,53 @@ export function createPassiveToastTestState(
   return assertState(state);
 }
 
+export function hadeanHabitatSaturated(state) {
+  if (state?.geologicalStage !== "hadean") return false;
+  for (let r = 2; r <= 5; r++)
+    for (let c = 2; c <= 5; c++)
+      if (!at(state, r, c)) return false;
+  return true;
+}
+
+export function grantHadeanPredation(state, owner) {
+  if (
+    state?.geologicalStage !== "hadean" ||
+    !["blue", "amber"].includes(owner)
+  )
+    return null;
+  const candidates = state.pieces
+    .filter(
+      (piece) =>
+        piece.owner === owner &&
+        !has(piece, "Predação"),
+    )
+    .sort((a, b) => a.id - b.id);
+  const piece =
+    candidates.find((candidate) => canPhotosynthesize(candidate)) ??
+    candidates[0] ??
+    null;
+  if (!piece) return null;
+
+  piece.genome = forceGenomeTrait(
+    piece.genome,
+    "Predação",
+    "dominant",
+  );
+  syncGenomePhenotype(piece, "Predação");
+  piece.ancestry = [
+    ...new Set([
+      ...(piece.ancestry ?? []),
+      "Fotossíntese",
+      "Predação",
+      ...piece.traits,
+    ]),
+  ];
+  piece.mutations = (piece.mutations ?? 0) + 1;
+  delete piece.photosynthesisCell;
+  delete piece.photosynthesisSinceTurn;
+  return piece;
+}
+
 export function activateOrigin(state) {
   if (state.phase !== "origin" || !state.origin)
     throw Error("Hadeano indisponível.");
@@ -1563,26 +1646,40 @@ export function activateOrigin(state) {
     amberCell = {
       r: Math.max(2, center.r - 1),
       c: center.c,
-    };
+    },
+    source = {
+      rank: 4,
+      mutations: 1,
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+    },
+    blue = newPiece(state, "blue", blueCell.r, blueCell.c, source),
+    amber = newPiece(state, "amber", amberCell.r, amberCell.c, source);
 
-  state.pieces.push(
-    newPiece(state, "blue", blueCell.r, blueCell.c, {
-      rank: 4,
-      mutations: 1,
-    }),
-    newPiece(state, "amber", amberCell.r, amberCell.c, {
-      rank: 4,
-      mutations: 1,
-    }),
-  );
-  state.board[square(blueCell.r, blueCell.c)] = "fertile";
-  state.board[square(amberCell.r, amberCell.c)] = "fertile";
+  state.pieces.push(blue, amber);
+  state.board[square(center.r, center.c)] = "neutral";
+  for (const piece of [blue, amber]) {
+    const cell = square(piece.r, piece.c);
+    state.board[cell] = "neutral";
+    piece.photosynthesisCell = cell;
+    piece.photosynthesisSinceTurn = state.turn;
+  }
   state.origin = null;
   state.phase = "move";
   state.current = "blue";
+  state.hadeanTutorial.divided = true;
+  notice(
+    state,
+    "Fotossíntese",
+    [
+      "As novas células precisam de tempo para acumular recursos e tornar a própria casa fértil.",
+      "Passe a Vez enquanto a casa estiver neutra. Quando ela ficar verde, poderá Vivificar.",
+    ],
+    "hadean-photosynthesis-wait",
+  );
   log(
     state,
-    `${geologicalLabel(state)} · 1º Ciclo: o ancestral com ⚪ Respiração anaeróbia se divide em dois Reis protocelulares, um branco e um preto, ainda sem divergência energética.`,
+    `${geologicalLabel(state)} · 1º Ciclo: o ancestral com ⚪ Respiração anaeróbia consumiu o nicho primordial e se dividiu em dois Reis com 🟢 Fotossíntese, agora sobre casas neutras.`,
   );
   return true;
 }

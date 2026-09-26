@@ -10,6 +10,7 @@ import {
   OWNERS,
   coord,
   energyBranch,
+  canPhotosynthesize,
 } from "./constants.js";
 import {
   at,
@@ -655,6 +656,14 @@ function spawnChild(state, profile, r, c) {
     : round(state);
   if (has(child, "Mutação Letal"))
     child.deleteriousDue = round(state) + 3;
+  if (
+    state.geologicalStage === "hadean" &&
+    canPhotosynthesize(child) &&
+    terrain(state, r, c) === "neutral"
+  ) {
+    child.photosynthesisCell = square(r, c);
+    child.photosynthesisSinceTurn = state.turn;
+  }
   state.pieces.push(child);
   registerDiscoveries(state, child);
   return child;
@@ -1541,13 +1550,6 @@ export function reproduce(
           round(state) + COLONY_BUD_COOLDOWN;
     }
     state.reproductions[parent.owner]++;
-    if (
-      state.geologicalStage === "hadean" &&
-      ["blue", "amber"].every(
-        (owner) => (state.reproductions?.[owner] ?? 0) >= 1,
-      )
-    )
-      state.hadeanCaptureUnlocked = true;
     tryVectorPathogen(state, parent);
     for (const candidate of mates) tryVectorPathogen(state, candidate);
     log(

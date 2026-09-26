@@ -1937,20 +1937,22 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.equal(d.querySelectorAll(".piece.amber").length, 1);
     assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 2);
     assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
-    assert.match(d.getElementById("round").textContent, /Tutorial 0\/2/);
-    if (d.querySelector("#notice-dialog[open]")) click("notice-ok");
+    assert.match(d.getElementById("round").textContent, /Tutorial 1\/2/);
+    assert.equal(d.querySelectorAll(".cell.fertile").length, 0);
+    const noticeDialog = d.querySelector("#notice-dialog[open]");
+    assert.ok(noticeDialog);
+    assert.match(noticeDialog.textContent, /Fotossíntese/);
+    assert.match(noticeDialog.textContent, /Passe a Vez/);
+    click("notice-ok");
 
     const blue = d.querySelector(".piece.blue");
     blue.parentElement.click();
     const selectedCell = d.querySelector(
       `[data-r="${blue.parentElement.dataset.r}"][data-c="${blue.parentElement.dataset.c}"]`,
     );
-    assert.ok(selectedCell.classList.contains("vivification-target"));
-    selectedCell.click();
-
-    if (d.querySelector("#notice-dialog[open]")) click("notice-ok");
-    assert.ok(d.querySelectorAll(".piece.blue, .piece.amber").length >= 3);
-    assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
+    assert.ok(!selectedCell.classList.contains("vivification-target"));
+    assert.equal(d.getElementById("pass").disabled, false);
+    assert.match(d.getElementById("pass").textContent, /Passar vez/);
 
     click("menu-button");
     click("save");
