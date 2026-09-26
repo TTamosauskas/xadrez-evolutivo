@@ -10,6 +10,7 @@ export class Controller {
     {
       render = () => {},
       report = () => {},
+      toast = () => {},
       workerFactory = () =>
         new Worker(new URL("./ai-worker.js", import.meta.url), {
           type: "module",
@@ -26,6 +27,7 @@ export class Controller {
     this.state = assertState(state);
     this.render = render;
     this.report = report;
+    this.toast = toast;
     this.workerFactory = workerFactory;
     this.setTimer = setTimer;
     this.clearTimer = clearTimer;
@@ -193,13 +195,19 @@ export class Controller {
           };
       }
 
-      const next = transition(this.state, action);
+      const passiveEffectFloor = this.state.nextPassiveEffect ?? 1,
+        next = transition(this.state, action);
       if (next === this.state) return false;
-      const pendingConway = this.conwayTimer;
+      const newPassiveEffects = (next.passiveEffects ?? []).filter(
+          (effect) => effect.id >= passiveEffectFloor,
+        ),
+        pendingConway = this.conwayTimer;
       this.conwayTimer = null;
       this.cancel();
       if (pendingConway !== null) this.clearTimer(pendingConway);
       this.state = next;
+      if (this.mode !== "auto")
+        for (const effect of newPassiveEffects) this.toast(effect);
 
       if (this.neocortexPending) {
         const pending = this.neocortexPending;
