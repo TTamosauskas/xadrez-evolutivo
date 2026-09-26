@@ -1,7 +1,7 @@
 import { SYMBOLS } from "./constants.js";
 
-const NORMAL_TIMING = Object.freeze({ move: 115, hold: 75, jump: 210 });
-const FAST_TIMING = Object.freeze({ move: 70, hold: 28, jump: 125 });
+const NORMAL_TIMING = Object.freeze({ move: 170, hold: 130, jump: 320 });
+const FAST_TIMING = Object.freeze({ move: 90, hold: 50, jump: 180 });
 
 function centerOf(cell) {
   const rect = cell.getBoundingClientRect();
@@ -130,6 +130,7 @@ export function animateMovementTrace(
         : null;
   finalPiece?.classList.add("movement-trace-hidden");
   finalCarcass?.classList.add("movement-trace-hidden");
+  destination?.classList.add("movement-trace-destination-hidden");
   board.classList.add("movement-animating");
 
   const overlay = doc.createElement("span"),
@@ -151,12 +152,13 @@ export function animateMovementTrace(
     });
   if (!plan) {
     board.classList.remove("movement-animating");
+    destination?.classList.remove("movement-trace-destination-hidden");
     finalPiece?.classList.remove("movement-trace-hidden");
     finalCarcass?.classList.remove("movement-trace-hidden");
     return false;
   }
 
-  overlay.className = `movement-trace-piece ${trace.owner}`;
+  overlay.className = `movement-trace-piece piece ${trace.owner}`;
   overlay.textContent = SYMBOLS[trace.owner]?.[trace.rank] ?? "●";
   overlay.setAttribute("aria-hidden", "true");
   overlay.style.fontSize = `${Math.max(18, start.size * 0.72)}px`;
@@ -165,6 +167,7 @@ export function animateMovementTrace(
   const cleanup = () => {
     overlay.remove();
     board.classList.remove("movement-animating");
+    destination?.classList.remove("movement-trace-destination-hidden");
     finalPiece?.classList.remove("movement-trace-hidden");
     finalCarcass?.classList.remove("movement-trace-hidden");
   };
