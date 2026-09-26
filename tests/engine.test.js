@@ -3165,7 +3165,7 @@ test("unit broods cannot originate Reprodução Sexuada", () => {
   }
 });
 
-test("mutation modal only queues outcomes that have not appeared before", () => {
+test("mutation toast only announces outcomes that have not appeared before", () => {
   const allLabels = [
     ...Object.keys(TRAITS),
     ...Object.keys(TRAITS).map((t) => `Perda de ${t}`),
@@ -3185,6 +3185,7 @@ test("mutation modal only queues outcomes that have not appeared before", () => 
   };
   s.seenMutations = [...allLabels];
   reproduce(context(s), s.pieces[0]);
+  assert.ok(!s.passiveEffects.some((effect) => effect.outcome === "new-mutation"));
   assert.ok(!s.notices.some((n) => n.title === "Novas mutações"));
 
   s = fixture([
@@ -3198,9 +3199,12 @@ test("mutation modal only queues outcomes that have not appeared before", () => 
     snapshots: {},
   };
   reproduce(context(s), s.pieces[0]);
-  const notice = s.notices.find((n) => n.title === "Novas mutações");
-  assert.ok(notice?.lines.length);
-  assert.ok(notice.lines.every((line) => s.seenMutations.includes(line)));
+  const mutationToast = s.passiveEffects.find(
+    (effect) => effect.outcome === "new-mutation",
+  );
+  assert.ok(mutationToast);
+  assert.match(mutationToast.text, /^🧬 Nova mutação: /);
+  assert.ok(!s.notices.some((n) => n.title === "Novas mutações"));
   assertState(s);
 });
 test("mass extinction starts a new Era from the dominant surviving lineage", () => {
