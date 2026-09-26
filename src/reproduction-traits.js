@@ -42,6 +42,7 @@ const lineageReached = (piece, trait) =>
 export const canUseBasalFertility = (piece) =>
   !!piece &&
   has(piece, "Respiração anaeróbia") &&
+  !has(piece, "Predação") &&
   !has(piece, "Reprodução Sexuada");
 
 export function predatoryReproductionAvailable(attacker, victim) {
