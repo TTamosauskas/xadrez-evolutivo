@@ -33,6 +33,7 @@ import {
   ecologicalDomainBlocked,
   consumeFertileTerrain,
   lethalHazardAt,
+  photosynthesisDelayTurns,
 } from "./state.js";
 import {
   BASAL_GENETIC_TRAIT,
