@@ -120,6 +120,7 @@ export class Controller {
     this.neocortexPending = null;
     this.neocortexWindow = null;
     this.neocortexLock = null;
+    this.pendingMovementTrace = null;
     this.state = state;
     this.resultReady = false;
     this.refresh();
