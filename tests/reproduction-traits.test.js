@@ -145,6 +145,45 @@ test("Cuidado Parental removes a protected juvenile from capture targets", () =>
   assertState(s);
 });
 
+test("Ovulação Induzida emits feedback only when sexual recovery is actually reduced", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: ["Reprodução Sexuada", "Ovulação Induzida"],
+      },
+      {
+        owner: "blue",
+        r: 4,
+        c: 5,
+        rank: 5,
+        traits: ["Reprodução Sexuada"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    mate = s.pieces[1];
+
+  assert.equal(
+    reproduce(context(s), parent, mate, "teste", {
+      forcedCount: 1,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const effect = s.passiveEffects.find(
+    (candidate) => candidate.trait === "Ovulação Induzida",
+  );
+  assert.ok(effect);
+  assert.equal(effect.pieceId, parent.id);
+  assert.equal(effect.outcome, "reduced-metabolic-recovery");
+  assert.equal(effect.value, 1);
+  assert.match(effect.text, /acelerou a recuperação metabólica/);
+  assertState(s);
+});
+
 test("Monogamia creates a reciprocal pair and guards half the brood", () => {
   const traits = [
       "Reprodução Sexuada",

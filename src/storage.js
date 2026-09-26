@@ -158,6 +158,9 @@ function normalizeCycleInnovationPressure(state) {
     piece.lifetimeOffspring ??= 0;
   if (!Array.isArray(state?.cyclePositiveInnovations))
     state.cyclePositiveInnovations = [];
+  if (!Array.isArray(state?.passiveEffects)) state.passiveEffects = [];
+  state.nextPassiveEffect ??=
+    Math.max(0, ...state.passiveEffects.map((effect) => effect?.id ?? 0)) + 1;
   if (
     !state?.openingMutationSatisfied ||
     typeof state.openingMutationSatisfied.blue !== "boolean" ||

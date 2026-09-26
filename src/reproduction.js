@@ -27,6 +27,7 @@ import {
   activePopulation,
   log,
   notice,
+  emitPassiveEffect,
   registerDiscoveries,
   reproductionReady,
   ecologicalDomainBlocked,
@@ -1292,8 +1293,21 @@ export function reproduce(
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece) => {
       let metabolic = metabolicReproductionCooldown(piece);
-      if (mates.length && has(piece, "Ovulação Induzida"))
+      if (mates.length && has(piece, "Ovulação Induzida")) {
+        const beforeOvulation = metabolic;
         metabolic = Math.max(1, metabolic - 1);
+        if (metabolic < beforeOvulation)
+          emitPassiveEffect(
+            state,
+            "Ovulação Induzida",
+            "🐇 Ovulação Induzida acelerou a recuperação metabólica.",
+            {
+              pieceId: piece.id,
+              outcome: "reduced-metabolic-recovery",
+              value: beforeOvulation - metabolic,
+            },
+          );
+      }
       if (has(piece, "Insuficiência Respiratória"))
         metabolic *= 2;
       if (
@@ -1379,6 +1393,12 @@ export function reproduce(
       log(
         state,
         `${OWNERS[parent.owner]}: 😩 Subfertilidade impediu a geração de prole por ${reason}.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Subfertilidade",
+        "😩 Subfertilidade impediu a reprodução.",
+        { pieceId: parent.id, outcome: "prevented-offspring" },
       );
       return true;
     };

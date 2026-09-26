@@ -342,6 +342,24 @@ export function log(state, text) {
   state.logs.unshift({ turn: state.turn, text });
   state.logs.length = Math.min(state.logs.length, 160);
 }
+export function emitPassiveEffect(
+  state,
+  trait,
+  text,
+  { pieceId = null, outcome = null, value = null } = {},
+) {
+  if (!TRAITS[trait] || typeof text !== "string" || !text) return;
+  state.passiveEffects.push({
+    id: state.nextPassiveEffect++,
+    turn: state.turn,
+    trait,
+    pieceId: Number.isInteger(pieceId) ? pieceId : null,
+    outcome: typeof outcome === "string" ? outcome : null,
+    value: Number.isFinite(value) ? value : null,
+    text,
+  });
+  if (state.passiveEffects.length > 24) state.passiveEffects.shift();
+}
 export function notice(state, title, lines, key = null) {
   if (key && state.seen.includes(key)) return;
   if (key) state.seen.push(key);
@@ -978,10 +996,12 @@ export function createState(seed = Date.now(), options = {}) {
     socialDefense: null,
     nextId: 1,
     nextNotice: 1,
+    nextPassiveEffect: 1,
     board: Array(64).fill("neutral"),
     pieces: [],
     reproductions: { blue: 0, amber: 0 },
     notices: [],
+    passiveEffects: [],
     seen: [],
     seenMutations:
       originPrelude && (options.geologicalStage ?? "archean") === "hadean"
@@ -1924,6 +1944,7 @@ export function assertState(state) {
   if (
     !integer(state.revision) ||
     !integer(state.nextNotice, 1) ||
+    !integer(state.nextPassiveEffect ?? 1, 1) ||
     !integer(state.nextDisease, 1) ||
     !integer(state.nextEgg, 1) ||
     !integer(state.nextPlantSeed, 1) ||
@@ -2521,6 +2542,7 @@ export function assertState(state) {
 
   if (
     !Array.isArray(state.notices) ||
+    !Array.isArray(state.passiveEffects ?? []) ||
     !Array.isArray(state.diseases) ||
     !Array.isArray(state.logs)
   )
@@ -2535,11 +2557,33 @@ export function assertState(state) {
         typeof n.title !== "string" ||
         !Array.isArray(n.lines) ||
         n.lines.some((l) => typeof l !== "string"),
+    ) ||
+    (state.passiveEffects ?? []).length > 24 ||
+    (state.passiveEffects ?? []).some(
+      (effect) =>
+        !integer(effect.id, 1) ||
+        !integer(effect.turn) ||
+        !TRAITS[effect.trait] ||
+        ![null, "string"].includes(
+          effect.outcome === null ? null : typeof effect.outcome,
+        ) ||
+        ![null, "number"].includes(
+          effect.value === null ? null : typeof effect.value,
+        ) ||
+        (effect.value !== null && !Number.isFinite(effect.value)) ||
+        (effect.pieceId !== null && !integer(effect.pieceId, 1)) ||
+        typeof effect.text !== "string",
     )
   )
     throw Error("Mensagem inválida.");
   if (state.notices.some((n) => n.id >= state.nextNotice))
     throw Error("Sequência de avisos inválida.");
+  if (
+    (state.passiveEffects ?? []).some(
+      (effect) => effect.id >= (state.nextPassiveEffect ?? 1),
+    )
+  )
+    throw Error("Sequência de efeitos passivos inválida.");
   const diseaseIds = new Set();
   for (const d of state.diseases) {
     if (

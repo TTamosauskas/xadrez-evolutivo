@@ -12,6 +12,7 @@ import {
   pick,
   log,
   notice,
+  emitPassiveEffect,
   assertState,
   fertilityPaused,
   consumeFertileTerrain,
@@ -114,6 +115,12 @@ export function context(state) {
         log(
           state,
           `${OWNERS[dead.owner]}: ♻️ Regeneração evitou a morte por ${reason}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Regeneração",
+          "♻️ Regeneração evitou a morte.",
+          { pieceId: dead.id, outcome: "prevented-death" },
         );
         return false;
       }
@@ -374,7 +381,15 @@ function moveDirection(p) {
 
 function hostileHazardKills(state, piece) {
   if (random(state) >= 1 / 2) return false;
-  return !has(piece, "Carapaça") || random(state) >= 1 / 4;
+  if (!has(piece, "Carapaça")) return true;
+  if (random(state) >= 1 / 4) return true;
+  emitPassiveEffect(
+    state,
+    "Carapaça",
+    "🐚 Carapaça bloqueou o risco hostil.",
+    { pieceId: piece.id, outcome: "blocked-hostile-risk" },
+  );
+  return false;
 }
 const canConsumeCarcass = (piece) =>
   !!piece && (has(piece, "Necrófago") || has(piece, "Onívoro Oportunista"));
@@ -1057,11 +1072,30 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
+    distance(p, victim) > 1 &&
+    has(victim, "Camuflagem") &&
+    has(p, "Visão Binocular")
+  )
+    emitPassiveEffect(
+      state,
+      "Visão Binocular",
+      "👀 Visão Binocular detectou Camuflagem.",
+      { pieceId: p.id, outcome: "neutralized-camouflage" },
+    );
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
     parentalCareProtects(state, victim)
   ) {
     log(
       state,
       `${OWNERS[victim.owner]}: 🐠 Cuidado Parental protegeu a cria em ${coord(victim.r, victim.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Cuidado Parental",
+      "🐠 Cuidado Parental protegeu a cria.",
+      { pieceId: victim.id, outcome: "prevented-capture" },
     );
     advanceTurn(ctx);
     settle(ctx);
@@ -1080,10 +1114,27 @@ function executeMove(ctx, action) {
       state,
       `${OWNERS[victim.owner]}: 🌵 Espinhos matou o agressor durante a tentativa de captura.`,
     );
+    emitPassiveEffect(
+      state,
+      "Espinhos",
+      "🌵 Espinhos matou o agressor.",
+      { pieceId: victim.id, outcome: "killed-attacker" },
+    );
     advanceTurn(ctx);
     settle(ctx);
     return;
   }
+  if (
+    pieceCapture &&
+    has(victim, "Chifre") &&
+    has(p, "Carapaça")
+  )
+    emitPassiveEffect(
+      state,
+      "Carapaça",
+      "🐚 Carapaça neutralizou Chifre.",
+      { pieceId: p.id, outcome: "neutralized-horn" },
+    );
   if (
     pieceCapture &&
     has(victim, "Chifre") &&
@@ -1097,6 +1148,12 @@ function executeMove(ctx, action) {
     log(
       state,
       `${OWNERS[victim.owner]}: 🫎 Chifre matou o agressor durante a tentativa de captura.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Chifre",
+      "🫎 Chifre matou o agressor.",
+      { pieceId: victim.id, outcome: "killed-attacker" },
     );
     advanceTurn(ctx);
     settle(ctx);
@@ -1120,6 +1177,12 @@ function executeMove(ctx, action) {
         state,
         `${OWNERS[victim.owner]}: 🫥 Mimetismo desviou o ataque para ${coord(redirected.r, redirected.c)}.`,
       );
+      emitPassiveEffect(
+        state,
+        "Mimetismo",
+        "🫥 Mimetismo desviou o ataque.",
+        { pieceId: victim.id, outcome: "redirected-capture" },
+      );
       advanceTurn(ctx);
       settle(ctx);
       return;
@@ -1140,6 +1203,19 @@ function executeMove(ctx, action) {
       return;
     }
   }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    nocturnalRound(state) &&
+    has(victim, "Notívago") &&
+    has(p, "Visão Noturna")
+  )
+    emitPassiveEffect(
+      state,
+      "Visão Noturna",
+      "👁️ Visão Noturna neutralizou Notívago.",
+      { pieceId: p.id, outcome: "neutralized-nocturnal-evasion" },
+    );
   const nocturnalEvasion =
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -1151,6 +1227,12 @@ function executeMove(ctx, action) {
       log(
         state,
         `${OWNERS[victim.owner]}: 🌙 Notívago escapou da captura durante a rodada noturna.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Notívago",
+        "🌙 Notívago evitou a captura.",
+        { pieceId: victim.id, outcome: "prevented-capture" },
       );
       advanceTurn(ctx);
       settle(ctx);
@@ -1167,10 +1249,28 @@ function executeMove(ctx, action) {
       state,
       `${OWNERS[victim.owner]}: 💨 Velocidade permitiu escapar da captura.`,
     );
+    emitPassiveEffect(
+      state,
+      "Velocidade",
+      "💨 Velocidade evitou a captura.",
+      { pieceId: victim.id, outcome: "prevented-capture" },
+    );
     advanceTurn(ctx);
     settle(ctx);
     return;
   }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Pele grossa") &&
+    has(p, "Presas")
+  )
+    emitPassiveEffect(
+      state,
+      "Presas",
+      "▽ Presas neutralizou Pele grossa.",
+      { pieceId: p.id, outcome: "neutralized-thick-skin" },
+    );
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -1181,6 +1281,12 @@ function executeMove(ctx, action) {
     log(
       state,
       `${OWNERS[victim.owner]}: 🦏 Pele grossa resistiu à captura em ${coord(victim.r, victim.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Pele grossa",
+      "🦏 Pele grossa bloqueou a captura.",
+      { pieceId: victim.id, outcome: "prevented-capture" },
     );
     advanceTurn(ctx);
     settle(ctx);
@@ -1196,6 +1302,12 @@ function executeMove(ctx, action) {
       state,
       `${OWNERS[victim.owner]}: 🪵 Madeira resistiu à captura em ${coord(victim.r, victim.c)}.`,
     );
+    emitPassiveEffect(
+      state,
+      "Madeira",
+      "🪵 Madeira bloqueou a captura.",
+      { pieceId: victim.id, outcome: "prevented-capture" },
+    );
     advanceTurn(ctx);
     settle(ctx);
     return;
@@ -1209,6 +1321,12 @@ function executeMove(ctx, action) {
     log(
       state,
       `${OWNERS[victim.owner]}: 🐧 parceiro monogâmico adjacente ajudou a evitar a captura.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Monogamia",
+      "🐧 Monogamia ajudou a evitar a captura.",
+      { pieceId: victim.id, outcome: "prevented-capture" },
     );
     advanceTurn(ctx);
     settle(ctx);
@@ -1224,6 +1342,12 @@ function executeMove(ctx, action) {
     log(
       state,
       `${OWNERS[victim.owner]}: 🐧 proteção biparental absorveu a captura da cria.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Monogamia",
+      "🐧 Cuidado biparental absorveu a captura.",
+      { pieceId: victim.id, outcome: "guarded-offspring" },
     );
     advanceTurn(ctx);
     settle(ctx);

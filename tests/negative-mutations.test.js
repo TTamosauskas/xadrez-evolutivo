@@ -267,6 +267,18 @@ test("subfertility can spend a reproductive attempt without offspring", () => {
     0,
   );
   assert.equal(parent.nextReproductionRound, 7);
+  assert.deepEqual(
+    s.passiveEffects.at(-1),
+    {
+      id: s.passiveEffects.at(-1).id,
+      turn: s.turn,
+      trait: "Subfertilidade",
+      pieceId: parent.id,
+      outcome: "prevented-offspring",
+      value: null,
+      text: "😩 Subfertilidade impediu a reprodução.",
+    },
+  );
 });
 
 test("malabsorption consumes one additional adjacent fertile resource", () => {
