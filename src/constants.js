@@ -70,6 +70,18 @@ export const TRAITS = {
     "🦀",
     "Especialização de artrópodes terrestres: percorre horizontalmente a própria linha e pode trocar de posição com a primeira criatura aliada encontrada.",
   ],
+  Escansão: [
+    "🦥",
+    "Especialização locomotora vertical de vertebrados escaladores: percorre a própria coluna e pode trocar de posição com a primeira criatura aliada encontrada.",
+  ],
+  Bioadesão: [
+    "🫠",
+    "Especialização adesiva das bordas: quando já está no perímetro, pode percorrê-lo continuamente, contornar cantos e trocar de posição com o primeiro aliado encontrado.",
+  ],
+  Arborícola: [
+    "🦧",
+    "Especialização de dossel: atravessa uma sequência contígua de criaturas fotossintéticas aliadas numa direção e pousa na primeira casa livre além delas.",
+  ],
   Serpenteamento: [
     "⚕️",
     "Trajetória sinuosa de até cinco passos adjacentes, com até duas mudanças de direção; casas intermediárias precisam permanecer livres.",
