@@ -23,8 +23,6 @@ import {
 import {
   captureUnlocked,
   contactCaptureUnlocked,
-  currentGeologicalStage,
-  geologicalStage,
 } from "./geology.js";
 import {
   canBud,
@@ -89,7 +87,7 @@ export function serotoninRepositionTargets(state) {
   if (!piece) return [];
 
   const terrestrialRestriction =
-      currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+      has(piece, "Locomoção Primitiva") &&
       !has(piece, "Locomoção Terrestre"),
     targets = [];
   for (let dr = -1; dr <= 1; dr++)
@@ -185,7 +183,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   if (!ignoreChain && state.chain && state.chain !== p.id) return [];
   const targets = [],
     terrestrialRestriction =
-      currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+      has(p, "Locomoção Primitiva") &&
       !has(p, "Locomoção Terrestre");
   function add(r, c, path, extra = {}) {
     if (!inside(r, c) || ecologicalDomainBlocked(state, p.owner, r, c)) return;
@@ -398,11 +396,30 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       }
     } else ray([...ORTH, ...DIAG], captureOnly);
   }
+
+  function primitiveMovementTargets() {
+    for (const [dr, dc] of [...ORTH, ...DIAG]) {
+      const r = p.r + dr,
+        c = p.c + dc;
+      if (
+        inside(r, c) &&
+        !at(state, r, c) &&
+        !eggAt(state, r, c)
+      )
+        add(r, c, [[r, c]]);
+    }
+  }
+
   const mobile =
     has(p, "Locomoção Primitiva") &&
     !has(p, "Séssil");
   if (mobile) {
-    chessTargets(false);
+    if (has(p, "Locomoção Articulada")) chessTargets(false);
+    else {
+      primitiveMovementTargets();
+      if (captureUnlocked(state, p) || contactCaptureUnlocked(p))
+        chessTargets(true);
+    }
     const baseTargets = [...targets];
     for (const special of specialLocomotionTargets(state, p, baseTargets)) {
       if (
