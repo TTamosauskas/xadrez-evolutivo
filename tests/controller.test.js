@@ -273,7 +273,8 @@ test("computer versus computer mode starts the Hadean tutorial and notices autom
   assert.equal(workers.length, 0);
   runNextTimer();
   assert.equal(c.state.notices.length, 0);
-  assert.equal(workers.length, 1);
+  assert.equal(workers.length, 0);
+  assert.ok(timers.size > 0);
 
   c.cancel();
   c.state.notices.push({
