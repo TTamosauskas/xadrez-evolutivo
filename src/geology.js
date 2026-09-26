@@ -1348,11 +1348,15 @@ export function rankMutationUnlocked(state) {
 }
 
 export function normalizePhotosyntheticRank(profile) {
-  if (
-    profile?.traits?.includes("Fotossíntese") &&
-    ![0, 4].includes(profile.rank)
-  )
-    profile.rank = 0;
+  if (!profile?.traits?.includes("Fotossíntese")) return profile;
+  const multicellular = profile.traits.includes("Multicelularismo"),
+    vascular = profile.traits.includes("Traqueófitas"),
+    allowed = vascular
+      ? new Set([0, 1, 2, 3, 4, 5])
+      : multicellular
+        ? new Set([0, 1, 2, 4])
+        : new Set([0, 4]);
+  if (!allowed.has(profile.rank)) profile.rank = 0;
   return profile;
 }
 
