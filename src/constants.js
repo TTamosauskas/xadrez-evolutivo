@@ -62,6 +62,10 @@ export const TRAITS = {
     "🐛",
     "Adapta o deslocamento a substratos expostos. A criatura pode mover-se e capturar também em casas neutras e hostis; casas hostis continuam oferecendo o risco ambiental normal.",
   ],
+  Rastejante: [
+    "🐌",
+    "Especialização locomotora terrestre das bordas: Peões e Reis atravessam o limite por um passo adjacente; outras formas cruzam a borda apenas segundo sua geometria e encerram o movimento ao reaparecer.",
+  ],
   Bipedalismo: [
     "🦍",
     "Após um deslocamento para casa vazia, permite um segundo deslocamento voluntário da mesma criatura; capturas e outras ações encerram a vez.",
