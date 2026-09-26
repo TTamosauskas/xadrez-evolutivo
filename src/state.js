@@ -7,6 +7,7 @@ import {
   EVENTS,
   PATHOGEN_AGENT_IDS,
   PATHOGEN_TRANSMISSION_IDS,
+  PIECE_LIFE_HISTORY,
   STATE_VERSION,
 } from "./constants.js";
 import {
@@ -192,7 +193,29 @@ export function restoreAquaticFertility(state) {
 }
 
 export function photosynthesisDelayTurns(state, piece = null) {
-  if (state.geologicalStage === "hadean" && piece) return 2;
+  if (state.geologicalStage === "hadean" && piece) {
+    const life =
+        PIECE_LIFE_HISTORY[piece.rank] ??
+        PIECE_LIFE_HISTORY[0],
+      aerobic = has(piece, "Respiração aeróbia") ? -1 : 0,
+      terrestrialCost =
+        has(piece, "Locomoção Terrestre") &&
+        !has(piece, "Respiração Pulmonar")
+          ? 1
+          : 0,
+      normalRounds = Math.max(
+        1,
+        life.metabolism + aerobic + terrestrialCost,
+      ),
+      dividedAtTurn = Number.isInteger(
+        state.hadeanTutorial?.dividedAtTurn,
+      )
+        ? state.hadeanTutorial.dividedAtTurn
+        : 0,
+      elapsedTurns = Math.max(0, state.turn - dividedAtTurn),
+      waitRounds = Math.min(normalRounds, 1 + elapsedTurns);
+    return waitRounds * 2;
+  }
   const population = activePopulation(state),
     preArticulated =
       piece &&
@@ -1611,6 +1634,7 @@ export function grantHadeanPredation(state, owner) {
   piece.mutations = (piece.mutations ?? 0) + 1;
   delete piece.photosynthesisCell;
   delete piece.photosynthesisSinceTurn;
+  delete piece.photosynthesisReadyTurn;
   return piece;
 }
 
@@ -1647,11 +1671,14 @@ export function activateOrigin(state) {
     state.board[cell] = "neutral";
     piece.photosynthesisCell = cell;
     piece.photosynthesisSinceTurn = state.turn;
+    piece.photosynthesisReadyTurn =
+      state.turn + photosynthesisDelayTurns(state, piece);
   }
   state.origin = null;
   state.phase = "move";
   state.current = "blue";
   state.hadeanTutorial.divided = true;
+  state.hadeanTutorial.dividedAtTurn = state.turn;
   notice(
     state,
     "Fotossíntese",
@@ -2655,6 +2682,8 @@ export function assertState(state) {
         !integer(p.photosynthesisCell, 0, 63)) ||
       (p.photosynthesisSinceTurn !== undefined &&
         !integer(p.photosynthesisSinceTurn)) ||
+      (p.photosynthesisReadyTurn !== undefined &&
+        !integer(p.photosynthesisReadyTurn)) ||
       (p.extremophyteCell !== undefined &&
         !integer(p.extremophyteCell, 0, 63)) ||
       (p.extremophyteSinceRound !== undefined &&
