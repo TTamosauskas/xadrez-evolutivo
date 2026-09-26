@@ -101,6 +101,10 @@ export const TRAITS = {
     "🥬",
     "Especialização alimentar: ao reproduzir por captura de uma criatura fotossintética, reduz em uma rodada a recuperação metabólica. Do Cambriano em diante, também permite Vivificar usando casas férteis.",
   ],
+  Granívoro: [
+    "🐿️",
+    "Especialização alimentar de herbívoros e onívoros: permite consumir sementes 🌰 adversárias alcançáveis e usar esse alimento para a reprodução normal da criatura.",
+  ],
   Canibalismo: [
     "🐻‍❄️",
     "Especialização de Carnívoro: permite capturar uma peça aliada segundo a geometria da peça e converter a morte em exatamente um descendente.",
