@@ -44,6 +44,7 @@ import {
   unreadDiscoveries,
 } from "./discoveries.js";
 import { createPassiveEffectToastPresenter } from "./passive-toast.js";
+import { animateMovementTrace } from "./movement-animation.js";
 import {
   ARENA_RECESSIVE_COUNT,
   ARENA_TRAIT_BUDGET,
@@ -86,8 +87,9 @@ const controller = new Controller(
         busy,
         mode: controller.mode,
         showResult,
-        movementTrace,
-        autoMode: controller.mode === "auto",
+      });
+      animateMovementTrace(document, movementTrace, {
+        fast: controller.mode === "auto",
       });
       $("undo-neocortex").hidden =
         controller.mode === "auto" || !controller.canUndoNeocortex();
