@@ -81,6 +81,7 @@ test("controller forwards realized passive effects and suppresses them in auto m
   assert.equal(visible.length, 1);
   assert.equal(visible[0].trait, "Pele grossa");
   assert.equal(visible[0].outcome, "prevented-capture");
+  assert.equal(visible[0].owner, "amber");
   assert.ok(sequence.indexOf("render") >= 0);
   assert.ok(sequence.indexOf("toast") > sequence.lastIndexOf("render"));
 

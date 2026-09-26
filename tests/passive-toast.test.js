@@ -50,6 +50,7 @@ test("Toastify waits until blocking dialogs close before showing an effect", () 
     }),
     effect = {
       id: 1,
+      owner: "amber",
       trait: "Pele grossa",
       text: "🦏 Pele grossa bloqueou a captura.",
     },
@@ -84,12 +85,13 @@ test("Toastify waits until blocking dialogs close before showing an effect", () 
       gravity: "top",
       position: "center",
       stopOnFocus: true,
-      className: "xe-passive-toast",
+      className: "xe-passive-toast xe-passive-toast--black",
       ariaLive: "polite",
     },
   );
   assert.equal(mock.calls[0].toastElement.dataset.effectId, "1");
   assert.equal(mock.calls[0].toastElement.dataset.trait, "Pele grossa");
+  assert.equal(mock.calls[0].toastElement.dataset.owner, "amber");
   assert.equal(mock.calls[0].toastElement.getAttribute("role"), "status");
 
   presenter.destroy();
@@ -198,6 +200,8 @@ test("realized passive effect reaches Toastify from engine through Controller", 
   const toast = mock.calls[0].toastElement;
   assert.ok(toast);
   assert.equal(toast.dataset.trait, "Pele grossa");
+  assert.equal(toast.dataset.owner, "amber");
+  assert.ok(toast.classList.contains("xe-passive-toast--black"));
   assert.equal(toast.textContent, "🦏 Pele grossa bloqueou a captura.");
 
   presenter.destroy();
@@ -248,6 +252,7 @@ test("the real Toastify bundle mounts an accessible fixed toast in the document 
     });
     presenter.show({
       id: 7,
+      owner: "blue",
       trait: "Visão Binocular",
       text: "👀 Visão Binocular detectou Camuflagem.",
     });
@@ -261,10 +266,17 @@ test("the real Toastify bundle mounts an accessible fixed toast in the document 
     assert.equal(toast.getAttribute("aria-live"), "polite");
     assert.equal(toast.dataset.effectId, "7");
     assert.equal(toast.dataset.trait, "Visão Binocular");
+    assert.equal(toast.dataset.owner, "blue");
+    assert.ok(toast.classList.contains("xe-passive-toast--white"));
     assert.equal(toast.style.top, "15px");
     assert.ok(toast.querySelector('button[aria-label="Fechar notificação"]'));
     assert.equal(dom.window.getComputedStyle(toast).position, "fixed");
-    assert.equal(dom.window.getComputedStyle(toast).backgroundColor, "rgb(32, 38, 31)");
+    assert.equal(dom.window.getComputedStyle(toast).backgroundColor, "rgb(197, 181, 149)");
+    const close = toast.querySelector('button[aria-label="Fechar notificação"]');
+    assert.ok(close);
+    assert.equal(dom.window.getComputedStyle(close).position, "absolute");
+    assert.equal(dom.window.getComputedStyle(close).top, "4px");
+    assert.equal(dom.window.getComputedStyle(close).right, "4px");
     assert.equal(presenter.visibleCount(), 1);
 
     presenter.destroy();

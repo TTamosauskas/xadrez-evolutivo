@@ -195,12 +195,22 @@ export class Controller {
           };
       }
 
-      const passiveEffectFloor = this.state.nextPassiveEffect ?? 1,
+      const ownersBeforeTransition = new Map(
+          this.state.pieces.map((piece) => [piece.id, piece.owner]),
+        ),
+        activeOwner = this.state.current,
+        passiveEffectFloor = this.state.nextPassiveEffect ?? 1,
         next = transition(this.state, action);
       if (next === this.state) return false;
-      const newPassiveEffects = (next.passiveEffects ?? []).filter(
-          (effect) => effect.id >= passiveEffectFloor,
-        ),
+      const newPassiveEffects = (next.passiveEffects ?? [])
+          .filter((effect) => effect.id >= passiveEffectFloor)
+          .map((effect) => ({
+            ...effect,
+            owner:
+              ownersBeforeTransition.get(effect.pieceId) ??
+              next.pieces.find((piece) => piece.id === effect.pieceId)?.owner ??
+              activeOwner,
+          })),
         pendingConway = this.conwayTimer;
       this.conwayTimer = null;
       this.cancel();

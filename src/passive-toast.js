@@ -23,7 +23,9 @@ export function createPassiveEffectToastPresenter(
       stopOnFocus: true,
       escapeMarkup: true,
       ariaLive: "polite",
-      className: "xe-passive-toast",
+      className: `xe-passive-toast xe-passive-toast--${
+        effect.owner === "amber" ? "black" : "white"
+      }`,
       offset: {
         x: 0,
         y: "calc(env(safe-area-inset-top, 0px) + 8px)",
@@ -38,6 +40,7 @@ export function createPassiveEffectToastPresenter(
     if (toast.toastElement) {
       toast.toastElement.dataset.effectId = String(effect.id ?? "");
       toast.toastElement.dataset.trait = effect.trait ?? "";
+      toast.toastElement.dataset.owner = effect.owner ?? "blue";
       toast.toastElement.setAttribute("role", "status");
       toast.toastElement
         .querySelector(".toast-close")
