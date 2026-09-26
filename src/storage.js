@@ -10,7 +10,10 @@ const LEGACY_TRAIT_NAMES = Object.freeze({
   "Mutação Deletéria": "Mutação Letal",
   Garras: "Presas",
 });
-const RETIRED_TRAITS = new Set(["Locomoção Avançada"]);
+const RETIRED_TRAITS = new Set([
+  "Locomoção Avançada",
+  "Carnivoria Botânica",
+]);
 
 function removeRetiredTraits(value) {
   if (Array.isArray(value)) {
