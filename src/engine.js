@@ -1309,9 +1309,11 @@ function executeMove(ctx, action) {
           path: target.path.map(([r, c]) => ({ r, c })),
           stop: { r: target.r, c: target.c },
           outcome: "moved",
-          kind: target.jet
-            ? "jet"
-            : target.jump
+          kind: target.crawler
+            ? "crawler"
+            : target.jet
+              ? "jet"
+              : target.jump
               ? "jump"
               : target.echolocation
                 ? "echolocation"
@@ -1414,6 +1416,7 @@ function executeMove(ctx, action) {
     herdFollowers =
       !second &&
       has(p, "Manada") &&
+      !target.crawler &&
       !target.capture &&
       !target.eggCapture &&
       !target.seedCapture &&
@@ -1513,6 +1516,7 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
+    !target.crawler &&
     distance(p, victim) > 1 &&
     has(victim, "Camuflagem") &&
     has(p, "Visão Binocular")
@@ -1898,6 +1902,18 @@ function executeMove(ctx, action) {
   if (!target.stay) p.stationarySinceRound = round(state);
   exposePathogenCell(state, p);
   moveDirection(p);
+  if (target.crawler) {
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🐌 Rastejante contornou o limite do habitat até ${coord(p.r, p.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Rastejante",
+      "🐌 Rastejante contornou o limite do habitat.",
+      { pieceId: p.id, outcome: "crossed-board-edge" },
+    );
+  }
   if (
     herdFollowers.length &&
     !pieceCapture &&
