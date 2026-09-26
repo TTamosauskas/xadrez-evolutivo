@@ -371,8 +371,8 @@ test("Hadean starts with one fertile gray ancestor and splits into two photosynt
   });
 
   const originCell = { ...s.origin };
-  s = simulate(s, { type: "ORIGIN_CLICK" });
-  s = simulate(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
 
   assert.equal(s.phase, "move");
   assert.equal(s.origin, null);
@@ -418,9 +418,9 @@ test("Hadean starts with one fertile gray ancestor and splits into two photosynt
 
 test("Hadean lethal boundary remains unreachable while photosynthetic founders wait", () => {
   let s = createCampaignState(304);
-  s = simulate(s, { type: "ORIGIN_CLICK" });
-  s = simulate(s, { type: "ORIGIN_CLICK" });
-  s = simulate(s, { type: "ACK_NOTICE", id: s.notices[0].id });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
 
   const blue = s.pieces.find((piece) => piece.owner === "blue");
   blue.r = 2;
@@ -441,10 +441,10 @@ test("Hadean lethal boundary remains unreachable while photosynthetic founders w
 
 test("Hadean photosynthesis matures after metabolic rest and newborn cells start neutral", () => {
   let s = createCampaignState(302);
-  s = simulate(s, { type: "ORIGIN_CLICK" });
-  s = simulate(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
   assert.equal(s.notices.length, 1);
-  s = simulate(s, { type: "ACK_NOTICE", id: s.notices[0].id });
+  s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
 
   let blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
@@ -562,9 +562,9 @@ test("compact non-canonical cycle starts keep Brancas on the lower half", () => 
 
 test("Hadean saturation grants Predação to each color on consecutive turns", () => {
   let s = createCampaignState(305);
-  s = simulate(s, { type: "ORIGIN_CLICK" });
-  s = simulate(s, { type: "ORIGIN_CLICK" });
-  s = simulate(s, { type: "ACK_NOTICE", id: s.notices[0].id });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
   s.pieces = [];
   s.nextId = 1;
   for (let r = 2; r <= 5; r++)
@@ -621,9 +621,9 @@ test("Hadean saturation grants Predação to each color on consecutive turns", (
 
 test("Hadean capture requires an explicit Predação trait", () => {
   let s = createCampaignState(306);
-  s = simulate(s, { type: "ORIGIN_CLICK" });
-  s = simulate(s, { type: "ORIGIN_CLICK" });
-  s = simulate(s, { type: "ACK_NOTICE", id: s.notices[0].id });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
   const blue = s.pieces.find((piece) => piece.owner === "blue");
   s.hadeanCaptureUnlocked = true;
   s.hadeanTutorial.captured = true;
@@ -638,8 +638,8 @@ test("Hadean capture requires an explicit Predação trait", () => {
 test("Hadean ancestral split keeps Brancas below and Pretas above across seeds", () => {
   for (let seed = 1; seed <= 24; seed++) {
     let s = createCampaignState(seed);
-    s = simulate(s, { type: "ORIGIN_CLICK" });
-    s = simulate(s, { type: "ORIGIN_CLICK" });
+    s = transition(s, { type: "ORIGIN_CLICK" });
+    s = transition(s, { type: "ORIGIN_CLICK" });
     assert.ok(
       s.pieces
         .filter((piece) => piece.owner === "blue")
