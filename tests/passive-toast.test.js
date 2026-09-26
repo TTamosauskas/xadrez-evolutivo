@@ -141,8 +141,8 @@ test("Toastify assets load before the app and mobile styling stays viewport-wide
       script.getAttribute("src"),
     );
 
-  assert.deepEqual(styles.slice(0, 2), ["vendor/toastify.css", "app.css"]);
-  assert.deepEqual(scripts.slice(-2), ["vendor/toastify.js", "src/app.js"]);
+  assert.deepEqual(styles.slice(0, 2), ["assets/toastify.css", "app.css"]);
+  assert.deepEqual(scripts.slice(-2), ["assets/toastify.js", "src/app.js"]);
   assert.equal(d.getElementById("passive-toasts"), null);
   assert.match(css, /\.toastify\.xe-passive-toast\s*\{/);
   assert.match(css, /max-width:\s*min\(calc\(100vw - 24px\), 680px\)/);
