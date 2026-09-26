@@ -128,7 +128,7 @@ function priority(state, a) {
     ).length,
     hunt =
       p &&
-      has(p, "Predação") &&
+      (has(p, "Predação") || has(p, "Mixotrofia")) &&
       enemies.length &&
       Number.isInteger(a.r) &&
       !enemyVictim
@@ -148,7 +148,7 @@ function priority(state, a) {
         : -8 - victim.rank
       : 0,
     fertileValue =
-      !victim && targetTerrain === "fertile" && canUseBasalFertility(p)
+      !victim && targetTerrain === "fertile" && canUseBasalFertility(state, p)
         ? 4
         : 0,
     fecalValue =
