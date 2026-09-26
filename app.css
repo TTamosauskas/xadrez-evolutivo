@@ -498,6 +498,18 @@ main {
   filter: drop-shadow(0 1px 1px #000b);
 }
 
+.arboreal-support-suggestion {
+  position: absolute;
+  z-index: 8;
+  top: 5%;
+  left: 5%;
+  font-size: clamp(10px, 1.6vw, 15px);
+  line-height: 1;
+  opacity: 0.72;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px #000b);
+}
+
 .feeding-suggestion {
   position: absolute;
   z-index: 8;

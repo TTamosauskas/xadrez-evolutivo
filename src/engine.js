@@ -1370,6 +1370,12 @@ function executeMove(ctx, action) {
       (t) => t.r === action.r && t.c === action.c,
     ),
     target =
+      matchingTargets.find(
+        (t) =>
+          t.lateralSwapId ||
+          t.escalationSwapId ||
+          t.bioadhesionSwapId,
+      ) ??
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
@@ -1390,7 +1396,13 @@ function executeMove(ctx, action) {
           outcome: "moved",
           kind: target.crawler
             ? "crawler"
-            : target.serpentine
+            : target.escalation
+              ? "escalation"
+              : target.bioadhesion
+                ? "bioadhesion"
+                : target.arboreal
+                  ? "arboreal"
+                  : target.serpentine
               ? "serpentine"
               : target.trail
                 ? "trail"
@@ -1504,6 +1516,9 @@ function executeMove(ctx, action) {
       has(p, "Manada") &&
       !target.crawler &&
       !target.lateral &&
+      !target.escalation &&
+      !target.bioadhesion &&
+      !target.arboreal &&
       !target.serpentine &&
       !target.trail &&
       !target.tigmotaxis &&
@@ -1520,7 +1535,9 @@ function executeMove(ctx, action) {
   for (const [r, c] of target.path)
     if (
       lethalHazardAt(state, r, c) &&
-      (!has(p, "Voo") || (r === target.r && c === target.c))
+      (!has(p, "Voo") &&
+        !target.arboreal ||
+        (r === target.r && c === target.c))
     ) {
       if (state.movementTrace) {
         const stopIndex = state.movementTrace.path.findIndex(
@@ -1550,7 +1567,10 @@ function executeMove(ctx, action) {
         r === target.r &&
         c === target.c
       ) &&
-      !(has(p, "Voo") && (r !== target.r || c !== target.c)) &&
+      !(
+        (has(p, "Voo") || target.arboreal) &&
+        (r !== target.r || c !== target.c)
+      ) &&
       !(has(p, "Dormência") && r === target.r && c === target.c) &&
       !(
         p.decompositionImmunity &&
@@ -1626,16 +1646,27 @@ function executeMove(ctx, action) {
     return;
   }
 
-  if (target.lateralSwapId) {
+  const alliedSwapId =
+    target.lateralSwapId ??
+    target.escalationSwapId ??
+    target.bioadhesionSwapId ??
+    null;
+  if (alliedSwapId) {
     const ally = state.pieces.find(
       (piece) =>
-        piece.id === target.lateralSwapId &&
+        piece.id === alliedSwapId &&
         piece.owner === p.owner &&
         piece.id !== p.id,
     );
-    if (!ally) throw Error("Troca lateral indisponível.");
+    if (!ally) throw Error("Troca locomotora indisponível.");
     const origin = { r: p.r, c: p.c },
-      allyOrigin = { r: ally.r, c: ally.c };
+      allyOrigin = { r: ally.r, c: ally.c },
+      trait = target.escalation
+        ? "Escansão"
+        : target.bioadhesion
+          ? "Bioadesão"
+          : "Movimento Lateral",
+      icon = target.escalation ? "🦥" : target.bioadhesion ? "🫠" : "🦀";
     recordMovementTrail(state, p, [
       origin,
       ...target.path.map(([r, c]) => ({ r, c })),
@@ -1645,7 +1676,7 @@ function executeMove(ctx, action) {
       ally,
       origin.r,
       origin.c,
-      "troca por Movimento Lateral",
+      `troca por ${trait}`,
     );
     if (state.pieces.some((piece) => piece.id === p.id))
       reactiveRelocation(
@@ -1653,16 +1684,16 @@ function executeMove(ctx, action) {
         p,
         allyOrigin.r,
         allyOrigin.c,
-        "troca por Movimento Lateral",
+        `troca por ${trait}`,
       );
     log(
       state,
-      `${OWNERS[p.owner]}: 🦀 Movimento Lateral trocou duas criaturas entre ${coord(origin.r, origin.c)} e ${coord(allyOrigin.r, allyOrigin.c)}.`,
+      `${OWNERS[p.owner]}: ${icon} ${trait} trocou duas criaturas entre ${coord(origin.r, origin.c)} e ${coord(allyOrigin.r, allyOrigin.c)}.`,
     );
     emitPassiveEffect(
       state,
-      "Movimento Lateral",
-      "🦀 Movimento Lateral permitiu trocar de posição com um aliado.",
+      trait,
+      `${icon} ${trait} permitiu trocar de posição com um aliado.`,
       { pieceId: p.id, outcome: "allied-position-swap" },
     );
     clearLocomotionChain(state);
@@ -2090,6 +2121,30 @@ function executeMove(ctx, action) {
     emitPassiveEffect(state, "Movimento Lateral", "🦀 Movimento Lateral percorreu a linha.", {
       pieceId: p.id,
       outcome: "lateral-movement",
+    });
+  }
+  if (target.escalation) {
+    log(state, `${OWNERS[p.owner]}: 🦥 Escansão percorreu verticalmente o habitat até ${coord(p.r, p.c)}.`);
+    emitPassiveEffect(state, "Escansão", "🦥 Escansão percorreu verticalmente o habitat.", {
+      pieceId: p.id,
+      outcome: "vertical-movement",
+    });
+  }
+  if (target.bioadhesion) {
+    log(state, `${OWNERS[p.owner]}: 🫠 Bioadesão percorreu o perímetro até ${coord(p.r, p.c)}.`);
+    emitPassiveEffect(state, "Bioadesão", "🫠 Bioadesão percorreu o perímetro do habitat.", {
+      pieceId: p.id,
+      outcome: "perimeter-movement",
+      value: target.path.length,
+    });
+  }
+  if (target.arboreal) {
+    const supports = target.arborealSupportIds?.length ?? 0;
+    log(state, `${OWNERS[p.owner]}: 🦧 Arborícola atravessou ${supports} criatura(s) fotossintética(s) aliada(s) até ${coord(p.r, p.c)}.`);
+    emitPassiveEffect(state, "Arborícola", "🦧 Arborícola atravessou o dossel aliado.", {
+      pieceId: p.id,
+      outcome: "crossed-allied-canopy",
+      value: supports,
     });
   }
   if (target.serpentine) {

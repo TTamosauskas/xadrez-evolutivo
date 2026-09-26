@@ -178,6 +178,12 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Rastejante");
   if (targets.some((target) => target.lateral))
     actionable.add("Movimento Lateral");
+  if (targets.some((target) => target.escalation))
+    actionable.add("Escansão");
+  if (targets.some((target) => target.bioadhesion))
+    actionable.add("Bioadesão");
+  if (targets.some((target) => target.arboreal))
+    actionable.add("Arborícola");
   if (targets.some((target) => target.serpentine))
     actionable.add("Serpenteamento");
   if (targets.some((target) => target.trail))
