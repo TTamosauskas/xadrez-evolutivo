@@ -24,7 +24,7 @@ export const TRAITS = {
   ],
   Multicelularismo: [
     "🫧",
-    "Protege contra captura por predadores que ainda não possuem Ingestão; a proteção vale mesmo contra outros organismos multicelulares.",
+    "Protege contra captura por predadores que ainda não possuem Ingestão; a proteção vale mesmo contra outros organismos multicelulares. Em linhagens fotossintéticas, libera formas vegetais Cavalo e Bispo.",
   ],
   "Simetria Bilateral": [
     "⏸",
@@ -131,7 +131,7 @@ export const TRAITS = {
   ],
   Fotossíntese: [
     "🟢",
-    "Define um ramo energético hereditário incompatível com Predação. Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas; descendentes permanecem neste ramo.",
+    "Define um ramo energético hereditário incompatível com Predação. Ao maturar, torna fértil a própria casa; formas vegetais multicelulares também fertilizam casas neutras do entorno imediato conforme sua arquitetura.",
   ],
   Mixotrofia: [
     "☯",
@@ -139,7 +139,7 @@ export const TRAITS = {
   ],
   Embriófitas: [
     "🌱",
-    "Ao completar Fotossíntese, pode tornar fértil também uma casa neutra adjacente desocupada.",
+    "Estabelece a linhagem vegetal terrestre e prepara a evolução de Traqueófitas e outras especializações vegetais posteriores.",
   ],
   Haustório: [
     "🪝",
@@ -151,7 +151,7 @@ export const TRAITS = {
   ],
   Traqueófitas: [
     "🍃",
-    "Pode reproduzir sem se deslocar consumindo uma casa fértil adjacente.",
+    "Pode reproduzir sem se deslocar consumindo uma casa fértil adjacente e libera formas vegetais Torre e Rainha.",
   ],
   Madeira: [
     "🪵",
