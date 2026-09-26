@@ -70,5 +70,5 @@ test("Regeneração prevents an environmental carcass when it prevents the death
   state = simulate(state, move(actor, 4, 4));
 
   assert.ok(state.pieces.some((piece) => piece.id === actor.id));
-  assert.equal(carcassAt(state, 4, 1), undefined);
+  assert.equal(carcassAt(state, 4, 1), null);
 });
