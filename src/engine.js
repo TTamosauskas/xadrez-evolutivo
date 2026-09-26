@@ -1132,7 +1132,7 @@ function executeMove(ctx, action) {
     emitPassiveEffect(
       state,
       "Carapaça",
-      "🐚 Carapaça neutralizou Chifre.",
+      "🐚 Carapaça neutralizou 🫎 Chifre.",
       { pieceId: p.id, outcome: "neutralized-horn" },
     );
   if (
@@ -1213,7 +1213,7 @@ function executeMove(ctx, action) {
     emitPassiveEffect(
       state,
       "Visão Noturna",
-      "👁️ Visão Noturna neutralizou Notívago.",
+      "👁️ Visão Noturna neutralizou 🌙 Notívago.",
       { pieceId: p.id, outcome: "neutralized-nocturnal-evasion" },
     );
   const nocturnalEvasion =
@@ -1268,7 +1268,7 @@ function executeMove(ctx, action) {
     emitPassiveEffect(
       state,
       "Presas",
-      "▽ Presas neutralizou Pele grossa.",
+      "▽ Presas neutralizou 🦏 Pele grossa.",
       { pieceId: p.id, outcome: "neutralized-thick-skin" },
     );
   if (
