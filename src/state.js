@@ -1627,8 +1627,6 @@ export function grantHadeanPredation(state, owner) {
   piece.mutations = (piece.mutations ?? 0) + 1;
   delete piece.photosynthesisCell;
   delete piece.photosynthesisSinceTurn;
-  recordHistoricalTraits(state, piece);
-  rememberEnergyBranchRepresentative(state, piece);
   return piece;
 }
 
@@ -1665,15 +1663,11 @@ export function activateOrigin(state) {
     state.board[cell] = "neutral";
     piece.photosynthesisCell = cell;
     piece.photosynthesisSinceTurn = state.turn;
-    recordHistoricalTraits(state, piece);
-    rememberEnergyBranchRepresentative(state, piece);
   }
   state.origin = null;
   state.phase = "move";
   state.current = "blue";
   state.hadeanTutorial.divided = true;
-  if (!state.seenMutations.includes("Fotossíntese"))
-    state.seenMutations.push("Fotossíntese");
   notice(
     state,
     "Fotossíntese",
