@@ -24,7 +24,7 @@ export const TRAITS = {
   ],
   Multicelularismo: [
     "🫧",
-    "Multicelularismo impede Predação direta por organismos unicelulares.",
+    "Protege contra captura por predadores que ainda não possuem Ingestão; a proteção vale mesmo contra outros organismos multicelulares.",
   ],
   "Simetria Bilateral": [
     "⏸",
@@ -64,14 +64,18 @@ export const TRAITS = {
     "🦖",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
-  Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Permite capturar criaturas adversárias; enquanto a linhagem ainda é unicelular, capturas inimigas também podem gerar reprodução predatória primordial. Após Multicelularismo, a reprodução pela captura depende de especializações alimentares."],
+  Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Capturas alimentares válidas podem gerar reprodução; sem Ingestão, organismos multicelulares permanecem protegidos."],
+  Ingestão: [
+    "👄",
+    "Adaptação multicelular que permite capturar e consumir organismos multicelulares; exige Multicelularismo e mantém a reprodução predatória após uma captura válida.",
+  ],
   Carnívoro: [
     "🍖",
-    "Especialização alimentar multicelular de uma linhagem com Predação: capturas de criaturas não fotossintéticas podem gerar reprodução predatória.",
+    "Especialização alimentar: ao reproduzir por captura de uma criatura não fotossintética, reduz em uma rodada a recuperação metabólica.",
   ],
   Herbívoro: [
     "🥬",
-    "Especialização alimentar multicelular de uma linhagem com Predação: capturas de criaturas fotossintéticas podem gerar reprodução predatória.",
+    "Especialização alimentar: ao reproduzir por captura de uma criatura fotossintética, reduz em uma rodada a recuperação metabólica. Do Cambriano em diante, também permite Vivificar usando casas férteis.",
   ],
   Canibalismo: [
     "🐻‍❄️",
@@ -84,7 +88,7 @@ export const TRAITS = {
   "Vetor Patógeno": ["🦟", "Pode desencadear surtos virais, bacterianos ou fúngicos em criaturas adversárias adjacentes."],
   Onívoro: [
     "🐻",
-    "Especialização posterior de Carnívoro ou Herbívoro: capturas de criaturas fotossintéticas ou não fotossintéticas podem gerar reprodução predatória.",
+    "Combina as especializações de Carnívoro e Herbívoro: reduz a recuperação metabólica após reprodução por qualquer presa e, do Cambriano em diante, também permite Vivificar em casas férteis.",
   ],
   "Respiração Cutânea": [
     "🐸",
@@ -131,7 +135,7 @@ export const TRAITS = {
   ],
   Mixotrofia: [
     "☯",
-    "Quando expressa, combina as funções energéticas básicas de Fotossíntese e Predação sem apagar o ramo ancestral nem liberar automaticamente as especializações do outro ramo.",
+    "Combina as funções energéticas básicas de Fotossíntese e Predação: pode explorar casas férteis e reproduzir por capturas válidas, mas continua precisando de Ingestão para consumir organismos multicelulares e não recebe a eficiência dos especialistas alimentares.",
   ],
   Embriófitas: [
     "🌱",
@@ -144,10 +148,6 @@ export const TRAITS = {
   "Perfume Floral": [
     "🌹",
     "Sementes orientam a dispersão para refúgios próximos a criaturas aliadas não fotossintéticas, priorizando as casas com maior proteção.",
-  ],
-  "Carnivoria Botânica": [
-    "👄",
-    "Permite consumir uma criatura não fotossintética inimiga adjacente sem se deslocar. Uma captura bem-sucedida pode gerar um descendente por reprodução predatória.",
   ],
   Traqueófitas: [
     "🍃",
