@@ -1664,6 +1664,7 @@ export function activateOrigin(state) {
     blue = newPiece(state, "blue", blueCell.r, blueCell.c, source),
     amber = newPiece(state, "amber", amberCell.r, amberCell.c, source);
 
+  state.hadeanTutorial.dividedAtTurn = state.turn;
   state.pieces.push(blue, amber);
   state.board[square(center.r, center.c)] = "neutral";
   for (const piece of [blue, amber]) {
@@ -1678,7 +1679,6 @@ export function activateOrigin(state) {
   state.phase = "move";
   state.current = "blue";
   state.hadeanTutorial.divided = true;
-  state.hadeanTutorial.dividedAtTurn = state.turn;
   notice(
     state,
     "Fotossíntese",
