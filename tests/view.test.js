@@ -320,13 +320,13 @@ test("renders one board occupant per piece and loads Toastify before the app", (
     [...d.querySelectorAll("script")].map((script) =>
       script.getAttribute("src"),
     ),
-    ["assets/toastify.js", "src/app.js"],
+    ["toastify.js", "src/app.js"],
   );
   assert.deepEqual(
     [...d.querySelectorAll("link[rel=stylesheet]")].map((link) =>
       link.getAttribute("href"),
     ),
-    ["assets/toastify.css", "app.css"],
+    ["toastify.css", "app.css"],
   );
   dom.window.close();
 });
