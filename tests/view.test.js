@@ -1246,6 +1246,49 @@ test("Vivificar and targeted Parasitismo use green and red board rings", () => {
   dom.window.close();
 });
 
+test("predatory reproduction uses concentric red and green capture rings", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 3, rank: 4 },
+      { owner: "amber", r: 4, c: 4, rank: 4 },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    predator = s.pieces[0],
+    prey = s.pieces[1],
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+
+  render(dom.window.document, s, { selected: predator.id });
+  let target = dom.window.document.querySelector(
+    `[data-r="${prey.r}"][data-c="${prey.c}"]`,
+  );
+  assert.ok(target.classList.contains("attack-target"));
+  assert.ok(target.classList.contains("predatory-reproduction-target"));
+  assert.match(target.title, /ataque com reprodução predatória/);
+  assert.ok(
+    dom.window.document.querySelector(
+      ".legend-action-ring.predatory-reproduction",
+    ),
+  );
+  assert.match(
+    css,
+    /\.cell\.legal\.attack-target::after[\s\S]*width:\s*84%[\s\S]*border:\s*4px solid #d54242/,
+  );
+  assert.match(
+    css,
+    /\.cell\.legal\.predatory-reproduction-target::before[\s\S]*width:\s*70%[\s\S]*border:\s*4px solid #5bd66c/,
+  );
+
+  predator.nextReproductionRound = round(s) + 2;
+  render(dom.window.document, s, { selected: predator.id });
+  target = dom.window.document.querySelector(
+    `[data-r="${prey.r}"][data-c="${prey.c}"]`,
+  );
+  assert.ok(target.classList.contains("attack-target"));
+  assert.ok(!target.classList.contains("predatory-reproduction-target"));
+  assert.match(target.title, /alvo de ataque/);
+  dom.window.close();
+});
+
 test("self-only Parasitismo uses Vivificar when there is no attack target", () => {
   const dom = setup(),
     s = fixture([
@@ -1324,14 +1367,16 @@ test("selected sexual pieces mark partners green and attack targets red", () => 
   assert.match(legend.textContent, /Vivificar/);
   assert.match(legend.textContent, /Ataque/);
   assert.ok(legend.querySelector(".legend-action-ring.vivify"));
-  assert.ok(legend.querySelector(".legend-action-ring.attack"));
+  assert.ok(
+    legend.querySelector(".legend-action-ring.predatory-reproduction"),
+  );
   assert.match(
     css,
     /\.legend-action-ring\.vivify[\s\S]*color:\s*#5bd66c/,
   );
   assert.match(
     css,
-    /\.legend-action-ring\.attack[\s\S]*color:\s*#d54242/,
+    /\.legend-action-ring\.predatory-reproduction[\s\S]*color:\s*#d54242/,
   );
   dom.window.close();
 });
