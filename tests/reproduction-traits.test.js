@@ -27,7 +27,7 @@ test("Brotamento repeats on a four-round cadence and Colônia shares identity an
       owner: "blue",
       r: 4,
       c: 4,
-      traits: ["Brotamento", "Colônia"],
+      traits: ["Brotamento", "Colônia", "Herbívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -159,7 +159,7 @@ test("Ovulação Induzida emits feedback only when sexual recovery is actually r
         r: 4,
         c: 5,
         rank: 5,
-        traits: ["Reprodução Sexuada"],
+        traits: ["Reprodução Sexuada", "Herbívoro"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
@@ -224,6 +224,7 @@ test("Promiscuidade reaches a sexual partner through a connected allied network"
       "Incubação",
       "Sociabilidade",
       "Promiscuidade",
+      "Herbívoro",
     ],
     s = fixture([
       { owner: "blue", r: 4, c: 2, traits },
@@ -383,19 +384,19 @@ test("Acasalamento Múltiplo uses one fertile resource across both partners", ()
       owner: "blue",
       r: 4,
       c: 4,
-      traits: ["Reprodução Sexuada", "Promiscuidade", "Acasalamento Múltiplo"],
+      traits: ["Reprodução Sexuada", "Promiscuidade", "Acasalamento Múltiplo", "Herbívoro"],
     },
     {
       owner: "blue",
       r: 4,
       c: 5,
-      traits: ["Reprodução Sexuada"],
+      traits: ["Reprodução Sexuada", "Herbívoro"],
     },
     {
       owner: "blue",
       r: 5,
       c: 4,
-      traits: ["Reprodução Sexuada"],
+      traits: ["Reprodução Sexuada", "Herbívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
