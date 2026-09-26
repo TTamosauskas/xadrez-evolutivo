@@ -174,6 +174,8 @@ export function actionableTraitsForPiece(state, piece) {
   if (targets.some((target) => target.jet)) actionable.add("Jatopropulsão");
   if (targets.some((target) => target.echolocation))
     actionable.add("Ecolocalização");
+  if (targets.some((target) => target.crawler))
+    actionable.add("Rastejante");
   if (
     has(piece, "Manada") &&
     state.pieces.some(
@@ -268,11 +270,13 @@ export function actionableTraitsForPiece(state, piece) {
       if (captureTrait) actionable.add(captureTrait);
 
       if (
+        !target.crawler &&
         distance(piece, victim) > 1 &&
         (piece.traits ?? []).includes("Percepção Espacial")
       )
         actionable.add("Percepção Espacial");
       if (
+        !target.crawler &&
         distance(piece, victim) > 1 &&
         has(victim, "Camuflagem") &&
         (piece.traits ?? []).includes("Visão Binocular")
