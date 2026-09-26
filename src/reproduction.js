@@ -639,16 +639,7 @@ function makeRequestedBrood(count) {
 
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
-  if (profile.newMutationToast) {
-    const cellTerrain = terrain(state, r, c),
-      singleToneTerrain =
-        currentGeologicalStage(state).index >= geologicalStage("devonian").index,
-      shade =
-        singleToneTerrain && cellTerrain !== "neutral"
-          ? "single"
-          : (r + c) % 2
-            ? "dark"
-            : "light";
+  if (profile.newMutationToast)
     emitPassiveEffect(
       state,
       profile.newMutationToast.trait,
@@ -656,10 +647,8 @@ function spawnChild(state, profile, r, c) {
       {
         pieceId: child.id,
         outcome: "new-mutation",
-        theme: `terrain-${cellTerrain}-${shade}`,
       },
     );
-  }
   child.maturesRound = has(child, "Multicelularismo")
     ? round(state) + sexualMaturityRounds(child)
     : round(state);
