@@ -38,6 +38,62 @@ function setup() {
   });
   return { c, workers, timers, timerDelays };
 }
+test("controller forwards realized passive effects and suppresses them in auto mode", () => {
+  const makeState = () => {
+      const state = fixture([
+        { owner: "blue", r: 4, c: 3, rank: 4 },
+        { owner: "amber", r: 4, c: 4, traits: ["Pele grossa"] },
+        { owner: "amber", r: 0, c: 0 },
+      ]);
+      state.rng = 0;
+      return state;
+    },
+    controllerOptions = (toasts) => ({
+      render: () => {},
+      toast: (effect) => toasts.push(effect),
+      workerFactory: () => ({
+        postMessage() {},
+        terminate() {},
+      }),
+      setTimer: () => 1,
+      clearTimer: () => {},
+    });
+
+  const visible = [],
+    human = new Controller(makeState(), controllerOptions(visible));
+  assert.equal(
+    human.dispatch({
+      type: "MOVE",
+      id: human.state.pieces[0].id,
+      r: 4,
+      c: 4,
+      revision: human.state.revision,
+    }),
+    true,
+  );
+  assert.equal(visible.length, 1);
+  assert.equal(visible[0].trait, "Pele grossa");
+  assert.equal(visible[0].outcome, "prevented-capture");
+
+  const hidden = [],
+    automatic = new Controller(makeState(), controllerOptions(hidden));
+  automatic.mode = "auto";
+  assert.equal(
+    automatic.dispatch(
+      {
+        type: "MOVE",
+        id: automatic.state.pieces[0].id,
+        r: 4,
+        c: 4,
+        revision: automatic.state.revision,
+      },
+      { ai: true },
+    ),
+    true,
+  );
+  assert.equal(hidden.length, 0);
+});
+
 test("automatic Conway waits between visible board updates", () => {
   const s = createState(302, {
     geologicalStage: "devonian",
