@@ -33,6 +33,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Reprodução Sexuada",
       "Carnívoro",
@@ -49,6 +50,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Escavador",
@@ -68,6 +70,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -90,6 +93,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -111,6 +115,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -135,6 +140,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -160,6 +166,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -187,6 +194,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -215,6 +223,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -244,6 +253,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -275,6 +285,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -299,11 +310,11 @@ export const EARTH_FOUNDER_GENOMES = {
       "Traqueófitas",
       "Gimnospermas",
       "Angiospermas",
-      "Carnivoria Botânica",
     ],
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -332,6 +343,7 @@ export const EARTH_FOUNDER_GENOMES = {
     animal: [
       "Predação",
       "Multicelularismo",
+      "Ingestão",
       "Respiração aeróbia",
       "Locomoção Primitiva",
       "Vertebrado",
@@ -355,6 +367,7 @@ const CONTEXT_AFFINITIES = {
   "Percepção Espacial": ["Locomoção Articulada"],
   "Respiração Pulmonar": ["Vertebrado", "Locomoção Terrestre"],
   Carapaça: ["Predação"],
+  Ingestão: ["Multicelularismo", "Predação"],
   Camuflagem: ["Locomoção Articulada"],
   Veneno: ["Carnívoro"],
   Necrófago: ["Predação"],
@@ -364,7 +377,6 @@ const CONTEXT_AFFINITIES = {
   Sociabilidade: ["Incubação"],
   Eusocialidade: ["Sociabilidade"],
   "Perfume Floral": ["Angiospermas"],
-  "Carnivoria Botânica": ["Angiospermas"],
   "Plantas Domesticadas": ["Angiospermas"],
   "Animais Domésticos": ["Neocórtex Desenvolvido"],
 };
