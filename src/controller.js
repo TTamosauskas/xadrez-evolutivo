@@ -47,6 +47,7 @@ export class Controller {
     this.neocortexPending = null;
     this.neocortexWindow = null;
     this.neocortexLock = null;
+    this.pendingMovementTrace = null;
   }
   cancel() {
     this.generation++;
@@ -66,7 +67,9 @@ export class Controller {
     }
   }
   refresh() {
-    const busy = this.conwayTimer !== null ? "conway" : !!this.job;
+    const busy = this.conwayTimer !== null ? "conway" : !!this.job,
+      movementTrace = this.pendingMovementTrace;
+    this.pendingMovementTrace = null;
     if (this.state.result) {
       if (!this.resultReady && this.resultTimer === null) {
         const revision = this.state.revision;
@@ -77,11 +80,11 @@ export class Controller {
           this.render(this.state, false, true);
         }, this.resultDelay);
       }
-      this.render(this.state, busy, this.resultReady);
+      this.render(this.state, busy, this.resultReady, movementTrace);
       return;
     }
     this.resultReady = false;
-    this.render(this.state, busy, true);
+    this.render(this.state, busy, true, movementTrace);
     if (!this.scheduleConway()) this.schedule();
   }
 
@@ -215,6 +218,8 @@ export class Controller {
       this.conwayTimer = null;
       this.cancel();
       if (pendingConway !== null) this.clearTimer(pendingConway);
+      this.pendingMovementTrace = next.movementTrace ?? null;
+      next.movementTrace = null;
       this.state = next;
 
       if (this.neocortexPending) {
