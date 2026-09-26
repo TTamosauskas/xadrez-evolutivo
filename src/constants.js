@@ -51,7 +51,7 @@ export const TRAITS = {
     "Ao sofrer uma tentativa de captura, tem 1/6 de chance de escapar para uma casa diagonal vazia válida; o agressor ocupa a posição abandonada.",
   ],
   "Artrópode": [
-    "🦀",
+    "🦞",
     "Plano corporal bilateral mutuamente exclusivo com Vertebrado. Habilita Locomoção Articulada, limita formas derivadas a Cavalo e Bispo e dobra a produção-base de descendentes, até 6.",
   ],
   "Locomoção Articulada": [
