@@ -386,8 +386,8 @@ main {
   background: transparent;
   box-sizing: border-box;
 }
-.cell.predatory-reproduction-target::before,
-.cell.legal.predatory-reproduction-target::before {
+.cell.capture-reproduction-target::before,
+.cell.legal.capture-reproduction-target::before {
   content: "";
   position: absolute;
   width: 70%;
@@ -667,11 +667,11 @@ main {
 .legend-action-ring.attack {
   color: #d54242;
 }
-.legend-action-ring.predatory-reproduction {
+.legend-action-ring.capture-reproduction {
   position: relative;
   color: #d54242;
 }
-.legend-action-ring.predatory-reproduction::after {
+.legend-action-ring.capture-reproduction::after {
   content: "";
   position: absolute;
   inset: 2px;
