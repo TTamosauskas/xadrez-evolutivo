@@ -7,7 +7,6 @@ import {
   EVENTS,
   PATHOGEN_AGENT_IDS,
   PATHOGEN_TRANSMISSION_IDS,
-  PIECE_LIFE_HISTORY,
   STATE_VERSION,
 } from "./constants.js";
 import {
