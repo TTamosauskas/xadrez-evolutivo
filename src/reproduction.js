@@ -328,9 +328,9 @@ function mutation(
       icon = traitName && TRAITS[traitName] ? TRAITS[traitName][0] : "🧬";
     p.newMutationToast = {
       trait: mutationTrait,
-      text: `🧬 Nova mutação: ${icon} ${label}.`,
+      text: `Nova Mutação: ${icon} ${label}.`,
     };
-    log(state, `🧬 Nova mutação: ${OWNERS[p.owner]} · ${label}.`);
+    log(state, `Nova Mutação: ${OWNERS[p.owner]} · ${label}.`);
   } else log(state, `${OWNERS[p.owner]}: ${label}.`);
   const discoveryId = mutationDiscoveryId(label);
   if (discoveryId) recordDiscovery(state, "mutations", discoveryId);
