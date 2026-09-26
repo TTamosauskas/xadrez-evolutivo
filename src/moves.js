@@ -424,6 +424,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     if (
       !has(p, "Rastejante") ||
       !has(p, "Locomoção Terrestre") ||
+      has(p, "Deficiência Motora") ||
       (p.r !== 0 && p.r !== 7 && p.c !== 0 && p.c !== 7)
     )
       return;
