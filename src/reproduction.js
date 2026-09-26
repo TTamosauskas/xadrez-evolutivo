@@ -26,7 +26,7 @@ import {
   fertilityPaused,
   activePopulation,
   log,
-  notice,
+  emitPassiveEffect,
   registerDiscoveries,
   reproductionReady,
   ecologicalDomainBlocked,
@@ -73,6 +73,7 @@ import {
   MARSUPIAL_CARRY_ROUNDS,
   paedogenesisReady,
   buddingResource,
+  canUseFertileResource,
 } from "./reproduction-traits.js";
 import {
   transmitSexualPathogen,
@@ -197,7 +198,13 @@ export function applyRegressionEffect(state, piece) {
   return hidden;
 }
 
-function mutation(state, p, positiveOnly, excludedTraits = null) {
+function mutation(
+  state,
+  p,
+  positiveOnly,
+  excludedTraits = null,
+  forcedGeneGain = null,
+) {
   const gains = [];
   if (p.rank === 4 && pawnMutationUnlocked(state, p))
     gains.push({ rank: 0, weight: 1 });
@@ -228,15 +235,21 @@ function mutation(state, p, positiveOnly, excludedTraits = null) {
     )
       losses.push({ geneGain: trait });
 
-  const negativeAllowed =
+  const forcedChoice = forcedGeneGain
+      ? gains.find((option) => option.geneGain === forcedGeneGain) ?? null
+      : null,
+    negativeAllowed =
       !positiveOnly && deleteriousMutationUnlocked(state),
     negative =
-      negativeAllowed && random(state) < negativeMutationChance(p);
+      !forcedChoice &&
+      negativeAllowed &&
+      random(state) < negativeMutationChance(p);
   let options = negative ? losses : gains;
   if (!options.length)
     options =
       positiveOnly || !negativeAllowed ? [] : negative ? gains : losses;
-  const choice = negative ? pick(state, options) : weightedPick(state, options);
+  const choice = forcedChoice ??
+    (negative ? pick(state, options) : weightedPick(state, options));
   if (!choice) return null;
 
   let label;
@@ -307,8 +320,17 @@ function mutation(state, p, positiveOnly, excludedTraits = null) {
   const firstAppearance = !state.seenMutations.includes(label);
   if (firstAppearance) {
     state.seenMutations.push(label);
-    notice(state, "Novas mutações", [label]);
-    log(state, `🧬 Nova mutação: ${OWNERS[p.owner]} · ${label}.`);
+    const mutationTrait = choice.geneGain ?? choice.geneLoss ?? p.traits[0] ?? "Respiração anaeróbia",
+      lostTrait = label.startsWith("Perda de ")
+        ? label.slice("Perda de ".length)
+        : null,
+      traitName = TRAITS[label] ? label : lostTrait,
+      icon = traitName && TRAITS[traitName] ? TRAITS[traitName][0] : "🧬";
+    p.newMutationToast = {
+      trait: mutationTrait,
+      text: `Nova Mutação: ${icon} ${label}.`,
+    };
+    log(state, `Nova Mutação: ${OWNERS[p.owner]} · ${label}.`);
   } else log(state, `${OWNERS[p.owner]}: ${label}.`);
   const discoveryId = mutationDiscoveryId(label);
   if (discoveryId) recordDiscovery(state, "mutations", discoveryId);
@@ -522,6 +544,31 @@ function pairSexualFounders(brood, sexualMutants) {
   );
 }
 
+function missingArcheanEnergyBranch(state) {
+  if (
+    state.scenario !== "earth" ||
+    state.geologicalStage !== "archean" ||
+    state.cycle !== 1
+  )
+    return null;
+  const history = new Set(state.historicalTraits ?? []),
+    photosynthesis = history.has("Fotossíntese"),
+    predation = history.has("Predação");
+  if (photosynthesis === predation) return null;
+  return photosynthesis ? "Predação" : "Fotossíntese";
+}
+
+function complementaryArcheanEnergyBranch(state, child) {
+  const missing = missingArcheanEnergyBranch(state);
+  if (
+    !missing ||
+    has(child, "Fotossíntese") ||
+    has(child, "Predação")
+  )
+    return null;
+  return traitUnlocked(state, missing, child) ? missing : null;
+}
+
 function makeChildProfile(
   state,
   parent,
@@ -549,8 +596,29 @@ function makeChildProfile(
   };
   syncGenomePhenotype(child);
   let mutationLabel = null;
-  if (random(state) < (state.event?.id === "solar" ? 1 : 1 / 3))
-    mutationLabel = mutation(state, child, !!mate, excludedMutationTraits);
+  const missingEnergyBranch = missingArcheanEnergyBranch(state),
+    complementaryBranch = complementaryArcheanEnergyBranch(state, child),
+    openingGuarantee =
+      round(state) >= 1 &&
+      state.openingMutationSatisfied?.[parent.owner] === false &&
+      (!missingEnergyBranch || !!complementaryBranch),
+    mutationAttempt =
+      openingGuarantee ||
+      random(state) < (state.event?.id === "solar" ? 1 : 1 / 3);
+  if (mutationAttempt)
+    mutationLabel = mutation(
+      state,
+      child,
+      !!mate,
+      excludedMutationTraits,
+      complementaryBranch,
+    );
+  if (
+    mutationLabel &&
+    state.openingMutationSatisfied &&
+    (!missingEnergyBranch || mutationLabel === missingEnergyBranch)
+  )
+    state.openingMutationSatisfied[parent.owner] = true;
   applyAirSacRankFloor(child);
   normalizeBodyPlanRank(child);
   normalizePhotosyntheticRank(child);
@@ -572,6 +640,16 @@ function makeRequestedBrood(count) {
 
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
+  if (profile.newMutationToast)
+    emitPassiveEffect(
+      state,
+      profile.newMutationToast.trait,
+      profile.newMutationToast.text,
+      {
+        pieceId: child.id,
+        outcome: "new-mutation",
+      },
+    );
   child.maturesRound = has(child, "Multicelularismo")
     ? round(state) + sexualMaturityRounds(child)
     : round(state);
@@ -916,10 +994,14 @@ export function pieceLifeHistory(profile) {
 }
 
 export function metabolicReproductionCooldown(profile) {
-  const base = pieceLifeHistory(profile).metabolism;
-  return has(profile, "Respiração aeróbia")
-    ? Math.max(1, base - 1)
-    : base;
+  const base = pieceLifeHistory(profile).metabolism,
+    aerobic = has(profile, "Respiração aeróbia") ? -1 : 0,
+    terrestrialCost =
+      has(profile, "Locomoção Terrestre") &&
+      !has(profile, "Respiração Pulmonar")
+        ? 1
+        : 0;
+  return Math.max(1, base + aerobic + terrestrialCost);
 }
 
 export function sexualMaturityRounds(profile) {
@@ -1230,8 +1312,21 @@ export function reproduce(
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece) => {
       let metabolic = metabolicReproductionCooldown(piece);
-      if (mates.length && has(piece, "Ovulação Induzida"))
+      if (mates.length && has(piece, "Ovulação Induzida")) {
+        const beforeOvulation = metabolic;
         metabolic = Math.max(1, metabolic - 1);
+        if (metabolic < beforeOvulation)
+          emitPassiveEffect(
+            state,
+            "Ovulação Induzida",
+            "🐇 Ovulação Induzida acelerou a recuperação metabólica.",
+            {
+              pieceId: piece.id,
+              outcome: "reduced-metabolic-recovery",
+              value: beforeOvulation - metabolic,
+            },
+          );
+      }
       if (has(piece, "Insuficiência Respiratória"))
         metabolic *= 2;
       if (
@@ -1239,6 +1334,7 @@ export function reproduce(
         TROPHIC_REPRODUCTION_RESOURCES.has(resourceKind)
       )
         metabolic *= 2;
+      if (options.trophicEfficiency) metabolic = Math.max(1, metabolic - 1);
       if (mates.length > 1) metabolic *= 2;
       return (
         round(state) +
@@ -1317,6 +1413,12 @@ export function reproduce(
       log(
         state,
         `${OWNERS[parent.owner]}: 😩 Subfertilidade impediu a geração de prole por ${reason}.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Subfertilidade",
+        "😩 Subfertilidade impediu a reprodução.",
+        { pieceId: parent.id, outcome: "prevented-offspring" },
       );
       return true;
     };
@@ -1831,7 +1933,12 @@ export function tickReproduction(ctx) {
 }
 
 export function harvest(state, p, r, c) {
-  if (!has(p, "Coletor") || state.board[square(r, c)] !== "fertile") return;
+  if (
+    !has(p, "Coletor") ||
+    !canUseFertileResource(state, p) ||
+    state.board[square(r, c)] !== "fertile"
+  )
+    return;
   let count = 0;
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++)

@@ -118,7 +118,7 @@ export const GEOLOGICAL_STAGES = [
       "Resistência",
       "Regeneração",
       "Reprodução Sexuada",
-      "Carnívoro",
+      "Ingestão",
     ],
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: {
@@ -192,7 +192,7 @@ export const GEOLOGICAL_STAGES = [
     id: "devonian",
     group: "Paleozoico",
     period: "Devoniano",
-    required: ["Locomoção Avançada", "Onívoro"],
+    required: ["Onívoro"],
     habitat: { fertile: 14, hostile: 7, standard: true, naturalBarriers: [2, 3], pattern: "corridors" },
     events: {
       "alluvial-river": 3,
@@ -298,6 +298,7 @@ export const TRAIT_STAGE = {
   "Respiração anaeróbia": "hadean",
   "Reparo Celular": "archean",
   "Respiração aeróbia": "proterozoic",
+  "Respiração Pulmonar": "devonian",
   Fotossíntese: "archean",
   Embriófitas: "ordovician",
   Traqueófitas: "silurian",
@@ -309,7 +310,6 @@ export const TRAIT_STAGE = {
   Angiospermas: "cretaceous",
   Haustório: "cretaceous",
   "Perfume Floral": "cretaceous",
-  "Carnivoria Botânica": "paleogene",
   Dormência: "archean",
   Multicelularismo: "proterozoic",
   "Simetria Bilateral": "ediacaran",
@@ -318,6 +318,7 @@ export const TRAIT_STAGE = {
   Regeneração: "proterozoic",
   Resistência: "proterozoic",
   Predação: "archean",
+  Ingestão: "proterozoic",
   Carnívoro: "proterozoic",
   Herbívoro: "ordovician",
   Canibalismo: "cambrian",
@@ -337,7 +338,6 @@ export const TRAIT_STAGE = {
   Camuflagem: "cambrian",
   Veneno: "cambrian",
   Coletor: "silurian",
-  "Locomoção Avançada": "devonian",
   Escalador: "devonian",
   Onívoro: "devonian",
   "Respiração Cutânea": "devonian",
@@ -350,7 +350,7 @@ export const TRAIT_STAGE = {
   "Incubação": "permian",
   Ovovivíparo: "permian",
   "Pele grossa": "permian",
-  Garras: "permian",
+  Presas: "permian",
   Lactação: "triassic",
   Vivíparo: "triassic",
   "Sacos Aéreos": "triassic",
@@ -408,7 +408,6 @@ export const ACTIVE_TRAIT_FAMILIES = [
     traits: [
       "Locomoção Articulada",
       "Locomoção Terrestre",
-      "Locomoção Avançada",
     ],
   },
   {
@@ -460,6 +459,10 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Respiração anaeróbia"],
     historical: ["Fotossíntese"],
   },
+  "Respiração Pulmonar": {
+    lineage: ["Respiração aeróbia"],
+    active: ["Vertebrado"],
+  },
   Fotossíntese: { lineage: ["Respiração anaeróbia"] },
   Predação: { lineage: ["Respiração anaeróbia"] },
   Embriófitas: { lineage: ["Fotossíntese"] },
@@ -472,15 +475,18 @@ export const TRAIT_DEPENDENCIES = {
   Angiospermas: { lineage: ["Gimnospermas"] },
   Haustório: { lineage: ["Angiospermas"] },
   "Perfume Floral": { lineage: ["Angiospermas"] },
-  "Carnivoria Botânica": { lineage: ["Angiospermas"] },
-  Carnívoro: { lineage: ["Predação", "Multicelularismo"] },
-  Herbívoro: { lineage: ["Predação", "Multicelularismo"] },
+  Ingestão: {
+    lineage: ["Multicelularismo"],
+    lineageAny: ["Predação", "Mixotrofia"],
+  },
+  Carnívoro: { lineage: ["Predação", "Multicelularismo", "Ingestão"] },
+  Herbívoro: { lineage: ["Predação", "Multicelularismo", "Ingestão"] },
   Necrófago: { lineage: ["Predação", "Multicelularismo"] },
   Coprofagia: {
     lineage: ["Predação", "Multicelularismo", "Locomoção Terrestre"],
   },
   "Pele grossa": { lineage: ["Herbívoro"] },
-  Garras: { lineage: ["Carnívoro"] },
+  Presas: { lineage: ["Carnívoro"] },
   Canibalismo: { lineage: ["Carnívoro"] },
   "Vetor Patógeno": { lineage: ["Parasitismo"] },
   "Precocidade Sexual": { lineage: ["Reprodução Sexuada"] },
@@ -498,13 +504,12 @@ export const TRAIT_DEPENDENCIES = {
   "Percepção Espacial": { lineage: ["Locomoção Articulada"] },
   Escavador: { lineage: ["Locomoção Primitiva"] },
   "Locomoção Terrestre": { lineage: ["Locomoção Articulada"] },
-  "Locomoção Avançada": { lineage: ["Locomoção Terrestre"] },
   Escalador: { lineage: ["Locomoção Terrestre"] },
   "Respiração Cutânea": { lineage: ["Locomoção Articulada"] },
   "Visão Binocular": { lineage: ["Predação"] },
-  Velocidade: { lineage: ["Locomoção Avançada"] },
+  Velocidade: { lineage: ["Locomoção Terrestre"] },
   Notívago: { lineage: ["Locomoção Articulada"] },
-  "Sacos Aéreos": { lineage: ["Locomoção Avançada"] },
+  "Sacos Aéreos": { lineage: ["Respiração Pulmonar", "Locomoção Terrestre"] },
   Voo: { lineage: ["Locomoção Terrestre"] },
   "Ovíparos Amniotas": { lineage: ["Ovíparo"] },
   Ovovivíparo: { lineage: ["Ovíparos Amniotas"] },
@@ -586,6 +591,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Locomoção Terrestre",
   "Percepção Espacial",
   "Mixotrofia",
+  "Ingestão",
   "Escavador",
   "Construtor de Nicho",
   "Necrófago",
@@ -594,16 +600,16 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Camuflagem",
   "Veneno",
   "Coletor",
-  "Locomoção Avançada",
   "Escalador",
   "Visão Binocular",
   "Velocidade",
   "Carnívoro",
   "Herbívoro",
   "Pele grossa",
-  "Garras",
+  "Presas",
   "Onívoro",
   "Respiração Cutânea",
+  "Respiração Pulmonar",
   "Voo",
   "Ovíparo",
   "Ovíparos Amniotas",
@@ -639,7 +645,6 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Angiospermas",
   "Haustório",
   "Perfume Floral",
-  "Carnivoria Botânica",
   "Insuficiência Respiratória",
   "Imunodeficiência",
   "Deficiência Motora",
@@ -671,7 +676,6 @@ export const PLANT_DERIVED_TRAITS = new Set([
   "Angiospermas",
   "Haustório",
   "Perfume Floral",
-  "Carnivoria Botânica",
   "Plantas Domesticadas",
 ]);
 
@@ -684,10 +688,10 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Locomoção Articulada",
   "Locomoção Terrestre",
   "Percepção Espacial",
-  "Locomoção Avançada",
   "Escavador",
   "Escalador",
   "Respiração Cutânea",
+  "Respiração Pulmonar",
   "Visão Binocular",
   "Velocidade",
   "Notívago",
@@ -695,7 +699,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Carnívoro",
   "Herbívoro",
   "Pele grossa",
-  "Garras",
+  "Presas",
   "Canibalismo",
   "Parasitismo",
   "Vetor Patógeno",
@@ -743,6 +747,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
 
 export const TRAIT_BRANCH_SCOPE = Object.freeze({
   "Transferência Horizontal": "predation",
+  "Respiração Pulmonar": "predation",
   Brotamento: "shared",
   Fragmentação: "shared",
   Colônia: "shared",
@@ -765,7 +770,8 @@ export const TRAIT_INCOMPATIBILITIES = Object.freeze({
   Coprofagia: ["Mixotrofia"],
   Mixotrofia: ["Coprofagia"],
   Vertebrado: ["Fragmentação"],
-  "Artrópode": ["Fragmentação"],
+  "Artrópode": ["Fragmentação", "Respiração Pulmonar"],
+  "Respiração Pulmonar": ["Artrópode"],
   Ooteca: ["Fragmentação"],
   Pedogênese: ["Precocidade Sexual"],
   "Precocidade Sexual": ["Pedogênese"],
@@ -1275,6 +1281,12 @@ export function traitUnlocked(state, trait, piece = null) {
   if (deps?.lineage?.some((dependency) => !lineage.has(dependency)))
     return false;
   if (
+    deps?.active?.some(
+      (dependency) => !piece?.traits?.includes(dependency),
+    )
+  )
+    return false;
+  if (
     deps?.lineageAny?.length &&
     !deps.lineageAny.some((dependency) => lineage.has(dependency))
   )
@@ -1346,7 +1358,11 @@ export function normalizePhotosyntheticRank(profile) {
 
 export function contactCaptureUnlocked(piece = null) {
   if (!piece) return false;
+  const predatory =
+    piece.traits?.includes("Predação") ||
+    piece.traits?.includes("Mixotrofia");
   return (
+    predatory &&
     !piece.traits?.includes("Locomoção Primitiva") &&
     !(piece.ancestry ?? []).includes("Locomoção Primitiva")
   );

@@ -106,8 +106,12 @@ export const captureDisturbanceAt = (state, r, c) =>
   null;
 export const hadeanPlayableCell = (r, c) =>
   r >= 2 && r <= 5 && c >= 2 && c <= 5;
+const outerBoardCell = (r, c) => r === 0 || r === 7 || c === 0 || c === 7;
 export const lethalHazardAt = (state, r, c) =>
   (state.geologicalStage === "hadean" && !hadeanPlayableCell(r, c)) ||
+  (state.geologicalStage === "archean" &&
+    state.cycle === 1 &&
+    outerBoardCell(r, c)) ||
   (state.event?.lethalHazards?.includes(square(r, c)) ?? false);
 export const organicResidueHazardousTo = (piece) =>
   !!piece &&
@@ -226,8 +230,10 @@ export function photosynthesisAvailable(state, piece) {
   );
 }
 export const PRE_BILATERAL_SENESCENCE_AGE = 13;
+export const PRE_BILATERAL_NATURAL_INFERTILITY_AGE = 16;
 export const PRE_BILATERAL_MAX_NATURAL_AGE = 24;
 export const SENESCENCE_AGE = 25;
+export const NATURAL_INFERTILITY_AGE = 30;
 export const MAX_NATURAL_AGE = 48;
 export const multicellular = (piece) =>
   !!piece && (piece.traits ?? []).includes("Multicelularismo");
@@ -250,6 +256,13 @@ export function naturalAgeProfile(piece) {
 export const senescent = (state, piece) =>
   multicellular(piece) &&
   pieceAge(state, piece) >= naturalAgeProfile(piece).senescence;
+export const naturalInfertilityAge = (piece) =>
+  bilateralLongevity(piece)
+    ? NATURAL_INFERTILITY_AGE
+    : PRE_BILATERAL_NATURAL_INFERTILITY_AGE;
+export const naturallyInfertile = (state, piece) =>
+  multicellular(piece) &&
+  pieceAge(state, piece) >= naturalInfertilityAge(piece);
 export function naturalDeathChance(state, piece) {
   if (!multicellular(piece)) return 0;
   const age = pieceAge(state, piece),
@@ -318,6 +331,7 @@ export const reproductionReady = (state, piece) =>
   !!piece &&
   has(piece, "Respiração anaeróbia") &&
   !juvenile(state, piece) &&
+  !naturallyInfertile(state, piece) &&
   !has(piece, "Esterilidade") &&
   (!has(piece, "Filho único") || (piece.lifetimeOffspring ?? 0) < 1) &&
   !(piece.pregnancies ?? []).some(
@@ -327,6 +341,26 @@ export const reproductionReady = (state, piece) =>
 export function log(state, text) {
   state.logs.unshift({ turn: state.turn, text });
   state.logs.length = Math.min(state.logs.length, 160);
+}
+export function emitPassiveEffect(
+  state,
+  trait,
+  text,
+  { pieceId = null, outcome = null, value = null, theme = null } = {},
+) {
+  if (!TRAITS[trait] || typeof text !== "string" || !text) return;
+  const effect = {
+    id: state.nextPassiveEffect++,
+    turn: state.turn,
+    trait,
+    pieceId: Number.isInteger(pieceId) ? pieceId : null,
+    outcome: typeof outcome === "string" ? outcome : null,
+    value: Number.isFinite(value) ? value : null,
+    text,
+  };
+  if (typeof theme === "string") effect.theme = theme;
+  state.passiveEffects.push(effect);
+  if (state.passiveEffects.length > 24) state.passiveEffects.shift();
 }
 export function notice(state, title, lines, key = null) {
   if (key && state.seen.includes(key)) return;
@@ -416,6 +450,7 @@ export function newPiece(state, owner, r, c, source = {}) {
 }
 
 export function registerDiscoveries(state, piece) {
+  rememberEnergyBranchRepresentative(state, piece);
   const added = recordHistoricalTraits(state, piece);
   if (!added.length) return added;
   for (const trait of added)
@@ -663,10 +698,24 @@ function seedHabitat(state) {
     state.board.fill("fertile");
     return;
   }
-  if (state.geologicalStage === "archean" && state.cycle === 1) {
-    state.board.fill("hostile");
-    for (let r = 1; r <= 6; r++)
-      for (let c = 1; c <= 6; c++) state.board[square(r, c)] = "fertile";
+  if (state.geologicalStage === "archean") {
+    if (state.cycle === 1) {
+      state.board.fill("neutral");
+      for (let r = 1; r <= 6; r++)
+        for (let c = 1; c <= 6; c++)
+          state.board[square(r, c)] =
+            r === 1 || r === 6 || c === 1 || c === 6
+              ? "hostile"
+              : "fertile";
+      return;
+    }
+    if (state.cycle === 2) {
+      state.board.fill("hostile");
+      for (let r = 1; r <= 6; r++)
+        for (let c = 1; c <= 6; c++) state.board[square(r, c)] = "fertile";
+      return;
+    }
+    state.board.fill("fertile");
     return;
   }
   if (aquaticFertilityRegime(state)) {
@@ -814,19 +863,74 @@ export function canonicalFounderStarts(state, slots = true) {
   ];
 }
 
-export function earthFounderStarts(geologicalStage, cycle = 1) {
+const ARCHEAN_FOUNDER_LAYOUTS = Object.freeze({
+  1: Object.freeze([
+    Object.freeze({
+      blue: Object.freeze([[5, 2], [5, 3]]),
+      amber: Object.freeze([[2, 5], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[5, 2], [4, 2]]),
+      amber: Object.freeze([[2, 5], [3, 5]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[5, 3], [4, 2]]),
+      amber: Object.freeze([[2, 4], [3, 5]]),
+    }),
+  ]),
+  2: Object.freeze([
+    Object.freeze({
+      blue: Object.freeze([[5, 2], [5, 3]]),
+      amber: Object.freeze([[2, 5], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[6, 2], [5, 3]]),
+      amber: Object.freeze([[1, 5], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[5, 1], [4, 2]]),
+      amber: Object.freeze([[2, 6], [3, 5]]),
+    }),
+  ]),
+  3: Object.freeze([
+    Object.freeze({
+      blue: Object.freeze([[6, 2], [5, 3]]),
+      amber: Object.freeze([[1, 5], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[6, 1], [5, 3]]),
+      amber: Object.freeze([[1, 6], [2, 4]]),
+    }),
+    Object.freeze({
+      blue: Object.freeze([[6, 3], [5, 1]]),
+      amber: Object.freeze([[1, 4], [2, 6]]),
+    }),
+  ]),
+});
+
+function archeanFounderStarts(state, cycle = 1) {
+  const band = cycle <= 1 ? 1 : cycle === 2 ? 2 : 3,
+    layouts = ARCHEAN_FOUNDER_LAYOUTS[band],
+    layout = state ? pick(state, layouts) : layouts[0],
+    reverseSlots = state ? pick(state, [false, true]) : false,
+    blue = reverseSlots ? [...layout.blue].reverse() : layout.blue,
+    amber = reverseSlots ? [...layout.amber].reverse() : layout.amber;
+  return [
+    ["blue", blue[0][0], blue[0][1], "primary"],
+    ["blue", blue[1][0], blue[1][1], "companion"],
+    ["amber", amber[0][0], amber[0][1], "primary"],
+    ["amber", amber[1][0], amber[1][1], "companion"],
+  ];
+}
+
+export function earthFounderStarts(geologicalStage, cycle = 1, state = null) {
   if (geologicalStage === "hadean")
     return [
       ["blue", 5, 2, null],
       ["amber", 2, 5, null],
     ];
   if (geologicalStage === "archean")
-    return [
-      ["blue", 4, 2, "primary"],
-      ["blue", 4, 3, "companion"],
-      ["amber", 3, 4, "primary"],
-      ["amber", 3, 5, "companion"],
-    ];
+    return archeanFounderStarts(state, cycle);
   if (geologicalStage === "proterozoic")
     return [
       ["blue", 5, 2, "primary"],
@@ -894,11 +998,13 @@ export function createState(seed = Date.now(), options = {}) {
     socialDefense: null,
     nextId: 1,
     nextNotice: 1,
+    nextPassiveEffect: 1,
     board: Array(64).fill("neutral"),
     pieces: [],
     reproductions: { blue: 0, amber: 0 },
     notices: [],
-    seen: [],
+    passiveEffects: [],
+    seen: [...new Set(options.seen ?? [])],
     seenMutations:
       originPrelude && (options.geologicalStage ?? "archean") === "hadean"
         ? ["Respiração anaeróbia"]
@@ -907,6 +1013,18 @@ export function createState(seed = Date.now(), options = {}) {
     cyclePositiveInnovations: [
       ...new Set(options.cyclePositiveInnovations ?? []),
     ],
+    openingMutationSatisfied: {
+      blue: options.openingMutationSatisfied?.blue === true,
+      amber: options.openingMutationSatisfied?.amber === true,
+    },
+    energyBranchRepresentatives: {
+      Fotossíntese: options.energyBranchRepresentatives?.Fotossíntese
+        ? structuredClone(options.energyBranchRepresentatives.Fotossíntese)
+        : null,
+      Predação: options.energyBranchRepresentatives?.Predação
+        ? structuredClone(options.energyBranchRepresentatives.Predação)
+        : null,
+    },
     cyclePathogenProfile: options.cyclePathogenProfile
       ? { ...options.cyclePathogenProfile }
       : null,
@@ -985,10 +1103,14 @@ export function createState(seed = Date.now(), options = {}) {
         ownerFounders?.amber?.companion,
       earthStarts =
         state.geologicalStage === "hadean" && scenario !== "arena"
-          ? earthFounderStarts(state.geologicalStage, state.cycle)
-          : scenario === "earth" && (balancedPair || ownerPair)
-            ? earthFounderStarts(state.geologicalStage, state.cycle)
-            : null,
+          ? earthFounderStarts(state.geologicalStage, state.cycle, state)
+          : state.geologicalStage === "archean" &&
+              scenario !== "arena" &&
+              (balancedPair || ownerPair || !founder)
+            ? earthFounderStarts(state.geologicalStage, state.cycle, state)
+            : scenario === "earth" && (balancedPair || ownerPair)
+              ? earthFounderStarts(state.geologicalStage, state.cycle, state)
+              : null,
       starts =
         earthStarts ??
         (() => {
@@ -1006,28 +1128,28 @@ export function createState(seed = Date.now(), options = {}) {
         : balancedPair
           ? founders[slot]
           : founders?.[owner] ?? founder;
-      state.pieces.push(
-        newPiece(
-          state,
-          owner,
-          r,
-          c,
-          source
-            ? {
-                rank: source.rank,
-                traits: source.traits,
-                ancestry: source.ancestry,
-                genome: source.genome,
-                reproGenes: source.reproGenes,
-                recessiveTraits: source.recessiveTraits,
-                mutations: 0,
-                generation: 0,
-              }
-            : state.geologicalStage === "hadean"
-              ? { rank: 4 }
-              : {},
-        ),
+      const piece = newPiece(
+        state,
+        owner,
+        r,
+        c,
+        source
+          ? {
+              rank: source.rank,
+              traits: source.traits,
+              ancestry: source.ancestry,
+              genome: source.genome,
+              reproGenes: source.reproGenes,
+              recessiveTraits: source.recessiveTraits,
+              mutations: 0,
+              generation: 0,
+            }
+          : state.geologicalStage === "hadean"
+            ? { rank: 4 }
+            : {},
       );
+      state.pieces.push(piece);
+      rememberEnergyBranchRepresentative(state, piece);
     }
   }
   if (options.naturalBarriers !== false && !aquaticFertilityRegime(state))
@@ -1245,6 +1367,186 @@ export function createPeriodState(
   });
 }
 
+export function createPassiveToastTestState(
+  seed = Date.now(),
+  discoveries = null,
+) {
+  const state = createState(seed, {
+      scenario: "alternative",
+      geologicalStage: "quaternary",
+      naturalBarriers: false,
+      discoveries,
+    }),
+    baseAnimal = [
+      "Reparo Celular",
+      "Multicelularismo",
+      "Predação",
+      "Ingestão",
+      "Simetria Bilateral",
+      "Vertebrado",
+      "Locomoção Primitiva",
+      "Locomoção Articulada",
+      "Locomoção Terrestre",
+    ],
+    older = (traits = [], rank = 4) => ({
+      rank,
+      traits: [...new Set([...baseAnimal, ...traits])],
+      bornRound: 0,
+      maturesRound: 0,
+      nextReproductionRound: 0,
+    }),
+    add = (role, owner, r, c, source) => {
+      const piece = newPiece(state, owner, r, c, source);
+      piece.toastTestRole = role;
+      state.pieces.push(piece);
+      return piece;
+    };
+
+  state.turn = 12;
+  state.current = "blue";
+  state.phase = "move";
+  state.result = null;
+  state.chain = null;
+  state.partner = null;
+  state.manipulation = null;
+  state.building = null;
+  state.eggPlacement = null;
+  state.domesticPlacement = null;
+  state.socialDefense = null;
+  state.pieces = [];
+  state.nextId = 1;
+  state.board.fill("neutral");
+  state.naturalBarriers = [];
+  state.barriers = [];
+  state.notices = [];
+  state.passiveEffects = [];
+  state.nextPassiveEffect = 1;
+  state.logs = [];
+  state.maxGenerationReached = 0;
+
+  const ovulationParent = add(
+      "ovulation-parent",
+      "blue",
+      7,
+      0,
+      older([
+        "Reprodução Sexuada",
+        "Herbívoro",
+        "Ovíparo",
+        "Ovíparos Amniotas",
+        "Vivíparo",
+        "Ovulação Induzida",
+      ]),
+    ),
+    ovulationMate = add(
+      "ovulation-mate",
+      "blue",
+      7,
+      1,
+      older([
+        "Reprodução Sexuada",
+        "Ovíparo",
+        "Ovíparos Amniotas",
+        "Vivíparo",
+      ]),
+    );
+
+  add(
+    "fangs-attacker",
+    "amber",
+    0,
+    0,
+    older(["Carnívoro", "Presas"]),
+  );
+  add(
+    "thick-skin-defender",
+    "blue",
+    1,
+    0,
+    older(["Herbívoro", "Pele grossa"]),
+  );
+
+  add(
+    "night-vision-attacker",
+    "blue",
+    3,
+    2,
+    older(["Notívago", "Visão Noturna"]),
+  );
+  add(
+    "nocturnal-defender",
+    "amber",
+    3,
+    3,
+    older(["Notívago"]),
+  );
+
+  add(
+    "carapace-attacker",
+    "amber",
+    4,
+    7,
+    older(["Carapaça"]),
+  );
+  add(
+    "horn-defender",
+    "blue",
+    5,
+    7,
+    older(["Chifre"]),
+  );
+
+  add(
+    "binocular-attacker",
+    "blue",
+    2,
+    0,
+    older(["Percepção Espacial", "Visão Binocular"], 3),
+  );
+  add(
+    "camouflage-defender",
+    "amber",
+    2,
+    4,
+    older(["Camuflagem"]),
+  );
+
+  add(
+    "biparental-guard-attacker",
+    "amber",
+    5,
+    2,
+    older([], 4),
+  );
+  const juvenile = add(
+    "biparental-guard-child",
+    "blue",
+    5,
+    3,
+    {
+      ...older([], 4),
+      bornRound: round(state),
+      maturesRound: round(state) + 3,
+      biparentalGuardCharges: 1,
+    },
+  );
+
+  state.board[square(ovulationParent.r, ovulationParent.c)] = "fertile";
+  state.board[square(ovulationMate.r, ovulationMate.c)] = "fertile";
+  state.toastTest = {
+    step: 1,
+    roles: Object.fromEntries(
+      state.pieces.map((piece) => [piece.toastTestRole, piece.id]),
+    ),
+  };
+  log(
+    state,
+    "🧪 Fase teste de toasts: siga as seis ações indicadas no Menu; todas foram preparadas para produzir feedback passivo sem depender de sorte.",
+  );
+  juvenile.stationarySinceRound = round(state);
+  return assertState(state);
+}
+
 export function activateOrigin(state) {
   if (state.phase !== "origin" || !state.origin)
     throw Error("Hadeano indisponível.");
@@ -1285,6 +1587,61 @@ export function activateOrigin(state) {
   return true;
 }
 
+const lineagePositiveTraits = (piece) =>
+  (piece?.traits ?? []).filter(
+    (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
+  ).length;
+
+const lineagePositiveGenome = (piece) =>
+  new Set(
+    genomeCarriedTraits(piece?.genome).filter(
+      (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
+    ),
+  ).size;
+
+const lineagePositiveAncestry = (piece) =>
+  new Set(
+    (piece?.ancestry ?? piece?.traits ?? []).filter(
+      (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
+    ),
+  ).size;
+
+function compareLineageStrength(a, b) {
+  return (
+    lineagePositiveTraits(b) - lineagePositiveTraits(a) ||
+    lineagePositiveGenome(b) - lineagePositiveGenome(a) ||
+    lineagePositiveAncestry(b) - lineagePositiveAncestry(a) ||
+    (b?.generation ?? 0) - (a?.generation ?? 0)
+  );
+}
+
+function energyRepresentativeSnapshot(piece) {
+  if (!piece) return null;
+  return {
+    rank: piece.rank,
+    traits: [...piece.traits],
+    ancestry: [...new Set(piece.ancestry ?? piece.traits)],
+    genome: cloneGenome(piece.genome),
+    mutations: piece.mutations ?? 0,
+    generation: piece.generation ?? 0,
+  };
+}
+
+export function rememberEnergyBranchRepresentative(state, piece) {
+  if (!state?.energyBranchRepresentatives || !piece) return false;
+  let changed = false;
+  for (const branch of ["Fotossíntese", "Predação"]) {
+    if (!(piece.traits ?? []).includes(branch)) continue;
+    const current = state.energyBranchRepresentatives[branch];
+    if (!current || compareLineageStrength(piece, current) < 0) {
+      state.energyBranchRepresentatives[branch] =
+        energyRepresentativeSnapshot(piece);
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 export function signature(p) {
   const ancestry = [...(p.ancestry ?? p.traits ?? [])].sort().join("|");
   return `${p.rank}|${[...p.traits].sort().join("|")}|${ancestry}|${genomeSignature(p.genome)}`;
@@ -1304,8 +1661,8 @@ export function dominantLineage(state, owner = null, predicate = null) {
   }
   const selected = [...groups.values()].sort(
     (a, b) =>
+      compareLineageStrength(a.piece, b.piece) ||
       b.count - a.count ||
-      b.piece.generation - a.piece.generation ||
       signature(a.piece).localeCompare(signature(b.piece), "pt-BR"),
   )[0];
   if (selected) return { ...selected, total: pieces.length };
@@ -1337,7 +1694,7 @@ function fossilEntries(previous) {
   });
 }
 
-export function founderProfile(piece) {
+function founderProfile(previous, piece) {
   if (!piece) return null;
   const excluded = new Set(["Esterilidade", "Mutação Letal"]),
     genome = withoutGenomeTraits(piece.genome, [...excluded]),
@@ -1390,9 +1747,9 @@ function arenaSurvivorEntries(state, owner) {
     .slice(0, 2)
     .map(({ piece }) => ({ source: piece, genome: cleanArenaGenome(piece) }));
   const extinctionFounder =
-    state.result?.extinctionFounder?.owner === owner
-      ? state.result.extinctionFounder
-      : null;
+      state.result?.extinctionFounder?.owner === owner
+        ? state.result.extinctionFounder
+        : null;
   if (extinctionFounder)
     selected.unshift({
       source: extinctionFounder,
@@ -1521,6 +1878,7 @@ export function createArenaSuccessorState(
         ...fossilEntries(previous),
       ],
       discoveries: previous.discoveries,
+      seen: previous.seen,
       ownerFounders: profiles,
       arenaFounders: profiles,
       naturalBarriers: true,
@@ -1530,6 +1888,30 @@ export function createArenaSuccessorState(
     `Arena · Fase ${state.arenaPhase}: sobreviventes e engenharia genética definiram os novos fundadores.`,
   );
   return state;
+}
+
+function archeanBranchFallback(branch) {
+  return {
+    rank: 4,
+    traits: [branch],
+    ancestry: [branch],
+  };
+}
+
+function earthBranchFounder(previous, branch, fallback) {
+  const living = dominantLineage(
+      previous,
+      null,
+      (piece) => piece.traits?.includes(branch),
+    ).piece,
+    remembered = previous.energyBranchRepresentatives?.[branch] ?? null,
+    source =
+      living && remembered
+        ? compareLineageStrength(living, remembered) <= 0
+          ? living
+          : remembered
+        : living ?? remembered;
+  return founderProfile(previous, source) ?? fallback;
 }
 
 function createEarthSuccessorState(previous, seed) {
@@ -1545,17 +1927,57 @@ function createEarthSuccessorState(previous, seed) {
         : previous.totalCycles + 1,
     stageIndex = GEOLOGICAL_STAGES.findIndex((stage) => stage.id === candidate.id),
     preview = previewFounderProfiles(stageIndex),
-    extinctionFounder = founderProfile(previous.result?.extinctionFounder),
+    preserveBranches = priorStage.id !== "hadean",
+    primaryFallback =
+      priorStage.id === "archean" && !preview.primary.traits.includes("Fotossíntese")
+        ? archeanBranchFallback("Fotossíntese")
+        : preview.primary,
+    companionFallback =
+      priorStage.id === "archean" && !preview.companion.traits.includes("Predação")
+        ? archeanBranchFallback("Predação")
+        : preview.companion,
+    extinctionFounder = founderProfile(
+      previous,
+      previous.result?.extinctionFounder,
+    ),
     extinctionFounderIsPhotosynthetic =
       extinctionFounder ? canPhotosynthesize(extinctionFounder) : false,
     founders = extinctionFounder
-      ? {
-          primary: extinctionFounder,
-          companion: extinctionFounderIsPhotosynthetic
-            ? preview.companion
-            : preview.primary,
-        }
-      : { primary: preview.primary, companion: preview.companion },
+      ? extinctionFounderIsPhotosynthetic
+        ? {
+            primary: extinctionFounder,
+            companion: preserveBranches
+              ? earthBranchFounder(
+                  previous,
+                  "Predação",
+                  companionFallback,
+                )
+              : preview.companion,
+          }
+        : {
+            primary: preserveBranches
+              ? earthBranchFounder(
+                  previous,
+                  "Fotossíntese",
+                  primaryFallback,
+                )
+              : preview.primary,
+            companion: extinctionFounder,
+          }
+      : preserveBranches
+        ? {
+            primary: earthBranchFounder(
+              previous,
+              "Fotossíntese",
+              primaryFallback,
+            ),
+            companion: earthBranchFounder(
+              previous,
+              "Predação",
+              companionFallback,
+            ),
+          }
+        : { primary: preview.primary, companion: preview.companion },
     state = createState(seed, {
       scenario: "earth",
       geologicalStage: candidate.id,
@@ -1564,13 +1986,20 @@ function createEarthSuccessorState(previous, seed) {
       generationOffset:
         previous.generationOffset + previous.maxGenerationReached + 1,
       historicalTraits: [
-        ...new Set([...previous.historicalTraits, ...preview.historicalTraits]),
+        ...new Set([
+          ...previous.historicalTraits,
+          ...preview.historicalTraits,
+          ...(priorStage.id === "archean"
+            ? ["Fotossíntese", "Predação"]
+            : []),
+        ]),
       ],
       fossilRecord: [
         ...(previous.fossilRecord ?? []),
         ...fossilEntries(previous),
       ],
       discoveries: previous.discoveries,
+      seen: previous.seen,
       sexualPathogenUnlockTotalCycle:
         previous.sexualPathogenUnlockTotalCycle ?? null,
       founders,
@@ -1582,9 +2011,11 @@ function createEarthSuccessorState(previous, seed) {
       ? advanced
         ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period}; a última linhagem extinta vencedora funda a nova geração ao lado da contraparte histórica.`
         : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo; a última linhagem extinta vencedora funda a nova geração ao lado da contraparte histórica.`
-      : advanced
-        ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period} com linhagens canônicas do período.`
-        : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo com fundadores canônicos.`,
+      : priorStage.id === "archean" && !advanced
+        ? `Vida na Terra: Arqueano continua no ${cycle}º Ciclo preservando as linhagens fotossintética e predatória mais derivadas.`
+        : advanced
+          ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period} preservando as linhagens evolutivas dos ramos fundamentais.`
+          : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo com os ramos mais derivados como fundadores.`,
   );
   return state;
 }
@@ -1603,7 +2034,10 @@ export function createSuccessorState(previous, seed = Date.now()) {
         (stage) => stage.id === candidate.id,
       ),
       preview = previewFounderProfiles(stageIndex),
-      extinctionFounder = founderProfile(previous.result?.extinctionFounder),
+      extinctionFounder = founderProfile(
+        previous,
+        previous.result?.extinctionFounder,
+      ),
       founders = extinctionFounder
         ? {
             primary: extinctionFounder,
@@ -1630,6 +2064,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
           ...fossilEntries(previous),
         ],
         discoveries: previous.discoveries,
+        seen: previous.seen,
         founders,
         canonicalPair: true,
       });
@@ -1641,7 +2076,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
   }
   const winner = previous.result?.winner ?? null,
     selected = dominantLineage(previous, winner),
-    founder = founderProfile(selected.piece),
+    founder = founderProfile(previous, selected.piece),
     founderIsPhotosynthetic = founder?.traits.includes("Fotossíntese") ?? false,
     counterpart = dominantLineage(
       previous,
@@ -1654,7 +2089,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       counterpart.piece &&
       (!selected.piece ||
         signature(counterpart.piece) !== signature(selected.piece))
-        ? founderProfile(counterpart.piece)
+        ? founderProfile(previous, counterpart.piece)
         : null,
     founders =
       founder && companion
@@ -1682,6 +2117,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       ...fossilEntries(previous),
     ],
     discoveries: previous.discoveries,
+    seen: previous.seen,
     sexualPathogenUnlockTotalCycle:
       previous.sexualPathogenUnlockTotalCycle ?? null,
     founder,
@@ -1753,6 +2189,7 @@ export function assertState(state) {
   if (
     !integer(state.revision) ||
     !integer(state.nextNotice, 1) ||
+    !integer(state.nextPassiveEffect ?? 1, 1) ||
     !integer(state.nextDisease, 1) ||
     !integer(state.nextEgg, 1) ||
     !integer(state.nextPlantSeed, 1) ||
@@ -1825,6 +2262,29 @@ export function assertState(state) {
     new Set(state.cyclePositiveInnovations).size !==
       state.cyclePositiveInnovations.length ||
     state.cyclePositiveInnovations.length > 6 ||
+    !state.openingMutationSatisfied ||
+    typeof state.openingMutationSatisfied.blue !== "boolean" ||
+    typeof state.openingMutationSatisfied.amber !== "boolean" ||
+    !state.energyBranchRepresentatives ||
+    !["Fotossíntese", "Predação"].every((branch) => {
+      const profile = state.energyBranchRepresentatives[branch];
+      return (
+        profile === null ||
+        (Number.isInteger(profile.rank) &&
+          profile.rank >= 0 &&
+          profile.rank <= 5 &&
+          Array.isArray(profile.traits) &&
+          profile.traits.includes(branch) &&
+          profile.traits.every((trait) => TRAITS[trait]) &&
+          traitCombinationValid(profile.traits) &&
+          Array.isArray(profile.ancestry) &&
+          profile.ancestry.every((trait) => TRAITS[trait]) &&
+          new Set(profile.ancestry).size === profile.ancestry.length &&
+          validGenome(profile.genome) &&
+          integer(profile.mutations ?? 0, 0) &&
+          integer(profile.generation ?? 0, 0))
+      );
+    }) ||
     !(
       state.cyclePathogenProfile === null ||
       (state.cyclePathogenProfile &&
@@ -2327,6 +2787,7 @@ export function assertState(state) {
 
   if (
     !Array.isArray(state.notices) ||
+    !Array.isArray(state.passiveEffects ?? []) ||
     !Array.isArray(state.diseases) ||
     !Array.isArray(state.logs)
   )
@@ -2341,11 +2802,36 @@ export function assertState(state) {
         typeof n.title !== "string" ||
         !Array.isArray(n.lines) ||
         n.lines.some((l) => typeof l !== "string"),
+    ) ||
+    (state.passiveEffects ?? []).length > 24 ||
+    (state.passiveEffects ?? []).some(
+      (effect) =>
+        !integer(effect.id, 1) ||
+        !integer(effect.turn) ||
+        !TRAITS[effect.trait] ||
+        ![null, "string"].includes(
+          effect.outcome === null ? null : typeof effect.outcome,
+        ) ||
+        ![null, "number"].includes(
+          effect.value === null ? null : typeof effect.value,
+        ) ||
+        ![null, "string"].includes(
+          effect.theme == null ? null : typeof effect.theme,
+        ) ||
+        (effect.value !== null && !Number.isFinite(effect.value)) ||
+        (effect.pieceId !== null && !integer(effect.pieceId, 1)) ||
+        typeof effect.text !== "string",
     )
   )
     throw Error("Mensagem inválida.");
   if (state.notices.some((n) => n.id >= state.nextNotice))
     throw Error("Sequência de avisos inválida.");
+  if (
+    (state.passiveEffects ?? []).some(
+      (effect) => effect.id >= (state.nextPassiveEffect ?? 1),
+    )
+  )
+    throw Error("Sequência de efeitos passivos inválida.");
   const diseaseIds = new Set();
   for (const d of state.diseases) {
     if (
@@ -2479,7 +2965,9 @@ export function assertState(state) {
             state.result.extinctionFounder.rank < 0 ||
             state.result.extinctionFounder.rank > 5 ||
             !Array.isArray(state.result.extinctionFounder.traits) ||
-            state.result.extinctionFounder.traits.some((trait) => !TRAITS[trait]) ||
+            state.result.extinctionFounder.traits.some(
+              (trait) => !TRAITS[trait],
+            ) ||
             !Array.isArray(state.result.extinctionFounder.ancestry) ||
             !validGenome(state.result.extinctionFounder.genome)))))
   )

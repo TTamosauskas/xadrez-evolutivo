@@ -13,7 +13,10 @@ import {
 import { fixture } from "./helpers.js";
 import { TRAITS, EVENTS } from "../src/constants.js";
 import { render, traitFrameSlots, establishedTraits } from "../src/view.js";
-import { actionableTraitsForPiece } from "../src/actionable-traits.js";
+import {
+  actionableTraitsForPiece,
+  contextualTraitsForBoard,
+} from "../src/actionable-traits.js";
 import { context } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
@@ -170,6 +173,10 @@ test("menu exposes match log and evolutionary history for consultation", () => {
   );
   assert.equal(d.getElementById("arena-mode"), null);
   assert.equal(
+    d.getElementById("toast-test-phase")?.textContent,
+    "🧪 Teste de toasts",
+  );
+  assert.equal(
     d.querySelector('#scenario option[value="earth"]').textContent,
     "Vida na Terra",
   );
@@ -302,15 +309,25 @@ test("status counter includes turns and historical generation", () => {
   dom.window.close();
 });
 
-test("renders one board occupant per piece and exactly one stylesheet and module entry", () => {
+test("renders one board occupant per piece and loads Toastify before the app", () => {
   const dom = setup(),
     s = createState(2);
   render(dom.window.document, s);
   const d = dom.window.document;
   assert.equal(d.querySelectorAll(".cell").length, 64);
   assert.equal(d.querySelectorAll(".piece").length, s.pieces.length);
-  assert.equal(d.querySelectorAll("script").length, 1);
-  assert.equal(d.querySelectorAll("link[rel=stylesheet]").length, 1);
+  assert.deepEqual(
+    [...d.querySelectorAll("script")].map((script) =>
+      script.getAttribute("src"),
+    ),
+    ["toastify-1.12.0.js", "src/app.js"],
+  );
+  assert.deepEqual(
+    [...d.querySelectorAll("link[rel=stylesheet]")].map((link) =>
+      link.getAttribute("href"),
+    ),
+    ["toastify-1.12.0.css", "app.css"],
+  );
   dom.window.close();
 });
 test("board legend only shows terrain elements currently visible", () => {
@@ -416,7 +433,7 @@ test("diet and amniote traits use the intended compact icons", () => {
   assert.equal(TRAITS["Ovíparos Amniotas"][0], "🥚");
 });
 
-test("active mutations form an evenly spaced frame starting at bottom center", () => {
+test("contextual mutations form an evenly spaced frame while the energy branch stays central", () => {
   assert.deepEqual(traitFrameSlots(1), [0]);
   assert.deepEqual(traitFrameSlots(4), [0, 3, 6, 9]);
   assert.deepEqual(traitFrameSlots(6), [0, 2, 4, 6, 8, 10]);
@@ -428,14 +445,11 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
   piece.traits = [
     "Multicelularismo",
     "Predação",
+    "Dormência",
     "Carapaça",
     "Veneno",
   ];
-  for (const other of s.pieces)
-    if (other.id !== piece.id) other.traits = ["Fotossíntese"];
-  s.pieces.find((other) => other.id !== piece.id).traits = [
-    "Respiração anaeróbia",
-  ];
+  s.board[piece.r * 8 + piece.c] = "hostile";
   render(dom.window.document, s, { selected: piece.id });
   const d = dom.window.document,
     cell = d.querySelector(
@@ -443,27 +457,24 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
     ),
     frame = cell.querySelector(".trait-frame"),
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
-    classes = [...frame.querySelectorAll(".trait-badge")].map((icon) =>
-      [...icon.classList].find((name) => name.startsWith("trait-slot-")),
-    );
+    badges = [...frame.querySelectorAll(".trait-badge")];
   assert.ok(frame);
-  assert.deepEqual(classes, [
-    "trait-slot-0",
-    "trait-slot-4",
-    "trait-slot-8",
-  ]);
-  assert.equal(frame.querySelector(".trait-overflow"), null);
-  assert.ok(
-    ![...frame.querySelectorAll(".trait-badge")].some(
-      (badge) => badge.dataset.trait === "Predação",
+  assert.deepEqual(badges.map((badge) => badge.dataset.trait), ["Dormência"]);
+  assert.deepEqual(
+    badges.map((icon) =>
+      [...icon.classList].find((name) => name.startsWith("trait-slot-")),
     ),
+    ["trait-slot-0"],
   );
+  assert.equal(frame.querySelector(".trait-overflow"), null);
+  assert.ok(!badges.some((badge) => badge.dataset.trait === "Predação"));
+  assert.ok(!badges.some((badge) => badge.dataset.trait === "Carapaça"));
+  assert.ok(!badges.some((badge) => badge.dataset.trait === "Veneno"));
+
   const core = cell.querySelector(".piece-energy-core");
   assert.equal(core?.dataset.trait, "Predação");
   assert.equal(core?.textContent, "👾");
   assert.ok(core?.classList.contains("blue"));
-  assert.ok(!cell.querySelector(".piece")?.classList.contains("reproduction-ready"));
-  assert.doesNotMatch(css, /\.piece\.reproduction-ready/);
   assert.match(
     css,
     /\.piece-energy-core\.blue\s*\{[\s\S]*background:\s*#fff8df/,
@@ -473,16 +484,68 @@ test("active mutations form an evenly spaced frame starting at bottom center", (
     /\.piece-energy-core\.amber\s*\{[\s\S]*background:\s*#242623/,
   );
   assert.match(css, /\.trait-slot-0\s*\{\s*left:\s*50%;\s*top:\s*94%/);
-  assert.match(css, /\.trait-slot-4\s*\{\s*left:\s*6%;\s*top:\s*25%/);
-  assert.match(css, /\.trait-slot-8\s*\{\s*left:\s*94%;\s*top:\s*25%/);
   assert.match(
     css,
     /\.piece-energy-core\s*\{[\s\S]*left:\s*50%;[\s\S]*top:\s*50%;[\s\S]*transform:\s*translate\(-50%, -50%\)/,
   );
+
+  s.board[piece.r * 8 + piece.c] = "neutral";
+  render(dom.window.document, s, { selected: piece.id });
+  const refreshed = d.querySelector(
+    `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+  );
+  assert.equal(
+    [...refreshed.querySelectorAll(".trait-badge")].some(
+      (badge) => badge.dataset.trait === "Dormência",
+    ),
+    false,
+  );
+  assert.equal(
+    refreshed.querySelector(".piece-energy-core")?.dataset.trait,
+    "Predação",
+  );
   dom.window.close();
 });
 
-test("mutation frame shows twelve phenotypes and an overflow counter", () => {
+test("causal frame suppresses Voo when Escalador already explains the same barrier traversal", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 3,
+        rank: 5,
+        traits: ["Escalador", "Voo"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0];
+  s.naturalBarriers.push(4 * 8 + 4);
+
+  const contextual = contextualTraitsForBoard(s).get(piece.id);
+  assert.ok(contextual.has("Escalador"));
+  assert.equal(contextual.has("Voo"), false);
+});
+
+test("causal frame keeps Locomoção Terrestre and Voo when they explain different parts of the same route", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 2,
+        rank: 5,
+        traits: ["Voo"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0];
+  s.board[4 * 8 + 3] = "hostile";
+
+  const contextual = contextualTraitsForBoard(s).get(piece.id);
+  assert.ok(contextual.has("Locomoção Terrestre"));
+  assert.ok(contextual.has("Voo"));
+});
+
+test("non-contextual phenotype inventory stays in the selected panel instead of the board frame", () => {
   const dom = setup(),
     s = createState(201),
     piece = s.pieces[0];
@@ -492,39 +555,32 @@ test("mutation frame shows twelve phenotypes and an overflow counter", () => {
     "Multicelularismo",
     "Predação",
     "Simetria Bilateral",
-    "Locomoção Primitiva",
     "Vertebrado",
-    "Locomoção Articulada",
-    "Percepção Espacial",
-    "Carnívoro",
-    "Ovíparo",
-    "Carapaça",
-    "Camuflagem",
-    "Veneno",
     "Resistência",
   ];
-  for (const other of s.pieces)
-    if (other.id !== piece.id) other.traits = ["Fotossíntese"];
-  s.pieces.find((other) => other.id !== piece.id).traits = [
-    "Respiração anaeróbia",
-  ];
+  s.current = "amber";
 
-  render(dom.window.document, s);
+  render(dom.window.document, s, { selected: piece.id });
   const cell = dom.window.document.querySelector(
       `[data-r="${piece.r}"][data-c="${piece.c}"]`,
     ),
-    frame = cell.querySelector(".trait-frame");
-  assert.equal(frame.querySelectorAll(".trait-badge").length, 12);
-  assert.equal(frame.querySelector(".trait-overflow").textContent, "+2");
+    frameTraits = [...cell.querySelectorAll(".trait-badge")].map(
+      (badge) => badge.dataset.trait,
+    ),
+    selected = dom.window.document.getElementById("selected");
+  assert.deepEqual(frameTraits, []);
+  assert.match(selected.textContent, /Simetria Bilateral/);
+  assert.match(selected.textContent, /Vertebrado/);
+  assert.match(selected.textContent, /Resistência/);
   assert.equal(
     cell.querySelector(".piece-energy-core")?.dataset.trait,
     "Predação",
   );
-  assert.ok(cell.classList.contains("trait-dense"));
+  assert.ok(!cell.classList.contains("trait-dense"));
   dom.window.close();
 });
 
-test("Mixotrofia remains peripheral while the ancestral energy branch stays central", () => {
+test("energy branch stays central while Mixotrofia follows contextual activity", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -569,7 +625,7 @@ test("Mixotrofia remains peripheral while the ancestral energy branch stays cent
     "Fotossíntese",
   );
   assert.ok(cell.querySelector(".piece-energy-core")?.classList.contains("amber"));
-  assert.ok(frameTraits.includes("Mixotrofia"));
+  assert.ok(!frameTraits.includes("Mixotrofia"));
   assert.ok(!frameTraits.includes("Fotossíntese"));
   dom.window.close();
 });
@@ -629,10 +685,11 @@ test("globally established inherited traits move to genetic legacy and return wh
     `[data-r="${selectedPiece.r}"][data-c="${selectedPiece.c}"]`,
   );
   assert.match(selected.textContent, /Carapaça/);
-  assert.ok(
+  assert.equal(
     [...cell.querySelectorAll(".trait-badge")].some(
       (badge) => badge.dataset.trait === "Carapaça",
     ),
+    false,
   );
   dom.window.close();
 });
@@ -683,7 +740,7 @@ test("branch-specific traits remain differential unless every piece expresses th
     );
   assert.match(selected.textContent, /Simetria Bilateral/);
   assert.match(selected.textContent, /Predação/);
-  assert.ok(frameTraits.includes("Simetria Bilateral"));
+  assert.ok(!frameTraits.includes("Simetria Bilateral"));
   assert.ok(!frameTraits.includes("Predação"));
   assert.equal(
     animalCell.querySelector(".piece-energy-core")?.dataset.trait,
@@ -701,7 +758,6 @@ test("branch-specific traits remain differential unless every piece expresses th
   assert.match(plantSelected.textContent, /Fotossíntese/);
   assert.match(plantSelected.textContent, /Embriófitas/);
   assert.ok(!plantFrameTraits.includes("Fotossíntese"));
-  assert.ok(plantFrameTraits.includes("Embriófitas"));
   assert.equal(
     plantCell.querySelector(".piece-energy-core")?.dataset.trait,
     "Fotossíntese",
@@ -725,18 +781,20 @@ test("somatic disadvantages stay individual even when an inherited trait is esta
   const selected = dom.window.document.getElementById("selected");
   assert.match(selected.textContent, /Desvantagens Evolutivas/);
   assert.match(selected.textContent, /Imunodeficiência · somática/);
-  assert.ok(
+  assert.equal(
     dom.window.document.querySelector(".trait-badge.somatic-badge"),
+    null,
   );
   dom.window.close();
 });
 
-test("somatic mutations are visually distinct in the mutation frame", () => {
+test("active somatic effects remain visually distinct in the contextual frame", () => {
   const dom = setup(),
     s = createState(202),
     piece = s.pieces[0];
   piece.traits = ["Respiração anaeróbia", "Multicelularismo"];
-  piece.somaticMutations = ["Imunodeficiência"];
+  piece.somaticMutations = ["Mutação Disfuncional"];
+  piece.lastMoveRound = 1;
 
   render(dom.window.document, s);
   const cell = dom.window.document.querySelector(
@@ -744,8 +802,8 @@ test("somatic mutations are visually distinct in the mutation frame", () => {
     ),
     somatic = cell.querySelector(".trait-badge.somatic-badge");
   assert.ok(somatic);
-  assert.equal(somatic.dataset.trait, "Imunodeficiência");
-  assert.equal(somatic.textContent, "🤢");
+  assert.equal(somatic.dataset.trait, "Mutação Disfuncional");
+  assert.equal(somatic.textContent, "❌");
   dom.window.close();
 });
 
@@ -827,14 +885,14 @@ test("selected legend separates active traits from ancestry behind a closed togg
   const dom = setup(),
     s = createState(22),
     piece = s.pieces[0];
-  piece.traits = ["Multicelularismo", "Predação", "Onívoro", "Locomoção Avançada"];
+  piece.traits = ["Multicelularismo", "Predação", "Onívoro", "Locomoção Terrestre"];
   piece.ancestry = [
     "Multicelularismo",
     "Predação",
     "Carnívoro",
     "Onívoro",
     "Locomoção Primitiva",
-    "Locomoção Avançada",
+    "Locomoção Terrestre",
   ];
 
   render(dom.window.document, s, { selected: piece.id });
@@ -845,7 +903,7 @@ test("selected legend separates active traits from ancestry behind a closed togg
 
   assert.match(selected.textContent, /Vantagens Evolutivas/);
   assert.match(selected.textContent, /Onívoro/);
-  assert.match(selected.textContent, /Locomoção Avançada/);
+  assert.match(selected.textContent, /Locomoção Terrestre/);
   assert.ok(toggle);
   assert.equal(toggle.open, false);
   assert.match(summary.textContent, /Legado Genético \(2\)/);
@@ -853,15 +911,14 @@ test("selected legend separates active traits from ancestry behind a closed togg
   assert.match(toggle.textContent, /Locomoção/);
   assert.doesNotMatch(
     toggle.querySelector(".ancestry-list").textContent,
-    /Onívoro|Locomoção Avançada/,
+    /Onívoro|Locomoção Terrestre/,
   );
 
   const cell = d.querySelector(
     `[data-r="${piece.r}"][data-c="${piece.c}"]`,
   );
   const boardIcons = cell.querySelector(".trait-frame").textContent;
-  assert.match(boardIcons, /🐻/);
-  assert.doesNotMatch(boardIcons, /🦁/);
+  assert.doesNotMatch(boardIcons, /🐻|🦁/);
   dom.window.close();
 });
 
@@ -981,7 +1038,7 @@ test("Brotamento becomes actionable only when an explicit resource is available"
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Brotamento"],
+        traits: ["Brotamento", "Herbívoro"],
       },
       { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),
@@ -1219,13 +1276,13 @@ test("selected sexual pieces mark partners green and attack targets red", () => 
         r: 4,
         c: 4,
         rank: 4,
-        traits: ["Reprodução Sexuada"],
+        traits: ["Reprodução Sexuada", "Herbívoro"],
       },
       {
         owner: "blue",
         r: 4,
         c: 5,
-        traits: ["Reprodução Sexuada"],
+        traits: ["Reprodução Sexuada", "Herbívoro"],
       },
       { owner: "amber", r: 3, c: 4 },
     ]),
@@ -1687,9 +1744,25 @@ test("application UI starts with the Hadean common ancestor, then plays division
   const prior = {
     document: globalThis.document,
     localStorage: globalThis.localStorage,
+    Toastify: globalThis.Toastify,
   };
   globalThis.document = w.document;
   globalThis.localStorage = w.localStorage;
+  globalThis.Toastify = (options) => ({
+    toastElement: null,
+    showToast() {
+      const toast = w.document.createElement("div");
+      toast.className = `toastify on ${options.className ?? ""}`;
+      toast.textContent = options.text;
+      w.document.body.append(toast);
+      this.toastElement = toast;
+      return this;
+    },
+    hideToast() {
+      this.toastElement?.remove();
+      options.callback?.();
+    },
+  });
   try {
     await import("../src/app.js");
     const d = w.document;
@@ -1738,6 +1811,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
   } finally {
     globalThis.document = prior.document;
     globalThis.localStorage = prior.localStorage;
+    globalThis.Toastify = prior.Toastify;
     dom.window.close();
   }
 });

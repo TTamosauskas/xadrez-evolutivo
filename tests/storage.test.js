@@ -20,6 +20,104 @@ test("current save schema round-trips deterministic state", () => {
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
 });
 
+test("current saves retire Locomoção Avançada from state and genome", () => {
+  const state = createState(11),
+    piece = state.pieces[0];
+  piece.traits.push("Locomoção Avançada");
+  piece.ancestry.push("Locomoção Avançada");
+  piece.genome["Locomoção Avançada"] = [
+    { value: "derived", dominance: "dominant" },
+    { value: "derived", dominance: "dominant" },
+  ];
+  state.historicalTraits.push("Locomoção Avançada");
+  state.seenMutations.push("Locomoção Avançada");
+  state.cyclePositiveInnovations.push("Locomoção Avançada");
+  state.chain = piece.id;
+
+  const restored = deserialize(JSON.stringify(state));
+  assert.equal(JSON.stringify(restored).includes("Locomoção Avançada"), false);
+  assert.equal(restored.chain, null);
+  assertState(restored);
+});
+
+test("current saves rename Garras to Presas across traits, genome and discoveries", () => {
+  const state = createState(17),
+    piece = state.pieces[0],
+    pair = [
+      { value: "derived", dominance: "dominant" },
+      { value: "derived", dominance: "dominant" },
+    ];
+  piece.traits.push("Garras");
+  piece.ancestry.push("Garras");
+  piece.genome.Garras = pair;
+  delete piece.genome.Presas;
+  state.historicalTraits.push("Garras");
+  state.seenMutations.push("Garras");
+  state.cyclePositiveInnovations.push("Garras");
+  state.discoveries.mutations.push("Garras");
+  state.discoveries.read.push("mutations:Garras");
+
+  const restored = deserialize(JSON.stringify(state)),
+    restoredPiece = restored.pieces.find((candidate) => candidate.id === piece.id);
+  assert.equal(JSON.stringify(restored).includes('"Garras"'), false);
+  assert.ok(restoredPiece.traits.includes("Presas"));
+  assert.ok(restoredPiece.ancestry.includes("Presas"));
+  assert.ok(restoredPiece.genome.Presas.some((allele) => allele.value === "derived"));
+  assert.ok(restored.historicalTraits.includes("Presas"));
+  assert.ok(restored.seenMutations.includes("Presas"));
+  assert.ok(restored.cyclePositiveInnovations.includes("Presas"));
+  assert.ok(restored.discoveries.mutations.includes("Presas"));
+  assert.ok(restored.discoveries.read.includes("mutations:Presas"));
+  assertState(restored);
+});
+
+test("current saves without passive-effect history normalize safely", () => {
+  const state = createState(18);
+  delete state.passiveEffects;
+  delete state.nextPassiveEffect;
+
+  const restored = deserialize(JSON.stringify(state));
+  assert.deepEqual(restored.passiveEffects, []);
+  assert.equal(restored.nextPassiveEffect, 1);
+  assertState(restored);
+});
+
+test("current saves without the pulmonary locus normalize safely", () => {
+  const state = createState(16);
+  for (const piece of state.pieces)
+    delete piece.genome["Respiração Pulmonar"];
+
+  const restored = deserialize(JSON.stringify(state));
+  for (const piece of restored.pieces)
+    assert.deepEqual(piece.genome["Respiração Pulmonar"], [
+      { value: "ancestral", dominance: "neutral" },
+      { value: "ancestral", dominance: "neutral" },
+    ]);
+  assertState(restored);
+});
+
+test("current saves without energy-branch memory normalize safely", () => {
+  const state = createState(12);
+  delete state.energyBranchRepresentatives;
+  const restored = deserialize(JSON.stringify(state));
+  assert.deepEqual(restored.energyBranchRepresentatives, {
+    Fotossíntese: null,
+    Predação: null,
+  });
+  assertState(restored);
+});
+
+test("current saves without opening mutation state avoid retroactive guarantees", () => {
+  const state = createState(13);
+  delete state.openingMutationSatisfied;
+  const restored = deserialize(JSON.stringify(state));
+  assert.deepEqual(restored.openingMutationSatisfied, {
+    blue: true,
+    amber: true,
+  });
+  assertState(restored);
+});
+
 test("current saves without cycle innovation pressure normalize to an empty cycle", () => {
   const state = createState(14);
   delete state.cyclePositiveInnovations;

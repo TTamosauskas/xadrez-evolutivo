@@ -15,9 +15,12 @@ import {
   photosynthesisDelayTurns,
   juvenile,
   senescent,
+  naturallyInfertile,
+  reproductionReady,
   pieceAge,
   naturalDeathChance,
   barrierAt,
+  notice,
   CANONICAL_FOUNDER_CELLS,
   earthFounderStarts,
   lethalHazardAt,
@@ -224,8 +227,17 @@ test("early aquatic stages stay outside Conway while Hadean and early Archean ke
     naturalBarriers: true,
   });
   assert.equal(aquaticFertilityRegime(archean), true);
-  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 36);
-  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 28);
+  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 16);
+  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 20);
+  assert.equal(archean.board.filter((cell) => cell === "neutral").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) =>
+        lethalHazardAt(archean, r, col),
+      ),
+    ).flat().filter(Boolean).length,
+    28,
+  );
   assert.deepEqual(archean.naturalBarriers, []);
 
   for (const stage of ["proterozoic", "ediacaran", "cambrian", "ordovician"]) {
@@ -281,7 +293,7 @@ test("consumed aquatic fertility returns after three turns", () => {
   assertState(s);
 });
 
-test("Archean expands from a 6x6 fertile core to the fully fertile aquatic board", () => {
+test("Archean opens habitat one ring per cycle before becoming fully fertile", () => {
   const first = createState(811, {
       geologicalStage: "archean",
       cycle: 1,
@@ -292,15 +304,46 @@ test("Archean expands from a 6x6 fertile core to the fully fertile aquatic board
       cycle: 2,
       totalCycles: 2,
       naturalBarriers: true,
+    }),
+    third = createState(813, {
+      geologicalStage: "archean",
+      cycle: 3,
+      totalCycles: 3,
+      naturalBarriers: true,
     });
-  assert.equal(first.board.filter((cell) => cell === "fertile").length, 36);
-  assert.equal(first.board.filter((cell) => cell === "hostile").length, 28);
-  assert.equal(second.board.filter((cell) => cell === "fertile").length, 64);
-  assert.equal(second.board.filter((cell) => cell === "hostile").length, 0);
-  assert.equal(first.naturalBarriers.length, 0);
-  assert.equal(second.naturalBarriers.length, 0);
-  assertState(first);
-  assertState(second);
+
+  assert.equal(first.board.filter((cell) => cell === "fertile").length, 16);
+  assert.equal(first.board.filter((cell) => cell === "hostile").length, 20);
+  assert.equal(first.board.filter((cell) => cell === "neutral").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) => lethalHazardAt(first, r, col)),
+    ).flat().filter(Boolean).length,
+    28,
+  );
+  for (let r = 0; r < 8; r++)
+    for (let col = 0; col < 8; col++) {
+      const ring = Math.min(r, col, 7 - r, 7 - col);
+      if (ring === 0) assert.equal(lethalHazardAt(first, r, col), true);
+      else if (ring === 1) assert.equal(first.board[r * 8 + col], "hostile");
+      else assert.equal(first.board[r * 8 + col], "fertile");
+    }
+
+  assert.equal(second.board.filter((cell) => cell === "fertile").length, 36);
+  assert.equal(second.board.filter((cell) => cell === "hostile").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) => lethalHazardAt(second, r, col)),
+    ).flat().filter(Boolean).length,
+    0,
+  );
+
+  assert.equal(third.board.filter((cell) => cell === "fertile").length, 64);
+  assert.equal(third.board.filter((cell) => cell === "hostile").length, 0);
+  for (const state of [first, second, third]) {
+    assert.equal(state.naturalBarriers.length, 0);
+    assertState(state);
+  }
 });
 
 test("Hadean starts with one gray common ancestor that splits into two basal Kings", () => {
@@ -512,14 +555,39 @@ test("Hadean tutorial uses reproduction and immediate capture before primitive l
   assert.equal(s.result.winner, "amber");
   assert.match(s.result.reason, /Extinção total/);
 
+  s.seen = [...new Set([...s.seen, "reproduction", "hostile"])];
   const archean = createSuccessorState(s, 303);
   assert.equal(archean.geologicalStage, "archean");
+  assert.ok(archean.seen.includes("reproduction"));
+  assert.ok(archean.seen.includes("hostile"));
+  notice(
+    archean,
+    "Reprodução",
+    ["Casas verdes podem gerar prole com as características dos pais."],
+    "reproduction",
+  );
+  notice(
+    archean,
+    "Casas hostis",
+    ["Casas vermelhas oferecem perigo de morte."],
+    "hostile",
+  );
+  assert.equal(archean.notices.length, 0);
   assert.equal(archean.cycle, 1);
   assert.equal(archean.totalCycles, 1);
   assert.equal(archean.hadeanTutorial, null);
   assert.equal(archean.pieces.length, 4);
-  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 36);
-  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 28);
+  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 16);
+  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 20);
+  assert.equal(archean.board.filter((cell) => cell === "neutral").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) =>
+        lethalHazardAt(archean, r, col),
+      ),
+    ).flat().filter(Boolean).length,
+    28,
+  );
   for (const owner of ["blue", "amber"]) {
     const founders = archean.pieces.filter((piece) => piece.owner === owner);
     assert.equal(founders.length, 2);
@@ -585,12 +653,14 @@ test("simultaneous total extinction is won by the lineage whose last piece dies 
 
   const next = createSuccessorState(amberLast, 305);
   assert.ok(next.pieces.length > 0);
-  assert.ok(next.pieces.every((piece) => piece.traits.includes("Predação")));
+  assert.ok(next.pieces.some((piece) => piece.traits.includes("Predação")));
 
   const blueLast = resolve(["amber", "blue"]);
   assert.equal(blueLast.result.winner, "blue");
   assert.equal(blueLast.result.extinctionFounder.owner, "blue");
-  assert.ok(blueLast.result.extinctionFounder.traits.includes("Fotossíntese"));
+  assert.ok(
+    blueLast.result.extinctionFounder.traits.includes("Fotossíntese"),
+  );
   assertState(amberLast);
   assertState(blueLast);
 });
@@ -706,8 +776,8 @@ test("mutual blocking advances Conway turn by turn until one side can act", () =
   s.pieces = [];
   s.nextId = 1;
   s.pieces = [
-    newPiece(s, "blue", 4, 4, { rank: 4, traits: [] }),
-    newPiece(s, "amber", 0, 0, { rank: 4, traits: [] }),
+    newPiece(s, "blue", 4, 4, { rank: 4, traits: ["Fotossíntese"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Fotossíntese"] }),
   ];
   for (const cell of [27, 28, 29]) s.board[cell] = "fertile";
   s.turn = 79;
@@ -811,7 +881,7 @@ test("invalid actions roll back the complete state, including random generator",
 });
 test("stationary reproduction keeps its parent and unique occupancy with Ooteca", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, traits: ["Ooteca"] },
+    { owner: "blue", r: 4, c: 4, traits: ["Ooteca", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
@@ -822,7 +892,7 @@ test("stationary reproduction keeps its parent and unique occupancy with Ooteca"
 });
 test("Ooteca only releases after successful reproduction on a fertile square", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca"] },
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   const parent = s.pieces[0];
@@ -832,7 +902,7 @@ test("Ooteca only releases after successful reproduction on a fertile square", (
   assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 0);
 
   s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca"] },
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
@@ -860,7 +930,7 @@ test("Ooteca only releases after successful reproduction on a fertile square", (
 test("capturing Ooteca reserves arrival and cannot overlap the attacker", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
-    { owner: "amber", r: 4, c: 4, traits: ["Ooteca"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Ooteca", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s = simulate(s, move(s.pieces[0], 4, 4));
@@ -869,7 +939,10 @@ test("capturing Ooteca reserves arrival and cannot overlap the attacker", () => 
   assertState(s);
 });
 test("notices pause actions; acknowledgment is ordered and idempotent", () => {
-  let s = fixture();
+  let s = fixture([
+    { owner: "blue", r: 6, c: 3, traits: ["Herbívoro"] },
+    { owner: "amber", r: 1, c: 4 },
+  ]);
   s.board[43] = "fertile";
   s = transition(s, move(s.pieces[0], 5, 3));
   assert.ok(s.notices.length);
@@ -879,34 +952,20 @@ test("notices pause actions; acknowledgment is ordered and idempotent", () => {
   const next = transition(s, { type: "ACK_NOTICE", id: first });
   assert.equal(transition(next, { type: "ACK_NOTICE", id: first }), next);
 });
-test("Locomoção Avançada has exactly two actions and restricts the second to the same piece", () => {
-  let s = fixture([
-    { owner: "blue", r: 6, c: 3, traits: ["Locomoção Avançada"] },
-    { owner: "blue", r: 6, c: 4 },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s = simulate(s, move(s.pieces[0], 5, 3));
-  assert.equal(s.turn, 0);
-  assert.equal(s.chain, 1);
-  assert.equal(movesFor(s, s.pieces[1]).length, 0);
-  s = simulate(s, move(s.pieces[0], 4, 3));
-  assert.equal(s.turn, 1);
-  assert.equal(s.chain, null);
-});
 test("sexual partner preserves Multicelularismo and survives save/restore", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 5,
       c: 3,
-      traits: ["Multicelularismo", "Reprodução Sexuada"],
+      traits: ["Multicelularismo", "Reprodução Sexuada", "Herbívoro"],
     },
     {
       owner: "blue",
       r: 4,
       c: 4,
       rank: 3,
-      traits: ["Multicelularismo", "Reprodução Sexuada"],
+      traits: ["Multicelularismo", "Reprodução Sexuada", "Herbívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -929,13 +988,13 @@ test("sexual partners require the trait on both parents and can use the mate's f
       owner: "blue",
       r: 4,
       c: 4,
-      traits: ["Reprodução Sexuada"],
+      traits: ["Reprodução Sexuada", "Herbívoro"],
     },
     {
       owner: "blue",
       r: 4,
       c: 5,
-      traits: ["Reprodução Sexuada"],
+      traits: ["Reprodução Sexuada", "Herbívoro"],
     },
     {
       owner: "blue",
@@ -962,19 +1021,19 @@ test("sexual partners require the trait on both parents and can use the mate's f
   assertState(s);
 });
 
-test("Reprodução Sexuada replaces carnivore basal fertility with partner reproduction", () => {
+test("Reprodução Sexuada routes herbivore fertility through partner reproduction", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 4,
       c: 4,
-      traits: ["Carnívoro", "Reprodução Sexuada"],
+      traits: ["Herbívoro", "Reprodução Sexuada"],
     },
     {
       owner: "blue",
       r: 4,
       c: 5,
-      traits: ["Carnívoro", "Reprodução Sexuada"],
+      traits: ["Herbívoro", "Reprodução Sexuada"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -1027,13 +1086,13 @@ test("sexual reproduction keeps fixed energy branches separated without Mixotrof
   assertState(s);
 });
 
-test("dysfunctional movement rests the following full round and suppresses Locomoção Avançada", () => {
+test("dysfunctional movement rests the following full round", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 6,
       c: 3,
-      traits: ["Mutação Disfuncional", "Locomoção Avançada"],
+      traits: ["Mutação Disfuncional"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -1047,7 +1106,7 @@ test("dysfunctional movement rests the following full round and suppresses Locom
 });
 test("collector gathers once and can spend a seed only once in its turn", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Coletor", "Locomoção Avançada"] },
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Coletor", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
@@ -1055,8 +1114,8 @@ test("collector gathers once and can spend a seed only once in its turn", () => 
   s = simulate(s, move(s.pieces[0], 4, 4));
   const p = s.pieces.find((p) => p.id === 1);
   assert.equal(p.seeds, 1);
-  assert.equal(s.chain, 1);
-  assert.ok(!movesFor(s, p).some((t) => t.stay));
+  assert.equal(s.chain, null);
+  assert.equal(s.turn, 1);
   assertState(s);
 });
 test("venom excludes capture turn and kills after two later own turns", () => {
@@ -1067,10 +1126,19 @@ test("venom excludes capture turn and kills after two later own turns", () => {
     { owner: "amber", r: 0, c: 0 },
   ]);
   s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.equal(s.pieces[0].venom.remaining, 2);
-  for (let i = 0; i < 3; i++) s = simulate(s, { type: "PASS" });
-  assert.equal(s.pieces.find((p) => p.id === 1).venom.remaining, 1);
-  s = simulate(s, { type: "PASS" });
+  assert.equal(s.pieces.find((p) => p.id === 1)?.venom?.remaining, 2);
+
+  let guard = 0;
+  while (
+    s.pieces.find((p) => p.id === 1)?.venom?.remaining === 2 &&
+    guard++ < 8
+  )
+    s = simulate(s, { type: "PASS" });
+  assert.equal(s.pieces.find((p) => p.id === 1)?.venom?.remaining, 1);
+
+  guard = 0;
+  while (s.pieces.some((p) => p.id === 1) && guard++ < 8)
+    s = simulate(s, { type: "PASS" });
   assert.ok(!s.pieces.some((p) => p.id === 1));
 });
 test("Voo bypasses hostile traversal but not hostile landing; knight only tests landing", () => {
@@ -1081,8 +1149,12 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   s.rng = 1;
   s.board[43] = "hostile";
   s.board[35] = "hostile";
-  const lost = simulate(s, move(s.pieces[0], 3, 3));
+  const lost = transition(s, move(s.pieces[0], 3, 3));
   assert.ok(!lost.pieces.some((p) => p.id === 1));
+  assert.deepEqual(
+    lost.notices.find((entry) => entry.title === "Casas hostis")?.lines,
+    ["Casas vermelhas oferecem perigo de morte."],
+  );
 
   s.pieces[0].traits = [
     "Locomoção Primitiva",
@@ -1449,6 +1521,18 @@ test("piece life history defines brood, metabolic recovery and sexual maturity",
   for (let rank = 0; rank < PIECE_LIFE_HISTORY.length; rank++) {
     const profile = { rank, traits: ["Respiração anaeróbia"] },
       aerobic = { rank, traits: ["Respiração aeróbia"] },
+      terrestrial = {
+        rank,
+        traits: ["Respiração aeróbia", "Locomoção Terrestre"],
+      },
+      pulmonary = {
+        rank,
+        traits: [
+          "Respiração aeróbia",
+          "Locomoção Terrestre",
+          "Respiração Pulmonar",
+        ],
+      },
       precocious = {
         rank,
         traits: ["Respiração anaeróbia", "Precocidade Sexual"],
@@ -1459,6 +1543,14 @@ test("piece life history defines brood, metabolic recovery and sexual maturity",
     );
     assert.equal(
       metabolicReproductionCooldown(aerobic),
+      Math.max(1, PIECE_LIFE_HISTORY[rank].metabolism - 1),
+    );
+    assert.equal(
+      metabolicReproductionCooldown(terrestrial),
+      PIECE_LIFE_HISTORY[rank].metabolism,
+    );
+    assert.equal(
+      metabolicReproductionCooldown(pulmonary),
       Math.max(1, PIECE_LIFE_HISTORY[rank].metabolism - 1),
     );
     assert.equal(
@@ -1563,6 +1655,37 @@ test("Semelparidade defers death while viviparous offspring are gestating", () =
   assertState(s);
 });
 
+test("fertile reproduction shows the concise tutorial copy only on its first occurrence", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 0, traits: ["Herbívoro"] },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  s.board[28] = "fertile";
+  s = transition(s, move(s.pieces[0], 3, 4));
+  const first = s.notices.find((entry) => entry.title === "Reprodução");
+  assert.deepEqual(first?.lines, [
+    "Casas verdes podem gerar prole com as características dos pais.",
+  ]);
+  assert.ok(s.seen.includes("reproduction"));
+
+  while (s.notices.length)
+    s = transition(s, {
+      type: "ACK_NOTICE",
+      id: s.notices[0].id,
+      revision: s.revision,
+    });
+  notice(
+    s,
+    "Reprodução",
+    ["Casas verdes podem gerar prole com as características dos pais."],
+    "reproduction",
+  );
+  assert.equal(
+    s.notices.some((entry) => entry.title === "Reprodução"),
+    false,
+  );
+});
+
 test("fertile reproduction uses the piece metabolic recovery profile", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração anaeróbia"] },
@@ -1574,7 +1697,7 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(anaerobicQueen.nextReproductionRound, round(s) + 6);
+  assert.equal(anaerobicQueen.nextReproductionRound, round(s) + 7);
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração aeróbia"] },
@@ -1586,7 +1709,7 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(aerobicQueen.nextReproductionRound, round(s) + 5);
+  assert.equal(aerobicQueen.nextReproductionRound, round(s) + 6);
 
   s = fixture([
     {
@@ -1604,7 +1727,7 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(inducedPawn.nextReproductionRound, round(s) + 3);
+  assert.equal(inducedPawn.nextReproductionRound, round(s) + 4);
   assertState(s);
 });
 
@@ -1617,10 +1740,26 @@ test("predatory reproduction uses the same metabolic recovery profile", () => {
   assert.equal(reproduce(context(s), predator, null, "predação", {
     forcedCount: 1,
   }), 1);
-  assert.equal(predator.nextReproductionRound, round(s) + 3);
+  assert.equal(predator.nextReproductionRound, round(s) + 4);
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Predação"] },
+    { owner: "amber", r: 0, c: 0, rank: 0 },
+  ]);
+  predator = s.pieces[0];
+  assert.equal(reproduce(context(s), predator, null, "predação", {
+    forcedCount: 1,
+  }), 1);
+  assert.equal(predator.nextReproductionRound, round(s) + 7);
+
+  s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 5,
+      traits: ["Predação", "Respiração aeróbia"],
+    },
     { owner: "amber", r: 0, c: 0, rank: 0 },
   ]);
   predator = s.pieces[0];
@@ -1635,7 +1774,11 @@ test("predatory reproduction uses the same metabolic recovery profile", () => {
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Predação", "Respiração aeróbia"],
+      traits: [
+        "Predação",
+        "Respiração aeróbia",
+        "Respiração Pulmonar",
+      ],
     },
     { owner: "amber", r: 0, c: 0, rank: 0 },
   ]);
@@ -2122,6 +2265,98 @@ test("Multicelularismo gates childhood and introduces progressive senescence", (
   assertState(s);
 });
 
+test("natural infertility begins at age 16 pre-bilateral and 30 for bilateral or photosynthetic lineages", () => {
+  const s = fixture([]),
+    preBilateral = newPiece(s, "blue", 4, 4, {
+      traits: ["Multicelularismo"],
+      bornRound: 0,
+      maturesRound: 0,
+    }),
+    bilateral = newPiece(s, "amber", 0, 0, {
+      traits: ["Multicelularismo", "Simetria Bilateral"],
+      bornRound: 0,
+      maturesRound: 0,
+    }),
+    photosynthetic = newPiece(s, "blue", 5, 5, {
+      traits: ["Multicelularismo", "Fotossíntese"],
+      bornRound: 0,
+      maturesRound: 0,
+    }),
+    unicellular = newPiece(s, "amber", 1, 1, {
+      bornRound: 0,
+      maturesRound: 0,
+    });
+  s.pieces.push(preBilateral, bilateral, photosynthetic, unicellular);
+
+  s.turn = 30;
+  assert.equal(pieceAge(s, preBilateral), 15);
+  assert.equal(naturallyInfertile(s, preBilateral), false);
+  assert.equal(reproductionReady(s, preBilateral), true);
+
+  s.turn = 32;
+  assert.equal(pieceAge(s, preBilateral), 16);
+  assert.equal(naturallyInfertile(s, preBilateral), true);
+  assert.equal(reproductionReady(s, preBilateral), false);
+
+  s.turn = 58;
+  assert.equal(pieceAge(s, bilateral), 29);
+  assert.equal(naturallyInfertile(s, bilateral), false);
+  assert.equal(naturallyInfertile(s, photosynthetic), false);
+  assert.equal(reproductionReady(s, bilateral), true);
+  assert.equal(reproductionReady(s, photosynthetic), true);
+
+  s.turn = 60;
+  assert.equal(pieceAge(s, bilateral), 30);
+  assert.equal(naturallyInfertile(s, bilateral), true);
+  assert.equal(naturallyInfertile(s, photosynthetic), true);
+  assert.equal(reproductionReady(s, bilateral), false);
+  assert.equal(reproductionReady(s, photosynthetic), false);
+
+  s.turn = 120;
+  assert.equal(naturallyInfertile(s, unicellular), false);
+  assert.equal(reproductionReady(s, unicellular), true);
+  assertState(s);
+});
+
+test("natural infertility does not cancel a viviparous pregnancy already in progress", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Multicelularismo", "Simetria Bilateral", "Vivíparo"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0];
+
+  s.turn = 58;
+  parent.bornRound = 0;
+  parent.maturesRound = 0;
+  parent.nextReproductionRound = 0;
+  assert.equal(pieceAge(s, parent), 29);
+  assert.equal(reproductionReady(s, parent), true);
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+    }),
+    1,
+  );
+  assert.equal(parent.pregnancies.length, 1);
+
+  const before = s.pieces.length;
+  s.turn = 64;
+  assert.equal(pieceAge(s, parent), 32);
+  assert.equal(naturallyInfertile(s, parent), true);
+  assert.equal(reproductionReady(s, parent), false);
+  tickReproduction(context(s));
+
+  assert.equal(parent.pregnancies.length, 0);
+  assert.ok(s.pieces.length > before);
+  assertState(s);
+});
+
 test("natural death is certain at age 48, bypasses Regeneração and leaves no trophic residue", () => {
   const s = fixture([
       {
@@ -2312,91 +2547,72 @@ test("generation milestones drive habitat and queue ecological events", () => {
   );
   assertState(s);
 });
-test("Multicelularismo ends primordial predatory reproduction even after later trait loss", () => {
+test("Predação keeps converting valid captures into reproduction after Multicelularismo", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: [] },
+    { owner: "blue", r: 4, c: 3, rank: 3 },
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  const multicellularPredator = s.pieces[0].id;
+  const parentId = s.pieces[0].id;
   s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
-  assert.ok(s.pieces.some((p) => p.id === multicellularPredator));
-
+  assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
   assert.equal(
     predatoryReproductionAvailable(
       {
-        traits: ["Predação"],
-        ancestry: ["Predação", "Multicelularismo"],
+        traits: ["Predação", "Multicelularismo", "Ingestão"],
+        ancestry: ["Predação", "Multicelularismo", "Ingestão"],
       },
-      { traits: [] },
+      { traits: ["Multicelularismo"] },
     ),
-    false,
+    true,
   );
+  assertState(s);
 });
 
-test("diet controls predatory reproduction without blocking capture", () => {
-  let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
-    { owner: "amber", r: 4, c: 4 },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  const carnivoreId = s.pieces[0].id;
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 2);
-  assert.ok(s.pieces.some((p) => p.parentId === carnivoreId));
+test("diet specializes trophic efficiency and green-resource access", () => {
+  const captureCooldown = (traits, preyTraits) => {
+    let s = fixture([
+      { owner: "blue", r: 4, c: 3, rank: 3, traits },
+      { owner: "amber", r: 4, c: 4, traits: preyTraits },
+      { owner: "amber", r: 0, c: 0 },
+    ]);
+    const parentId = s.pieces[0].id;
+    s = simulate(s, move(s.pieces[0], 4, 4));
+    const parent = s.pieces.find((piece) => piece.id === parentId);
+    assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
+    return parent.nextReproductionRound;
+  };
 
-  s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
-    { owner: "amber", r: 4, c: 4, traits: ["Fotossíntese"] },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  const plantVictim = s.pieces[1].id;
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(!s.pieces.some((p) => p.id === plantVictim));
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
+  const basalAnimal = captureCooldown([], []),
+    carnivoreAnimal = captureCooldown(["Carnívoro"], []),
+    basalPlant = captureCooldown([], ["Fotossíntese"]),
+    herbivorePlant = captureCooldown(["Herbívoro"], ["Fotossíntese"]);
+  assert.equal(carnivoreAnimal, basalAnimal - 1);
+  assert.equal(herbivorePlant, basalPlant - 1);
 
-  s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Herbívoro"] },
-    { owner: "amber", r: 4, c: 4, traits: ["Fotossíntese"] },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  const herbivoreId = s.pieces[0].id;
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(s.pieces.some((p) => p.parentId === herbivoreId));
-
-  s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Herbívoro"] },
-    { owner: "amber", r: 4, c: 4 },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  const animalVictim = s.pieces[1].id;
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(!s.pieces.some((p) => p.id === animalVictim));
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 1);
-
-  s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Onívoro"] },
-    { owner: "amber", r: 4, c: 4, traits: ["Fotossíntese"] },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  const omnivoreId = s.pieces[0].id;
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(s.pieces.some((p) => p.parentId === omnivoreId));
-
-  s = fixture([
-    { owner: "blue", r: 4, c: 4, traits: ["Carnívoro"] },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s.board[36] = "fertile";
-  assert.ok(
-    movesFor(s, s.pieces[0]).some(
-      (target) => target.r === 4 && target.c === 4 && target.stay,
-    ),
-  );
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(s.pieces.filter((p) => p.owner === "blue").length > 1);
-  assertState(s);
+  for (const [traits, expected] of [
+    [["Carnívoro"], false],
+    [["Herbívoro"], true],
+    [["Onívoro"], true],
+    [["Mixotrofia"], true],
+  ]) {
+    const s = fixture([
+      { owner: "blue", r: 4, c: 4, traits },
+      { owner: "amber", r: 0, c: 0 },
+    ]);
+    s.board[36] = "fertile";
+    assert.equal(
+      movesFor(s, s.pieces[0]).some(
+        (target) =>
+          target.r === 4 &&
+          target.c === 4 &&
+          target.stay &&
+          !target.capture,
+      ),
+      expected,
+      traits.join(", "),
+    );
+  }
 });
 
 test("Onívoro uses fertile cells and gains predatory reproduction from either prey branch", () => {
@@ -2453,6 +2669,7 @@ test("capture without trophic reproduction keeps disturbance for the carcass lif
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
+  s.pieces[0].nextReproductionRound = round(s) + 10;
   s = simulate(s, move(s.pieces[0], 4, 4));
   const attacker = s.pieces.find((piece) => piece.id === 1),
     disturbance = s.captureDisturbances[0];
@@ -2484,6 +2701,7 @@ test("capture disturbance preserves fertile terrain underneath", () => {
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
+  s.pieces[0].nextReproductionRound = round(s) + 10;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.equal(s.deathSites.length, 0);
   assert.equal(s.carcasses[0]?.cell, 36);
@@ -2663,6 +2881,190 @@ test("photosynthetic offspring keep their hereditary energy branch", () => {
   assert.ok(child.traits.includes("Fotossíntese"));
   assert.ok(!child.traits.includes("Predação"));
   assert.ok(!s.historicalTraits.includes("Predação"));
+  assertState(s);
+});
+
+test("Archean opening guarantee fixes the missing energy branch on an eligible basal descendant", () => {
+  const s = createState(1196, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia", "Fotossíntese"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+  s.turn = 2;
+
+  const parent = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    }),
+    rival = newPiece(s, "amber", 2, 5, {
+      rank: 4,
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+    });
+  s.pieces.push(parent, rival);
+
+  const before = s.nextId;
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const child = s.pieces.find((piece) => piece.id >= before);
+  assert.ok(child);
+  assert.ok(child.traits.includes("Predação"));
+  assert.equal(child.traits.includes("Fotossíntese"), false);
+  assert.ok(s.historicalTraits.includes("Predação"));
+  assert.equal(s.openingMutationSatisfied.blue, true);
+  assert.ok(s.energyBranchRepresentatives.Predação?.traits.includes("Predação"));
+  assertState(s);
+});
+
+test("same-branch offspring do not spend the guarantee reserved for the missing Archean branch", () => {
+  const s = createState(1195, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia", "Fotossíntese"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+  s.turn = 2;
+  const parent = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+    }),
+    rival = newPiece(s, "amber", 2, 5, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    });
+  s.pieces.push(parent, rival);
+
+  reproduce(context(s), parent, null, "teste", {
+    forcedCount: 1,
+    ignoreReadiness: true,
+    immediateDevelopment: true,
+  });
+  assert.equal(s.openingMutationSatisfied.blue, false);
+  assert.equal(s.historicalTraits.includes("Predação"), false);
+  assertState(s);
+});
+
+test("opening mutation guarantee is independent per side from the second round onward", () => {
+  const s = createState(1197, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+  s.turn = 2;
+
+  const blue = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    }),
+    amber = newPiece(s, "amber", 2, 5, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    });
+  s.pieces.push(blue, amber);
+
+  const blueBefore = s.nextId;
+  assert.equal(
+    reproduce(context(s), blue, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const blueChild = s.pieces.find((piece) => piece.id >= blueBefore);
+  assert.ok(blueChild);
+  assert.equal(blueChild.mutations, 1);
+  assert.equal(s.openingMutationSatisfied.blue, true);
+  assert.equal(s.openingMutationSatisfied.amber, false);
+
+  const amberBefore = s.nextId;
+  assert.equal(
+    reproduce(context(s), amber, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const amberChild = s.pieces.find((piece) => piece.id >= amberBefore);
+  assert.ok(amberChild);
+  assert.equal(amberChild.mutations, 1);
+  assert.equal(s.openingMutationSatisfied.amber, true);
+  assertState(s);
+});
+
+test("a natural opening mutation consumes the later guarantee for that side", () => {
+  const s = createState(1198, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+  const parent = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    }),
+    rival = newPiece(s, "amber", 2, 5, {
+      rank: 4,
+      traits: [],
+      ancestry: ["Respiração anaeróbia"],
+    });
+  s.pieces.push(parent, rival);
+  s.event = {
+    ...EVENTS.find((event) => event.id === "solar"),
+    startRound: 0,
+    hazards: [],
+    snapshots: {},
+  };
+
+  const before = s.nextId;
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 1,
+      ignoreReadiness: true,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const child = s.pieces.find((piece) => piece.id >= before);
+  assert.ok(child);
+  assert.equal(child.mutations, 1);
+  assert.equal(s.openingMutationSatisfied.blue, true);
+  assert.equal(s.openingMutationSatisfied.amber, false);
   assertState(s);
 });
 
@@ -2867,7 +3269,7 @@ test("unit broods cannot originate Reprodução Sexuada", () => {
   }
 });
 
-test("mutation modal only queues outcomes that have not appeared before", () => {
+test("mutation toast only announces outcomes that have not appeared before", () => {
   const allLabels = [
     ...Object.keys(TRAITS),
     ...Object.keys(TRAITS).map((t) => `Perda de ${t}`),
@@ -2887,6 +3289,7 @@ test("mutation modal only queues outcomes that have not appeared before", () => 
   };
   s.seenMutations = [...allLabels];
   reproduce(context(s), s.pieces[0]);
+  assert.ok(!s.passiveEffects.some((effect) => effect.outcome === "new-mutation"));
   assert.ok(!s.notices.some((n) => n.title === "Novas mutações"));
 
   s = fixture([
@@ -2900,9 +3303,12 @@ test("mutation modal only queues outcomes that have not appeared before", () => 
     snapshots: {},
   };
   reproduce(context(s), s.pieces[0]);
-  const notice = s.notices.find((n) => n.title === "Novas mutações");
-  assert.ok(notice?.lines.length);
-  assert.ok(notice.lines.every((line) => s.seenMutations.includes(line)));
+  const mutationToast = s.passiveEffects.find(
+    (effect) => effect.outcome === "new-mutation",
+  );
+  assert.ok(mutationToast);
+  assert.match(mutationToast.text, /^Nova Mutação: /);
+  assert.ok(!s.notices.some((n) => n.title === "Novas mutações"));
   assertState(s);
 });
 test("mass extinction starts a new Era from the dominant surviving lineage", () => {
@@ -3102,7 +3508,7 @@ test("sexual virus does not spread by adjacency and keeps complete Resistance im
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Reprodução Sexuada"],
+        traits: ["Reprodução Sexuada", "Herbívoro"],
       },
       {
         owner: "blue",
@@ -3114,7 +3520,7 @@ test("sexual virus does not spread by adjacency and keeps complete Resistance im
         owner: "blue",
         r: 5,
         c: 4,
-        traits: ["Reprodução Sexuada"],
+        traits: ["Reprodução Sexuada", "Herbívoro"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
@@ -3233,13 +3639,13 @@ test("ecological pathogen selection separates agent choice from eligible routes"
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Carnívoro", "Reprodução Sexuada"],
+        traits: ["Herbívoro", "Reprodução Sexuada"],
       },
       {
         owner: "blue",
         r: 4,
         c: 5,
-        traits: ["Reprodução Sexuada"],
+        traits: ["Reprodução Sexuada", "Herbívoro"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]);
@@ -4046,6 +4452,8 @@ test("Espinhos has a one-in-ten chance to kill the aggressor on a capture attemp
   assert.ok(!s.pieces.some((piece) => piece.id === attacker.id));
   assert.ok(s.pieces.some((piece) => piece.id === defender.id));
   assert.ok(s.captureDisturbances.some((entry) => entry.cell === 35));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Espinhos");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "killed-attacker");
   assertState(s);
 });
 
@@ -4072,6 +4480,8 @@ test("Regeneração prevents one non-capture death but never a capture", () => {
   assert.equal(ctx.kill(p.id, "casa hostil"), false);
   assert.ok(s.pieces.some((x) => x.id === p.id));
   assert.equal(p.regenerationUsed, true);
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Regeneração");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "prevented-death");
   assert.equal(movesFor(s, p).length, 0);
   assert.equal(ctx.kill(p.id, "casa hostil"), true);
   assert.ok(!s.pieces.some((x) => x.id === p.id));
@@ -4135,6 +4545,8 @@ test("Notívago evades on even rounds and Visão Noturna cancels the defense", (
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((piece) => piece.id === 2));
   assert.ok(s.logs.some((entry) => entry.text.includes("Notívago escapou")));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Notívago");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "prevented-capture");
 
   s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Visão Noturna"] },
@@ -4145,6 +4557,13 @@ test("Notívago evades on even rounds and Visão Noturna cancels the defense", (
   s.rng = 0;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Visão Noturna" &&
+        effect.outcome === "neutralized-nocturnal-evasion",
+    ),
+  );
 });
 
 test("Velocidade evades captures unless the aggressor also has Velocidade", () => {
@@ -4157,6 +4576,8 @@ test("Velocidade evades captures unless the aggressor also has Velocidade", () =
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((piece) => piece.id === 2));
   assert.ok(s.logs.some((entry) => entry.text.includes("Velocidade permitiu")));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Velocidade");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "prevented-capture");
 
   s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Velocidade"] },
@@ -4168,7 +4589,7 @@ test("Velocidade evades captures unless the aggressor also has Velocidade", () =
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
 });
 
-test("Pele grossa resists captures unless the aggressor has Garras", () => {
+test("Pele grossa resists captures unless the aggressor has Presas", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4 },
     { owner: "amber", r: 4, c: 4, traits: ["Pele grossa"] },
@@ -4178,15 +4599,24 @@ test("Pele grossa resists captures unless the aggressor has Garras", () => {
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((piece) => piece.id === 2));
   assert.ok(s.logs.some((entry) => entry.text.includes("Pele grossa resistiu")));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Pele grossa");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "prevented-capture");
 
   s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Garras"] },
+    { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Presas"] },
     { owner: "amber", r: 4, c: 4, traits: ["Pele grossa"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.rng = 0;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Presas" &&
+        effect.outcome === "neutralized-thick-skin",
+    ),
+  );
 });
 
 test("Incubação protects adjacent eggs from Ovífagia", () => {
@@ -4324,10 +4754,14 @@ test("Polegar Opositor can decline transfer and ignores temporary decomposition"
 });
 
 
-test("Archean basal organisms capture on contact without Predação but do not reproduce from prey", () => {
-  let s = createState(4270, {
+test("Archean photosynthetic organisms without Predação cannot capture by contact", () => {
+  const s = createState(4270, {
     geologicalStage: "archean",
-    historicalTraits: ["Respiração anaeróbia"],
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Fotossíntese",
+      "Reparo Celular",
+    ],
     naturalBarriers: false,
   });
   s.board.fill("neutral");
@@ -4335,8 +4769,16 @@ test("Archean basal organisms capture on contact without Predação but do not r
   s.nextId = 1;
   const attacker = newPiece(s, "blue", 4, 4, {
       rank: 4,
-      traits: ["Respiração anaeróbia"],
-      ancestry: ["Respiração anaeróbia"],
+      traits: [
+        "Respiração anaeróbia",
+        "Fotossíntese",
+        "Reparo Celular",
+      ],
+      ancestry: [
+        "Respiração anaeróbia",
+        "Fotossíntese",
+        "Reparo Celular",
+      ],
     }),
     victim = newPiece(s, "amber", 3, 3, {
       rank: 4,
@@ -4351,26 +4793,70 @@ test("Archean basal organisms capture on contact without Predação but do not r
   s.pieces.push(attacker, victim, survivor);
 
   assert.equal(captureUnlocked(s, attacker), false);
-  assert.equal(contactCaptureUnlocked(attacker), true);
+  assert.equal(contactCaptureUnlocked(attacker), false);
   const targets = movesFor(s, attacker);
-  assert.ok(
+  assert.equal(
     targets.some(
       (target) =>
         target.r === victim.r &&
         target.c === victim.c &&
         target.capture,
     ),
+    false,
   );
   assert.equal(
     targets.some((target) => !target.capture && !target.stay),
     false,
   );
-
-  s = simulate(s, move(attacker, victim.r, victim.c));
-  assert.ok(!s.pieces.some((piece) => piece.id === victim.id));
-  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 1);
-  assert.ok(!s.pieces.some((piece) => piece.parentId === attacker.id));
   assertState(s);
+});
+
+test("fertile food is universal through Ediacaran and restricted from Cambrian onward", () => {
+  const make = (stage, traits) => {
+    const s = createState(4272, {
+      geologicalStage: stage,
+      historicalTraits: ["Respiração anaeróbia", "Predação"],
+      naturalBarriers: false,
+    });
+    s.board.fill("neutral");
+    s.pieces = [];
+    s.nextId = 1;
+    const piece = newPiece(s, "blue", 4, 4, {
+        rank: 4,
+        traits: ["Respiração anaeróbia", ...traits],
+        ancestry: ["Respiração anaeróbia", ...traits],
+      }),
+      rival = newPiece(s, "amber", 0, 0, {
+        rank: 4,
+        traits: ["Respiração anaeróbia"],
+        ancestry: ["Respiração anaeróbia"],
+      });
+    s.pieces.push(piece, rival);
+    s.board[square(piece.r, piece.c)] = "fertile";
+    return [s, piece];
+  };
+
+  for (const stage of ["archean", "proterozoic", "ediacaran"]) {
+    const [s, piece] = make(stage, ["Predação"]);
+    assert.ok(
+      movesFor(s, piece).some(
+        (target) => target.r === piece.r && target.c === piece.c && target.stay,
+      ),
+      stage,
+    );
+  }
+
+  const [cambrian, predator] = make("cambrian", ["Predação"]);
+  assert.equal(
+    movesFor(cambrian, predator).some(
+      (target) =>
+        target.r === predator.r &&
+        target.c === predator.c &&
+        target.stay &&
+        !target.capture,
+    ),
+    false,
+  );
 });
 
 test("Predação converts a pre-Locomotion contact capture into primordial reproduction", () => {
@@ -4428,8 +4914,8 @@ test("Predação is required for ordinary post-Locomotion captures", () => {
   assert.ok(movesFor(s, attacker).some((target) => target.c === 4));
 });
 
-test("Multicelularismo blocks direct predation by unicellular attackers", () => {
-  let s = fixture([
+test("Multicelularismo blocks capture until the predator obtains Ingestão", () => {
+  const s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4 },
     { owner: "amber", r: 4, c: 4, rank: 4 },
     { owner: "amber", r: 0, c: 0 },
@@ -4437,14 +4923,16 @@ test("Multicelularismo blocks direct predation by unicellular attackers", () => 
   const attacker = s.pieces[0],
     target = s.pieces[1];
 
-  attacker.traits = attacker.traits.filter(
-    (trait) => trait !== "Multicelularismo",
+  attacker.traits = attacker.traits.filter((trait) => trait !== "Ingestão");
+  attacker.ancestry = (attacker.ancestry ?? []).filter(
+    (trait) => trait !== "Ingestão",
   );
   assert.ok(target.traits.includes("Multicelularismo"));
-  assert.ok(
-    !movesFor(s, attacker).some(
+  assert.equal(
+    movesFor(s, attacker).some(
       (cell) => cell.r === target.r && cell.c === target.c && cell.capture,
     ),
+    false,
   );
 
   target.traits = target.traits.filter(
@@ -4457,21 +4945,11 @@ test("Multicelularismo blocks direct predation by unicellular attackers", () => 
   );
 
   target.traits.push("Multicelularismo");
-  attacker.traits.push("Multicelularismo");
+  attacker.traits.push("Ingestão");
+  attacker.ancestry.push("Ingestão");
   assert.ok(
     movesFor(s, attacker).some(
       (cell) => cell.r === target.r && cell.c === target.c && cell.capture,
-    ),
-  );
-
-  s = simulate(s, move(attacker, target.r, target.c));
-  assert.ok(!s.pieces.some((piece) => piece.id === target.id));
-  assert.ok(
-    s.pieces.some(
-      (piece) =>
-        piece.id === attacker.id &&
-        piece.r === target.r &&
-        piece.c === target.c,
     ),
   );
   assertState(s);
@@ -4491,7 +4969,6 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
         "Locomoção Primitiva",
         "Locomoção Articulada",
         "Locomoção Terrestre",
-        "Locomoção Avançada",
       ].includes(trait),
   );
   assert.ok(movesFor(s, king).some((target) => target.r === 4 && target.c === 4));
@@ -4519,7 +4996,6 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
         "Locomoção Primitiva",
         "Locomoção Articulada",
         "Locomoção Terrestre",
-        "Locomoção Avançada",
       ].includes(trait),
   );
   const targets = movesFor(s, pawn);
@@ -4541,7 +5017,6 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
         "Locomoção Primitiva",
         "Locomoção Articulada",
         "Locomoção Terrestre",
-        "Locomoção Avançada",
       ].includes(trait),
   );
   s = simulate(s, move(predator, 4, 4));
@@ -4601,6 +5076,8 @@ test("Chifre can kill an unarmored aggressor before capture", () => {
   assert.ok(!s.pieces.some((piece) => piece.id === 1));
   assert.ok(s.pieces.some((piece) => piece.id === 2 && piece.r === 4 && piece.c === 4));
   assert.ok(s.captureDisturbances.some((entry) => entry.cell === 35));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Chifre");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "killed-attacker");
   assertState(s);
 });
 
@@ -4620,6 +5097,13 @@ test("Carapaça prevents Chifre counterattack", () => {
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((piece) => piece.id === 1 && piece.r === 4 && piece.c === 4));
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Carapaça" &&
+        effect.outcome === "neutralized-horn",
+    ),
+  );
   assertState(s);
 });
 
@@ -4630,7 +5114,7 @@ test("Antropização offers an adjacent barrier after fertile reproduction", () 
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Antropização"],
+      traits: ["Antropização", "Onívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -4714,7 +5198,7 @@ test("domesticated offspring enter manual placement up to distance two", () => {
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Animais Domésticos"],
+      traits: ["Animais Domésticos", "Onívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -4780,6 +5264,8 @@ test("Mimetismo can redirect capture damage to an adjacent piece", () => {
   }
   assert.ok(result);
   assert.ok(result.pieces.some((piece) => piece.id === 2));
+  assert.equal(result.passiveEffects.at(-1)?.trait, "Mimetismo");
+  assert.equal(result.passiveEffects.at(-1)?.outcome, "redirected-capture");
   assertState(result);
 });
 
@@ -4836,7 +5322,7 @@ test("Vivificar groups multiple legal self-actions without hidden priority", () 
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Brotamento", "Respiração anaeróbia"],
+        traits: ["Brotamento", "Respiração anaeróbia", "Herbívoro"],
       },
       { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),

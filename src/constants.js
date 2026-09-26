@@ -24,7 +24,7 @@ export const TRAITS = {
   ],
   Multicelularismo: [
     "🫧",
-    "Multicelularismo impede Predação direta por organismos unicelulares.",
+    "Protege contra captura por predadores que ainda não possuem Ingestão; a proteção vale mesmo contra outros organismos multicelulares.",
   ],
   "Simetria Bilateral": [
     "⏸",
@@ -55,27 +55,27 @@ export const TRAITS = {
     "Permite direcionar capturas além da primeira casa da trajetória oficial da peça. Para Cavalos, o destino do salto conta como a primeira e única casa da trajetória.",
   ],
   Escavador: ["🦡", "Pode perfurar barreiras."],
-  "Locomoção Avançada": [
-    "🐎",
-    "Especialização posterior da Locomoção Terrestre; permite uma segunda movimentação no mesmo turno.",
-  ],
   Escalador: [
     "🐐",
     "Permite ocupar e atravessar barreiras naturais marrons sem destruí-las.",
   ],
   Voo: ["🐦", "Permite atravessar casas hostis."],
   "Sacos Aéreos": [
-    "🦕",
+    "🦖",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
-  Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Permite capturar criaturas adversárias; enquanto a linhagem ainda é unicelular, capturas inimigas também podem gerar reprodução predatória primordial. Após Multicelularismo, a reprodução pela captura depende de especializações alimentares."],
+  Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Capturas alimentares válidas podem gerar reprodução; sem Ingestão, organismos multicelulares permanecem protegidos."],
+  Ingestão: [
+    "👄",
+    "Adaptação multicelular que permite capturar e consumir organismos multicelulares; exige Multicelularismo e mantém a reprodução predatória após uma captura válida.",
+  ],
   Carnívoro: [
     "🍖",
-    "Especialização alimentar multicelular de uma linhagem com Predação: capturas de criaturas não fotossintéticas podem gerar reprodução predatória.",
+    "Especialização alimentar: ao reproduzir por captura de uma criatura não fotossintética, reduz em uma rodada a recuperação metabólica.",
   ],
   Herbívoro: [
     "🥬",
-    "Especialização alimentar multicelular de uma linhagem com Predação: capturas de criaturas fotossintéticas podem gerar reprodução predatória.",
+    "Especialização alimentar: ao reproduzir por captura de uma criatura fotossintética, reduz em uma rodada a recuperação metabólica. Do Cambriano em diante, também permite Vivificar usando casas férteis.",
   ],
   Canibalismo: [
     "🐻‍❄️",
@@ -88,7 +88,7 @@ export const TRAITS = {
   "Vetor Patógeno": ["🦟", "Pode desencadear surtos virais, bacterianos ou fúngicos em criaturas adversárias adjacentes."],
   Onívoro: [
     "🐻",
-    "Especialização posterior de Carnívoro ou Herbívoro: capturas de criaturas fotossintéticas ou não fotossintéticas podem gerar reprodução predatória.",
+    "Combina as especializações de Carnívoro e Herbívoro: reduz a recuperação metabólica após reprodução por qualquer presa e, do Cambriano em diante, também permite Vivificar em casas férteis.",
   ],
   "Respiração Cutânea": [
     "🐸",
@@ -125,13 +125,17 @@ export const TRAITS = {
     "🔵",
     "Metabolismo mais eficiente com oxigênio. Mantém a capacidade metabólica basal e reduz em uma rodada a recuperação metabólica após qualquer reprodução.",
   ],
+  "Respiração Pulmonar": [
+    "🫁",
+    "Especialização respiratória de vertebrados aeróbios. Elimina o custo metabólico adicional associado à Locomoção Terrestre sem substituir Respiração Cutânea.",
+  ],
   Fotossíntese: [
     "🟢",
     "Define um ramo energético hereditário incompatível com Predação. Transforma em fértil uma casa neutra após três rodadas completas de permanência enquanto houver pelo menos duas casas adjacentes desocupadas; descendentes permanecem neste ramo.",
   ],
   Mixotrofia: [
     "☯",
-    "Quando expressa, combina as funções energéticas básicas de Fotossíntese e Predação sem apagar o ramo ancestral nem liberar automaticamente as especializações do outro ramo.",
+    "Combina as funções energéticas básicas de Fotossíntese e Predação: pode explorar casas férteis e reproduzir por capturas válidas, mas continua precisando de Ingestão para consumir organismos multicelulares e não recebe a eficiência dos especialistas alimentares.",
   ],
   Embriófitas: [
     "🌱",
@@ -144,10 +148,6 @@ export const TRAITS = {
   "Perfume Floral": [
     "🌹",
     "Sementes orientam a dispersão para refúgios próximos a criaturas aliadas não fotossintéticas, priorizando as casas com maior proteção.",
-  ],
-  "Carnivoria Botânica": [
-    "👄",
-    "Permite consumir uma criatura não fotossintética inimiga adjacente sem se deslocar. Uma captura bem-sucedida pode gerar um descendente por reprodução predatória.",
   ],
   Traqueófitas: [
     "🍃",
@@ -248,10 +248,10 @@ export const TRAITS = {
     "Em rodadas pares, tem 50% de chance de escapar de uma captura. Visão Noturna do agressor anula essa proteção.",
   ],
   "Pele grossa": [
-    "🐘",
-    "Tem 25% de chance de resistir a uma captura. Garras do agressor anulam essa proteção.",
+    "🦏",
+    "Tem 25% de chance de resistir a uma captura. Presas do agressor anulam essa proteção.",
   ],
-  Garras: [
+  Presas: [
     "▽",
     "Neutraliza a proteção oferecida por Pele grossa.",
   ],
@@ -279,7 +279,7 @@ export const TRAITS = {
   ],
   "Deficiência Motora": [
     "🐾",
-    "Reduz movimento e captura ao primeiro passo da trajetória e impede a segunda movimentação de Locomoção Avançada.",
+    "Reduz movimento e captura ao primeiro passo da trajetória.",
   ],
   "Deficiência Sensorial": [
     "😵",
@@ -434,13 +434,9 @@ export const square = (r, c) => r * 8 + c;
 export const coord = (r, c) => `${String.fromCharCode(65 + c)}${8 - r}`;
 const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Respiração aeróbia": ["Respiração anaeróbia"],
+  "Respiração Pulmonar": ["Respiração aeróbia", "Respiração anaeróbia"],
   "Locomoção Articulada": ["Locomoção Primitiva"],
   "Locomoção Terrestre": ["Locomoção Articulada", "Locomoção Primitiva"],
-  "Locomoção Avançada": [
-    "Locomoção Terrestre",
-    "Locomoção Articulada",
-    "Locomoção Primitiva",
-  ],
   "Vetor Patógeno": ["Parasitismo"],
   Onívoro: ["Carnívoro", "Herbívoro"],
   Traqueófitas: ["Embriófitas"],

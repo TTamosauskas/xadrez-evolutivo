@@ -64,10 +64,51 @@ test("phenotypic dependencies suppress genes whose functional prerequisites are 
     "Predação",
     "Locomoção Primitiva",
     "Vertebrado",
-    "Locomoção Avançada",
+    "Locomoção Terrestre",
     "Velocidade",
   ]);
   assert.ok(expressGenome(complete, [], "Predação").includes("Velocidade"));
+});
+
+test("Respiração Pulmonar is expressed only with an active vertebrate phenotype", () => {
+  const vertebrateGenome = genomeFromTraits([
+    "Respiração anaeróbia",
+    "Respiração aeróbia",
+    "Multicelularismo",
+    "Predação",
+    "Locomoção Primitiva",
+    "Vertebrado",
+    "Locomoção Articulada",
+    "Locomoção Terrestre",
+    "Respiração Pulmonar",
+    "Respiração Cutânea",
+  ]);
+  const vertebrate = {
+    genome: vertebrateGenome,
+    traits: [],
+  };
+  syncGenomePhenotype(vertebrate, "Predação");
+  assert.ok(vertebrate.traits.includes("Respiração Pulmonar"));
+  assert.ok(vertebrate.traits.includes("Respiração Cutânea"));
+
+  const arthropodGenome = genomeFromTraits([
+    "Respiração anaeróbia",
+    "Respiração aeróbia",
+    "Multicelularismo",
+    "Predação",
+    "Locomoção Primitiva",
+    "Artrópode",
+    "Locomoção Articulada",
+    "Locomoção Terrestre",
+    "Respiração Pulmonar",
+  ]);
+  const arthropod = {
+    genome: arthropodGenome,
+    traits: [],
+  };
+  syncGenomePhenotype(arthropod, "Predação");
+  assert.ok(arthropod.traits.includes("Artrópode"));
+  assert.equal(arthropod.traits.includes("Respiração Pulmonar"), false);
 });
 
 test("Locomoção Terrestre enters the genome as a dominant mutation", () => {

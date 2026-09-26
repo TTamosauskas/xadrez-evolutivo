@@ -10,6 +10,7 @@ export class Controller {
     {
       render = () => {},
       report = () => {},
+      toast = () => {},
       workerFactory = () =>
         new Worker(new URL("./ai-worker.js", import.meta.url), {
           type: "module",
@@ -26,6 +27,7 @@ export class Controller {
     this.state = assertState(state);
     this.render = render;
     this.report = report;
+    this.toast = toast;
     this.workerFactory = workerFactory;
     this.setTimer = setTimer;
     this.clearTimer = clearTimer;
@@ -193,9 +195,23 @@ export class Controller {
           };
       }
 
-      const next = transition(this.state, action);
+      const ownersBeforeTransition = new Map(
+          this.state.pieces.map((piece) => [piece.id, piece.owner]),
+        ),
+        activeOwner = this.state.current,
+        passiveEffectFloor = this.state.nextPassiveEffect ?? 1,
+        next = transition(this.state, action);
       if (next === this.state) return false;
-      const pendingConway = this.conwayTimer;
+      const newPassiveEffects = (next.passiveEffects ?? [])
+          .filter((effect) => effect.id >= passiveEffectFloor)
+          .map((effect) => ({
+            ...effect,
+            owner:
+              ownersBeforeTransition.get(effect.pieceId) ??
+              next.pieces.find((piece) => piece.id === effect.pieceId)?.owner ??
+              activeOwner,
+          })),
+        pendingConway = this.conwayTimer;
       this.conwayTimer = null;
       this.cancel();
       if (pendingConway !== null) this.clearTimer(pendingConway);
@@ -235,6 +251,8 @@ export class Controller {
         this.neocortexLock = null;
 
       this.refresh();
+      if (this.mode !== "auto")
+        for (const effect of newPassiveEffects) this.toast(effect);
       return true;
     } catch (error) {
       this.report(error.message);

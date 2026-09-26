@@ -32,7 +32,10 @@ import {
 import { hiddenRecessiveTraits } from "./genetics.js";
 import { pathogenAgentAt } from "./disease.js";
 import { traitSummary } from "./trait-presentation.js";
-import { actionableTraitsForPiece } from "./actionable-traits.js";
+import {
+  actionableTraitsForPiece,
+  contextualTraitsForBoard,
+} from "./actionable-traits.js";
 import { canUseBasalFertility } from "./reproduction-traits.js";
 import {
   movesFor,
@@ -131,17 +134,27 @@ export function establishedTraits(state) {
   return established;
 }
 
-export function traitFrameEntries(piece, established = new Set()) {
-  const entries = [
+export function traitFrameEntries(
+  piece,
+  established = new Set(),
+  contextual = null,
+) {
+  const contextualSet = contextual instanceof Set ? contextual : null,
+    entries = [
     ...(piece?.traits ?? [])
       .filter(
-        (trait) => !established.has(trait) || trait === "Mixotrofia",
+        (trait) =>
+          contextualSet
+            ? contextualSet.has(trait)
+            : !established.has(trait) || trait === "Mixotrofia",
       )
       .map((trait) => ({ trait, somatic: false })),
-    ...(piece?.somaticMutations ?? []).map((trait) => ({
-      trait,
-      somatic: true,
-    })),
+    ...(piece?.somaticMutations ?? [])
+      .filter((trait) => !contextualSet || contextualSet.has(trait))
+      .map((trait) => ({
+        trait,
+        somatic: true,
+      })),
   ]
     .filter(
       ({ trait }) => TRAITS[trait] && !ENERGY_BRANCH_TRAITS.has(trait),
@@ -226,7 +239,8 @@ export function render(
       state.notices.length > 0 ||
       mode === "auto" ||
       (mode === "single" && state.current === "amber"),
-    established = establishedTraits(state);
+    established = establishedTraits(state),
+    contextualTraits = contextualTraitsForBoard(state);
   const targets =
     state.phase === "move" && actor && actor.owner === state.current
       ? movesFor(state, actor)
@@ -461,7 +475,7 @@ export function render(
           !captureTarget &&
           reproductionReady(state, actor) &&
           state.board[square(r, c)] === "fertile" &&
-          ((targetEntry && canUseBasalFertility(actor)) ||
+          ((targetEntry && canUseBasalFertility(state, actor)) ||
             (p?.id === actor.id &&
               has(actor, "Reprodução Sexuada") &&
               mates.length))
@@ -610,7 +624,11 @@ export function render(
       if (originHere)
         cell.append(make("span", "♚", "piece origin-piece"));
       if (p) {
-        const traitFrame = traitFrameEntries(p, established);
+        const traitFrame = traitFrameEntries(
+          p,
+          established,
+          contextualTraits.get(p.id) ?? new Set(),
+        );
         if (traitFrame.total > 8) cell.classList.add("trait-dense");
         cell.append(
           make(
@@ -650,7 +668,7 @@ export function render(
               `+${traitFrame.overflow}`,
               "trait-overflow",
             );
-            overflow.title = `${traitFrame.overflow} mutação(ões) ativa(s) adicional(is); selecione a peça para ver todas.`;
+            overflow.title = `${traitFrame.overflow} mutação(ões) contextual(is) adicional(is); selecione a peça para ver todas.`;
             frame.append(overflow);
           }
           cell.append(frame);

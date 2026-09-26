@@ -17,5 +17,8 @@
   "devDependencies": {
     "jsdom": "^30.1.0",
     "prettier": "^3.6.2"
+  },
+  "dependencies": {
+    "toastify-js": "^1.12.0"
   }
 }

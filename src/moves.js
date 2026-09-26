@@ -30,6 +30,7 @@ import {
   canBud,
   canPupate,
   canUseBasalFertility,
+  canUseFertileResource,
   connectedAlliesWithin,
   paedogenesisReady,
   parentalCareProtects,
@@ -170,9 +171,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         victim.owner !== p.owner &&
         distance(p, victim) === 1 &&
         has(p, "Fotossíntese") &&
-        ((has(p, "Haustório") && has(victim, "Fotossíntese")) ||
-          (has(p, "Carnivoria Botânica") &&
-            !has(victim, "Fotossíntese"))),
+        has(p, "Haustório") &&
+        has(victim, "Fotossíntese"),
       cannibal =
         victim?.owner === p.owner &&
         victim.id !== p.id &&
@@ -200,7 +200,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     if (
       victim &&
       has(victim, "Multicelularismo") &&
-      !has(p, "Multicelularismo") &&
+      !has(p, "Ingestão") &&
       !botanicalPredation
     )
       return;
@@ -372,32 +372,25 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     (captureUnlocked(state, p) || contactCaptureUnlocked(p))
   )
     chessTargets(true);
-  if (
-    has(p, "Fotossíntese") &&
-    (has(p, "Haustório") || has(p, "Carnivoria Botânica"))
-  )
+  if (has(p, "Fotossíntese") && has(p, "Haustório"))
     for (let dr = -1; dr <= 1; dr++)
       for (let dc = -1; dc <= 1; dc++) {
         if (!dr && !dc) continue;
         const r = p.r + dr,
           c = p.c + dc,
           victim = at(state, r, c);
-        if (!victim || victim.owner === p.owner) continue;
-        const specialization =
-          has(victim, "Fotossíntese") && has(p, "Haustório")
-            ? "Haustório"
-            : !has(victim, "Fotossíntese") &&
-                has(p, "Carnivoria Botânica")
-              ? "Carnivoria Botânica"
-              : null;
-        if (specialization)
+        if (
+          victim &&
+          victim.owner !== p.owner &&
+          has(victim, "Fotossíntese")
+        )
           add(r, c, [], {
-            botanicalPredation: specialization,
+            botanicalPredation: "Haustório",
             stay: true,
           });
       }
   const collector = has(p, "Coletor"),
-    basalFertility = canUseBasalFertility(p),
+    basalFertility = canUseBasalFertility(state, p),
     canReproduce =
       reproductionReady(state, p) || paedogenesisReady(state, p);
   if (
@@ -409,7 +402,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     targets.push({ r: p.r, c: p.c, path: [], stay: true, capture: false });
   if (
     canReproduce &&
-    has(p, "Respiração anaeróbia") &&
+    canUseFertileResource(state, p) &&
     has(p, "Respiração Cutânea") &&
     !has(p, "Fotossíntese")
   )
@@ -476,7 +469,7 @@ export function sexualReproductionResource(state, parent, mate) {
   const providers = [parent, mate].filter(Boolean);
   for (const provider of providers)
     if (
-      has(provider, "Respiração anaeróbia") &&
+      canUseFertileResource(state, provider) &&
       terrain(state, provider.r, provider.c) === "fertile"
     )
       return {
@@ -486,7 +479,7 @@ export function sexualReproductionResource(state, parent, mate) {
       };
   for (const provider of providers)
     if (
-      has(provider, "Respiração anaeróbia") &&
+      canUseFertileResource(state, provider) &&
       has(provider, "Coletor") &&
       (provider.seeds ?? 0) > 0 &&
       provider.seedUsedTurn !== state.turn

@@ -27,7 +27,7 @@ test("Brotamento repeats on a four-round cadence and Colônia shares identity an
       owner: "blue",
       r: 4,
       c: 4,
-      traits: ["Brotamento", "Colônia"],
+      traits: ["Brotamento", "Colônia", "Herbívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -145,6 +145,45 @@ test("Cuidado Parental removes a protected juvenile from capture targets", () =>
   assertState(s);
 });
 
+test("Ovulação Induzida emits feedback only when sexual recovery is actually reduced", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 5,
+        traits: ["Reprodução Sexuada", "Ovulação Induzida"],
+      },
+      {
+        owner: "blue",
+        r: 4,
+        c: 5,
+        rank: 5,
+        traits: ["Reprodução Sexuada", "Herbívoro"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    mate = s.pieces[1];
+
+  assert.equal(
+    reproduce(context(s), parent, mate, "teste", {
+      forcedCount: 1,
+      immediateDevelopment: true,
+    }),
+    1,
+  );
+  const effect = s.passiveEffects.find(
+    (candidate) => candidate.trait === "Ovulação Induzida",
+  );
+  assert.ok(effect);
+  assert.equal(effect.pieceId, parent.id);
+  assert.equal(effect.outcome, "reduced-metabolic-recovery");
+  assert.equal(effect.value, 1);
+  assert.match(effect.text, /acelerou a recuperação metabólica/);
+  assertState(s);
+});
+
 test("Monogamia creates a reciprocal pair and guards half the brood", () => {
   const traits = [
       "Reprodução Sexuada",
@@ -185,6 +224,7 @@ test("Promiscuidade reaches a sexual partner through a connected allied network"
       "Incubação",
       "Sociabilidade",
       "Promiscuidade",
+      "Herbívoro",
     ],
     s = fixture([
       { owner: "blue", r: 4, c: 2, traits },
@@ -344,19 +384,19 @@ test("Acasalamento Múltiplo uses one fertile resource across both partners", ()
       owner: "blue",
       r: 4,
       c: 4,
-      traits: ["Reprodução Sexuada", "Promiscuidade", "Acasalamento Múltiplo"],
+      traits: ["Reprodução Sexuada", "Promiscuidade", "Acasalamento Múltiplo", "Herbívoro"],
     },
     {
       owner: "blue",
       r: 4,
       c: 5,
-      traits: ["Reprodução Sexuada"],
+      traits: ["Reprodução Sexuada", "Herbívoro"],
     },
     {
       owner: "blue",
       r: 5,
       c: 4,
-      traits: ["Reprodução Sexuada"],
+      traits: ["Reprodução Sexuada", "Herbívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);

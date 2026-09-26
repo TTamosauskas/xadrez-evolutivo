@@ -49,6 +49,12 @@ test("Como Jogar covers all scenarios, ecological events and Earth required inno
   assert.ok(text.includes("Domínio Ecológico"));
   assert.ok(text.includes("Reparo Celular"));
   assert.ok(text.includes("Simetria Bilateral"));
+  assert.ok(text.includes("🫁 Respiração Pulmonar"));
+  assert.ok(text.includes("elimina esse custo"));
+  assert.ok(text.includes("sem substituir Respiração Cutânea"));
+  assert.ok(text.includes("naturalmente inférteis aos 16"));
+  assert.ok(text.includes("infertilidade natural aos 30"));
+  assert.ok(text.includes("proles já iniciadas continuam"));
   assert.ok(text.includes("🟥 Casas hostis"));
   assert.equal(text.includes("⬛ Casas hostis"), false);
   assert.ok(
@@ -57,7 +63,21 @@ test("Como Jogar covers all scenarios, ecological events and Earth required inno
     ),
   );
   assert.ok(text.includes("⚪ Respiração anaeróbia → dividir → capturar"));
+  assert.ok(text.includes("Arqueano · 1º Ciclo"));
+  assert.ok(text.includes("segunda camada é 🟥 hostil"));
+  assert.ok(text.includes("camada externa é ☠️ letal"));
+  assert.ok(text.includes("No 2º Ciclo, o núcleo fértil se expande para 6×6"));
+  assert.ok(text.includes("No 3º Ciclo, o tabuleiro aquático começa integralmente fértil"));
+  assert.ok(text.includes("posições iniciais dos Reis arqueanos variam"));
+  assert.ok(text.includes("primeira divergência energética continua aleatória"));
+  assert.ok(text.includes("ramo ainda ausente"));
+  assert.ok(text.includes("representantes mais derivados já registrados"));
+  assert.ok(text.includes("mesmo que tenham sido extintos"));
+  assert.ok(text.includes("garantia independente"));
+  assert.ok(text.includes("chegar à 2ª rodada"));
+  assert.ok(text.includes("próximo descendente com alguma mutação elegível"));
   assert.equal(text.includes("deslocar → dividir → capturar"), false);
+  assert.equal(text.includes("Locomoção Avançada"), false);
 });
 
 test("Como Jogar orders positive mutations by the Vida na Terra chronology", () => {
@@ -90,6 +110,7 @@ test("Como Jogar orders positive mutations by the Vida na Terra chronology", () 
     if (!current) continue;
     for (const dependency of [
       ...(deps.lineage ?? []),
+      ...(deps.active ?? []),
       ...(deps.lineageAny ?? []),
       ...(deps.historical ?? []),
     ]) {

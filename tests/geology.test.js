@@ -42,6 +42,7 @@ import {
   newPiece,
   registerDiscoveries,
   restoreAquaticFertility,
+  lethalHazardAt,
 } from "../src/state.js";
 import { movesFor } from "../src/moves.js";
 import { context } from "../src/engine.js";
@@ -159,6 +160,7 @@ test("cycle transition resets hidden positive-innovation pressure", () => {
       "Resistência",
     ],
   });
+  s.openingMutationSatisfied = { blue: true, amber: true };
   s.result = { winner: "blue", reason: "teste" };
   s.phase = "over";
 
@@ -166,6 +168,10 @@ test("cycle transition resets hidden positive-innovation pressure", () => {
   assert.equal(next.geologicalStage, "proterozoic");
   assert.equal(next.cycle, 2);
   assert.deepEqual(next.cyclePositiveInnovations, []);
+  assert.deepEqual(next.openingMutationSatisfied, {
+    blue: false,
+    amber: false,
+  });
   assert.equal(
     cyclePositiveInnovationMultiplier(next, "Brotamento"),
     1,
@@ -188,7 +194,7 @@ test("period innovations follow the didactic sequence", () => {
     "Resistência",
     "Regeneração",
     "Reprodução Sexuada",
-    "Carnívoro",
+    "Ingestão",
   ]);
   assert.deepEqual(required.ediacaran, [
     "Simetria Bilateral",
@@ -205,7 +211,7 @@ test("period innovations follow the didactic sequence", () => {
   ]);
   assert.deepEqual(required.ordovician, ["Ovíparo"]);
   assert.deepEqual(required.silurian, ["Locomoção Terrestre", "Coletor"]);
-  assert.deepEqual(required.devonian, ["Locomoção Avançada", "Onívoro"]);
+  assert.deepEqual(required.devonian, ["Onívoro"]);
   assert.deepEqual(required.carboniferous, ["Ovíparos Amniotas", "Ooteca", "Voo"]);
   assert.deepEqual(required.permian, ["Incubação"]);
   assert.deepEqual(required.triassic, ["Vivíparo", "Notívago"]);
@@ -245,7 +251,7 @@ test("Hadean anaerobic respiration precedes the parallel Archean energy branches
   assert.equal(has({ traits: aerobic }, "Respiração anaeróbia"), true);
 });
 
-test("Carnívoro requires a multicellular predatory lineage", () => {
+test("Ingestão gates multicellular predation and Carnívoro builds on it", () => {
   const s = createState(114, {
       scenario: "earth",
       geologicalStage: "proterozoic",
@@ -265,6 +271,10 @@ test("Carnívoro requires a multicellular predatory lineage", () => {
 
   predator.traits.push("Multicelularismo");
   predator.ancestry.push("Multicelularismo");
+  assert.equal(traitUnlocked(s, "Ingestão", predator), true);
+  assert.equal(traitUnlocked(s, "Carnívoro", predator), false);
+  predator.traits.push("Ingestão");
+  predator.ancestry.push("Ingestão");
   assert.equal(traitUnlocked(s, "Carnívoro", predator), true);
 });
 
@@ -382,18 +392,31 @@ test("geological event pools gain pathogen outbreaks from the Proterozoic onward
   assert.ok(eventWeights(proterozoic).pathogen > 0);
 });
 
-test("first Archean cycle starts with a fertile 6x6 core and hostile border", () => {
+test("first Archean cycle keeps a fertile 4x4 core between hostile and lethal rings", () => {
   const s = createPeriodState("archean", 101, null, "earth");
   assert.equal(s.version, STATE_VERSION);
   assert.equal(s.geologicalStage, "archean");
   assert.equal(s.cycle, 1);
-  const fertile = s.board.filter((terrain) => terrain === "fertile").length;
-  assert.equal(fertile, 36);
-  assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 28);
+  assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 16);
+  assert.equal(s.board.filter((terrain) => terrain === "hostile").length, 20);
+  assert.equal(s.board.filter((terrain) => terrain === "neutral").length, 28);
+  assert.equal(
+    Array.from({ length: 8 }, (_, r) =>
+      Array.from({ length: 8 }, (_, col) => lethalHazardAt(s, r, col)),
+    ).flat().filter(Boolean).length,
+    28,
+  );
   assert.deepEqual(s.naturalBarriers, []);
+  assert.ok(
+    s.pieces.every(
+      (piece) =>
+        s.board[piece.r * 8 + piece.c] === "fertile" &&
+        !lethalHazardAt(s, piece.r, piece.c),
+    ),
+  );
   const actions = movesFor(s, s.pieces[0]);
   assert.ok(actions.length > 0);
-  assert.ok(actions.every((target) => target.stay));
+  assert.ok(actions.every((target) => target.stay || target.capture));
 });
 
 test("Silurian is a stable coast and Devonian starts Conway terrain evolution", () => {
@@ -493,6 +516,7 @@ test("Locomoção Terrestre is the Silurian gate for dry movement and capture", 
       traits: [
         "Multicelularismo",
         "Predação",
+        "Ingestão",
         "Locomoção Primitiva",
         "Vertebrado",
         "Locomoção Articulada",
@@ -866,11 +890,17 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
     "Vertebrado",
     "Locomoção Articulada",
     "Locomoção Terrestre",
+    "Respiração aeróbia",
   );
-  assert.equal(traitUnlocked(s, "Locomoção Avançada", p), true);
-  s.historicalTraits.push("Locomoção Avançada");
   p.ancestry.push("Carnívoro");
   assert.equal(traitUnlocked(s, "Onívoro", p), true);
+
+  p.traits = ["Multicelularismo", "Predação", "Vertebrado"];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), true);
+  p.traits = ["Multicelularismo", "Predação", "Artrópode"];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), false);
+  p.traits = ["Multicelularismo", "Predação"];
+  assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), false);
 
   s.geologicalStage = "triassic";
   p.ancestry.push("Ovíparos Amniotas");
@@ -904,8 +934,8 @@ test("campaign history from another lineage does not satisfy ancestry prerequisi
       ],
     }),
     descendant = {
-      traits: ["Multicelularismo"],
-      ancestry: ["Predação", "Multicelularismo"],
+      traits: ["Multicelularismo", "Ingestão"],
+      ancestry: ["Predação", "Multicelularismo", "Ingestão"],
     },
     predatoryOutsider = { traits: [], ancestry: ["Predação"] },
     outsider = { traits: [], ancestry: [] };
@@ -991,7 +1021,6 @@ test("active phenotype families replace older expressions without erasing ancest
     "Locomoção Primitiva",
     "Locomoção Articulada",
     "Locomoção Terrestre",
-    "Locomoção Avançada",
     "Embriófitas",
     "Traqueófitas",
     "Gimnospermas",
@@ -1004,14 +1033,13 @@ test("active phenotype families replace older expressions without erasing ancest
   assert.ok(ACTIVE_TRAIT_FAMILIES.length >= 6);
   assert.ok(active.includes("Predação"));
   assert.ok(active.includes("Onívoro"));
-  assert.ok(active.includes("Locomoção Avançada"));
+  assert.ok(active.includes("Locomoção Terrestre"));
   assert.ok(active.includes("Angiospermas"));
   assert.ok(active.includes("Eusocialidade"));
   for (const suppressed of [
     "Carnívoro",
     "Herbívoro",
     "Locomoção Articulada",
-    "Locomoção Terrestre",
     "Embriófitas",
     "Traqueófitas",
     "Gimnospermas",
@@ -1034,15 +1062,11 @@ test("active phenotype families replace older expressions without erasing ancest
 });
 
 test("later active phenotypes retain capabilities of the form they replaced", () => {
-  const advanced = { traits: ["Locomoção Avançada"] },
-    vascularSeedPlant = { traits: ["Gimnospermas"] },
+  const vascularSeedPlant = { traits: ["Gimnospermas"] },
     flowering = { traits: ["Angiospermas"] },
     omnivore = { traits: ["Onívoro"] },
     eusocial = { traits: ["Eusocialidade"] };
 
-  assert.equal(has(advanced, "Locomoção Terrestre"), true);
-  assert.equal(has(advanced, "Locomoção Articulada"), true);
-  assert.equal(has(advanced, "Locomoção Primitiva"), true);
   assert.equal(has(vascularSeedPlant, "Embriófitas"), true);
   assert.equal(has(vascularSeedPlant, "Traqueófitas"), true);
   assert.equal(has(flowering, "Embriófitas"), true);
@@ -1117,8 +1141,8 @@ test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either 
       historicalTraits: prior,
     }),
     predator = {
-      traits: ["Multicelularismo", "Predação"],
-      ancestry: ["Predação"],
+      traits: ["Multicelularismo", "Predação", "Ingestão"],
+      ancestry: ["Predação", "Multicelularismo", "Ingestão"],
     };
 
   assert.equal(traitUnlocked(s, "Herbívoro", predator), true);
@@ -1129,14 +1153,13 @@ test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either 
   s.historicalTraits = GEOLOGICAL_STAGES.slice(0, 6).flatMap(
     (stage) => stage.required,
   );
-  s.historicalTraits.push("Locomoção Avançada");
   const herbivore = {
-      traits: ["Multicelularismo", "Predação", "Herbívoro"],
-      ancestry: ["Predação", "Herbívoro"],
+      traits: ["Multicelularismo", "Predação", "Ingestão", "Herbívoro"],
+      ancestry: ["Predação", "Multicelularismo", "Ingestão", "Herbívoro"],
     },
     carnivore = {
-      traits: ["Multicelularismo", "Predação", "Carnívoro"],
-      ancestry: ["Predação", "Carnívoro"],
+      traits: ["Multicelularismo", "Predação", "Ingestão", "Carnívoro"],
+      ancestry: ["Predação", "Multicelularismo", "Ingestão", "Carnívoro"],
     };
   assert.equal(traitUnlocked(s, "Onívoro", herbivore), true);
   assert.equal(traitUnlocked(s, "Onívoro", carnivore), true);
@@ -1148,8 +1171,8 @@ test("new combat specializations unlock in the intended periods and lineages", (
       return GEOLOGICAL_STAGES.slice(0, index).flatMap((stage) => stage.required);
     },
     predator = {
-      traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Avançada"],
-      ancestry: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Locomoção Avançada"],
+      traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado"],
+      ancestry: ["Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"],
     },
     herbivore = {
       traits: ["Multicelularismo", "Predação", "Herbívoro", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"],
@@ -1178,9 +1201,9 @@ test("new combat specializations unlock in the intended periods and lineages", (
     historicalTraits: historyBefore("permian"),
   });
   assert.equal(traitUnlocked(permian, "Pele grossa", herbivore), true);
-  assert.equal(traitUnlocked(permian, "Garras", carnivore), true);
+  assert.equal(traitUnlocked(permian, "Presas", carnivore), true);
   assert.equal(traitUnlocked(permian, "Pele grossa", carnivore), false);
-  assert.equal(traitUnlocked(permian, "Garras", herbivore), false);
+  assert.equal(traitUnlocked(permian, "Presas", herbivore), false);
 
   const triassic = createState(184, {
     geologicalStage: "triassic",
@@ -1422,6 +1445,7 @@ test("plant innovations require the photosynthetic lineage and exclude animal sp
     "Escavador",
     "Escalador",
     "Respiração Cutânea",
+    "Respiração Pulmonar",
     "Sacos Aéreos",
     "Necrófago",
     "Coprofagia",
@@ -1520,16 +1544,10 @@ test("Paleogene waits for reachable period innovations instead of auto-completin
   });
   assert.equal(currentGeologicalStage(s).period, "Paleógeno");
   assert.deepEqual(periodInnovations(s), [
-    "Carnivoria Botânica",
     "Ovulação Induzida",
     "Monogamia",
   ]);
-  assert.deepEqual(periodCompletionInnovations(s), [
-    "Carnivoria Botânica",
-  ]);
-  assert.equal(stageComplete(s), false);
-
-  s.historicalTraits.push("Carnivoria Botânica");
+  assert.deepEqual(periodCompletionInnovations(s), []);
   assert.equal(stageComplete(s), true);
   assert.deepEqual(eventWeights(s), {
     ...currentGeologicalStage(s).events,

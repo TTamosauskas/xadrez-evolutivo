@@ -51,7 +51,6 @@ test("photosynthetic specializations obey geological periods and lineage precede
   assert.equal(traitUnlocked(state, "Extremófitas", plant), false);
   assert.equal(traitUnlocked(state, "Haustório", plant), false);
   assert.equal(traitUnlocked(state, "Perfume Floral", plant), false);
-  assert.equal(traitUnlocked(state, "Carnivoria Botânica", plant), false);
 
   state.geologicalStage = "permian";
   assert.equal(traitUnlocked(state, "Extremófitas", plant), true);
@@ -59,17 +58,12 @@ test("photosynthetic specializations obey geological periods and lineage precede
   state.geologicalStage = "cretaceous";
   assert.equal(traitUnlocked(state, "Haustório", plant), true);
   assert.equal(traitUnlocked(state, "Perfume Floral", plant), true);
-  assert.equal(traitUnlocked(state, "Carnivoria Botânica", plant), false);
-
-  state.geologicalStage = "paleogene";
-  assert.equal(traitUnlocked(state, "Carnivoria Botânica", plant), true);
 
   const animal = {
     traits: ["Multicelularismo", "Predação"],
     ancestry: plantLineage(["Predação"]),
   };
   assert.equal(traitUnlocked(state, "Madeira", animal), false);
-  assert.equal(traitUnlocked(state, "Carnivoria Botânica", animal), false);
 });
 
 test("Haustório consumes only adjacent photosynthetic enemies and keeps the plant stationary", () => {
@@ -116,47 +110,6 @@ test("Haustório consumes only adjacent photosynthetic enemies and keeps the pla
   );
 });
 
-test("Carnivoria Botânica targets heterotrophs and ignores photosynthetic prey", () => {
-  const state = blankState(703),
-    attacker = newPiece(state, "blue", 4, 4, {
-      traits: plantLineage(["Carnivoria Botânica"]),
-    }),
-    plantPrey = newPiece(state, "amber", 3, 4, {
-      traits: plantLineage(),
-    }),
-    animalPrey = newPiece(state, "amber", 4, 5, {
-      rank: 4,
-      traits: ["Multicelularismo", "Predação"],
-    });
-  state.pieces.push(attacker, plantPrey, animalPrey);
-
-  const targets = movesFor(state, attacker);
-  assert.equal(
-    targets.some((target) => target.r === 3 && target.c === 4),
-    false,
-  );
-  assert.ok(
-    targets.some(
-      (target) =>
-        target.r === 4 &&
-        target.c === 5 &&
-        target.botanicalPredation === "Carnivoria Botânica",
-    ),
-  );
-
-  const next = transition(state, {
-    type: "MOVE",
-    id: attacker.id,
-    r: animalPrey.r,
-    c: animalPrey.c,
-  });
-  const survivor = next.pieces.find((piece) => piece.id === attacker.id);
-  assert.deepEqual([survivor.r, survivor.c], [4, 4]);
-  assert.equal(next.pieces.some((piece) => piece.id === animalPrey.id), false);
-  assert.equal(next.pieces.some((piece) => piece.id === plantPrey.id), true);
-  assert.equal(next.plantSeeds.length, 1);
-});
-
 test("Madeira blocks one quarter of capture attempts before the victim is removed", () => {
   const state = blankState(704),
     attacker = newPiece(state, "blue", 4, 4, {
@@ -164,6 +117,7 @@ test("Madeira blocks one quarter of capture attempts before the victim is remove
       traits: [
         "Multicelularismo",
         "Predação",
+        "Ingestão",
         "Locomoção Primitiva",
         "Vertebrado",
         "Locomoção Terrestre",
