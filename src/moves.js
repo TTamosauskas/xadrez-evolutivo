@@ -1,4 +1,11 @@
-import { inside, has, distance, square, energyBranch } from "./constants.js";
+import {
+  inside,
+  has,
+  distance,
+  square,
+  energyBranch,
+  canPhotosynthesize,
+} from "./constants.js";
 import {
   at,
   eggAt,
@@ -521,6 +528,200 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
   }
 
+  function escalationTargets() {
+    if (
+      !has(p, "Escansão") ||
+      !has(p, "Vertebrado") ||
+      !has(p, "Locomoção Terrestre") ||
+      !has(p, "Escalador") ||
+      has(p, "Deficiência Motora")
+    )
+      return;
+
+    for (const dr of [-1, 1]) {
+      const path = [];
+      for (let r = p.r + dr; inside(r, p.c); r += dr) {
+        path.push([r, p.c]);
+        if (
+          ecologicalDomainBlocked(state, p.owner, r, p.c) ||
+          hardMovementBlock(r, p.c)
+        )
+          break;
+        const occupant = at(state, r, p.c);
+        if (occupant) {
+          if (occupant.owner === p.owner)
+            targets.push({
+              r,
+              c: p.c,
+              path: [...path],
+              capture: false,
+              cannibal: false,
+              eggCapture: null,
+              seedCapture: null,
+              escalation: true,
+              escalationSwapId: occupant.id,
+              noContinuation: true,
+            });
+          break;
+        }
+        if (
+          !targets.some(
+            (target) => target.r === r && target.c === p.c,
+          )
+        )
+          add(r, p.c, [...path], {
+            escalation: true,
+            noContinuation: true,
+          });
+      }
+    }
+  }
+
+  function bioadhesionTargets() {
+    if (
+      !has(p, "Bioadesão") ||
+      !has(p, "Locomoção Terrestre") ||
+      !has(p, "Escalador") ||
+      has(p, "Deficiência Motora") ||
+      (p.r !== 0 && p.r !== 7 && p.c !== 0 && p.c !== 7)
+    )
+      return;
+
+    const perimeter = [];
+    for (let c = 0; c < 8; c++) perimeter.push([0, c]);
+    for (let r = 1; r < 8; r++) perimeter.push([r, 7]);
+    for (let c = 6; c >= 0; c--) perimeter.push([7, c]);
+    for (let r = 6; r > 0; r--) perimeter.push([r, 0]);
+
+    const start = perimeter.findIndex(
+        ([r, c]) => r === p.r && c === p.c,
+      ),
+      candidates = new Map();
+    if (start < 0) return;
+
+    const consider = (candidate) => {
+      const key = `${candidate.r},${candidate.c}`,
+        current = candidates.get(key);
+      if (!current || candidate.path.length < current.path.length)
+        candidates.set(key, candidate);
+    };
+
+    for (const direction of [-1, 1]) {
+      const path = [];
+      for (let step = 1; step < perimeter.length; step++) {
+        const index =
+            (start + direction * step + perimeter.length * 2) %
+            perimeter.length,
+          [r, c] = perimeter[index];
+        if (ecologicalDomainBlocked(state, p.owner, r, c)) break;
+        path.push([r, c]);
+        if (hardMovementBlock(r, c)) break;
+
+        const occupant = at(state, r, c);
+        if (occupant) {
+          if (occupant.owner === p.owner)
+            consider({
+              r,
+              c,
+              path: [...path],
+              capture: false,
+              cannibal: false,
+              eggCapture: null,
+              seedCapture: null,
+              bioadhesion: true,
+              bioadhesionSwapId: occupant.id,
+              noContinuation: true,
+            });
+          break;
+        }
+
+        if (
+          !targets.some(
+            (target) => target.r === r && target.c === c,
+          )
+        )
+          consider({
+            r,
+            c,
+            path: [...path],
+            bioadhesion: true,
+            noContinuation: true,
+          });
+      }
+    }
+
+    for (const candidate of candidates.values()) {
+      if (candidate.bioadhesionSwapId) {
+        targets.push(candidate);
+        continue;
+      }
+      add(candidate.r, candidate.c, candidate.path, {
+        bioadhesion: true,
+        noContinuation: true,
+      });
+    }
+  }
+
+  function arborealTargets() {
+    if (
+      !has(p, "Arborícola") ||
+      !has(p, "Locomoção Terrestre") ||
+      !has(p, "Escalador") ||
+      has(p, "Deficiência Motora")
+    )
+      return;
+
+    for (const [dr, dc] of [...ORTH, ...DIAG]) {
+      const path = [],
+        supportIds = [];
+      let r = p.r + dr,
+        c = p.c + dc;
+
+      while (inside(r, c)) {
+        if (ecologicalDomainBlocked(state, p.owner, r, c)) break;
+        const occupant = at(state, r, c);
+        if (
+          occupant &&
+          occupant.owner === p.owner &&
+          canPhotosynthesize(occupant)
+        ) {
+          if (
+            builtBarrierAt(state, r, c) ||
+            eggAt(state, r, c) ||
+            fragmentAt(state, r, c)
+          )
+            break;
+          path.push([r, c]);
+          supportIds.push(occupant.id);
+          r += dr;
+          c += dc;
+          continue;
+        }
+
+        if (!supportIds.length || occupant) break;
+        if (
+          eggAt(state, r, c) ||
+          fragmentAt(state, r, c) ||
+          builtBarrierAt(state, r, c)
+        )
+          break;
+
+        path.push([r, c]);
+        if (
+          !targets.some(
+            (target) => target.r === r && target.c === c,
+          )
+        )
+          add(r, c, [...path], {
+            arboreal: true,
+            arborealSupportIds: [...supportIds],
+            noContinuation: true,
+          });
+        break;
+      }
+    }
+  }
+
   function serpentineMovementTargets() {
     if (
       !has(p, "Serpenteamento") ||
@@ -774,6 +975,9 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
     crawlerTargets();
     lateralMovementTargets();
+    escalationTargets();
+    bioadhesionTargets();
+    arborealTargets();
     serpentineMovementTargets();
     trailMovementTargets();
   } else if (
