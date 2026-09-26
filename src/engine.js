@@ -82,8 +82,6 @@ import {
 import {
   aquaticFertilityRegime,
   conwayUnlocked,
-  currentGeologicalStage,
-  geologicalStage,
 } from "./geology.js";
 import {
   attemptHorizontalTransfer,
@@ -488,7 +486,7 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
 
 function proteanEscapeCells(state, victim) {
   const terrestrialRestriction =
-      currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+      has(victim, "Locomoção Primitiva") &&
       !has(victim, "Locomoção Terrestre"),
     cells = [];
   for (let dr = -1; dr <= 1; dr++)
@@ -515,7 +513,7 @@ function proteanEscapeCells(state, victim) {
 
 function adrenalineEscapeCells(state, victim) {
   const terrestrialRestriction =
-      currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+      has(victim, "Locomoção Primitiva") &&
       !has(victim, "Locomoção Terrestre"),
     cells = [];
   for (const [dr, dc] of [
@@ -1225,7 +1223,7 @@ function moveHerd(ctx, leader, followers, origin, target) {
           barrierAt(state, r, c) ||
           lethalHazardAt(state, r, c) ||
           dormant(state, piece) ||
-          (currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+          (has(piece, "Locomoção Primitiva") &&
             !has(piece, "Locomoção Terrestre") &&
             terrain(state, r, c) !== "fertile") ||
           (occupant && !ids.has(occupant.id) && occupant.id !== leader.id)

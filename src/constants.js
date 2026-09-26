@@ -32,7 +32,7 @@ export const TRAITS = {
   ],
   "Locomoção Primitiva": [
     "🔀",
-    "Libera deslocamentos para casas vazias segundo a geometria oficial da peça; capturas continuam dependendo de Predação.",
+    "Permite deslocar-se uma casa para um espaço fértil; capturas continuam dependendo de Predação.",
   ],
   Serotonina: [
     "😊",
@@ -56,7 +56,7 @@ export const TRAITS = {
   ],
   "Locomoção Articulada": [
     "🦵",
-    "Especialização locomotora de Vertebrados ou Artrópodes; habilita as formas derivadas permitidas pelo plano corporal. A partir do Siluriano, sem Locomoção Terrestre, movimento e captura só podem terminar em casas férteis.",
+    "Especialização locomotora de Vertebrados ou Artrópodes; libera a geometria completa da peça, mas sem Locomoção Terrestre movimento e captura ainda terminam apenas em casas férteis.",
   ],
   "Locomoção Terrestre": [
     "🐛",
