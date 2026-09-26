@@ -111,7 +111,7 @@ test("toast test phase executes six guaranteed passive-effect demonstrations in 
   assert.equal(state.current, "amber");
   state = acknowledgeAll(state);
 
-  attacker = role(state, "parental-care-attacker");
+  attacker = role(state, "biparental-guard-attacker");
   state = transition(state, {
     type: "MOVE",
     id: attacker.id,
@@ -119,7 +119,7 @@ test("toast test phase executes six guaranteed passive-effect demonstrations in 
     c: 3,
     revision: state.revision,
   });
-  latestEffect(state, "Cuidado Parental", "prevented-capture");
-  assert.ok(role(state, "parental-care-child"));
+  latestEffect(state, "Monogamia", "guarded-offspring");
+  assert.ok(role(state, "biparental-guard-child"));
   assertState(state);
 });
