@@ -66,6 +66,30 @@ export const TRAITS = {
     "🐌",
     "Especialização locomotora terrestre das bordas: Peões e Reis atravessam o limite por um passo adjacente; outras formas cruzam a borda apenas segundo sua geometria e encerram o movimento ao reaparecer.",
   ],
+  "Movimento Lateral": [
+    "🦀",
+    "Especialização de artrópodes terrestres: percorre horizontalmente a própria linha e pode trocar de posição com a primeira criatura aliada encontrada.",
+  ],
+  Serpenteamento: [
+    "⚕️",
+    "Trajetória sinuosa de até cinco passos adjacentes, com até duas mudanças de direção; casas intermediárias precisam permanecer livres.",
+  ],
+  Trilhas: [
+    "⋯",
+    "Cria trilhas temporárias durante o deslocamento; aliados com a mesma mutação podem percorrer a rede e ampliá-la em uma casa.",
+  ],
+  Tigmotaxia: [
+    "🪳",
+    "Ao terminar um deslocamento não ofensivo em um canto, permite continuar uma ou duas casas por uma das bordas adjacentes.",
+  ],
+  Recuo: [
+    "🐆",
+    "Após uma captura adjacente bem-sucedida, pode retornar imediatamente à casa de origem se ela continuar livre.",
+  ],
+  Deslizamento: [
+    "🦦",
+    "Ao terminar um deslocamento em casa fértil, permite um passo adicional para uma casa adjacente vazia.",
+  ],
   Bipedalismo: [
     "🦍",
     "Após um deslocamento para casa vazia, permite um segundo deslocamento voluntário da mesma criatura; capturas e outras ações encerram a vez.",
