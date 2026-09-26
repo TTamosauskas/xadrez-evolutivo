@@ -98,7 +98,7 @@ test("Toastify waits until blocking dialogs close before showing an effect", () 
   dom.window.close();
 });
 
-test("new mutations use a neutral toast independent of lineage", () => {
+test("new mutations use the terrain theme of the square where they manifest", () => {
   const dom = new JSDOM(),
     mock = createToastifyMock(dom.window.document),
     presenter = createPassiveEffectToastPresenter(dom.window.document, {
@@ -110,14 +110,16 @@ test("new mutations use a neutral toast independent of lineage", () => {
     owner: "amber",
     trait: "Chifre",
     outcome: "new-mutation",
+    theme: "terrain-hostile-dark",
     text: "🧬 Nova mutação: 🫎 Chifre.",
   });
 
   assert.equal(
     mock.calls[0].options.className,
-    "xe-passive-toast xe-passive-toast--neutral",
+    "xe-passive-toast xe-passive-toast--terrain-hostile-dark",
   );
-  assert.equal(mock.calls[0].toastElement.dataset.owner, "neutral");
+  assert.equal(mock.calls[0].toastElement.dataset.owner, "terrain");
+  assert.equal(mock.calls[0].toastElement.dataset.theme, "terrain-hostile-dark");
   assert.equal(mock.calls[0].toastElement.dataset.trait, "Chifre");
 
   presenter.destroy();
@@ -178,7 +180,9 @@ test("tracked Toastify assets load before the app and mobile styling stays viewp
   assert.match(toastifyJs, /Toastify js 1\.12\.0/);
   assert.equal(d.getElementById("passive-toasts"), null);
   assert.match(css, /\.toastify\.xe-passive-toast\s*\{/);
-  assert.match(css, /\.toastify\.xe-passive-toast--neutral\s*\{/);
+  assert.match(css, /\.toastify\.xe-passive-toast--terrain-fertile-light\s*\{/);
+  assert.match(css, /\.toastify\.xe-passive-toast--terrain-hostile-dark\s*\{/);
+  assert.match(css, /\.toastify\.xe-passive-toast--terrain-fertile-single\s*\{/);
   assert.match(css, /max-width:\s*min\(calc\(100vw - 24px\), 680px\)/);
   assert.match(
     css,
