@@ -101,6 +101,26 @@ test("Pulo correction for Knight jumps to the normal landing then steps to the c
   assert.equal(final.length, 2);
 });
 
+test("Rastejante squeezes out and reappears without crossing the board center", () => {
+  const plan = movementAnimationPlan(
+    [point(0), point(448)],
+    { kind: "crawler" },
+  );
+
+  assert.ok(plan);
+  assert.equal(plan.keyframes.length, 5);
+  assert.match(plan.keyframes[1].transform, /translate\(0px, 0px\).*scale\(0\.12\)/);
+  assert.match(plan.keyframes[2].transform, /translate\(448px, 0px\).*scale\(0\.12\)/);
+  assert.equal(plan.keyframes[2].opacity, 0.18);
+  assert.equal(plan.keyframes.at(-1).opacity, 1);
+  assert.equal(
+    plan.keyframes.some((frame) =>
+      frame.transform.includes("translate(224px, 0px)"),
+    ),
+    false,
+  );
+});
+
 test("automatic mode keeps the same steps with shorter timing", () => {
   const points = [point(0), point(64), point(128)],
     normal = movementAnimationPlan(points),
