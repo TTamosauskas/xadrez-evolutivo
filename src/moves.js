@@ -402,7 +402,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     targets.push({ r: p.r, c: p.c, path: [], stay: true, capture: false });
   if (
     canReproduce &&
-    has(p, "Respiração anaeróbia") &&
+    canUseFertileResource(state, p) &&
     has(p, "Respiração Cutânea") &&
     !has(p, "Fotossíntese")
   )
