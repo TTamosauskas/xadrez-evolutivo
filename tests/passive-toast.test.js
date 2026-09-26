@@ -129,9 +129,13 @@ test("Toastify presenter limits visible effects and releases its queue on dismis
   dom.window.close();
 });
 
-test("Toastify assets load before the app and mobile styling stays viewport-wide", () => {
+test("Toastify is bundled into existing assets and mobile styling stays viewport-wide", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8"),
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    build = readFileSync(
+      new URL("../scripts/build.js", import.meta.url),
+      "utf8",
+    ),
     dom = new JSDOM(html),
     d = dom.window.document,
     styles = [...d.querySelectorAll('link[rel="stylesheet"]')].map((link) =>
@@ -141,8 +145,12 @@ test("Toastify assets load before the app and mobile styling stays viewport-wide
       script.getAttribute("src"),
     );
 
-  assert.deepEqual(styles.slice(0, 2), ["toastify.css", "app.css"]);
-  assert.deepEqual(scripts.slice(-2), ["toastify.js", "src/app.js"]);
+  assert.deepEqual(styles, ["app.css"]);
+  assert.deepEqual(scripts, ["src/app.js"]);
+  assert.match(build, /dist\/src\/passive-toast\.js/);
+  assert.match(build, /dist\/app\.css/);
+  assert.match(build, /node_modules\/toastify-js\/src\/toastify\.js/);
+  assert.match(build, /node_modules\/toastify-js\/src\/toastify\.css/);
   assert.equal(d.getElementById("passive-toasts"), null);
   assert.match(css, /\.toastify\.xe-passive-toast\s*\{/);
   assert.match(css, /max-width:\s*min\(calc\(100vw - 24px\), 680px\)/);
