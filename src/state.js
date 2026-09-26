@@ -7,7 +7,6 @@ import {
   EVENTS,
   PATHOGEN_AGENT_IDS,
   PATHOGEN_TRANSMISSION_IDS,
-  PIECE_LIFE_HISTORY,
   STATE_VERSION,
 } from "./constants.js";
 import {
@@ -193,22 +192,7 @@ export function restoreAquaticFertility(state) {
 }
 
 export function photosynthesisDelayTurns(state, piece = null) {
-  if (state.geologicalStage === "hadean" && piece) {
-    const life =
-        PIECE_LIFE_HISTORY[piece.rank] ??
-        PIECE_LIFE_HISTORY[0],
-      aerobic = has(piece, "Respiração aeróbia") ? -1 : 0,
-      terrestrialCost =
-        has(piece, "Locomoção Terrestre") &&
-        !has(piece, "Respiração Pulmonar")
-          ? 1
-          : 0,
-      metabolicRounds = Math.max(
-        1,
-        life.metabolism + aerobic + terrestrialCost,
-      );
-    return metabolicRounds * 2;
-  }
+  if (state.geologicalStage === "hadean" && piece) return 2;
   const population = activePopulation(state),
     preArticulated =
       piece &&
