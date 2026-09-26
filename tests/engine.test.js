@@ -4321,31 +4321,86 @@ test("Fotossíntese counts any adjacent piece as occupied space", () => {
   assertState(s);
 });
 
-test("Embriófitas adds at most one fertile empty neighbor when photosynthesis matures", () => {
-  let s = fixture([
+test("plant ranks fertilize the immediate neighborhood according to their form", () => {
+  const cases = [
+    { rank: 0, extra: 0, traits: ["Fotossíntese"] },
     {
-      owner: "blue",
-      r: 4,
-      c: 4,
-      traits: ["Fotossíntese", "Embriófitas"],
+      rank: 4,
+      extra: 2,
+      traits: ["Fotossíntese", "Multicelularismo"],
     },
-    { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
-  ]);
-  for (let turn = 1; turn <= 6; turn++)
-    s = simulate(s, { type: "PASS" });
-  assert.equal(s.board[36], "fertile");
-  assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 2);
-  assertState(s);
+    {
+      rank: 1,
+      extra: 3,
+      traits: ["Fotossíntese", "Multicelularismo"],
+    },
+    {
+      rank: 2,
+      extra: 4,
+      traits: ["Fotossíntese", "Multicelularismo"],
+      allowed: new Set([27, 29, 43, 45]),
+    },
+    {
+      rank: 3,
+      extra: 4,
+      traits: ["Fotossíntese", "Multicelularismo", "Traqueófitas"],
+      allowed: new Set([28, 35, 37, 44]),
+    },
+    {
+      rank: 5,
+      extra: 5,
+      traits: ["Fotossíntese", "Multicelularismo", "Traqueófitas"],
+    },
+  ];
+
+  for (const example of cases) {
+    let s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: example.rank,
+        traits: example.traits,
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Predação", "Locomoção"] },
+    ]);
+    for (let turn = 1; turn <= 6; turn++)
+      s = simulate(s, { type: "PASS" });
+
+    const fertile = s.board
+      .map((terrain, cell) => (terrain === "fertile" ? cell : null))
+      .filter((cell) => cell !== null);
+    assert.equal(
+      fertile.length,
+      1 + example.extra,
+      `rank ${example.rank} should fertilize self + ${example.extra}`,
+    );
+    assert.ok(fertile.includes(36));
+    const extras = fertile.filter((cell) => cell !== 36);
+    assert.ok(
+      extras.every((cell) => {
+        const r = Math.floor(cell / 8),
+          col = cell % 8;
+        return Math.abs(r - 4) <= 1 && Math.abs(col - 4) <= 1;
+      }),
+      `rank ${example.rank} must stay in the immediate neighborhood`,
+    );
+    if (example.allowed)
+      assert.ok(extras.every((cell) => example.allowed.has(cell)));
+    assertState(s);
+  }
 });
 
-test("Angiospermas prefers fertilizing a neutral square occupied by an ally", () => {
+test("Angiospermas prioritizes allied occupied cells within the plant rank footprint", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 4,
       c: 4,
+      rank: 4,
       traits: [
         "Fotossíntese",
+        "Multicelularismo",
         "Embriófitas",
         "Traqueófitas",
         "Gimnospermas",
@@ -4359,7 +4414,7 @@ test("Angiospermas prefers fertilizing a neutral square occupied by an ally", ()
     s = simulate(s, { type: "PASS" });
   assert.equal(s.board[36], "fertile");
   assert.equal(s.board[37], "fertile");
-  assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 2);
+  assert.equal(s.board.filter((terrain) => terrain === "fertile").length, 3);
   assertState(s);
 });
 
