@@ -115,3 +115,66 @@ test("destination creature visuals stay hidden until movement animation finishes
   );
   dom.window.close();
 });
+
+
+test("reduced-motion preference keeps a discrete visible trajectory instead of teleporting", () => {
+  const dom = new JSDOM(
+      `<!doctype html><body>
+        <div id="board">
+          <button data-r="4" data-c="0"></button>
+          <button data-r="4" data-c="1"></button>
+          <button data-r="4" data-c="2"></button>
+          <button data-r="4" data-c="3"></button>
+          <button data-r="4" data-c="4"><span class="piece blue">♜</span></button>
+        </div>
+      </body>`,
+      { pretendToBeVisual: true },
+    ),
+    { window } = dom,
+    d = window.document;
+
+  window.matchMedia = () => ({ matches: true });
+  for (const cell of d.querySelectorAll("[data-r][data-c]")) {
+    cell.getBoundingClientRect = () => {
+      const c = Number(cell.dataset.c);
+      return {
+        left: c * 64,
+        top: 256,
+        width: 64,
+        height: 64,
+        right: c * 64 + 64,
+        bottom: 320,
+      };
+    };
+  }
+
+  let captured = null;
+  window.HTMLElement.prototype.animate = function (frames, options) {
+    captured = { frames, options };
+    return { addEventListener() {} };
+  };
+
+  const trace = {
+    pieceId: 1,
+    owner: "blue",
+    rank: 3,
+    origin: { r: 4, c: 0 },
+    path: [
+      { r: 4, c: 1 },
+      { r: 4, c: 2 },
+      { r: 4, c: 3 },
+      { r: 4, c: 4 },
+    ],
+    stop: { r: 4, c: 4 },
+    outcome: "moved",
+    kind: "move",
+    jumpedCell: null,
+    knightCorrection: false,
+  };
+
+  assert.equal(animateMovementTrace(d, trace), true);
+  assert.ok(captured);
+  assert.equal(captured.frames.length, 9);
+  assert.equal(captured.options.duration, 724);
+  dom.window.close();
+});
