@@ -324,3 +324,204 @@ test("novas locomoções respeitam período e ramo evolutivo", () => {
   assert.equal(traitUnlocked(state, "Tigmotaxia", vertebrate), false);
   assert.equal(traitUnlocked(state, "Movimento Lateral", arthropod), false);
 });
+
+
+test("Escansão percorre a coluna e troca com o primeiro aliado", () => {
+  let state = fixture([
+    { owner: "blue", r: 5, c: 3, rank: 0 },
+    { owner: "blue", r: 2, c: 3, rank: 2 },
+    { owner: "amber", r: 0, c: 7, rank: 4 },
+  ]);
+  const actor = exactTraits(
+      state.pieces[0],
+      animalTraits(["Escalador", "Escansão"]),
+    ),
+    ally = state.pieces[1];
+
+  const targets = movesFor(state, actor);
+  for (const r of [4, 3])
+    assert.ok(
+      targets.some(
+        (target) => target.r === r && target.c === 3 && target.escalation,
+      ),
+      `missing Escansão target ${r},3`,
+    );
+  const swap = targets.find(
+    (target) => target.r === 2 && target.c === 3 && target.escalationSwapId,
+  );
+  assert.equal(swap?.escalationSwapId, ally.id);
+
+  state = simulate(state, move(actor, 2, 3));
+  const movedActor = state.pieces.find((piece) => piece.id === actor.id),
+    movedAlly = state.pieces.find((piece) => piece.id === ally.id);
+  assert.deepEqual([movedActor.r, movedActor.c], [2, 3]);
+  assert.deepEqual([movedAlly.r, movedAlly.c], [5, 3]);
+  assert.equal(state.chain, null);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Escansão" &&
+        effect.outcome === "allied-position-swap",
+    ),
+  );
+});
+
+test("Bioadesão percorre o perímetro, dobra cantos e troca com aliado", () => {
+  let state = fixture([
+    { owner: "blue", r: 4, c: 0, rank: 0 },
+    { owner: "blue", r: 0, c: 3, rank: 2 },
+    { owner: "amber", r: 4, c: 4, rank: 4 },
+  ]);
+  const actor = exactTraits(
+      state.pieces[0],
+      animalTraits(["Escalador", "Bioadesão"]),
+    ),
+    ally = state.pieces[1];
+
+  const targets = movesFor(state, actor),
+    cornerRoute = targets.find(
+      (target) =>
+        target.r === 0 &&
+        target.c === 2 &&
+        target.bioadhesion,
+    ),
+    swap = targets.find(
+      (target) =>
+        target.r === 0 &&
+        target.c === 3 &&
+        target.bioadhesionSwapId,
+    );
+
+  assert.ok(cornerRoute);
+  assert.ok(
+    cornerRoute.path.some(([r, c]) => r === 0 && c === 0),
+  );
+  assert.equal(swap?.bioadhesionSwapId, ally.id);
+  assert.equal(
+    targets.some(
+      (target) =>
+        target.bioadhesion &&
+        target.r === 4 &&
+        target.c === 4,
+    ),
+    false,
+  );
+
+  state = simulate(state, move(actor, 0, 3));
+  const movedActor = state.pieces.find((piece) => piece.id === actor.id),
+    movedAlly = state.pieces.find((piece) => piece.id === ally.id);
+  assert.deepEqual([movedActor.r, movedActor.c], [0, 3]);
+  assert.deepEqual([movedAlly.r, movedAlly.c], [4, 0]);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Bioadesão" &&
+        effect.outcome === "allied-position-swap",
+    ),
+  );
+});
+
+test("Bioadesão só funciona quando a criatura já está na borda", () => {
+  const state = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 0 },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    actor = exactTraits(
+      state.pieces[0],
+      animalTraits(["Escalador", "Bioadesão"]),
+    );
+
+  assert.equal(
+    movesFor(state, actor).some((target) => target.bioadhesion),
+    false,
+  );
+});
+
+test("Arborícola atravessa sequência contínua de aliados fotossintéticos", () => {
+  let state = fixture([
+    { owner: "blue", r: 4, c: 1, rank: 0 },
+    { owner: "blue", r: 4, c: 2, rank: 0, traits: ["Fotossíntese"] },
+    { owner: "blue", r: 4, c: 3, rank: 0, traits: ["Fotossíntese"] },
+    { owner: "amber", r: 0, c: 0, rank: 4 },
+  ]);
+  const actor = exactTraits(
+      state.pieces[0],
+      animalTraits(["Escalador", "Arborícola"]),
+    ),
+    supports = state.pieces.slice(1, 3),
+    target = movesFor(state, actor).find(
+      (candidate) =>
+        candidate.r === 4 &&
+        candidate.c === 4 &&
+        candidate.arboreal,
+    );
+
+  assert.ok(target);
+  assert.deepEqual(target.arborealSupportIds, supports.map((piece) => piece.id));
+  assert.deepEqual(target.path, [[4, 2], [4, 3], [4, 4]]);
+  assert.equal(target.noContinuation, true);
+
+  state = simulate(state, move(actor, 4, 4));
+  const moved = state.pieces.find((piece) => piece.id === actor.id);
+  assert.deepEqual([moved.r, moved.c], [4, 4]);
+  for (const support of supports) {
+    const current = state.pieces.find((piece) => piece.id === support.id);
+    assert.deepEqual([current.r, current.c], [support.r, support.c]);
+  }
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Arborícola" &&
+        effect.outcome === "crossed-allied-canopy" &&
+        effect.value === 2,
+    ),
+  );
+});
+
+test("Arborícola exige dossel fotossintético aliado contínuo", () => {
+  const state = fixture([
+      { owner: "blue", r: 4, c: 1, rank: 0 },
+      { owner: "blue", r: 4, c: 2, rank: 0 },
+      { owner: "blue", r: 4, c: 3, rank: 0, traits: ["Fotossíntese"] },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    actor = exactTraits(
+      state.pieces[0],
+      animalTraits(["Escalador", "Arborícola"]),
+    );
+
+  assert.equal(
+    movesFor(state, actor).some((target) => target.arboreal),
+    false,
+  );
+});
+
+test("Escansão, Bioadesão e Arborícola respeitam precedência evolutiva", () => {
+  const state = createState(913, {
+      geologicalStage: "carboniferous",
+      historicalTraits: ["Madeira"],
+      naturalBarriers: false,
+    }),
+    vertebrate = newPiece(state, "blue", 4, 4, {
+      traits: animalTraits(["Escalador"]),
+    }),
+    arthropod = newPiece(state, "blue", 4, 5, {
+      traits: animalTraits(["Escalador"], "Artrópode"),
+    }),
+    unclimbing = newPiece(state, "blue", 5, 4, {
+      traits: animalTraits([]),
+    });
+
+  assert.equal(traitUnlocked(state, "Escansão", vertebrate), true);
+  assert.equal(traitUnlocked(state, "Escansão", arthropod), false);
+  assert.equal(traitUnlocked(state, "Arborícola", vertebrate), true);
+  assert.equal(traitUnlocked(state, "Arborícola", arthropod), true);
+  assert.equal(traitUnlocked(state, "Bioadesão", vertebrate), false);
+  assert.equal(traitUnlocked(state, "Arborícola", unclimbing), false);
+
+  state.geologicalStage = "permian";
+  assert.equal(traitUnlocked(state, "Bioadesão", vertebrate), true);
+
+  state.historicalTraits = [];
+  assert.equal(traitUnlocked(state, "Arborícola", vertebrate), false);
+});
