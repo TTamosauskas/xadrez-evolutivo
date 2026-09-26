@@ -78,7 +78,7 @@ const controller = new Controller(
   {
     report,
     toast: (effect) => passiveToastPresenter.show(effect),
-    render: (state, busy, showResult = true) => {
+    render: (state, busy, showResult = true, movementTrace = null) => {
       if (selected && !state.pieces.some((p) => p.id === selected))
         selected = null;
       render(document, state, {
@@ -86,6 +86,8 @@ const controller = new Controller(
         busy,
         mode: controller.mode,
         showResult,
+        movementTrace,
+        autoMode: controller.mode === "auto",
       });
       $("undo-neocortex").hidden =
         controller.mode === "auto" || !controller.canUndoNeocortex();
