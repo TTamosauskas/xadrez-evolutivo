@@ -115,6 +115,7 @@ const mutationTopics = {
   "Artrópode": ["Arthropoda", "Artrópodes possuem apêndices articulados e grande diversidade de estratégias reprodutivas; no jogo, trocam o teto morfológico por maior produção de descendentes."],
   "Locomoção Articulada": ["Locomoção articulada", "No jogo, representa a especialização locomotora de linhagens vertebradas ou artrópodas, libera a geometria completa da peça e preserva a dependência de pousar em espaço fértil até surgir Locomoção Terrestre."],
   "Locomoção Terrestre": ["Locomoção terrestre", "A colonização animal de substratos expostos exigiu conjuntos distintos de adaptações em diferentes linhagens; no jogo, a característica abstrai essa transição e libera movimento e captura fora das casas férteis."],
+  Rastejante: ["Locomoção rastejante", "Animais rastejantes podem explorar superfícies e passagens estreitas mantendo contato contínuo com o substrato; no jogo, essa capacidade é abstraída como uma travessia de borda que conecta lados opostos do habitat."],
   Pulo: ["Salto", "Saltos evoluíram repetidamente em animais terrestres como formas especializadas de propulsão; no jogo, permitem transpor um organismo durante o deslocamento."],
   Bipedalismo: ["Bipedalismo", "A locomoção bípede reorganiza apoio, equilíbrio e economia do deslocamento; no jogo, permite uma segunda movimentação voluntária."],
   "Percepção Espacial": ["Percepção espacial", "Integra informações sensoriais sobre posição, direção e distância; no jogo, permite orientar capturas para além da primeira casa da trajetória oficial da peça."],

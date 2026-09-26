@@ -10,6 +10,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Artrópode: "Libera formas até Bispo e dobra a prole-base, até 6.",
   "Locomoção Articulada": "Libera a geometria completa da peça; sem Locomoção Terrestre, o destino precisa ser fértil.",
   "Locomoção Terrestre": "Permite terminar movimentos em casas neutras e hostis.",
+  Rastejante: "Na borda, atravessa o limite do habitat e reaparece do lado oposto conforme a forma da peça.",
   Bipedalismo: "Após mover para casa vazia, pode realizar um segundo deslocamento.",
   Pulo: "Permite atravessar um organismo durante o deslocamento.",
   Jatopropulsão: "Permite impulso de 5 a 10 casas livres, com até uma curva de 90°.",

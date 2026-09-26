@@ -272,6 +272,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     if (
       victim &&
       has(victim, "Camuflagem") &&
+      !extra.crawler &&
       distance(p, victim) > 1 &&
       !has(p, "Visão Binocular")
     )
@@ -418,6 +419,64 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
   }
 
+  const wrap = (value) => (value + 8) % 8;
+  function crawlerTargets() {
+    if (
+      !has(p, "Rastejante") ||
+      !has(p, "Locomoção Terrestre") ||
+      has(p, "Deficiência Motora") ||
+      (p.r !== 0 && p.r !== 7 && p.c !== 0 && p.c !== 7)
+    )
+      return;
+
+    const addCrawler = (rawR, rawC) => {
+      if (inside(rawR, rawC)) return;
+      const r = wrap(rawR),
+        c = wrap(rawC),
+        existingIndex = targets.findIndex(
+          (target) => target.r === r && target.c === c,
+        ),
+        before = targets.length;
+      add(r, c, [[r, c]], { crawler: true });
+      if (targets.length === before) return;
+      const crawler = targets.at(-1);
+      if (existingIndex >= 0) {
+        targets[existingIndex] = crawler;
+        targets.pop();
+      }
+    };
+
+    if (p.rank === 0 || p.rank === 4) {
+      for (const [dr, dc] of [...ORTH, ...DIAG])
+        addCrawler(p.r + dr, p.c + dc);
+      return;
+    }
+
+    if (p.rank === 1) {
+      for (const [dr, dc] of [
+        [-2, -1],
+        [-2, 1],
+        [2, -1],
+        [2, 1],
+        [-1, -2],
+        [-1, 2],
+        [1, -2],
+        [1, 2],
+      ])
+        addCrawler(p.r + dr, p.c + dc);
+      return;
+    }
+
+    const directions =
+      p.rank === 2
+        ? DIAG
+        : p.rank === 3
+          ? ORTH
+          : [...ORTH, ...DIAG];
+    for (const [dr, dc] of directions)
+      addCrawler(p.r + dr, p.c + dc);
+  }
+
   const mobile =
     has(p, "Locomoção Primitiva") &&
     !has(p, "Séssil");
@@ -445,6 +504,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       delete extra.path;
       add(special.r, special.c, special.path, extra);
     }
+    crawlerTargets();
   } else if (
     !has(p, "Séssil") &&
     (captureUnlocked(state, p) || contactCaptureUnlocked(p))

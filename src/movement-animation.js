@@ -41,6 +41,18 @@ function appendJump(frames, from, to, timing, clock) {
   frames.push({ transform: transform(to), time: clock.value });
 }
 
+function appendCrawler(frames, from, to, timing, clock) {
+  const squeeze = Math.max(1, Math.floor(timing.move * 0.6));
+  clock.value += squeeze;
+  frames.push({ transform: transform(from, 0.12), opacity: 0.18, time: clock.value });
+  clock.value += 1;
+  frames.push({ transform: transform(to, 0.12), opacity: 0.18, time: clock.value });
+  clock.value += squeeze;
+  frames.push({ transform: transform(to), opacity: 1, time: clock.value });
+  clock.value += timing.hold;
+  frames.push({ transform: transform(to), opacity: 1, time: clock.value });
+}
+
 export function movementAnimationPlan(
   points,
   {
@@ -60,7 +72,9 @@ export function movementAnimationPlan(
     frames = [{ transform: transform(points[0]), time: 0 }],
     clock = { value: 0 };
 
-  if (kind === "knight") {
+  if (kind === "crawler") {
+    appendCrawler(frames, points[0], points.at(-1), timing, clock);
+  } else if (kind === "knight") {
     appendJump(frames, points[0], points.at(-1), timing, clock);
   } else if (kind === "jump" && jumpedIndex > 0 && jumpedIndex < points.length - 1) {
     for (let index = 1; index < jumpedIndex; index++)
