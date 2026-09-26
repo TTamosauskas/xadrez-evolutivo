@@ -164,7 +164,7 @@ function budPlacementAvailable(state, piece) {
 }
 
 export function buddingResource(state, piece) {
-  if (!piece || !has(piece, "Respiração anaeróbia")) return null;
+  if (!canUseFertileResource(state, piece)) return null;
   if (terrain(state, piece.r, piece.c) === "fertile")
     return { kind: "fertile", cell: piece.r * 8 + piece.c };
   if (
