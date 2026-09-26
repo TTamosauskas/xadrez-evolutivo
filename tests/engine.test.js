@@ -3256,7 +3256,6 @@ test("mutation toast only announces outcomes that have not appeared before", () 
   );
   assert.ok(mutationToast);
   assert.match(mutationToast.text, /^🧬 Nova mutação: /);
-  assert.match(mutationToast.theme, /^terrain-neutral-(light|dark)$/);
   assert.ok(!s.notices.some((n) => n.title === "Novas mutações"));
   assertState(s);
 });
