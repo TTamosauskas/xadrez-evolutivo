@@ -83,12 +83,15 @@ main {
 .play-area {
   position: relative;
 }
+.board-stage {
+  position: relative;
+}
 .passive-toasts {
-  position: fixed;
+  position: absolute;
   z-index: 40;
-  top: max(70px, calc(env(safe-area-inset-top) + 18px));
+  top: 10px;
   left: 50%;
-  width: min(90vw, 520px);
+  width: min(calc(100% - 28px), 520px);
   transform: translateX(-50%);
   display: grid;
   gap: 8px;
