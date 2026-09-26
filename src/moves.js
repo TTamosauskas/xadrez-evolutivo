@@ -219,6 +219,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         contactCaptureUnlocked(p);
     const seedCapture =
       !!plantSeed &&
+      !plantSeed.sprouting &&
       plantSeed.owner !== p.owner &&
       has(p, "Granívoro") &&
       reproductionReady(state, p);
