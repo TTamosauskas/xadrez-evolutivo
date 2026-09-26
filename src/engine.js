@@ -1020,7 +1020,13 @@ function completeMove(ctx, p, second, locomotion) {
     !has(p, "Mutação Disfuncional") &&
     !has(p, "Deficiência Motora") &&
     state.pieces.some((x) => x.id === p.id) &&
-    movesFor(state, p).length
+    movesFor(state, p).some(
+      (target) =>
+        !target.capture &&
+        !target.eggCapture &&
+        !target.stay &&
+        !at(state, target.r, target.c),
+    )
   ) {
     state.chain = p.id;
     state.chainTrait = "Bipedalismo";
@@ -1212,6 +1218,10 @@ function moveHerd(ctx, leader, followers, origin, target) {
           fragmentAt(state, r, c) ||
           barrierAt(state, r, c) ||
           lethalHazardAt(state, r, c) ||
+          dormant(state, piece) ||
+          (currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+            !has(piece, "Locomoção Terrestre") &&
+            terrain(state, r, c) !== "fertile") ||
           (occupant && !ids.has(occupant.id) && occupant.id !== leader.id)
         )
           return null;
@@ -1955,7 +1965,7 @@ function executeMove(ctx, action) {
       id: p.id,
       selectedIds: [],
       second,
-      locomotion,
+      locomotion: false,
       collectorStay: false,
       predation,
       manipulation,
@@ -2086,12 +2096,19 @@ function executeMove(ctx, action) {
     deferReproductionPlacement(state, p, {
       manipulation,
       second,
-      locomotion,
+      locomotion: born > 0 ? false : locomotion,
       build,
     })
   )
     return;
-  finishMovement(ctx, p, manipulation, second, locomotion, build);
+  finishMovement(
+    ctx,
+    p,
+    manipulation,
+    second,
+    born > 0 ? false : locomotion,
+    build,
+  );
 }
 function resolveBudding(ctx, action) {
   const state = ctx.state,
