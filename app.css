@@ -175,6 +175,8 @@ main {
 }
 .movement-trace-piece {
   position: fixed;
+  top: 0;
+  left: 0;
   z-index: 9999;
   display: block;
   width: 1em;
@@ -186,6 +188,13 @@ main {
   will-change: transform;
 }
 .movement-trace-hidden {
+  visibility: hidden !important;
+}
+.movement-trace-destination-hidden .piece,
+.movement-trace-destination-hidden .piece-energy-core,
+.movement-trace-destination-hidden .trait-frame,
+.movement-trace-destination-hidden .piece-status,
+.movement-trace-destination-hidden .pathogen-overlay {
   visibility: hidden !important;
 }
 .board.movement-animating .cell {
