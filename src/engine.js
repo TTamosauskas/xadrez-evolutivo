@@ -28,6 +28,7 @@ import {
   ECOLOGICAL_DOMAIN_REQUIRED_TURNS,
   ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS,
   ecologicalQuadrant,
+  ecologicalDomainBlocked,
   createEcologicalDomain,
   organicResidueAt,
   carcassAt,
