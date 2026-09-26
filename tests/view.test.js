@@ -1262,11 +1262,11 @@ test("predatory reproduction uses concentric red and green capture rings", () =>
     `[data-r="${prey.r}"][data-c="${prey.c}"]`,
   );
   assert.ok(target.classList.contains("attack-target"));
-  assert.ok(target.classList.contains("predatory-reproduction-target"));
+  assert.ok(target.classList.contains("capture-reproduction-target"));
   assert.match(target.title, /ataque com reprodução predatória/);
   assert.ok(
     dom.window.document.querySelector(
-      ".legend-action-ring.predatory-reproduction",
+      ".legend-action-ring.capture-reproduction",
     ),
   );
   assert.match(
@@ -1275,7 +1275,7 @@ test("predatory reproduction uses concentric red and green capture rings", () =>
   );
   assert.match(
     css,
-    /\.cell\.legal\.predatory-reproduction-target::before[\s\S]*width:\s*70%[\s\S]*border:\s*4px solid #5bd66c/,
+    /\.cell\.legal\.capture-reproduction-target::before[\s\S]*width:\s*70%[\s\S]*border:\s*4px solid #5bd66c/,
   );
 
   predator.nextReproductionRound = round(s) + 2;
@@ -1284,8 +1284,117 @@ test("predatory reproduction uses concentric red and green capture rings", () =>
     `[data-r="${prey.r}"][data-c="${prey.c}"]`,
   );
   assert.ok(target.classList.contains("attack-target"));
-  assert.ok(!target.classList.contains("predatory-reproduction-target"));
+  assert.ok(!target.classList.contains("capture-reproduction-target"));
   assert.match(target.title, /alvo de ataque/);
+  dom.window.close();
+});
+
+test("Canibalismo and egg consumption use the same concentric capture-reproduction marker", () => {
+  let dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Canibalismo"] },
+      { owner: "blue", r: 4, c: 4, rank: 4 },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    actor = s.pieces[0],
+    ally = s.pieces[1];
+
+  render(dom.window.document, s, { selected: actor.id });
+  let target = dom.window.document.querySelector(
+    `[data-r="${ally.r}"][data-c="${ally.c}"]`,
+  );
+  assert.ok(target.classList.contains("attack-target"));
+  assert.ok(target.classList.contains("capture-reproduction-target"));
+  assert.match(target.title, /Canibalismo com reprodução/);
+  dom.window.close();
+
+  for (const trait of ["Ovífagia", "Onívoro Oportunista"]) {
+    dom = setup();
+    s = fixture([
+      { owner: "blue", r: 4, c: 3, rank: 4, traits: [trait] },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]);
+    actor = s.pieces[0];
+    s.eggs.push({
+      id: 900,
+      owner: "amber",
+      parentId: 999,
+      r: 4,
+      c: 4,
+      laidRound: 0,
+      hatchRound: round(s) + 2,
+      expireRound: round(s) + 5,
+      mode: "basal",
+      brood: [{}],
+      dispersal: "local",
+    });
+
+    render(dom.window.document, s, { selected: actor.id });
+    target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
+    assert.ok(target.classList.contains("attack-target"), trait);
+    assert.ok(target.classList.contains("capture-reproduction-target"), trait);
+    assert.match(
+      target.title,
+      trait === "Ovífagia"
+        ? /Ovífagia com reprodução/
+        : /Onívoro Oportunista com reprodução/,
+    );
+
+    actor.nextReproductionRound = round(s) + 2;
+    render(dom.window.document, s, { selected: actor.id });
+    target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
+    assert.ok(target.classList.contains("attack-target"), trait);
+    assert.ok(!target.classList.contains("capture-reproduction-target"), trait);
+    dom.window.close();
+  }
+});
+
+test("Necrófago, Onívoro Oportunista and Coprofagia use a single green reproduction ring on resources", () => {
+  for (const trait of ["Necrófago", "Onívoro Oportunista"]) {
+    const dom = setup(),
+      s = fixture([
+        { owner: "blue", r: 4, c: 3, rank: 4, traits: [trait] },
+        { owner: "amber", r: 0, c: 0, rank: 4 },
+      ]),
+      actor = s.pieces[0];
+    s.carcasses.push({ cell: 36, dueRound: round(s) + 3, base: "neutral" });
+    s.captureDisturbances.push({
+      cell: 36,
+      dueRound: round(s) + 3,
+      base: "neutral",
+      sourceId: null,
+    });
+
+    render(dom.window.document, s, { selected: actor.id });
+    const target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
+    assert.ok(target.classList.contains("vivification-target"), trait);
+    assert.ok(!target.classList.contains("attack-target"), trait);
+    assert.ok(!target.classList.contains("capture-reproduction-target"), trait);
+    assert.match(
+      target.title,
+      trait === "Necrófago" ? /Necrofagia/ : /Onívoro Oportunista/,
+    );
+    dom.window.close();
+  }
+
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Coprofagia"] },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    actor = s.pieces[0];
+  s.deathSites.push({
+    cell: 36,
+    dueRound: round(s) + 3,
+    base: "neutral",
+    kind: "fecal",
+  });
+  render(dom.window.document, s, { selected: actor.id });
+  const target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
+  assert.ok(target.classList.contains("vivification-target"));
+  assert.ok(!target.classList.contains("attack-target"));
+  assert.ok(!target.classList.contains("capture-reproduction-target"));
+  assert.match(target.title, /Coprofagia/);
   dom.window.close();
 });
 
@@ -1368,7 +1477,7 @@ test("selected sexual pieces mark partners green and attack targets red", () => 
   assert.match(legend.textContent, /Ataque/);
   assert.ok(legend.querySelector(".legend-action-ring.vivify"));
   assert.ok(
-    legend.querySelector(".legend-action-ring.predatory-reproduction"),
+    legend.querySelector(".legend-action-ring.capture-reproduction"),
   );
   assert.match(
     css,
@@ -1376,7 +1485,7 @@ test("selected sexual pieces mark partners green and attack targets red", () => 
   );
   assert.match(
     css,
-    /\.legend-action-ring\.predatory-reproduction[\s\S]*color:\s*#d54242/,
+    /\.legend-action-ring\.capture-reproduction[\s\S]*color:\s*#d54242/,
   );
   dom.window.close();
 });
