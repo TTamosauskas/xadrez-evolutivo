@@ -37,6 +37,7 @@ export function fixture(
             "Reparo Celular",
             "Multicelularismo",
             "Predação",
+            "Ingestão",
             "Simetria Bilateral",
             "Locomoção Primitiva",
             "Vertebrado",
