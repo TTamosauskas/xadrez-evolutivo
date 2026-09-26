@@ -81,10 +81,12 @@ import {
   canBud,
   canPupate,
   canUseBasalFertility,
+  canUseFertileResource,
   monogamySurvivalBonus,
   paedogenesisReady,
   parentalCareProtects,
   predatoryReproductionAvailable,
+  trophicSpecializationMatches,
 } from "./reproduction-traits.js";
 import {
   consumeOrganicResidue,
@@ -1509,12 +1511,13 @@ function executeMove(ctx, action) {
         terrain(state, p.r, p.c) === "fertile" &&
         (state.geologicalStage !== "hadean" || target.stay)) ||
         collectorStay),
-    fertile = fertileResource && canUseBasalFertility(p),
+    fertile = fertileResource && canUseBasalFertility(state, p),
     sexualResourceHere =
       !scavenging &&
       !coprophagy &&
       !recycledFeces &&
       !capture &&
+      canUseFertileResource(state, p) &&
       (terrain(state, p.r, p.c) === "fertile" || collectorStay),
     predation =
       pieceCapture &&
@@ -1617,6 +1620,8 @@ function executeMove(ctx, action) {
         forcedCount: paedogenic ? 1 : undefined,
         immediateDevelopment: paedogenic,
         paedogenesis: paedogenic,
+        trophicEfficiency:
+          predation && trophicSpecializationMatches(p, victim),
         resourceKind: predation
           ? "prey"
           : collectorStay
