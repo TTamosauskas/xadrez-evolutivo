@@ -110,7 +110,7 @@ test("new mutations use the same lineage color as other toasts", () => {
     owner: "amber",
     trait: "Chifre",
     outcome: "new-mutation",
-    text: "🧬 Nova mutação: 🫎 Chifre.",
+    text: "Nova Mutação: 🫎 Chifre.",
   });
 
   assert.equal(
