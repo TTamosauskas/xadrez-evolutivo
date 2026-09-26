@@ -2768,6 +2768,11 @@ export function assertState(state) {
       !["blue", "amber"].includes(seed.owner) ||
       !inside(seed.r, seed.c) ||
       !integer(seed.movesRemaining, 0, 3) ||
+      (seed.age !== undefined && !integer(seed.age, 0)) ||
+      (seed.sprouting !== undefined && typeof seed.sprouting !== "boolean") ||
+      (seed.sproutReadyRound !== undefined &&
+        seed.sproutReadyRound !== null &&
+        !integer(seed.sproutReadyRound, 0)) ||
       !validBroodProfile(seed.profile, seed.owner) ||
       plantSeedCells.has(cell) ||
       ((state.barriers.includes(cell) ||

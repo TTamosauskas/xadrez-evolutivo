@@ -219,14 +219,14 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         contactCaptureUnlocked(p);
     const seedCapture =
       !!plantSeed &&
+      !plantSeed.sprouting &&
       plantSeed.owner !== p.owner &&
       has(p, "Granívoro") &&
       reproductionReady(state, p);
     if (
       fragment ||
       (victim?.owner === p.owner && !cannibal) ||
-      egg?.owner === p.owner ||
-      (plantSeed && !seedCapture)
+      egg?.owner === p.owner
     )
       return;
     if (
@@ -287,8 +287,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       ...extra,
     });
   }
-  const occupiedTarget = (r, c) =>
-    !!at(state, r, c) || !!eggAt(state, r, c) || !!plantSeedAt(state, r, c);
+  const occupiedTarget = (r, c) => !!at(state, r, c) || !!eggAt(state, r, c);
   function ray(directions, captureOnly = false) {
     for (const [dr, dc] of directions) {
       let geometricRange = 0;

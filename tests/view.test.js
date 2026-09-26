@@ -1803,7 +1803,10 @@ test("renders dispersing Gymnosperm seeds on the board", () => {
     r: 3,
     c: 3,
     parentId: parent.id,
+    age: 1,
     movesRemaining: 2,
+    sprouting: false,
+    sproutReadyRound: null,
     profile: {
       owner: parent.owner,
       rank: parent.rank,
@@ -1820,7 +1823,7 @@ test("renders dispersing Gymnosperm seeds on the board", () => {
   assert.ok(cell.classList.contains("plant-seed"));
   assert.match(cell.textContent, /🌰/);
   assert.match(cell.title, /semente das Brancas/);
-  assert.match(cell.title, /2 rodada/);
+  assert.match(cell.title, /idade 1 de 3/);
   dom.window.close();
 });
 

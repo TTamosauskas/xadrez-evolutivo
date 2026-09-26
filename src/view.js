@@ -613,7 +613,9 @@ export function render(
             : `, ovo ${egg.mode === "amniote" ? "amniótico" : "ovovivíparo"} das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s)`
           : "",
         plantSeedLabel = plantSeed
-          ? `, semente das ${OWNERS[plantSeed.owner]}, ${plantSeed.movesRemaining} rodada(s) de dispersão restante(s)`
+          ? plantSeed.sprouting
+            ? `, broto 🌱 das ${OWNERS[plantSeed.owner]}, aguardando estabelecimento`
+            : `, semente das ${OWNERS[plantSeed.owner]}, idade ${plantSeed.age ?? 3 - (plantSeed.movesRemaining ?? 3)} de 3 rodada(s) mínimas; ${(plantSeed.age ?? 3 - (plantSeed.movesRemaining ?? 3)) >= 3 ? "madura" : "em dispersão"}`
           : "",
         pathogenSporeLabel = pathogenSpore
           ? `, esporo fúngico, ${pathogenSpore.movesRemaining} etapa(s) de dispersão restante(s)`
@@ -691,7 +693,10 @@ export function render(
             "egg-preview",
           ),
         );
-      if (plantSeed) cell.append(make("span", "🌰", "egg-mark"));
+      if (plantSeed)
+        cell.append(
+          make("span", plantSeed.sprouting ? "🌱" : "🌰", "egg-mark"),
+        );
       if (pathogenSpore)
         cell.append(make("span", "◌", "pathogen-spore-mark"));
       if (fragment) cell.append(make("span", "𓇼", "fragment-mark"));

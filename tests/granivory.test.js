@@ -14,13 +14,16 @@ function addSeed(state, owner, r, c) {
     c,
     parentId: null,
     profile: { traits: ["Gimnospermas"] },
+    age: 0,
     movesRemaining: 3,
+    sprouting: false,
+    sproutReadyRound: null,
   };
   state.plantSeeds.push(seed);
   return seed;
 }
 
-test("seeds block ordinary movement and only become targets for a reproductively ready Granívoro", () => {
+test("seeds share cells with ordinary movement and become food only for a ready Granívoro", () => {
   const plain = fixture([
       { owner: "blue", r: 4, c: 0, rank: 3, traits: ["Herbívoro"] },
       { owner: "amber", r: 0, c: 7, rank: 4 },
@@ -30,12 +33,17 @@ test("seeds block ordinary movement and only become targets for a reproductively
 
   const plainTargets = movesFor(plain, plainActor);
   assert.equal(
-    plainTargets.some((target) => target.r === 4 && target.c === 1),
-    false,
+    plainTargets.some(
+      (target) =>
+        target.r === 4 &&
+        target.c === 1 &&
+        !target.seedCapture,
+    ),
+    true,
   );
   assert.equal(
     plainTargets.some((target) => target.r === 4 && target.c === 2),
-    false,
+    true,
   );
 
   const granivore = fixture([
@@ -57,12 +65,11 @@ test("seeds block ordinary movement and only become targets for a reproductively
   assert.equal(target?.seedCapture, seed.id);
 
   actor.nextReproductionRound = 999;
-  assert.equal(
-    movesFor(granivore, actor).some(
-      (candidate) => candidate.r === 4 && candidate.c === 1,
-    ),
-    false,
+  const restingTarget = movesFor(granivore, actor).find(
+    (candidate) => candidate.r === 4 && candidate.c === 1,
   );
+  assert.ok(restingTarget);
+  assert.equal(restingTarget.seedCapture, null);
 });
 
 test("Granívoro consumes one enemy seed and uses the normal brood size of the chess form", () => {
@@ -97,7 +104,7 @@ test("Granívoro consumes one enemy seed and uses the normal brood size of the c
   );
 });
 
-test("Granívoro cannot consume allied seeds", () => {
+test("Granívoro can share a cell with an allied seed without consuming it", () => {
   const state = fixture([
       {
         owner: "blue",
@@ -111,12 +118,11 @@ test("Granívoro cannot consume allied seeds", () => {
     actor = state.pieces[0];
   addSeed(state, "blue", 4, 1);
 
-  assert.equal(
-    movesFor(state, actor).some(
-      (candidate) => candidate.r === 4 && candidate.c === 1,
-    ),
-    false,
+  const target = movesFor(state, actor).find(
+    (candidate) => candidate.r === 4 && candidate.c === 1,
   );
+  assert.ok(target);
+  assert.equal(target.seedCapture, null);
 });
 
 test("Granívoro debuts in the Carboniferous after terrestrial Herbívoro or Onívoro and historical Gimnospermas", () => {

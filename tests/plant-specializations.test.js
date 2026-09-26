@@ -191,6 +191,122 @@ test("Perfume Floral guides a seed toward a refuge protected by allied heterotro
   assert.equal(state.plantSeeds[0].movesRemaining, 2);
 });
 
+test("seed waits three reproductive rounds, sprouts on empty fertile terrain, then establishes one round later", () => {
+  const state = blankState(706, "carboniferous"),
+    profile = newPiece(state, "blue", 0, 0, {
+      traits: plantLineage(),
+    });
+  state.pieces = [];
+  state.nextId = 1;
+  state.board[4 * 8 + 4] = "fertile";
+  state.plantSeeds.push({
+    id: state.nextPlantSeed++,
+    owner: "blue",
+    r: 4,
+    c: 4,
+    parentId: null,
+    profile,
+    age: 0,
+    movesRemaining: 3,
+    sprouting: false,
+    sproutReadyRound: null,
+  });
+
+  tickReproduction(context(state));
+  assert.equal(state.plantSeeds[0].age, 1);
+  assert.equal(state.plantSeeds[0].sprouting, false);
+
+  state.turn = 2;
+  tickReproduction(context(state));
+  assert.equal(state.plantSeeds[0].age, 2);
+  assert.equal(state.plantSeeds[0].sprouting, false);
+
+  state.turn = 4;
+  tickReproduction(context(state));
+  assert.equal(state.plantSeeds[0].age, 3);
+  assert.equal(state.plantSeeds[0].sprouting, true);
+  assert.equal(state.pieces.length, 0);
+
+  state.turn = 6;
+  tickReproduction(context(state));
+  assert.equal(state.plantSeeds.length, 0);
+  assert.equal(state.pieces.length, 1);
+  assert.deepEqual([state.pieces[0].r, state.pieces[0].c], [4, 4]);
+});
+
+test("mature seed waits under an occupant and starts sprouting after the fertile cell becomes empty", () => {
+  const state = blankState(707, "carboniferous"),
+    occupant = newPiece(state, "amber", 4, 4, {
+      traits: ["Multicelularismo", "Predação"],
+    }),
+    profile = newPiece(state, "blue", 0, 0, {
+      traits: plantLineage(),
+    });
+  state.pieces = [occupant];
+  state.nextId = occupant.id + 1;
+  state.board[4 * 8 + 4] = "fertile";
+  state.plantSeeds.push({
+    id: state.nextPlantSeed++,
+    owner: "blue",
+    r: 4,
+    c: 4,
+    parentId: null,
+    profile,
+    age: 3,
+    movesRemaining: 0,
+    sprouting: false,
+    sproutReadyRound: null,
+  });
+
+  tickReproduction(context(state));
+  assert.equal(state.plantSeeds[0].sprouting, false);
+  assert.equal(state.pieces.length, 1);
+
+  state.pieces = [];
+  state.turn = 2;
+  tickReproduction(context(state));
+  assert.equal(state.plantSeeds[0].sprouting, true);
+
+  state.turn = 4;
+  tickReproduction(context(state));
+  assert.equal(state.plantSeeds.length, 0);
+  assert.equal(state.pieces.length, 1);
+});
+
+test("mature seed on non-fertile terrain keeps dispersing until it reaches fertile terrain", () => {
+  const state = blankState(708, "carboniferous"),
+    profile = newPiece(state, "blue", 0, 0, {
+      traits: plantLineage(),
+    });
+  state.pieces = [];
+  state.nextId = 1;
+  state.board.fill("neutral");
+  state.board[4 * 8 + 5] = "fertile";
+  state.plantSeeds.push({
+    id: state.nextPlantSeed++,
+    owner: "blue",
+    r: 4,
+    c: 4,
+    parentId: null,
+    profile,
+    age: 3,
+    movesRemaining: 0,
+    sprouting: false,
+    sproutReadyRound: null,
+  });
+
+  tickReproduction(context(state));
+  assert.deepEqual(
+    [state.plantSeeds[0].r, state.plantSeeds[0].c],
+    [4, 5],
+  );
+  assert.equal(state.plantSeeds[0].sprouting, false);
+
+  state.turn = 2;
+  tickReproduction(context(state));
+  assert.equal(state.plantSeeds[0].sprouting, true);
+});
+
 test("Extremófitas converts survived hostile terrain into temporary fertility and restores hostility when consumed", () => {
   let state = blankState(706, "permian");
   const extremophyte = newPiece(state, "blue", 4, 4, {

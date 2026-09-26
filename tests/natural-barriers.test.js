@@ -287,7 +287,13 @@ test("Gymnosperm Trepadeira seeds can settle and germinate on barriers", () => {
   );
   assert.equal(s.plantSeeds.length, 1);
   assert.deepEqual([s.plantSeeds[0].r, s.plantSeeds[0].c], [4, 5]);
+  s.board[barrier] = "fertile";
+  s.plantSeeds[0].age = 3;
   s.plantSeeds[0].movesRemaining = 0;
+  tickReproduction(context(s));
+  assert.equal(s.plantSeeds.length, 1);
+  assert.equal(s.plantSeeds[0].sprouting, true);
+  s.turn = 2;
   tickReproduction(context(s));
   assert.equal(s.plantSeeds.length, 0);
   assert.ok(

@@ -1111,7 +1111,10 @@ function layPlantSeeds(ctx, parent, brood) {
         c: target.c,
         parentId: parent.id,
         profile: profiles[i],
+        age: 0,
         movesRemaining: 3,
+        sprouting: false,
+        sproutReadyRound: null,
       });
       laid++;
     }
@@ -2019,38 +2022,74 @@ export function tickReproduction(ctx) {
   tickFragments(ctx);
 
   for (const seed of [...state.plantSeeds]) {
-    if (seed.movesRemaining > 0) {
-      const candidates = [];
-      for (let dr = -1; dr <= 1; dr++)
-        for (let dc = -1; dc <= 1; dc++) {
-          if (!dr && !dc) continue;
-          const r = seed.r + dr,
-            c = seed.c + dc;
-          if (inside(r, c) && !occupied(state, r, c, seed.profile))
-            candidates.push({ r, c });
-        }
-      const target = perfumeSeedStep(state, seed, candidates);
-      if (target) {
-        seed.r = target.r;
-        seed.c = target.c;
+    seed.age = Number.isInteger(seed.age)
+      ? seed.age + 1
+      : 4 - Math.max(0, Math.min(3, seed.movesRemaining ?? 3));
+    seed.movesRemaining = Math.max(0, 3 - seed.age);
+
+    const fertileHere = terrain(state, seed.r, seed.c) === "fertile",
+      occupiedHere = !!at(state, seed.r, seed.c) || !!eggAt(state, seed.r, seed.c),
+      invalidHere =
+        lethalHazardAt(state, seed.r, seed.c) ||
+        (barrierAt(state, seed.r, seed.c) &&
+          !has(seed.profile, "Trepadeira"));
+
+    if (seed.sprouting) {
+      if (!fertileHere || invalidHere) {
+        seed.sprouting = false;
+        seed.sproutReadyRound = null;
+      } else if (!occupiedHere && now >= (seed.sproutReadyRound ?? now + 1)) {
+        state.plantSeeds = state.plantSeeds.filter(
+          (item) => item.id !== seed.id,
+        );
+        spawnChild(state, seed.profile, seed.r, seed.c);
+        log(
+          state,
+          `🌱 Broto das ${OWNERS[seed.owner]} estabeleceu-se em ${coord(seed.r, seed.c)}.`,
+        );
+        continue;
+      } else {
+        continue;
       }
-      seed.movesRemaining--;
     }
-    if (seed.movesRemaining > 0) continue;
-    if (
-      at(state, seed.r, seed.c) ||
-      eggAt(state, seed.r, seed.c) ||
-      lethalHazardAt(state, seed.r, seed.c) ||
-      (barrierAt(state, seed.r, seed.c) &&
-        !has(seed.profile, "Trepadeira"))
-    )
+
+    const mature = seed.age >= 3;
+    if (mature && fertileHere && !occupiedHere && !invalidHere) {
+      seed.sprouting = true;
+      seed.sproutReadyRound = now + 1;
+      log(
+        state,
+        `🌱 Semente das ${OWNERS[seed.owner]} iniciou germinação em ${coord(seed.r, seed.c)}.`,
+      );
       continue;
-    state.plantSeeds = state.plantSeeds.filter((item) => item.id !== seed.id);
-    spawnChild(state, seed.profile, seed.r, seed.c);
-    log(
-      state,
-      `🌰 Semente das ${OWNERS[seed.owner]} germinou em ${coord(seed.r, seed.c)}.`,
-    );
+    }
+
+    const shouldMove = !fertileHere && !invalidHere;
+    if (!shouldMove) continue;
+
+    const candidates = [];
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = seed.r + dr,
+          c = seed.c + dc;
+        if (inside(r, c) && !occupied(state, r, c, seed.profile))
+          candidates.push({ r, c });
+      }
+
+    let choices = candidates;
+    if (mature) {
+      const fertileCandidates = candidates.filter(
+        (candidate) => terrain(state, candidate.r, candidate.c) === "fertile",
+      );
+      if (fertileCandidates.length) choices = fertileCandidates;
+    }
+
+    const target = perfumeSeedStep(state, seed, choices);
+    if (target) {
+      seed.r = target.r;
+      seed.c = target.c;
+    }
   }
 
   for (const egg of [...state.eggs]) {
