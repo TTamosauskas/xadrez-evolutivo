@@ -719,8 +719,8 @@ test("mutual blocking advances Conway turn by turn until one side can act", () =
   s.pieces = [];
   s.nextId = 1;
   s.pieces = [
-    newPiece(s, "blue", 4, 4, { rank: 4, traits: [] }),
-    newPiece(s, "amber", 0, 0, { rank: 4, traits: [] }),
+    newPiece(s, "blue", 4, 4, { rank: 4, traits: ["Fotossíntese"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Fotossíntese"] }),
   ];
   for (const cell of [27, 28, 29]) s.board[cell] = "fertile";
   s.turn = 79;
@@ -824,7 +824,7 @@ test("invalid actions roll back the complete state, including random generator",
 });
 test("stationary reproduction keeps its parent and unique occupancy with Ooteca", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, traits: ["Ooteca"] },
+    { owner: "blue", r: 4, c: 4, traits: ["Ooteca", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
@@ -835,7 +835,7 @@ test("stationary reproduction keeps its parent and unique occupancy with Ooteca"
 });
 test("Ooteca only releases after successful reproduction on a fertile square", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca"] },
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   const parent = s.pieces[0];
@@ -845,7 +845,7 @@ test("Ooteca only releases after successful reproduction on a fertile square", (
   assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 0);
 
   s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca"] },
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ooteca", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
@@ -873,7 +873,7 @@ test("Ooteca only releases after successful reproduction on a fertile square", (
 test("capturing Ooteca reserves arrival and cannot overlap the attacker", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
-    { owner: "amber", r: 4, c: 4, traits: ["Ooteca"] },
+    { owner: "amber", r: 4, c: 4, traits: ["Ooteca", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s = simulate(s, move(s.pieces[0], 4, 4));
@@ -882,7 +882,10 @@ test("capturing Ooteca reserves arrival and cannot overlap the attacker", () => 
   assertState(s);
 });
 test("notices pause actions; acknowledgment is ordered and idempotent", () => {
-  let s = fixture();
+  let s = fixture([
+    { owner: "blue", r: 6, c: 3, traits: ["Herbívoro"] },
+    { owner: "amber", r: 1, c: 4 },
+  ]);
   s.board[43] = "fertile";
   s = transition(s, move(s.pieces[0], 5, 3));
   assert.ok(s.notices.length);
@@ -898,14 +901,14 @@ test("sexual partner preserves Multicelularismo and survives save/restore", () =
       owner: "blue",
       r: 5,
       c: 3,
-      traits: ["Multicelularismo", "Reprodução Sexuada"],
+      traits: ["Multicelularismo", "Reprodução Sexuada", "Herbívoro"],
     },
     {
       owner: "blue",
       r: 4,
       c: 4,
       rank: 3,
-      traits: ["Multicelularismo", "Reprodução Sexuada"],
+      traits: ["Multicelularismo", "Reprodução Sexuada", "Herbívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -928,13 +931,13 @@ test("sexual partners require the trait on both parents and can use the mate's f
       owner: "blue",
       r: 4,
       c: 4,
-      traits: ["Reprodução Sexuada"],
+      traits: ["Reprodução Sexuada", "Herbívoro"],
     },
     {
       owner: "blue",
       r: 4,
       c: 5,
-      traits: ["Reprodução Sexuada"],
+      traits: ["Reprodução Sexuada", "Herbívoro"],
     },
     {
       owner: "blue",
@@ -961,19 +964,19 @@ test("sexual partners require the trait on both parents and can use the mate's f
   assertState(s);
 });
 
-test("Reprodução Sexuada replaces carnivore basal fertility with partner reproduction", () => {
+test("Reprodução Sexuada routes herbivore fertility through partner reproduction", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 4,
       c: 4,
-      traits: ["Carnívoro", "Reprodução Sexuada"],
+      traits: ["Herbívoro", "Reprodução Sexuada"],
     },
     {
       owner: "blue",
       r: 4,
       c: 5,
-      traits: ["Carnívoro", "Reprodução Sexuada"],
+      traits: ["Herbívoro", "Reprodução Sexuada"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -1046,7 +1049,7 @@ test("dysfunctional movement rests the following full round", () => {
 });
 test("collector gathers once and can spend a seed only once in its turn", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Coletor"] },
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Coletor", "Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
@@ -1588,7 +1591,7 @@ test("Semelparidade defers death while viviparous offspring are gestating", () =
 
 test("fertile reproduction shows the concise tutorial copy only on its first occurrence", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 0 },
+    { owner: "blue", r: 4, c: 4, rank: 0, traits: ["Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[28] = "fertile";
@@ -3456,7 +3459,7 @@ test("sexual virus does not spread by adjacency and keeps complete Resistance im
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Reprodução Sexuada"],
+        traits: ["Reprodução Sexuada", "Herbívoro"],
       },
       {
         owner: "blue",
@@ -3468,7 +3471,7 @@ test("sexual virus does not spread by adjacency and keeps complete Resistance im
         owner: "blue",
         r: 5,
         c: 4,
-        traits: ["Reprodução Sexuada"],
+        traits: ["Reprodução Sexuada", "Herbívoro"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
@@ -3587,13 +3590,13 @@ test("ecological pathogen selection separates agent choice from eligible routes"
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Carnívoro", "Reprodução Sexuada"],
+        traits: ["Herbívoro", "Reprodução Sexuada"],
       },
       {
         owner: "blue",
         r: 4,
         c: 5,
-        traits: ["Reprodução Sexuada"],
+        traits: ["Reprodução Sexuada", "Herbívoro"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]);
@@ -5053,7 +5056,7 @@ test("Antropização offers an adjacent barrier after fertile reproduction", () 
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Antropização"],
+      traits: ["Antropização", "Onívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -5137,7 +5140,7 @@ test("domesticated offspring enter manual placement up to distance two", () => {
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Animais Domésticos"],
+      traits: ["Animais Domésticos", "Onívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -5261,7 +5264,7 @@ test("Vivificar groups multiple legal self-actions without hidden priority", () 
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Brotamento", "Respiração anaeróbia"],
+        traits: ["Brotamento", "Respiração anaeróbia", "Herbívoro"],
       },
       { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),
