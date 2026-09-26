@@ -19,6 +19,7 @@ import {
   eggPlacementTargets,
   domesticPlacementTargets,
   socialDefenseTargets,
+  serotoninRepositionTargets,
   ovoviviparousPlacementTargets,
   parasitismTargets,
   vivificationActionsForPiece,
@@ -224,6 +225,15 @@ $("board").addEventListener("click", (event) => {
       dispatch({ type: "SOCIAL_SACRIFICE", id: p.id });
     return;
   }
+  if (state.phase === "serotonin-reposition") {
+    if (
+      serotoninRepositionTargets(state).some(
+        (target) => target.r === r && target.c === c,
+      )
+    )
+      dispatch({ type: "SEROTONIN_REPOSITION", r, c });
+    return;
+  }
   const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
   if (actor?.id === p?.id && actor?.owner === state.current) {
     const vivificationActions = vivificationActionsForPiece(state, actor);
@@ -309,7 +319,9 @@ $("pass").addEventListener("click", () =>
       ? { type: "SKIP_MANIPULATION" }
       : controller.state.phase === "build"
         ? { type: "SKIP_BUILD" }
-        : { type: "PASS" },
+        : controller.state.phase === "serotonin-reposition"
+          ? { type: "SKIP_SEROTONIN_REPOSITION" }
+          : { type: "PASS" },
   ),
 );
 $("undo-neocortex").addEventListener("click", () => {

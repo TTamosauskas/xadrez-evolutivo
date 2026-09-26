@@ -78,6 +78,7 @@ import {
   buddingResource,
   canUseFertileResource,
 } from "./reproduction-traits.js";
+import { offspringPlacementPreference } from "./positioning.js";
 import {
   transmitSexualPathogen,
   tryVectorPathogen,
@@ -778,51 +779,84 @@ function placeBrood(
     unrestricted = ordinary.filter(
       (profile) => !aquaticAnimals.includes(profile),
     ),
-    climbers = brood.filter((profile) => has(profile, "Trepadeira"));
+    climbers = brood.filter((profile) => has(profile, "Trepadeira")),
+    placementEffects = new Set();
   let born = 0;
+
+  const hasDirectedPlacement = (profile) =>
+    ["Testosterona", "Corticosteroides", "Ocitocina"].some((trait) =>
+      has(profile, trait),
+    );
 
   const placeGroup = (profiles, placementProfile = null) => {
     if (!profiles.length) return;
-    const cells = freeCells(ctx, origin, dispersal, placementProfile),
-      count = Math.min(profiles.length, cells.length),
-      targets = direction
-        ? chooseCellsTowardEnemy(
-            ctx.state,
-            cells,
-            origin,
-            count,
-            direction,
-          )
-        : chooseCells(ctx.state, cells, origin, count, dispersal);
-    for (let i = 0; i < targets.length; i++) {
-      spawnChild(ctx.state, profiles[i], targets[i].r, targets[i].c);
+    const directed = profiles.some(hasDirectedPlacement);
+    if (!directed) {
+      const cells = freeCells(ctx, origin, dispersal, placementProfile),
+        count = Math.min(profiles.length, cells.length),
+        targets = direction
+          ? chooseCellsTowardEnemy(
+              ctx.state,
+              cells,
+              origin,
+              count,
+              direction,
+            )
+          : chooseCells(ctx.state, cells, origin, count, dispersal);
+      for (let i = 0; i < targets.length; i++) {
+        spawnChild(ctx.state, profiles[i], targets[i].r, targets[i].c);
+        born++;
+      }
+      return;
+    }
+
+    for (const profile of profiles) {
+      const cells = freeCells(ctx, origin, dispersal, placementProfile);
+      if (!cells.length) break;
+      const preference = offspringPlacementPreference(
+          ctx.state,
+          cells,
+          origin,
+          profile,
+        ),
+        candidates = direction
+          ? chooseCellsTowardEnemy(
+              ctx.state,
+              preference.cells,
+              origin,
+              preference.cells.length,
+              direction,
+            )
+          : preference.cells,
+        target = pick(ctx.state, candidates);
+      if (!target) continue;
+      for (const trait of preference.appliedTraits)
+        placementEffects.add(trait);
+      spawnChild(ctx.state, profile, target.r, target.c);
       born++;
     }
   };
 
   placeGroup(aquaticAnimals, aquaticAnimals[0] ?? null);
   placeGroup(unrestricted, unrestricted[0] ?? null);
+  placeGroup(climbers, climbers[0] ?? null);
 
-  if (climbers.length) {
-    const cells = freeCells(ctx, origin, dispersal, climbers[0]),
-      count = Math.min(climbers.length, cells.length),
-      targets = direction
-        ? chooseCellsTowardEnemy(
-            ctx.state,
-            cells,
-            origin,
-            count,
-            direction,
-          )
-        : chooseCells(ctx.state, cells, origin, count, dispersal);
-    for (let i = 0; i < targets.length; i++) {
-      spawnChild(ctx.state, climbers[i], targets[i].r, targets[i].c);
-      born++;
-    }
-  }
+  const messages = {
+    Testosterona:
+      "🐊 Testosterona orientou a prole para posições ofensivas.",
+    Corticosteroides:
+      "🦎 Corticosteroides orientaram a prole para posições protegidas.",
+    Ocitocina:
+      "🐶 Ocitocina aproximou a prole do grupo aliado.",
+  };
+  for (const trait of placementEffects)
+    emitPassiveEffect(ctx.state, trait, messages[trait], {
+      outcome: "directed-offspring-placement",
+      value: born,
+    });
+
   return born;
 }
-
 function adjacentEggCells(ctx, parent) {
   const cells = [];
   for (let dr = -1; dr <= 1; dr++)
@@ -1193,6 +1227,34 @@ function competitiveReproductionPressure(
   };
 }
 
+export function dopaminePressureReductionAvailable(state, parent) {
+  if (!state || !parent || !has(parent, "Dopamina")) return false;
+  const population = activePopulation(state),
+    pressureLatched =
+      population >= 24
+        ? true
+        : population < 16
+          ? false
+          : !!(
+              state.populationLatched?.blue ||
+              state.populationLatched?.amber
+            ),
+    competitive = competitiveReproductionPressure(
+      state,
+      parent,
+      pressureLatched,
+    );
+  return (
+    populationReproductionCooldown(
+      population,
+      pressureLatched,
+      state.geologicalStage,
+    ) +
+      competitive.cooldown >
+    0
+  );
+}
+
 export function consumeReproductionResource(state, parent, cell) {
   if (!consumeFertileTerrain(state, cell)) return 0;
   let consumed = 1;
@@ -1441,7 +1503,7 @@ export function reproduce(
         ? 0
         : Math.min(populationLimit, competitivePressure.limit),
     wanted = Math.min(baseWanted, pressureLimit),
-    cooldown = (piece) => {
+    cooldown = (piece, feeder = false) => {
       let metabolic = metabolicReproductionCooldown(piece);
       if (mates.length && has(piece, "Ovulação Induzida")) {
         const beforeOvulation = metabolic;
@@ -1467,23 +1529,39 @@ export function reproduce(
         metabolic *= 2;
       if (options.trophicEfficiency) metabolic = Math.max(1, metabolic - 1);
       if (mates.length > 1) metabolic *= 2;
-      return (
-        round(state) +
-        metabolic +
+
+      let pressure =
         populationReproductionCooldown(
           activePopulation(state),
           pressureLatched,
           state.geologicalStage,
-        ) +
-        competitivePressure.cooldown
-      );
+        ) + competitivePressure.cooldown;
+      if (
+        feeder &&
+        pressure > 0 &&
+        has(piece, "Dopamina") &&
+        TROPHIC_REPRODUCTION_RESOURCES.has(resourceKind)
+      ) {
+        pressure--;
+        emitPassiveEffect(
+          state,
+          "Dopamina",
+          "🤤 Dopamina reduziu em 1 rodada a pressão reprodutiva.",
+          {
+            pieceId: piece.id,
+            outcome: "reduced-reproductive-pressure",
+            value: 1,
+          },
+        );
+      }
+      return round(state) + metabolic + pressure;
     },
     applyCooldown = () => {
-      const apply = (piece) => {
-        piece.nextReproductionRound = cooldown(piece);
+      const apply = (piece, feeder = false) => {
+        piece.nextReproductionRound = cooldown(piece, feeder);
       };
-      apply(parent);
-      for (const candidate of mates) apply(candidate);
+      apply(parent, true);
+      for (const candidate of mates) apply(candidate, false);
     },
     makeRequestedBrood = (count) => {
       const brood = [],

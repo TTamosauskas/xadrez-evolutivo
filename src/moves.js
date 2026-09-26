@@ -78,6 +78,40 @@ export const resting = (state, p) =>
   regenerationResting(state, p) ||
   pupating(state, p);
 
+export function serotoninRepositionTargets(state) {
+  const pending = state.serotoninReposition;
+  if (state.phase !== "serotonin-reposition" || !pending) return [];
+  const piece = state.pieces.find(
+    (candidate) =>
+      candidate.id === pending.id && candidate.owner === state.current,
+  );
+  if (!piece) return [];
+
+  const terrestrialRestriction =
+      currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+      !has(piece, "Locomoção Terrestre"),
+    targets = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = piece.r + dr,
+        c = piece.c + dc;
+      if (
+        !inside(r, c) ||
+        ecologicalDomainBlocked(state, piece.owner, r, c) ||
+        at(state, r, c) ||
+        eggAt(state, r, c) ||
+        plantSeedAt(state, r, c) ||
+        fragmentAt(state, r, c) ||
+        barrierAt(state, r, c) ||
+        (terrestrialRestriction && terrain(state, r, c) !== "fertile")
+      )
+        continue;
+      targets.push({ r, c });
+    }
+  return targets;
+}
+
 export function manipulationTargets(state) {
   const pending = state.manipulation;
   if (state.phase !== "manipulate" || !pending) return [];
@@ -850,6 +884,15 @@ export function pieceActionState(state, piece) {
 export function legalActions(state) {
   if (state.result) return [];
   if (state.phase === "collapse") return [{ type: "DOMAIN_COLLAPSE" }];
+  if (state.phase === "serotonin-reposition")
+    return [
+      ...serotoninRepositionTargets(state).map((target) => ({
+        type: "SEROTONIN_REPOSITION",
+        r: target.r,
+        c: target.c,
+      })),
+      { type: "SKIP_SEROTONIN_REPOSITION" },
+    ];
   if (state.phase === "manipulate")
     return [
       ...manipulationTargets(state).map((target) => ({

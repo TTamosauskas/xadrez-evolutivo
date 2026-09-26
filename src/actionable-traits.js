@@ -8,6 +8,7 @@ import {
   eventBarrierAt,
   terrain,
   reproductionReady,
+  juvenile,
   photosynthesisAvailable,
   organicResidueAt,
   carcassAt,
@@ -24,7 +25,10 @@ import {
   paedogenesisReady,
   buddingCanProgress,
   monogamySurvivalBonus,
+  parentalCareProtects,
+  predatoryReproductionAvailable,
 } from "./reproduction-traits.js";
+import { dopaminePressureReductionAvailable } from "./reproduction.js";
 
 const firstExplicitTrait = (piece, traits) =>
   traits.find((trait) => (piece?.traits ?? []).includes(trait)) ?? null;
@@ -149,6 +153,31 @@ export function actionableTraitsForPiece(state, piece) {
       !!organicResidueAt(state, r, c) || !!carcassAt(state, r, c);
 
   if (
+    has(piece, "Córtex Pré-Frontal") &&
+    targets.some((target) => !target.stay)
+  )
+    actionable.add("Córtex Pré-Frontal");
+
+  if (
+    has(piece, "Serotonina") &&
+    targets.some((target) => {
+      if (!target.capture) return false;
+      const victim = at(state, target.r, target.c);
+      if (!victim || victim.owner === piece.owner) return false;
+      return (
+        ["Notívago", "Velocidade", "Pele grossa", "Madeira"].some((trait) =>
+          has(victim, trait),
+        ) ||
+        parentalCareProtects(state, victim) ||
+        monogamySurvivalBonus(state, victim) > 0 ||
+        (juvenile(state, victim) &&
+          (victim.biparentalGuardCharges ?? 0) > 0)
+      );
+    })
+  )
+    actionable.add("Serotonina");
+
+  if (
     locomotionTrait &&
     targets.some(
       (target) =>
@@ -168,6 +197,12 @@ export function actionableTraitsForPiece(state, piece) {
     if (target.cannibal) actionable.add("Canibalismo");
 
     if (target.eggCapture) {
+      if (
+        reproductiveReady &&
+        has(piece, "Dopamina") &&
+        dopaminePressureReductionAvailable(state, piece)
+      )
+        actionable.add("Dopamina");
       const eggTrait = firstExplicitTrait(piece, [
         "Ovífagia",
         "Onívoro Oportunista",
@@ -220,6 +255,14 @@ export function actionableTraitsForPiece(state, piece) {
       )
         actionable.add("Carapaça");
 
+      if (
+        reproductiveReady &&
+        has(piece, "Dopamina") &&
+        predatoryReproductionAvailable(piece, victim) &&
+        dopaminePressureReductionAvailable(state, piece)
+      )
+        actionable.add("Dopamina");
+
       if (reproductiveReady) {
         const photosyntheticPrey = has(victim, "Fotossíntese");
         if ((piece.traits ?? []).includes("Onívoro"))
@@ -261,6 +304,11 @@ export function actionableTraitsForPiece(state, piece) {
     }
 
     if (reproductiveReady && carcassAt(state, target.r, target.c)) {
+      if (
+        has(piece, "Dopamina") &&
+        dopaminePressureReductionAvailable(state, piece)
+      )
+        actionable.add("Dopamina");
       const scavengerTrait = firstExplicitTrait(piece, [
         "Necrófago",
         "Onívoro Oportunista",
@@ -271,8 +319,14 @@ export function actionableTraitsForPiece(state, piece) {
       reproductiveReady &&
       organicResidueAt(state, target.r, target.c) &&
       (piece.traits ?? []).includes("Coprofagia")
-    )
+    ) {
       actionable.add("Coprofagia");
+      if (
+        has(piece, "Dopamina") &&
+        dopaminePressureReductionAvailable(state, piece)
+      )
+        actionable.add("Dopamina");
+    }
 
     if (
       (piece.traits ?? []).includes("Locomoção Terrestre") &&
@@ -332,6 +386,20 @@ export function actionableTraitsForPiece(state, piece) {
   )
     actionable.add("Pedogênese");
 
+  const reproductiveOpportunity =
+    reproductiveReady &&
+    (targets.some(
+      (target) =>
+        target.stay ||
+        target.capture ||
+        target.eggCapture ||
+        hasDetritusAt(target.r, target.c),
+    ) ||
+      actions.some((action) => action.type === "PARTNER"));
+  if (reproductiveOpportunity)
+    for (const trait of ["Testosterona", "Corticosteroides", "Ocitocina"])
+      if (has(piece, trait)) actionable.add(trait);
+
   return actionable;
 }
 
@@ -363,6 +431,13 @@ function sociableGroup(state, victim) {
 }
 
 function addActiveStateTraits(state, piece, traits) {
+  if (
+    state.phase === "serotonin-reposition" &&
+    state.serotoninReposition?.id === piece.id &&
+    has(piece, "Serotonina")
+  )
+    traits.add("Serotonina");
+
   const actionState = pieceActionState(state, piece),
     waitingTrait = ACTIVE_WAIT_TRAITS[actionState.reason];
   if (waitingTrait && has(piece, waitingTrait))
@@ -554,6 +629,9 @@ function markCaptureContext(state, attacker, victim, byId) {
 
     const nocturnalEvasion =
       nocturnal && !has(attacker, "Visão Noturna");
+    if (!nocturnalEvasion && has(victim, "Adrenalina"))
+      victimTraits.add("Adrenalina");
+
     if (!nocturnalEvasion && has(victim, "Velocidade")) {
       victimTraits.add("Velocidade");
       if (has(attacker, "Velocidade"))

@@ -1027,6 +1027,7 @@ export function createState(seed = Date.now(), options = {}) {
     eggPlacement: null,
     domesticPlacement: null,
     socialDefense: null,
+    serotoninReposition: null,
     nextId: 1,
     nextNotice: 1,
     nextPassiveEffect: 1,
@@ -1575,6 +1576,10 @@ export function createPassiveToastTestState(
 
   state.board[square(ovulationParent.r, ovulationParent.c)] = "fertile";
   state.board[square(ovulationMate.r, ovulationMate.c)] = "fertile";
+  for (const piece of state.pieces)
+    if (piece.toastTestRole?.endsWith("-attacker"))
+      piece.nextReproductionRound = round(state) + 100;
+
   state.toastTest = {
     step: 1,
     roles: Object.fromEntries(
@@ -2512,6 +2517,7 @@ export function assertState(state) {
       "egg-placement",
       "domestic-placement",
       "social-defense",
+      "serotonin-reposition",
       "collapse",
       "over",
     ].includes(state.phase)
@@ -2569,6 +2575,23 @@ export function assertState(state) {
       state.socialDefense.memberIds.some((id) => !integer(id, 1)))
   )
     throw Error("Sociabilidade inválida.");
+  if (
+    (state.phase === "serotonin-reposition" && !state.serotoninReposition) ||
+    (state.phase !== "serotonin-reposition" && state.serotoninReposition)
+  )
+    throw Error("Fase serotoninérgica inválida.");
+  if (
+    state.serotoninReposition &&
+    (!integer(state.serotoninReposition.id, 1) ||
+      typeof state.serotoninReposition.defense !== "string" ||
+      !state.pieces.some(
+        (piece) =>
+          piece.id === state.serotoninReposition.id &&
+          piece.owner === state.current &&
+          has(piece, "Serotonina"),
+      ))
+  )
+    throw Error("Reposicionamento serotoninérgico inválido.");
   if (!Array.isArray(state.pieces) || state.pieces.length > 64)
     throw Error("População inválida.");
   const ids = new Set(),

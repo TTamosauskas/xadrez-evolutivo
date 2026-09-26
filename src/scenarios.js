@@ -358,6 +358,7 @@ export const EARTH_FOUNDER_GENOMES = {
       "Escavador",
       "Construtor de Nicho",
       "Polegar Opositor",
+      "Córtex Pré-Frontal",
     ],
     rank: 5,
   },

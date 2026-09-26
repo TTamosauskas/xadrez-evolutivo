@@ -34,9 +34,21 @@ export const TRAITS = {
     "🔀",
     "Libera deslocamentos para casas vazias segundo a geometria oficial da peça; capturas continuam dependendo de Predação.",
   ],
+  Serotonina: [
+    "😊",
+    "Após uma tentativa de captura ser frustrada por uma defesa, permite um reposicionamento voluntário para uma casa adjacente vazia válida e encerra o turno.",
+  ],
+  Dopamina: [
+    "🤤",
+    "Após reprodução bem-sucedida por alimento, reduz em uma rodada a pressão ecológica ou competitiva aplicada à recuperação reprodutiva.",
+  ],
   Vertebrado: [
     "🐟",
     "Plano corporal bilateral mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e a evolução completa de Peão até Cavalo, Bispo, Torre e Rainha; Rei continua disponível.",
+  ],
+  Adrenalina: [
+    "🚨",
+    "Ao sofrer uma tentativa de captura, tem 1/6 de chance de escapar para uma casa diagonal vazia válida; o agressor ocupa a posição abandonada.",
   ],
   "Artrópode": [
     "🦀",
@@ -116,6 +128,18 @@ export const TRAITS = {
   "Ovulação Induzida": [
     "🐇",
     "Na reprodução sexuada, reduz em uma rodada a recuperação metabólica do portador, até o mínimo de uma rodada.",
+  ],
+  Testosterona: [
+    "🐊",
+    "Orienta a colocação automática da prole para as casas válidas com maior potencial ofensivo.",
+  ],
+  Corticosteroides: [
+    "🦎",
+    "Orienta a colocação automática da prole para as casas válidas com menor exposição a ataques adversários.",
+  ],
+  Ocitocina: [
+    "🐶",
+    "Orienta a colocação automática da prole para formar agrupamentos próximos de aliados; quando há outra orientação da prole, atua como critério social de desempate.",
   ],
   "Respiração anaeróbia": [
     "⚪",
@@ -208,6 +232,10 @@ export const TRAITS = {
   "Polegar Opositor": [
     "✋",
     "Permite transferir o terreno fértil ou hostil de chegada para uma casa neutra adjacente.",
+  ],
+  "Córtex Pré-Frontal": [
+    "🤔",
+    "Ao selecionar a peça, destaca a posição legal com melhor potencial ofensivo e a posição legal com melhor segurança defensiva.",
   ],
   "Neocórtex Desenvolvido": [
     "🧠",
@@ -444,6 +472,7 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   Angiospermas: ["Embriófitas", "Traqueófitas"],
   Eusocialidade: ["Sociabilidade"],
   "Acasalamento Múltiplo": ["Promiscuidade"],
+  "Neocórtex Desenvolvido": ["Córtex Pré-Frontal"],
 };
 export const has = (piece, trait) => {
   const activeTraits = [
