@@ -177,7 +177,7 @@ test("Respiração Cutânea consumes orthogonally adjacent fertility without mov
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Respiração Cutânea"],
+      traits: ["Respiração Cutânea", "Herbívoro"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -203,14 +203,14 @@ test("Respiração Cutânea consumes orthogonally adjacent fertility without mov
   assertState(s);
 });
 
-test("diet and sexual strategy do not disable Respiração Cutânea", () => {
+test("Herbívoro keeps Respiração Cutânea on fertile resources after the Ediacaran", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Carnívoro", "Respiração Cutânea", "Reprodução Sexuada"],
+      traits: ["Herbívoro", "Respiração Cutânea"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
