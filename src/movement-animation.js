@@ -45,13 +45,18 @@ export function movementAnimationPlan(
   points,
   {
     fast = false,
+    reducedMotion = false,
     kind = "move",
     jumpedIndex = -1,
     knightCorrection = false,
   } = {},
 ) {
   if (!Array.isArray(points) || points.length < 2) return null;
-  const timing = fast ? FAST_TIMING : NORMAL_TIMING,
+  const timing = reducedMotion
+      ? { move: 1, hold: fast ? 90 : 180, jump: 1 }
+      : fast
+        ? FAST_TIMING
+        : NORMAL_TIMING,
     frames = [{ transform: transform(points[0]), time: 0 }],
     clock = { value: 0 };
 
@@ -101,9 +106,9 @@ export function animateMovementTrace(
   )
     return false;
 
-  const win = doc.defaultView;
-  if (win?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches)
-    return false;
+  const win = doc.defaultView,
+    reducedMotion =
+      win?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
 
   const board = doc.getElementById("board"),
     originCell = board?.querySelector(
@@ -146,6 +151,7 @@ export function animateMovementTrace(
       : -1,
     plan = movementAnimationPlan(points, {
       fast,
+      reducedMotion,
       kind: trace.kind,
       jumpedIndex,
       knightCorrection: trace.knightCorrection === true,

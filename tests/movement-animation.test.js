@@ -109,3 +109,16 @@ test("automatic mode keeps the same steps with shorter timing", () => {
   assert.equal(fast.keyframes.length, normal.keyframes.length);
   assert.ok(fast.duration < normal.duration);
 });
+
+
+test("reduced motion uses discrete near-instant hops with visible holds", () => {
+  const points = [point(0), point(64), point(128)],
+    plan = movementAnimationPlan(points, { reducedMotion: true });
+  assert.equal(plan.keyframes.length, 5);
+  assert.equal(plan.duration, 362);
+  const firstCell = plan.keyframes.filter((frame) =>
+    frame.transform.includes("translate(64px, 0px)"),
+  );
+  assert.equal(firstCell.length, 2);
+  assert.ok(firstCell[1].offset > firstCell[0].offset);
+});

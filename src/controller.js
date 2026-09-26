@@ -67,8 +67,7 @@ export class Controller {
     }
   }
   refresh() {
-    const busy = this.conwayTimer !== null ? "conway" : !!this.job,
-      movementTrace = this.pendingMovementTrace;
+    const movementTrace = this.pendingMovementTrace;
     this.pendingMovementTrace = null;
     if (this.state.result) {
       if (!this.resultReady && this.resultTimer === null) {
@@ -80,12 +79,14 @@ export class Controller {
           this.render(this.state, false, true);
         }, this.resultDelay);
       }
+      const busy = this.conwayTimer !== null ? "conway" : !!this.job;
       this.render(this.state, busy, this.resultReady, movementTrace);
       return;
     }
     this.resultReady = false;
-    this.render(this.state, busy, true, movementTrace);
     if (!this.scheduleConway()) this.schedule();
+    const busy = this.conwayTimer !== null ? "conway" : !!this.job;
+    this.render(this.state, busy, true, movementTrace);
   }
 
   scheduleConway() {
@@ -111,7 +112,6 @@ export class Controller {
       this.conwayTimer = null;
       this.dispatch({ type: "CONWAY_STEP", revision }, { ai: true });
     }, this.conwayDelay);
-    this.render(this.state, "conway");
     return true;
   }
   replace(state) {
@@ -287,7 +287,6 @@ export class Controller {
       this.cancel();
       this.dispatch({ ...action, revision }, { ai: true });
     }, delay);
-    this.render(this.state, true);
   }
   schedule() {
     const state = this.state;
@@ -386,7 +385,6 @@ export class Controller {
       this.clearTimer(this.job.timer);
       this.job.timer = this.setTimer(() => finish(null), 120);
     }
-    this.render(this.state, true);
   }
   dispose() {
     this.cancel();

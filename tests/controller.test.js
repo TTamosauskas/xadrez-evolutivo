@@ -574,3 +574,54 @@ test("ecological collapse advances automatically one organism at a time", () => 
   assert.ok(resultTimer);
   controller.dispose();
 });
+
+
+test("single-player scheduling preserves a long movement trace in the only immediate render", () => {
+  const state = fixture([
+      { owner: "blue", r: 4, c: 0, rank: 3 },
+      { owner: "amber", r: 0, c: 7, rank: 4 },
+    ]),
+    renders = [],
+    timers = new Map();
+  let nextTimer = 0;
+  const controller = new Controller(state, {
+    render: (_state, busy, _showResult, movementTrace) =>
+      renders.push({ busy, movementTrace }),
+    workerFactory: () => ({
+      postMessage() {},
+      terminate() {},
+    }),
+    setTimer: (fn, delay) => {
+      const id = ++nextTimer;
+      timers.set(id, { fn, delay });
+      return id;
+    },
+    clearTimer: (id) => timers.delete(id),
+  });
+  controller.mode = "single";
+
+  const actor = controller.state.pieces[0];
+  assert.equal(
+    controller.dispatch({
+      type: "MOVE",
+      id: actor.id,
+      r: 4,
+      c: 4,
+      revision: controller.state.revision,
+    }),
+    true,
+  );
+
+  assert.equal(renders.length, 1);
+  assert.equal(renders[0].busy, true);
+  assert.deepEqual(
+    renders[0].movementTrace?.path,
+    [
+      { r: 4, c: 1 },
+      { r: 4, c: 2 },
+      { r: 4, c: 3 },
+      { r: 4, c: 4 },
+    ],
+  );
+  controller.dispose();
+});
