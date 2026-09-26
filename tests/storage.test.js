@@ -71,6 +71,17 @@ test("current saves rename Garras to Presas across traits, genome and discoverie
   assertState(restored);
 });
 
+test("current saves without passive-effect history normalize safely", () => {
+  const state = createState(18);
+  delete state.passiveEffects;
+  delete state.nextPassiveEffect;
+
+  const restored = deserialize(JSON.stringify(state));
+  assert.deepEqual(restored.passiveEffects, []);
+  assert.equal(restored.nextPassiveEffect, 1);
+  assertState(restored);
+});
+
 test("current saves without the pulmonary locus normalize safely", () => {
   const state = createState(16);
   for (const piece of state.pieces)
