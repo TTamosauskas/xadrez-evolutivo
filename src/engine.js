@@ -32,8 +32,6 @@ import {
   captureDisturbanceAt,
   lethalHazardAt,
   organicResidueHazardousTo,
-  hadeanHabitatSaturated,
-  grantHadeanPredation,
 } from "./state.js";
 import {
   movesFor,
@@ -212,63 +210,10 @@ function markHadeanTutorialStep(state, step) {
   };
   log(state, "🌋 Tutorial Hadeano: " + labels[step] + " concluído.");
 }
-function hadeanPredationTransitionComplete(state) {
-  if (state.geologicalStage !== "hadean") return true;
-  const granted = state.hadeanPredationGranted ?? {};
-  return granted.blue === true && granted.amber === true;
-}
-
-function advanceHadeanPredation(state) {
-  if (
-    state.geologicalStage !== "hadean" ||
-    !hadeanHabitatSaturated(state)
-  )
-    return false;
-
-  state.hadeanPredationGranted ??= {
-    blue: false,
-    amber: false,
-  };
-  if (state.hadeanPredationGranted[state.current]) return false;
-
-  const piece = grantHadeanPredation(state, state.current);
-  if (!piece) return false;
-
-  state.hadeanPredationGranted[state.current] = true;
-  emitPassiveEffect(
-    state,
-    "Predação",
-    "Nova Mutação: 👾 Predação.",
-    {
-      pieceId: piece.id,
-      outcome: "new-mutation",
-    },
-  );
-  log(
-    state,
-    `Nova Mutação: ${OWNERS[state.current]} · Predação após saturação do habitat.`,
-  );
-
-  if (hadeanPredationTransitionComplete(state)) {
-    state.hadeanCaptureUnlocked = true;
-    log(
-      state,
-      "Hadeano: Brancas e Pretas agora possuem 👾 Predação; a competição por captura pode decidir a linhagem sobrevivente.",
-    );
-  }
-  return true;
-}
-
 function extinction(state) {
   if (state.result) return true;
   const blue = state.pieces.some((p) => p.owner === "blue"),
     amber = state.pieces.some((p) => p.owner === "amber");
-  if (
-    state.geologicalStage === "hadean" &&
-    (!blue || !amber) &&
-    !hadeanPredationTransitionComplete(state)
-  )
-    return false;
   if (!blue || !amber) {
     const simultaneous = !blue && !amber,
       extinctionFounder = simultaneous ? state.lastDeathPiece ?? null : null,
@@ -682,7 +627,6 @@ function advanceTurn(ctx) {
   recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
-  advanceHadeanPredation(state);
   tickSevereEventTurn(state);
   restoreAquaticFertility(state);
   state.fertileTraces = state.fertileTraces.filter(

@@ -34,6 +34,7 @@ import {
   consumeFertileTerrain,
   lethalHazardAt,
   photosynthesisDelayTurns,
+  hadeanHabitatSaturated,
 } from "./state.js";
 import {
   BASAL_GENETIC_TRAIT,
@@ -640,6 +641,76 @@ function makeRequestedBrood(count) {
   return brood;
 }
 
+function mutateHadeanPredationNewborn(state, child) {
+  if (
+    state.geologicalStage !== "hadean" ||
+    !child ||
+    has(child, "Predação")
+  )
+    return false;
+
+  state.hadeanPredationGranted ??= {
+    blue: false,
+    amber: false,
+  };
+  const opponent = child.owner === "blue" ? "amber" : "blue",
+    firstPredator =
+      !state.hadeanPredationGranted.blue &&
+      !state.hadeanPredationGranted.amber &&
+      hadeanHabitatSaturated(state),
+    answeringPredator =
+      !state.hadeanPredationGranted[child.owner] &&
+      state.hadeanPredationGranted[opponent] === true;
+
+  if (!firstPredator && !answeringPredator) return false;
+
+  child.genome = forceGenomeTrait(
+    child.genome,
+    "Predação",
+    "dominant",
+  );
+  syncGenomePhenotype(child, "Predação");
+  child.ancestry = [
+    ...new Set([
+      ...(child.ancestry ?? []),
+      "Fotossíntese",
+      "Predação",
+      ...child.traits,
+    ]),
+  ];
+  child.mutations = (child.mutations ?? 0) + 1;
+  delete child.photosynthesisCell;
+  delete child.photosynthesisSinceTurn;
+  delete child.photosynthesisReadyTurn;
+  state.hadeanPredationGranted[child.owner] = true;
+
+  emitPassiveEffect(
+    state,
+    "Predação",
+    "Nova Mutação: 👾 Predação.",
+    {
+      pieceId: child.id,
+      outcome: "new-mutation",
+    },
+  );
+  log(
+    state,
+    `Nova Mutação: ${OWNERS[child.owner]} · 👾 Predação surgiu no descendente em ${coord(child.r, child.c)}.`,
+  );
+
+  if (
+    state.hadeanPredationGranted.blue &&
+    state.hadeanPredationGranted.amber
+  ) {
+    state.hadeanCaptureUnlocked = true;
+    log(
+      state,
+      "Hadeano: Brancas e Pretas já produziram descendentes com 👾 Predação.",
+    );
+  }
+  return true;
+}
+
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
   if (profile.newMutationToast)
@@ -669,6 +740,7 @@ function spawnChild(state, profile, r, c) {
   }
   state.pieces.push(child);
   registerDiscoveries(state, child);
+  mutateHadeanPredationNewborn(state, child);
   return child;
 }
 
