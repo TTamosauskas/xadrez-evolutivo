@@ -173,6 +173,10 @@ test("menu exposes match log and evolutionary history for consultation", () => {
   );
   assert.equal(d.getElementById("arena-mode"), null);
   assert.equal(
+    d.getElementById("toast-test-phase")?.textContent,
+    "🧪 Teste de toasts",
+  );
+  assert.equal(
     d.querySelector('#scenario option[value="earth"]').textContent,
     "Vida na Terra",
   );

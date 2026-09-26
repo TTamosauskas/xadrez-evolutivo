@@ -1365,6 +1365,184 @@ export function createPeriodState(
   });
 }
 
+export function createPassiveToastTestState(
+  seed = Date.now(),
+  discoveries = null,
+) {
+  const state = createState(seed, {
+      scenario: "alternative",
+      geologicalStage: "quaternary",
+      naturalBarriers: false,
+      discoveries,
+    }),
+    baseAnimal = [
+      "Reparo Celular",
+      "Multicelularismo",
+      "Predação",
+      "Simetria Bilateral",
+      "Vertebrado",
+      "Locomoção Primitiva",
+      "Locomoção Articulada",
+      "Locomoção Terrestre",
+    ],
+    older = (traits = [], rank = 4) => ({
+      rank,
+      traits: [...new Set([...baseAnimal, ...traits])],
+      bornRound: 0,
+      maturesRound: 0,
+      nextReproductionRound: 0,
+    }),
+    add = (role, owner, r, c, source) => {
+      const piece = newPiece(state, owner, r, c, source);
+      piece.toastTestRole = role;
+      state.pieces.push(piece);
+      return piece;
+    };
+
+  state.turn = 12;
+  state.current = "blue";
+  state.phase = "move";
+  state.result = null;
+  state.chain = null;
+  state.partner = null;
+  state.manipulation = null;
+  state.building = null;
+  state.eggPlacement = null;
+  state.domesticPlacement = null;
+  state.socialDefense = null;
+  state.pieces = [];
+  state.nextId = 1;
+  state.board.fill("neutral");
+  state.naturalBarriers = [];
+  state.barriers = [];
+  state.notices = [];
+  state.passiveEffects = [];
+  state.nextPassiveEffect = 1;
+  state.logs = [];
+  state.maxGenerationReached = 0;
+
+  const ovulationParent = add(
+      "ovulation-parent",
+      "blue",
+      7,
+      0,
+      older([
+        "Reprodução Sexuada",
+        "Ovíparo",
+        "Ovíparos Amniotas",
+        "Vivíparo",
+        "Ovulação Induzida",
+      ]),
+    ),
+    ovulationMate = add(
+      "ovulation-mate",
+      "blue",
+      7,
+      1,
+      older([
+        "Reprodução Sexuada",
+        "Ovíparo",
+        "Ovíparos Amniotas",
+        "Vivíparo",
+      ]),
+    );
+
+  add(
+    "fangs-attacker",
+    "amber",
+    0,
+    0,
+    older(["Carnívoro", "Presas"]),
+  );
+  add(
+    "thick-skin-defender",
+    "blue",
+    1,
+    0,
+    older(["Herbívoro", "Pele grossa"]),
+  );
+
+  add(
+    "night-vision-attacker",
+    "blue",
+    3,
+    2,
+    older(["Notívago", "Visão Noturna"]),
+  );
+  add(
+    "nocturnal-defender",
+    "amber",
+    3,
+    3,
+    older(["Notívago"]),
+  );
+
+  add(
+    "carapace-attacker",
+    "amber",
+    4,
+    7,
+    older(["Carapaça"]),
+  );
+  add(
+    "horn-defender",
+    "blue",
+    5,
+    7,
+    older(["Chifre"]),
+  );
+
+  add(
+    "binocular-attacker",
+    "blue",
+    2,
+    0,
+    older(["Percepção Espacial", "Visão Binocular"], 3),
+  );
+  add(
+    "camouflage-defender",
+    "amber",
+    2,
+    4,
+    older(["Camuflagem"]),
+  );
+
+  add(
+    "biparental-guard-attacker",
+    "amber",
+    5,
+    2,
+    older([], 4),
+  );
+  const juvenile = add(
+    "biparental-guard-child",
+    "blue",
+    5,
+    3,
+    {
+      ...older([], 4),
+      bornRound: round(state),
+      maturesRound: round(state) + 3,
+      biparentalGuardCharges: 1,
+    },
+  );
+
+  state.board[square(ovulationParent.r, ovulationParent.c)] = "fertile";
+  state.board[square(ovulationMate.r, ovulationMate.c)] = "fertile";
+  state.toastTest = {
+    step: 1,
+    roles: Object.fromEntries(
+      state.pieces.map((piece) => [piece.toastTestRole, piece.id]),
+    ),
+  };
+  log(
+    state,
+    "🧪 Fase teste de toasts: siga as seis ações indicadas no Menu; todas foram preparadas para produzir feedback passivo sem depender de sorte.",
+  );
+  juvenile.stationarySinceRound = round(state);
+  return assertState(state);
+}
+
 export function activateOrigin(state) {
   if (state.phase !== "origin" || !state.origin)
     throw Error("Hadeano indisponível.");
