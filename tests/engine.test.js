@@ -4344,6 +4344,8 @@ test("Espinhos has a one-in-ten chance to kill the aggressor on a capture attemp
   assert.ok(!s.pieces.some((piece) => piece.id === attacker.id));
   assert.ok(s.pieces.some((piece) => piece.id === defender.id));
   assert.ok(s.captureDisturbances.some((entry) => entry.cell === 35));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Espinhos");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "killed-attacker");
   assertState(s);
 });
 
@@ -4370,6 +4372,8 @@ test("Regeneração prevents one non-capture death but never a capture", () => {
   assert.equal(ctx.kill(p.id, "casa hostil"), false);
   assert.ok(s.pieces.some((x) => x.id === p.id));
   assert.equal(p.regenerationUsed, true);
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Regeneração");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "prevented-death");
   assert.equal(movesFor(s, p).length, 0);
   assert.equal(ctx.kill(p.id, "casa hostil"), true);
   assert.ok(!s.pieces.some((x) => x.id === p.id));
@@ -4433,6 +4437,8 @@ test("Notívago evades on even rounds and Visão Noturna cancels the defense", (
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((piece) => piece.id === 2));
   assert.ok(s.logs.some((entry) => entry.text.includes("Notívago escapou")));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Notívago");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "prevented-capture");
 
   s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Visão Noturna"] },
@@ -4443,6 +4449,13 @@ test("Notívago evades on even rounds and Visão Noturna cancels the defense", (
   s.rng = 0;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Visão Noturna" &&
+        effect.outcome === "neutralized-nocturnal-evasion",
+    ),
+  );
 });
 
 test("Velocidade evades captures unless the aggressor also has Velocidade", () => {
@@ -4455,6 +4468,8 @@ test("Velocidade evades captures unless the aggressor also has Velocidade", () =
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((piece) => piece.id === 2));
   assert.ok(s.logs.some((entry) => entry.text.includes("Velocidade permitiu")));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Velocidade");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "prevented-capture");
 
   s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Velocidade"] },
@@ -4476,6 +4491,8 @@ test("Pele grossa resists captures unless the aggressor has Presas", () => {
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((piece) => piece.id === 2));
   assert.ok(s.logs.some((entry) => entry.text.includes("Pele grossa resistiu")));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Pele grossa");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "prevented-capture");
 
   s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Presas"] },
@@ -4485,6 +4502,13 @@ test("Pele grossa resists captures unless the aggressor has Presas", () => {
   s.rng = 0;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Presas" &&
+        effect.outcome === "neutralized-thick-skin",
+    ),
+  );
 });
 
 test("Incubação protects adjacent eggs from Ovífagia", () => {
@@ -4896,6 +4920,8 @@ test("Chifre can kill an unarmored aggressor before capture", () => {
   assert.ok(!s.pieces.some((piece) => piece.id === 1));
   assert.ok(s.pieces.some((piece) => piece.id === 2 && piece.r === 4 && piece.c === 4));
   assert.ok(s.captureDisturbances.some((entry) => entry.cell === 35));
+  assert.equal(s.passiveEffects.at(-1)?.trait, "Chifre");
+  assert.equal(s.passiveEffects.at(-1)?.outcome, "killed-attacker");
   assertState(s);
 });
 
@@ -4915,6 +4941,13 @@ test("Carapaça prevents Chifre counterattack", () => {
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((piece) => piece.id === 1 && piece.r === 4 && piece.c === 4));
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Carapaça" &&
+        effect.outcome === "neutralized-horn",
+    ),
+  );
   assertState(s);
 });
 
@@ -5075,6 +5108,8 @@ test("Mimetismo can redirect capture damage to an adjacent piece", () => {
   }
   assert.ok(result);
   assert.ok(result.pieces.some((piece) => piece.id === 2));
+  assert.equal(result.passiveEffects.at(-1)?.trait, "Mimetismo");
+  assert.equal(result.passiveEffects.at(-1)?.outcome, "redirected-capture");
   assertState(result);
 });
 
