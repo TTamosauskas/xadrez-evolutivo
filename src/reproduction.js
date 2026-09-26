@@ -26,7 +26,6 @@ import {
   fertilityPaused,
   activePopulation,
   log,
-  notice,
   emitPassiveEffect,
   registerDiscoveries,
   reproductionReady,
@@ -320,7 +319,18 @@ function mutation(
   const firstAppearance = !state.seenMutations.includes(label);
   if (firstAppearance) {
     state.seenMutations.push(label);
-    notice(state, "Novas mutações", [label]);
+    const mutationTrait = choice.geneGain ?? choice.geneLoss ?? p.traits[0] ?? "Respiração anaeróbia",
+      lostTrait = label.startsWith("Perda de ")
+        ? label.slice("Perda de ".length)
+        : null,
+      traitName = TRAITS[label] ? label : lostTrait,
+      icon = traitName && TRAITS[traitName] ? TRAITS[traitName][0] : "🧬";
+    emitPassiveEffect(
+      state,
+      mutationTrait,
+      `🧬 Nova mutação: ${icon} ${label}.`,
+      { pieceId: p.id, outcome: "new-mutation" },
+    );
     log(state, `🧬 Nova mutação: ${OWNERS[p.owner]} · ${label}.`);
   } else log(state, `${OWNERS[p.owner]}: ${label}.`);
   const discoveryId = mutationDiscoveryId(label);
