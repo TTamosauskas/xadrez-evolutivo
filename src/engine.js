@@ -1039,9 +1039,7 @@ function executeMove(ctx, action) {
       notice(
         state,
         "Casas hostis",
-        [
-          "Cada casa hostil atravessada tem 50% de risco; Carapaça tem 25% de chance de bloquear uma consequência letal. Voo ignora apenas casas atravessadas, não a casa de chegada. Dormência protege a chegada ao imobilizar a criatura.",
-        ],
+        ["Casas vermelhas oferecem perigo de morte."],
         "hostile",
       );
       if (hostileHazardKills(state, p)) {
@@ -1437,9 +1435,7 @@ function executeMove(ctx, action) {
     notice(
       state,
       "Casas hostis",
-      [
-        "Em uma captura, a vítima é resolvida primeiro; depois a casa hostil ameaça o agressor. Carapaça tem 25% de chance de bloquear uma consequência letal da casa hostil.",
-      ],
+      ["Casas vermelhas oferecem perigo de morte."],
       "hostile",
     );
     p.hostileRiskRound = round(state) + 1;
@@ -1532,9 +1528,7 @@ function executeMove(ctx, action) {
     notice(
       state,
       "Reprodução",
-      [
-        "Casas férteis geram descendentes que herdam as características dos progenitores.",
-      ],
+      ["Casas verdes podem gerar prole com as características dos pais."],
       "reproduction",
     );
   const sexualPartners = partnersFor(state, p);
