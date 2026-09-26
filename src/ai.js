@@ -13,6 +13,7 @@ import {
   canUseBasalFertility,
   predatoryReproductionAvailable,
 } from "./reproduction-traits.js";
+import { corticalActionBonus } from "./positioning.js";
 export function fallbackAction(state) {
   const actions = legalActions(state);
   return (
@@ -110,7 +111,9 @@ function priority(state, a) {
   }
   if (a.type === "BUILD") return 3;
   if (a.type === "SKIP_BUILD") return 0;
-  const p = state.pieces.find((piece) => piece.id === a.id),
+  const p = state.pieces.find(
+      (piece) => piece.id === (a.id ?? state.serotoninReposition?.id),
+    ),
     victim = state.pieces.find(
       (piece) => piece.r === a.r && piece.c === a.c && piece.id !== p?.id,
     ),
@@ -187,6 +190,7 @@ function priority(state, a) {
     fertileValue +
     fecalValue +
     carcassValue +
+    corticalActionBonus(state, a) +
     (egg && egg.owner !== state.current ? 6 + egg.brood.length : 0) -
     (targetTerrain === "hostile" && !has(p, "Dormência") ? 8 : 0) -
     disturbancePenalty -
