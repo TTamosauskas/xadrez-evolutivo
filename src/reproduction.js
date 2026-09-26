@@ -325,12 +325,10 @@ function mutation(
         : null,
       traitName = TRAITS[label] ? label : lostTrait,
       icon = traitName && TRAITS[traitName] ? TRAITS[traitName][0] : "🧬";
-    emitPassiveEffect(
-      state,
-      mutationTrait,
-      `🧬 Nova mutação: ${icon} ${label}.`,
-      { pieceId: p.id, outcome: "new-mutation" },
-    );
+    p.newMutationToast = {
+      trait: mutationTrait,
+      text: `🧬 Nova mutação: ${icon} ${label}.`,
+    };
     log(state, `🧬 Nova mutação: ${OWNERS[p.owner]} · ${label}.`);
   } else log(state, `${OWNERS[p.owner]}: ${label}.`);
   const discoveryId = mutationDiscoveryId(label);
@@ -641,6 +639,27 @@ function makeRequestedBrood(count) {
 
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
+  if (profile.newMutationToast) {
+    const cellTerrain = terrain(state, r, c),
+      singleToneTerrain =
+        currentGeologicalStage(state).index >= geologicalStage("devonian").index,
+      shade =
+        singleToneTerrain && cellTerrain !== "neutral"
+          ? "single"
+          : (r + c) % 2
+            ? "dark"
+            : "light";
+    emitPassiveEffect(
+      state,
+      profile.newMutationToast.trait,
+      profile.newMutationToast.text,
+      {
+        pieceId: child.id,
+        outcome: "new-mutation",
+        theme: `terrain-${cellTerrain}-${shade}`,
+      },
+    );
+  }
   child.maturesRound = has(child, "Multicelularismo")
     ? round(state) + sexualMaturityRounds(child)
     : round(state);
