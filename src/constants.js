@@ -62,6 +62,18 @@ export const TRAITS = {
     "🐛",
     "Adapta o deslocamento a substratos expostos. A criatura pode mover-se e capturar também em casas neutras e hostis; casas hostis continuam oferecendo o risco ambiental normal.",
   ],
+  Bipedalismo: [
+    "🦍",
+    "Após um deslocamento para casa vazia, permite um segundo deslocamento voluntário da mesma criatura; capturas e outras ações encerram a vez.",
+  ],
+  Pulo: [
+    "🐎",
+    "Adaptação locomotora que permite transpor um organismo durante deslocamentos; Reis e Peões saltam para a casa seguinte e Cavalos ganham uma correção curta de aterrissagem.",
+  ],
+  Jatopropulsão: [
+    "🦑",
+    "Permite um impulso por pelo menos cinco casas livres, com até dez casas totais e no máximo uma curva de 90 graus; o destino deve permanecer vazio.",
+  ],
   "Percepção Espacial": [
     "꩜",
     "Permite direcionar capturas além da primeira casa da trajetória oficial da peça. Para Cavalos, o destino do salto conta como a primeira e única casa da trajetória.",
@@ -221,6 +233,10 @@ export const TRAITS = {
     "🦗︎",
     "Grupos conectados de quatro ou mais indivíduos podem sacrificar qualquer membro para absorver um ataque.",
   ],
+  Manada: [
+    "🦬",
+    "Ao deslocar um membro para uma casa vazia, aliados conectados com Manada podem acompanhar uma casa na mesma direção, quando houver espaço legal.",
+  ],
   Mimetismo: [
     "🫥",
     "Confunde captores imitando outros seres.",
@@ -267,9 +283,21 @@ export const TRAITS = {
     "👀",
     "Permite detectar e capturar criaturas com Camuflagem à distância.",
   ],
+  Ecolocalização: [
+    "🦇",
+    "Acrescenta uma correção diagonal terminal de uma casa após uma trajetória normal de movimento, inclusive para alcançar uma captura válida.",
+  ],
   Velocidade: [
     "💨",
     "Tem 25% de chance de escapar de uma captura; se o agressor também possuir Velocidade, essa proteção é anulada.",
+  ],
+  "Movimento proteano": [
+    "🦌",
+    "Ao sofrer uma captura, tem 25% de chance de escapar aleatoriamente para uma casa adjacente válida; o agressor permanece na origem.",
+  ],
+  "Interceptação preditiva": [
+    "🐱",
+    "Predadores com percepção espacial antecipam a fuga imprevisível e neutralizam Movimento proteano.",
   ],
   Notívago: [
     "🌙",
@@ -465,6 +493,7 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Respiração Pulmonar": ["Respiração aeróbia", "Respiração anaeróbia"],
   "Locomoção Articulada": ["Locomoção Primitiva"],
   "Locomoção Terrestre": ["Locomoção Articulada", "Locomoção Primitiva"],
+  Bipedalismo: ["Locomoção Terrestre", "Locomoção Articulada", "Locomoção Primitiva"],
   "Vetor Patógeno": ["Parasitismo"],
   Onívoro: ["Carnívoro", "Herbívoro"],
   Traqueófitas: ["Embriófitas"],
