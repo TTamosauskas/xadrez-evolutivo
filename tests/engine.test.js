@@ -3250,7 +3250,7 @@ test("mutation toast only announces outcomes that have not appeared before", () 
     (effect) => effect.outcome === "new-mutation",
   );
   assert.ok(mutationToast);
-  assert.match(mutationToast.text, /^🧬 Nova mutação: /);
+  assert.match(mutationToast.text, /^Nova Mutação: /);
   assert.ok(!s.notices.some((n) => n.title === "Novas mutações"));
   assertState(s);
 });
@@ -4697,10 +4697,14 @@ test("Polegar Opositor can decline transfer and ignores temporary decomposition"
 });
 
 
-test("Archean basal organisms capture on contact without Predação but do not reproduce from prey", () => {
-  let s = createState(4270, {
+test("Archean photosynthetic organisms without Predação cannot capture by contact", () => {
+  const s = createState(4270, {
     geologicalStage: "archean",
-    historicalTraits: ["Respiração anaeróbia"],
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Fotossíntese",
+      "Reparo Celular",
+    ],
     naturalBarriers: false,
   });
   s.board.fill("neutral");
@@ -4708,8 +4712,16 @@ test("Archean basal organisms capture on contact without Predação but do not r
   s.nextId = 1;
   const attacker = newPiece(s, "blue", 4, 4, {
       rank: 4,
-      traits: ["Respiração anaeróbia"],
-      ancestry: ["Respiração anaeróbia"],
+      traits: [
+        "Respiração anaeróbia",
+        "Fotossíntese",
+        "Reparo Celular",
+      ],
+      ancestry: [
+        "Respiração anaeróbia",
+        "Fotossíntese",
+        "Reparo Celular",
+      ],
     }),
     victim = newPiece(s, "amber", 3, 3, {
       rank: 4,
@@ -4724,25 +4736,21 @@ test("Archean basal organisms capture on contact without Predação but do not r
   s.pieces.push(attacker, victim, survivor);
 
   assert.equal(captureUnlocked(s, attacker), false);
-  assert.equal(contactCaptureUnlocked(attacker), true);
+  assert.equal(contactCaptureUnlocked(attacker), false);
   const targets = movesFor(s, attacker);
-  assert.ok(
+  assert.equal(
     targets.some(
       (target) =>
         target.r === victim.r &&
         target.c === victim.c &&
         target.capture,
     ),
+    false,
   );
   assert.equal(
     targets.some((target) => !target.capture && !target.stay),
     false,
   );
-
-  s = simulate(s, move(attacker, victim.r, victim.c));
-  assert.ok(!s.pieces.some((piece) => piece.id === victim.id));
-  assert.equal(s.pieces.filter((piece) => piece.owner === "blue").length, 1);
-  assert.ok(!s.pieces.some((piece) => piece.parentId === attacker.id));
   assertState(s);
 });
 
