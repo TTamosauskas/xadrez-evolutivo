@@ -1507,27 +1507,15 @@ export function createPassiveToastTestState(
     older(["Camuflagem"]),
   );
 
-  const parentalCareParent = add(
-    "parental-care-parent",
-    "blue",
-    4,
-    3,
-    older([
-      "Reprodução Sexuada",
-      "Ovíparo",
-      "Incubação",
-      "Cuidado Parental",
-    ]),
-  );
   add(
-    "parental-care-attacker",
+    "biparental-guard-attacker",
     "amber",
     5,
     2,
     older([], 4),
   );
   const juvenile = add(
-    "parental-care-child",
+    "biparental-guard-child",
     "blue",
     5,
     3,
@@ -1535,8 +1523,7 @@ export function createPassiveToastTestState(
       ...older([], 4),
       bornRound: round(state),
       maturesRound: round(state) + 3,
-      parentId: parentalCareParent.id,
-      parentIds: [parentalCareParent.id],
+      biparentalGuardCharges: 1,
     },
   );
 
