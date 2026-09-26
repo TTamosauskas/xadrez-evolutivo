@@ -1021,6 +1021,7 @@ export function createState(seed = Date.now(), options = {}) {
     phase: originPrelude ? "origin" : "move",
     origin: null,
     chain: null,
+    chainTrait: null,
     partner: null,
     manipulation: null,
     building: null,
@@ -2507,6 +2508,20 @@ export function assertState(state) {
     !Number.isInteger(state.rng)
   )
     throw Error("Turno inválido.");
+  if (
+    !(
+      state.chainTrait === null ||
+      (state.chainTrait === "Bipedalismo" &&
+        integer(state.chain, 1) &&
+        state.pieces.some(
+          (piece) =>
+            piece.id === state.chain &&
+            piece.owner === state.current &&
+            has(piece, "Bipedalismo"),
+        ))
+    )
+  )
+    throw Error("Cadeia locomotora inválida.");
   if (
     ![
       "origin",

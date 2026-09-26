@@ -141,6 +141,7 @@ export function context(state) {
       state.pieces = state.pieces.filter((p) => p.id !== id);
       if (bonded?.pairedWithId === dead.id) bonded.pairedWithId = null;
       if (state.chain === id) state.chain = null;
+  state.chainTrait = null;
       if (attacker) {
         if (has(dead, "Veneno"))
           attacker.venom = { remaining: 2, infectedTurn: state.turn };
@@ -197,6 +198,7 @@ function finishGame(state, winner, reason, extinctionFounder = null) {
   delete state.lastDeathPiece;
   state.phase = "over";
   state.chain = null;
+  state.chainTrait = null;
   state.partner = null;
   state.manipulation = null;
   state.building = null;
@@ -255,6 +257,7 @@ function ecologicalDomainController(state, quadrant) {
 function excludeEcologicalPiece(state, piece, quadrant) {
   state.pieces = state.pieces.filter((candidate) => candidate.id !== piece.id);
   if (state.chain === piece.id) state.chain = null;
+  state.chainTrait = null;
   log(
     state,
     `${OWNERS[piece.owner]} perderam uma peça no quadrante ${quadrant + 1} por exclusão do Domínio Ecológico.`,
@@ -352,6 +355,7 @@ export function advanceEcologicalDomain(ctx, actingOwner) {
       state.ecologicalDomain.victoryOwner = owner;
       state.phase = "collapse";
       state.chain = null;
+  state.chainTrait = null;
       state.partner = null;
       state.manipulation = null;
       state.building = null;
@@ -480,6 +484,33 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
   return true;
 }
 
+function proteanEscapeCells(state, victim) {
+  const terrestrialRestriction =
+      currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+      !has(victim, "Locomoção Terrestre"),
+    cells = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = victim.r + dr,
+        c = victim.c + dc;
+      if (
+        !inside(r, c) ||
+        at(state, r, c) ||
+        eggAt(state, r, c) ||
+        plantSeedAt(state, r, c) ||
+        fragmentAt(state, r, c) ||
+        barrierAt(state, r, c) ||
+        lethalHazardAt(state, r, c) ||
+        ecologicalDomainBlocked(state, victim.owner, r, c) ||
+        (terrestrialRestriction && terrain(state, r, c) !== "fertile")
+      )
+        continue;
+      cells.push({ r, c });
+    }
+  return cells;
+}
+
 function adrenalineEscapeCells(state, victim) {
   const terrestrialRestriction =
       currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
@@ -557,6 +588,7 @@ function offerSerotoninReposition(ctx, attacker, defense) {
   };
   state.phase = "serotonin-reposition";
   state.chain = null;
+  state.chainTrait = null;
   if (serotoninRepositionTargets(state).length) {
     log(
       state,
@@ -785,6 +817,7 @@ function advanceTurn(ctx) {
     before = state.turn;
   restoreExtremophyteFertility(state);
   state.chain = null;
+  state.chainTrait = null;
   state.partner = null;
   state.manipulation = null;
   state.building = null;
@@ -987,9 +1020,16 @@ function completeMove(ctx, p, second, locomotion) {
     !has(p, "Mutação Disfuncional") &&
     !has(p, "Deficiência Motora") &&
     state.pieces.some((x) => x.id === p.id) &&
-    movesFor(state, p).length
+    movesFor(state, p).some(
+      (target) =>
+        !target.capture &&
+        !target.eggCapture &&
+        !target.stay &&
+        !at(state, target.r, target.c),
+    )
   ) {
     state.chain = p.id;
+    state.chainTrait = "Bipedalismo";
     return;
   }
   advanceTurn(ctx);
@@ -1020,6 +1060,7 @@ function finishMovement(
     };
     state.phase = "manipulate";
     state.chain = null;
+  state.chainTrait = null;
     if (manipulationTargets(state).length) return;
     state.manipulation = null;
     state.phase = "move";
@@ -1032,6 +1073,7 @@ function finishMovement(
     state.building = { id: p.id, second, locomotion };
     state.phase = "build";
     state.chain = null;
+  state.chainTrait = null;
     if (constructionTargets(state).length) return;
     state.building = null;
     state.phase = "move";
@@ -1059,6 +1101,7 @@ function deferReproductionPlacement(
     build,
   };
   state.chain = null;
+  state.chainTrait = null;
   return true;
 }
 function resolveManipulation(ctx, action) {
@@ -1132,6 +1175,108 @@ function sociableGroup(state, victim) {
   return [...seen].map((id) => byId.get(id)).filter(Boolean);
 }
 
+function herdGroup(state, leader) {
+  if (!leader || !has(leader, "Manada")) return [];
+  const members = state.pieces.filter(
+      (piece) => piece.owner === leader.owner && has(piece, "Manada"),
+    ),
+    byId = new Map(members.map((piece) => [piece.id, piece])),
+    seen = new Set([leader.id]),
+    queue = [leader];
+  while (queue.length) {
+    const current = queue.shift();
+    for (const candidate of members)
+      if (!seen.has(candidate.id) && distance(current, candidate) === 1) {
+        seen.add(candidate.id);
+        queue.push(candidate);
+      }
+  }
+  return [...seen]
+    .filter((id) => id !== leader.id)
+    .map((id) => byId.get(id))
+    .filter(Boolean);
+}
+
+function moveHerd(ctx, leader, followers, origin, target) {
+  const state = ctx.state;
+  if (!followers.length) return 0;
+  const dr = Math.sign(target.r - origin.r),
+    dc = Math.sign(target.c - origin.c);
+  if (!dr && !dc) return 0;
+
+  const ids = new Set(followers.map((piece) => piece.id)),
+    proposals = followers
+      .map((piece) => {
+        const r = piece.r + dr,
+          c = piece.c + dc,
+          occupant = at(state, r, c);
+        if (
+          !inside(r, c) ||
+          ecologicalDomainBlocked(state, piece.owner, r, c) ||
+          eggAt(state, r, c) ||
+          plantSeedAt(state, r, c) ||
+          fragmentAt(state, r, c) ||
+          barrierAt(state, r, c) ||
+          lethalHazardAt(state, r, c) ||
+          dormant(state, piece) ||
+          (currentGeologicalStage(state).index >= geologicalStage("silurian").index &&
+            !has(piece, "Locomoção Terrestre") &&
+            terrain(state, r, c) !== "fertile") ||
+          (occupant && !ids.has(occupant.id) && occupant.id !== leader.id)
+        )
+          return null;
+        return { piece, r, c, occupant };
+      })
+      .filter(Boolean),
+    byCell = new Map();
+  for (const proposal of proposals) {
+    const key = square(proposal.r, proposal.c),
+      current = byCell.get(key);
+    if (
+      !current ||
+      distance(proposal.piece, origin) < distance(current.piece, origin)
+    )
+      byCell.set(key, proposal);
+  }
+  let moving = [...byCell.values()],
+    changed = true;
+  while (changed) {
+    changed = false;
+    const movingIds = new Set(moving.map((entry) => entry.piece.id));
+    const next = moving.filter(
+      (entry) =>
+        !entry.occupant ||
+        entry.occupant.id === leader.id ||
+        !ids.has(entry.occupant.id) ||
+        movingIds.has(entry.occupant.id),
+    );
+    if (next.length !== moving.length) changed = true;
+    moving = next;
+  }
+
+  for (const entry of moving)
+    reactiveRelocation(
+      ctx,
+      entry.piece,
+      entry.r,
+      entry.c,
+      "deslocamento por Manada",
+    );
+
+  if (moving.length)
+    emitPassiveEffect(
+      state,
+      "Manada",
+      `🦬 Manada deslocou ${moving.length} aliado(s).`,
+      {
+        pieceId: leader.id,
+        outcome: "herd-movement",
+        value: moving.length,
+      },
+    );
+  return moving.length;
+}
+
 function executeMove(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -1185,7 +1330,13 @@ function executeMove(ctx, action) {
     return;
   }
   const second = state.chain === p.id,
-    locomotion = false,
+    locomotion =
+      has(p, "Bipedalismo") &&
+      !second &&
+      !target.capture &&
+      !target.eggCapture &&
+      !target.stay &&
+      !at(state, target.r, target.c),
     botanicalPredation = target.botanicalPredation ?? null,
     landingCell = square(target.r, target.c),
     landingTerrain = terrain(state, target.r, target.c),
@@ -1223,7 +1374,16 @@ function executeMove(ctx, action) {
         `${OWNERS[p.owner]}: 🦡 Escavador perfurou barreira(s) em ${destroyed.join(", ")}.`,
       );
   }
-  const landingVictim = at(state, target.r, target.c),
+  const moveOrigin = { r: p.r, c: p.c },
+    herdFollowers =
+      !second &&
+      has(p, "Manada") &&
+      !target.capture &&
+      !target.eggCapture &&
+      !target.stay
+        ? herdGroup(state, p)
+        : [],
+    landingVictim = at(state, target.r, target.c),
     landingPieceCapture = !!landingVictim && landingVictim.id !== p.id;
   for (const [r, c] of target.path)
     if (
@@ -1415,6 +1575,7 @@ function executeMove(ctx, action) {
       state.current = victim.owner;
       state.phase = "social-defense";
       state.chain = null;
+  state.chainTrait = null;
       return;
     }
   }
@@ -1451,6 +1612,44 @@ function executeMove(ctx, action) {
       );
       finishFrustratedCapture(ctx, p, "Notívago");
       return;
+    }
+  } else if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Movimento proteano")
+  ) {
+    if (has(p, "Interceptação preditiva")) {
+      emitPassiveEffect(
+        state,
+        "Interceptação preditiva",
+        "🐱 Interceptação preditiva antecipou o Movimento proteano.",
+        { pieceId: p.id, outcome: "neutralized-protean-movement" },
+      );
+    } else {
+      const cells = proteanEscapeCells(state, victim);
+      if (cells.length && random(state) < 1 / 4) {
+        const target = pick(state, cells);
+        reactiveRelocation(
+          ctx,
+          victim,
+          target.r,
+          target.c,
+          "fuga por Movimento proteano",
+        );
+        log(
+          state,
+          `${OWNERS[victim.owner]}: 🦌 Movimento proteano desviou a criatura para ${coord(target.r, target.c)}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Movimento proteano",
+          `🦌 Movimento proteano desviou a criatura para ${coord(target.r, target.c)}.`,
+          { pieceId: victim.id, outcome: "escaped-capture" },
+        );
+        advanceTurn(ctx);
+        settle(ctx);
+        return;
+      }
     }
   } else if (
     pieceCapture &&
@@ -1632,6 +1831,13 @@ function executeMove(ctx, action) {
   if (!target.stay) p.stationarySinceRound = round(state);
   exposePathogenCell(state, p);
   moveDirection(p);
+  if (
+    herdFollowers.length &&
+    !pieceCapture &&
+    !eggCapture &&
+    !target.stay
+  )
+    moveHerd(ctx, p, herdFollowers, moveOrigin, target);
   ctx.reserved.delete(landingCell);
   const cell = square(p.r, p.c);
   if (
@@ -1759,12 +1965,13 @@ function executeMove(ctx, action) {
       id: p.id,
       selectedIds: [],
       second,
-      locomotion,
+      locomotion: false,
       collectorStay: false,
       predation,
       manipulation,
     };
     state.chain = null;
+  state.chainTrait = null;
     if (has(p, "Acasalamento Preferencial")) {
       if (has(p, "Acasalamento Múltiplo") && sexualPartners.length > 1) {
         state.partner.selectedIds = [sexualPartners[0].id];
@@ -1889,12 +2096,19 @@ function executeMove(ctx, action) {
     deferReproductionPlacement(state, p, {
       manipulation,
       second,
-      locomotion,
+      locomotion: born > 0 ? false : locomotion,
       build,
     })
   )
     return;
-  finishMovement(ctx, p, manipulation, second, locomotion, build);
+  finishMovement(
+    ctx,
+    p,
+    manipulation,
+    second,
+    born > 0 ? false : locomotion,
+    build,
+  );
 }
 function resolveBudding(ctx, action) {
   const state = ctx.state,
@@ -2030,6 +2244,7 @@ function resolveDirectPartner(ctx, action) {
     manipulation: null,
   };
   state.chain = null;
+  state.chainTrait = null;
   if (
     has(p, "Acasalamento Múltiplo") &&
     compatibleCandidates.some((candidate) => candidate.id !== firstMate.id)
