@@ -163,6 +163,51 @@ test("Vida na Terra disperses aquatic founders progressively through early geolo
   );
 });
 
+test("Vida na Terra carries the last extinct winner into the next generation", () => {
+  const state = createState(706, {
+    scenario: "earth",
+    geologicalStage: "archean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    founders: {
+      primary: {
+        rank: 4,
+        traits: ["Fotossíntese"],
+        ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+      },
+      companion: {
+        rank: 4,
+        traits: ["Predação"],
+        ancestry: ["Respiração anaeróbia", "Predação"],
+      },
+    },
+    canonicalPair: true,
+  });
+  const winner = state.pieces.find((piece) =>
+    piece.traits.includes("Predação"),
+  );
+  state.pieces = [];
+  state.result = {
+    winner: winner.owner,
+    reason: "Extinção total.",
+    extinctionFounder: structuredClone(winner),
+  };
+  state.phase = "over";
+
+  const next = createSuccessorState(state, 707);
+  assert.equal(next.geologicalStage, "archean");
+  assert.equal(next.cycle, 2);
+  assert.ok(
+    next.pieces.some((piece) => piece.traits.includes("Predação")),
+  );
+  assert.ok(
+    next.logs.some((entry) =>
+      entry.text.includes("última linhagem extinta vencedora"),
+    ),
+  );
+});
+
 test("derived lineages outrank larger basal clone groups when choosing a founder", () => {
   const s = createState(706, {
     geologicalStage: "archean",
