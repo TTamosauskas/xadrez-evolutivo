@@ -497,7 +497,7 @@ test("Silurian is a stable coast and Devonian starts Conway terrain evolution", 
   assertState(d);
 });
 
-test("Locomoção Terrestre is the Silurian gate for dry movement and capture", () => {
+test("Locomoção Terrestre universally removes the fertile landing gate", () => {
   const historyBeforeSilurian = GEOLOGICAL_STAGES.slice(
       0,
       GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "silurian"),
@@ -581,6 +581,13 @@ test("Locomoção Terrestre is the Silurian gate for dry movement and capture", 
     ],
   });
   cambrian.pieces.push(marine);
+  assert.equal(
+    movesFor(cambrian, marine).some(
+      (target) => target.r === 3 && target.c === 4,
+    ),
+    false,
+  );
+  cambrian.board[3 * 8 + 4] = "fertile";
   assert.ok(
     movesFor(cambrian, marine).some(
       (target) => target.r === 3 && target.c === 4,
@@ -604,6 +611,7 @@ test("Predação enables capture and is an individual prerequisite for Locomoç�
     }),
     amber = newPiece(s, "amber", 4, 1, { traits: [] });
   s.pieces.push(blue, amber);
+  s.board[4 * 8 + 1] = "fertile";
   assert.equal(captureUnlocked(s, blue), true);
   assert.ok(movesFor(s, blue).some((target) => target.c === 1));
 
