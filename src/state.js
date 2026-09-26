@@ -346,7 +346,7 @@ export function emitPassiveEffect(
   state,
   trait,
   text,
-  { pieceId = null, outcome = null, value = null } = {},
+  { pieceId = null, outcome = null, value = null, theme = null } = {},
 ) {
   if (!TRAITS[trait] || typeof text !== "string" || !text) return;
   state.passiveEffects.push({
@@ -356,6 +356,7 @@ export function emitPassiveEffect(
     pieceId: Number.isInteger(pieceId) ? pieceId : null,
     outcome: typeof outcome === "string" ? outcome : null,
     value: Number.isFinite(value) ? value : null,
+    theme: typeof theme === "string" ? theme : null,
     text,
   });
   if (state.passiveEffects.length > 24) state.passiveEffects.shift();
@@ -1002,7 +1003,7 @@ export function createState(seed = Date.now(), options = {}) {
     reproductions: { blue: 0, amber: 0 },
     notices: [],
     passiveEffects: [],
-    seen: [],
+    seen: [...new Set(options.seen ?? [])],
     seenMutations:
       originPrelude && (options.geologicalStage ?? "archean") === "hadean"
         ? ["Respiração anaeróbia"]
@@ -1859,6 +1860,7 @@ export function createArenaSuccessorState(
         ...fossilEntries(previous),
       ],
       discoveries: previous.discoveries,
+      seen: previous.seen,
       ownerFounders: profiles,
       arenaFounders: profiles,
       naturalBarriers: true,
@@ -1951,6 +1953,7 @@ function createEarthSuccessorState(previous, seed) {
         ...fossilEntries(previous),
       ],
       discoveries: previous.discoveries,
+      seen: previous.seen,
       sexualPathogenUnlockTotalCycle:
         previous.sexualPathogenUnlockTotalCycle ?? null,
       founders,
@@ -1999,6 +2002,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
           ...fossilEntries(previous),
         ],
         discoveries: previous.discoveries,
+        seen: previous.seen,
         founders: { primary: preview.primary, companion: preview.companion },
         canonicalPair: true,
       });
@@ -2747,6 +2751,9 @@ export function assertState(state) {
         ) ||
         ![null, "number"].includes(
           effect.value === null ? null : typeof effect.value,
+        ) ||
+        ![null, "string"].includes(
+          effect.theme == null ? null : typeof effect.theme,
         ) ||
         (effect.value !== null && !Number.isFinite(effect.value)) ||
         (effect.pieceId !== null && !integer(effect.pieceId, 1)) ||
