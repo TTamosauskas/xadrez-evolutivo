@@ -1126,6 +1126,35 @@ function onlyChildExhausted(piece) {
   );
 }
 
+export function predatoryReproductionReady(state, parent) {
+  if (!state || !parent || !reproductionReady(state, parent)) return false;
+  const population = activePopulation(state),
+    pressureLatched =
+      population >= 24
+        ? true
+        : population < 16
+          ? false
+          : !!(
+              state.populationLatched?.blue ||
+              state.populationLatched?.amber
+            ),
+    primitiveLocomotionReached =
+      has(parent, "Locomoção Primitiva") ||
+      (parent.ancestry ?? []).includes("Locomoção Primitiva"),
+    populationLimit = primitiveLocomotionReached
+      ? predationBirthLimit(population)
+      : 1,
+    competitivePressure = competitiveReproductionPressure(
+      state,
+      parent,
+      pressureLatched,
+    );
+  return (
+    !competitivePressure.suppressPredation &&
+    Math.min(populationLimit, competitivePressure.limit) > 0
+  );
+}
+
 function lifetimeOffspringLimit(parent, mates, wanted) {
   if (!Number.isFinite(wanted) || wanted <= 0) return Math.max(0, wanted);
   const parentLimit = has(parent, "Filho único")
