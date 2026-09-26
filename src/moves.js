@@ -477,6 +477,274 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       addCrawler(p.r + dr, p.c + dc);
   }
 
+  const hardMovementBlock = (r, c) =>
+    !!eggAt(state, r, c) ||
+    !!fragmentAt(state, r, c) ||
+    barrierAt(state, r, c);
+
+  function lateralMovementTargets() {
+    if (
+      !has(p, "Movimento Lateral") ||
+      !has(p, "Artrópode") ||
+      !has(p, "Locomoção Terrestre") ||
+      has(p, "Deficiência Motora")
+    )
+      return;
+
+    for (const dc of [-1, 1]) {
+      const path = [];
+      for (let c = p.c + dc; inside(p.r, c); c += dc) {
+        path.push([p.r, c]);
+        if (hardMovementBlock(p.r, c)) break;
+        const occupant = at(state, p.r, c);
+        if (occupant) {
+          if (
+            occupant.owner === p.owner &&
+            !ecologicalDomainBlocked(state, p.owner, p.r, c)
+          )
+            targets.push({
+              r: p.r,
+              c,
+              path: [...path],
+              capture: false,
+              cannibal: false,
+              eggCapture: null,
+              seedCapture: null,
+              lateral: true,
+              lateralSwapId: occupant.id,
+              noContinuation: true,
+            });
+          break;
+        }
+        add(p.r, c, [...path], { lateral: true });
+      }
+    }
+  }
+
+  function serpentineMovementTargets() {
+    if (
+      !has(p, "Serpenteamento") ||
+      !has(p, "Vertebrado") ||
+      !has(p, "Locomoção Terrestre") ||
+      has(p, "Deficiência Motora")
+    )
+      return;
+
+    const directions = [...ORTH, ...DIAG],
+      visited = new Set([square(p.r, p.c)]);
+    const explore = (r, c, path, previousDirection, turns) => {
+      if (path.length >= 5) return;
+      for (const [dr, dc] of directions) {
+        const nextTurns =
+          previousDirection &&
+          (previousDirection[0] !== dr || previousDirection[1] !== dc)
+            ? turns + 1
+            : turns;
+        if (nextTurns > 2) continue;
+        const rr = r + dr,
+          cc = c + dc;
+        if (
+          !inside(rr, cc) ||
+          ecologicalDomainBlocked(state, p.owner, rr, cc)
+        )
+          continue;
+        const cell = square(rr, cc);
+        if (visited.has(cell) || hardMovementBlock(rr, cc)) continue;
+
+        const occupant = at(state, rr, cc),
+          nextPath = [...path, [rr, cc]],
+          alreadyOrdinary = targets.some(
+            (target) =>
+              target.r === rr &&
+              target.c === cc &&
+              !!target.capture === !!occupant,
+          );
+        if (!alreadyOrdinary)
+          add(rr, cc, nextPath, {
+            serpentine: true,
+            noContinuation: true,
+          });
+        if (occupant) continue;
+
+        visited.add(cell);
+        explore(rr, cc, nextPath, [dr, dc], nextTurns);
+        visited.delete(cell);
+      }
+    };
+    explore(p.r, p.c, [], null, 0);
+  }
+
+  function trailMovementTargets() {
+    if (
+      !has(p, "Trilhas") ||
+      !has(p, "Artrópode") ||
+      !has(p, "Sociabilidade") ||
+      has(p, "Deficiência Motora")
+    )
+      return;
+
+    const active = new Set(
+        (state.trails ?? [])
+          .filter(
+            (trail) =>
+              trail.owner === p.owner && trail.expiresRound >= round(state),
+          )
+          .map((trail) => trail.cell),
+      ),
+      originCell = square(p.r, p.c),
+      passableTrail = (r, c) =>
+        inside(r, c) &&
+        active.has(square(r, c)) &&
+        !ecologicalDomainBlocked(state, p.owner, r, c) &&
+        !hardMovementBlock(r, c) &&
+        (!at(state, r, c) || (r === p.r && c === p.c)),
+      queue = [],
+      best = new Map();
+
+    if (active.has(originCell)) {
+      queue.push({ r: p.r, c: p.c, path: [] });
+      best.set(originCell, []);
+    }
+    for (const [dr, dc] of [...ORTH, ...DIAG]) {
+      const r = p.r + dr,
+        c = p.c + dc,
+        cell = square(r, c);
+      if (!passableTrail(r, c) || best.has(cell)) continue;
+      const path = [[r, c]];
+      best.set(cell, path);
+      queue.push({ r, c, path });
+    }
+
+    for (let index = 0; index < queue.length; index++) {
+      const current = queue[index];
+      for (const [dr, dc] of [...ORTH, ...DIAG]) {
+        const r = current.r + dr,
+          c = current.c + dc,
+          cell = square(r, c);
+        if (!passableTrail(r, c) || best.has(cell)) continue;
+        const path = [...current.path, [r, c]];
+        best.set(cell, path);
+        queue.push({ r, c, path });
+      }
+    }
+
+    for (const current of queue)
+      for (const [dr, dc] of [...ORTH, ...DIAG]) {
+        const r = current.r + dr,
+          c = current.c + dc;
+        if (
+          !inside(r, c) ||
+          ecologicalDomainBlocked(state, p.owner, r, c) ||
+          active.has(square(r, c)) ||
+          square(r, c) === originCell ||
+          at(state, r, c) ||
+          hardMovementBlock(r, c)
+        )
+          continue;
+        if (
+          targets.some(
+            (target) => target.r === r && target.c === c,
+          )
+        )
+          continue;
+        add(r, c, [...current.path, [r, c]], {
+          trail: true,
+          trailExtension: true,
+          noContinuation: true,
+        });
+      }
+  }
+
+  function tigmotaxisContinuationTargets() {
+    const result = [];
+    if (!has(p, "Tigmotaxia")) return result;
+    const rowEdge = p.r === 0 || p.r === 7,
+      colEdge = p.c === 0 || p.c === 7;
+    if (!rowEdge || !colEdge) return result;
+    const directions = [
+      [p.r === 0 ? 1 : -1, 0],
+      [0, p.c === 0 ? 1 : -1],
+    ];
+    for (const [dr, dc] of directions) {
+      const path = [];
+      for (let step = 1; step <= 2; step++) {
+        const r = p.r + dr * step,
+          c = p.c + dc * step;
+        if (
+          !inside(r, c) ||
+          ecologicalDomainBlocked(state, p.owner, r, c) ||
+          at(state, r, c) ||
+          hardMovementBlock(r, c)
+        )
+          break;
+        path.push([r, c]);
+        result.push({
+          r,
+          c,
+          path: [...path],
+          capture: false,
+          eggCapture: null,
+          seedCapture: null,
+          tigmotaxis: true,
+          continuationTrait: "Tigmotaxia",
+          noContinuation: true,
+        });
+      }
+    }
+    return result;
+  }
+
+  function slidingContinuationTargets() {
+    if (!has(p, "Deslizamento")) return [];
+    const result = [];
+    for (const [dr, dc] of [...ORTH, ...DIAG]) {
+      const r = p.r + dr,
+        c = p.c + dc;
+      if (
+        !inside(r, c) ||
+        ecologicalDomainBlocked(state, p.owner, r, c) ||
+        at(state, r, c) ||
+        hardMovementBlock(r, c)
+      )
+        continue;
+      result.push({
+        r,
+        c,
+        path: [[r, c]],
+        capture: false,
+        eggCapture: null,
+        seedCapture: null,
+        sliding: true,
+        continuationTrait: "Deslizamento",
+        noContinuation: true,
+      });
+    }
+    return result;
+  }
+
+  function recoilContinuationTargets() {
+    if (!has(p, "Recuo") || !state.chainOrigin) return [];
+    const { r, c } = state.chainOrigin;
+    if (
+      !inside(r, c) ||
+      ecologicalDomainBlocked(state, p.owner, r, c) ||
+      at(state, r, c) ||
+      hardMovementBlock(r, c)
+    )
+      return [];
+    return [{
+      r,
+      c,
+      path: [[r, c]],
+      capture: false,
+      eggCapture: null,
+      seedCapture: null,
+      recoil: true,
+      continuationTrait: "Recuo",
+      noContinuation: true,
+    }];
+  }
+
   const mobile =
     has(p, "Locomoção Primitiva") &&
     !has(p, "Séssil");
@@ -505,6 +773,9 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       add(special.r, special.c, special.path, extra);
     }
     crawlerTargets();
+    lateralMovementTargets();
+    serpentineMovementTargets();
+    trailMovementTargets();
   } else if (
     !has(p, "Séssil") &&
     (captureUnlocked(state, p) || contactCaptureUnlocked(p))
@@ -601,15 +872,45 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
             capture: false,
           });
       }
-  if (state.chain === p.id && state.chainTrait === "Bipedalismo")
-    return targets.filter(
-      (target) =>
-        !target.capture &&
-        !target.eggCapture &&
-        !target.seedCapture &&
-        !target.stay &&
-        !at(state, target.r, target.c),
-    );
+  if (state.chain === p.id) {
+    const options = state.chainOptions?.length
+        ? state.chainOptions
+        : state.chainTrait && state.chainTrait !== "Locomoção Especial"
+          ? [state.chainTrait]
+          : [],
+      continuation = [];
+    if (options.includes("Bipedalismo"))
+      continuation.push(
+        ...targets
+          .filter(
+            (target) =>
+              !target.capture &&
+              !target.eggCapture &&
+              !target.seedCapture &&
+              !target.stay &&
+              !at(state, target.r, target.c),
+          )
+          .map((target) => ({
+            ...target,
+            continuationTrait:
+              target.continuationTrait ?? "Bipedalismo",
+          })),
+      );
+    if (options.includes("Tigmotaxia"))
+      continuation.push(...tigmotaxisContinuationTargets());
+    if (options.includes("Deslizamento"))
+      continuation.push(...slidingContinuationTargets());
+    if (options.includes("Recuo"))
+      continuation.push(...recoilContinuationTargets());
+
+    const unique = new Map();
+    for (const target of continuation) {
+      const key = `${target.r},${target.c}`;
+      if (!unique.has(key) || target.recoil)
+        unique.set(key, target);
+    }
+    return [...unique.values()];
+  }
   return targets;
 }
 export function sexualReproductionResource(state, parent, mate) {
@@ -832,6 +1133,9 @@ function pieceEvaluationState(state, piece) {
     current: piece.owner,
     phase: "move",
     chain: null,
+    chainTrait: null,
+    chainOptions: [],
+    chainOrigin: null,
   };
 }
 
@@ -866,7 +1170,7 @@ export function actionsForPiece(
         ? partnersFor(source, piece).slice(0, 1)
         : partnersFor(source, piece);
 
-  if (source.chain === piece.id && source.chainTrait === "Bipedalismo")
+  if (source.chain === piece.id)
     return movesFor(source, piece).map((target) => ({
       type: "MOVE",
       id: piece.id,
