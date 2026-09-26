@@ -499,7 +499,7 @@ function matureExtremophytes(state) {
 function photosynthesisExtraCells(state, p) {
   if (
     !has(p, "Fotossíntese") ||
-    !has(p, "Multicelularismo") ||
+    (!has(p, "Multicelularismo") && !has(p, "Traqueófitas")) ||
     p.rank === 0
   )
     return [];
