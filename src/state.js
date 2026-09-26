@@ -1576,6 +1576,10 @@ export function createPassiveToastTestState(
 
   state.board[square(ovulationParent.r, ovulationParent.c)] = "fertile";
   state.board[square(ovulationMate.r, ovulationMate.c)] = "fertile";
+  for (const piece of state.pieces)
+    if (piece.toastTestRole?.endsWith("-attacker"))
+      piece.nextReproductionRound = round(state) + 100;
+
   state.toastTest = {
     step: 1,
     roles: Object.fromEntries(
