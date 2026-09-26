@@ -2055,6 +2055,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       ...fossilEntries(previous),
     ],
     discoveries: previous.discoveries,
+    seen: previous.seen,
     sexualPathogenUnlockTotalCycle:
       previous.sexualPathogenUnlockTotalCycle ?? null,
     founder,
