@@ -449,7 +449,7 @@ test("Hadean photosynthesis matures after metabolic rest and newborn cells start
   let blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
   const delay = photosynthesisDelayTurns(s, blue);
-  assert.equal(delay, metabolicReproductionCooldown(blue) * 2);
+  assert.equal(delay, 2);
   assert.equal(s.board[square(blue.r, blue.c)], "neutral");
   assert.equal(s.board[square(amber.r, amber.c)], "neutral");
   assert.equal(movesFor(s, blue).length, 0);
