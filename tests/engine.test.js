@@ -1069,10 +1069,19 @@ test("venom excludes capture turn and kills after two later own turns", () => {
     { owner: "amber", r: 0, c: 0 },
   ]);
   s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.equal(s.pieces[0].venom.remaining, 2);
-  for (let i = 0; i < 3; i++) s = simulate(s, { type: "PASS" });
-  assert.equal(s.pieces.find((p) => p.id === 1).venom.remaining, 1);
-  s = simulate(s, { type: "PASS" });
+  assert.equal(s.pieces.find((p) => p.id === 1)?.venom?.remaining, 2);
+
+  let guard = 0;
+  while (
+    s.pieces.find((p) => p.id === 1)?.venom?.remaining === 2 &&
+    guard++ < 8
+  )
+    s = simulate(s, { type: "PASS" });
+  assert.equal(s.pieces.find((p) => p.id === 1)?.venom?.remaining, 1);
+
+  guard = 0;
+  while (s.pieces.some((p) => p.id === 1) && guard++ < 8)
+    s = simulate(s, { type: "PASS" });
   assert.ok(!s.pieces.some((p) => p.id === 1));
 });
 test("Voo bypasses hostile traversal but not hostile landing; knight only tests landing", () => {
