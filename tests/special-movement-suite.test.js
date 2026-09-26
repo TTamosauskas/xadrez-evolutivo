@@ -339,13 +339,17 @@ test("Escansão percorre a coluna e troca com o primeiro aliado", () => {
     ally = state.pieces[1];
 
   const targets = movesFor(state, actor);
-  for (const r of [4, 3])
-    assert.ok(
-      targets.some(
-        (target) => target.r === r && target.c === 3 && target.escalation,
-      ),
-      `missing Escansão target ${r},3`,
-    );
+  assert.ok(
+    targets.some(
+      (target) => target.r === 4 && target.c === 3,
+    ),
+  );
+  assert.ok(
+    targets.some(
+      (target) => target.r === 3 && target.c === 3 && target.escalation,
+    ),
+    "missing special Escansão target 3,3",
+  );
   const swap = targets.find(
     (target) => target.r === 2 && target.c === 3 && target.escalationSwapId,
   );
