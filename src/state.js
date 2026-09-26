@@ -1671,6 +1671,9 @@ export function activateOrigin(state) {
   state.origin = null;
   state.phase = "move";
   state.current = "blue";
+  state.hadeanTutorial.divided = true;
+  if (!state.seenMutations.includes("Fotossíntese"))
+    state.seenMutations.push("Fotossíntese");
   notice(
     state,
     "Fotossíntese",
