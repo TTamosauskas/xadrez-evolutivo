@@ -238,12 +238,20 @@ $("board").addEventListener("click", (event) => {
       dispatch({ type: "SEROTONIN_REPOSITION", r, c });
     return;
   }
-  const actor = state.pieces.find((p) => p.id === (state.chain ?? selected));
-  const movementTarget =
-    actor?.owner === state.current
-      ? movesFor(state, actor).find((target) => target.r === r && target.c === c)
-      : null;
-  if (movementTarget?.lateralSwapId) {
+  const actor = state.pieces.find((p) => p.id === (state.chain ?? selected)),
+    movementTargets =
+      actor?.owner === state.current
+        ? movesFor(state, actor).filter(
+            (target) => target.r === r && target.c === c,
+          )
+        : [],
+    swapMovementTarget = movementTargets.find(
+      (target) =>
+        target.lateralSwapId ||
+        target.escalationSwapId ||
+        target.bioadhesionSwapId,
+    );
+  if (swapMovementTarget) {
     dispatch({ type: "MOVE", id: actor.id, r, c });
     return;
   }
