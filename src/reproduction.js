@@ -158,9 +158,17 @@ function eusocialBonus(state, parent) {
 }
 
 function nextDerivedRank(piece) {
-  if (!has(piece, "Locomoção Articulada")) return null;
   const next = DERIVED_FORM_NEXT.get(piece.rank);
   if (next === undefined) return null;
+
+  if (has(piece, "Fotossíntese")) {
+    if (!has(piece, "Multicelularismo")) return null;
+    if ([1, 2].includes(next)) return next;
+    if ([3, 5].includes(next) && has(piece, "Traqueófitas")) return next;
+    return null;
+  }
+
+  if (!has(piece, "Locomoção Articulada")) return null;
   if (has(piece, "Artrópode") && ![1, 2].includes(next)) return null;
   return has(piece, "Vertebrado") || has(piece, "Artrópode") ? next : null;
 }
@@ -209,11 +217,21 @@ function mutation(
   forcedGeneGain = null,
 ) {
   const gains = [];
-  if (p.rank === 4 && pawnMutationUnlocked(state, p))
+  if (
+    p.rank === 4 &&
+    (pawnMutationUnlocked(state, p) ||
+      (has(p, "Fotossíntese") && has(p, "Multicelularismo")))
+  )
     gains.push({ rank: 0, weight: 1 });
-  else if (!has(p, "Fotossíntese") && rankMutationUnlocked(state)) {
-    const nextRank = nextDerivedRank(p);
-    if (nextRank !== null) gains.push({ rank: nextRank, weight: 1 });
+  else {
+    const plantRankMutation =
+        has(p, "Fotossíntese") && has(p, "Multicelularismo"),
+      animalRankMutation =
+        !has(p, "Fotossíntese") && rankMutationUnlocked(state);
+    if (plantRankMutation || animalRankMutation) {
+      const nextRank = nextDerivedRank(p);
+      if (nextRank !== null) gains.push({ rank: nextRank, weight: 1 });
+    }
   }
 
   for (const trait of genomeGainOptions(p).filter((trait) =>
