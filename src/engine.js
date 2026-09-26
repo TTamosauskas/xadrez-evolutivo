@@ -235,8 +235,6 @@ function advanceHadeanPredation(state) {
   if (!piece) return false;
 
   state.hadeanPredationGranted[state.current] = true;
-  if (!state.seenMutations.includes("Predação"))
-    state.seenMutations.push("Predação");
   emitPassiveEffect(
     state,
     "Predação",
