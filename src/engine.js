@@ -594,6 +594,12 @@ function recordPhotosynthesis(state, owner) {
         p.photosynthesisReadyTurn =
           state.turn + photosynthesisDelayTurns(state, p);
       else delete p.photosynthesisReadyTurn;
+    } else if (
+      state.geologicalStage === "hadean" &&
+      !Number.isInteger(p.photosynthesisReadyTurn)
+    ) {
+      p.photosynthesisReadyTurn =
+        state.turn + photosynthesisDelayTurns(state, p);
     }
   }
 }
