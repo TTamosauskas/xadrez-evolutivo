@@ -210,7 +210,12 @@ test("first generation-3 habitat update preserves every geological preset", () =
 test("early aquatic stages stay outside Conway while Hadean and early Archean keep compact habitat overlays", () => {
   const hadean = createCampaignState(898);
   assert.equal(aquaticFertilityRegime(hadean), true);
-  assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 64);
+  assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 1);
+  assert.equal(hadean.board.filter((cell) => cell === "neutral").length, 63);
+  assert.equal(
+    hadean.board[square(hadean.origin.r, hadean.origin.c)],
+    "fertile",
+  );
   assert.equal(
     Array.from({ length: 8 }, (_, r) =>
       Array.from({ length: 8 }, (_, col) =>
@@ -346,17 +351,18 @@ test("Archean opens habitat one ring per cycle before becoming fully fertile", (
   }
 });
 
-test("Hadean starts with one gray common ancestor that splits into two basal Kings", () => {
+test("Hadean starts with one fertile gray ancestor and splits into two photosynthetic Kings on neutral cells", () => {
   let s = createCampaignState(301);
   assert.equal(s.geologicalStage, "hadean");
   assert.equal(s.phase, "origin");
   assert.ok(s.origin);
-  assert.equal(s.origin.selected, false);
   assert.equal(s.pieces.length, 0);
-  assert.equal(s.historicalTraits.includes("Respiração anaeróbia"), true);
-  assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
-  assert.equal(s.historicalTraits.includes("Predação"), false);
-  assert.ok(s.discoveries.mutations.includes("Respiração anaeróbia"));
+  assert.equal(s.board.filter((cell) => cell === "fertile").length, 1);
+  assert.equal(s.board.filter((cell) => cell === "neutral").length, 63);
+  assert.equal(
+    s.board[square(s.origin.r, s.origin.c)],
+    "fertile",
+  );
   assert.deepEqual(s.origin.traits, ["Respiração anaeróbia"]);
   assert.deepEqual(s.hadeanTutorial, {
     moved: false,
@@ -366,39 +372,39 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
 
   const originCell = { ...s.origin };
   s = simulate(s, { type: "ORIGIN_CLICK" });
-  assert.equal(s.phase, "origin");
-  assert.equal(s.origin.selected, true);
-  assert.equal(s.pieces.length, 0);
-
   s = simulate(s, { type: "ORIGIN_CLICK" });
+
   assert.equal(s.phase, "move");
   assert.equal(s.origin, null);
   assert.equal(s.pieces.length, 2);
-  assert.ok(s.pieces.every((piece) => piece.rank === 4));
+  assert.equal(s.hadeanTutorial.divided, true);
   assert.ok(
     s.pieces.every(
       (piece) =>
-        piece.mutations === 1 &&
-        piece.traits.length === 1 &&
-        piece.traits.includes("Respiração anaeróbia"),
+        piece.rank === 4 &&
+        piece.traits.includes("Respiração anaeróbia") &&
+        piece.traits.includes("Fotossíntese") &&
+        !piece.traits.includes("Predação"),
     ),
   );
-  assert.ok(s.historicalTraits.includes("Respiração anaeróbia"));
-  assert.ok(s.discoveries.mutations.includes("Respiração anaeróbia"));
-  assert.ok(s.seenMutations.includes("Respiração anaeróbia"));
+  assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
+  assert.equal(s.historicalTraits.includes("Predação"), false);
+  assert.deepEqual(s.seenMutations, ["Respiração anaeróbia"]);
+  assert.equal(s.notices.length, 1);
+  assert.equal(s.notices[0].title, "Fotossíntese");
+  assert.match(s.notices[0].lines.join(" "), /Passe a Vez/);
+
   const blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
   assert.ok(blue.r > originCell.r);
   assert.ok(amber.r < originCell.r);
   assert.equal(blue.c, originCell.c);
   assert.equal(amber.c, originCell.c);
-
-  const legal = movesFor(s, blue);
-  assert.equal(
-    legal.some((target) => !target.stay && !target.capture),
-    false,
-  );
-  assert.ok(legal.some((target) => target.stay));
+  assert.equal(s.board[square(blue.r, blue.c)], "neutral");
+  assert.equal(s.board[square(amber.r, amber.c)], "neutral");
+  assert.equal(s.board[square(originCell.r, originCell.c)], "neutral");
+  assert.ok(Number.isInteger(blue.photosynthesisSinceTurn));
+  assert.ok(Number.isInteger(amber.photosynthesisSinceTurn));
   assert.equal(
     Array.from({ length: 8 }, (_, r) =>
       Array.from({ length: 8 }, (_, col) =>
@@ -410,14 +416,17 @@ test("Hadean starts with one gray common ancestor that splits into two basal Kin
   assertState(s);
 });
 
-test("Hadean lethal boundary remains marked but is unreachable before primitive locomotion", () => {
+test("Hadean lethal boundary remains unreachable while photosynthetic founders wait", () => {
   let s = createCampaignState(304);
   s = simulate(s, { type: "ORIGIN_CLICK" });
   s = simulate(s, { type: "ORIGIN_CLICK" });
+  s = simulate(s, { type: "ACK_NOTICE", id: s.notices[0].id });
 
   const blue = s.pieces.find((piece) => piece.owner === "blue");
   blue.r = 2;
   blue.c = 2;
+  blue.photosynthesisCell = square(2, 2);
+  blue.photosynthesisSinceTurn = s.turn;
   assert.equal(lethalHazardAt(s, 1, 1), true);
   assert.equal(lethalHazardAt(s, 1, 2), true);
   assert.equal(
@@ -426,186 +435,58 @@ test("Hadean lethal boundary remains marked but is unreachable before primitive 
     ),
     false,
   );
-  assert.ok(
-    movesFor(s, blue).some(
-      (target) => target.stay && target.r === blue.r && target.c === blue.c,
-    ),
-  );
+  assert.equal(movesFor(s, blue).length, 0);
   assertState(s);
 });
 
-test("Hadean tutorial uses reproduction and immediate capture before primitive locomotion", () => {
+test("Hadean photosynthesis matures after metabolic rest and newborn cells start neutral", () => {
   let s = createCampaignState(302);
   s = simulate(s, { type: "ORIGIN_CLICK" });
   s = simulate(s, { type: "ORIGIN_CLICK" });
+  assert.equal(s.notices.length, 1);
+  s = simulate(s, { type: "ACK_NOTICE", id: s.notices[0].id });
 
-  let blue = s.pieces.find((piece) => piece.owner === "blue");
-  const blueTargets = movesFor(s, blue);
-  assert.ok(
-    blueTargets.some(
-      (target) => target.stay && target.r === blue.r && target.c === blue.c,
-    ),
-  );
-  assert.ok(blueTargets.every((target) => target.stay || target.capture));
-  assert.equal(
-    blueTargets.some((target) => !target.stay && !target.capture),
-    false,
-  );
+  let blue = s.pieces.find((piece) => piece.owner === "blue"),
+    amber = s.pieces.find((piece) => piece.owner === "amber");
+  const delay = photosynthesisDelayTurns(s, blue);
+  assert.equal(delay, metabolicReproductionCooldown(blue) * 2);
+  assert.equal(s.board[square(blue.r, blue.c)], "neutral");
+  assert.equal(s.board[square(amber.r, amber.c)], "neutral");
+  assert.equal(movesFor(s, blue).length, 0);
 
+  let passes = 0;
+  while (
+    s.board[square(blue.r, blue.c)] !== "fertile" &&
+    passes <= delay + 2
+  ) {
+    s = simulate(s, { type: "PASS" });
+    passes++;
+    blue = s.pieces.find((piece) => piece.id === blue.id);
+    amber = s.pieces.find((piece) => piece.id === amber.id);
+  }
+  assert.equal(s.board[square(blue.r, blue.c)], "fertile");
+  assert.ok(passes >= delay);
+
+  while (s.current !== "blue")
+    s = simulate(s, { type: "PASS" });
+  blue = s.pieces.find((piece) => piece.id === blue.id);
+  const beforeIds = new Set(s.pieces.map((piece) => piece.id));
   s = simulate(s, move(blue, blue.r, blue.c));
-  assert.equal(s.hadeanTutorial.divided, true);
-  assert.equal(s.hadeanTutorial.moved, false);
+  const child = s.pieces.find(
+    (piece) => piece.owner === "blue" && !beforeIds.has(piece.id),
+  );
+  assert.ok(child);
+  assert.ok(child.traits.includes("Fotossíntese"));
+  assert.equal(s.board[square(child.r, child.c)], "neutral");
+  assert.ok(Number.isInteger(child.photosynthesisSinceTurn));
   assert.equal(
-    s.pieces.filter((piece) => piece.owner === "blue").length,
-    2,
-  );
-
-  let amber = s.pieces.find((piece) => piece.owner === "amber");
-  const amberTargets = movesFor(s, amber);
-  assert.equal(
-    amberTargets.some((target) => !target.stay && !target.capture),
-    false,
-  );
-  s = simulate(s, move(amber, amber.r, amber.c));
-  assert.equal(
-    s.pieces.filter((piece) => piece.owner === "amber").length,
-    2,
-  );
-  assert.ok(
-    s.pieces.every(
-      (piece) =>
-        piece.traits.length === 1 &&
-        piece.traits.includes("Respiração anaeróbia"),
-    ),
-  );
-  assert.deepEqual(s.seenMutations, ["Respiração anaeróbia"]);
-
-  amber = s.pieces.find((piece) => piece.owner === "amber");
-  blue = s.pieces.find((piece) => piece.owner === "blue");
-  const others = s.pieces.filter(
-    (piece) => piece.id !== amber.id && piece.id !== blue.id,
-  );
-  blue.r = 4;
-  blue.c = 4;
-  amber.r = 3;
-  amber.c = 3;
-  if (others[0]) {
-    others[0].r = 5;
-    others[0].c = 5;
-  }
-  if (others[1]) {
-    others[1].r = 4;
-    others[1].c = 5;
-  }
-
-  assert.equal(s.hadeanCaptureUnlocked, true);
-  assert.ok(
-    movesFor(s, blue).some(
-      (target) => target.r === 3 && target.c === 3 && target.capture,
-    ),
-  );
-  assert.equal(
-    movesFor(s, blue).some(
-      (target) => !target.stay && !target.capture,
+    s.fertilityRecovery.some(
+      (entry) => entry.cell === square(blue.r, blue.c),
     ),
     false,
   );
-
-  s = simulate(s, move(blue, 3, 3));
-  assert.equal(s.hadeanTutorial.captured, true);
-  assert.deepEqual(s.hadeanTutorial, {
-    moved: false,
-    divided: true,
-    captured: true,
-  });
-  assert.equal(s.phase, "move");
-  assert.equal(s.result, null);
-  assert.equal(s.carcasses.length, 0);
-  assert.equal(s.deathSites.length, 0);
-
-  const lastBlue = s.pieces.find(
-      (piece) => piece.owner === "blue" && piece.id !== blue.id,
-    ),
-    lastAmber = s.pieces.find((piece) => piece.owner === "amber");
-  assert.ok(lastBlue);
-  assert.ok(lastAmber);
-  lastAmber.r = 4;
-  lastAmber.c = 4;
-  lastBlue.r = 5;
-  lastBlue.c = 5;
-  blue.r = 2;
-  blue.c = 2;
-  s.current = "amber";
-
-  s = simulate(s, move(lastAmber, 5, 5));
-  assert.equal(
-    s.pieces.filter((piece) => piece.owner === "blue").length,
-    1,
-  );
-
-  const finalBlue = s.pieces.find((piece) => piece.owner === "blue"),
-    finalAmber = s.pieces.find((piece) => piece.owner === "amber");
-  finalAmber.r = 3;
-  finalAmber.c = 3;
-  finalBlue.r = 4;
-  finalBlue.c = 4;
-  s.current = "amber";
-  s = simulate(s, move(finalAmber, 4, 4));
-  assert.equal(s.phase, "over");
-  assert.equal(s.result.winner, "amber");
-  assert.match(s.result.reason, /Extinção total/);
-
-  s.seen = [...new Set([...s.seen, "reproduction", "hostile"])];
-  const archean = createSuccessorState(s, 303);
-  assert.equal(archean.geologicalStage, "archean");
-  assert.ok(archean.seen.includes("reproduction"));
-  assert.ok(archean.seen.includes("hostile"));
-  notice(
-    archean,
-    "Reprodução",
-    ["Casas verdes podem gerar prole com as características dos pais."],
-    "reproduction",
-  );
-  notice(
-    archean,
-    "Casas hostis",
-    ["Casas vermelhas oferecem perigo de morte."],
-    "hostile",
-  );
-  assert.equal(archean.notices.length, 0);
-  assert.equal(archean.cycle, 1);
-  assert.equal(archean.totalCycles, 1);
-  assert.equal(archean.hadeanTutorial, null);
-  assert.equal(archean.pieces.length, 4);
-  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 16);
-  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 20);
-  assert.equal(archean.board.filter((cell) => cell === "neutral").length, 28);
-  assert.equal(
-    Array.from({ length: 8 }, (_, r) =>
-      Array.from({ length: 8 }, (_, col) =>
-        lethalHazardAt(archean, r, col),
-      ),
-    ).flat().filter(Boolean).length,
-    28,
-  );
-  for (const owner of ["blue", "amber"]) {
-    const founders = archean.pieces.filter((piece) => piece.owner === owner);
-    assert.equal(founders.length, 2);
-    assert.ok(
-      founders.every(
-        (piece) =>
-          piece.mutations === 0 &&
-          piece.traits.length === 1 &&
-          piece.traits.includes("Respiração anaeróbia") &&
-          !piece.traits.includes("Fotossíntese") &&
-          !piece.traits.includes("Predação"),
-      ),
-    );
-  }
-  assert.ok(archean.historicalTraits.includes("Respiração anaeróbia"));
-  assert.equal(archean.historicalTraits.includes("Fotossíntese"), false);
-  assert.equal(archean.historicalTraits.includes("Predação"), false);
-  assertState(archean);
+  assert.equal(s.board[square(blue.r, blue.c)], "neutral");
+  assertState(s);
 });
 
 test("simultaneous total extinction is won by the lineage whose last piece dies last", () => {
@@ -679,71 +560,78 @@ test("compact non-canonical cycle starts keep Brancas on the lower half", () => 
   }
 });
 
-test("Hadean capture stays unlocked after the initial 2x2 population loses a piece", () => {
+test("Hadean saturation grants Predação to each color on consecutive turns", () => {
   let s = createCampaignState(305);
   s = simulate(s, { type: "ORIGIN_CLICK" });
   s = simulate(s, { type: "ORIGIN_CLICK" });
+  s = simulate(s, { type: "ACK_NOTICE", id: s.notices[0].id });
+  s.pieces = [];
+  s.nextId = 1;
+  for (let r = 2; r <= 5; r++)
+    for (let col = 2; col <= 5; col++) {
+      const owner = (r + col) % 2 ? "blue" : "amber";
+      s.pieces.push(
+        newPiece(s, owner, r, col, {
+          rank: 4,
+          traits: ["Fotossíntese"],
+          ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+        }),
+      );
+      s.board[square(r, col)] = "neutral";
+    }
+  s.current = "blue";
+  s.hadeanPredationGranted = { blue: false, amber: false };
+  s.hadeanCaptureUnlocked = false;
 
-  let blue = s.pieces.find((piece) => piece.owner === "blue");
-  s = simulate(s, move(blue, blue.r, blue.c));
-  let amber = s.pieces.find((piece) => piece.owner === "amber");
-  s = simulate(s, move(amber, amber.r, amber.c));
-
-  assert.equal(s.reproductions.blue, 1);
-  assert.equal(s.reproductions.amber, 1);
-  assert.equal(s.pieces.length, 4);
-  assert.equal(s.hadeanCaptureUnlocked, true);
-  assert.equal(captureUnlocked(s, s.pieces[0]), true);
-
-  const ambers = s.pieces.filter((piece) => piece.owner === "amber"),
-    blues = s.pieces.filter((piece) => piece.owner === "blue"),
-    attacker = ambers[0],
-    survivingAmber = ambers[1],
-    victim = blues[0],
-    survivingBlue = blues[1];
-
-  attacker.r = 3;
-  attacker.c = 3;
-  victim.r = 4;
-  victim.c = 4;
-  survivingBlue.r = 5;
-  survivingBlue.c = 5;
-  survivingAmber.r = 2;
-  survivingAmber.c = 2;
-  s.current = "amber";
-
-  s = simulate(s, move(attacker, 4, 4));
-  assert.equal(s.pieces.length, 3);
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.current, "amber");
+  assert.equal(s.hadeanPredationGranted.amber, true);
+  assert.equal(s.hadeanPredationGranted.blue, false);
+  assert.equal(s.hadeanCaptureUnlocked, false);
+  const amberPredators = s.pieces.filter(
+    (piece) => piece.owner === "amber" && piece.traits.includes("Predação"),
+  );
+  assert.equal(amberPredators.length, 1);
+  assert.equal(amberPredators[0].traits.includes("Fotossíntese"), false);
+  assert.equal(captureUnlocked(s, amberPredators[0]), true);
   assert.equal(
-    s.pieces.filter((piece) => piece.owner === "blue").length,
-    1,
+    s.pieces
+      .filter((piece) => piece.owner === "blue")
+      .some((piece) => captureUnlocked(s, piece)),
+    false,
   );
 
-  const blueAfterLoss = s.pieces.find(
-    (piece) => piece.id === survivingBlue.id,
-  );
-  blueAfterLoss.nextReproductionRound = round(s) + 4;
-  s.reproductions = { blue: 0, amber: 0 };
-
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.current, "blue");
+  assert.equal(s.hadeanPredationGranted.blue, true);
+  assert.equal(s.hadeanPredationGranted.amber, true);
   assert.equal(s.hadeanCaptureUnlocked, true);
-  assert.equal(captureUnlocked(s, blueAfterLoss), true);
+  const bluePredators = s.pieces.filter(
+    (piece) => piece.owner === "blue" && piece.traits.includes("Predação"),
+  );
+  assert.equal(bluePredators.length, 1);
+  assert.equal(bluePredators[0].traits.includes("Fotossíntese"), false);
   assert.ok(
-    movesFor(s, blueAfterLoss).some(
-      (target) => target.r === 4 && target.c === 4 && target.capture,
+    s.logs.some((entry) =>
+      entry.text.includes("Brancas e Pretas agora possuem 👾 Predação"),
     ),
   );
   assertState(s);
 });
 
-test("legacy Hadean states keep capture unlocked after a recorded capture", () => {
+test("Hadean capture requires an explicit Predação trait", () => {
   let s = createCampaignState(306);
   s = simulate(s, { type: "ORIGIN_CLICK" });
   s = simulate(s, { type: "ORIGIN_CLICK" });
-  delete s.hadeanCaptureUnlocked;
+  s = simulate(s, { type: "ACK_NOTICE", id: s.notices[0].id });
+  const blue = s.pieces.find((piece) => piece.owner === "blue");
+  s.hadeanCaptureUnlocked = true;
   s.hadeanTutorial.captured = true;
-  s.reproductions = { blue: 0, amber: 0 };
+  assert.equal(captureUnlocked(s, blue), false);
 
-  assert.equal(captureUnlocked(s, s.pieces[0]), true);
+  blue.traits = ["Respiração anaeróbia", "Predação"];
+  blue.ancestry = ["Respiração anaeróbia", "Fotossíntese", "Predação"];
+  assert.equal(captureUnlocked(s, blue), true);
   assertState(s);
 });
 
