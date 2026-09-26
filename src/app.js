@@ -5,6 +5,7 @@ import {
   createSuccessorState,
   createArenaState,
   createArenaSuccessorState,
+  createPassiveToastTestState,
   arenaSurvivorGenomes,
 } from "./state.js";
 import { Controller } from "./controller.js";
@@ -786,7 +787,7 @@ for (const tab of document.querySelectorAll("[data-discovery-tab]"))
     activeDiscoveryCategory = tab.dataset.discoveryTab;
     renderDiscoveryList();
   });
-function info(title, lines, action = null) {
+function info(title, lines, action = null, confirmLabel = null) {
   $("menu-dialog").close();
   $("info-title").textContent = title;
   $("info-content").replaceChildren(
@@ -823,7 +824,9 @@ function info(title, lines, action = null) {
   );
   confirmAction = action;
   $("info-cancel").hidden = !action;
-  $("info-ok").textContent = action ? "Iniciar nova partida" : "Entendi";
+  $("info-ok").textContent = action
+    ? (confirmLabel ?? "Iniciar nova partida")
+    : "Entendi";
   const dialog = $("info-dialog");
   dialog.showModal();
   dialog.focus({ preventScroll: true });
@@ -864,6 +867,33 @@ for (const id of ["mode", "difficulty"])
       report("Preferência aplicada nesta sessão.");
     }
   });
+$("toast-test-phase").addEventListener("click", () =>
+  info(
+    "🧪 Fase teste de toasts",
+    [
+      "Esta fase substitui temporariamente a partida atual e força o modo 2 jogadores. As seis ações abaixo foram preparadas para gerar toasts determinísticos, sem depender de sorte.",
+      "§ Sequência garantida",
+      "1. Brancas: em A1, selecione a peça com 🐇 Ovulação Induzida e clique no parceiro em B1.",
+      "2. Pretas: em A8, selecione a peça com ▽ Presas e capture A7, que possui 🦏 Pele grossa.",
+      "3. Brancas: em C5, selecione a peça com 👁️ Visão Noturna e capture D5, que possui 🌙 Notívago.",
+      "4. Pretas: em H4, selecione a peça com 🐚 Carapaça e capture H3, que possui 🫎 Chifre.",
+      "5. Brancas: em A6, selecione a Torre com 👀 Visão Binocular e capture E6, que possui 😶‍🌫️ Camuflagem.",
+      "6. Pretas: em C3, selecione a peça atacante e tente capturar D3. A cria é protegida pelo progenitor 🐠 Cuidado Parental em D4.",
+      "Cada ação deve produzir um toast no topo do próprio tabuleiro. Se uma reprodução abrir um aviso de mutação, feche o aviso: o toast ficará na fila e aparecerá em seguida.",
+    ],
+    () => {
+      const next = createPassiveToastTestState(
+        Date.now(),
+        controller.state.discoveries,
+      );
+      replaceCycleState(next);
+      controller.configure("multi", controller.difficulty);
+      $("mode").value = "multi";
+      report("🧪 Fase teste de toasts iniciada. Siga a sequência mostrada no Menu.");
+    },
+    "Iniciar fase teste",
+  ),
+);
 $("new").addEventListener("click", () =>
   info(
     "Começar de novo?",
