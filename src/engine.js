@@ -477,7 +477,9 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
     );
     piece.hostileRiskRound = round(state) + 1;
     if (hostileHazardKills(state, piece)) {
-      ctx.kill(piece.id, reason + " em casa hostil");
+      const killed = ctx.kill(piece.id, reason + " em casa hostil");
+      if (killed && terrain(state, r, c) === "hostile")
+        markCarcass(state, destination);
       return false;
     }
   }
@@ -874,8 +876,12 @@ function advanceTurn(ctx) {
         p.hostileRiskRound !== round(state)
       ) {
         p.hostileRiskRound = round(state);
-        if (hostileHazardKills(state, p))
-          ctx.kill(p.id, "casa hostil");
+        if (hostileHazardKills(state, p)) {
+          const cell = square(p.r, p.c);
+          const killed = ctx.kill(p.id, "casa hostil");
+          if (killed && terrain(state, p.r, p.c) === "hostile")
+            markCarcass(state, cell);
+        }
       }
     if (!extinction(state)) applyNaturalDeaths(ctx);
     if (!extinction(state)) matureExtremophytes(state);
@@ -1289,6 +1295,25 @@ function executeMove(ctx, action) {
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
+  state.movementTrace =
+    !target.stay && (target.path?.length ?? 0) > 1
+      ? {
+          pieceId: p.id,
+          owner: p.owner,
+          rank: p.rank,
+          origin: { r: p.r, c: p.c },
+          path: target.path.map(([r, c]) => ({ r, c })),
+          stop: { r: target.r, c: target.c },
+          outcome: "moved",
+          kind: target.jet
+            ? "jet"
+            : target.jump
+              ? "jump"
+              : target.echolocation
+                ? "echolocation"
+                : "move",
+        }
+      : null;
   if (target.cutaneous) {
     const resource = square(target.r, target.c);
     if (state.board[resource] !== "fertile")
@@ -1390,6 +1415,18 @@ function executeMove(ctx, action) {
       lethalHazardAt(state, r, c) &&
       (!has(p, "Voo") || (r === target.r && c === target.c))
     ) {
+      if (state.movementTrace) {
+        const stopIndex = state.movementTrace.path.findIndex(
+          (cell) => cell.r === r && cell.c === c,
+        );
+        if (stopIndex >= 0)
+          state.movementTrace.path = state.movementTrace.path.slice(
+            0,
+            stopIndex + 1,
+          );
+        state.movementTrace.stop = { r, c };
+        state.movementTrace.outcome = "died-lethal";
+      }
       ctx.kill(p.id, "ambiente letal", null, true);
       advanceTurn(ctx);
       settle(ctx);
@@ -1421,7 +1458,21 @@ function executeMove(ctx, action) {
         "hostile",
       );
       if (hostileHazardKills(state, p)) {
-        ctx.kill(p.id, "deslocamento em casa hostil");
+        if (state.movementTrace) {
+          const stopIndex = state.movementTrace.path.findIndex(
+            (cell) => cell.r === r && cell.c === c,
+          );
+          if (stopIndex >= 0)
+            state.movementTrace.path = state.movementTrace.path.slice(
+              0,
+              stopIndex + 1,
+            );
+          state.movementTrace.stop = { r, c };
+          state.movementTrace.outcome = "died-hostile";
+        }
+        const killed = ctx.kill(p.id, "deslocamento em casa hostil");
+        if (killed && terrain(state, r, c) === "hostile")
+          markCarcass(state, square(r, c));
         advanceTurn(ctx);
         settle(ctx);
         return;
@@ -1861,7 +1912,9 @@ function executeMove(ctx, action) {
     );
     p.hostileRiskRound = round(state) + 1;
     if (hostileHazardKills(state, p)) {
-      ctx.kill(p.id, "casa hostil após captura");
+      const killed = ctx.kill(p.id, "casa hostil após captura");
+      if (killed && terrain(state, p.r, p.c) === "hostile")
+        markCarcass(state, cell);
       if (capturedPieceKilled) {
         markCarcass(state, cell);
         markCaptureDisturbance(state, cell);
@@ -2597,6 +2650,7 @@ export function transition(previous, action) {
   if (previous.result || previous.notices.length) return previous;
   const state = clone(previous),
     ctx = context(state);
+  state.movementTrace = null;
   if (action.type === "DOMAIN_COLLAPSE" && state.phase === "collapse")
     resolveEcologicalCollapse(ctx);
   else if (action.type === "ORIGIN_CLICK" && state.phase === "origin")
