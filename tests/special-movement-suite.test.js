@@ -234,15 +234,17 @@ test("Recuo retorna à origem depois de uma captura adjacente bem-sucedida", () 
   let state = fixture([
     { owner: "blue", r: 4, c: 4, rank: 4 },
     { owner: "amber", r: 4, c: 5, rank: 0 },
+    { owner: "amber", r: 0, c: 0, rank: 4 },
   ]);
   const actor = exactTraits(
-    state.pieces[0],
-    animalTraits(["Velocidade", "Recuo"]),
-  );
+      state.pieces[0],
+      animalTraits(["Velocidade", "Recuo"]),
+    ),
+    victim = state.pieces[1];
 
   state = simulate(state, move(actor, 4, 5));
   assert.equal(
-    state.pieces.some((piece) => piece.owner === "amber"),
+    state.pieces.some((piece) => piece.id === victim.id),
     false,
   );
   assert.equal(state.chain, actor.id);
