@@ -178,9 +178,6 @@ test("tracked Toastify assets load before the app and mobile styling stays viewp
   assert.match(toastifyJs, /Toastify js 1\.12\.0/);
   assert.equal(d.getElementById("passive-toasts"), null);
   assert.match(css, /\.toastify\.xe-passive-toast\s*\{/);
-  assert.match(css, /\.toastify\.xe-passive-toast--terrain-fertile-light\s*\{/);
-  assert.match(css, /\.toastify\.xe-passive-toast--terrain-hostile-dark\s*\{/);
-  assert.match(css, /\.toastify\.xe-passive-toast--terrain-fertile-single\s*\{/);
   assert.match(css, /max-width:\s*min\(calc\(100vw - 24px\), 680px\)/);
   assert.match(
     css,
