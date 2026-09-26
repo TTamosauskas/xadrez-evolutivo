@@ -488,6 +488,10 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     !!eggAt(state, r, c) ||
     !!fragmentAt(state, r, c) ||
     barrierAt(state, r, c);
+  const escalatorMovementBlock = (r, c) =>
+    !!eggAt(state, r, c) ||
+    !!fragmentAt(state, r, c) ||
+    builtBarrierAt(state, r, c);
 
   function lateralMovementTargets() {
     if (
@@ -544,7 +548,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         path.push([r, p.c]);
         if (
           ecologicalDomainBlocked(state, p.owner, r, p.c) ||
-          hardMovementBlock(r, p.c)
+          escalatorMovementBlock(r, p.c)
         )
           break;
         const occupant = at(state, r, p.c);
@@ -615,7 +619,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           [r, c] = perimeter[index];
         if (ecologicalDomainBlocked(state, p.owner, r, c)) break;
         path.push([r, c]);
-        if (hardMovementBlock(r, c)) break;
+        if (escalatorMovementBlock(r, c)) break;
 
         const occupant = at(state, r, c);
         if (occupant) {
