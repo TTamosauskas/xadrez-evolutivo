@@ -176,6 +176,18 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Ecolocalização");
   if (targets.some((target) => target.crawler))
     actionable.add("Rastejante");
+  if (targets.some((target) => target.lateral))
+    actionable.add("Movimento Lateral");
+  if (targets.some((target) => target.serpentine))
+    actionable.add("Serpenteamento");
+  if (targets.some((target) => target.trail))
+    actionable.add("Trilhas");
+  if (targets.some((target) => target.tigmotaxis))
+    actionable.add("Tigmotaxia");
+  if (targets.some((target) => target.recoil))
+    actionable.add("Recuo");
+  if (targets.some((target) => target.sliding))
+    actionable.add("Deslizamento");
   if (
     has(piece, "Manada") &&
     state.pieces.some(
