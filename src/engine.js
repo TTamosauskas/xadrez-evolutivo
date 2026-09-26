@@ -151,6 +151,7 @@ export function context(state) {
           resourceKind: "stored",
         });
       scatterSeeds(state, dead);
+      state.lastDeathPiece = clone(dead);
       log(state, `${OWNERS[dead.owner]} perderam uma peça por ${reason}.`);
       return true;
     },
@@ -180,8 +181,11 @@ export function applyNaturalDeaths(ctx) {
   return deaths;
 }
 
-function finishGame(state, winner, reason) {
-  state.result = { winner, reason };
+function finishGame(state, winner, reason, extinctionFounder = null) {
+  state.result = extinctionFounder
+    ? { winner, reason, extinctionFounder: clone(extinctionFounder) }
+    : { winner, reason };
+  delete state.lastDeathPiece;
   state.phase = "over";
   state.chain = null;
   state.partner = null;
@@ -207,13 +211,22 @@ function markHadeanTutorialStep(state, step) {
   log(state, "🌋 Tutorial Hadeano: " + labels[step] + " concluído.");
 }
 function extinction(state) {
+  if (state.result) return true;
   const blue = state.pieces.some((p) => p.owner === "blue"),
     amber = state.pieces.some((p) => p.owner === "amber");
   if (!blue || !amber) {
+    const simultaneous = !blue && !amber,
+      extinctionFounder = simultaneous ? state.lastDeathPiece ?? null : null,
+      winner = blue
+        ? "blue"
+        : amber
+          ? "amber"
+          : extinctionFounder?.owner ?? null;
     finishGame(
       state,
-      blue ? "blue" : amber ? "amber" : null,
+      winner,
       "Extinção total.",
+      extinctionFounder,
     );
     return true;
   }
