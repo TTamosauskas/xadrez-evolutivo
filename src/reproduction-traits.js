@@ -1,4 +1,10 @@
-import { distance, energyBranch, has, inside } from "./constants.js";
+import {
+  canPhotosynthesize,
+  distance,
+  energyBranch,
+  has,
+  inside,
+} from "./constants.js";
 import {
   juvenile,
   reproductionReady,
@@ -39,17 +45,32 @@ export const MARSUPIAL_CARRY_ROUNDS = 1;
 const lineageReached = (piece, trait) =>
   has(piece, trait) || (piece?.ancestry ?? []).includes(trait);
 
-export const canUseBasalFertility = (piece) =>
-  !!piece &&
-  has(piece, "Respiração anaeróbia") &&
-  !(has(piece, "Predação") && !lineageReached(piece, "Multicelularismo")) &&
+export function canUseFertileResource(state, piece) {
+  if (!piece || !has(piece, "Respiração anaeróbia")) return false;
+  const stage = currentGeologicalStage(state);
+  if (stage.index <= geologicalStage("ediacaran").index) return true;
+  return (
+    canPhotosynthesize(piece) ||
+    has(piece, "Herbívoro") ||
+    has(piece, "Onívoro")
+  );
+}
+
+export const canUseBasalFertility = (state, piece) =>
+  canUseFertileResource(state, piece) &&
   !has(piece, "Reprodução Sexuada");
 
 export function predatoryReproductionAvailable(attacker, victim) {
-  if (!attacker || !victim || !has(attacker, "Predação")) return false;
-  if (!lineageReached(attacker, "Multicelularismo")) return true;
-  if (has(attacker, "Onívoro")) return true;
-  return has(victim, "Fotossíntese")
+  return !!(
+    attacker &&
+    victim &&
+    (has(attacker, "Predação") || has(attacker, "Mixotrofia"))
+  );
+}
+
+export function trophicSpecializationMatches(attacker, victim) {
+  if (!attacker || !victim) return false;
+  return canPhotosynthesize(victim)
     ? has(attacker, "Herbívoro")
     : has(attacker, "Carnívoro");
 }
