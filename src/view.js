@@ -466,7 +466,9 @@ export function render(
         jetTarget = !!targetEntry?.jet,
         echolocationTarget = !!targetEntry?.echolocation,
         captureTarget = !!(
-          targetEntry?.capture || targetEntry?.eggCapture
+          targetEntry?.capture ||
+          targetEntry?.eggCapture ||
+          targetEntry?.seedCapture
         ),
         parasitismTarget = !!(
           actor &&
@@ -495,10 +497,16 @@ export function render(
           targetEntry?.eggCapture &&
           reproductionReady(state, actor)
         ),
+        granivoryReproductionTarget = !!(
+          actor &&
+          targetEntry?.seedCapture &&
+          reproductionReady(state, actor)
+        ),
         captureReproductionTarget = !!(
           predatoryReproductionTarget ||
           cannibalReproductionTarget ||
-          eggReproductionTarget
+          eggReproductionTarget ||
+          granivoryReproductionTarget
         ),
         manipulate = manipulation.some((t) => t.r === r && t.c === c),
         build = construction.some((t) => t.r === r && t.c === c),
