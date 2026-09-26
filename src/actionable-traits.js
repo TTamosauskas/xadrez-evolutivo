@@ -8,6 +8,7 @@ import {
   eventBarrierAt,
   terrain,
   reproductionReady,
+  juvenile,
   photosynthesisAvailable,
   organicResidueAt,
   carcassAt,
