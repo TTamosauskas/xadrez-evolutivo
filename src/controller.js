@@ -206,8 +206,6 @@ export class Controller {
       this.cancel();
       if (pendingConway !== null) this.clearTimer(pendingConway);
       this.state = next;
-      if (this.mode !== "auto")
-        for (const effect of newPassiveEffects) this.toast(effect);
 
       if (this.neocortexPending) {
         const pending = this.neocortexPending;
@@ -243,6 +241,8 @@ export class Controller {
         this.neocortexLock = null;
 
       this.refresh();
+      if (this.mode !== "auto")
+        for (const effect of newPassiveEffects) this.toast(effect);
       return true;
     } catch (error) {
       this.report(error.message);
