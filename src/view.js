@@ -468,7 +468,7 @@ export function render(
           !captureTarget &&
           reproductionReady(state, actor) &&
           state.board[square(r, c)] === "fertile" &&
-          ((targetEntry && canUseBasalFertility(actor)) ||
+          ((targetEntry && canUseBasalFertility(state, actor)) ||
             (p?.id === actor.id &&
               has(actor, "Reprodução Sexuada") &&
               mates.length))
