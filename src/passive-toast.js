@@ -25,7 +25,7 @@ export function createPassiveEffectToastPresenter(
       ariaLive: "polite",
       className: `xe-passive-toast xe-passive-toast--${
         effect.outcome === "new-mutation"
-          ? "neutral"
+          ? effect.theme ?? "terrain-neutral-light"
           : effect.owner === "amber"
             ? "black"
             : "white"
@@ -45,7 +45,8 @@ export function createPassiveEffectToastPresenter(
       toast.toastElement.dataset.effectId = String(effect.id ?? "");
       toast.toastElement.dataset.trait = effect.trait ?? "";
       toast.toastElement.dataset.owner =
-        effect.outcome === "new-mutation" ? "neutral" : effect.owner ?? "blue";
+        effect.outcome === "new-mutation" ? "terrain" : effect.owner ?? "blue";
+      if (effect.theme) toast.toastElement.dataset.theme = effect.theme;
       toast.toastElement.setAttribute("role", "status");
       toast.toastElement
         .querySelector(".toast-close")
