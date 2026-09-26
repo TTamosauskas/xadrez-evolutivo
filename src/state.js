@@ -1022,6 +1022,8 @@ export function createState(seed = Date.now(), options = {}) {
     origin: null,
     chain: null,
     chainTrait: null,
+    chainOptions: [],
+    chainOrigin: null,
     partner: null,
     manipulation: null,
     building: null,
@@ -1117,6 +1119,7 @@ export function createState(seed = Date.now(), options = {}) {
     eggs: [],
     nextPlantSeed: 1,
     plantSeeds: [],
+    trails: [],
     nextFragment: 1,
     fragments: [],
     nextColonyId: 1,
@@ -2407,6 +2410,7 @@ export function assertState(state) {
     !Array.isArray(state.extremophyteFertility) ||
     !Array.isArray(state.eggs) ||
     !Array.isArray(state.plantSeeds) ||
+    (state.trails !== undefined && !Array.isArray(state.trails)) ||
     !Array.isArray(state.pathogenSpores) ||
     !Array.isArray(state.fragments) ||
     !Array.isArray(state.barriers) ||
@@ -2509,20 +2513,32 @@ export function assertState(state) {
     !Number.isInteger(state.rng)
   )
     throw Error("Turno inválido.");
+  const chainTraits = state.chainOptions?.length
+    ? state.chainOptions
+    : state.chainTrait && state.chainTrait !== "Locomoção Especial"
+      ? [state.chainTrait]
+      : [];
   if (
-    !(
-      state.chainTrait === null ||
-      (state.chainTrait === "Bipedalismo" &&
-        integer(state.chain, 1) &&
-        state.pieces.some(
-          (piece) =>
-            piece.id === state.chain &&
-            piece.owner === state.current &&
-            has(piece, "Bipedalismo"),
-        ))
-    )
+    state.chainTrait !== null &&
+    (!integer(state.chain, 1) ||
+      !state.pieces.some(
+        (piece) => piece.id === state.chain && piece.owner === state.current,
+      ) ||
+      !chainTraits.length ||
+      chainTraits.some(
+        (trait) =>
+          !["Bipedalismo", "Tigmotaxia", "Deslizamento", "Recuo"].includes(
+            trait,
+          ),
+      ))
   )
     throw Error("Cadeia locomotora inválida.");
+  if (
+    state.chainOrigin !== undefined &&
+    state.chainOrigin !== null &&
+    !inside(state.chainOrigin.r, state.chainOrigin.c)
+  )
+    throw Error("Origem da cadeia locomotora inválida.");
   if (
     ![
       "origin",
@@ -2785,6 +2801,18 @@ export function assertState(state) {
   }
   if (state.nextPlantSeed <= Math.max(0, ...plantSeedIds))
     throw Error("Identificadores de sementes vegetais inválidos.");
+  const trailKeys = new Set();
+  for (const trail of state.trails ?? []) {
+    const key = `${trail.owner}:${trail.cell}`;
+    if (
+      !["blue", "amber"].includes(trail.owner) ||
+      !integer(trail.cell, 0, 63) ||
+      !integer(trail.expiresRound, 0) ||
+      trailKeys.has(key)
+    )
+      throw Error("Trilha inválida.");
+    trailKeys.add(key);
+  }
   const pathogenSporeIds = new Set();
   for (const spore of state.pathogenSpores) {
     const disease = state.diseases.find(
