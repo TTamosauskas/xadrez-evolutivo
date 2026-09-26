@@ -73,6 +73,7 @@ import {
   MARSUPIAL_CARRY_ROUNDS,
   paedogenesisReady,
   buddingResource,
+  canUseFertileResource,
 } from "./reproduction-traits.js";
 import {
   transmitSexualPathogen,
@@ -1333,6 +1334,7 @@ export function reproduce(
         TROPHIC_REPRODUCTION_RESOURCES.has(resourceKind)
       )
         metabolic *= 2;
+      if (options.trophicEfficiency) metabolic = Math.max(1, metabolic - 1);
       if (mates.length > 1) metabolic *= 2;
       return (
         round(state) +
@@ -1931,7 +1933,12 @@ export function tickReproduction(ctx) {
 }
 
 export function harvest(state, p, r, c) {
-  if (!has(p, "Coletor") || state.board[square(r, c)] !== "fertile") return;
+  if (
+    !has(p, "Coletor") ||
+    !canUseFertileResource(state, p) ||
+    state.board[square(r, c)] !== "fertile"
+  )
+    return;
   let count = 0;
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++)
