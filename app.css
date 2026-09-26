@@ -188,6 +188,9 @@ main {
 .movement-trace-hidden {
   visibility: hidden !important;
 }
+.board.movement-animating .cell {
+  pointer-events: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .movement-trace-piece {
     display: none;

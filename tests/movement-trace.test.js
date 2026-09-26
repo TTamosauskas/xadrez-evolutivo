@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture, move } from "./helpers.js";
 import { simulate } from "../src/engine.js";
+import { movesFor } from "../src/moves.js";
 import { carcassAt } from "../src/state.js";
 
 test("long movements expose the resolved path for interface animation", () => {
@@ -27,6 +28,8 @@ test("long movements expose the resolved path for interface animation", () => {
     stop: { r: 4, c: 4 },
     outcome: "moved",
     kind: "move",
+    jumpedCell: null,
+    knightCorrection: false,
   });
 });
 
@@ -71,4 +74,84 @@ test("Regeneração prevents an environmental carcass when it prevents the death
 
   assert.ok(state.pieces.some((piece) => piece.id === actor.id));
   assert.equal(carcassAt(state, 4, 1), null);
+});
+
+
+test("Bishop, Rook and Queen expose every traversed square in order", () => {
+  const cases = [
+    {
+      rank: 2,
+      origin: [5, 1],
+      target: [2, 4],
+      path: [[4, 2], [3, 3], [2, 4]],
+    },
+    {
+      rank: 3,
+      origin: [4, 0],
+      target: [4, 4],
+      path: [[4, 1], [4, 2], [4, 3], [4, 4]],
+    },
+    {
+      rank: 5,
+      origin: [6, 1],
+      target: [2, 5],
+      path: [[5, 2], [4, 3], [3, 4], [2, 5]],
+    },
+  ];
+
+  for (const entry of cases) {
+    let state = fixture([
+      {
+        owner: "blue",
+        r: entry.origin[0],
+        c: entry.origin[1],
+        rank: entry.rank,
+      },
+      { owner: "amber", r: 0, c: 7, rank: 4 },
+    ]);
+    const actor = state.pieces[0];
+    state = simulate(state, move(actor, entry.target[0], entry.target[1]));
+    assert.deepEqual(
+      state.movementTrace?.path,
+      entry.path.map(([r, c]) => ({ r, c })),
+      `rank ${entry.rank}`,
+    );
+    assert.equal(state.movementTrace?.kind, "move", `rank ${entry.rank}`);
+  }
+});
+
+test("Knight long displacement is animated as a jump even with a one-cell logical path", () => {
+  let state = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 1 },
+    { owner: "amber", r: 0, c: 0, rank: 4 },
+  ]);
+  const actor = state.pieces[0];
+
+  state = simulate(state, move(actor, 2, 3));
+
+  assert.deepEqual(state.movementTrace?.origin, { r: 4, c: 4 });
+  assert.deepEqual(state.movementTrace?.path, [{ r: 2, c: 3 }]);
+  assert.deepEqual(state.movementTrace?.stop, { r: 2, c: 3 });
+  assert.equal(state.movementTrace?.kind, "knight");
+});
+
+test("ordinary one-cell Pawn and King moves stay outside long-movement animation", () => {
+  const pawnState = fixture([
+      { owner: "blue", r: 6, c: 3, rank: 0 },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    pawn = pawnState.pieces[0],
+    pawnTarget = movesFor(pawnState, pawn).find(
+      (target) => target.r === 5 && target.c === 3,
+    );
+  assert.ok(pawnTarget);
+  assert.deepEqual(pawnTarget.path, [[5, 3]]);
+
+  let kingState = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 4 },
+    { owner: "amber", r: 0, c: 0, rank: 4 },
+  ]);
+  const king = kingState.pieces[0];
+  kingState = simulate(kingState, move(king, 4, 5));
+  assert.equal(kingState.movementTrace, null);
 });
