@@ -39,7 +39,6 @@ import {
   genomeFromLegacyProfile,
   genomeSignature,
   hiddenRecessiveTraits,
-  forceGenomeTrait,
   syncGenomePhenotype,
   validGenome,
   withoutGenomeTraits,
@@ -1596,46 +1595,6 @@ export function hadeanHabitatSaturated(state) {
     for (let c = 2; c <= 5; c++)
       if (!at(state, r, c)) return false;
   return true;
-}
-
-export function grantHadeanPredation(state, owner) {
-  if (
-    state?.geologicalStage !== "hadean" ||
-    !["blue", "amber"].includes(owner)
-  )
-    return null;
-  const candidates = state.pieces
-    .filter(
-      (piece) =>
-        piece.owner === owner &&
-        !has(piece, "Predação"),
-    )
-    .sort((a, b) => a.id - b.id);
-  const piece =
-    candidates.find((candidate) => canPhotosynthesize(candidate)) ??
-    candidates[0] ??
-    null;
-  if (!piece) return null;
-
-  piece.genome = forceGenomeTrait(
-    piece.genome,
-    "Predação",
-    "dominant",
-  );
-  syncGenomePhenotype(piece, "Predação");
-  piece.ancestry = [
-    ...new Set([
-      ...(piece.ancestry ?? []),
-      "Fotossíntese",
-      "Predação",
-      ...piece.traits,
-    ]),
-  ];
-  piece.mutations = (piece.mutations ?? 0) + 1;
-  delete piece.photosynthesisCell;
-  delete piece.photosynthesisSinceTurn;
-  delete piece.photosynthesisReadyTurn;
-  return piece;
 }
 
 export function activateOrigin(state) {
