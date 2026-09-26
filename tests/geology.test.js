@@ -217,7 +217,11 @@ test("period innovations follow the didactic sequence", () => {
   assert.deepEqual(required.triassic, ["Vivíparo", "Notívago"]);
   assert.deepEqual(required.jurassic, ["Visão Noturna"]);
   assert.deepEqual(required.cretaceous, ["Eusocialidade", "Ovífagia"]);
-  assert.deepEqual(required.neogene, ["Chifre", "Polegar Opositor"]);
+  assert.deepEqual(required.neogene, [
+    "Chifre",
+    "Polegar Opositor",
+    "Córtex Pré-Frontal",
+  ]);
   assert.deepEqual(required.quaternary, [
     "Neocórtex Desenvolvido",
     "Antropização",
