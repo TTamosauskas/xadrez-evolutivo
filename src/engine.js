@@ -1028,6 +1028,7 @@ function completeMove(ctx, p, second, locomotion) {
       (target) =>
         !target.capture &&
         !target.eggCapture &&
+        !target.seedCapture &&
         !target.stay &&
         !at(state, target.r, target.c),
     )
@@ -1369,6 +1370,7 @@ function executeMove(ctx, action) {
       !second &&
       !target.capture &&
       !target.eggCapture &&
+      !target.seedCapture &&
       !target.stay &&
       !at(state, target.r, target.c),
     botanicalPredation = target.botanicalPredation ?? null,
@@ -1414,6 +1416,7 @@ function executeMove(ctx, action) {
       has(p, "Manada") &&
       !target.capture &&
       !target.eggCapture &&
+      !target.seedCapture &&
       !target.stay
         ? herdGroup(state, p)
         : [],
@@ -1500,11 +1503,13 @@ function executeMove(ctx, action) {
     p.lastMoveRound = round(state) + 1;
   const victim = at(state, target.r, target.c),
     egg = eggAt(state, target.r, target.c),
+    plantSeed = plantSeedAt(state, target.r, target.c),
     pieceCapture = !!victim && victim.id !== p.id,
     cannibalism =
       pieceCapture && victim.owner === p.owner && has(p, "Canibalismo"),
     eggCapture = !!egg,
-    capture = pieceCapture || eggCapture;
+    seedCapture = !!plantSeed && target.seedCapture === plantSeed.id,
+    capture = pieceCapture || eggCapture || seedCapture;
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -1880,6 +1885,8 @@ function executeMove(ctx, action) {
     manipulation = null;
   }
   if (eggCapture) state.eggs = state.eggs.filter((x) => x.id !== egg.id);
+  if (seedCapture)
+    state.plantSeeds = state.plantSeeds.filter((x) => x.id !== plantSeed.id);
   leaveBacterialTrail(state, p, square(p.r, p.c));
   if (
     p.decompositionImmunity &&
@@ -1895,6 +1902,7 @@ function executeMove(ctx, action) {
     herdFollowers.length &&
     !pieceCapture &&
     !eggCapture &&
+    !seedCapture &&
     !target.stay
   )
     moveHerd(ctx, p, herdFollowers, moveOrigin, target);
@@ -2052,7 +2060,20 @@ function executeMove(ctx, action) {
   if (consumedFertile) consumeReproductionResource(state, p, cell);
   let born = 0;
   const paedogenic = paedogenesisReady(state, p);
-  if (eggCapture) {
+  if (seedCapture) {
+    born = reproduce(ctx, p, null, "granivoria", {
+      resourceKind: "seed-prey",
+    });
+    const granivoryText = born
+      ? `🐿️ Granívoro consumiu uma semente 🌰 e gerou ${born} descendente(s).`
+      : "🐿️ Granívoro consumiu uma semente 🌰.";
+    log(state, `${OWNERS[p.owner]}: ${granivoryText}`);
+    emitPassiveEffect(state, "Granívoro", granivoryText, {
+      pieceId: p.id,
+      outcome: born ? "seed-fed-reproduction" : "consumed-seed",
+      value: born,
+    });
+  } else if (eggCapture) {
     born = reproduce(ctx, p, null, "ovifagia", {
       forcedCount:
         paedogenic || !has(p, "Ovífagia") ? 1 : egg.brood.length,

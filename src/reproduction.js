@@ -1372,6 +1372,7 @@ export function resolveSemelparityDeath(ctx, piece) {
 const TROPHIC_REPRODUCTION_RESOURCES = new Set([
   "prey",
   "egg",
+  "seed-prey",
   "carcass",
   "feces",
 ]);

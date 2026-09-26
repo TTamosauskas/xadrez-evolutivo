@@ -195,6 +195,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       return;
     const victim = at(state, r, c),
       egg = eggAt(state, r, c),
+      plantSeed = plantSeedAt(state, r, c),
       fragment = fragmentAt(state, r, c),
       builtBarrier = builtBarrierAt(state, r, c),
       naturalBarrier = naturalBarrierAt(state, r, c),
@@ -216,10 +217,16 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         victim.owner !== p.owner &&
         distance(p, victim) === 1 &&
         contactCaptureUnlocked(p);
+    const seedCapture =
+      !!plantSeed &&
+      plantSeed.owner !== p.owner &&
+      has(p, "Granívoro") &&
+      reproductionReady(state, p);
     if (
       fragment ||
       (victim?.owner === p.owner && !cannibal) ||
-      egg?.owner === p.owner
+      egg?.owner === p.owner ||
+      (plantSeed && !seedCapture)
     )
       return;
     if (
@@ -276,10 +283,12 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       capture: !!victim,
       cannibal,
       eggCapture: egg?.id ?? null,
+      seedCapture: seedCapture ? plantSeed.id : null,
       ...extra,
     });
   }
-  const occupiedTarget = (r, c) => !!at(state, r, c) || !!eggAt(state, r, c);
+  const occupiedTarget = (r, c) =>
+    !!at(state, r, c) || !!eggAt(state, r, c) || !!plantSeedAt(state, r, c);
   function ray(directions, captureOnly = false) {
     for (const [dr, dc] of directions) {
       let geometricRange = 0;
@@ -538,6 +547,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       (target) =>
         !target.capture &&
         !target.eggCapture &&
+        !target.seedCapture &&
         !target.stay &&
         !at(state, target.r, target.c),
     );

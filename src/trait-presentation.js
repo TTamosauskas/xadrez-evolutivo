@@ -23,6 +23,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Ingestão: "Permite consumir presas multicelulares.",
   Carnívoro: "Presas não fotossintéticas reduzem em uma rodada a recuperação após reprodução predatória.",
   Herbívoro: "Especializa presas fotossintéticas e permite usar casas férteis após o Ediacarano.",
+  Granívoro: "Pode consumir uma semente 🌰 adversária alcançável para reproduzir.",
   Canibalismo: "Pode capturar aliado e gerar 1 descendente.",
   Parasitismo: "Pode fertilizar a própria casa e atacar o habitat de 1 inimigo adjacente.",
   "Vetor Patógeno": "Pode causar surtos patogênicos em inimigos adjacentes.",

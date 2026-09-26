@@ -99,6 +99,7 @@ const mutationTopics = {
   "Acasalamento Múltiplo": ["Poliandria", "Múltiplos acasalamentos podem produzir ninhadas com paternidades distintas; no jogo, cada descendente continua biparental embora a reprodução use dois parceiros."],
   Metamorfose: ["Metamorfose completa", "Metamorfose reorganiza profundamente a forma corporal ao longo do desenvolvimento; no jogo, uma pupa artrópode emerge uma forma acima."],
   "Carnívoro": ["Carnivoria", "Carnivoria é uma estratégia alimentar baseada predominantemente no consumo de outros animais."],
+  Granívoro: ["Granivoria", "Granivoria é o consumo de sementes. No jogo, herbívoros ou onívoros especializados podem consumir sementes adversárias antes da germinação e converter esse recurso em reprodução."],
   "Interceptação preditiva": ["Interceptação", "Predadores de perseguição podem antecipar a trajetória futura de uma presa em vez de apenas seguir sua posição atual; no jogo, isso neutraliza Movimento proteano."],
   "Canibalismo": ["Canibalismo", "Canibalismo é o consumo de indivíduos da mesma espécie e pode influenciar competição, densidade populacional e seleção."],
   "Parasitismo": ["Parasitismo", "Parasitismo é uma interação em que um organismo obtém recursos de um hospedeiro e pode reduzir sua aptidão sem depender de uma morte imediata."],

@@ -231,6 +231,16 @@ export function actionableTraitsForPiece(state, piece) {
       actionable.add(target.botanicalPredation);
     if (target.cannibal) actionable.add("Canibalismo");
 
+    if (target.seedCapture) {
+      actionable.add("Granívoro");
+      if (
+        reproductiveReady &&
+        has(piece, "Dopamina") &&
+        dopaminePressureReductionAvailable(state, piece)
+      )
+        actionable.add("Dopamina");
+    }
+
     if (target.eggCapture) {
       if (
         reproductiveReady &&
