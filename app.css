@@ -1105,6 +1105,16 @@ select {
   width: 100%;
   font-size: 12px;
 }
+.arena-rank {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.arena-rank select {
+  color: var(--text);
+}
 .arena-trait-grid {
   display: grid;
   gap: 6px;
