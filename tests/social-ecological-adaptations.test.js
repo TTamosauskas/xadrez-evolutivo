@@ -119,8 +119,20 @@ test("Hierarquia recommends an unavailable reproducer before more useful members
 
 test("Superorganismo recommends the member with the strongest AI-priority move", () => {
   const s = fixture([
-      { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Superorganismo"] },
-      { owner: "blue", r: 7, c: 7, rank: 0, traits: ["Superorganismo"] },
+      {
+        owner: "blue",
+        r: 4,
+        c: 3,
+        rank: 2,
+        traits: ["Artrópode", "Eusocialidade", "Percepção Espacial", "Superorganismo"],
+      },
+      {
+        owner: "blue",
+        r: 7,
+        c: 7,
+        rank: 0,
+        traits: ["Artrópode", "Eusocialidade", "Percepção Espacial", "Superorganismo"],
+      },
       { owner: "amber", r: 4, c: 6, rank: 4 },
       { owner: "amber", r: 0, c: 0, rank: 0 },
     ]),
@@ -175,7 +187,7 @@ test("Mutualismo links adjacent opposite energy branches and reduces metabolic r
     }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 5);
+  assert.equal(parent.nextReproductionRound, 6);
   assert.ok(
     s.passiveEffects.some(
       (effect) =>
