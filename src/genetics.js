@@ -602,7 +602,8 @@ export function legacyReproGenesFromGenome(source) {
 
 function applyFormExpression(profile, traits) {
   if (!profile) return traits;
-  return largeFunctionalForm(profile)
+  const expressedProfile = { ...profile, traits };
+  return largeFunctionalForm(expressedProfile)
     ? traits.filter((trait) => trait !== "Forésia")
     : traits;
 }
