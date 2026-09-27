@@ -330,7 +330,7 @@ test("mutual Cópula Agressiva kills the attacker before reproduction", () => {
       owner: "blue",
       r: 4,
       c: 4,
-      traits: ["Reprodução Sexuada", "Cópula Agressiva"],
+      traits: ["Herbívoro", "Reprodução Sexuada", "Cópula Agressiva"],
     },
     {
       owner: "amber",
