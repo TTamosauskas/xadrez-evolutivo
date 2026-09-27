@@ -2,6 +2,7 @@ export const SIZE = 8;
 export const STATE_VERSION = 31;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
+export const CHESS_PIECE_VALUES = Object.freeze([1, 3, 3, 5, 100, 9]);
 export const SYMBOLS = {
   blue: ["♙", "♘", "♗", "♖", "♔", "♕"],
   amber: ["♟", "♞", "♝", "♜", "♚", "♛"],
