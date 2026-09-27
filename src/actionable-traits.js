@@ -530,6 +530,11 @@ function addActiveStateTraits(state, piece, traits) {
 
   if (buddingCanProgress(state, piece)) traits.add("Brotamento");
 
+  if (terrain(state, piece.r, piece.c) === "hostile") {
+    if (has(piece, "Penas")) traits.add("Penas");
+    if (has(piece, "Pelos")) traits.add("Pelos");
+  }
+
   if (
     state.phase === "social-defense" &&
     state.socialDefense?.memberIds?.includes(piece.id) &&
@@ -562,11 +567,14 @@ function camouflageBlocksCurrentAttack(state, victim, attackers) {
     return false;
   const unmasked = stateWithoutCamouflage(state, victim);
   return attackers.some((attacker) => {
-    if (
-      has(attacker, "Visão Binocular") ||
-      distance(attacker, victim) <= 1
-    )
-      return false;
+    if (has(attacker, "Visão Binocular")) return false;
+    const d = distance(attacker, victim),
+      diagonalTegument =
+        d === 1 &&
+        Math.abs(attacker.r - victim.r) === 1 &&
+        Math.abs(attacker.c - victim.c) === 1 &&
+        (has(victim, "Pelos") || has(victim, "Penas"));
+    if (d <= 1 && !diagonalTegument) return false;
     return movesFor(unmasked, attacker).some(
       (target) =>
         target.capture &&
@@ -672,11 +680,16 @@ function markCaptureContext(state, attacker, victim, byId) {
     victimTraits = byId.get(victim.id);
   if (!attackerTraits || !victimTraits) return;
 
-  if (has(victim, "Espinhos")) victimTraits.add("Espinhos");
+  if (has(victim, "Espinhos")) {
+    victimTraits.add("Espinhos");
+    if (has(attacker, "Osteodermos")) attackerTraits.add("Osteodermos");
+  }
 
   if (has(victim, "Chifre")) {
     victimTraits.add("Chifre");
     if (has(attacker, "Carapaça")) attackerTraits.add("Carapaça");
+    else if (has(attacker, "Osteodermos"))
+      attackerTraits.add("Osteodermos");
   }
 
   if (
@@ -723,7 +736,12 @@ function markCaptureContext(state, attacker, victim, byId) {
       if (has(attacker, "Presas")) attackerTraits.add("Presas");
     }
 
-    if (has(victim, "Madeira")) victimTraits.add("Madeira");
+    if (has(victim, "Escamas") && distance(attacker, victim) === 1)
+      victimTraits.add("Escamas");
+    if (has(victim, "Madeira")) {
+      victimTraits.add("Madeira");
+      if (has(attacker, "Roedor")) attackerTraits.add("Roedor");
+    }
     if (monogamySurvivalBonus(state, victim) > 0)
       victimTraits.add("Monogamia");
   }
@@ -733,13 +751,22 @@ function markCaptureContext(state, attacker, victim, byId) {
   if (has(victim, "Ooteca") && victim.oothecaPrimed)
     victimTraits.add("Ooteca");
 
-  if (
-    has(victim, "Camuflagem") &&
-    distance(attacker, victim) > 1
-  ) {
-    victimTraits.add("Camuflagem");
-    if (has(attacker, "Visão Binocular"))
-      attackerTraits.add("Visão Binocular");
+  if (has(victim, "Camuflagem")) {
+    const d = distance(attacker, victim),
+      diagonalTegument =
+        d === 1 &&
+        Math.abs(attacker.r - victim.r) === 1 &&
+        Math.abs(attacker.c - victim.c) === 1 &&
+        (has(victim, "Pelos") || has(victim, "Penas"));
+    if (d > 1 || diagonalTegument) {
+      victimTraits.add("Camuflagem");
+      if (diagonalTegument) {
+        if (has(victim, "Pelos")) victimTraits.add("Pelos");
+        if (has(victim, "Penas")) victimTraits.add("Penas");
+      }
+      if (has(attacker, "Visão Binocular"))
+        attackerTraits.add("Visão Binocular");
+    }
   }
 }
 
@@ -776,8 +803,21 @@ export function contextualTraitsForBoard(state) {
     }
 
   for (const victim of state.pieces ?? [])
-    if (camouflageBlocksCurrentAttack(state, victim, attackers))
-      byId.get(victim.id)?.add("Camuflagem");
+    if (camouflageBlocksCurrentAttack(state, victim, attackers)) {
+      const traits = byId.get(victim.id);
+      traits?.add("Camuflagem");
+      const diagonalThreat = attackers.some(
+        (attacker) =>
+          !has(attacker, "Visão Binocular") &&
+          distance(attacker, victim) === 1 &&
+          Math.abs(attacker.r - victim.r) === 1 &&
+          Math.abs(attacker.c - victim.c) === 1,
+      );
+      if (diagonalThreat) {
+        if (has(victim, "Pelos")) traits?.add("Pelos");
+        if (has(victim, "Penas")) traits?.add("Penas");
+      }
+    }
 
   return byId;
 }
