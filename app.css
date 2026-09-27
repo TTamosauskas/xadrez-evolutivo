@@ -409,6 +409,33 @@ main {
   border: 3px solid #fff0b0;
   background: transparent;
 }
+.cell.aggressive-partner::before {
+  content: "";
+  position: absolute;
+  width: 84%;
+  aspect-ratio: 1;
+  border: 4px solid #b455d4;
+  border-radius: 50%;
+  box-sizing: border-box;
+  z-index: 5;
+  pointer-events: none;
+}
+.cell.aggressive-partner-counter {
+  outline: 4px double #d54242;
+  outline-offset: -10px;
+}
+.cell.filial-cannibal-target::before,
+.cell.matriphagy-target::before {
+  content: "";
+  position: absolute;
+  width: 68%;
+  aspect-ratio: 1;
+  border: 3px dashed #f2b45b;
+  border-radius: 50%;
+  box-sizing: border-box;
+  z-index: 5;
+  pointer-events: none;
+}
 .cell.partner::before {
   content: "";
   position: absolute;

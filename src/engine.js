@@ -22,6 +22,7 @@ import {
   photosynthesisDelayTurns,
   photosynthesisHasSpace,
   naturalDeathChance,
+  naturalAgeProfile,
   pieceAge,
   juvenile,
   ECOLOGICAL_DOMAIN_START_TURN,
@@ -39,6 +40,8 @@ import {
 import {
   movesFor,
   partnersFor,
+  aggressivePartnersFor,
+  parthenogenesisAvailable,
   sexualReproductionResource,
   legalActions,
   canWaitForRest,
@@ -226,14 +229,18 @@ export function context(state) {
         );
         return true;
       }
-      releaseCarriedPlantSeeds(state, dead);
+      if (!options.consumed) releaseCarriedPlantSeeds(state, dead);
       state.pieces = state.pieces.filter((p) => p.id !== id);
       if (bonded?.pairedWithId === dead.id) bonded.pairedWithId = null;
       if (state.chain === id) state.chain = null;
       if (state.neurofocus === id) state.neurofocus = null;
       if (state.neurodivergenceAction?.id === id)
         state.neurodivergenceAction = null;
-  state.chainTrait = null;
+      state.chainTrait = null;
+      if (options.consumed) {
+        log(state, `${OWNERS[dead.owner]} perderam uma peça por ${reason}.`);
+        return true;
+      }
       if (attacker) {
         applyChemicalCaptureDefense(state, dead, attacker);
         const disease = state.diseases.find(
@@ -264,10 +271,50 @@ export function applyNaturalDeaths(ctx) {
   const state = ctx.state;
   let deaths = 0;
   for (const piece of [...state.pieces]) {
+    const age = pieceAge(state, piece),
+      profile = naturalAgeProfile(piece);
+
+    if (has(piece, "Imortalidade Biológica")) {
+      if (
+        age >= profile.maximum &&
+        !piece.biologicalImmortalityTriggered
+      ) {
+        piece.biologicalImmortalityTriggered = true;
+        emitPassiveEffect(
+          state,
+          "Imortalidade Biológica",
+          "🪼 Imortalidade Biológica anulou a morte natural.",
+          { pieceId: piece.id, outcome: "prevented-natural-death" },
+        );
+        log(
+          state,
+          `${OWNERS[piece.owner]}: 🪼 Imortalidade Biológica anulou a morte natural por idade.`,
+        );
+      }
+      continue;
+    }
+
     const chance = naturalDeathChance(state, piece);
-    if (!chance || (chance < 1 && random(state) >= chance)) continue;
-    const cell = square(piece.r, piece.c),
-      age = pieceAge(state, piece);
+    if (!chance) continue;
+    const roll = random(state),
+      baseChance = has(piece, "Longevidade")
+        ? Math.min(1, chance * 2)
+        : chance;
+    if (roll >= chance) {
+      if (has(piece, "Longevidade") && roll < baseChance) {
+        emitPassiveEffect(
+          state,
+          "Longevidade",
+          "🦜 Longevidade evitou uma morte natural.",
+          { pieceId: piece.id, outcome: "prevented-natural-death" },
+        );
+        log(
+          state,
+          `${OWNERS[piece.owner]}: 🦜 Longevidade reduziu o risco de morte natural.`,
+        );
+      }
+      continue;
+    }
     if (
       ctx.kill(
         piece.id,
@@ -275,9 +322,8 @@ export function applyNaturalDeaths(ctx) {
         null,
         true,
       )
-    ) {
+    )
       deaths++;
-    }
   }
   return deaths;
 }
@@ -1070,7 +1116,8 @@ function maturePhotosynthesis(state, owner) {
 }
 function actionActorId(state, action) {
   if (!action || state.phase !== "move") return null;
-  if (action.type === "PARTNER") return action.parentId ?? null;
+  if (["PARTNER", "AGGRESSIVE_MATE"].includes(action.type))
+    return action.parentId ?? null;
   if (
     [
       "MOVE",
@@ -1080,6 +1127,7 @@ function actionActorId(state, action) {
       "PUPATE",
       "PARASITIZE",
       "LAY_OVOVIVIPAROUS",
+      "PARTHENOGENESIS",
     ].includes(action.type)
   )
     return action.id ?? null;
@@ -2171,8 +2219,14 @@ function executeMove(ctx, action) {
     egg = eggAt(state, target.r, target.c),
     plantSeed = plantSeedAt(state, target.r, target.c),
     pieceCapture = !!victim && victim.id !== p.id,
+    filialCannibalism = !!target.filialCannibal,
+    matriphagy = !!target.matriphagy,
     cannibalism =
-      pieceCapture && victim.owner === p.owner && has(p, "Canibalismo"),
+      pieceCapture &&
+      victim.owner === p.owner &&
+      has(p, "Canibalismo") &&
+      !filialCannibalism &&
+      !matriphagy,
     eggCapture = !!egg,
     seedCapture = !!plantSeed && target.seedCapture === plantSeed.id,
     fruitConsumption =
@@ -2735,17 +2789,59 @@ function executeMove(ctx, action) {
   let capturedEnemy = null,
     capturedPieceKilled = false;
   if (pieceCapture) {
-    const killed = ctx.kill(
-      victim.id,
-      cannibalism ? "canibalismo" : "captura",
-      p,
-      false,
-      {
-        suppressTanatosis:
-          aggressiveNeutralizedTrait === "Tanatose",
-      },
-    );
+    const killed = filialCannibalism
+      ? ctx.kill(
+          victim.id,
+          "Canibalismo Filial",
+          p,
+          true,
+          { consumed: true, suppressTanatosis: true },
+        )
+      : matriphagy
+        ? ctx.kill(
+            victim.id,
+            "Matrifagia",
+            p,
+            true,
+            { consumed: true, suppressTanatosis: true },
+          )
+        : ctx.kill(
+            victim.id,
+            cannibalism ? "canibalismo" : "captura",
+            p,
+            false,
+            {
+              suppressTanatosis:
+                aggressiveNeutralizedTrait === "Tanatose",
+            },
+          );
     capturedPieceKilled = killed;
+    if (killed && filialCannibalism) {
+      p.nextReproductionRound = round(state);
+      log(
+        state,
+        `${OWNERS[p.owner]}: 🐹 Canibalismo Filial encerrou a recuperação metabólica.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Canibalismo Filial",
+        "🐹 Canibalismo Filial encerrou a recuperação metabólica.",
+        { pieceId: p.id, outcome: "reset-reproductive-cooldown" },
+      );
+    }
+    if (killed && matriphagy) {
+      p.maturesRound = round(state);
+      log(
+        state,
+        `${OWNERS[p.owner]}: 🕷️ Matrifagia levou a cria à maturidade sexual.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Matrifagia",
+        "🕷️ Matrifagia levou a cria à maturidade sexual.",
+        { pieceId: p.id, outcome: "accelerated-maturity" },
+      );
+    }
     if (killed && victim.owner !== p.owner) {
       capturedEnemy = victim;
       state.lastSuccessfulCaptureRound = round(state);
@@ -3400,6 +3496,98 @@ function consumeSexualResource(state, parent, mate) {
   return resource;
 }
 
+function finishSpecialReproduction(ctx, parent, born, resource) {
+  const state = ctx.state,
+    build =
+      born > 0 &&
+      resource?.kind === "fertile" &&
+      has(parent, "Antropização");
+  if (
+    born > 0 &&
+    deferReproductionPlacement(state, parent, { build })
+  )
+    return;
+  state.phase = "move";
+  finishMovement(ctx, parent, null, false, false, build);
+}
+
+function resolveParthenogenesis(ctx, action) {
+  const state = ctx.state,
+    parent = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    );
+  if (!parent || !parthenogenesisAvailable(state, parent))
+    throw Error("Partenogênese indisponível.");
+  const resource = consumeSexualResource(state, parent, null);
+  if (!resource) throw Error("Partenogênese precisa de um recurso fértil.");
+  const born = reproduce(ctx, parent, null, "Partenogênese", {
+    forcedCount: 1,
+    fertileReproduction: resource.kind === "fertile",
+    resourceKind: resource.kind,
+  });
+  if (born)
+    emitPassiveEffect(
+      state,
+      "Partenogênese",
+      "♀️ Partenogênese gerou uma prole sem parceiro sexual.",
+      { pieceId: parent.id, outcome: "asexual-fallback", value: born },
+    );
+  finishSpecialReproduction(ctx, parent, born, resource);
+}
+
+function resolveAggressiveMate(ctx, action) {
+  const state = ctx.state,
+    parent = state.pieces.find(
+      (piece) =>
+        piece.id === action.parentId && piece.owner === state.current,
+    ),
+    mate = aggressivePartnersFor(state, parent).find(
+      (candidate) => candidate.id === action.id,
+    );
+  if (!parent || !mate) throw Error("Cópula Agressiva indisponível.");
+
+  if (has(mate, "Cópula Agressiva")) {
+    ctx.kill(
+      parent.id,
+      "contra-agressão por Cópula Agressiva",
+      mate,
+      true,
+      { consumed: true, suppressTanatosis: true },
+    );
+    emitPassiveEffect(
+      state,
+      "Cópula Agressiva",
+      "🦆 Cópula Agressiva encontrou resistência equivalente: o agressor morreu.",
+      { pieceId: mate.id, outcome: "killed-aggressive-mate" },
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+
+  const resource = consumeSexualResource(state, parent, null);
+  if (!resource)
+    throw Error("Cópula Agressiva precisa de um recurso fértil do atacante.");
+  const born = reproduce(ctx, parent, mate, "Cópula Agressiva", {
+    forcedCount: 1,
+    fertileReproduction: resource.kind === "fertile",
+    resourceKind: resource.kind,
+  });
+  if (born) {
+    log(
+      state,
+      `${OWNERS[parent.owner]}: 🦆 Cópula Agressiva gerou uma prole usando um parceiro adversário.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Cópula Agressiva",
+      "🦆 Cópula Agressiva gerou uma prole usando um parceiro adversário.",
+      { pieceId: parent.id, outcome: "aggressive-mating", value: born },
+    );
+  }
+  finishSpecialReproduction(ctx, parent, born, resource);
+}
+
 function resolveDirectPartner(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -3475,17 +3663,38 @@ function choosePartner(ctx, id) {
   if (!firstMate) throw Error("Parceiro inicial indisponível.");
   const resource = consumeSexualResource(state, p, firstMate);
   if (!resource) throw Error("O casal precisa de um recurso fértil disponível.");
-  const born = reproduce(
-    ctx,
-    p,
-    firstMate,
-    secondMate ? "acasalamento múltiplo" : "reprodução sexuada",
-    {
-      fertileReproduction: resource.kind === "fertile",
-      additionalMate: secondMate,
-      resourceKind: resource.kind,
-    },
-  );
+  const sexualCannibalism = has(p, "Canibalismo Sexual"),
+    born = reproduce(
+      ctx,
+      p,
+      firstMate,
+      sexualCannibalism
+        ? "Canibalismo Sexual"
+        : secondMate
+          ? "acasalamento múltiplo"
+          : "reprodução sexuada",
+      {
+        forcedCount: sexualCannibalism ? 2 : undefined,
+        fertileReproduction: resource.kind === "fertile",
+        additionalMate: sexualCannibalism ? null : secondMate,
+        resourceKind: resource.kind,
+      },
+    );
+  if (sexualCannibalism) {
+    ctx.kill(
+      firstMate.id,
+      "Canibalismo Sexual",
+      p,
+      true,
+      { consumed: true, suppressTanatosis: true },
+    );
+    emitPassiveEffect(
+      state,
+      "Canibalismo Sexual",
+      `𒌐 Canibalismo Sexual consumiu o parceiro e gerou ${born} prole(s).`,
+      { pieceId: p.id, outcome: "consumed-sexual-partner", value: born },
+    );
+  }
   state.partner = null;
   if (
     born > 0 &&
@@ -3831,6 +4040,10 @@ export function transition(previous, action) {
     executeMove(ctx, action);
   else if (action.type === "PARTNER" && state.phase === "move")
     resolveDirectPartner(ctx, action);
+  else if (action.type === "PARTHENOGENESIS" && state.phase === "move")
+    resolveParthenogenesis(ctx, action);
+  else if (action.type === "AGGRESSIVE_MATE" && state.phase === "move")
+    resolveAggressiveMate(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
     resolveNursing(ctx, action);
   else if (action.type === "NICHE_BUILD" && state.phase === "move")

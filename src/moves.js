@@ -223,6 +223,18 @@ export function nicheConstructionTargets(state, piece) {
   }
   return targets;
 }
+function enemyCaptureAvailableWithoutFilial(state, p) {
+  if (!p || !has(p, "Canibalismo Filial")) return false;
+  const proxy = {
+    ...p,
+    traits: (p.traits ?? []).filter((trait) => trait !== "Canibalismo Filial"),
+  };
+  return movesFor(state, proxy, { ignoreChain: true }).some((target) => {
+    const victim = at(state, target.r, target.c);
+    return !!victim && victim.owner !== p.owner && target.capture;
+  });
+}
+
 export function movesFor(state, p, { ignoreChain = false } = {}) {
   if (
     !p ||
@@ -236,6 +248,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     return [];
   if (!ignoreChain && state.chain && state.chain !== p.id) return [];
   const targets = [],
+    filialCannibalismMode =
+      has(p, "Canibalismo Filial") &&
+      has(p, "Canibalismo") &&
+      (p.nextReproductionRound ?? 0) > round(state) &&
+      !enemyCaptureAvailableWithoutFilial(state, p),
     terrestrialRestriction =
       has(p, "Locomoção Primitiva") &&
       !has(p, "Locomoção Terrestre");
@@ -261,11 +278,32 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         has(p, "Fotossíntese") &&
         has(p, "Haustório") &&
         has(victim, "Fotossíntese"),
+      directChild =
+        !!victim &&
+        (
+          victim.parentId === p.id ||
+          (victim.parentIds ?? []).includes(p.id)
+        ),
+      filialCannibal =
+        victim?.owner === p.owner &&
+        victim.id !== p.id &&
+        filialCannibalismMode &&
+        directChild &&
+        juvenile(state, victim),
+      matriphagy =
+        victim?.owner === p.owner &&
+        victim.id === p.parentId &&
+        has(p, "Matrifagia") &&
+        has(p, "Canibalismo") &&
+        juvenile(state, p),
       cannibal =
         victim?.owner === p.owner &&
         victim.id !== p.id &&
         has(p, "Canibalismo") &&
-        reproductionReady(state, p),
+        reproductionReady(state, p) &&
+        !filialCannibal &&
+        !matriphagy,
+      alliedConsumption = cannibal || filialCannibal || matriphagy,
       contactCapture =
         victim?.owner !== undefined &&
         victim.owner !== p.owner &&
@@ -296,7 +334,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         reproductionReady(state, p);
     if (
       fragment ||
-      (victim?.owner === p.owner && !cannibal) ||
+      (victim?.owner === p.owner && !alliedConsumption) ||
       egg?.owner === p.owner
     )
       return;
@@ -368,6 +406,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       path,
       capture: !!victim,
       cannibal,
+      filialCannibal,
+      matriphagy,
       eggCapture: egg?.id ?? null,
       seedCapture: seedCapture ? plantSeed.id : null,
       fruitConsume: fruitConsume ? plantSeed.id : null,
@@ -1282,6 +1322,66 @@ export function sexualReproductionResource(state, parent, mate) {
   return null;
 }
 
+export function aggressivePartnersFor(
+  state,
+  p,
+  { requireResource = true } = {},
+) {
+  if (
+    !p ||
+    !reproductionReady(state, p) ||
+    !has(p, "Reprodução Sexuada") ||
+    !has(p, "Cópula Agressiva") ||
+    resting(state, p) ||
+    dormant(state, p)
+  )
+    return [];
+  if (
+    requireResource &&
+    !sexualReproductionResource(state, p, null)
+  )
+    return [];
+  const branch = energyBranch(p);
+  if (!branch) return [];
+  return state.pieces.filter((candidate) => {
+    if (
+      candidate.id === p.id ||
+      candidate.owner === p.owner ||
+      distance(p, candidate) !== 1 ||
+      !has(candidate, "Reprodução Sexuada") ||
+      !reproductionReady(state, candidate) ||
+      resting(state, candidate) ||
+      dormant(state, candidate)
+    )
+      return false;
+    const candidateBranch = energyBranch(candidate),
+      crossBranch =
+        candidateBranch &&
+        branch &&
+        candidateBranch !== branch;
+    return (
+      candidateBranch === branch ||
+      (
+        crossBranch &&
+        has(p, "Mixotrofia") &&
+        has(candidate, "Mixotrofia")
+      )
+    );
+  });
+}
+
+export function parthenogenesisAvailable(state, p) {
+  return !!(
+    p &&
+    has(p, "Partenogênese") &&
+    has(p, "Reprodução Sexuada") &&
+    reproductionReady(state, p) &&
+    !has(p, "Esterilidade") &&
+    !partnersFor(state, p, { requireResource: false }).length &&
+    sexualReproductionResource(state, p, null)
+  );
+}
+
 export function partnersFor(state, p, { requireResource = true } = {}) {
   if (
     !reproductionReady(state, p) ||
@@ -1522,6 +1622,10 @@ export function actionsForPiece(
       : has(piece, "Acasalamento Preferencial")
         ? partnersFor(source, piece).slice(0, 1)
         : partnersFor(source, piece);
+  const aggressiveMates =
+      source.chain && source.chain !== piece.id
+        ? []
+        : aggressivePartnersFor(source, piece);
 
   if (source.chain === piece.id)
     return movesFor(source, piece).map((target) => ({
@@ -1543,6 +1647,14 @@ export function actionsForPiece(
       parentId: piece.id,
       id: mate.id,
     })),
+    ...aggressiveMates.map((mate) => ({
+      type: "AGGRESSIVE_MATE",
+      parentId: piece.id,
+      id: mate.id,
+    })),
+    ...(parthenogenesisAvailable(source, piece)
+      ? [{ type: "PARTHENOGENESIS", id: piece.id }]
+      : []),
     ...nursingTargets(source, piece).map((child) => ({
       type: "NURSE",
       id: piece.id,
@@ -1587,6 +1699,7 @@ export function vivificationActionsForPiece(state, piece) {
         action.c === piece.c) ||
       action.type === "BUD" ||
       action.type === "PUPATE" ||
+      action.type === "PARTHENOGENESIS" ||
       (action.type === "PARASITIZE" &&
         !Number.isInteger(action.targetId)),
   );

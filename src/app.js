@@ -13,6 +13,7 @@ import { render } from "./view.js";
 import {
   movesFor,
   partnersFor,
+  aggressivePartnersFor,
   manipulationTargets,
   constructionTargets,
   nicheConstructionTargets,
@@ -131,6 +132,7 @@ const VIVIFICATION_LABELS = Object.freeze({
   BUD: "Brotar",
   PUPATE: "Metamorfosear",
   PARASITIZE: "Fertilizar por Parasitismo",
+  PARTHENOGENESIS: "Partenogênese",
 });
 const vivificationLabel = (action) =>
   VIVIFICATION_LABELS[action?.type] ?? "Vivificar";
@@ -277,6 +279,14 @@ $("board").addEventListener("click", (event) => {
     parasitismTargets(state, actor).some((target) => target.id === p.id)
   ) {
     dispatch({ type: "PARASITIZE", id: actor.id, targetId: p.id });
+    return;
+  }
+  if (
+    actor?.owner === state.current &&
+    p &&
+    aggressivePartnersFor(state, actor).some((mate) => mate.id === p.id)
+  ) {
+    dispatch({ type: "AGGRESSIVE_MATE", parentId: actor.id, id: p.id });
     return;
   }
   if (
