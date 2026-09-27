@@ -149,17 +149,17 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
   },
   miocene: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Mirmecocoria"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Interceptação preditiva"],
+    animal: ["Predação", "Escavador", "Construtor de Nicho", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Interceptação preditiva"],
     rank: 5,
   },
   pliocene: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Capsaicina"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Chifre"],
+    animal: ["Predação", "Escavador", "Construtor de Nicho", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Chifre"],
     rank: 5,
   },
   pleistocene: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Polegar Opositor", "Bipedalismo", "Córtex Pré-Frontal"],
+    animal: ["Predação", "Escavador", "Construtor de Nicho", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Polegar Opositor", "Bipedalismo", "Córtex Pré-Frontal"],
     rank: 5,
   },
   holocene: {
