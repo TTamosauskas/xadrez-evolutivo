@@ -1299,6 +1299,10 @@ export function pieceLifeHistory(profile) {
   );
 }
 
+function ruminationBlock(piece) {
+  return `${Math.floor(piece.r / 2)},${Math.floor(piece.c / 2)}`;
+}
+
 export function metabolicReproductionCooldown(profile) {
   const base = pieceLifeHistory(profile).metabolism,
     aerobic =
@@ -1797,6 +1801,24 @@ export function reproduce(
     applyCooldown = () => {
       const apply = (piece, feeder = false) => {
         piece.nextReproductionRound = cooldown(piece, feeder);
+        if (
+          has(piece, "Ruminante") &&
+          piece.nextReproductionRound > round(state)
+        ) {
+          piece.rumination = {
+            block: ruminationBlock(piece),
+            startedTurn: state.turn,
+          };
+          emitPassiveEffect(
+            state,
+            "Ruminante",
+            "🐄 Ruminante iniciou ruminação no bloco atual e pode acelerar a recuperação metabólica.",
+            {
+              pieceId: piece.id,
+              outcome: "started-rumination",
+            },
+          );
+        } else piece.rumination = null;
       };
       apply(parent, true);
       for (const candidate of mates) apply(candidate, false);
@@ -1923,7 +1945,21 @@ export function reproduce(
   }
 
   let produced = 0;
-  if (domesticated) {
+  if (options.fixedPlacement) {
+    const target = options.fixedPlacement;
+    if (
+      !inside(target.r, target.c) ||
+      occupied(state, target.r, target.c, parent) ||
+      !offspringTerrainAllowed(state, profile, target.r, target.c) ||
+      ctx.reserved.has(square(target.r, target.c))
+    )
+      return 0;
+    if (failIfSubfertile()) return 0;
+    const brood = makeRequestedBrood(1);
+    if (!brood.length) return 0;
+    spawnChild(state, brood[0], target.r, target.c);
+    produced = 1;
+  } else if (domesticated) {
     const capacity = domesticPlacementCells(ctx, parent).length,
       count = Math.min(wanted, capacity);
     if (!count) return 0;
@@ -2039,6 +2075,28 @@ export function reproduce(
     for (const candidate of mates) recordSemelparity(ctx, candidate, false);
   }
   return produced;
+}
+
+export function rhizome(ctx, parent, target) {
+  const resource = buddingResource(ctx.state, parent);
+  if (!resource || !target) return 0;
+  const spendResource = () => {
+    if (resource.kind === "fertile")
+      return consumeReproductionResource(ctx.state, parent, resource.cell);
+    if (resource.kind === "seed" && (parent.seeds ?? 0) > 0)
+      return consumeCollectorSeed(ctx.state, parent) ? 1 : 0;
+    return 0;
+  };
+  const born = reproduce(ctx, parent, null, "Rizoma", {
+    forcedCount: 1,
+    immediateDevelopment: true,
+    resourceKind: resource.kind,
+    resourceCell: resource.kind === "fertile" ? resource.cell : undefined,
+    fixedPlacement: { r: target.r, c: target.c },
+    onFailedAttempt: resource.kind === "seed" ? spendResource : undefined,
+  });
+  if (born) spendResource();
+  return born;
 }
 
 export function bud(ctx, parent) {
