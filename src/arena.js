@@ -425,8 +425,9 @@ export function engineerArenaAISide(
   opponentGenomes = null,
   seed = Date.now(),
 ) {
-  let result = (baseGenomes ?? []).map((genome) => completeArenaGenome(genome));
-  while (result.length < 2) result.push([...result[0]]);
+  let result = ARENA_BRANCHES.map((branch, index) =>
+    completeArenaBranchGenome(baseGenomes?.[index] ?? [], branch.id),
+  );
   const random = lcg(seed);
   let wanted;
   if (difficulty === "hard") {
