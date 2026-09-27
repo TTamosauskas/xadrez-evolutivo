@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -149,11 +149,6 @@ function normalizePathogenEvolution(state) {
 }
 
 function normalizeCycleInnovationPressure(state) {
-  normalizeLegacyTraitNames(state);
-  if (Array.isArray(state?.discoveries?.read))
-    state.discoveries.read = state.discoveries.read.map((key) =>
-      key === "mutations:Garras" ? "mutations:Presas" : key,
-    );
   removeRetiredTraits(state);
   normalizeStoredGenomes(state);
   state.chainTrait ??= null;
@@ -171,8 +166,13 @@ function normalizeCycleInnovationPressure(state) {
   }
   state.serotoninReposition ??= null;
   state.movementTrace = null;
-  for (const piece of state?.pieces ?? [])
+  state.webs ??= [];
+  state.chemicalHazards ??= [];
+  for (const piece of state?.pieces ?? []) {
     piece.lifetimeOffspring ??= 0;
+    piece.webTrapped ??= null;
+    piece.webCreatedStationarySinceRound ??= null;
+  }
   if (!Array.isArray(state?.cyclePositiveInnovations))
     state.cyclePositiveInnovations = [];
   if (!Array.isArray(state?.passiveEffects)) state.passiveEffects = [];
@@ -380,6 +380,10 @@ function migrateLegacy(data) {
   }
   state.version = STATE_VERSION;
   normalizeLegacyTraitNames(state);
+  if (Array.isArray(state?.discoveries?.read))
+    state.discoveries.read = state.discoveries.read.map((key) =>
+      key === "mutations:Garras" ? "mutations:Presas" : key,
+    );
   normalizeStoredGenomes(state);
   normalizeLegacyNeurodivergenceState(state);
   normalizeLegacyDefenseState(state);

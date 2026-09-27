@@ -1,4 +1,4 @@
-import { has, distance, square } from "./constants.js";
+import { has, distance, square, functionalSizeClass } from "./constants.js";
 import {
   at,
   eggAt,
@@ -144,6 +144,13 @@ export function actionableTraitsForPiece(state, piece) {
   const actions = actionsForPiece(state, piece);
   if (!actions.length) return actionable;
 
+  for (const action of actions) {
+    if (action.type === "BIO_PROJECTILE") actionable.add("Projétil Biológico");
+    if (action.type === "ELECTRODISCHARGE") actionable.add("Eletrodescarga");
+    if (action.type === "FEEDING_REACH" && action.trait)
+      actionable.add(action.trait);
+  }
+
   const targets = movesFor(state, piece),
     reproductiveReady =
       reproductionReady(state, piece) || paedogenesisReady(state, piece),
@@ -158,6 +165,48 @@ export function actionableTraitsForPiece(state, piece) {
     ]),
     hasDetritusAt = (r, c) =>
       !!organicResidueAt(state, r, c) || !!carcassAt(state, r, c);
+
+  if (
+    has(piece, "Teia") &&
+    (
+      (state.webs ?? []).some((web) => web.sourceId === piece.id) ||
+      round(state) > (piece.stationarySinceRound ?? round(state))
+    )
+  )
+    actionable.add("Teia");
+
+  if (
+    has(piece, "Peçonha") &&
+    targets.some((target) => {
+      if (!target.capture) return false;
+      const victim = at(state, target.r, target.c);
+      return victim?.owner !== piece.owner && distance(piece, victim) === 1;
+    })
+  )
+    actionable.add("Peçonha");
+
+  if (
+    has(piece, "Predação em Massa") &&
+    functionalSizeClass(piece) === "large" &&
+    targets.some((target) => {
+      if (!target.capture) return false;
+      const victim = at(state, target.r, target.c);
+      if (
+        !victim ||
+        victim.owner === piece.owner ||
+        functionalSizeClass(victim) === "large"
+      )
+        return false;
+      return state.pieces.some(
+        (candidate) =>
+          candidate.owner !== piece.owner &&
+          candidate.id !== victim.id &&
+          distance(candidate, victim) === 1 &&
+          functionalSizeClass(candidate) !== "large",
+      );
+    })
+  )
+    actionable.add("Predação em Massa");
 
   if (
     has(piece, "Córtex Pré-Frontal") &&

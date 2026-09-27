@@ -40,13 +40,14 @@ test("current saves retire Locomoção Avançada from state and genome", () => {
   assertState(restored);
 });
 
-test("current saves rename Garras to Presas across traits, genome and discoveries", () => {
+test("legacy v27 saves rename the old Garras trait to Presas", () => {
   const state = createState(17),
     piece = state.pieces[0],
     pair = [
       { value: "derived", dominance: "dominant" },
       { value: "derived", dominance: "dominant" },
     ];
+  state.version = 27;
   piece.traits.push("Garras");
   piece.ancestry.push("Garras");
   piece.genome.Garras = pair;
@@ -59,7 +60,12 @@ test("current saves rename Garras to Presas across traits, genome and discoverie
 
   const restored = deserialize(JSON.stringify(state)),
     restoredPiece = restored.pieces.find((candidate) => candidate.id === piece.id);
-  assert.equal(JSON.stringify(restored).includes('"Garras"'), false);
+  assert.equal(restoredPiece.traits.includes("Garras"), false);
+  assert.ok(
+    restoredPiece.genome.Garras.every(
+      (allele) => allele.value === "ancestral",
+    ),
+  );
   assert.ok(restoredPiece.traits.includes("Presas"));
   assert.ok(restoredPiece.ancestry.includes("Presas"));
   assert.ok(restoredPiece.genome.Presas.some((allele) => allele.value === "derived"));

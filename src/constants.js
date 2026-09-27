@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 27;
+export const STATE_VERSION = 28;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -566,6 +566,34 @@ export const TRAITS = {
     "Ao ser capturada por contato, intoxica o agressor: ele perde o próximo turno próprio, tem as defesas reativas suspensas e sua recuperação metabólica é adiada em uma rodada.",
   ],
   Veneno: ["🫟", "Especialização de Toxicidade que condena o agressor à morte após dois turnos próprios."],
+  Peçonha: [
+    "🦂",
+    "Especialização ofensiva de Veneno: quando uma captura de contato é frustrada sem afastar a vítima, inocula uma toxina letal que mata após dois turnos próprios.",
+  ],
+  Teia: [
+    "🕸️",
+    "Após cinco rodadas completas na mesma casa, produz uma teia temporária. Adversários que pousam ou atravessam a teia ficam presos e gastam a próxima ação para se libertar.",
+  ],
+  "Projétil Biológico": [
+    "🪲",
+    "Dispara uma secreção na geometria do Cavalo sem se deslocar, tornando temporariamente hostil a casa ocupada pelo alvo e entrando em recuperação metabólica normal.",
+  ],
+  "Predação em Massa": [
+    "🐋",
+    "Formas grandes podem engolfar presas menores: após uma captura normal de presa menor, cada inimigo menor adjacente ao alvo tem 50% de chance de ser consumido, até dois adicionais, sem reprodução extra.",
+  ],
+  Garras: [
+    "🦅",
+    "Após alcançar uma casa vazia legal, permite capturar uma presa animal inimiga adjacente à casa de chegada sem ocupar a casa da presa.",
+  ],
+  "Pescoço Verticalizado": [
+    "🦒",
+    "Após alcançar uma casa vazia legal, permite capturar uma presa fotossintética inimiga adjacente à casa de chegada sem ocupar a casa da presa.",
+  ],
+  Eletrodescarga: [
+    "⚡",
+    "Mata um inimigo na geometria do Cavalo sem deslocamento nem reprodução; o disparo impõe recuperação metabólica triplicada.",
+  ],
   "Mutação Letal": ["💀", "A peça morre após três rodadas completas."],
   "Mutação Disfuncional": [
     "❌",
@@ -707,6 +735,7 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Acasalamento Múltiplo": ["Promiscuidade"],
   "Neocórtex Desenvolvido": ["Córtex Pré-Frontal"],
   Veneno: ["Toxicidade"],
+  Peçonha: ["Veneno", "Toxicidade"],
 };
 export const has = (piece, trait) => {
   const activeTraits = [

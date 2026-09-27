@@ -27,6 +27,7 @@ import {
   captureDisturbanceAt,
   lethalHazardAt,
   organicResidueHazardousTo,
+  webAt,
 } from "./state.js";
 import {
   captureUnlocked,
@@ -54,6 +55,16 @@ const ORTH = [
     [-1, 1],
     [1, -1],
     [1, 1],
+  ],
+  KNIGHT = [
+    [-2, -1],
+    [-2, 1],
+    [2, -1],
+    [2, 1],
+    [-1, -2],
+    [-1, 2],
+    [1, -2],
+    [1, 2],
   ];
 export const dysfunctionalResting = (state, p) =>
   has(p, "Mutação Disfuncional") &&
@@ -247,6 +258,33 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
   )
     return [];
   if (!ignoreChain && state.chain && state.chain !== p.id) return [];
+  if (p.webTrapped) {
+    const active = (state.webs ?? []).some(
+      (entry) =>
+        entry.sourceId === p.webTrapped.sourceId &&
+        entry.cell === p.webTrapped.cell &&
+        entry.expiresRound >= round(state),
+    );
+    if (active)
+      return [
+        {
+          r: p.r,
+          c: p.c,
+          path: [],
+          capture: false,
+          cannibal: false,
+          filialCannibal: false,
+          matriphagy: false,
+          eggCapture: null,
+          seedCapture: null,
+          fruitConsume: null,
+          synzooCollect: null,
+          stay: true,
+          webEscape: true,
+          noContinuation: true,
+        },
+      ];
+  }
   const targets = [],
     filialCannibalismMode =
       has(p, "Canibalismo Filial") &&
@@ -1568,6 +1606,108 @@ export function canParasitize(state, p) {
   );
 }
 
+const metabolicActionReady = (state, piece) =>
+  !!piece &&
+  !resting(state, piece) &&
+  !dormant(state, piece) &&
+  round(state) >= (piece.nextReproductionRound ?? 0);
+
+function knightEnemyTargets(state, piece) {
+  if (!piece) return [];
+  const targets = [];
+  for (const [dr, dc] of KNIGHT) {
+    const r = piece.r + dr,
+      c = piece.c + dc;
+    if (!inside(r, c)) continue;
+    const target = at(state, r, c);
+    if (target && target.owner !== piece.owner) targets.push(target);
+  }
+  return targets;
+}
+
+export function biologicalProjectileTargets(state, piece) {
+  if (
+    !has(piece, "Projétil Biológico") ||
+    !metabolicActionReady(state, piece)
+  )
+    return [];
+  return knightEnemyTargets(state, piece).filter(
+    (target) => terrain(state, target.r, target.c) !== "hostile",
+  );
+}
+
+export function electricDischargeTargets(state, piece) {
+  if (
+    !has(piece, "Eletrodescarga") ||
+    !metabolicActionReady(state, piece)
+  )
+    return [];
+  return knightEnemyTargets(state, piece);
+}
+
+export function feedingReachTargets(state, piece) {
+  const trait = has(piece, "Garras")
+      ? "Garras"
+      : has(piece, "Pescoço Verticalizado")
+        ? "Pescoço Verticalizado"
+        : null;
+  if (!trait || resting(state, piece) || dormant(state, piece)) return [];
+
+  const landings = movesFor(state, piece, { ignoreChain: true })
+      .filter(
+        (target) =>
+          !target.stay &&
+          !target.webEscape &&
+          !target.capture &&
+          !target.eggCapture &&
+          !target.seedCapture &&
+          !at(state, target.r, target.c) &&
+          !(target.path ?? []).some(([r, c]) =>
+            (state.webs ?? []).some(
+              (web) =>
+                web.owner !== piece.owner &&
+                web.cell === square(r, c) &&
+                web.expiresRound >= round(state),
+            ),
+          ),
+      )
+      .sort(
+        (a, b) =>
+          (a.path?.length ?? 0) - (b.path?.length ?? 0) ||
+          a.r - b.r ||
+          a.c - b.c,
+      ),
+    byVictim = new Map();
+
+  for (const landing of landings)
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const victim = at(state, landing.r + dr, landing.c + dc);
+        if (
+          !victim ||
+          victim.owner === piece.owner ||
+          parentalCareProtects(state, victim)
+        )
+          continue;
+        const photosynthetic = canPhotosynthesize(victim);
+        if (
+          (trait === "Garras" && photosynthetic) ||
+          (trait === "Pescoço Verticalizado" && !photosynthetic)
+        )
+          continue;
+        if (!byVictim.has(victim.id))
+          byVictim.set(victim.id, {
+            targetId: victim.id,
+            landingR: landing.r,
+            landingC: landing.c,
+            path: landing.path ?? [[landing.r, landing.c]],
+            trait,
+          });
+      }
+  return [...byVictim.values()];
+}
+
 function pieceEvaluationState(state, piece) {
   if (
     state.phase === "move" &&
@@ -1665,6 +1805,24 @@ export function actionsForPiece(
       id: piece.id,
       r: target.r,
       c: target.c,
+    })),
+    ...biologicalProjectileTargets(source, piece).map((target) => ({
+      type: "BIO_PROJECTILE",
+      id: piece.id,
+      targetId: target.id,
+    })),
+    ...electricDischargeTargets(source, piece).map((target) => ({
+      type: "ELECTRODISCHARGE",
+      id: piece.id,
+      targetId: target.id,
+    })),
+    ...feedingReachTargets(source, piece).map((target) => ({
+      type: "FEEDING_REACH",
+      id: piece.id,
+      targetId: target.targetId,
+      landingR: target.landingR,
+      landingC: target.landingC,
+      trait: target.trait,
     })),
     ...parasitismTargets(source, piece).map((target) => ({
       type: "PARASITIZE",
