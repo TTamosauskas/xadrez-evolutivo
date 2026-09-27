@@ -35,6 +35,7 @@ import {
   lethalHazardAt,
   photosynthesisDelayTurns,
   hadeanHabitatSaturated,
+  allelopathySourceAt,
 } from "./state.js";
 import {
   BASAL_GENETIC_TRAIT,
@@ -1584,7 +1585,7 @@ export function reproduce(
   if (
     !has(parent, "Respiração anaeróbia") ||
     mates.some((candidate) => !has(candidate, "Respiração anaeróbia")) ||
-    [parent, ...mates].some(onlyChildExhausted)
+    ([parent, ...mates].some(onlyChildExhausted) && !parent.autotomyRecovery)
   )
     return 0;
   if (
@@ -1618,7 +1619,13 @@ export function reproduce(
   )
     return 0;
 
-  const sexualProfiles = mates.map((candidate) =>
+  let broodParasiteInserted = 0;
+  const activeBroodParasite =
+      parent.broodParasite &&
+      parent.broodParasite.expiresRound >= round(state)
+        ? parent.broodParasite
+        : null,
+    sexualProfiles = mates.map((candidate) =>
       sexualProfile(state, parent, candidate),
     ),
     resourceKind = reproductionResourceKind(reason, options),
@@ -1697,6 +1704,22 @@ export function reproduce(
       }
       if (has(piece, "Insuficiência Respiratória"))
         metabolic *= 2;
+      if (
+        has(piece, "Fotossíntese") &&
+        allelopathySourceAt(state, piece.r, piece.c, piece.owner)
+      ) {
+        metabolic += 1;
+        emitPassiveEffect(
+          state,
+          "Alelopatia",
+          "🍂 Alelopatia rival aumentou a recuperação metabólica em 1 rodada.",
+          {
+            pieceId: piece.id,
+            outcome: "allelopathic-reproductive-cost",
+            value: 1,
+          },
+        );
+      }
       if (
         has(piece, "Má absorção Alimentar") &&
         TROPHIC_REPRODUCTION_RESOURCES.has(resourceKind)
@@ -1788,6 +1811,11 @@ export function reproduce(
             ? new Set(["Reprodução Sexuada"])
             : null;
       for (let i = 0; i < count; i++) {
+        if (i === 0 && activeBroodParasite) {
+          brood.push(structuredClone(activeBroodParasite.profile));
+          broodParasiteInserted = 1;
+          continue;
+        }
         const index = mates.length ? i % mates.length : 0,
           childMate = mates[index] ?? null,
           childProfile = sexualProfiles[index] ?? profile;
@@ -1799,6 +1827,29 @@ export function reproduce(
                 sexualMutants.push(child);
             },
           }),
+        );
+      }
+      if (broodParasiteInserted) {
+        delete parent.broodParasite;
+        const parasite = state.pieces.find(
+          (candidate) => candidate.id === activeBroodParasite.parasiteId,
+        );
+        if (parasite)
+          parasite.lifetimeOffspring =
+            (parasite.lifetimeOffspring ?? 0) + 1;
+        log(
+          state,
+          `🪹 Um descendente das ${OWNERS[activeBroodParasite.parasiteOwner]} substituiu um slot da ninhada das ${OWNERS[parent.owner]}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Parasitismo de Ninhada",
+          "🪹 Um descendente parasita emergirá da ninhada inimiga.",
+          {
+            pieceId: activeBroodParasite.parasiteId,
+            outcome: "brood-slot-stolen",
+            value: 1,
+          },
         );
       }
       if (foundingSexuality && sexualMutants.length)
@@ -1848,6 +1899,28 @@ export function reproduce(
     };
 
   if (wanted <= 0) return 0;
+
+  if (parent.autotomyRecovery) {
+    const restoredRank = parent.autotomyRecovery.originalRank;
+    parent.rank = restoredRank;
+    parent.autotomyRecovery = null;
+    applyCooldown();
+    log(
+      state,
+      `${OWNERS[parent.owner]}: ✂️ Autotomia regenerou a forma ${PIECES[restoredRank]} usando energia reprodutiva.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Autotomia",
+      `✂️ Autotomia regenerou a forma ${PIECES[restoredRank]} em vez de gerar prole.`,
+      {
+        pieceId: parent.id,
+        outcome: "restored-autotomy-form",
+        value: restoredRank,
+      },
+    );
+    return 1;
+  }
 
   let produced = 0;
   if (domesticated) {
@@ -1914,7 +1987,11 @@ export function reproduce(
   }
 
   if (produced) {
-    recordLifetimeOffspring(parent, mates, produced);
+    recordLifetimeOffspring(
+      parent,
+      mates,
+      Math.max(0, produced - broodParasiteInserted),
+    );
     if (has(parent, "Ooteca") && options.fertileReproduction)
       parent.oothecaPrimed = true;
     applyCooldown();
@@ -2389,7 +2466,19 @@ export function tickReproduction(ctx) {
     const mature = seed.age >= 3;
     if (mature && fertileHere && !occupiedHere && !invalidHere) {
       seed.sprouting = true;
-      seed.sproutReadyRound = now + 1;
+      const allelopathic =
+        !!allelopathySourceAt(state, seed.r, seed.c, seed.owner);
+      seed.sproutReadyRound = now + 1 + (allelopathic ? 1 : 0);
+      if (allelopathic)
+        emitPassiveEffect(
+          state,
+          "Alelopatia",
+          "🍂 Alelopatia rival atrasou a germinação em 1 rodada.",
+          {
+            outcome: "delayed-rival-germination",
+            value: 1,
+          },
+        );
       log(
         state,
         `🌱 Semente das ${OWNERS[seed.owner]} iniciou germinação em ${coord(seed.r, seed.c)}.`,
