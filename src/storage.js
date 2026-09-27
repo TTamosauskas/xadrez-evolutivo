@@ -325,6 +325,17 @@ function migrateLegacy(data) {
       !state.historicalTraits.includes("Zoorremediação")
     )
       state.historicalTraits.push("Zoorremediação");
+    for (const collection of [
+      state.seenMutations,
+      state.cyclePositiveInnovations,
+      state.discoveries?.mutations,
+    ])
+      if (
+        Array.isArray(collection) &&
+        collection.includes("Construtor de Nicho") &&
+        !collection.includes("Zoorremediação")
+      )
+        collection.push("Zoorremediação");
   }
   return normalizeCycleInnovationPressure(state);
 }
