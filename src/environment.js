@@ -171,7 +171,9 @@ function addNaturalBarriers(state, count, near = []) {
         ...state.barriers,
         ...state.naturalBarriers,
         ...state.eggs.map((egg) => square(egg.r, egg.c)),
-        ...state.plantSeeds.map((seed) => square(seed.r, seed.c)),
+        ...state.plantSeeds
+          .filter((seed) => !seed.transport)
+          .map((seed) => square(seed.r, seed.c)),
         ...state.pieces.map((piece) => square(piece.r, piece.c)),
         ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
         ...state.deathSites.map((site) => site.cell),
