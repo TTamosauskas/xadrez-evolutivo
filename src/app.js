@@ -15,6 +15,7 @@ import {
   partnersFor,
   manipulationTargets,
   constructionTargets,
+  nicheConstructionTargets,
   nursingTargets,
   eggPlacementTargets,
   domesticPlacementTargets,
@@ -250,6 +251,15 @@ $("board").addEventListener("click", (event) => {
     );
   if (swapMovementTarget) {
     dispatch({ type: "MOVE", id: actor.id, r, c });
+    return;
+  }
+  if (
+    actor?.owner === state.current &&
+    nicheConstructionTargets(state, actor).some(
+      (target) => target.r === r && target.c === c,
+    )
+  ) {
+    dispatch({ type: "NICHE_BUILD", id: actor.id, r, c });
     return;
   }
   if (actor?.id === p?.id && actor?.owner === state.current) {
