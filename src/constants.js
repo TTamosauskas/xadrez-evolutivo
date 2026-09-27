@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 25;
+export const STATE_VERSION = 26;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -197,6 +197,10 @@ export const TRAITS = {
     "🦎",
     "Orienta a colocação automática da prole para as casas válidas com menor exposição a ataques adversários.",
   ],
+  Forrageamento: [
+    "🐔",
+    "Orienta a colocação automática da prole herbívora para as casas válidas mais próximas de aliados fotossintéticos.",
+  ],
   Ocitocina: [
     "🐶",
     "Orienta a colocação automática da prole para formar agrupamentos próximos de aliados; quando há outra orientação da prole, atua como critério social de desempate.",
@@ -232,6 +236,10 @@ export const TRAITS = {
   "Perfume Floral": [
     "🌹",
     "Sementes orientam a dispersão para refúgios próximos a criaturas aliadas não fotossintéticas, priorizando as casas com maior proteção.",
+  ],
+  Tropismo: [
+    "🌻",
+    "Orienta a colocação da prole fotossintética para as casas válidas mais próximas de outra casa fértil.",
   ],
   Traqueófitas: [
     "🍃",
@@ -284,6 +292,22 @@ export const TRAITS = {
   Sociabilidade: [
     "🦗︎",
     "Grupos conectados de quatro ou mais indivíduos podem sacrificar qualquer membro para absorver um ataque.",
+  ],
+  Hierarquia: [
+    "🐃",
+    "Durante a defesa por Sociabilidade, destaca o membro mais sacrificável do grupo sem escolhê-lo automaticamente.",
+  ],
+  Superorganismo: [
+    "🐝",
+    "Ao selecionar um membro, sinaliza os outros portadores aliados e destaca o membro e o movimento com melhor avaliação pela IA.",
+  ],
+  "Caça Cooperativa": [
+    "🐬",
+    "Se pelo menos dois caçadores adjacentes com esta característica cercarem a presa, Espinhos e Chifre da presa são neutralizados.",
+  ],
+  Mutualismo: [
+    "🫂",
+    "Portadores aliados adjacentes de ramos energéticos opostos reduzem em uma rodada a própria recuperação metabólica após reproduzir, até o mínimo de uma.",
   ],
   Manada: [
     "🦬",
@@ -388,6 +412,18 @@ export const TRAITS = {
   "Insuficiência Respiratória": [
     "😮‍💨",
     "Dobra o intervalo de recuperação metabólica após qualquer reprodução.",
+  ],
+  "Anemia Falciforme": [
+    "🛑",
+    "Anula a redução de uma rodada na recuperação metabólica fornecida por Respiração aeróbia.",
+  ],
+  "Assimetria Flutuante": [
+    "👹",
+    "Não pode ser escolhida como parceira-alvo de Reprodução Sexuada.",
+  ],
+  Ataxia: [
+    "🥴",
+    "Quando há mais de um movimento legal, cada ação MOVE tem 25% de chance de ser desviada para outro destino legal da mesma criatura.",
   ],
   Imunodeficiência: [
     "🤢",
