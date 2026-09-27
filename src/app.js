@@ -236,7 +236,9 @@ $("board").addEventListener("click", (event) => {
       dispatch({ type: "SEROTONIN_REPOSITION", r, c });
     return;
   }
-  const actor = state.pieces.find((p) => p.id === (state.chain ?? selected)),
+  const actor = state.pieces.find(
+      (p) => p.id === (state.neurofocus ?? state.chain ?? selected),
+    ),
     movementTargets =
       actor?.owner === state.current
         ? movesFor(state, actor).filter(
