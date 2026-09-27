@@ -2163,14 +2163,23 @@ function archeanBranchFallback(branch) {
 }
 
 function earthBranchFounder(previous, branch, fallback) {
-  const living = strongestSurvivor(
-    previous,
-    null,
-    branch === "Fotossíntese"
-      ? (piece) => canPhotosynthesize(piece)
-      : (piece) => !canPhotosynthesize(piece),
-  ).piece;
-  return founderProfile(previous, living) ?? fallback;
+  const predicate =
+      branch === "Fotossíntese"
+        ? (piece) => canPhotosynthesize(piece)
+        : (piece) => !canPhotosynthesize(piece),
+    winner = previous.result?.winner ?? null,
+    winnerSurvivor = winner
+      ? strongestSurvivor(previous, winner, predicate).piece
+      : null,
+    anySurvivor = strongestSurvivor(previous, null, predicate).piece,
+    remembered =
+      branch === "Fotossíntese"
+        ? previous.energyBranchRepresentatives?.Fotossíntese ?? null
+        : previous.energyBranchRepresentatives?.Predação ?? null;
+  return (
+    founderProfile(previous, winnerSurvivor ?? anySurvivor ?? remembered) ??
+    fallback
+  );
 }
 
 function createEarthSuccessorState(previous, seed) {
@@ -2333,7 +2342,22 @@ export function createSuccessorState(previous, seed = Date.now()) {
     );
     return state;
   }
-  const winner = previous.result?.winner ?? null,
+  const priorStage = currentGeologicalStage(previous),
+    candidate = stageComplete(previous)
+      ? nextGeologicalStage(priorStage.id)
+      : priorStage,
+    stageIndex = GEOLOGICAL_STAGES.findIndex(
+      (stage) => stage.id === candidate.id,
+    ),
+    preview = previewFounderProfiles(stageIndex),
+    previewProfiles = [preview.primary, preview.companion],
+    previewPhotosynthetic =
+      previewProfiles.find((profile) => canPhotosynthesize(profile)) ??
+      preview.primary,
+    previewNonPhotosynthetic =
+      previewProfiles.find((profile) => !canPhotosynthesize(profile)) ??
+      preview.companion,
+    winner = previous.result?.winner ?? null,
     photosynthetic = strongestSurvivor(
       previous,
       winner,
@@ -2354,22 +2378,23 @@ export function createSuccessorState(previous, seed = Date.now()) {
       null,
       (piece) => !canPhotosynthesize(piece),
     ),
-    founder = founderProfile(
-      previous,
-      photosynthetic.piece ?? fallbackPhotosynthetic.piece,
-    ),
-    companion = founderProfile(
-      previous,
-      nonPhotosynthetic.piece ?? fallbackNonPhotosynthetic.piece,
-    ),
-    founders =
-      founder && companion
-        ? { primary: founder, companion }
-        : null,
-    priorStage = currentGeologicalStage(previous),
-    candidate = stageComplete(previous)
-      ? nextGeologicalStage(priorStage.id)
-      : priorStage,
+    photosyntheticSource =
+      photosynthetic.piece ??
+      fallbackPhotosynthetic.piece ??
+      previous.energyBranchRepresentatives?.Fotossíntese ??
+      null,
+    nonPhotosyntheticSource =
+      nonPhotosynthetic.piece ??
+      fallbackNonPhotosynthetic.piece ??
+      previous.energyBranchRepresentatives?.Predação ??
+      null,
+    founder =
+      founderProfile(previous, photosyntheticSource) ??
+      previewPhotosynthetic,
+    companion =
+      founderProfile(previous, nonPhotosyntheticSource) ??
+      previewNonPhotosynthetic,
+    founders = { primary: founder, companion },
     advanced = candidate.id !== priorStage.id,
     geologicalStage = candidate.id,
     cycle = advanced ? 1 : previous.cycle + 1,
