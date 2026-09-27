@@ -13,6 +13,8 @@ import {
   round,
   stomataOpen,
   assertState,
+  createState,
+  newPiece,
 } from "../src/state.js";
 import { TRAITS, has, square } from "../src/constants.js";
 import { actionsForPiece } from "../src/moves.js";
@@ -99,18 +101,22 @@ test("Endossimbiose antecipa uma reprodução em uma rodada e cobra dívida +2",
 });
 
 test("Quimiossíntese converte casa hostil não letal em um único descendente", () => {
-  let state = fixture([
-    {
-      owner: "blue",
-      r: 4,
-      c: 4,
-      rank: 0,
-      traits: ["Respiração anaeróbia", "Quimiossíntese"],
-    },
-    { owner: "amber", r: 0, c: 0, rank: 0, traits: ["Respiração anaeróbia"] },
-  ], 4103);
+  let state = createState(4103, {
+    scenario: "alternative",
+    geologicalStage: "archean",
+    naturalBarriers: false,
+  });
+  state.pieces = [];
+  state.nextId = 1;
+  state.phase = "move";
   state.current = "blue";
-  const parent = state.pieces.find((candidate) => candidate.owner === "blue");
+  state.board.fill("neutral");
+  const parent = newPiece(state, "blue", 4, 4, {
+      rank: 0,
+      traits: ["Quimiossíntese"],
+    }),
+    rival = newPiece(state, "amber", 0, 0, { rank: 0 });
+  state.pieces.push(parent, rival);
   state.board[square(parent.r, parent.c)] = "hostile";
   parent.nextReproductionRound = round(state);
   assert.ok(
@@ -243,6 +249,7 @@ test("Endotermia converte um risco hostil letal em uma rodada de recuperação",
     piece = state.pieces.find((candidate) => candidate.owner === "blue"),
     now = round(state);
   piece.nextReproductionRound = now;
+  state.rng = 1;
   const killed = hostileHazardKills(state, piece, true);
   assert.equal(killed, false);
   assert.equal(piece.nextReproductionRound, now + 1);
