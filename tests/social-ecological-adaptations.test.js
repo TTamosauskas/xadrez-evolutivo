@@ -25,7 +25,8 @@ import {
   negativeTraitUnlocked,
 } from "../src/geology.js";
 import { assertState, clone, round } from "../src/state.js";
-import { square, TRAITS } from "../src/constants.js";
+import { square, TRAITS, STATE_VERSION } from "../src/constants.js";
+import { deserialize } from "../src/storage.js";
 
 test("Tropismo directs photosynthetic offspring toward another fertile cell", () => {
   const s = fixture([
@@ -327,4 +328,49 @@ test("approved icons are registered", () => {
   assert.equal(TRAITS["Assimetria Flutuante"][0], "👹");
   assert.equal(TRAITS.Ataxia[0], "🥴");
   assert.equal(TRAITS["Anemia Falciforme"][0], "🛑");
+});
+
+
+test("v25 saves migrate to v26 with ancestral loci for the new traits", () => {
+  const legacy = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 4 },
+    { owner: "amber", r: 0, c: 0, rank: 4 },
+  ]);
+  legacy.version = 25;
+  for (const piece of legacy.pieces)
+    for (const trait of [
+      "Tropismo",
+      "Forrageamento",
+      "Hierarquia",
+      "Superorganismo",
+      "Caça Cooperativa",
+      "Mutualismo",
+      "Assimetria Flutuante",
+      "Ataxia",
+      "Anemia Falciforme",
+    ])
+      delete piece.genome[trait];
+
+  const restored = deserialize(JSON.stringify(legacy));
+  assert.equal(restored.version, STATE_VERSION);
+  for (const piece of restored.pieces)
+    for (const trait of [
+      "Tropismo",
+      "Forrageamento",
+      "Hierarquia",
+      "Superorganismo",
+      "Caça Cooperativa",
+      "Mutualismo",
+      "Assimetria Flutuante",
+      "Ataxia",
+      "Anemia Falciforme",
+    ]) {
+      assert.ok(Array.isArray(piece.genome[trait]));
+      assert.ok(
+        piece.genome[trait].every(
+          (allele) => allele.value === "ancestral",
+        ),
+      );
+    }
+  assertState(restored);
 });
