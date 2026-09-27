@@ -12,7 +12,8 @@ import {
   TRAIT_STAGE,
   traitCombinationValid,
 } from "../src/geology.js";
-import { round, square } from "../src/state.js";
+import { round } from "../src/state.js";
+import { square } from "../src/constants.js";
 import { metabolicReproductionCooldown } from "../src/reproduction.js";
 
 test("novas mutações ocupam períodos e loci funcionais coerentes", () => {
