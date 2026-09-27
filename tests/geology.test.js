@@ -207,7 +207,7 @@ test("period innovations follow the didactic sequence", () => {
     "Percepção Espacial",
     "Carapaça",
     "Camuflagem",
-    "Veneno",
+    "Toxicidade",
   ]);
   assert.deepEqual(required.ordovician, ["Ovíparo"]);
   assert.deepEqual(required.silurian, ["Locomoção Terrestre", "Coletor"]);
