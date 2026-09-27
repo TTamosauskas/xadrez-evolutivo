@@ -13,6 +13,9 @@ import {
   organicResidueAt,
   carcassAt,
   round,
+  pieceAge,
+  naturalAgeProfile,
+  naturalInfertilityAge,
   lethalHazardAt,
 } from "./state.js";
 import {
@@ -373,6 +376,8 @@ export function actionableTraitsForPiece(state, piece) {
       }
     }
 
+    if (target.filialCannibal) actionable.add("Canibalismo Filial");
+    if (target.matriphagy) actionable.add("Matrifagia");
     if (target.cutaneous) actionable.add("Respiração Cutânea");
     if (target.vascular) actionable.add("Traqueófitas");
 
@@ -453,7 +458,14 @@ export function actionableTraitsForPiece(state, piece) {
   }
 
   for (const action of actions) {
-    if (action.type === "PARTNER") actionable.add("Reprodução Sexuada");
+    if (action.type === "PARTNER") {
+      actionable.add("Reprodução Sexuada");
+      if (has(piece, "Canibalismo Sexual"))
+        actionable.add("Canibalismo Sexual");
+    } else if (action.type === "AGGRESSIVE_MATE")
+      actionable.add("Cópula Agressiva");
+    else if (action.type === "PARTHENOGENESIS")
+      actionable.add("Partenogênese");
     else if (action.type === "NURSE") actionable.add("Lactação");
     else if (action.type === "LAY_OVOVIVIPAROUS")
       actionable.add("Ovovivíparo");
@@ -488,7 +500,11 @@ export function actionableTraitsForPiece(state, piece) {
         target.eggCapture ||
         hasDetritusAt(target.r, target.c),
     ) ||
-      actions.some((action) => action.type === "PARTNER"));
+      actions.some((action) =>
+        ["PARTNER", "AGGRESSIVE_MATE", "PARTHENOGENESIS"].includes(
+          action.type,
+        ),
+      ));
   if (reproductiveOpportunity)
     for (const trait of [
       "Testosterona",
@@ -510,6 +526,23 @@ export function actionableTraitsForPiece(state, piece) {
     has(piece, "Respiração aeróbia")
   )
     actionable.add("Anemia Falciforme");
+
+  const age = pieceAge(state, piece);
+  if (
+    has(piece, "Longevidade") &&
+    age >= naturalAgeProfile(piece).senescence
+  )
+    actionable.add("Longevidade");
+  if (
+    has(piece, "Imortalidade Biológica") &&
+    age >= naturalAgeProfile(piece).senescence
+  )
+    actionable.add("Imortalidade Biológica");
+  if (
+    has(piece, "Fertilidade Longeva") &&
+    age >= naturalInfertilityAge(piece)
+  )
+    actionable.add("Fertilidade Longeva");
 
   return actionable;
 }
