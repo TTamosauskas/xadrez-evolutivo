@@ -630,7 +630,8 @@ export function activeTraitFamily(trait) {
 
 export const TRAIT_DEPENDENCIES = {
   Multicelularismo: {
-    lineage: ["Reparo Celular", "Eucarionte", "Endossimbiose"],
+    lineage: ["Reparo Celular"],
+    historical: ["Eucarionte", "Endossimbiose"],
   },
   Quimiossíntese: { lineage: ["Respiração anaeróbia"] },
   Eucarionte: { lineage: ["Reparo Celular"] },
@@ -1871,6 +1872,14 @@ export function stageComplete(state) {
 export function traitUnlocked(state, trait, piece = null) {
   if (NEGATIVE_TRAITS.has(trait))
     return negativeTraitUnlocked(state, trait, piece);
+  if (
+    piece &&
+    trait === "Quimiossíntese" &&
+    ["Fotossíntese", "Predação", "Mixotrofia"].some((candidate) =>
+      piece.traits?.includes(candidate),
+    )
+  )
+    return false;
   if (
     piece &&
     ENERGY_BRANCH_TRAITS.has(trait) &&
