@@ -408,6 +408,17 @@ export const TRAIT_STAGE = {
   Marsupial: "cretaceous",
   "Acasalamento Múltiplo": "cretaceous",
   Monogamia: "paleogene",
+  "Pele Glandular": "devonian",
+  Escamas: "permian",
+  Osteodermos: "permian",
+  Pelos: "triassic",
+  Penas: "jurassic",
+  Endozoocoria: "cretaceous",
+  Epizoocoria: "paleogene",
+  Sinzoocoria: "paleogene",
+  Mirmecocoria: "paleogene",
+  Roedor: "paleogene",
+  Capsaicina: "neogene",
 };
 
 export const ENERGY_BRANCH_TRAITS = new Set(["Fotossíntese", "Predação"]);
@@ -473,6 +484,14 @@ export const ACTIVE_TRAIT_FAMILIES = [
     id: "mating-system",
     traits: ["Promiscuidade", "Monogamia", "Acasalamento Múltiplo"],
   },
+  {
+    id: "integument",
+    traits: ["Pele Glandular", "Escamas", "Pelos", "Penas"],
+  },
+  {
+    id: "zoochory",
+    traits: ["Endozoocoria", "Epizoocoria", "Sinzoocoria", "Mirmecocoria"],
+  },
 ];
 
 const activeFamilyByTrait = new Map(
@@ -514,6 +533,11 @@ export const TRAIT_DEPENDENCIES = {
   Angiospermas: { lineage: ["Gimnospermas"] },
   Haustório: { lineage: ["Angiospermas"] },
   "Perfume Floral": { lineage: ["Angiospermas"] },
+  Endozoocoria: { lineage: ["Angiospermas"] },
+  Capsaicina: { lineage: ["Angiospermas"], active: ["Endozoocoria"] },
+  Epizoocoria: { lineage: ["Angiospermas"] },
+  Sinzoocoria: { lineage: ["Gimnospermas"] },
+  Mirmecocoria: { lineage: ["Angiospermas"] },
   Ingestão: {
     lineage: ["Multicelularismo"],
     lineageAny: ["Predação", "Mixotrofia"],
@@ -530,6 +554,13 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Predação", "Multicelularismo", "Locomoção Terrestre"],
   },
   "Pele grossa": { lineage: ["Herbívoro"] },
+  "Pele Glandular": {
+    lineage: ["Vertebrado", "Respiração Cutânea"],
+  },
+  Escamas: { lineage: ["Vertebrado", "Ovíparos Amniotas"] },
+  Osteodermos: { lineage: ["Vertebrado", "Locomoção Terrestre"] },
+  Pelos: { lineage: ["Vertebrado", "Ovíparos Amniotas"] },
+  Penas: { lineage: ["Vertebrado", "Ovíparos Amniotas"] },
   Presas: { lineage: ["Carnívoro"] },
   Canibalismo: { lineage: ["Carnívoro"] },
   "Vetor Patógeno": { lineage: ["Parasitismo"] },
@@ -599,7 +630,7 @@ export const TRAIT_DEPENDENCIES = {
   "Ovíparos Amniotas": { lineage: ["Ovíparo"] },
   Ovovivíparo: { lineage: ["Ovíparos Amniotas"] },
   "Incubação": { lineage: ["Ovíparo"] },
-  Lactação: { lineage: ["Incubação"] },
+  Lactação: { lineage: ["Incubação", "Pelos"] },
   Ocitocina: { lineage: ["Lactação"] },
   Vivíparo: { lineage: ["Ovíparos Amniotas"] },
   "Ovulação Induzida": {
@@ -616,6 +647,11 @@ export const TRAIT_DEPENDENCIES = {
   "Construtor de Nicho": { lineage: ["Escavador"] },
   "Polegar Opositor": { lineage: ["Construtor de Nicho"] },
   Chifre: { lineage: ["Predação"] },
+  Roedor: {
+    lineage: ["Vertebrado", "Lactação"],
+    lineageAny: ["Herbívoro", "Onívoro"],
+    active: ["Pelos"],
+  },
   "Antropização": { lineage: ["Neocórtex Desenvolvido"] },
   "Córtex Pré-Frontal": { lineage: ["Polegar Opositor"] },
   "Neocórtex Desenvolvido": { lineage: ["Córtex Pré-Frontal"] },
@@ -775,6 +811,17 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Regressão Evolutiva",
   "Nanismo",
   "Gigantismo",
+  "Pele Glandular",
+  "Escamas",
+  "Osteodermos",
+  "Pelos",
+  "Penas",
+  "Roedor",
+  "Endozoocoria",
+  "Capsaicina",
+  "Epizoocoria",
+  "Sinzoocoria",
+  "Mirmecocoria",
 ]);
 
 export function normalizeMulticellularTraits(traits) {
@@ -796,6 +843,11 @@ export const PLANT_DERIVED_TRAITS = new Set([
   "Haustório",
   "Perfume Floral",
   "Plantas Domesticadas",
+  "Endozoocoria",
+  "Capsaicina",
+  "Epizoocoria",
+  "Sinzoocoria",
+  "Mirmecocoria",
 ]);
 
 export const PLANT_INCOMPATIBLE_TRAITS = new Set([
@@ -880,6 +932,12 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Monogamia",
   "Acasalamento Múltiplo",
   "Metamorfose",
+  "Pele Glandular",
+  "Escamas",
+  "Osteodermos",
+  "Pelos",
+  "Penas",
+  "Roedor",
   "Transferência Horizontal",
   "Insuficiência Respiratória",
   "Deficiência Motora",
@@ -920,6 +978,17 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Monogamia: "predation",
   "Acasalamento Múltiplo": "predation",
   Metamorfose: "predation",
+  "Pele Glandular": "predation",
+  Escamas: "predation",
+  Osteodermos: "predation",
+  Pelos: "predation",
+  Penas: "predation",
+  Roedor: "predation",
+  Endozoocoria: "photosynthesis",
+  Capsaicina: "photosynthesis",
+  Epizoocoria: "photosynthesis",
+  Sinzoocoria: "photosynthesis",
+  Mirmecocoria: "photosynthesis",
 });
 
 export const TRAIT_INCOMPATIBILITIES = Object.freeze({
@@ -1275,14 +1344,31 @@ export function periodTraitReachable(state, trait) {
   );
 }
 
+const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
+  "Pele Glandular",
+  "Escamas",
+  "Osteodermos",
+  "Pelos",
+  "Penas",
+  "Endozoocoria",
+  "Capsaicina",
+  "Epizoocoria",
+  "Sinzoocoria",
+  "Mirmecocoria",
+  "Roedor",
+]);
+
 export function periodCompletionInnovations(state) {
   const stage = currentGeologicalStage(state),
     history = new Set(state.historicalTraits ?? []);
   return periodInnovations(state).filter(
     (trait) =>
-      stage.required.includes(trait) ||
-      history.has(trait) ||
-      periodTraitReachable(state, trait),
+      !OPTIONAL_NON_COMPLETION_TRAITS.has(trait) &&
+      (
+        stage.required.includes(trait) ||
+        history.has(trait) ||
+        periodTraitReachable(state, trait)
+      ),
   );
 }
 

@@ -48,7 +48,9 @@ function depletePausedFertility(state) {
   const occupied = new Set([
       ...state.pieces.map((piece) => square(piece.r, piece.c)),
       ...state.eggs.map((egg) => square(egg.r, egg.c)),
-      ...state.plantSeeds.map((seed) => square(seed.r, seed.c)),
+      ...state.plantSeeds
+        .filter((seed) => !seed.transport)
+        .map((seed) => square(seed.r, seed.c)),
     ]),
     hazards = new Set(state.event?.hazards ?? []),
     eligible = allCells().filter((cell) => {
@@ -169,7 +171,9 @@ function addNaturalBarriers(state, count, near = []) {
         ...state.barriers,
         ...state.naturalBarriers,
         ...state.eggs.map((egg) => square(egg.r, egg.c)),
-        ...state.plantSeeds.map((seed) => square(seed.r, seed.c)),
+        ...state.plantSeeds
+          .filter((seed) => !seed.transport)
+          .map((seed) => square(seed.r, seed.c)),
         ...state.pieces.map((piece) => square(piece.r, piece.c)),
         ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
         ...state.deathSites.map((site) => site.cell),
@@ -254,6 +258,13 @@ export function consumeOrganicResidue(state, cell) {
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
   state.captureDisturbances = (state.captureDisturbances ?? []).filter(
     (entry) => entry.cell !== cell,
+  );
+  state.plantSeeds = (state.plantSeeds ?? []).filter(
+    (seed) =>
+      !(
+        seed.transport?.kind === "endozoocoria" &&
+        seed.transport.cell === cell
+      ),
   );
   return true;
 }

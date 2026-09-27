@@ -1840,7 +1840,7 @@ test("renders barriers, build targets and construction emoji icons", () => {
   const d = dom.window.document;
   assert.ok(d.querySelector('[data-r="2"][data-c="2"]').classList.contains("barrier"));
   assert.ok(d.querySelectorAll(".cell.build-target").length > 0);
-  assert.match(d.getElementById("selected").textContent, /🦫/);
+  assert.match(d.getElementById("selected").textContent, /🧱/);
   assert.match(d.getElementById("selected").textContent, /🧔/);
   assert.equal(d.getElementById("pass").textContent, "Não construir");
   dom.window.close();

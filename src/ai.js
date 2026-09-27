@@ -89,7 +89,9 @@ function priority(state, a) {
           c < 8 &&
           !state.pieces.some((piece) => piece.r === r && piece.c === c) &&
           !state.eggs.some((egg) => egg.r === r && egg.c === c) &&
-          !state.plantSeeds.some((seed) => seed.r === r && seed.c === c) &&
+          !state.plantSeeds.some(
+            (seed) => !seed.transport && seed.r === r && seed.c === c,
+          ) &&
           !barrierAt(state, r, c)
         )
           free++;

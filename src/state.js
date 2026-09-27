@@ -72,7 +72,9 @@ export const at = (state, r, c) =>
 export const eggAt = (state, r, c) =>
   state.eggs?.find((egg) => egg.r === r && egg.c === c);
 export const plantSeedAt = (state, r, c) =>
-  state.plantSeeds?.find((seed) => seed.r === r && seed.c === c);
+  state.plantSeeds?.find(
+    (seed) => !seed.transport && seed.r === r && seed.c === c,
+  );
 export const pathogenSporeAt = (state, r, c) =>
   state.pathogenSpores?.find((spore) => spore.r === r && spore.c === c);
 export const fragmentAt = (state, r, c) =>
@@ -2762,9 +2764,32 @@ export function assertState(state) {
     throw Error("Identificadores de ovos inválidos.");
 
   const plantSeedIds = new Set(),
-    plantSeedCells = new Set();
+    plantSeedCells = new Set(),
+    zoochoryModes = new Set([
+      null,
+      "endozoocoria",
+      "capsaicina",
+      "epizoocoria",
+      "sinzoocoria",
+      "mirmecocoria",
+    ]);
   for (const seed of state.plantSeeds) {
-    const cell = square(seed.r, seed.c);
+    const cell = square(seed.r, seed.c),
+      transport = seed.transport ?? null,
+      transported = !!transport,
+      transportValid =
+        transport === null ||
+        (transport &&
+          ["endozoocoria", "epizoocoria", "sinzoocoria"].includes(
+            transport.kind,
+          ) &&
+          integer(transport.releaseRound, 0) &&
+          (transport.kind === "endozoocoria"
+            ? integer(transport.cell, 0, 63)
+            : integer(transport.carrierId, 1) &&
+              state.pieces.some(
+                (piece) => piece.id === transport.carrierId,
+              )));
     if (
       !integer(seed.id, 1) ||
       plantSeedIds.has(seed.id) ||
@@ -2776,15 +2801,21 @@ export function assertState(state) {
       (seed.sproutReadyRound !== undefined &&
         seed.sproutReadyRound !== null &&
         !integer(seed.sproutReadyRound, 0)) ||
+      (seed.zoochory !== undefined &&
+        !zoochoryModes.has(seed.zoochory)) ||
+      (seed.mirmecochoryMoved !== undefined &&
+        typeof seed.mirmecochoryMoved !== "boolean") ||
+      !transportValid ||
       !validBroodProfile(seed.profile, seed.owner) ||
-      plantSeedCells.has(cell) ||
-      ((state.barriers.includes(cell) ||
-        state.naturalBarriers.includes(cell)) &&
+      (!transported && plantSeedCells.has(cell)) ||
+      (!transported &&
+        (state.barriers.includes(cell) ||
+          state.naturalBarriers.includes(cell)) &&
         !seed.profile.traits.includes("Trepadeira"))
     )
       throw Error("Semente vegetal inválida.");
     plantSeedIds.add(seed.id);
-    plantSeedCells.add(cell);
+    if (!transported) plantSeedCells.add(cell);
   }
   if (state.nextPlantSeed <= Math.max(0, ...plantSeedIds))
     throw Error("Identificadores de sementes vegetais inválidos.");

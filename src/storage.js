@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -196,8 +196,41 @@ function normalizeCycleInnovationPressure(state) {
   return normalizePathogenEvolution(state);
 }
 
+function normalizeLegacyZoochory(state) {
+  for (const seed of state?.plantSeeds ?? []) {
+    seed.zoochory ??= null;
+    seed.transport ??= null;
+    seed.mirmecochoryMoved ??= false;
+  }
+  return state;
+}
+
+function preserveLegacyLactationLineage(value) {
+  if (!value || typeof value !== "object") return;
+  if (
+    Array.isArray(value.traits) &&
+    value.traits.includes("Lactação") &&
+    value.genome?.Pelos &&
+    value.genome.Pelos.every((allele) => allele?.value === "ancestral")
+  ) {
+    value.genome.Pelos = [
+      { value: "derived", dominance: "recessive" },
+      { value: "ancestral", dominance: "neutral" },
+    ];
+    if (Array.isArray(value.ancestry) && !value.ancestry.includes("Pelos"))
+      value.ancestry.push("Pelos");
+  }
+  for (const child of Object.values(value)) {
+    if (child === value.genome) continue;
+    if (Array.isArray(child))
+      for (const item of child) preserveLegacyLactationLineage(item);
+    else if (child && typeof child === "object")
+      preserveLegacyLactationLineage(child);
+  }
+}
+
 function migrateLegacy(data) {
-  let state = structuredClone(data);
+  let state = normalizeLegacyZoochory(structuredClone(data));
   if (
     data.version === 19 &&
     state.geologicalStage === "hadean" &&
@@ -258,6 +291,7 @@ function migrateLegacy(data) {
   state.version = STATE_VERSION;
   normalizeLegacyTraitNames(state);
   normalizeStoredGenomes(state);
+  preserveLegacyLactationLineage(state);
   return normalizeCycleInnovationPressure(state);
 }
 

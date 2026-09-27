@@ -225,12 +225,29 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         victim.owner !== p.owner &&
         distance(p, victim) === 1 &&
         contactCaptureUnlocked(p);
-    const seedCapture =
-      !!plantSeed &&
-      !plantSeed.sprouting &&
-      plantSeed.owner !== p.owner &&
-      has(p, "Granívoro") &&
-      reproductionReady(state, p);
+    const fruitConsume =
+        !!plantSeed &&
+        !plantSeed.sprouting &&
+        ["endozoocoria", "capsaicina"].includes(plantSeed.zoochory) &&
+        (has(p, "Herbívoro") || has(p, "Onívoro") || has(p, "Granívoro")),
+      synzooCollect =
+        !!plantSeed &&
+        !plantSeed.sprouting &&
+        plantSeed.zoochory === "sinzoocoria" &&
+        has(p, "Coletor") &&
+        !state.plantSeeds.some(
+          (seed) =>
+            seed.transport?.kind === "sinzoocoria" &&
+            seed.transport.carrierId === p.id,
+        ),
+      seedCapture =
+        !!plantSeed &&
+        !plantSeed.sprouting &&
+        !fruitConsume &&
+        !synzooCollect &&
+        plantSeed.owner !== p.owner &&
+        has(p, "Granívoro") &&
+        reproductionReady(state, p);
     if (
       fragment ||
       (victim?.owner === p.owner && !cannibal) ||
@@ -272,6 +289,12 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         return;
     }
     if (
+      plantSeed &&
+      ["endozoocoria", "capsaicina"].includes(plantSeed.zoochory) &&
+      !fruitConsume
+    )
+      return;
+    if (
       victim &&
       victim.owner !== p.owner &&
       parentalCareProtects(state, victim)
@@ -281,8 +304,16 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       victim &&
       has(victim, "Camuflagem") &&
       !extra.crawler &&
-      distance(p, victim) > 1 &&
-      !has(p, "Visão Binocular")
+      !has(p, "Visão Binocular") &&
+      (
+        distance(p, victim) > 1 ||
+        (
+          distance(p, victim) === 1 &&
+          Math.abs(p.r - victim.r) === 1 &&
+          Math.abs(p.c - victim.c) === 1 &&
+          (has(victim, "Pelos") || has(victim, "Penas"))
+        )
+      )
     )
       return;
     targets.push({
@@ -293,7 +324,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       cannibal,
       eggCapture: egg?.id ?? null,
       seedCapture: seedCapture ? plantSeed.id : null,
+      fruitConsume: fruitConsume ? plantSeed.id : null,
+      synzooCollect: synzooCollect ? plantSeed.id : null,
       ...extra,
+      noContinuation:
+        !!extra.noContinuation || fruitConsume || synzooCollect,
     });
   }
   const occupiedTarget = (r, c) => !!at(state, r, c) || !!eggAt(state, r, c);

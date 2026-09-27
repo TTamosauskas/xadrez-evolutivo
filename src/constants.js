@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 21;
+export const STATE_VERSION = 22;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -262,7 +262,7 @@ export const TRAITS = {
     "Ao completar Fotossíntese, a casa fértil adicional também pode ser uma casa neutra ocupada por uma criatura aliada.",
   ],
   "Construtor de Nicho": [
-    "🦫",
+    "🧱",
     "Neutraliza a casa hostil de chegada quando a criatura sobrevive.",
   ],
   "Antropização": [
@@ -270,7 +270,7 @@ export const TRAITS = {
     "Após reproduzir consumindo uma casa fértil, pode construir uma barreira em uma casa adjacente vazia.",
   ],
   "Plantas Domesticadas": [
-    "🌾",
+    "🪴",
     "Permite posicionar descendentes fotossintéticos em casas vazias a até duas casas de distância.",
   ],
   "Animais Domésticos": [
@@ -490,6 +490,50 @@ export const TRAITS = {
   Coletor: [
     "🐿️",
     "Transporta fertilidade e usa sementes para reproduzir parado.",
+  ],
+  "Pele Glandular": [
+    "🐸",
+    "Tegumento úmido especializado: tem 30% de chance de bloquear exposições por trilha bacteriana, fungo ambiental ou esporos.",
+  ],
+  Escamas: [
+    "◆",
+    "Reduz em 20% multiplicativos o sucesso de capturas adjacentes; não protege contra capturas a distância.",
+  ],
+  Osteodermos: [
+    "🛡️",
+    "Reduz pela metade o risco de o agressor morrer por Espinhos ou Chifre durante uma tentativa de captura.",
+  ],
+  Pelos: [
+    "🦣",
+    "Reduz em 10% a mortalidade de casas hostis e em 20% exposições patogênicas externas; com Camuflagem, bloqueia capturas diagonais adjacentes.",
+  ],
+  Penas: [
+    "🪶",
+    "Reduz em 15% a mortalidade de casas hostis; com Camuflagem, bloqueia capturas diagonais adjacentes.",
+  ],
+  Endozoocoria: [
+    "🍎",
+    "Transforma sementes de Angiospermas em frutos consumíveis que podem alimentar o dispersor e carregar a prole vegetal em fezes.",
+  ],
+  Capsaicina: [
+    "🌶️",
+    "Especializa frutos endozoocóricos: consumidores com Pelos têm recuperação metabólica dobrada, enquanto Penas evita essa penalidade.",
+  ],
+  Epizoocoria: [
+    "🌾",
+    "Sementes aderem a portadores com Pelos ou Penas por três rodadas e depois se estabelecem perto do transportador.",
+  ],
+  Sinzoocoria: [
+    "🌰",
+    "Sementes podem ser armazenadas por Coletor; se não forem usadas em três rodadas, dispersam-se perto do transportador.",
+  ],
+  Mirmecocoria: [
+    "🍒",
+    "Diásporos próximos de Artrópodes eusociais recebem um transporte único para um local de estabelecimento próximo ao vetor.",
+  ],
+  Roedor: [
+    "🦫",
+    "Neutraliza a proteção de Madeira ao capturar uma criatura fotossintética lenhosa.",
   ],
 };
 export const PATHOGEN_AGENTS = Object.freeze({

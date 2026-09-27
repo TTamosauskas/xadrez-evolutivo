@@ -69,6 +69,8 @@ import {
   bud,
   fragmentOnCapture,
   releaseMarsupialPouch,
+  consumeCollectorSeed,
+  releaseCarriedPlantSeeds,
 } from "./reproduction.js";
 import {
   checkPopulation,
@@ -136,6 +138,7 @@ export function context(state) {
       const bonded = dead.pairedWithId
         ? state.pieces.find((piece) => piece.id === dead.pairedWithId)
         : null;
+      releaseCarriedPlantSeeds(state, dead);
       state.pieces = state.pieces.filter((p) => p.id !== id);
       if (bonded?.pairedWithId === dead.id) bonded.pairedWithId = null;
       if (state.chain === id) state.chain = null;
@@ -405,8 +408,32 @@ function moveDirection(p) {
   }
 }
 
+export function retaliatoryDefenseChance(attacker, trait) {
+  const base =
+    trait === "Espinhos" ? 1 / 10 : trait === "Chifre" ? 1 / 5 : 0;
+  return has(attacker, "Osteodermos") ? base / 2 : base;
+}
+
 function hostileHazardKills(state, piece) {
   if (random(state) >= 1 / 2) return false;
+  if (has(piece, "Penas") && random(state) < 0.15) {
+    emitPassiveEffect(
+      state,
+      "Penas",
+      "🪶 Penas reduziram o impacto do ambiente hostil.",
+      { pieceId: piece.id, outcome: "blocked-hostile-risk" },
+    );
+    return false;
+  }
+  if (has(piece, "Pelos") && random(state) < 0.1) {
+    emitPassiveEffect(
+      state,
+      "Pelos",
+      "🦣 Pelos reduziram o impacto do ambiente hostil.",
+      { pieceId: piece.id, outcome: "blocked-hostile-risk" },
+    );
+    return false;
+  }
   if (!has(piece, "Carapaça")) return true;
   if (random(state) >= 1 / 4) return true;
   emitPassiveEffect(
@@ -1516,6 +1543,7 @@ function executeMove(ctx, action) {
     herdFollowers =
       !second &&
       has(p, "Manada") &&
+      !target.noContinuation &&
       !target.crawler &&
       !target.lateral &&
       !target.escalation &&
@@ -1714,14 +1742,26 @@ function executeMove(ctx, action) {
       pieceCapture && victim.owner === p.owner && has(p, "Canibalismo"),
     eggCapture = !!egg,
     seedCapture = !!plantSeed && target.seedCapture === plantSeed.id,
+    fruitConsumption =
+      !!plantSeed && target.fruitConsume === plantSeed.id,
+    synzooCollection =
+      !!plantSeed && target.synzooCollect === plantSeed.id,
     capture = pieceCapture || eggCapture || seedCapture;
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
     !target.crawler &&
-    distance(p, victim) > 1 &&
     has(victim, "Camuflagem") &&
-    has(p, "Visão Binocular")
+    has(p, "Visão Binocular") &&
+    (
+      distance(p, victim) > 1 ||
+      (
+        distance(p, victim) === 1 &&
+        Math.abs(p.r - victim.r) === 1 &&
+        Math.abs(p.c - victim.c) === 1 &&
+        (has(victim, "Pelos") || has(victim, "Penas"))
+      )
+    )
   )
     emitPassiveEffect(
       state,
@@ -1747,28 +1787,39 @@ function executeMove(ctx, action) {
     finishFrustratedCapture(ctx, p, "Cuidado Parental");
     return;
   }
-  if (
-    pieceCapture &&
-    has(victim, "Espinhos") &&
-    random(state) < 1 / 10
-  ) {
-    const origin = square(p.r, p.c);
-    ctx.kill(p.id, "defesa por Espinhos", victim);
-    markCarcass(state, origin);
-    markCaptureDisturbance(state, origin);
-    log(
-      state,
-      `${OWNERS[victim.owner]}: 🌵 Espinhos matou o agressor durante a tentativa de captura.`,
-    );
-    emitPassiveEffect(
-      state,
-      "Espinhos",
-      "🌵 Espinhos matou o agressor.",
-      { pieceId: victim.id, outcome: "killed-attacker" },
-    );
-    advanceTurn(ctx);
-    settle(ctx);
-    return;
+  if (pieceCapture && has(victim, "Espinhos")) {
+    const roll = random(state),
+      threshold = retaliatoryDefenseChance(p, "Espinhos");
+    if (
+      has(p, "Osteodermos") &&
+      roll >= threshold &&
+      roll < 1 / 10
+    )
+      emitPassiveEffect(
+        state,
+        "Osteodermos",
+        "🛡️ Osteodermos absorveram o impacto de 🌵 Espinhos.",
+        { pieceId: p.id, outcome: "blocked-counterattack" },
+      );
+    if (roll < threshold) {
+      const origin = square(p.r, p.c);
+      ctx.kill(p.id, "defesa por Espinhos", victim);
+      markCarcass(state, origin);
+      markCaptureDisturbance(state, origin);
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 🌵 Espinhos matou o agressor durante a tentativa de captura.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Espinhos",
+        "🌵 Espinhos matou o agressor.",
+        { pieceId: victim.id, outcome: "killed-attacker" },
+      );
+      advanceTurn(ctx);
+      settle(ctx);
+      return;
+    }
   }
   if (
     pieceCapture &&
@@ -1784,26 +1835,40 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     has(victim, "Chifre") &&
-    !has(p, "Carapaça") &&
-    random(state) < 1 / 5
+    !has(p, "Carapaça")
   ) {
-    const origin = square(p.r, p.c);
-    ctx.kill(p.id, "defesa por Chifre", victim);
-    markCarcass(state, origin);
-    markCaptureDisturbance(state, origin);
-    log(
-      state,
-      `${OWNERS[victim.owner]}: 🫎 Chifre matou o agressor durante a tentativa de captura.`,
-    );
-    emitPassiveEffect(
-      state,
-      "Chifre",
-      "🫎 Chifre matou o agressor.",
-      { pieceId: victim.id, outcome: "killed-attacker" },
-    );
-    advanceTurn(ctx);
-    settle(ctx);
-    return;
+    const roll = random(state),
+      threshold = retaliatoryDefenseChance(p, "Chifre");
+    if (
+      has(p, "Osteodermos") &&
+      roll >= threshold &&
+      roll < 1 / 5
+    )
+      emitPassiveEffect(
+        state,
+        "Osteodermos",
+        "🛡️ Osteodermos absorveram o impacto de 🫎 Chifre.",
+        { pieceId: p.id, outcome: "blocked-counterattack" },
+      );
+    if (roll < threshold) {
+      const origin = square(p.r, p.c);
+      ctx.kill(p.id, "defesa por Chifre", victim);
+      markCarcass(state, origin);
+      markCaptureDisturbance(state, origin);
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 🫎 Chifre matou o agressor durante a tentativa de captura.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Chifre",
+        "🫎 Chifre matou o agressor.",
+        { pieceId: victim.id, outcome: "killed-attacker" },
+      );
+      advanceTurn(ctx);
+      settle(ctx);
+      return;
+    }
   }
   if (
     pieceCapture &&
@@ -1983,7 +2048,40 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
+    distance(p, victim) === 1 &&
+    has(victim, "Escamas") &&
+    random(state) < 0.2
+  ) {
+    log(
+      state,
+      `${OWNERS[victim.owner]}: ◆ Escamas resistiram à captura em ${coord(victim.r, victim.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Escamas",
+      "◆ Escamas bloquearam a captura de contato.",
+      { pieceId: victim.id, outcome: "prevented-capture" },
+    );
+    finishFrustratedCapture(ctx, p, "Escamas");
+    return;
+  }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
     has(victim, "Madeira") &&
+    has(p, "Roedor")
+  )
+    emitPassiveEffect(
+      state,
+      "Roedor",
+      "🦫 Roedor neutralizou 🪵 Madeira.",
+      { pieceId: p.id, outcome: "neutralized-wood" },
+    );
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Madeira") &&
+    !has(p, "Roedor") &&
     random(state) < 1 / 4
   ) {
     log(
@@ -2242,18 +2340,76 @@ function executeMove(ctx, action) {
     state.board[cell] = "neutral";
     log(
       state,
-      `${OWNERS[p.owner]}: 🦫 Construtor de Nicho neutralizou ${coord(p.r, p.c)}.`,
+      `${OWNERS[p.owner]}: 🧱 Construtor de Nicho neutralizou ${coord(p.r, p.c)}.`,
     );
   }
+  if (fruitConsumption && plantSeed) {
+    const trait =
+        plantSeed.zoochory === "capsaicina" ? "Capsaicina" : "Endozoocoria",
+      icon = plantSeed.zoochory === "capsaicina" ? "🌶️" : "🍎";
+    plantSeed.transport = {
+      kind: "endozoocoria",
+      cell,
+      releaseRound: round(state) + 1,
+    };
+    plantSeed.r = p.r;
+    plantSeed.c = p.c;
+    plantSeed.sprouting = false;
+    plantSeed.sproutReadyRound = null;
+    markOrganicResidue(
+      state,
+      cell,
+      fecalPathogenDiseaseIdsForHost(state, p),
+    );
+    p.decompositionImmunity = {
+      cell,
+      throughTurn: state.turn + 2,
+    };
+    log(
+      state,
+      `${OWNERS[p.owner]}: ${icon} ${trait} foi consumida e dispersou uma semente em 💩.`,
+    );
+    emitPassiveEffect(
+      state,
+      trait,
+      `${icon} ${trait} dispersou uma semente em 💩.`,
+      { pieceId: p.id, outcome: "zoochory-consumed" },
+    );
+  }
+  if (synzooCollection && plantSeed) {
+    plantSeed.transport = {
+      kind: "sinzoocoria",
+      carrierId: p.id,
+      releaseRound: round(state) + 3,
+    };
+    plantSeed.r = p.r;
+    plantSeed.c = p.c;
+    p.seeds = (p.seeds ?? 0) + 1;
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🌰 Sinzoocoria armazenou uma semente em Coletor.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Sinzoocoria",
+      "🌰 Sinzoocoria: Coletor armazenou a semente.",
+      { pieceId: p.id, outcome: "zoochory-carried" },
+    );
+  }
+
   const fecesHere = hasOrganicResidue(state, cell),
     carcassHere = !!carcassAt(state, p.r, p.c),
     coprophagyContact =
       !capture &&
+      !fruitConsumption &&
       fecesHere &&
       has(p, "Coprofagia"),
     recycledFeces =
-      !capture && fecesHere && canPhotosynthesize(p);
-  if (!capture && fecesHere)
+      !capture &&
+      !fruitConsumption &&
+      fecesHere &&
+      canPhotosynthesize(p);
+  if (!capture && !fruitConsumption && fecesHere)
     exposeFecalResidue(state, p, cell, {
       ingestion: coprophagyContact,
     });
@@ -2275,11 +2431,20 @@ function executeMove(ctx, action) {
     coprophagy =
       !recycledFeces &&
       coprophagyContact;
-  if (!capture && !scavenging && !coprophagy && !recycledFeces)
+  if (
+    !capture &&
+    !fruitConsumption &&
+    !synzooCollection &&
+    !scavenging &&
+    !coprophagy &&
+    !recycledFeces
+  )
     harvest(state, p, p.r, p.c);
   const collectorStay =
       !scavenging &&
       !coprophagy &&
+      !fruitConsumption &&
+      !synzooCollection &&
       has(p, "Coletor") &&
       target.stay &&
       p.seeds > 0,
@@ -2287,6 +2452,8 @@ function executeMove(ctx, action) {
       !scavenging &&
       !coprophagy &&
       !recycledFeces &&
+      !fruitConsumption &&
+      !synzooCollection &&
       ((!capture &&
         terrain(state, p.r, p.c) === "fertile" &&
         (state.geologicalStage !== "hadean" || target.stay)) ||
@@ -2297,6 +2464,8 @@ function executeMove(ctx, action) {
       !coprophagy &&
       !recycledFeces &&
       !capture &&
+      !fruitConsumption &&
+      !synzooCollection &&
       canUseFertileResource(state, p) &&
       (terrain(state, p.r, p.c) === "fertile" || collectorStay),
     predation =
@@ -2351,7 +2520,26 @@ function executeMove(ctx, action) {
   if (consumedFertile) consumeReproductionResource(state, p, cell);
   let born = 0;
   const paedogenic = paedogenesisReady(state, p);
-  if (seedCapture) {
+  if (fruitConsumption && plantSeed) {
+    const capsaicinHair =
+      plantSeed.zoochory === "capsaicina" && has(p, "Pelos");
+    born = reproduce(ctx, p, null, "endozoocoria", {
+      forcedCount: 1,
+      resourceKind: "fruit",
+      metabolicMultiplier: capsaicinHair ? 2 : 1,
+    });
+    if (born && capsaicinHair)
+      emitPassiveEffect(
+        state,
+        "Capsaicina",
+        "🌶️ Capsaicina dobrou a recuperação metabólica do consumidor.",
+        {
+          pieceId: p.id,
+          outcome: "doubled-metabolic-recovery",
+          value: 2,
+        },
+      );
+  } else if (seedCapture) {
     born = reproduce(ctx, p, null, "granivoria", {
       resourceKind: "seed-prey",
     });
@@ -2429,7 +2617,7 @@ function executeMove(ctx, action) {
       fertile
     )
       markHadeanTutorialStep(state, "divided");
-    if (collectorStay && born) p.seeds--;
+    if (collectorStay && born) consumeCollectorSeed(state, p);
   }
   if (capturedPieceKilled && state.geologicalStage !== "hadean") {
     const captureCell = square(p.r, p.c),
@@ -2608,8 +2796,7 @@ function consumeSexualResource(state, parent, mate) {
       provider.seedUsedTurn === state.turn
     )
       return null;
-    provider.seeds--;
-    provider.seedUsedTurn = state.turn;
+    if (!consumeCollectorSeed(state, provider)) return null;
   }
   return resource;
 }

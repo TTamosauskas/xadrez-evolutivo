@@ -83,6 +83,10 @@ import {
   transmitSexualPathogen,
   tryVectorPathogen,
 } from "./disease.js";
+import {
+  consumeOrganicResidue,
+  hasOrganicResidue,
+} from "./environment.js";
 
 const NEGATIVE = [...NEGATIVE_GENETIC_TRAITS];
 const POSITIVE = Object.keys(TRAITS).filter(
@@ -1087,6 +1091,154 @@ function hatchEgg(ctx, egg) {
   return born;
 }
 
+function zoochoryMode(profile) {
+  if (has(profile, "Capsaicina")) return "capsaicina";
+  if (has(profile, "Endozoocoria")) return "endozoocoria";
+  if (has(profile, "Epizoocoria")) return "epizoocoria";
+  if (has(profile, "Sinzoocoria")) return "sinzoocoria";
+  if (has(profile, "Mirmecocoria")) return "mirmecocoria";
+  return null;
+}
+
+function zoochoryCellFree(
+  state,
+  seed,
+  r,
+  c,
+  { allowHostile = false } = {},
+) {
+  return (
+    inside(r, c) &&
+    !ecologicalDomainBlocked(state, seed.owner, r, c) &&
+    !at(state, r, c) &&
+    !eggAt(state, r, c) &&
+    !plantSeedAt(state, r, c) &&
+    !fragmentAt(state, r, c) &&
+    !barrierAt(state, r, c) &&
+    !lethalHazardAt(state, r, c) &&
+    (allowHostile || terrain(state, r, c) !== "hostile")
+  );
+}
+
+function zoochorySettlementCells(
+  state,
+  seed,
+  origin,
+  maxRadius = 2,
+  options = {},
+) {
+  const cells = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      const d = distance(origin, { r, c });
+      if (
+        d < 1 ||
+        d > maxRadius ||
+        !zoochoryCellFree(state, seed, r, c, options)
+      )
+        continue;
+      cells.push({
+        r,
+        c,
+        distance: d,
+        fertile: terrain(state, r, c) === "fertile" ? 1 : 0,
+      });
+    }
+  return shuffle(state, cells).sort(
+    (a, b) => a.distance - b.distance || b.fertile - a.fertile,
+  );
+}
+
+function nearestZoochoryCarrier(state, seed, predicate, radius = 2) {
+  const candidates = state.pieces
+    .filter(
+      (piece) =>
+        predicate(piece) &&
+        distance(seed, piece) <= radius,
+    )
+    .map((piece) => ({ piece, distance: distance(seed, piece) }));
+  if (!candidates.length) return null;
+  const nearest = Math.min(...candidates.map((entry) => entry.distance));
+  return pick(
+    state,
+    candidates
+      .filter((entry) => entry.distance === nearest)
+      .map((entry) => entry.piece),
+  );
+}
+
+function establishTransportedSeed(ctx, seed, origin, trait, icon) {
+  const target = zoochorySettlementCells(ctx.state, seed, origin, 2)[0] ?? null;
+  ctx.state.plantSeeds = ctx.state.plantSeeds.filter(
+    (candidate) => candidate.id !== seed.id,
+  );
+  if (!target) {
+    log(
+      ctx.state,
+      `${icon} ${trait}: a semente transportada perdeu-se sem casa válida.`,
+    );
+    return false;
+  }
+  spawnChild(ctx.state, seed.profile, target.r, target.c);
+  log(
+    ctx.state,
+    `${icon} ${trait} estabeleceu prole vegetal em ${coord(target.r, target.c)}.`,
+  );
+  emitPassiveEffect(
+    ctx.state,
+    trait,
+    `${icon} ${trait} concluiu a dispersão.`,
+    { outcome: "zoochory-established" },
+  );
+  return true;
+}
+
+export function consumeCollectorSeed(state, piece) {
+  if (!piece || !has(piece, "Coletor") || (piece.seeds ?? 0) <= 0)
+    return false;
+  const carried = state.plantSeeds.find(
+    (seed) =>
+      seed.transport?.kind === "sinzoocoria" &&
+      seed.transport.carrierId === piece.id,
+  );
+  if (carried)
+    state.plantSeeds = state.plantSeeds.filter(
+      (seed) => seed.id !== carried.id,
+    );
+  piece.seeds = Math.max(0, (piece.seeds ?? 0) - 1);
+  piece.seedUsedTurn = state.turn;
+  return true;
+}
+
+export function releaseCarriedPlantSeeds(state, carrier) {
+  if (!carrier) return 0;
+  let released = 0;
+  for (const seed of [...state.plantSeeds]) {
+    if (
+      !["epizoocoria", "sinzoocoria"].includes(seed.transport?.kind) ||
+      seed.transport.carrierId !== carrier.id
+    )
+      continue;
+    if (seed.transport.kind === "sinzoocoria")
+      carrier.seeds = Math.max(0, (carrier.seeds ?? 0) - 1);
+    const target =
+      zoochorySettlementCells(state, seed, carrier, 1)[0] ??
+      zoochorySettlementCells(state, seed, carrier, 2)[0] ??
+      null;
+    if (!target) {
+      state.plantSeeds = state.plantSeeds.filter(
+        (candidate) => candidate.id !== seed.id,
+      );
+      continue;
+    }
+    seed.r = target.r;
+    seed.c = target.c;
+    seed.transport = null;
+    released++;
+  }
+  return released;
+}
+
 function layPlantSeeds(ctx, parent, brood) {
   const ordinary = brood.filter((profile) => !has(profile, "Trepadeira")),
     climbers = brood.filter((profile) => has(profile, "Trepadeira"));
@@ -1117,6 +1269,9 @@ function layPlantSeeds(ctx, parent, brood) {
         movesRemaining: 3,
         sprouting: false,
         sproutReadyRound: null,
+        zoochory: zoochoryMode(profiles[i]),
+        transport: null,
+        mirmecochoryMoved: false,
       });
       laid++;
     }
@@ -1378,6 +1533,7 @@ const TROPHIC_REPRODUCTION_RESOURCES = new Set([
   "prey",
   "egg",
   "seed-prey",
+  "fruit",
   "carcass",
   "feces",
 ]);
@@ -1535,6 +1691,11 @@ export function reproduce(
         metabolic *= 2;
       if (options.trophicEfficiency) metabolic = Math.max(1, metabolic - 1);
       if (mates.length > 1) metabolic *= 2;
+      if (
+        Number.isFinite(options.metabolicMultiplier) &&
+        options.metabolicMultiplier > 1
+      )
+        metabolic *= options.metabolicMultiplier;
 
       let pressure =
         populationReproductionCooldown(
@@ -1761,11 +1922,8 @@ export function bud(ctx, parent) {
   const spendResource = () => {
     if (resource.kind === "fertile")
       return consumeReproductionResource(ctx.state, parent, resource.cell);
-    if (resource.kind === "seed" && (parent.seeds ?? 0) > 0) {
-      parent.seeds--;
-      parent.seedUsedTurn = ctx.state.turn;
-      return 1;
-    }
+    if (resource.kind === "seed" && (parent.seeds ?? 0) > 0)
+      return consumeCollectorSeed(ctx.state, parent) ? 1 : 0;
     return 0;
   };
   const born = reproduce(ctx, parent, null, "Brotamento", {
@@ -2024,6 +2182,131 @@ export function tickReproduction(ctx) {
   tickFragments(ctx);
 
   for (const seed of [...state.plantSeeds]) {
+    if (seed.transport?.kind === "endozoocoria") {
+      if (now < seed.transport.releaseRound) continue;
+      const cell = seed.transport.cell,
+        r = Math.floor(cell / 8),
+        c = cell % 8,
+        valid =
+          hasOrganicResidue(state, cell) &&
+          inside(r, c) &&
+          !ecologicalDomainBlocked(state, seed.owner, r, c) &&
+          !at(state, r, c) &&
+          !eggAt(state, r, c) &&
+          !fragmentAt(state, r, c) &&
+          !barrierAt(state, r, c) &&
+          !lethalHazardAt(state, r, c);
+      state.plantSeeds = state.plantSeeds.filter(
+        (candidate) => candidate.id !== seed.id,
+      );
+      if (valid) {
+        consumeOrganicResidue(state, cell);
+        spawnChild(state, seed.profile, r, c);
+        const trait =
+            seed.zoochory === "capsaicina" ? "Capsaicina" : "Endozoocoria",
+          icon = seed.zoochory === "capsaicina" ? "🌶️" : "🍎";
+        log(
+          state,
+          `${icon} ${trait}: a semente dispersa germinou em ${coord(r, c)}.`,
+        );
+        emitPassiveEffect(
+          state,
+          trait,
+          `🌱 A semente de ${trait} germinou.`,
+          { outcome: "zoochory-established" },
+        );
+      }
+      continue;
+    }
+
+    if (
+      ["epizoocoria", "sinzoocoria"].includes(seed.transport?.kind)
+    ) {
+      const carrier = state.pieces.find(
+        (piece) => piece.id === seed.transport.carrierId,
+      );
+      if (!carrier) {
+        state.plantSeeds = state.plantSeeds.filter(
+          (candidate) => candidate.id !== seed.id,
+        );
+        continue;
+      }
+      seed.r = carrier.r;
+      seed.c = carrier.c;
+      if (now < seed.transport.releaseRound) continue;
+      if (seed.transport.kind === "sinzoocoria")
+        carrier.seeds = Math.max(0, (carrier.seeds ?? 0) - 1);
+      const trait =
+          seed.transport.kind === "sinzoocoria"
+            ? "Sinzoocoria"
+            : "Epizoocoria",
+        icon = trait === "Sinzoocoria" ? "🌰" : "🌾";
+      establishTransportedSeed(ctx, seed, carrier, trait, icon);
+      continue;
+    }
+
+    if (seed.zoochory === "epizoocoria") {
+      const carrier = nearestZoochoryCarrier(
+        state,
+        seed,
+        (piece) => has(piece, "Pelos") || has(piece, "Penas"),
+      );
+      if (carrier) {
+        seed.transport = {
+          kind: "epizoocoria",
+          carrierId: carrier.id,
+          releaseRound: now + 3,
+        };
+        seed.r = carrier.r;
+        seed.c = carrier.c;
+        log(
+          state,
+          `🌾 Epizoocoria aderiu uma semente a ${coord(carrier.r, carrier.c)}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Epizoocoria",
+          "🌾 Epizoocoria aderiu a um dispersor.",
+          { pieceId: carrier.id, outcome: "zoochory-carried" },
+        );
+        continue;
+      }
+    }
+
+    if (
+      seed.zoochory === "mirmecocoria" &&
+      !seed.mirmecochoryMoved
+    ) {
+      const carrier = nearestZoochoryCarrier(
+        state,
+        seed,
+        (piece) => has(piece, "Artrópode") && has(piece, "Eusocialidade"),
+      );
+      if (carrier) {
+        const target = zoochorySettlementCells(
+          state,
+          seed,
+          carrier,
+          2,
+        )[0];
+        if (target) {
+          seed.r = target.r;
+          seed.c = target.c;
+          seed.mirmecochoryMoved = true;
+          log(
+            state,
+            `🍒 Mirmecocoria transportou o diásporo para ${coord(target.r, target.c)}.`,
+          );
+          emitPassiveEffect(
+            state,
+            "Mirmecocoria",
+            "🍒 Mirmecocoria transportou o diásporo.",
+            { pieceId: carrier.id, outcome: "zoochory-transported" },
+          );
+        }
+      }
+    }
+
     seed.age = Number.isInteger(seed.age)
       ? seed.age + 1
       : 4 - Math.max(0, Math.min(3, seed.movesRemaining ?? 3));
