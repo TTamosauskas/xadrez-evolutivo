@@ -212,6 +212,34 @@ const mutationTopics = {
   Nanismo: ["Nanismo", "Nanismo descreve fenótipos de crescimento corporal reduzido; no jogo, força a forma funcional de Peão e reduz o tamanho visual da peça."],
   Gigantismo: ["Gigantismo", "Gigantismo descreve aumento extremo de tamanho corporal; no jogo, amplia o tamanho visual e impõe um custo de mobilidade."],
   "Mutação Mutadora": ["Fenótipo mutador", "Fenótipos mutadores apresentam taxas de mutação elevadas, frequentemente por alterações em mecanismos de manutenção do genoma; no jogo, aumentam a chance de mutações negativas."],
+  "Predação em Massa": [
+    "Alimentação por filtração",
+    "A alimentação em massa permite explorar concentrações de presas pequenas; no jogo, formas grandes podem engolfar até duas presas menores adicionais após uma captura.",
+  ],
+  Teia: [
+    "Teia de aranha",
+    "Sedas de captura transformam o espaço em armadilha; no jogo, uma teia amadurece após permanência prolongada e prende adversários.",
+  ],
+  Peçonha: [
+    "Peçonha",
+    "Peçonhas são inoculadas por estruturas especializadas e podem imobilizar ou matar presas; no jogo, uma tentativa de captura de contato frustrada pode produzir morte diferida.",
+  ],
+  "Projétil Biológico": [
+    "Besouro-bombardeiro",
+    "Alguns artrópodes ejetam secreções defensivas direcionadas; no jogo, o projétil cria hostilidade ambiental temporária à distância.",
+  ],
+  "Pescoço Verticalizado": [
+    "Girafa",
+    "Pescoços alongados ampliam o envelope de forrageamento; no jogo, a criatura alcança uma presa fotossintética adjacente à casa onde aterrissa.",
+  ],
+  Garras: [
+    "Garra",
+    "Garras raptoriais ajudam a agarrar e conter presas; no jogo, permitem capturar uma presa animal adjacente à casa de aterrissagem.",
+  ],
+  Eletrodescarga: [
+    "Enguia-elétrica",
+    "Peixes elétricos podem gerar descargas fortes para incapacitar presas; no jogo, a descarga mata à distância e cobra alto custo metabólico.",
+  ],
   "Mutação Letal": ["Mutação letal", "Uma mutação letal compromete a sobrevivência do portador; no jogo, a morte ocorre após três rodadas completas."],
   "Mutação Disfuncional": ["Mutação", "Mutações alteram o material genético; seus efeitos podem ser neutros, vantajosos ou prejudiciais conforme o contexto."],
 };
