@@ -99,6 +99,27 @@ export const webAt = (state, r, c) =>
     (entry) =>
       entry.cell === square(r, c) && entry.expiresRound >= round(state),
   ) ?? null;
+export const inkCloudAt = (state, r, c) => {
+  const cell = square(r, c);
+  return (
+    (state.inkClouds ?? []).find(
+      (entry) =>
+        state.turn <= entry.expiresTurn &&
+        Array.isArray(entry.cells) &&
+        entry.cells.includes(cell),
+    ) ?? null
+  );
+};
+export const allelopathySourceAt = (state, r, c, owner = null) =>
+  state.pieces.find(
+    (piece) =>
+      has(piece, "Alelopatia") &&
+      (!owner || piece.owner !== owner) &&
+      round(state) -
+        (piece.stationarySinceRound ?? piece.bornRound ?? round(state)) >=
+        3 &&
+      Math.abs(piece.r - r) + Math.abs(piece.c - c) === 1,
+  ) ?? null;
 export const terrain = (state, r, c) =>
   chemicalHazardAt(state, r, c) ? "hostile" : state.board[square(r, c)];
 export const organicResidueAt = (state, r, c) => {
@@ -467,6 +488,15 @@ export function newPiece(state, owner, r, c, source = {}) {
       semelparityDeathPending: source.semelparityDeathPending ?? false,
       neurodivergenceRestThroughRound: source.neurodivergenceRestThroughRound ?? null,
       intoxicationRestThroughRound: source.intoxicationRestThroughRound ?? null,
+      hematophagyDepletedUntilRound:
+        source.hematophagyDepletedUntilRound ?? null,
+      autotomyRecovery: source.autotomyRecovery
+        ? structuredClone(source.autotomyRecovery)
+        : null,
+      inkReadyRound: source.inkReadyRound ?? bornRound,
+      broodParasite: source.broodParasite
+        ? structuredClone(source.broodParasite)
+        : null,
       webTrapped: source.webTrapped ?? null,
       webCreatedStationarySinceRound:
         source.webCreatedStationarySinceRound ?? null,
@@ -1147,6 +1177,7 @@ export function createState(seed = Date.now(), options = {}) {
     trails: [],
     webs: [],
     chemicalHazards: [],
+    inkClouds: [],
     nextFragment: 1,
     fragments: [],
     nextColonyId: 1,
@@ -2430,6 +2461,17 @@ export function assertState(state) {
     (state.webs !== undefined && !Array.isArray(state.webs)) ||
     (state.chemicalHazards !== undefined &&
       !Array.isArray(state.chemicalHazards)) ||
+    (state.inkClouds !== undefined && !Array.isArray(state.inkClouds)) ||
+    (state.inkClouds ?? []).some(
+      (entry) =>
+        !entry ||
+        !integer(entry.sourceId, 1) ||
+        !["blue", "amber"].includes(entry.owner) ||
+        !integer(entry.expiresTurn, 0) ||
+        !Array.isArray(entry.cells) ||
+        !entry.cells.length ||
+        entry.cells.some((cell) => !integer(cell, 0, 63)),
+    ) ||
     (state.webs ?? []).some(
       (entry) =>
         !entry ||
@@ -2752,6 +2794,23 @@ export function assertState(state) {
       (p.intoxicationRestThroughRound !== undefined &&
         p.intoxicationRestThroughRound !== null &&
         !integer(p.intoxicationRestThroughRound)) ||
+      (p.hematophagyDepletedUntilRound !== undefined &&
+        p.hematophagyDepletedUntilRound !== null &&
+        !integer(p.hematophagyDepletedUntilRound, 0)) ||
+      (p.inkReadyRound !== undefined && !integer(p.inkReadyRound, 0)) ||
+      (p.autotomyRecovery !== undefined &&
+        p.autotomyRecovery !== null &&
+        (!integer(p.autotomyRecovery.originalRank, 1, 5) ||
+          p.autotomyRecovery.originalRank <= p.rank)) ||
+      (p.broodParasite !== undefined &&
+        p.broodParasite !== null &&
+        (!integer(p.broodParasite.parasiteId, 1) ||
+          !["blue", "amber"].includes(p.broodParasite.parasiteOwner) ||
+          !integer(p.broodParasite.expiresRound, 0) ||
+          !validBroodProfile(
+            p.broodParasite.profile,
+            p.broodParasite.parasiteOwner,
+          ))) ||
       (p.webTrapped !== undefined &&
         p.webTrapped !== null &&
         (!integer(p.webTrapped.sourceId, 1) ||
@@ -2858,7 +2917,7 @@ export function assertState(state) {
       egg.dispersal !== "local" ||
       !Array.isArray(egg.brood) ||
       !egg.brood.length ||
-      !egg.brood.every((profile) => validBroodProfile(profile, egg.owner))
+      !egg.brood.every((profile) => validBroodProfile(profile))
     )
       throw Error("Ovo inválido.");
     eggIds.add(egg.id);
