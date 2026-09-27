@@ -398,7 +398,9 @@ export const reproductionReady = (state, piece) =>
   !juvenile(state, piece) &&
   !naturallyInfertile(state, piece) &&
   !has(piece, "Esterilidade") &&
-  (!has(piece, "Filho único") || (piece.lifetimeOffspring ?? 0) < 1) &&
+  (!has(piece, "Filho único") ||
+    (piece.lifetimeOffspring ?? 0) < 1 ||
+    !!piece.autotomyRecovery) &&
   !(piece.pregnancies ?? []).some(
     (pregnancy) => pregnancy.kind === "ovoviviparous",
   ) &&
