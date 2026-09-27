@@ -66,6 +66,18 @@ export function crowdingPenalty(count) {
   return count > 12 ? Math.min(36, (count - 12) * 2) : 0;
 }
 export function actionPriority(state, a) {
+  if (a.type === "ELECTRODISCHARGE") {
+    const target = state.pieces.find((piece) => piece.id === a.targetId);
+    return 18 + (target?.rank ?? 0) * 2;
+  }
+  if (a.type === "FEEDING_REACH") {
+    const target = state.pieces.find((piece) => piece.id === a.targetId);
+    return 14 + (target?.rank ?? 0) * 2;
+  }
+  if (a.type === "BIO_PROJECTILE") {
+    const target = state.pieces.find((piece) => piece.id === a.targetId);
+    return 7 + (target?.rank ?? 0);
+  }
   if (a.type === "BUD") return 12;
   if (a.type === "PUPATE") {
     const piece = state.pieces.find((candidate) => candidate.id === a.id);
