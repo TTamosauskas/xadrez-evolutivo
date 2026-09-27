@@ -1595,6 +1595,9 @@ test("Paleogene waits for reachable period innovations instead of auto-completin
   });
   assert.equal(currentGeologicalStage(s).period, "Paleógeno");
   assert.deepEqual(periodInnovations(s), [
+    "Predação em Massa",
+    "Garras",
+    "Eletrodescarga",
     "Ovulação Induzida",
     "Ecolocalização",
     "Interceptação preditiva",
