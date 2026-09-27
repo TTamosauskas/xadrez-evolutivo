@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -205,6 +205,37 @@ function normalizeLegacyZoochory(state) {
   return state;
 }
 
+function normalizeLegacyDefenseState(state) {
+  state.thanatosis ??= [];
+  for (const piece of state.pieces ?? [])
+    piece.intoxicationRestThroughRound ??= null;
+  return state;
+}
+
+function preserveLegacyVenomLineage(value) {
+  if (!value || typeof value !== "object") return;
+  if (
+    Array.isArray(value.traits) &&
+    value.traits.includes("Veneno") &&
+    value.genome?.Toxicidade
+  ) {
+    if (Array.isArray(value.ancestry) && !value.ancestry.includes("Toxicidade"))
+      value.ancestry.push("Toxicidade");
+    if (value.genome.Toxicidade.every((allele) => allele?.value === "ancestral"))
+      value.genome.Toxicidade = [
+        { value: "derived", dominance: "recessive" },
+        { value: "ancestral", dominance: "neutral" },
+      ];
+  }
+  for (const child of Object.values(value)) {
+    if (child === value.genome) continue;
+    if (Array.isArray(child))
+      for (const item of child) preserveLegacyVenomLineage(item);
+    else if (child && typeof child === "object")
+      preserveLegacyVenomLineage(child);
+  }
+}
+
 function normalizeLegacyNeurodivergenceState(state) {
   state.neurofocus ??= null;
   state.neurodivergenceAction ??= null;
@@ -325,7 +356,34 @@ function migrateLegacy(data) {
   normalizeLegacyTraitNames(state);
   normalizeStoredGenomes(state);
   normalizeLegacyNeurodivergenceState(state);
+  normalizeLegacyDefenseState(state);
+  preserveLegacyVenomLineage(state);
   preserveLegacyLactationLineage(state);
+  if (data.version <= 24) {
+    const venomKnown =
+      (state.historicalTraits ?? []).includes("Veneno") ||
+      (state.pieces ?? []).some((piece) =>
+        (piece.traits ?? []).includes("Veneno"),
+      );
+    if (venomKnown) {
+      if (
+        Array.isArray(state.historicalTraits) &&
+        !state.historicalTraits.includes("Toxicidade")
+      )
+        state.historicalTraits.push("Toxicidade");
+      for (const collection of [
+        state.seenMutations,
+        state.cyclePositiveInnovations,
+        state.discoveries?.mutations,
+      ])
+        if (
+          Array.isArray(collection) &&
+          collection.includes("Veneno") &&
+          !collection.includes("Toxicidade")
+        )
+          collection.push("Toxicidade");
+    }
+  }
   if (data.version <= 22) {
     preserveLegacyNicheRemediation(state);
     if (
