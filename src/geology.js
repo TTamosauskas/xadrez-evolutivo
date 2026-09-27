@@ -350,6 +350,7 @@ export const TRAIT_STAGE = {
   "Percepção Espacial": "cambrian",
   Escavador: "ediacaran",
   "Construtor de Nicho": "ediacaran",
+  Zoorremediação: "ediacaran",
   Necrófago: "ediacaran",
   Coprofagia: "cretaceous",
   Carapaça: "cambrian",
@@ -645,6 +646,7 @@ export const TRAIT_DEPENDENCIES = {
     lineageAny: ["Carnívoro", "Onívoro"],
   },
   "Construtor de Nicho": { lineage: ["Escavador"] },
+  Zoorremediação: { lineage: ["Construtor de Nicho"] },
   "Polegar Opositor": { lineage: ["Construtor de Nicho"] },
   Chifre: { lineage: ["Predação"] },
   Roedor: {
@@ -748,6 +750,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Ingestão",
   "Escavador",
   "Construtor de Nicho",
+  Zoorremediação,
   "Necrófago",
   "Coprofagia",
   "Carapaça",
@@ -917,6 +920,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Eusocialidade",
   "Chifre",
   "Construtor de Nicho",
+  Zoorremediação,
   "Polegar Opositor",
   "Neocórtex Desenvolvido",
   "Antropização",
@@ -984,6 +988,7 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Pelos: "predation",
   Penas: "predation",
   Roedor: "predation",
+  Zoorremediação: "predation",
   Endozoocoria: "photosynthesis",
   Capsaicina: "photosynthesis",
   Epizoocoria: "photosynthesis",
@@ -1356,6 +1361,7 @@ const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
   "Sinzoocoria",
   "Mirmecocoria",
   "Roedor",
+  "Zoorremediação",
 ]);
 
 export function periodCompletionInnovations(state) {
