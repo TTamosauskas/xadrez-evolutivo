@@ -217,3 +217,66 @@ test("legacy development loci migrate into the universal genome without losing d
   assert.ok(hiddenRecessiveTraits(profile).includes("Vivíparo"));
   assert.ok(hiddenRecessiveTraits(profile).includes("Camuflagem"));
 });
+
+
+test("Forésia fica fenotipicamente silenciosa em Torre e Rainha e retorna em formas menores", () => {
+  const genome = genomeFromTraits([
+      "Respiração anaeróbia",
+      "Multicelularismo",
+      "Predação",
+      "Locomoção Primitiva",
+      "Vertebrado",
+      "Locomoção Articulada",
+      "Locomoção Terrestre",
+      "Incubação",
+      "Sociabilidade",
+      "Forésia",
+    ]),
+    profile = {
+      rank: 2,
+      genome,
+      traits: [],
+      ancestry: ["Forésia"],
+    };
+
+  syncGenomePhenotype(profile, "Predação");
+  assert.ok(profile.traits.includes("Forésia"));
+
+  profile.rank = 3;
+  syncGenomePhenotype(profile, "Predação");
+  assert.equal(profile.traits.includes("Forésia"), false);
+  assert.ok(genomeCarriedTraits(profile.genome).includes("Forésia"));
+
+  profile.rank = 5;
+  syncGenomePhenotype(profile, "Predação");
+  assert.equal(profile.traits.includes("Forésia"), false);
+
+  profile.rank = 4;
+  syncGenomePhenotype(profile, "Predação");
+  assert.ok(profile.traits.includes("Forésia"));
+
+  profile.rank = 1;
+  syncGenomePhenotype(profile, "Predação");
+  assert.ok(profile.traits.includes("Forésia"));
+});
+
+test("Nanismo mantém Forésia expressa mesmo partindo de forma grande", () => {
+  const genome = genomeFromTraits([
+      "Respiração anaeróbia",
+      "Multicelularismo",
+      "Predação",
+      "Locomoção Primitiva",
+      "Vertebrado",
+      "Locomoção Articulada",
+      "Locomoção Terrestre",
+      "Incubação",
+      "Sociabilidade",
+      "Nanismo",
+      "Forésia",
+    ]),
+    profile = { rank: 5, genome, traits: [] };
+
+  syncGenomePhenotype(profile, "Predação");
+  assert.ok(profile.traits.includes("Nanismo"));
+  assert.ok(profile.traits.includes("Forésia"));
+});

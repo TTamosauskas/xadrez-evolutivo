@@ -120,6 +120,7 @@ const mutationTopics = {
   Escansão: ["Escansão", "Locomoção escansorial combina aderência e progressão vertical em superfícies estruturadas; no jogo, vertebrados escaladores percorrem colunas e podem trocar de posição com o primeiro aliado encontrado."],
   Bioadesão: ["Bioadesão", "Muitos organismos aderem a superfícies por estruturas, secreções ou forças físicas; no jogo, essa especialização transforma o perímetro do habitat numa rota contínua que pode contornar cantos."],
   Arborícola: ["Locomoção arborícola", "Ambientes florestais criam redes tridimensionais de suporte entre organismos e estruturas vegetais; no jogo, aliados fotossintéticos contíguos formam uma rota de dossel para a travessia."],
+  Forésia: ["Forésia", "Forésia é uma associação em que um organismo usa outro como meio de transporte sem necessariamente se alimentar dele; no jogo, formas pequenas e médias usam aliados não fotossintéticos contíguos como uma rota de deslocamento."],
   Serpenteamento: ["Locomoção serpentina", "Ondulações corporais permitem trajetórias sinuosas em vários vertebrados alongados; no jogo, Serpenteamento cria um caminho curto com mudanças controladas de direção."],
   Trilhas: ["Trilhas químicas", "Muitos artrópodes sociais depositam sinais no substrato que orientam companheiros; no jogo, a trilha forma uma rede temporária que pode ser percorrida, renovada e ampliada."],
   Tigmotaxia: ["Tigmotaxia", "Tigmotaxia é orientação associada ao contato com limites e superfícies; no jogo, os cantos do habitat permitem uma continuação curta ao longo da borda."],

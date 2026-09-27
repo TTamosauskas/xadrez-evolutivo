@@ -503,7 +503,7 @@ test("Arborícola exige dossel fotossintético aliado contínuo", () => {
 test("Escansão, Bioadesão e Arborícola respeitam precedência evolutiva", () => {
   const state = createState(913, {
       geologicalStage: "carboniferous",
-      historicalTraits: ["Madeira"],
+      historicalTraits: [],
       naturalBarriers: false,
     }),
     vertebrate = newPiece(state, "blue", 4, 4, {
@@ -527,5 +527,95 @@ test("Escansão, Bioadesão e Arborícola respeitam precedência evolutiva", () 
   assert.equal(traitUnlocked(state, "Bioadesão", vertebrate), true);
 
   state.historicalTraits = [];
-  assert.equal(traitUnlocked(state, "Arborícola", vertebrate), false);
+  assert.equal(traitUnlocked(state, "Arborícola", vertebrate), true);
+});
+
+test("Forésia atravessa uma sequência de aliados não fotossintéticos", () => {
+  let state = fixture([
+    { owner: "blue", r: 4, c: 1, rank: 4 },
+    { owner: "blue", r: 4, c: 2, rank: 0 },
+    { owner: "blue", r: 4, c: 3, rank: 2 },
+    { owner: "amber", r: 0, c: 0, rank: 4 },
+  ]);
+  const actor = exactTraits(
+      state.pieces[0],
+      animalTraits(["Sociabilidade", "Forésia"]),
+    ),
+    carriers = state.pieces.slice(1, 3),
+    target = movesFor(state, actor).find(
+      (candidate) =>
+        candidate.r === 4 &&
+        candidate.c === 4 &&
+        candidate.phoresy,
+    );
+
+  assert.ok(target);
+  assert.deepEqual(target.phoresyCarrierIds, carriers.map((piece) => piece.id));
+  assert.deepEqual(target.path, [[4, 2], [4, 3], [4, 4]]);
+  assert.equal(target.noContinuation, true);
+
+  state = simulate(state, move(actor, 4, 4));
+  const moved = state.pieces.find((piece) => piece.id === actor.id);
+  assert.deepEqual([moved.r, moved.c], [4, 4]);
+  for (const carrier of carriers) {
+    const current = state.pieces.find((piece) => piece.id === carrier.id);
+    assert.deepEqual([current.r, current.c], [carrier.r, carrier.c]);
+  }
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Forésia" &&
+        effect.outcome === "crossed-allied-carriers" &&
+        effect.value === 2,
+    ),
+  );
+});
+
+test("Forésia é bloqueada por aliado fotossintético e por forma grande", () => {
+  const photosyntheticState = fixture([
+      { owner: "blue", r: 4, c: 1, rank: 0 },
+      { owner: "blue", r: 4, c: 2, rank: 0, traits: ["Fotossíntese"] },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    small = exactTraits(
+      photosyntheticState.pieces[0],
+      animalTraits(["Sociabilidade", "Forésia"]),
+    );
+  assert.equal(
+    movesFor(photosyntheticState, small).some((target) => target.phoresy),
+    false,
+  );
+
+  const largeState = fixture([
+      { owner: "blue", r: 4, c: 1, rank: 3 },
+      { owner: "blue", r: 4, c: 2, rank: 0 },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    large = exactTraits(
+      largeState.pieces[0],
+      animalTraits(["Sociabilidade", "Forésia"]),
+    );
+  assert.equal(
+    movesFor(largeState, large).some((target) => target.phoresy),
+    false,
+  );
+});
+
+test("Forésia surge no Jurássico após Sociabilidade e Locomoção Terrestre", () => {
+  const state = createState(914, {
+      geologicalStage: "jurassic",
+      naturalBarriers: false,
+    }),
+    social = newPiece(state, "blue", 4, 4, {
+      traits: animalTraits(["Sociabilidade"]),
+    }),
+    solitary = newPiece(state, "blue", 4, 5, {
+      traits: animalTraits([]),
+    });
+
+  assert.equal(traitUnlocked(state, "Forésia", social), true);
+  assert.equal(traitUnlocked(state, "Forésia", solitary), false);
+
+  state.geologicalStage = "triassic";
+  assert.equal(traitUnlocked(state, "Forésia", social), false);
 });

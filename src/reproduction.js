@@ -277,6 +277,8 @@ function mutation(
   let label;
   if (choice.rank !== undefined) {
     p.rank = choice.rank;
+    normalizeBodyPlanRank(p);
+    syncGenomePhenotype(p);
     label = `Mutação de peça: ${PIECES[p.rank]}`;
   } else if (choice.geneGain) {
     if (

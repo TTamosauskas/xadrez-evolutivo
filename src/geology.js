@@ -341,6 +341,7 @@ export const TRAIT_STAGE = {
   Escansão: "carboniferous",
   Arborícola: "carboniferous",
   Bioadesão: "permian",
+  Forésia: "jurassic",
   Tigmotaxia: "carboniferous",
   Recuo: "permian",
   Deslizamento: "permian",
@@ -566,7 +567,9 @@ export const TRAIT_DEPENDENCIES = {
   },
   Arborícola: {
     lineage: ["Locomoção Terrestre", "Escalador"],
-    historical: ["Madeira"],
+  },
+  Forésia: {
+    lineage: ["Locomoção Terrestre", "Sociabilidade"],
   },
   Tigmotaxia: { lineage: ["Locomoção Terrestre"] },
   Recuo: {
@@ -698,6 +701,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Escansão",
   "Bioadesão",
   "Arborícola",
+  "Forésia",
   "Tigmotaxia",
   "Recuo",
   "Deslizamento",
@@ -821,6 +825,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Escansão",
   "Bioadesão",
   "Arborícola",
+  "Forésia",
   "Tigmotaxia",
   "Recuo",
   "Deslizamento",
@@ -899,6 +904,7 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Escansão: "predation",
   Bioadesão: "predation",
   Arborícola: "predation",
+  Forésia: "predation",
   Tigmotaxia: "predation",
   Recuo: "predation",
   Deslizamento: "predation",
