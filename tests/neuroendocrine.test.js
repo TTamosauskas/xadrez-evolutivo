@@ -58,6 +58,13 @@ test("new loci keep one active evasion, offspring orientation and cognitive phen
     has({ traits: ["Neocórtex Desenvolvido"] }, "Córtex Pré-Frontal"),
     true,
   );
+  assert.deepEqual(
+    normalizeActiveTraits([
+      "Neocórtex Desenvolvido",
+      "Neurodivergência",
+    ]),
+    ["Neocórtex Desenvolvido", "Neurodivergência"],
+  );
 });
 
 test("Neurodivergência grants exactly one full second action when starting without adjacent allies", () => {
