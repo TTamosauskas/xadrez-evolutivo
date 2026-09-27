@@ -321,6 +321,8 @@ function mutation(
         ...(p.traits ?? []),
       ]),
     ];
+    if (choice.geneGain === "Estômatos" && has(p, "Estômatos"))
+      p.stomataStartedRound = round(state);
     const negativeExpressed =
         NEGATIVE_GENETIC_TRAITS.has(choice.geneGain) &&
         has(p, choice.geneGain),
