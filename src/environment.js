@@ -255,6 +255,13 @@ export function consumeOrganicResidue(state, cell) {
   state.captureDisturbances = (state.captureDisturbances ?? []).filter(
     (entry) => entry.cell !== cell,
   );
+  state.plantSeeds = (state.plantSeeds ?? []).filter(
+    (seed) =>
+      !(
+        seed.transport?.kind === "endozoocoria" &&
+        seed.transport.cell === cell
+      ),
+  );
   return true;
 }
 export const consumeFecalResidue = consumeOrganicResidue;
