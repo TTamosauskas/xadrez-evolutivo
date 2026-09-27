@@ -1,6 +1,13 @@
 import { legalActions, movesFor, actionsForPiece } from "./moves.js";
 import { simulate } from "./engine.js";
-import { has, other, square, distance, canPhotosynthesize } from "./constants.js";
+import {
+  has,
+  other,
+  square,
+  distance,
+  canPhotosynthesize,
+  CHESS_PIECE_VALUES,
+} from "./constants.js";
 import {
   eggAt,
   barrierAt,
@@ -316,8 +323,6 @@ export function superorganismRecommendation(state, selected) {
   return best;
 }
 
-const CHESS_SACRIFICE_VALUE = Object.freeze([1, 3, 3, 5, 100, 9]);
-
 function compareSacrificeVectors(a, b) {
   for (let index = 0; index < Math.max(a.length, b.length); index++) {
     const delta = (a[index] ?? 0) - (b[index] ?? 0);
@@ -342,7 +347,7 @@ export function hierarchySacrificeRecommendation(state) {
       bestMove = bestMoveSuggestion(state, piece),
       vector = [
         reproductionReady(state, piece) ? 0 : 1,
-        -(CHESS_SACRIFICE_VALUE[piece.rank] ?? 1),
+        -(CHESS_PIECE_VALUES[piece.rank] ?? 1),
         negatives,
         -positives,
         -(bestMove?.score ?? -100000),
