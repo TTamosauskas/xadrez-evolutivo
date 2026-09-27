@@ -86,11 +86,14 @@ export const ARENA_PRESETS = Object.freeze({
   ],
 });
 
-export const ARENA_ARCHETYPES = Object.freeze(
-  [...ARENA_PRESETS.animal.slice(3, 7), ...ARENA_PRESETS.plant.slice(5, 9)].map(
-    (preset) => preset.traits,
-  ),
-);
+export const ARENA_ARCHETYPES = Object.freeze([
+  ...ARENA_PRESETS.animal
+    .slice(3, 7)
+    .map((preset) => completeArenaBranchGenome(preset.traits, "animal")),
+  ...ARENA_PRESETS.plant
+    .slice(5, 9)
+    .map((preset) => completeArenaBranchGenome(preset.traits, "plant")),
+]);
 
 const COUNTERS = {
   Camuflagem: "Visão Binocular",
