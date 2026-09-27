@@ -1696,6 +1696,11 @@ export function reproduce(
         options.metabolicMultiplier > 1
       )
         metabolic *= options.metabolicMultiplier;
+      if (
+        Number.isInteger(piece.intoxicationRestThroughRound) &&
+        round(state) <= piece.intoxicationRestThroughRound
+      )
+        metabolic += 1;
 
       let pressure =
         populationReproductionCooldown(
