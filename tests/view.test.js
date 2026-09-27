@@ -303,7 +303,7 @@ test("status counter includes turns and historical generation", () => {
   const d = dom.window.document;
   assert.equal(
     d.getElementById("round").textContent,
-    "Pré-Cambriano · Arqueano · 1º Ciclo · 22 Turnos · 14ª Geração",
+    "Arqueano · Eoarqueana · 1º Ciclo · 22 Turnos · 14ª Geração",
   );
   assert.equal(d.getElementById("pass").disabled, true);
   dom.window.close();
