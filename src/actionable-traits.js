@@ -151,7 +151,11 @@ export function actionableTraitsForPiece(state, piece) {
     if (action.type === "BROOD_PARASITIZE")
       actionable.add("Parasitismo de Ninhada");
     if (action.type === "REJECT_BROOD_PARASITE") actionable.add("Incubação");
-    if (action.type === "FEEDING_REACH" && action.trait)
+    if (action.type === "RHIZOME") actionable.add("Rizoma");
+    if (
+      ["FEEDING_REACH", "EXTENDED_CAPTURE"].includes(action.type) &&
+      action.trait
+    )
       actionable.add(action.trait);
   }
 
@@ -169,6 +173,26 @@ export function actionableTraitsForPiece(state, piece) {
     ]),
     hasDetritusAt = (r, c) =>
       !!organicResidueAt(state, r, c) || !!carcassAt(state, r, c);
+
+  if (
+    has(piece, "Parasitoidismo") &&
+    !piece.parasitoidism &&
+    !state.pieces.some(
+      (candidate) => candidate.parasitoidism?.sourceId === piece.id,
+    ) &&
+    targets.some((target) => {
+      if (!target.capture) return false;
+      const victim = at(state, target.r, target.c);
+      return (
+        victim?.owner !== piece.owner &&
+        distance(piece, victim) === 1 &&
+        !has(victim, "Fotossíntese")
+      );
+    })
+  )
+    actionable.add("Parasitoidismo");
+
+  if (piece.rumination) actionable.add("Ruminante");
 
   if (
     has(piece, "Autotomia") &&
@@ -413,6 +437,15 @@ export function actionableTraitsForPiece(state, piece) {
         has(piece, "Interceptação preditiva")
       )
         actionable.add("Interceptação preditiva");
+      if (
+        ["Contorcionismo", "Corpo Gelatinoso", "Esclerotização"].some(
+          (trait) => has(victim, trait),
+        ) &&
+        has(piece, "Mandíbula")
+      )
+        actionable.add("Mandíbula");
+      if (has(victim, "Escamas") && has(piece, "Dentes"))
+        actionable.add("Dentes");
       if (
         has(victim, "Pele grossa") &&
         (piece.traits ?? []).includes("Presas")
