@@ -66,7 +66,7 @@ export const ARENA_PRESETS = Object.freeze({
     { id: "coelophysis", stage: "triassic", label: "Coelophysis", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Endotermia", "Ovíparos Amniotas"] },
     { id: "archaeopteryx", stage: "jurassic", label: "Archaeopteryx", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Voo", "Penas", "Ovíparos Amniotas"] },
     { id: "tyrannosaurus", stage: "cretaceous", label: "Tiranossauro rex", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Presas", "Visão Binocular"] },
-    { id: "basilosaurus", stage: "paleogene", label: "Basilosaurus", traits: ["Predação", "Vertebrado", "Carnívoro", "Respiração Pulmonar", "Predação em Massa", "Longevidade"] },
+    { id: "basilosaurus", stage: "paleogene", label: "Basilosaurus", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Carnívoro", "Respiração Pulmonar", "Predação em Massa", "Longevidade"] },
     { id: "megalodon", stage: "neogene", label: "Megalodon", traits: ["Predação", "Vertebrado", "Carnívoro", "Mandíbula", "Dentes", "Presas", "Longevidade"] },
     { id: "mammoth", stage: "quaternary", label: "Mamute", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Herbívoro", "Pelos", "Tromba", "Cuidado Parental"] },
     { id: "kangaroo", stage: "quaternary", label: "Canguru-gigante", traits: ["Predação", "Marsupial", "Pulo"] },
