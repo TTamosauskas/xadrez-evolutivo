@@ -40,13 +40,14 @@ test("current saves retire Locomoção Avançada from state and genome", () => {
   assertState(restored);
 });
 
-test("current saves rename Garras to Presas across traits, genome and discoveries", () => {
+test("legacy v27 saves rename the old Garras trait to Presas", () => {
   const state = createState(17),
     piece = state.pieces[0],
     pair = [
       { value: "derived", dominance: "dominant" },
       { value: "derived", dominance: "dominant" },
     ];
+  state.version = 27;
   piece.traits.push("Garras");
   piece.ancestry.push("Garras");
   piece.genome.Garras = pair;
