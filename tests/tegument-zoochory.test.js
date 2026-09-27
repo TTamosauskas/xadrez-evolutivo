@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture, move } from "./helpers.js";
-import { context, transition } from "../src/engine.js";
+import {
+  context,
+  transition,
+  retaliatoryDefenseChance,
+} from "../src/engine.js";
 import { movesFor } from "../src/moves.js";
 import { tickReproduction } from "../src/reproduction.js";
 import { normalizeActiveTraits } from "../src/geology.js";
@@ -122,41 +126,14 @@ test("Escamas blocks an adjacent capture with its own probabilistic layer", () =
   );
 });
 
-test("Osteodermos halves Espinhos retaliation instead of duplicating capture resistance", () => {
-  const base = fixture([
-      { owner: "blue", r: 4, c: 4, rank: 4 },
-      { owner: "amber", r: 3, c: 4, rank: 4, traits: ["Espinhos"] },
-      { owner: "amber", r: 0, c: 0, rank: 4 },
-    ]),
-    protectedState = fixture([
-      { owner: "blue", r: 4, c: 4, rank: 4, traits: ["Osteodermos"] },
-      { owner: "amber", r: 3, c: 4, rank: 4, traits: ["Espinhos"] },
-      { owner: "amber", r: 0, c: 0, rank: 4 },
-    ]);
-  base.rng = 2126;
-  protectedState.rng = 2126;
+test("Osteodermos halves Espinhos and Chifre retaliation instead of duplicating capture resistance", () => {
+  const plain = { traits: [] },
+    armored = { traits: ["Osteodermos"] };
 
-  const dead = transition(
-      base,
-      move(base.pieces[0], base.pieces[1].r, base.pieces[1].c),
-    ),
-    protectedNext = transition(
-      protectedState,
-      move(
-        protectedState.pieces[0],
-        protectedState.pieces[1].r,
-        protectedState.pieces[1].c,
-      ),
-    );
-
-  assert.equal(dead.pieces.some((piece) => piece.owner === "blue"), false);
-  assert.ok(
-    protectedNext.passiveEffects.some(
-      (effect) =>
-        effect.trait === "Osteodermos" &&
-        effect.outcome === "blocked-counterattack",
-    ),
-  );
+  assert.equal(retaliatoryDefenseChance(plain, "Espinhos"), 0.1);
+  assert.equal(retaliatoryDefenseChance(armored, "Espinhos"), 0.05);
+  assert.equal(retaliatoryDefenseChance(plain, "Chifre"), 0.2);
+  assert.equal(retaliatoryDefenseChance(armored, "Chifre"), 0.1);
 });
 
 test("Roedor neutralizes Madeira while the same deterministic roll blocks an ordinary attacker", () => {
