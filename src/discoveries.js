@@ -232,6 +232,34 @@ const mutationTopics = {
     "Parasitismo de ninhada",
     "Parasitas de ninhada transferem parte do custo de criação para hospedeiros; no jogo, um descendente da próxima ninhada inimiga é substituído pelo parasita.",
   ],
+  Quimiossíntese: [
+    "Quimiolitotrofia",
+    "Metabolismos quimiotróficos obtêm energia de reações com compostos inorgânicos; no jogo, ambientes hostis antigos tornam-se recursos reprodutivos esgotáveis.",
+  ],
+  Eucarionte: [
+    "Eucariogênese",
+    "A compartimentalização e regulação celular dos eucariotos ampliaram a complexidade fenotípica; no jogo, isso é abstraído como tamponamento temporário de efeitos mutacionais negativos.",
+  ],
+  Endossimbiose: [
+    "Endossimbiose",
+    "A incorporação do ancestral mitocondrial integrou grande capacidade bioenergética à célula eucariótica; no jogo, energia pode ser antecipada ao custo de uma dívida metabólica posterior.",
+  ],
+  Biomineralização: [
+    "Biomineralização",
+    "Muitos organismos depositam minerais em estruturas corporais; no jogo, essas estruturas persistem brevemente após a morte e alteram a defensibilidade da casa.",
+  ],
+  "Imunidade Adaptativa": [
+    "Sistema imunitário adaptativo",
+    "Respostas imunes adaptativas reconhecem alvos específicos e formam memória; no jogo, cada indivíduo aprende combinações de agente e rota de transmissão às quais sobrevive.",
+  ],
+  Estômatos: [
+    "Estômato",
+    "Estômatos regulam trocas gasosas e perda de água; no jogo, alternam automaticamente entre produtividade fotossintética e proteção contra dessecação e algumas exposições patogênicas.",
+  ],
+  Endotermia: [
+    "Endotermia",
+    "A produção interna de calor reduz dependência térmica do ambiente, mas cobra energia; no jogo, uma morte ambiental pode ser convertida em atraso metabólico.",
+  ],
   Tromba: [
     "Tromba de elefante",
     "A tromba dos proboscídeos combina alcance e manipulação precisa do alimento; no jogo, amplia a captura estacionária de organismos fotossintéticos.",
