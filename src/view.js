@@ -613,6 +613,15 @@ export function render(
             (candidate) => candidate.id === p.id,
           )
         ),
+        rhizomeAction =
+          actor
+            ? actorActions.find(
+                (action) =>
+                  action.type === "RHIZOME" &&
+                  action.r === r &&
+                  action.c === c,
+              ) ?? null
+            : null,
         specialAction =
           actor && p
             ? actorActions.find(
@@ -623,19 +632,24 @@ export function render(
                     "FEEDING_REACH",
                     "HEMATOPHAGY",
                     "BROOD_PARASITIZE",
+                    "EXTENDED_CAPTURE",
                   ].includes(action.type) && action.targetId === p.id,
               ) ?? null
             : null,
         specialActionIcon =
-          specialAction?.type === "BIO_PROJECTILE"
-            ? "🪲"
+          rhizomeAction
+            ? "🫚"
+            : specialAction?.type === "BIO_PROJECTILE"
+              ? "🪲"
             : specialAction?.type === "ELECTRODISCHARGE"
               ? "⚡"
               : specialAction?.type === "HEMATOPHAGY"
                 ? "🩸"
                 : specialAction?.type === "BROOD_PARASITIZE"
                   ? "🪹"
-                  : specialAction?.type === "FEEDING_REACH"
+                  : ["FEEDING_REACH", "EXTENDED_CAPTURE"].includes(
+                        specialAction?.type,
+                      )
                     ? TRAITS[specialAction.trait]?.[0] ?? "🧬"
                     : null,
         attackTarget = captureTarget || parasitismTarget || !!specialAction,
@@ -746,6 +760,7 @@ export function render(
           organicRecyclingTarget ||
           nicheBuildTarget ||
           selfVivificationTarget ||
+          !!rhizomeAction ||
           (originHere && origin?.selected),
         nurse = nursing.some((child) => child.id === p?.id),
         eggPlacementTarget = eggPlacement.some(
@@ -791,7 +806,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}${domainClass}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction || rhizomeAction ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}${domainClass}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -1004,6 +1019,9 @@ export function render(
         )
           statusBadges.push("🩸⏳");
         if (p.broodParasite) statusBadges.push("🪹⏳");
+        if (p.parasitoidism)
+          statusBadges.push(`🌀${p.parasitoidism.remaining}`);
+        if (p.rumination) statusBadges.push("🐄⏳");
         if (
           has(p, "Tinta") &&
           Number.isInteger(p.inkReadyRound) &&
@@ -1130,6 +1148,12 @@ export function render(
         : null,
       state.pieces.some((piece) => intoxicationResting(state, piece))
         ? { marker: "😵‍💫", label: "Intoxicação · sem ação" }
+        : null,
+      state.pieces.some((piece) => piece.parasitoidism)
+        ? { marker: "🌀", label: "Parasitoidismo · controle temporário e morte programada" }
+        : null,
+      state.pieces.some((piece) => piece.rumination)
+        ? { marker: "🐄", label: "Ruminante · recuperação acelerada no bloco 2×2" }
         : null,
       boardElement.querySelector(
         ".cell.vivification-target, .cell.partner",
