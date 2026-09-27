@@ -73,6 +73,9 @@ export function actionPriority(state, a) {
   }
   if (a.type === "PARTNER")
     return state.pieces.find((p) => p.id === a.id)?.rank * 2 || 0;
+  if (a.type === "PARTHENOGENESIS") return 8;
+  if (a.type === "AGGRESSIVE_MATE")
+    return 8 + (state.pieces.find((p) => p.id === a.id)?.rank ?? 0);
   if (a.type === "NURSE") {
     const child = state.pieces.find((piece) => piece.id === a.childId);
     return 6 + (child?.rank ?? 0);
@@ -119,11 +122,22 @@ export function actionPriority(state, a) {
   const p = state.pieces.find(
       (piece) => piece.id === (a.id ?? state.serotoninReposition?.id),
     ),
+    moveTarget =
+      a.type === "MOVE" && p
+        ? movesFor(state, p).find(
+            (target) => target.r === a.r && target.c === a.c,
+          )
+        : null,
     victim = state.pieces.find(
       (piece) => piece.r === a.r && piece.c === a.c && piece.id !== p?.id,
     ),
     enemyVictim = victim?.owner !== undefined && victim.owner !== state.current,
     alliedVictim = victim?.owner === state.current,
+    familyReproductionBonus = moveTarget?.filialCannibal
+      ? 10
+      : moveTarget?.matriphagy
+        ? 11
+        : 0,
     egg = eggAt(state, a.r, a.c),
     targetCell =
       Number.isInteger(a.r) && Number.isInteger(a.c) ? square(a.r, a.c) : null,
@@ -189,6 +203,7 @@ export function actionPriority(state, a) {
     lethalPenalty =
       targetCell !== null && lethalHazardAt(state, a.r, a.c) ? 10000 : 0;
   return (
+    familyReproductionBonus +
     hunt +
     captureValue +
     cannibalValue +
