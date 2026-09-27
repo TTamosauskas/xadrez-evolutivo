@@ -1344,14 +1344,31 @@ export function periodTraitReachable(state, trait) {
   );
 }
 
+const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
+  "Pele Glandular",
+  "Escamas",
+  "Osteodermos",
+  "Pelos",
+  "Penas",
+  "Endozoocoria",
+  "Capsaicina",
+  "Epizoocoria",
+  "Sinzoocoria",
+  "Mirmecocoria",
+  "Roedor",
+]);
+
 export function periodCompletionInnovations(state) {
   const stage = currentGeologicalStage(state),
     history = new Set(state.historicalTraits ?? []);
   return periodInnovations(state).filter(
     (trait) =>
-      stage.required.includes(trait) ||
-      history.has(trait) ||
-      periodTraitReachable(state, trait),
+      !OPTIONAL_NON_COMPLETION_TRAITS.has(trait) &&
+      (
+        stage.required.includes(trait) ||
+        history.has(trait) ||
+        periodTraitReachable(state, trait)
+      ),
   );
 }
 
