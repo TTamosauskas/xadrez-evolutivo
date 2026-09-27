@@ -83,6 +83,7 @@ const VIVIFICATION_LABELS = Object.freeze({
   BUD: "Brotamento",
   PUPATE: "Metamorfose",
   PARASITIZE: "Parasitismo",
+  REJECT_BROOD_PARASITE: "🪺 Rejeitar ovo parasita",
 });
 const vivificationLabel = (action) =>
   VIVIFICATION_LABELS[action?.type] ?? "Vivificar";
