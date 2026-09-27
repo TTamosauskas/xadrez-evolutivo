@@ -56,7 +56,6 @@ import {
   arenaSelectableTraits,
   arenaTraitCost,
   arenaBranchLimit,
-  arenaSetupGenomeValid,
   arenaSetupSelectionValid,
   arenaRankValid,
   arenaRankRestrictionReason,
