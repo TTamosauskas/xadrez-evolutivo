@@ -291,16 +291,19 @@ export const naturalInfertilityAge = (piece) =>
     : PRE_BILATERAL_NATURAL_INFERTILITY_AGE;
 export const naturallyInfertile = (state, piece) =>
   multicellular(piece) &&
+  !has(piece, "Fertilidade Longeva") &&
   pieceAge(state, piece) >= naturalInfertilityAge(piece);
 export function naturalDeathChance(state, piece) {
-  if (!multicellular(piece)) return 0;
+  if (!multicellular(piece) || has(piece, "Imortalidade Biológica")) return 0;
   const age = pieceAge(state, piece),
     profile = naturalAgeProfile(piece);
-  if (age < profile.senescence) return 0;
-  if (age < profile.moderate) return 0.05;
-  if (age < profile.high) return 0.1;
-  if (age < profile.maximum) return 0.2;
-  return 1;
+  let chance = 0;
+  if (age < profile.senescence) chance = 0;
+  else if (age < profile.moderate) chance = 0.05;
+  else if (age < profile.high) chance = 0.1;
+  else if (age < profile.maximum) chance = 0.2;
+  else chance = 1;
+  return has(piece, "Longevidade") ? chance * 0.5 : chance;
 }
 export function deterministicDeathNextTurn(state, piece) {
   if (!piece) return null;
@@ -338,6 +341,8 @@ export function deterministicDeathNextTurn(state, piece) {
 
   if (
     multicellular(piece) &&
+    !has(piece, "Imortalidade Biológica") &&
+    !has(piece, "Longevidade") &&
     pieceAge(state, piece) + 1 >= naturalAgeProfile(piece).maximum
   )
     return "morte natural";
@@ -458,6 +463,8 @@ export function newPiece(state, owner, r, c, source = {}) {
       paedogenesisUsed: source.paedogenesisUsed ?? false,
       pupaUntilRound: source.pupaUntilRound ?? null,
       metamorphosisUsed: source.metamorphosisUsed ?? false,
+      biologicalImmortalityTriggered:
+        source.biologicalImmortalityTriggered ?? false,
       pairedWithId: source.pairedWithId ?? null,
       biparentalGuardCharges: source.biparentalGuardCharges ?? 0,
       marsupialPouch: Array.isArray(source.marsupialPouch)
