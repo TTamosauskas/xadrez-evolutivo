@@ -50,7 +50,7 @@ test("Arena restricts chess forms from the selected branch and body plan", () =>
 
 test("Arena mutations can further restrict the available chess form", () => {
   const airSacs = animal("Sacos Aéreos"),
-    massPredator = animal("Predação em Massa");
+    massPredator = animal("Locomoção Articulada", "Predação em Massa");
 
   assert.equal(arenaRankValid(airSacs, 0, "animal"), false);
   assert.match(
@@ -62,11 +62,24 @@ test("Arena mutations can further restrict the available chess form", () => {
   assert.equal(arenaRankValid(massPredator, 5, "animal"), true);
 });
 
-test("arenaProfile rejects an incompatible form instead of silently normalizing it", () => {
-  const arthropod = animal("Artrópode", "Locomoção Articulada");
+test("explicit Arena setup rejects an incompatible selected form", () => {
+  const arthropod = animal("Artrópode", "Locomoção Articulada"),
+    photosynthetic = plant();
   assert.throws(
-    () => arenaProfile(arthropod, 5),
-    /Artrópodes não podem assumir Torre ou Rainha/,
+    () =>
+      createArenaState(
+        {
+          blue: [arthropod, photosynthetic],
+          amber: [arthropod, photosynthetic],
+        },
+        9400,
+        null,
+        {
+          blue: [5, 4],
+          amber: [2, 4],
+        },
+      ),
+    /Forma inválida/,
   );
   assert.equal(arenaProfile(arthropod, 2).rank, 2);
 });
