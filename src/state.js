@@ -451,6 +451,7 @@ export function newPiece(state, owner, r, c, source = {}) {
       lifetimeOffspring: source.lifetimeOffspring ?? 0,
       semelparityDeathPending: source.semelparityDeathPending ?? false,
       neurodivergenceRestThroughRound: source.neurodivergenceRestThroughRound ?? null,
+      intoxicationRestThroughRound: source.intoxicationRestThroughRound ?? null,
       stationarySinceRound: source.stationarySinceRound ?? bornRound,
       budded: source.budded ?? false,
       colonyId: source.colonyId ?? null,
@@ -1111,6 +1112,7 @@ export function createState(seed = Date.now(), options = {}) {
     deathSites: [],
     fertileTraces: [],
     carcasses: [],
+    thanatosis: [],
     captureDisturbances: [],
     fertilityRecovery: [],
     extremophyteFertility: [],
@@ -2706,6 +2708,9 @@ export function assertState(state) {
       (p.neurodivergenceRestThroughRound !== undefined &&
         p.neurodivergenceRestThroughRound !== null &&
         !integer(p.neurodivergenceRestThroughRound)) ||
+      (p.intoxicationRestThroughRound !== undefined &&
+        p.intoxicationRestThroughRound !== null &&
+        !integer(p.intoxicationRestThroughRound)) ||
       (p.photosynthesisCell !== undefined &&
         !integer(p.photosynthesisCell, 0, 63)) ||
       (p.photosynthesisSinceTurn !== undefined &&
@@ -2741,6 +2746,32 @@ export function assertState(state) {
     ids.add(p.id);
     cells.add(square(p.r, p.c));
   }
+
+  if (!Array.isArray(state.thanatosis)) throw Error("Tanatose inválida.");
+  const thanatosisIds = new Set();
+  for (const entry of state.thanatosis) {
+    const piece = entry?.piece;
+    if (
+      !entry ||
+      !integer(entry.cell, 0, 63) ||
+      !integer(entry.captorId, 1) ||
+      !piece ||
+      !integer(piece.id, 1) ||
+      ids.has(piece.id) ||
+      thanatosisIds.has(piece.id) ||
+      !["blue", "amber"].includes(piece.owner) ||
+      !inside(piece.r, piece.c) ||
+      !Array.isArray(piece.traits) ||
+      piece.traits.some((trait) => !TRAITS[trait]) ||
+      !traitCombinationValid(piece.traits) ||
+      !Array.isArray(piece.ancestry) ||
+      piece.ancestry.some((trait) => !TRAITS[trait]) ||
+      !validGenome(piece.genome)
+    )
+      throw Error("Tanatose inválida.");
+    thanatosisIds.add(piece.id);
+  }
+
   const fragmentIds = new Set();
   for (const fragment of state.fragments) {
     const cell = square(fragment.r, fragment.c);
@@ -2907,12 +2938,24 @@ export function assertState(state) {
         )
       )
         throw Error("Gestação inválida.");
-  if (!Number.isInteger(state.nextId) || state.nextId <= Math.max(0, ...ids))
+  if (
+    !Number.isInteger(state.nextId) ||
+    state.nextId <= Math.max(0, ...ids, ...thanatosisIds)
+  )
     throw Error("Identificadores inválidos.");
   const unbornGenerations = [
     ...state.eggs.flatMap((egg) => egg.brood.map((p) => p.generation)),
     ...state.plantSeeds.map((seed) => seed.profile.generation),
     ...state.fragments.map((fragment) => fragment.profile.generation),
+    ...state.thanatosis.flatMap((entry) => [
+      entry.piece.generation,
+      ...(entry.piece.pregnancies ?? []).flatMap((pregnancy) =>
+        pregnancy.brood.map((child) => child.generation),
+      ),
+      ...(entry.piece.marsupialPouch ?? []).flatMap((pouch) =>
+        pouch.brood.map((child) => child.generation),
+      ),
+    ]),
     ...(state.domesticPlacement?.brood ?? []).map((p) => p.generation),
     ...state.pieces.flatMap((p) => [
       ...p.pregnancies.flatMap((pregnancy) =>
