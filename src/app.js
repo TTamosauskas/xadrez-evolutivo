@@ -134,12 +134,16 @@ const VIVIFICATION_LABELS = Object.freeze({
   PUPATE: "Metamorfosear",
   PARASITIZE: "Fertilizar por Parasitismo",
   PARTHENOGENESIS: "Partenogênese",
+  REJECT_BROOD_PARASITE: "🪺 Rejeitar ovo parasita",
 });
 const vivificationLabel = (action) =>
   VIVIFICATION_LABELS[action?.type] ?? "Vivificar";
 const boardActionLabel = (action) => {
   if (action.type === "MOVE") return "Mover ou capturar normalmente";
   if (action.type === "PARASITIZE") return "🪱 Parasitismo";
+  if (action.type === "HEMATOPHAGY") return "🩸 Hematofagia";
+  if (action.type === "BROOD_PARASITIZE")
+    return "🪹 Parasitismo de Ninhada";
   if (action.type === "BIO_PROJECTILE") return "🪲 Projétil Biológico";
   if (action.type === "ELECTRODISCHARGE") return "⚡ Eletrodescarga";
   if (action.type === "FEEDING_REACH")
@@ -338,6 +342,8 @@ $("board").addEventListener("click", (event) => {
         (p &&
           [
             "PARASITIZE",
+            "HEMATOPHAGY",
+            "BROOD_PARASITIZE",
             "BIO_PROJECTILE",
             "ELECTRODISCHARGE",
             "FEEDING_REACH",
