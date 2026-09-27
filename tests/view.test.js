@@ -1827,6 +1827,28 @@ test("renders dispersing Gymnosperm seeds on the board", () => {
   dom.window.close();
 });
 
+test("Construtor de Nicho highlights only orthogonal corner cells as Vivify targets", () => {
+  const dom = setup(),
+    s = createState(2501),
+    p = s.pieces[0];
+  p.r = 0;
+  p.c = 0;
+  p.traits = ["Construtor de Nicho"];
+  s.pieces[1].r = 7;
+  s.pieces[1].c = 7;
+
+  render(dom.window.document, s, { selected: p.id });
+  const d = dom.window.document,
+    east = d.querySelector('[data-r="0"][data-c="1"]'),
+    south = d.querySelector('[data-r="1"][data-c="0"]'),
+    diagonal = d.querySelector('[data-r="1"][data-c="1"]');
+  assert.ok(east.classList.contains("vivification-target"));
+  assert.ok(south.classList.contains("vivification-target"));
+  assert.equal(diagonal.classList.contains("vivification-target"), false);
+  assert.match(east.title, /Construtor de Nicho/);
+  dom.window.close();
+});
+
 test("renders barriers, build targets and construction emoji icons", () => {
   const dom = setup(),
     s = createState(25),
