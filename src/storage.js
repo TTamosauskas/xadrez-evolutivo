@@ -212,6 +212,30 @@ function normalizeLegacyDefenseState(state) {
   return state;
 }
 
+function preserveLegacyMimicryLineage(value) {
+  if (!value || typeof value !== "object") return;
+  if (
+    Array.isArray(value.traits) &&
+    value.traits.includes("Mimetismo") &&
+    value.genome?.Camuflagem
+  ) {
+    if (Array.isArray(value.ancestry) && !value.ancestry.includes("Camuflagem"))
+      value.ancestry.push("Camuflagem");
+    if (value.genome.Camuflagem.every((allele) => allele?.value === "ancestral"))
+      value.genome.Camuflagem = [
+        { value: "derived", dominance: "recessive" },
+        { value: "ancestral", dominance: "neutral" },
+      ];
+  }
+  for (const child of Object.values(value)) {
+    if (child === value.genome) continue;
+    if (Array.isArray(child))
+      for (const item of child) preserveLegacyMimicryLineage(item);
+    else if (child && typeof child === "object")
+      preserveLegacyMimicryLineage(child);
+  }
+}
+
 function preserveLegacyVenomLineage(value) {
   if (!value || typeof value !== "object") return;
   if (
@@ -358,6 +382,7 @@ function migrateLegacy(data) {
   normalizeLegacyNeurodivergenceState(state);
   normalizeLegacyDefenseState(state);
   preserveLegacyVenomLineage(state);
+  preserveLegacyMimicryLineage(state);
   preserveLegacyLactationLineage(state);
   if (data.version <= 24) {
     const venomKnown =
