@@ -41,7 +41,7 @@ test("toast test phase executes six guaranteed passive-effect demonstrations in 
   assert.equal(state.turn, 12);
   assert.equal(state.phase, "move");
   assert.equal(state.scenario, "alternative");
-  assert.equal(state.geologicalStage, "quaternary");
+  assert.equal(state.geologicalStage, "holocene");
 
   const parent = role(state, "ovulation-parent"),
     mate = role(state, "ovulation-mate");
