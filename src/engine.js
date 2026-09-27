@@ -609,7 +609,37 @@ export function retaliatoryDefenseChance(attacker, trait) {
   return has(attacker, "Osteodermos") ? base / 2 : base;
 }
 
-function hostileHazardKills(state, piece, normalHostile = false) {
+function endothermyRescues(state, piece, normalHostile) {
+  if (
+    !normalHostile ||
+    !has(piece, "Endotermia") ||
+    piece.endothermyUsedTurn === state.turn
+  )
+    return false;
+  const now = round(state);
+  piece.nextReproductionRound =
+    (piece.nextReproductionRound ?? now) <= now
+      ? now + 1
+      : piece.nextReproductionRound + 1;
+  piece.endothermyUsedTurn = state.turn;
+  emitPassiveEffect(
+    state,
+    "Endotermia",
+    "🔥 Endotermia converteu o estresse ambiental em custo metabólico · recuperação +1.",
+    {
+      pieceId: piece.id,
+      outcome: "endothermy-rescued-hostile-risk",
+      value: 1,
+    },
+  );
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🔥 Endotermia evitou a morte ambiental e acrescentou 1 rodada de recuperação.`,
+  );
+  return true;
+}
+
+export function hostileHazardKills(state, piece, normalHostile = false) {
   if (random(state) >= 1 / 2) return false;
   if (
     normalHostile &&
@@ -642,8 +672,10 @@ function hostileHazardKills(state, piece, normalHostile = false) {
     );
     return false;
   }
-  if (!has(piece, "Carapaça")) return true;
-  if (random(state) >= 1 / 4) return true;
+  if (!has(piece, "Carapaça"))
+    return !endothermyRescues(state, piece, normalHostile);
+  if (random(state) >= 1 / 4)
+    return !endothermyRescues(state, piece, normalHostile);
   emitPassiveEffect(
     state,
     "Carapaça",
@@ -3093,6 +3125,33 @@ function executeMove(ctx, action) {
     );
     finishFrustratedCapture(ctx, p, "Cuidado Parental", victim);
     return;
+  }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    distance(p, victim) === 1
+  ) {
+    const remnant = mineralRemnantAt(state, victim.r, victim.c);
+    if (remnant) {
+      state.mineralRemnants = state.mineralRemnants.filter(
+        (entry) => entry !== remnant,
+      );
+      log(
+        state,
+        `🪨 O remanescente mineral em ${coord(victim.r, victim.c)} bloqueou a captura e se rompeu.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Biomineralização",
+        "🪨 O remanescente mineral bloqueou a captura de contato e se rompeu.",
+        {
+          pieceId: victim.id,
+          outcome: "mineral-remnant-blocked-capture",
+        },
+      );
+      finishFrustratedCapture(ctx, p, "Biomineralização", victim);
+      return;
+    }
   }
   if (
     pieceCapture &&
