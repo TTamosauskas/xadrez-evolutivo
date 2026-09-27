@@ -157,7 +157,7 @@ export const hadeanPlayableCell = (r, c) =>
 const outerBoardCell = (r, c) => r === 0 || r === 7 || c === 0 || c === 7;
 export const lethalHazardAt = (state, r, c) =>
   (state.geologicalStage === "hadean" && !hadeanPlayableCell(r, c)) ||
-  (state.geologicalStage === "archean" &&
+  (state.geologicalStage === "eoarchean" &&
     state.cycle === 1 &&
     outerBoardCell(r, c)) ||
   (state.event?.lethalHazards?.includes(square(r, c)) ?? false);
@@ -906,30 +906,6 @@ function seedHabitat(state) {
       state.board[square(state.origin.r, state.origin.c)] = "fertile";
     return;
   }
-  if (state.geologicalStage === "archean") {
-    if (state.cycle === 1) {
-      state.board.fill("neutral");
-      for (let r = 1; r <= 6; r++)
-        for (let c = 1; c <= 6; c++)
-          state.board[square(r, c)] =
-            r === 1 || r === 6 || c === 1 || c === 6
-              ? "hostile"
-              : "fertile";
-      return;
-    }
-    if (state.cycle === 2) {
-      state.board.fill("hostile");
-      for (let r = 1; r <= 6; r++)
-        for (let c = 1; c <= 6; c++) state.board[square(r, c)] = "fertile";
-      return;
-    }
-    state.board.fill("fertile");
-    return;
-  }
-  if (aquaticFertilityRegime(state)) {
-    state.board.fill("fertile");
-    return;
-  }
   state.board.fill("neutral");
   const founderCells = new Set([
       ...state.pieces.map((p) => square(p.r, p.c)),
@@ -1071,89 +1047,33 @@ export function canonicalFounderStarts(state, slots = true) {
   ];
 }
 
-const ARCHEAN_FOUNDER_LAYOUTS = Object.freeze({
-  1: Object.freeze([
-    Object.freeze({
-      blue: Object.freeze([[5, 2], [5, 3]]),
-      amber: Object.freeze([[2, 5], [2, 4]]),
-    }),
-    Object.freeze({
-      blue: Object.freeze([[5, 2], [4, 2]]),
-      amber: Object.freeze([[2, 5], [3, 5]]),
-    }),
-    Object.freeze({
-      blue: Object.freeze([[5, 3], [4, 2]]),
-      amber: Object.freeze([[2, 4], [3, 5]]),
-    }),
-  ]),
-  2: Object.freeze([
-    Object.freeze({
-      blue: Object.freeze([[5, 2], [5, 3]]),
-      amber: Object.freeze([[2, 5], [2, 4]]),
-    }),
-    Object.freeze({
-      blue: Object.freeze([[6, 2], [5, 3]]),
-      amber: Object.freeze([[1, 5], [2, 4]]),
-    }),
-    Object.freeze({
-      blue: Object.freeze([[5, 1], [4, 2]]),
-      amber: Object.freeze([[2, 6], [3, 5]]),
-    }),
-  ]),
-  3: Object.freeze([
-    Object.freeze({
-      blue: Object.freeze([[6, 2], [5, 3]]),
-      amber: Object.freeze([[1, 5], [2, 4]]),
-    }),
-    Object.freeze({
-      blue: Object.freeze([[6, 1], [5, 3]]),
-      amber: Object.freeze([[1, 6], [2, 4]]),
-    }),
-    Object.freeze({
-      blue: Object.freeze([[6, 3], [5, 1]]),
-      amber: Object.freeze([[1, 4], [2, 6]]),
-    }),
-  ]),
-});
+const founderTransform = ([r, c], mode) => {
+  if (mode === 1) return [r, 7 - c];
+  if (mode === 2) return [7 - r, c];
+  if (mode === 3) return [7 - r, 7 - c];
+  return [r, c];
+};
 
-function archeanFounderStarts(state, cycle = 1) {
-  const band = cycle <= 1 ? 1 : cycle === 2 ? 2 : 3,
-    layouts = ARCHEAN_FOUNDER_LAYOUTS[band],
-    layout = state ? pick(state, layouts) : layouts[0],
-    reverseSlots = state ? pick(state, [false, true]) : false,
-    blue = reverseSlots ? [...layout.blue].reverse() : layout.blue,
-    amber = reverseSlots ? [...layout.amber].reverse() : layout.amber;
+export function earthFounderStarts(geologicalStage, cycle = 1, state = null) {
+  const stage = GEOLOGICAL_STAGES.find((entry) => entry.id === geologicalStage);
+  if (!stage?.founderLayout) return null;
+  const mode = state ? pick(state, [0, 1, 2, 3]) : 0,
+    cells = stage.founderLayout.map((cell) => founderTransform(cell, mode));
+  if (geologicalStage === "hadean")
+    return [
+      ["blue", cells[0][0], cells[0][1], null],
+      ["amber", cells[2][0], cells[2][1], null],
+    ];
+  const swapBlue = state ? pick(state, [false, true]) : false,
+    swapAmber = state ? pick(state, [false, true]) : false,
+    blue = swapBlue ? [cells[1], cells[0]] : [cells[0], cells[1]],
+    amber = swapAmber ? [cells[3], cells[2]] : [cells[2], cells[3]];
   return [
     ["blue", blue[0][0], blue[0][1], "primary"],
     ["blue", blue[1][0], blue[1][1], "companion"],
     ["amber", amber[0][0], amber[0][1], "primary"],
     ["amber", amber[1][0], amber[1][1], "companion"],
   ];
-}
-
-export function earthFounderStarts(geologicalStage, cycle = 1, state = null) {
-  if (geologicalStage === "hadean")
-    return [
-      ["blue", 5, 2, null],
-      ["amber", 2, 5, null],
-    ];
-  if (geologicalStage === "archean")
-    return archeanFounderStarts(state, cycle);
-  if (geologicalStage === "proterozoic")
-    return [
-      ["blue", 5, 2, "primary"],
-      ["blue", 5, 3, "companion"],
-      ["amber", 2, 4, "primary"],
-      ["amber", 2, 5, "companion"],
-    ];
-  if (geologicalStage === "ediacaran")
-    return [
-      ["blue", 6, 2, "primary"],
-      ["blue", 6, 3, "companion"],
-      ["amber", 1, 4, "primary"],
-      ["amber", 1, 5, "companion"],
-    ];
-  return null;
 }
 
 export function createState(seed = Date.now(), options = {}) {
@@ -1163,7 +1083,7 @@ export function createState(seed = Date.now(), options = {}) {
     originPrelude = !!options.originPrelude,
     canonicalPair = !!options.canonicalPair,
     scenario = options.scenario ?? "alternative",
-    geologicalStage = options.geologicalStage ?? "archean",
+    geologicalStage = options.geologicalStage ?? "eoarchean",
     totalCycles = options.totalCycles ?? 1,
     historicalTraits = [
       ...new Set([
@@ -1174,15 +1094,15 @@ export function createState(seed = Date.now(), options = {}) {
     stageIndex = GEOLOGICAL_STAGES.findIndex(
       (stage) => stage.id === geologicalStage,
     ),
-    proterozoicIndex = GEOLOGICAL_STAGES.findIndex(
-      (stage) => stage.id === "proterozoic",
+    sexualReproductionStageIndex = GEOLOGICAL_STAGES.findIndex(
+      (stage) => stage.id === "calymmian",
     ),
     inferredSexualPathogenUnlock =
       scenario !== "arena" &&
       historicalTraits.includes("Reprodução Sexuada")
-        ? stageIndex > proterozoicIndex
+        ? stageIndex > sexualReproductionStageIndex
           ? totalCycles
-          : stageIndex === proterozoicIndex
+          : stageIndex === sexualReproductionStageIndex
             ? totalCycles + 1
             : null
         : null;
@@ -1221,7 +1141,7 @@ export function createState(seed = Date.now(), options = {}) {
     passiveEffects: [],
     seen: [...new Set(options.seen ?? [])],
     seenMutations:
-      originPrelude && (options.geologicalStage ?? "archean") === "hadean"
+      originPrelude && (options.geologicalStage ?? "eoarchean") === "hadean"
         ? ["Respiração anaeróbia"]
         : [],
     historicalTraits,
@@ -1335,15 +1255,11 @@ export function createState(seed = Date.now(), options = {}) {
         ownerFounders?.amber?.primary &&
         ownerFounders?.amber?.companion,
       earthStarts =
-        state.geologicalStage === "hadean" && scenario !== "arena"
+        scenario !== "arena" &&
+        (state.geologicalStage === "hadean" ||
+          (scenario === "earth" && (balancedPair || ownerPair || !founder)))
           ? earthFounderStarts(state.geologicalStage, state.cycle, state)
-          : state.geologicalStage === "archean" &&
-              scenario !== "arena" &&
-              (balancedPair || ownerPair || !founder)
-            ? earthFounderStarts(state.geologicalStage, state.cycle, state)
-            : scenario === "earth" && (balancedPair || ownerPair)
-              ? earthFounderStarts(state.geologicalStage, state.cycle, state)
-              : null,
+          : null,
       starts =
         earthStarts ??
         (() => {
@@ -1435,8 +1351,8 @@ function previewFounderProfiles(stageIndex) {
     primitiveLocomotionStageIndex = GEOLOGICAL_STAGES.findIndex((entry) =>
       entry.required.includes("Locomoção Primitiva"),
     ),
-    archeanStageIndex = GEOLOGICAL_STAGES.findIndex(
-      (entry) => entry.id === "archean",
+    repairStageIndex = GEOLOGICAL_STAGES.findIndex(
+      (entry) => entry.id === "mesoarchean",
     ),
     ordovicianStageIndex = GEOLOGICAL_STAGES.findIndex(
       (entry) => entry.id === "ordovician",
@@ -1445,27 +1361,9 @@ function previewFounderProfiles(stageIndex) {
       (entry) => entry.id === "cambrian",
     ),
     prePrimitiveLocomotion = stageIndex <= primitiveLocomotionStageIndex;
-  if (stage?.id === "archean") {
-    const basal = ["Respiração anaeróbia"];
-    return {
-      historicalTraits: [...basal],
-      primary: {
-        rank: 4,
-        traits: [],
-        ancestry: [],
-        recessiveTraits: [],
-      },
-      companion: {
-        rank: 4,
-        traits: [],
-        ancestry: [],
-        recessiveTraits: [],
-      },
-    };
-  }
   if (curated) {
     const inheritedRepair =
-        stageIndex > archeanStageIndex ? ["Reparo Celular"] : [],
+        stageIndex > repairStageIndex ? ["Reparo Celular"] : [],
       inheritedBilateral =
         stageIndex > GEOLOGICAL_STAGES.findIndex((entry) => entry.id === "ediacaran")
           ? ["Simetria Bilateral"]
@@ -1606,7 +1504,7 @@ export function createPassiveToastTestState(
 ) {
   const state = createState(seed, {
       scenario: "alternative",
-      geologicalStage: "quaternary",
+      geologicalStage: "holocene",
       naturalBarriers: false,
       discoveries,
     }),
@@ -2120,7 +2018,7 @@ export function createArenaState(
     ];
   return createState(seed, {
     scenario: "arena",
-    geologicalStage: "quaternary",
+    geologicalStage: "holocene",
     cycle: 1,
     totalCycles: 1,
     arenaPhase: 1,
@@ -2149,7 +2047,7 @@ export function createArenaSuccessorState(
     profiles = arenaProfiles(genomes, survivorEntries, seed),
     state = createState(seed, {
       scenario: "arena",
-      geologicalStage: "quaternary",
+      geologicalStage: "holocene",
       cycle: previous.cycle + 1,
       totalCycles: previous.totalCycles + 1,
       arenaPhase: (previous.arenaPhase || previous.cycle || 1) + 1,
@@ -2178,7 +2076,7 @@ export function createArenaSuccessorState(
   return state;
 }
 
-function archeanBranchFallback(branch) {
+function energyBranchFallback(branch) {
   return {
     rank: 4,
     traits: [branch],
@@ -2187,22 +2085,29 @@ function archeanBranchFallback(branch) {
 }
 
 function earthBranchFounder(previous, branch, fallback) {
-  const predicate =
-      branch === "Fotossíntese"
-        ? (piece) => canPhotosynthesize(piece)
-        : (piece) => !canPhotosynthesize(piece),
+  const photosynthetic = branch === "Fotossíntese",
+    predicate = photosynthetic
+      ? (piece) => canPhotosynthesize(piece)
+      : (piece) => !canPhotosynthesize(piece),
     winner = previous.result?.winner ?? null,
     winnerSurvivor = winner
       ? strongestSurvivor(previous, winner, predicate).piece
       : null,
     anySurvivor = strongestSurvivor(previous, null, predicate).piece,
+    extinctionFounder = previous.result?.extinctionFounder ?? null,
+    extinctMatch =
+      extinctionFounder && predicate(extinctionFounder)
+        ? extinctionFounder
+        : null,
     remembered =
-      branch === "Fotossíntese"
+      photosynthetic
         ? previous.energyBranchRepresentatives?.Fotossíntese ?? null
         : previous.energyBranchRepresentatives?.Predação ?? null;
   return (
-    founderProfile(previous, winnerSurvivor ?? anySurvivor ?? remembered) ??
-    fallback
+    founderProfile(
+      previous,
+      winnerSurvivor ?? anySurvivor ?? extinctMatch ?? remembered,
+    ) ?? fallback
   );
 }
 
@@ -2217,59 +2122,21 @@ function createEarthSuccessorState(previous, seed) {
       priorStage.id === "hadean"
         ? 1
         : previous.totalCycles + 1,
-    stageIndex = GEOLOGICAL_STAGES.findIndex((stage) => stage.id === candidate.id),
-    preview = previewFounderProfiles(stageIndex),
-    preserveBranches = priorStage.id !== "hadean",
-    primaryFallback =
-      priorStage.id === "archean" && !preview.primary.traits.includes("Fotossíntese")
-        ? archeanBranchFallback("Fotossíntese")
-        : preview.primary,
-    companionFallback =
-      priorStage.id === "archean" && !preview.companion.traits.includes("Predação")
-        ? archeanBranchFallback("Predação")
-        : preview.companion,
-    extinctionFounder = founderProfile(
-      previous,
-      previous.result?.extinctionFounder,
+    stageIndex = GEOLOGICAL_STAGES.findIndex(
+      (stage) => stage.id === candidate.id,
     ),
-    extinctionFounderIsPhotosynthetic =
-      extinctionFounder ? canPhotosynthesize(extinctionFounder) : false,
-    founders = extinctionFounder
-      ? extinctionFounderIsPhotosynthetic
-        ? {
-            primary: extinctionFounder,
-            companion: preserveBranches
-              ? earthBranchFounder(
-                  previous,
-                  "Predação",
-                  companionFallback,
-                )
-              : preview.companion,
-          }
-        : {
-            primary: preserveBranches
-              ? earthBranchFounder(
-                  previous,
-                  "Fotossíntese",
-                  primaryFallback,
-                )
-              : preview.primary,
-            companion: extinctionFounder,
-          }
-      : preserveBranches
-        ? {
-            primary: earthBranchFounder(
-              previous,
-              "Fotossíntese",
-              primaryFallback,
-            ),
-            companion: earthBranchFounder(
-              previous,
-              "Predação",
-              companionFallback,
-            ),
-          }
-        : { primary: preview.primary, companion: preview.companion },
+    preview = previewFounderProfiles(stageIndex),
+    history = new Set(previous.historicalTraits ?? []),
+    preservePhotosynthetic = history.has("Fotossíntese"),
+    preserveNonPhotosynthetic =
+      history.has("Predação") || preservePhotosynthetic,
+    primary = preservePhotosynthetic
+      ? earthBranchFounder(previous, "Fotossíntese", preview.primary)
+      : preview.primary,
+    companion = preserveNonPhotosynthetic
+      ? earthBranchFounder(previous, "Predação", preview.companion)
+      : preview.companion,
+    founders = { primary, companion },
     state = createState(seed, {
       scenario: "earth",
       geologicalStage: candidate.id,
@@ -2281,9 +2148,6 @@ function createEarthSuccessorState(previous, seed) {
         ...new Set([
           ...previous.historicalTraits,
           ...preview.historicalTraits,
-          ...(priorStage.id === "archean"
-            ? ["Fotossíntese", "Predação"]
-            : []),
         ]),
       ],
       fossilRecord: [
@@ -2299,15 +2163,9 @@ function createEarthSuccessorState(previous, seed) {
     });
   log(
     state,
-    extinctionFounder
-      ? advanced
-        ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period}; a última linhagem extinta vencedora funda a nova geração ao lado da contraparte histórica.`
-        : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo; a última linhagem extinta vencedora funda a nova geração ao lado da contraparte histórica.`
-      : priorStage.id === "archean" && !advanced
-        ? `Vida na Terra: Arqueano continua no ${cycle}º Ciclo preservando as linhagens fotossintética e predatória mais derivadas.`
-        : advanced
-          ? `Vida na Terra: inicia-se ${candidate.group} · ${candidate.period} preservando as linhagens evolutivas dos ramos fundamentais.`
-          : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo com os ramos mais derivados como fundadores.`,
+    advanced
+      ? `Vida na Terra: inicia-se ${geologicalLabel(state)}; os fundadores preservam as linhagens vivas já estabelecidas e o preset canônico completa ramos ainda não originados.`
+      : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo; as linhagens sobreviventes mais poderosas retornam como fundadoras.`,
   );
   return state;
 }
@@ -2362,7 +2220,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       });
     log(
       state,
-      "Transição Evolutiva: inicia-se o Arqueano · 1º Ciclo. As linhagens começam apenas com Respiração anaeróbia basal; Fotossíntese e Predação ficam abertas como caminhos metabólicos alternativos.",
+      `Transição Evolutiva: inicia-se ${candidate.group} · ${candidate.period} · 1º Ciclo. A linhagem basal mantém Respiração anaeróbia; as próximas inovações dependem dos ciclos geológicos.`,
     );
     return state;
   }
@@ -2377,14 +2235,14 @@ export function createSuccessorState(previous, seed = Date.now()) {
     previewProfiles = [preview.primary, preview.companion],
     previewPhotosynthetic =
       previewProfiles.find((profile) => canPhotosynthesize(profile)) ??
-      archeanBranchFallback("Fotossíntese"),
+      energyBranchFallback("Fotossíntese"),
     previewNonPhotosynthetic =
       previewProfiles.find(
         (profile) =>
           !canPhotosynthesize(profile) &&
           profile.traits?.includes("Predação"),
       ) ??
-      archeanBranchFallback("Predação"),
+      energyBranchFallback("Predação"),
     winner = previous.result?.winner ?? null,
     photosynthetic = strongestSurvivor(
       previous,
