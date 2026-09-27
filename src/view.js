@@ -280,7 +280,10 @@ function plantSeedPresentation(seed) {
     icon: presentation[0],
     title: `${presentation[1]} das ${OWNERS[seed.owner]}`,
     detail: `Idade ${age}/3 · ${mature ? "madura; procura terreno fértil para estabelecimento" : "em dispersão"}.`,
-    objectLabel: `${presentation[1].toLowerCase()} ${presentation[0]} das ${OWNERS[seed.owner]}, idade ${age} de 3 rodada(s) mínimas; ${mature ? "madura" : "em dispersão"}`,
+    objectLabel:
+      seed.zoochory
+        ? `${presentation[1].toLowerCase()} ${presentation[0]} das ${OWNERS[seed.owner]}, idade ${age} de 3 rodada(s) mínimas; ${mature ? "madura" : "em dispersão"}`
+        : `semente das ${OWNERS[seed.owner]}, idade ${age} de 3 rodada(s) mínimas; ${mature ? "madura" : "em dispersão"}`,
     summary: `${presentation[0]} ${mature ? "Semente madura" : `Semente ${age}/3`}`,
   };
 }
@@ -483,6 +486,7 @@ function cellSelectionInfo(state, r, c) {
       "Esporo fúngico",
       `${spore.movesRemaining} etapa(s) de dispersão restante(s).`,
       `◌ Esporo · ${spore.movesRemaining}`,
+      `esporo fúngico, ${spore.movesRemaining} etapa(s) de dispersão restante(s)`,
     );
   for (const agent of pathogenAgents) {
     const definition = PATHOGEN_AGENTS[agent] ?? PATHOGEN_AGENTS.virus;
