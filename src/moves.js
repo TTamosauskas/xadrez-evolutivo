@@ -1699,6 +1699,7 @@ export function vivificationActionsForPiece(state, piece) {
         action.c === piece.c) ||
       action.type === "BUD" ||
       action.type === "PUPATE" ||
+      action.type === "PARTHENOGENESIS" ||
       (action.type === "PARASITIZE" &&
         !Number.isInteger(action.targetId)),
   );
