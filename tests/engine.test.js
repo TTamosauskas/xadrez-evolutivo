@@ -2885,9 +2885,9 @@ test("Archean opening guarantee fixes the missing energy branch on an eligible b
   const s = createState(1196, {
     scenario: "earth",
     geologicalStage: "archean",
-    cycle: 1,
-    totalCycles: 1,
-    historicalTraits: ["Respiração anaeróbia", "Fotossíntese"],
+    cycle: 2,
+    totalCycles: 2,
+    historicalTraits: ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese"],
     naturalBarriers: false,
   });
   s.pieces = [];
@@ -2930,9 +2930,9 @@ test("same-branch offspring do not spend the guarantee reserved for the missing 
   const s = createState(1195, {
     scenario: "earth",
     geologicalStage: "archean",
-    cycle: 1,
-    totalCycles: 1,
-    historicalTraits: ["Respiração anaeróbia", "Fotossíntese"],
+    cycle: 2,
+    totalCycles: 2,
+    historicalTraits: ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese"],
     naturalBarriers: false,
   });
   s.pieces = [];
@@ -2965,9 +2965,9 @@ test("opening mutation guarantee is independent per side from the second round o
   const s = createState(1197, {
     scenario: "earth",
     geologicalStage: "archean",
-    cycle: 1,
-    totalCycles: 1,
-    historicalTraits: ["Respiração anaeróbia"],
+    cycle: 2,
+    totalCycles: 2,
+    historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
     naturalBarriers: false,
   });
   s.pieces = [];
@@ -3022,9 +3022,9 @@ test("a natural opening mutation consumes the later guarantee for that side", ()
   const s = createState(1198, {
     scenario: "earth",
     geologicalStage: "archean",
-    cycle: 1,
-    totalCycles: 1,
-    historicalTraits: ["Respiração anaeróbia"],
+    cycle: 2,
+    totalCycles: 2,
+    historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
     naturalBarriers: false,
   });
   s.pieces = [];
@@ -3082,7 +3082,7 @@ test("cycle innovation pressure blocks a seventh new positive mutation without b
     s.totalCycles = 1;
     s.cycle = 2;
     s.geologicalStage = "archean";
-    s.historicalTraits = ["Respiração anaeróbia", "Predação"];
+    s.historicalTraits = ["Respiração anaeróbia", "Quimiossíntese", "Predação"];
     s.cyclePositiveInnovations = [...cyclePositiveInnovations];
     s.event = {
       ...EVENTS.find((event) => event.id === "solar"),
@@ -3184,6 +3184,10 @@ function sexualInnovationState(seed) {
     totalCycles: 1,
     historicalTraits: [
       ...GEOLOGICAL_STAGES[0].required,
+      ...GEOLOGICAL_STAGES[1].required,
+      "Eucarionte",
+      "Respiração aeróbia",
+      "Endossimbiose",
       "Multicelularismo",
       "Resistência",
       "Regeneração",
