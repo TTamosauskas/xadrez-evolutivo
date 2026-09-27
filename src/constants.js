@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 26;
+export const STATE_VERSION = 27;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -152,6 +152,18 @@ export const TRAITS = {
   Canibalismo: [
     "🐻‍❄️",
     "Especialização de Carnívoro: permite capturar uma peça aliada segundo a geometria da peça e converter a morte em exatamente um descendente.",
+  ],
+  "Canibalismo Filial": [
+    "🐹",
+    "Se estiver em recuperação metabólica e não houver captura inimiga disponível, pode consumir uma cria direta ainda juvenil para encerrar imediatamente a espera reprodutiva.",
+  ],
+  "Canibalismo Sexual": [
+    "𒌐",
+    "Na reprodução sexuada, consome o parceiro e produz exatamente duas proles recombinadas.",
+  ],
+  Matrifagia: [
+    "🕷️",
+    "Uma cria juvenil pode consumir seu progenitor primário alcançável para atingir imediatamente a maturidade sexual.",
   ],
   Parasitismo: [
     "🪱",
@@ -349,6 +361,18 @@ export const TRAITS = {
     "♻️",
     "Uma vez por vida, sobrevive a uma morte não causada por captura e descansa na rodada seguinte. Não evita morte natural por senescência.",
   ],
+  Longevidade: [
+    "🦜",
+    "Reduz em 50% a chance de morte natural causada pela idade.",
+  ],
+  "Fertilidade Longeva": [
+    "🐢",
+    "A idade deixa de causar infertilidade natural; demais causas de infertilidade e restrições reprodutivas continuam válidas.",
+  ],
+  "Imortalidade Biológica": [
+    "🪼",
+    "Anula exclusivamente a morte natural por envelhecimento; captura, ambiente, patógenos, veneno, mutações letais e outras mortes continuam funcionando.",
+  ],
   "Incubação": [
     "🪺",
     "Ovos adjacentes ao progenitor ficam protegidos contra Ovífagia.",
@@ -403,6 +427,14 @@ export const TRAITS = {
   "Reprodução Sexuada": [
     "❤️",
     "Substitui a reprodução basal individual em casas férteis e sementes por acasalamento entre dois portadores reprodutivamente aptos; rotas reprodutivas especializadas permanecem disponíveis. Quando a inovação surge em uma ninhada com pelo menos dois descendentes, estabelece dois fundadores sexuais.",
+  ],
+  Partenogênese: [
+    "♀️",
+    "Quando não existe parceiro sexual legal, permite usar um recurso reprodutivo para gerar exatamente uma prole sem recombinação.",
+  ],
+  "Cópula Agressiva": [
+    "🦆",
+    "Permite Reprodução Sexuada com um inimigo adjacente compatível e gera uma prole da cor do atacante; se o alvo também tiver Cópula Agressiva, o atacante morre antes da reprodução.",
   ],
   "Precocidade Sexual": [
     "🪰",
@@ -526,7 +558,7 @@ export const TRAITS = {
     "Uma cria artrópode pode gastar a ação para empupar por uma rodada e emergir uma forma acima, até o limite de Bispo.",
   ],
   Ooteca: [
-    "🕷",
+    "🪩",
     "Depois de uma reprodução bem-sucedida em casa fértil, fica preparada; ao morrer, libera uma prole nas casas livres ao redor.",
   ],
   Toxicidade: [
