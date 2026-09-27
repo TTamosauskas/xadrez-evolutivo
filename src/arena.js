@@ -10,10 +10,7 @@ import {
   normalizeActiveTraits,
   traitCombinationValid,
 } from "./geology.js";
-import {
-  ARENA_ENGINEERING_CHANGES,
-  ARENA_TRAIT_BUDGET,
-} from "./scenarios.js";
+import { ARENA_ENGINEERING_CHANGES } from "./scenarios.js";
 import {
   genomeFromTraits,
   hiddenRecessiveTraits,
@@ -131,7 +128,7 @@ export function completeArenaGenome(input, preferred = null) {
   return sorted(set);
 }
 
-export function arenaGenomeValid(genome, budget = null) {
+export function arenaGenomeValid(genome) {
   const normalized = completeArenaGenome(genome),
     input = new Set(
       (genome ?? []).filter(
@@ -144,7 +141,6 @@ export function arenaGenomeValid(genome, budget = null) {
   if (normalized.includes("Vertebrado") && normalized.includes("Artrópode"))
     return false;
   if (normalizedBillable.length !== input.size) return false;
-  if (budget !== null && normalizedBillable.length !== budget) return false;
   const traits = normalizeActiveTraits([BASAL, ...normalized]);
   return traitCombinationValid(traits);
 }
@@ -387,4 +383,4 @@ export function engineerArenaAISide(
   return result;
 }
 
-export { ARENA_ENGINEERING_CHANGES, ARENA_TRAIT_BUDGET };
+export { ARENA_ENGINEERING_CHANGES };

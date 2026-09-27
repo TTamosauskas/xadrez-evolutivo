@@ -7,7 +7,6 @@ export const SCENARIOS = [
 ];
 export const DEFAULT_SCENARIO = "earth";
 export const LEGACY_SCENARIO = "alternative";
-export const ARENA_TRAIT_BUDGET = 6;
 export const ARENA_ENGINEERING_CHANGES = 2;
 export const ARENA_HABITAT = {
   fertile: 14,
