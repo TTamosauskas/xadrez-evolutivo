@@ -2377,10 +2377,14 @@ export function createSuccessorState(previous, seed = Date.now()) {
     previewProfiles = [preview.primary, preview.companion],
     previewPhotosynthetic =
       previewProfiles.find((profile) => canPhotosynthesize(profile)) ??
-      preview.primary,
+      archeanBranchFallback("Fotossíntese"),
     previewNonPhotosynthetic =
-      previewProfiles.find((profile) => !canPhotosynthesize(profile)) ??
-      preview.companion,
+      previewProfiles.find(
+        (profile) =>
+          !canPhotosynthesize(profile) &&
+          profile.traits?.includes("Predação"),
+      ) ??
+      archeanBranchFallback("Predação"),
     winner = previous.result?.winner ?? null,
     photosynthetic = strongestSurvivor(
       previous,
