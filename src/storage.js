@@ -183,6 +183,7 @@ function normalizeCycleInnovationPressure(state) {
     piece.eukaryoteBufferedTraits ??= [];
     piece.endosymbiosisDebtUntilRound ??= null;
     piece.adaptiveImmuneMemory ??= [];
+    piece.adaptiveImmuneNotifiedDisease ??= null;
     piece.stomataStartedRound ??= piece.bornRound ?? 0;
     piece.endothermyUsedTurn ??= null;
     piece.webTrapped ??= null;
