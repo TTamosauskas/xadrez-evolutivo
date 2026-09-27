@@ -66,6 +66,7 @@ export function crowdingPenalty(count) {
   return count > 12 ? Math.min(36, (count - 12) * 2) : 0;
 }
 export function actionPriority(state, a) {
+  if (a.type === "CHEMOSYNTHESIS") return 11;
   if (a.type === "EXTENDED_CAPTURE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
     return (a.trait === "Tromba" ? 15 : 12) + (target?.rank ?? 0) * 2;
