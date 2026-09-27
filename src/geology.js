@@ -817,6 +817,11 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Pelos",
   "Penas",
   "Roedor",
+  "Endozoocoria",
+  "Capsaicina",
+  "Epizoocoria",
+  "Sinzoocoria",
+  "Mirmecocoria",
 ]);
 
 export function normalizeMulticellularTraits(traits) {
