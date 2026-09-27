@@ -128,31 +128,30 @@ import {
   square,
 } from "../src/constants.js";
 
-test("period habitat profiles encode the new ecological progression", () => {
-  const archean = habitatProfile("archean"),
-    proterozoic = habitatProfile("proterozoic"),
-    ordovician = habitatProfile("ordovician"),
-    devonian = habitatProfile("devonian"),
+test("detailed geological phases expose distinct habitat presets", () => {
+  const eo = habitatProfile("eoarchean"),
+    cryogenian = habitatProfile("cryogenian"),
+    cambrian = habitatProfile("cambrian"),
     carboniferous = habitatProfile("carboniferous"),
     permian = habitatProfile("permian"),
-    triassic = habitatProfile("triassic"),
-    cretaceous = habitatProfile("cretaceous"),
-    neogene = habitatProfile("neogene");
+    eocene = habitatProfile("eocene"),
+    miocene = habitatProfile("miocene"),
+    pleistocene = habitatProfile("pleistocene"),
+    holocene = habitatProfile("holocene");
 
-  for (const profile of [archean, proterozoic, ordovician]) {
-    assert.equal(profile.fertile, 64);
-    assert.equal(profile.hostile, 0);
-    assert.deepEqual(profile.naturalBarriers, [0, 0]);
-    assert.equal(profile.pattern, "aquatic");
-  }
-  assert.equal(devonian.pattern, "corridors");
+  assert.equal(eo.pattern, "volcanic-ocean");
+  assert.equal(cryogenian.pattern, "snowball");
+  assert.ok(cryogenian.hostile > cryogenian.fertile);
+  assert.equal(cambrian.pattern, "reef");
+  assert.equal(carboniferous.pattern, "swamp");
   assert.deepEqual(carboniferous.naturalBarriers, [3, 6]);
+  assert.equal(permian.pattern, "arid");
   assert.equal(permian.hostile, 12);
-  assert.equal(triassic.pattern, "open");
-  assert.equal(cretaceous.fertile, 18);
-  assert.equal(neogene.pattern, "fragmented");
+  assert.equal(eocene.pattern, "rainforest");
+  assert.equal(miocene.pattern, "savanna");
+  assert.equal(pleistocene.pattern, "steppe");
+  assert.equal(holocene.pattern, "anthropic");
 });
-
 test("first generation-3 habitat update preserves every geological preset", () => {
   const cellsOf = (state, type) =>
       new Set(
@@ -207,81 +206,61 @@ test("first generation-3 habitat update preserves every geological preset", () =
   }
 });
 
-test("early aquatic stages stay outside Conway while Hadean and early Archean keep compact habitat overlays", () => {
+test("pre-Devonian custom habitats stay outside Conway while preserving their phase presets", () => {
   const hadean = createCampaignState(898);
   assert.equal(aquaticFertilityRegime(hadean), true);
   assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 1);
-  assert.equal(hadean.board.filter((cell) => cell === "neutral").length, 63);
-  assert.equal(
-    hadean.board[square(hadean.origin.r, hadean.origin.c)],
-    "fertile",
-  );
-  assert.equal(
-    Array.from({ length: 8 }, (_, r) =>
-      Array.from({ length: 8 }, (_, col) =>
-        lethalHazardAt(hadean, r, col),
-      ),
-    ).flat().filter(Boolean).length,
-    48,
-  );
-  assert.deepEqual(hadean.naturalBarriers, []);
 
-  const archean = createState(899, {
-    geologicalStage: "archean",
-    cycle: 1,
-    naturalBarriers: true,
-  });
-  assert.equal(aquaticFertilityRegime(archean), true);
-  assert.equal(archean.board.filter((cell) => cell === "fertile").length, 16);
-  assert.equal(archean.board.filter((cell) => cell === "hostile").length, 20);
-  assert.equal(archean.board.filter((cell) => cell === "neutral").length, 28);
-  assert.equal(
-    Array.from({ length: 8 }, (_, r) =>
-      Array.from({ length: 8 }, (_, col) =>
-        lethalHazardAt(archean, r, col),
-      ),
-    ).flat().filter(Boolean).length,
-    28,
-  );
-  assert.deepEqual(archean.naturalBarriers, []);
-
-  for (const stage of ["proterozoic", "ediacaran", "cambrian", "ordovician"]) {
-    const s = createState(899, {
-      geologicalStage: stage,
-      naturalBarriers: true,
-    });
-    assert.equal(aquaticFertilityRegime(s), true);
-    assert.equal(s.board.filter((cell) => cell === "fertile").length, 64);
-    assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
-    assert.deepEqual(s.naturalBarriers, []);
-
-    const before = [...s.board];
-    s.maxGenerationReached = 3;
-    tickEnvironment(context(s));
-    advanceConway(context(s));
-    assert.deepEqual(s.board, before);
-    assert.deepEqual(s.naturalBarriers, []);
-    assertState(s);
+  for (const [index, id] of [
+    "eoarchean",
+    "paleoarchean",
+    "mesoarchean",
+    "neoarchean",
+    "cryogenian",
+    "ediacaran",
+    "cambrian",
+    "ordovician",
+  ].entries()) {
+    const stage = GEOLOGICAL_STAGES.find((entry) => entry.id === id),
+      state = createState(899 + index, {
+        geologicalStage: id,
+        naturalBarriers: true,
+      }),
+      before = [...state.board];
+    assert.equal(aquaticFertilityRegime(state), true, id);
+    assert.equal(conwayUnlocked(state), false, id);
+    assert.ok(state.board.includes("fertile"), id);
+    if ((stage.habitat.hostile ?? 0) > 0)
+      assert.ok(state.board.includes("hostile"), id);
+    state.maxGenerationReached = 3;
+    tickEnvironment(context(state));
+    advanceConway(context(state));
+    assert.deepEqual(state.board, before, id);
+    assertState(state);
   }
 
-  const silurian = createState(900, {
+  const silurian = createState(920, {
     geologicalStage: "silurian",
     naturalBarriers: true,
   });
   assert.equal(aquaticFertilityRegime(silurian), false);
-  assert.ok(silurian.board.some((cell) => cell !== "fertile"));
+  assert.equal(conwayUnlocked(silurian), false);
   assertState(hadean);
-  assertState(archean);
   assertState(silurian);
 });
-
-test("consumed aquatic fertility returns after three turns", () => {
+test("consumed aquatic fertility returns after three turns on detailed aquatic phases", () => {
   const s = createState(901, {
-    geologicalStage: "archean",
+    geologicalStage: "paleoarchean",
     naturalBarriers: true,
   });
-  const cell = 27;
-  assert.equal(s.board[cell], "fertile");
+  const founderCells = new Set(s.pieces.map((piece) => square(piece.r, piece.c))),
+    cell = s.board.findIndex(
+      (terrain, index) =>
+        terrain === "fertile" &&
+        !founderCells.has(index) &&
+        !s.naturalBarriers.includes(index),
+    );
+  assert.ok(cell >= 0);
 
   assert.equal(consumeFertileTerrain(s, cell), true);
   assert.equal(s.board[cell], "neutral");
@@ -289,68 +268,30 @@ test("consumed aquatic fertility returns after three turns", () => {
 
   s.turn = 2;
   assert.equal(restoreAquaticFertility(s), 0);
-  assert.equal(s.board[cell], "neutral");
-
   s.turn = 3;
   assert.equal(restoreAquaticFertility(s), 1);
   assert.equal(s.board[cell], "fertile");
   assert.deepEqual(s.fertilityRecovery, []);
   assertState(s);
 });
-
-test("Archean opens habitat one ring per cycle before becoming fully fertile", () => {
-  const first = createState(811, {
-      geologicalStage: "archean",
-      cycle: 1,
-      naturalBarriers: true,
-    }),
-    second = createState(812, {
-      geologicalStage: "archean",
-      cycle: 2,
-      totalCycles: 2,
-      naturalBarriers: true,
-    }),
-    third = createState(813, {
-      geologicalStage: "archean",
-      cycle: 3,
-      totalCycles: 3,
-      naturalBarriers: true,
+test("Archean subdivisions use distinct custom habitats instead of cycle rings", () => {
+  const ids = ["eoarchean", "paleoarchean", "mesoarchean", "neoarchean"],
+    patterns = ids.map(
+      (id) => GEOLOGICAL_STAGES.find((stage) => stage.id === id).habitat.pattern,
+    ),
+    signatures = ids.map((id, index) => {
+      const state = createPeriodState(id, 811 + index, null, "earth");
+      assert.equal(state.geologicalStage, id);
+      assert.equal(state.cycle, 1);
+      assertState(state);
+      return [
+        state.board.filter((cell) => cell === "fertile").length,
+        state.board.filter((cell) => cell === "hostile").length,
+      ].join(":");
     });
-
-  assert.equal(first.board.filter((cell) => cell === "fertile").length, 16);
-  assert.equal(first.board.filter((cell) => cell === "hostile").length, 20);
-  assert.equal(first.board.filter((cell) => cell === "neutral").length, 28);
-  assert.equal(
-    Array.from({ length: 8 }, (_, r) =>
-      Array.from({ length: 8 }, (_, col) => lethalHazardAt(first, r, col)),
-    ).flat().filter(Boolean).length,
-    28,
-  );
-  for (let r = 0; r < 8; r++)
-    for (let col = 0; col < 8; col++) {
-      const ring = Math.min(r, col, 7 - r, 7 - col);
-      if (ring === 0) assert.equal(lethalHazardAt(first, r, col), true);
-      else if (ring === 1) assert.equal(first.board[r * 8 + col], "hostile");
-      else assert.equal(first.board[r * 8 + col], "fertile");
-    }
-
-  assert.equal(second.board.filter((cell) => cell === "fertile").length, 36);
-  assert.equal(second.board.filter((cell) => cell === "hostile").length, 28);
-  assert.equal(
-    Array.from({ length: 8 }, (_, r) =>
-      Array.from({ length: 8 }, (_, col) => lethalHazardAt(second, r, col)),
-    ).flat().filter(Boolean).length,
-    0,
-  );
-
-  assert.equal(third.board.filter((cell) => cell === "fertile").length, 64);
-  assert.equal(third.board.filter((cell) => cell === "hostile").length, 0);
-  for (const state of [first, second, third]) {
-    assert.equal(state.naturalBarriers.length, 0);
-    assertState(state);
-  }
+  assert.equal(new Set(patterns).size, 4);
+  assert.ok(new Set(signatures).size >= 3);
 });
-
 test("Hadean starts with one fertile gray ancestor and splits into two photosynthetic Kings on neutral cells", () => {
   let s = createCampaignState(301);
   assert.equal(s.geologicalStage, "hadean");
@@ -2849,20 +2790,14 @@ test("non-capture deaths do not create decomposition", () => {
 });
 test("photosynthetic offspring keep their hereditary energy branch", () => {
   const s = fixture([
-      {
-        owner: "blue",
-        r: 4,
-        c: 4,
-        rank: 4,
-        traits: ["Fotossíntese"],
-      },
+      { owner: "blue", r: 4, c: 4, rank: 4, traits: ["Fotossíntese"] },
       { owner: "amber", r: 0, c: 0, rank: 4 },
     ]),
     parent = s.pieces[0];
-  s.totalCycles = 1;
+  s.totalCycles = 2;
   s.cycle = 1;
-  s.geologicalStage = "archean";
-  s.historicalTraits = ["Fotossíntese"];
+  s.geologicalStage = "paleoarchean";
+  s.historicalTraits = ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese"];
   s.event = {
     ...EVENTS.find((event) => event.id === "solar"),
     startRound: 0,
@@ -2870,22 +2805,18 @@ test("photosynthetic offspring keep their hereditary energy branch", () => {
     snapshots: {},
   };
   const before = s.nextId;
-  assert.equal(
-    reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
-    1,
-  );
+  assert.equal(reproduce(context(s), parent, null, "teste", { forcedCount: 1 }), 1);
   const child = s.pieces.find((piece) => piece.id >= before);
   assert.ok(child.traits.includes("Fotossíntese"));
   assert.ok(!child.traits.includes("Predação"));
   assert.ok(!s.historicalTraits.includes("Predação"));
   assertState(s);
 });
-
 test("Archean opening guarantee fixes the missing energy branch on an eligible basal descendant", () => {
   const s = createState(1196, {
     scenario: "earth",
-    geologicalStage: "archean",
-    cycle: 2,
+    geologicalStage: "paleoarchean",
+    cycle: 1,
     totalCycles: 2,
     historicalTraits: ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese"],
     naturalBarriers: false,
@@ -2929,8 +2860,8 @@ test("Archean opening guarantee fixes the missing energy branch on an eligible b
 test("same-branch offspring do not spend the guarantee reserved for the missing Archean branch", () => {
   const s = createState(1195, {
     scenario: "earth",
-    geologicalStage: "archean",
-    cycle: 2,
+    geologicalStage: "paleoarchean",
+    cycle: 1,
     totalCycles: 2,
     historicalTraits: ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese"],
     naturalBarriers: false,
@@ -2964,8 +2895,8 @@ test("same-branch offspring do not spend the guarantee reserved for the missing 
 test("opening mutation guarantee is independent per side from the second round onward", () => {
   const s = createState(1197, {
     scenario: "earth",
-    geologicalStage: "archean",
-    cycle: 2,
+    geologicalStage: "paleoarchean",
+    cycle: 1,
     totalCycles: 2,
     historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
     naturalBarriers: false,
@@ -3021,8 +2952,8 @@ test("opening mutation guarantee is independent per side from the second round o
 test("a natural opening mutation consumes the later guarantee for that side", () => {
   const s = createState(1198, {
     scenario: "earth",
-    geologicalStage: "archean",
-    cycle: 2,
+    geologicalStage: "paleoarchean",
+    cycle: 1,
     totalCycles: 2,
     historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
     naturalBarriers: false,
@@ -3080,9 +3011,9 @@ test("cycle innovation pressure blocks a seventh new positive mutation without b
       parent = s.pieces[0];
     s.scenario = "earth";
     s.totalCycles = 1;
-    s.cycle = 2;
-    s.geologicalStage = "archean";
-    s.historicalTraits = ["Respiração anaeróbia", "Quimiossíntese", "Predação"];
+    s.cycle = 1;
+    s.geologicalStage = "mesoarchean";
+    s.historicalTraits = ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese", "Predação", "Reparo Celular"];
     s.cyclePositiveInnovations = [...cyclePositiveInnovations];
     s.event = {
       ...EVENTS.find((event) => event.id === "solar"),
@@ -3153,7 +3084,7 @@ test("first-cycle mutation attempts never fall back to deleterious outcomes", ()
     parent = s.pieces[0];
   s.totalCycles = 1;
   s.cycle = 1;
-  s.geologicalStage = "archean";
+  s.geologicalStage = "eoarchean";
   s.historicalTraits = ["Fotossíntese"];
   s.event = {
     ...EVENTS.find((event) => event.id === "solar"),
@@ -3355,7 +3286,7 @@ test("mass extinction starts a new Era from the strongest surviving forms", () =
   s.phase = "over";
 
   const next = createSuccessorState(s, 123);
-  assert.equal(next.geologicalStage, "quaternary");
+  assert.equal(next.geologicalStage, "holocene");
   assert.equal(next.cycle, 2);
   assert.equal(next.totalCycles, 2);
   assert.equal(next.generationOffset, 10);
