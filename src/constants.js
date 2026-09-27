@@ -82,6 +82,10 @@ export const TRAITS = {
     "🦧",
     "Especialização de dossel: atravessa uma sequência contígua de criaturas fotossintéticas aliadas numa direção e pousa na primeira casa livre além delas.",
   ],
+  Forésia: [
+    "🐀",
+    "Especialização de transporte: formas pequenas e médias atravessam sequências contíguas de criaturas aliadas não fotossintéticas e pousam na primeira casa livre além delas; em Torre e Rainha, permanece apenas como legado genético.",
+  ],
   Serpenteamento: [
     "⚕️",
     "Trajetória sinuosa de até cinco passos adjacentes, com até duas mudanças de direção; casas intermediárias precisam permanecer livres.",
@@ -559,6 +563,16 @@ export const has = (piece, trait) => {
     )
   );
 };
+
+export function functionalSizeClass(piece) {
+  if (!piece || has(piece, "Nanismo")) return "small";
+  if ([0, 4].includes(piece.rank)) return "small";
+  if ([1, 2].includes(piece.rank)) return "medium";
+  return "large";
+}
+
+export const largeFunctionalForm = (piece) =>
+  functionalSizeClass(piece) === "large";
 export const energyBranch = (piece) =>
   piece?.traits?.includes("Fotossíntese")
     ? "Fotossíntese"
