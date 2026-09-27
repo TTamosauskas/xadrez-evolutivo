@@ -401,6 +401,7 @@ export const reproductionReady = (state, piece) =>
   (!has(piece, "Filho único") ||
     (piece.lifetimeOffspring ?? 0) < 1 ||
     !!piece.autotomyRecovery) &&
+  !piece.parasitoidism &&
   !(piece.pregnancies ?? []).some(
     (pregnancy) => pregnancy.kind === "ovoviviparous",
   ) &&
@@ -498,6 +499,12 @@ export function newPiece(state, owner, r, c, source = {}) {
       inkReadyRound: source.inkReadyRound ?? bornRound,
       broodParasite: source.broodParasite
         ? structuredClone(source.broodParasite)
+        : null,
+      parasitoidism: source.parasitoidism
+        ? structuredClone(source.parasitoidism)
+        : null,
+      rumination: source.rumination
+        ? structuredClone(source.rumination)
         : null,
       webTrapped: source.webTrapped ?? null,
       webCreatedStationarySinceRound:
@@ -2813,6 +2820,20 @@ export function assertState(state) {
             p.broodParasite.profile,
             p.broodParasite.parasiteOwner,
           ))) ||
+      (p.parasitoidism !== undefined &&
+        p.parasitoidism !== null &&
+        (!["blue", "amber"].includes(p.parasitoidism.originalOwner) ||
+          !["blue", "amber"].includes(p.parasitoidism.controllerOwner) ||
+          p.parasitoidism.originalOwner === p.parasitoidism.controllerOwner ||
+          p.owner !== p.parasitoidism.controllerOwner ||
+          !integer(p.parasitoidism.sourceId, 1) ||
+          !integer(p.parasitoidism.remaining, 1, 3) ||
+          !integer(p.parasitoidism.infectedTurn, 0))) ||
+      (p.rumination !== undefined &&
+        p.rumination !== null &&
+        (typeof p.rumination.block !== "string" ||
+          !/^[0-3],[0-3]$/.test(p.rumination.block) ||
+          !integer(p.rumination.startedTurn, 0))) ||
       (p.webTrapped !== undefined &&
         p.webTrapped !== null &&
         (!integer(p.webTrapped.sourceId, 1) ||
