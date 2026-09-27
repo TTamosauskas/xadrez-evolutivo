@@ -50,7 +50,6 @@ import {
 } from "./scenarios.js";
 import {
   arenaProfile,
-  completeArenaGenome,
   completeArenaBranchGenome,
 } from "./arena.js";
 export const clone = (value) => structuredClone(value);
