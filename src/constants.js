@@ -565,7 +565,8 @@ export const has = (piece, trait) => {
 };
 
 export function functionalSizeClass(piece) {
-  if (!piece || has(piece, "Nanismo")) return "small";
+  if (!piece || !Number.isInteger(piece.rank) || has(piece, "Nanismo"))
+    return "small";
   if ([0, 4].includes(piece.rank)) return "small";
   if ([1, 2].includes(piece.rank)) return "medium";
   return "large";
