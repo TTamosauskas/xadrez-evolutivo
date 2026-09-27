@@ -533,14 +533,25 @@ function renderArenaDesigner() {
       input.type = "checkbox";
       input.value = trait;
       input.checked = selectedTraits.has(trait);
-      if (arenaFlow.kind === "setup" && !input.checked) {
+      if (trait === branch.energy) {
+        input.checked = true;
+        input.disabled = true;
+      }
+      if (
+        trait !== branch.energy &&
+        arenaFlow.kind === "setup" &&
+        !input.checked
+      ) {
         const candidate = completeArenaBranchGenome(
           [...selectedTraits, trait],
           branch.id,
         );
         input.disabled = arenaTraitCost(candidate) > branch.limit;
       }
-      copy.textContent = `${TRAITS[trait][0]} ${trait}`;
+      copy.textContent =
+        trait === branch.energy
+          ? `${TRAITS[trait][0]} ${trait} · raiz fixa`
+          : `${TRAITS[trait][0]} ${trait}`;
       input.addEventListener("change", () => {
         const genome = new Set(arenaFlow.current[index]);
         if (input.checked) genome.add(trait);
