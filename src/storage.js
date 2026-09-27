@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [24, 23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [25, 24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
