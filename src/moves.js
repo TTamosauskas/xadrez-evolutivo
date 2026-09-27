@@ -26,6 +26,7 @@ import {
   carcassAt,
   captureDisturbanceAt,
   lethalHazardAt,
+  chemosynthesisExhaustedAt,
   organicResidueHazardousTo,
   webAt,
   inkCloudAt,
@@ -1874,6 +1875,19 @@ export function broodParasitismTargets(state, piece) {
   );
 }
 
+export function chemosynthesisAvailable(state, piece) {
+  return !!(
+    piece &&
+    has(piece, "Quimiossíntese") &&
+    reproductionReady(state, piece) &&
+    !resting(state, piece) &&
+    !dormant(state, piece) &&
+    terrain(state, piece.r, piece.c) === "hostile" &&
+    !lethalHazardAt(state, piece.r, piece.c) &&
+    !chemosynthesisExhaustedAt(state, piece.r, piece.c)
+  );
+}
+
 export function canRejectBroodParasite(state, piece) {
   return !!(
     piece?.broodParasite &&
@@ -1968,6 +1982,9 @@ export function actionsForPiece(
       parentId: piece.id,
       id: mate.id,
     })),
+    ...(chemosynthesisAvailable(source, piece)
+      ? [{ type: "CHEMOSYNTHESIS", id: piece.id }]
+      : []),
     ...(parthenogenesisAvailable(source, piece)
       ? [{ type: "PARTHENOGENESIS", id: piece.id }]
       : []),
@@ -2057,6 +2074,7 @@ export function vivificationActionsForPiece(state, piece) {
         action.r === piece.r &&
         action.c === piece.c) ||
       action.type === "BUD" ||
+      action.type === "CHEMOSYNTHESIS" ||
       action.type === "PUPATE" ||
       action.type === "PARTHENOGENESIS" ||
       action.type === "REJECT_BROOD_PARASITE" ||
