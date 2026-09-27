@@ -30,6 +30,7 @@ import {
   monogamySurvivalBonus,
   parentalCareProtects,
   predatoryReproductionAvailable,
+  mutualismPartner,
 } from "./reproduction-traits.js";
 import { dopaminePressureReductionAvailable } from "./reproduction.js";
 
@@ -160,6 +161,21 @@ export function actionableTraitsForPiece(state, piece) {
     targets.some((target) => !target.stay)
   )
     actionable.add("Córtex Pré-Frontal");
+  if (
+    has(piece, "Superorganismo") &&
+    state.pieces.some(
+      (ally) =>
+        ally.id !== piece.id &&
+        ally.owner === piece.owner &&
+        has(ally, "Superorganismo"),
+    )
+  )
+    actionable.add("Superorganismo");
+  if (
+    has(piece, "Ataxia") &&
+    targets.filter((target) => !target.stay).length > 1
+  )
+    actionable.add("Ataxia");
 
   if (
     has(piece, "Bipedalismo") &&
@@ -474,8 +490,26 @@ export function actionableTraitsForPiece(state, piece) {
     ) ||
       actions.some((action) => action.type === "PARTNER"));
   if (reproductiveOpportunity)
-    for (const trait of ["Testosterona", "Corticosteroides", "Ocitocina"])
+    for (const trait of [
+      "Testosterona",
+      "Corticosteroides",
+      "Forrageamento",
+      "Tropismo",
+      "Ocitocina",
+    ])
       if (has(piece, trait)) actionable.add(trait);
+  if (
+    reproductiveOpportunity &&
+    has(piece, "Mutualismo") &&
+    mutualismPartner(state, piece)
+  )
+    actionable.add("Mutualismo");
+  if (
+    reproductiveOpportunity &&
+    has(piece, "Anemia Falciforme") &&
+    has(piece, "Respiração aeróbia")
+  )
+    actionable.add("Anemia Falciforme");
 
   return actionable;
 }
@@ -508,6 +542,16 @@ function sociableGroup(state, victim) {
 }
 
 function addActiveStateTraits(state, piece, traits) {
+  if (
+    state.phase === "social-defense" &&
+    (state.socialDefense?.memberIds ?? []).includes(piece.id) &&
+    has(piece, "Hierarquia")
+  )
+    traits.add("Hierarquia");
+
+  if (has(piece, "Mutualismo") && mutualismPartner(state, piece))
+    traits.add("Mutualismo");
+
   if (
     state.phase === "serotonin-reposition" &&
     state.serotoninReposition?.id === piece.id &&
@@ -718,15 +762,31 @@ function markCaptureContext(state, attacker, victim, byId) {
     victimTraits = byId.get(victim.id);
   if (!attackerTraits || !victimTraits) return;
 
+  const cooperativeHunters = state.pieces.filter(
+      (piece) =>
+        piece.owner === attacker.owner &&
+        has(piece, "Caça Cooperativa") &&
+        distance(piece, victim) === 1,
+    ),
+    cooperativeHunt =
+      has(attacker, "Caça Cooperativa") &&
+      cooperativeHunters.length >= 2 &&
+      (has(victim, "Espinhos") || has(victim, "Chifre"));
+  if (cooperativeHunt)
+    for (const hunter of cooperativeHunters)
+      byId.get(hunter.id)?.add("Caça Cooperativa");
+
   if (has(victim, "Espinhos")) {
     victimTraits.add("Espinhos");
-    if (has(attacker, "Osteodermos")) attackerTraits.add("Osteodermos");
+    if (!cooperativeHunt && has(attacker, "Osteodermos"))
+      attackerTraits.add("Osteodermos");
   }
 
   if (has(victim, "Chifre")) {
     victimTraits.add("Chifre");
-    if (has(attacker, "Carapaça")) attackerTraits.add("Carapaça");
-    else if (has(attacker, "Osteodermos"))
+    if (!cooperativeHunt && has(attacker, "Carapaça"))
+      attackerTraits.add("Carapaça");
+    else if (!cooperativeHunt && has(attacker, "Osteodermos"))
       attackerTraits.add("Osteodermos");
   }
 
