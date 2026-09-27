@@ -9,7 +9,6 @@ import {
 import {
   ARENA_ARCHETYPES,
   ARENA_RECESSIVE_COUNT,
-  ARENA_TRAIT_BUDGET,
   arenaGenomeValid,
   arenaInterventionCount,
   completeArenaGenome,
@@ -545,10 +544,9 @@ test("Arena completes Carnívoro with its multicellular foundation", () => {
   assert.ok(completed.includes("Carnívoro"));
 });
 
-test("all built-in Arena archetypes respect the six-mutation budget and admit two safe recessives", () => {
+test("all built-in Arena archetypes are valid and admit two safe recessives", () => {
   for (const genome of ARENA_ARCHETYPES) {
-    assert.equal(genome.length, ARENA_TRAIT_BUDGET);
-    assert.equal(arenaGenomeValid(genome, ARENA_TRAIT_BUDGET), true);
+    assert.equal(arenaGenomeValid(genome), true);
     assert.ok(arenaRecessivePairs(genome).length > 0);
     assert.ok(
       arenaRecessivePairs(genome).every(
@@ -556,6 +554,42 @@ test("all built-in Arena archetypes respect the six-mutation budget and admit tw
       ),
     );
   }
+});
+
+test("Arena accepts valid genomes with more than six selected mutations", () => {
+  const expanded = completeArenaGenome(
+    [
+      ...ARENA_ARCHETYPES[0],
+      "Locomoção Terrestre",
+      "Escalador",
+      "Bioadesão",
+    ],
+    "Bioadesão",
+  );
+  assert.ok(arenaTraitCost(expanded) > 6);
+  assert.equal(arenaGenomeValid(expanded), true);
+  assert.ok(arenaRecessivePairs(expanded).length > 0);
+
+  const state = createArenaState(
+    {
+      blue: [expanded, ARENA_ARCHETYPES[1]],
+      amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[5]],
+    },
+    605,
+  );
+  const expandedFounder = state.pieces.find(
+    (piece) =>
+      piece.owner === "blue" &&
+      piece.ancestry.includes("Bioadesão"),
+  );
+  assert.ok(expandedFounder);
+  assert.ok(
+    arenaTraitCost(
+      expandedFounder.ancestry.filter(
+        (trait) => trait !== "Respiração anaeróbia",
+      ),
+    ) > 6,
+  );
 });
 
 test("Vida na Terra seeds post-sexual founders with historical recessive variation", () => {
@@ -642,7 +676,7 @@ test("Arena founders carry exactly two randomly recessive characteristics per li
       genome = piece.ancestry.filter(
         (trait) => trait !== "Respiração anaeróbia",
       );
-    assert.equal(arenaTraitCost(genome), ARENA_TRAIT_BUDGET);
+    assert.ok(arenaTraitCost(genome) > 0);
     assert.equal(recessives.length, ARENA_RECESSIVE_COUNT);
     assert.ok(recessives.every((trait) => genome.includes(trait)));
     assert.ok(recessives.every((trait) => !piece.traits.includes(trait)));
