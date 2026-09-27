@@ -201,7 +201,7 @@ export const GEOLOGICAL_STAGES = [
     required: ["Reprodução Sexuada"],
     cycles: [["Reprodução Sexuada"]],
     habitat: { fertile: 54, hostile: 6, founderFertile: true, naturalBarriers: [0, 1], pattern: "inland-seas" },
-    events: { fertilized: 4, sea: 2, "abundant-rains": 2, earthquake: 1 },
+    events: { fertilized: 4, sea: 2, "abundant-rains": 2, earthquake: 1, volcano: 1 },
     founderLayout: [[6, 2], [4, 1], [1, 5], [3, 6]],
   },
   {
@@ -212,7 +212,7 @@ export const GEOLOGICAL_STAGES = [
     required: ["Ingestão"],
     cycles: [["Ingestão"]],
     habitat: { fertile: 56, hostile: 5, founderFertile: true, naturalBarriers: [0, 1], pattern: "continental-shelves" },
-    events: { fertilized: 3, sea: 2, abundance: 1, "abundant-rains": 1 },
+    events: { fertilized: 3, sea: 2, abundance: 1, "abundant-rains": 1, warming: 1 },
     founderLayout: [[6, 1], [4, 2], [1, 6], [3, 5]],
   },
   {
@@ -223,7 +223,7 @@ export const GEOLOGICAL_STAGES = [
     required: ["Carnívoro"],
     cycles: [["Carnívoro"]],
     habitat: { fertile: 52, hostile: 7, founderFertile: true, naturalBarriers: [0, 2], pattern: "supercontinent-coast" },
-    events: { sea: 2, abundance: 2, earthquake: 2, fertilized: 2 },
+    events: { sea: 2, abundance: 2, earthquake: 2, fertilized: 2, volcano: 1 },
     founderLayout: [[6, 2], [4, 1], [1, 5], [3, 6]],
   },
   {
@@ -234,7 +234,7 @@ export const GEOLOGICAL_STAGES = [
     required: ["Colônia", "Séssil"],
     cycles: [["Colônia", "Séssil"]],
     habitat: { fertile: 48, hostile: 10, founderFertile: true, naturalBarriers: [1, 2], pattern: "rift-seas" },
-    events: { sea: 3, "abundant-rains": 2, fertilized: 2, earthquake: 2 },
+    events: { sea: 3, "abundant-rains": 2, fertilized: 2, earthquake: 2, warming: 1 },
     founderLayout: [[6, 1], [4, 3], [1, 6], [3, 4]],
   },
   {
