@@ -8,11 +8,9 @@ import {
 } from "../src/geology.js";
 import {
   ARENA_ARCHETYPES,
-  ARENA_RECESSIVE_COUNT,
   arenaGenomeValid,
   arenaInterventionCount,
   completeArenaGenome,
-  arenaRecessivePairs,
   arenaTraitCost,
 } from "../src/arena.js";
 import {
@@ -544,16 +542,9 @@ test("Arena completes Carnívoro with its multicellular foundation", () => {
   assert.ok(completed.includes("Carnívoro"));
 });
 
-test("all built-in Arena archetypes are valid and admit two safe recessives", () => {
-  for (const genome of ARENA_ARCHETYPES) {
+test("all built-in Arena archetypes are valid", () => {
+  for (const genome of ARENA_ARCHETYPES)
     assert.equal(arenaGenomeValid(genome), true);
-    assert.ok(arenaRecessivePairs(genome).length > 0);
-    assert.ok(
-      arenaRecessivePairs(genome).every(
-        (pair) => pair.length === ARENA_RECESSIVE_COUNT,
-      ),
-    );
-  }
 });
 
 test("Arena accepts valid genomes with more than six selected mutations", () => {
@@ -568,7 +559,6 @@ test("Arena accepts valid genomes with more than six selected mutations", () => 
   );
   assert.ok(arenaTraitCost(expanded) > 6);
   assert.equal(arenaGenomeValid(expanded), true);
-  assert.ok(arenaRecessivePairs(expanded).length > 0);
 
   const state = createArenaState(
     {
@@ -663,32 +653,27 @@ test("Arena starts with four engineered founders and ignores geological chronolo
   assert.equal(traitUnlocked(state, "Visão Binocular", predator), true);
 });
 
-test("Arena founders carry exactly two randomly recessive characteristics per lineage", () => {
-  const state = createArenaState(
-    {
+test("Arena founders express every selected initial mutation", () => {
+  const selected = {
       blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[1]],
       amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[7]],
     },
-    606,
-  );
+    state = createArenaState(selected, 606);
+
   for (const piece of state.pieces) {
-    const recessives = hiddenRecessiveTraits(piece),
-      genome = piece.ancestry.filter(
-        (trait) => trait !== "Respiração anaeróbia",
-      );
-    assert.ok(arenaTraitCost(genome) > 0);
-    assert.equal(recessives.length, ARENA_RECESSIVE_COUNT);
-    assert.ok(recessives.every((trait) => genome.includes(trait)));
-    assert.ok(recessives.every((trait) => !piece.traits.includes(trait)));
+    assert.deepEqual(hiddenRecessiveTraits(piece), []);
+    const selectedForOwner = selected[piece.owner].some((genome) =>
+      genome.every((trait) => piece.ancestry.includes(trait)),
+    );
+    assert.equal(selectedForOwner, true);
+    for (const trait of piece.ancestry)
+      if (trait !== "Respiração anaeróbia")
+        assert.ok(
+          piece.traits.includes(trait) ||
+            ["Reparo Celular", "Simetria Bilateral"].includes(trait),
+          `initial Arena mutation should be expressed: ${trait}`,
+        );
   }
-  const blueHidden = state.pieces
-    .filter((piece) => piece.owner === "blue")
-    .map((piece) => hiddenRecessiveTraits(piece));
-  const amberHidden = state.pieces
-    .filter((piece) => piece.owner === "amber")
-    .map((piece) => hiddenRecessiveTraits(piece));
-  assert.equal(blueHidden.length, 2);
-  assert.equal(amberHidden.length, 2);
 });
 
 test("Arena carries survivor piece forms into the next engineered phase", () => {
