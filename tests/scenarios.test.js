@@ -800,7 +800,7 @@ test("Arena carries survivor piece forms into the next engineered phase", () => 
     next.pieces
       .filter((piece) => piece.owner === "blue")
       .map((piece) => piece.rank),
-    [3, 2],
+    [2, 3],
   );
   assert.equal(next.arenaPhase, 2);
 });
@@ -829,7 +829,7 @@ test("Arena engineering counts substitutions rather than raw edits", () => {
     ],
     after = [
       ARENA_ARCHETYPES[0].map((trait) =>
-        trait === "Percepção Espacial" ? "Camuflagem" : trait,
+        trait === "Carapaça" ? "Camuflagem" : trait,
       ),
       [...ARENA_ARCHETYPES[4]],
     ],
