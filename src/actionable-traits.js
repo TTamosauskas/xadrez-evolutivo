@@ -532,6 +532,8 @@ function addActiveStateTraits(state, piece, traits) {
   if (buddingCanProgress(state, piece)) traits.add("Brotamento");
 
   if (
+    state.phase === "move" &&
+    piece.owner === state.current &&
     has(piece, "Construtor de Nicho") &&
     nicheConstructionTargets(state, piece).length
   )
