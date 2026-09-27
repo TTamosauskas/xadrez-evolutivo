@@ -64,6 +64,7 @@ import {
 } from "./arena.js";
 const $ = (id) => document.getElementById(id);
 let selected = null,
+  selectedCell = null,
   confirmAction = null,
   selectedScenario = "earth",
   arenaFlow = null;
@@ -77,6 +78,9 @@ try {
 const report = (text) => {
   $("message").textContent = text;
 };
+function clearSelection() {
+  selected = selectedCell = null;
+}
 const passiveToastPresenter = createPassiveEffectToastPresenter(document);
 const controller = new Controller(
   createCampaignState(Date.now(), selectedScenario),
@@ -85,9 +89,10 @@ const controller = new Controller(
     toast: (effect) => passiveToastPresenter.show(effect),
     render: (state, busy, showResult = true, movementTrace = null) => {
       if (selected && !state.pieces.some((p) => p.id === selected))
-        selected = null;
+        clearSelection();
       render(document, state, {
         selected,
+        selectedCell,
         busy,
         mode: controller.mode,
         showResult,
@@ -126,10 +131,13 @@ function replaceCycleState(next) {
 
 function dispatch(action) {
   const revision = controller.state.revision;
-  const previousSelection = selected;
-  selected = null;
-  if (!controller.dispatch({ ...action, revision }))
+  const previousSelection = selected,
+    previousSelectedCell = selectedCell;
+  clearSelection();
+  if (!controller.dispatch({ ...action, revision })) {
     selected = previousSelection;
+    selectedCell = previousSelectedCell;
+  }
 }
 
 const VIVIFICATION_LABELS = Object.freeze({
@@ -373,7 +381,13 @@ $("board").addEventListener("click", (event) => {
       return;
     }
   }
-  selected = p?.id ?? null;
+  if (p) {
+    selected = p.id;
+    selectedCell = null;
+  } else {
+    selected = null;
+    selectedCell = { r, c };
+  }
   controller.refresh();
 });
 $("board").addEventListener("keydown", (event) => {
@@ -416,7 +430,7 @@ $("pass").addEventListener("click", () =>
   ),
 );
 $("undo-neocortex").addEventListener("click", () => {
-  selected = null;
+  clearSelection();
   if (controller.undoNeocortex()) report("↻ Cenário desfeito.");
 });
 function acknowledge() {
@@ -629,7 +643,7 @@ function finishArenaFlow() {
   }
   if ($("arena-dialog").open) $("arena-dialog").close();
   arenaFlow = null;
-  selected = null;
+  clearSelection();
   const next =
     flow.kind === "setup"
       ? createArenaState({ blue, amber })
@@ -647,7 +661,7 @@ function openArenaSetup() {
         controller.difficulty === "hard" ? blue : null,
         Date.now() + 1,
       );
-    selected = null;
+    clearSelection();
     replaceCycleState(createArenaState({ blue, amber }));
     controller.pause(false);
     return;
@@ -686,7 +700,7 @@ function openArenaEngineering() {
         controller.difficulty === "hard" ? blue : baselines.blue,
         Date.now() + 1,
       );
-    selected = null;
+    clearSelection();
     replaceCycleState(createArenaSuccessorState(previous, { blue, amber }));
     controller.pause(false);
     return;
@@ -735,7 +749,7 @@ $("game-over-retry").addEventListener("click", () => {
   const discoveries = clone(controller.state.discoveries),
     next = clone(cycleStartState);
   next.discoveries = discoveries;
-  selected = null;
+  clearSelection();
   replaceCycleState(next);
   report(
     next.scenario === "arena"
@@ -746,7 +760,7 @@ $("game-over-retry").addEventListener("click", () => {
 $("game-over-new").addEventListener("click", () => {
   if ($("game-over-dialog").open) $("game-over-dialog").close();
   if ($("notice-dialog").open) $("notice-dialog").close();
-  selected = null;
+  clearSelection();
   const state = controller.state;
   if (state.scenario === "arena") {
     $("mass-extinction-title").textContent = "Seleção da Arena";
@@ -784,7 +798,7 @@ $("mass-extinction-continue").addEventListener("click", () => {
     return;
   }
   const next = createSuccessorState(controller.state);
-  selected = null;
+  clearSelection();
   replaceCycleState(next);
 });
 $("mass-extinction-dialog").addEventListener("cancel", (event) => {
@@ -928,7 +942,7 @@ $("discovery-play").addEventListener("click", () => {
   $("scenario").value = selectedScenario;
   if ($("discoveries-dialog").open) $("discoveries-dialog").close();
   if ($("menu-dialog").open) $("menu-dialog").close();
-  selected = null;
+  clearSelection();
   replaceCycleState(next);
   controller.pause(false);
   report(`Iniciado o 1º Ciclo de ${currentGeologicalStage(next).period}.`);
@@ -996,7 +1010,7 @@ function closeInfo(run) {
   confirmAction = null;
   $("info-dialog").close();
   if (run && action) {
-    selected = null;
+    clearSelection();
     action();
   }
   if (!$("arena-dialog").open) controller.pause(false);
@@ -1085,7 +1099,7 @@ $("import-file").addEventListener("change", async (event) => {
   try {
     if (file.size > 2000000) throw Error("Arquivo muito grande.");
     const state = deserialize(await file.text());
-    selected = null;
+    clearSelection();
     selectedScenario = state.scenario;
     $("scenario").value = selectedScenario;
     replaceCycleState(state);
