@@ -12,6 +12,7 @@ import {
   round,
   log,
   notice,
+  emitPassiveEffect,
   activePopulation,
   fertilityPaused,
   stomataOpen,
