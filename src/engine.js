@@ -44,6 +44,7 @@ import {
   canWaitForRest,
   canWaitForBirth,
   dormant,
+  adjacentAlliesCount,
   manipulationTargets,
   constructionTargets,
   nicheConstructionTargets,
@@ -143,6 +144,9 @@ export function context(state) {
       state.pieces = state.pieces.filter((p) => p.id !== id);
       if (bonded?.pairedWithId === dead.id) bonded.pairedWithId = null;
       if (state.chain === id) state.chain = null;
+      if (state.neurofocus === id) state.neurofocus = null;
+      if (state.neurodivergenceAction?.id === id)
+        state.neurodivergenceAction = null;
   state.chainTrait = null;
       if (attacker) {
         if (has(dead, "Veneno"))
@@ -258,6 +262,9 @@ function ecologicalDomainController(state, quadrant) {
 function excludeEcologicalPiece(state, piece, quadrant) {
   state.pieces = state.pieces.filter((candidate) => candidate.id !== piece.id);
   if (state.chain === piece.id) state.chain = null;
+  if (state.neurofocus === piece.id) state.neurofocus = null;
+  if (state.neurodivergenceAction?.id === piece.id)
+    state.neurodivergenceAction = null;
   state.chainTrait = null;
   log(
     state,
@@ -838,9 +845,149 @@ function maturePhotosynthesis(state, owner) {
     }
   }
 }
-function advanceTurn(ctx) {
+function actionActorId(state, action) {
+  if (!action || state.phase !== "move") return null;
+  if (action.type === "PARTNER") return action.parentId ?? null;
+  if (
+    [
+      "MOVE",
+      "NURSE",
+      "NICHE_BUILD",
+      "BUD",
+      "PUPATE",
+      "PARASITIZE",
+      "LAY_OVOVIVIPAROUS",
+    ].includes(action.type)
+  )
+    return action.id ?? null;
+  return null;
+}
+
+function beginNeurodivergentAction(state, action) {
+  if (state.neurodivergenceAction || state.phase !== "move") return;
+  const actorId = actionActorId(state, action);
+  if (!actorId) return;
+  if (state.neurofocus) {
+    if (state.neurofocus === actorId)
+      state.neurodivergenceAction = {
+        id: actorId,
+        stage: "second",
+        hyperfocus: false,
+        overloadTurns: 0,
+      };
+    return;
+  }
+  const piece = state.pieces.find(
+    (candidate) =>
+      candidate.id === actorId && candidate.owner === state.current,
+  );
+  if (!piece || !has(piece, "Neurodivergência")) return;
+  const allies = adjacentAlliesCount(state, piece),
+    overloadTurns =
+      allies >= 2 ? (has(piece, "Neocórtex Desenvolvido") ? 1 : 2) : 0;
+  if (allies !== 0 && overloadTurns === 0) return;
+  state.neurodivergenceAction = {
+    id: piece.id,
+    stage: "primary",
+    hyperfocus: allies === 0,
+    overloadTurns,
+  };
+}
+
+function clearForNeurofocusContinuation(state) {
+  clearLocomotionChain(state);
+  state.partner = null;
+  state.manipulation = null;
+  state.building = null;
+  state.eggPlacement = null;
+  state.domesticPlacement = null;
+  state.socialDefense = null;
+  state.serotoninReposition = null;
+  state.phase = "move";
+}
+
+function resolveNeurodivergentActionEnd(ctx) {
   const state = ctx.state,
-    acting = state.current,
+    pending = state.neurodivergenceAction;
+  if (!pending) {
+    if (state.neurofocus) state.neurofocus = null;
+    return false;
+  }
+  const piece = state.pieces.find(
+    (candidate) =>
+      candidate.id === pending.id && candidate.owner === state.current,
+  );
+
+  if (
+    pending.stage === "primary" &&
+    piece &&
+    pending.overloadTurns > 0
+  ) {
+    piece.neurodivergenceRestThroughRound =
+      round(state) + pending.overloadTurns;
+    log(
+      state,
+      `${OWNERS[piece.owner]}: ♾️ Sobrecarga após alta densidade social; ${pending.overloadTurns} turno(s) próprio(s) sem ação.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Neurodivergência",
+      `♾️ Sobrecarga: ${pending.overloadTurns} turno${pending.overloadTurns === 1 ? "" : "s"} sem ação.`,
+      {
+        pieceId: piece.id,
+        outcome: "neurodivergent-overload",
+        value: pending.overloadTurns,
+      },
+    );
+    if (
+      pending.overloadTurns === 1 &&
+      has(piece, "Neocórtex Desenvolvido")
+    )
+      emitPassiveEffect(
+        state,
+        "Neocórtex Desenvolvido",
+        "🧠 Neocórtex reduziu a Sobrecarga para 1 turno.",
+        {
+          pieceId: piece.id,
+          outcome: "reduced-neurodivergent-overload",
+          value: 1,
+        },
+      );
+  }
+
+  if (
+    pending.stage === "primary" &&
+    pending.hyperfocus &&
+    piece
+  ) {
+    state.neurodivergenceAction = null;
+    state.neurofocus = piece.id;
+    clearForNeurofocusContinuation(state);
+    if (legalActions(state).length) {
+      log(
+        state,
+        `${OWNERS[piece.owner]}: ♾️ Hiperfoco concedeu uma segunda ação consecutiva.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Neurodivergência",
+        "♾️ Hiperfoco: segunda ação disponível.",
+        { pieceId: piece.id, outcome: "neurodivergent-hyperfocus" },
+      );
+      return true;
+    }
+    state.neurofocus = null;
+  }
+
+  state.neurodivergenceAction = null;
+  state.neurofocus = null;
+  return false;
+}
+
+function advanceTurn(ctx) {
+  const state = ctx.state;
+  if (resolveNeurodivergentActionEnd(ctx)) return;
+  const acting = state.current,
     before = state.turn;
   restoreExtremophyteFertility(state);
   clearLocomotionChain(state);
@@ -3221,6 +3368,7 @@ export function transition(previous, action) {
   const state = clone(previous),
     ctx = context(state);
   state.movementTrace = null;
+  beginNeurodivergentAction(state, action);
   if (action.type === "DOMAIN_COLLAPSE" && state.phase === "collapse")
     resolveEcologicalCollapse(ctx);
   else if (action.type === "ORIGIN_CLICK" && state.phase === "origin")
