@@ -7,6 +7,8 @@ import { tickReproduction } from "../src/reproduction.js";
 import { normalizeActiveTraits } from "../src/geology.js";
 import { newPiece } from "../src/state.js";
 import { tegumentBlocksPathogenExposure } from "../src/disease.js";
+import { TRAITS, STATE_VERSION } from "../src/constants.js";
+import { deserialize } from "../src/storage.js";
 
 function addPlantSeed(state, zoochory, r, c, owner = "amber") {
   const plantTraits = [
@@ -336,5 +338,37 @@ test("Pele Glandular and Pelos intercept only their approved external pathogen r
   assert.equal(
     tegumentBlocksPathogenExposure(hair, hair.pieces[0], sexual),
     false,
+  );
+});
+
+
+test("visual identifiers reserve the approved icons for the new traits", () => {
+  assert.equal(TRAITS.Escamas[0], "◆");
+  assert.equal(TRAITS["Construtor de Nicho"][0], "🧱");
+  assert.equal(TRAITS["Plantas Domesticadas"][0], "🪴");
+  assert.equal(TRAITS.Mirmecocoria[0], "🍒");
+});
+
+test("v21 migration preserves Lactação by carrying Pelos recessively and upgrades to v22", () => {
+  const legacy = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 4, traits: ["Incubação", "Lactação"] },
+    { owner: "amber", r: 0, c: 0, rank: 4 },
+  ]);
+  legacy.version = 21;
+  const lactating = legacy.pieces[0];
+  delete lactating.genome.Pelos;
+  lactating.ancestry = lactating.ancestry.filter((trait) => trait !== "Pelos");
+
+  const restored = deserialize(JSON.stringify(legacy)),
+    piece = restored.pieces.find((candidate) => candidate.id === lactating.id);
+
+  assert.equal(restored.version, STATE_VERSION);
+  assert.ok(piece.traits.includes("Lactação"));
+  assert.ok(piece.ancestry.includes("Pelos"));
+  assert.ok(
+    piece.genome.Pelos.some(
+      (allele) =>
+        allele.value === "derived" && allele.dominance === "recessive",
+    ),
   );
 });
