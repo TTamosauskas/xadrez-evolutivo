@@ -39,6 +39,7 @@ import {
   canPupate,
   canUseBasalFertility,
   canUseFertileResource,
+  buddingResource,
   connectedAlliesWithin,
   paedogenesisReady,
   parentalCareProtects,
@@ -1728,6 +1729,106 @@ export function feedingReachTargets(state, piece) {
   return [...byVictim.values()];
 }
 
+function complementaryCaptureCells(piece) {
+  const adjacent = [...ORTH, ...DIAG];
+  if (piece.rank === 0 || piece.rank === 2) return ORTH;
+  if (piece.rank === 3) return DIAG;
+  if (piece.rank === 1 || piece.rank === 5) return adjacent;
+  if (piece.rank === 4)
+    return adjacent.flatMap(([dr, dc]) => [
+      [dr, dc],
+      [dr * 2, dc * 2],
+    ]);
+  return [];
+}
+
+export function extendedCaptureTargets(state, piece) {
+  const trait = has(piece, "Tromba")
+      ? "Tromba"
+      : has(piece, "Rabo Chicote")
+        ? "Rabo Chicote"
+        : null;
+  if (
+    !piece ||
+    !trait ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    inkCloudAt(state, piece.r, piece.c)
+  )
+    return [];
+
+  const targets = [];
+  for (const [dr, dc] of complementaryCaptureCells(piece)) {
+    const r = piece.r + dr,
+      c = piece.c + dc;
+    if (!inside(r, c) || ecologicalDomainBlocked(state, piece.owner, r, c))
+      continue;
+    const victim = at(state, r, c);
+    if (
+      !victim ||
+      victim.owner === piece.owner ||
+      parentalCareProtects(state, victim) ||
+      inkCloudAt(state, victim.r, victim.c)
+    )
+      continue;
+    const photosynthetic = canPhotosynthesize(victim);
+    if (
+      (trait === "Tromba" && !photosynthetic) ||
+      (trait === "Rabo Chicote" && photosynthetic)
+    )
+      continue;
+    targets.push({
+      targetId: victim.id,
+      r: victim.r,
+      c: victim.c,
+      trait,
+      queenBypass: piece.rank === 5,
+    });
+  }
+  return targets;
+}
+
+export function rhizomeTargets(state, piece) {
+  if (
+    !piece ||
+    !has(piece, "Rizoma") ||
+    !canPhotosynthesize(piece) ||
+    !reproductionReady(state, piece) ||
+    !buddingResource(state, piece) ||
+    resting(state, piece) ||
+    dormant(state, piece)
+  )
+    return [];
+  const targets = [];
+  for (const [dr, dc] of ORTH) {
+    const middleR = piece.r + dr,
+      middleC = piece.c + dc,
+      r = piece.r + dr * 2,
+      c = piece.c + dc * 2;
+    if (
+      !inside(r, c) ||
+      ecologicalDomainBlocked(state, piece.owner, r, c) ||
+      terrain(state, middleR, middleC) === "hostile" ||
+      terrain(state, r, c) === "hostile" ||
+      barrierAt(state, middleR, middleC) ||
+      naturalBarrierAt(state, middleR, middleC) ||
+      eventBarrierAt(state, middleR, middleC) ||
+      lethalHazardAt(state, middleR, middleC) ||
+      at(state, r, c) ||
+      eggAt(state, r, c) ||
+      plantSeedAt(state, r, c) ||
+      fragmentAt(state, r, c) ||
+      barrierAt(state, r, c) ||
+      naturalBarrierAt(state, r, c) ||
+      eventBarrierAt(state, r, c) ||
+      lethalHazardAt(state, r, c)
+    )
+      continue;
+    targets.push({ r, c, middleR, middleC });
+  }
+  return targets;
+}
+
 export function hematophagyTargets(state, piece) {
   if (
     !piece ||
@@ -1877,6 +1978,18 @@ export function actionsForPiece(
     })),
     ...ovoviviparousPlacementTargets(source, piece).map((target) => ({
       type: "LAY_OVOVIVIPAROUS",
+      id: piece.id,
+      r: target.r,
+      c: target.c,
+    })),
+    ...extendedCaptureTargets(source, piece).map((target) => ({
+      type: "EXTENDED_CAPTURE",
+      id: piece.id,
+      targetId: target.targetId,
+      trait: target.trait,
+    })),
+    ...rhizomeTargets(source, piece).map((target) => ({
+      type: "RHIZOME",
       id: piece.id,
       r: target.r,
       c: target.c,

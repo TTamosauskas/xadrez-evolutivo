@@ -66,6 +66,8 @@ import {
   biologicalProjectileTargets,
   electricDischargeTargets,
   feedingReachTargets,
+  extendedCaptureTargets,
+  rhizomeTargets,
   hematophagyTargets,
   broodParasitismTargets,
   canRejectBroodParasite,
@@ -82,6 +84,7 @@ import {
   consumeReproductionResource,
   resolveSemelparityDeath,
   bud,
+  rhizome,
   fragmentOnCapture,
   releaseMarsupialPouch,
   consumeCollectorSeed,
@@ -374,11 +377,14 @@ function markHadeanTutorialStep(state, step) {
 }
 function extinction(state) {
   if (state.result) return true;
-  const blue =
-      state.pieces.some((p) => p.owner === "blue") ||
+  const biologicallyOwnedBy = (piece, owner) =>
+      piece.owner === owner ||
+      piece.parasitoidism?.originalOwner === owner,
+    blue =
+      state.pieces.some((p) => biologicallyOwnedBy(p, "blue")) ||
       state.thanatosis.some((entry) => entry.piece.owner === "blue"),
     amber =
-      state.pieces.some((p) => p.owner === "amber") ||
+      state.pieces.some((p) => biologicallyOwnedBy(p, "amber")) ||
       state.thanatosis.some((entry) => entry.piece.owner === "amber");
   if (!blue || !amber) {
     const simultaneous = !blue && !amber,
@@ -715,17 +721,41 @@ const CONTACT_CAPTURE_REDUCTIONS = Object.freeze([
   ["Escamas", 0.2],
 ]);
 
-export function contactCaptureSuccessMultiplier(victim) {
+function physicalCaptureTraitIgnored(attacker, trait, bypassAll = false) {
+  if (bypassAll) return true;
+  if (
+    has(attacker, "Mandíbula") &&
+    ["Contorcionismo", "Corpo Gelatinoso", "Esclerotização"].includes(trait)
+  )
+    return true;
+  return has(attacker, "Dentes") && trait === "Escamas";
+}
+
+export function contactCaptureSuccessMultiplier(
+  victim,
+  attacker = null,
+  { bypassAll = false } = {},
+) {
   return CONTACT_CAPTURE_REDUCTIONS.reduce(
     (chance, [trait, reduction]) =>
-      has(victim, trait) ? chance * (1 - reduction) : chance,
+      has(victim, trait) &&
+      !physicalCaptureTraitIgnored(attacker, trait, bypassAll)
+        ? chance * (1 - reduction)
+        : chance,
     1,
   );
 }
 
-function contactCaptureBlockingTrait(state, victim) {
-  const active = CONTACT_CAPTURE_REDUCTIONS.filter(([trait]) =>
-    has(victim, trait),
+function contactCaptureBlockingTrait(
+  state,
+  attacker,
+  victim,
+  { bypassAll = false } = {},
+) {
+  const active = CONTACT_CAPTURE_REDUCTIONS.filter(
+    ([trait]) =>
+      has(victim, trait) &&
+      !physicalCaptureTraitIgnored(attacker, trait, bypassAll),
   );
   if (!active.length) return null;
   const roll = random(state);
@@ -736,6 +766,46 @@ function contactCaptureBlockingTrait(state, victim) {
     success = next;
   }
   return null;
+}
+
+function emitNeutralizedPhysicalDefenses(
+  state,
+  attacker,
+  victim,
+  { bypassAll = false, sourceTrait = null } = {},
+) {
+  const jaw = CONTACT_CAPTURE_REDUCTIONS
+      .filter(
+        ([trait]) =>
+          has(victim, trait) &&
+          ["Contorcionismo", "Corpo Gelatinoso", "Esclerotização"].includes(
+            trait,
+          ),
+      )
+      .map(([trait]) => trait),
+    scales = has(victim, "Escamas");
+  if ((bypassAll || has(attacker, "Mandíbula")) && jaw.length)
+    emitPassiveEffect(
+      state,
+      sourceTrait ?? "Mandíbula",
+      `${sourceTrait ? TRAITS[sourceTrait]?.[0] ?? "" : "🦈"} ${sourceTrait ?? "Mandíbula"} neutralizou ${jaw.join(", ")}.`,
+      {
+        pieceId: attacker.id,
+        outcome: "neutralized-physical-defense",
+        value: jaw.length,
+      },
+    );
+  if ((bypassAll || has(attacker, "Dentes")) && scales)
+    emitPassiveEffect(
+      state,
+      sourceTrait ?? "Dentes",
+      `${sourceTrait ? TRAITS[sourceTrait]?.[0] ?? "" : "🦷"} ${sourceTrait ?? "Dentes"} neutralizou ◆ Escamas.`,
+      {
+        pieceId: attacker.id,
+        outcome: "neutralized-scales",
+        value: 1,
+      },
+    );
 }
 
 function mimicryModels(state, attacker, victim) {
@@ -1185,6 +1255,8 @@ function actionActorId(state, action) {
       "BIO_PROJECTILE",
       "ELECTRODISCHARGE",
       "FEEDING_REACH",
+      "EXTENDED_CAPTURE",
+      "RHIZOME",
       "LAY_OVOVIVIPAROUS",
       "PARTHENOGENESIS",
     ].includes(action.type)
@@ -1314,6 +1386,85 @@ function resolveNeurodivergentActionEnd(ctx) {
   return false;
 }
 
+function ruminationBlock(piece) {
+  return `${Math.floor(piece.r / 2)},${Math.floor(piece.c / 2)}`;
+}
+
+function tickRuminantRecovery(state, acting, before) {
+  for (const piece of state.pieces) {
+    if (!piece.rumination || piece.owner !== acting) continue;
+    if (
+      piece.rumination.block !== ruminationBlock(piece) ||
+      (piece.nextReproductionRound ?? 0) <= round(state)
+    ) {
+      piece.rumination = null;
+      continue;
+    }
+    if (piece.rumination.startedTurn >= before) continue;
+    piece.nextReproductionRound = Math.max(
+      round(state),
+      piece.nextReproductionRound - 1,
+    );
+    if (piece.nextReproductionRound <= round(state)) {
+      piece.rumination = null;
+      emitPassiveEffect(
+        state,
+        "Ruminante",
+        "🐄 Ruminante completou a recuperação metabólica dentro do mesmo bloco.",
+        {
+          pieceId: piece.id,
+          outcome: "completed-rumination",
+          value: 1,
+        },
+      );
+    }
+  }
+}
+
+function tickParasitoidism(ctx, acting, before) {
+  const state = ctx.state;
+  for (const host of [...state.pieces]) {
+    const status = host.parasitoidism;
+    if (
+      !status ||
+      status.controllerOwner !== acting ||
+      status.infectedTurn >= before
+    )
+      continue;
+    status.remaining--;
+    if (status.remaining > 0) continue;
+    const cell = square(host.r, host.c),
+      sourceId = status.sourceId,
+      originalOwner = status.originalOwner;
+    host.owner = originalOwner;
+    host.pawnDir = originalOwner === "blue" ? -1 : 1;
+    host.parasitoidism = null;
+    const killed = ctx.kill(
+      host.id,
+      "Parasitoidismo",
+      null,
+      true,
+      { suppressTanatosis: true },
+    );
+    if (killed) {
+      markCarcass(state, cell);
+      log(
+        state,
+        `🌀 Parasitoidismo matou o hospedeiro em ${coord(host.r, host.c)} após três turnos de controle.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Parasitoidismo",
+        "🌀 O ciclo parasitoide terminou com a morte do hospedeiro.",
+        {
+          pieceId: sourceId,
+          outcome: "parasitoid-killed-host",
+        },
+      );
+    }
+  }
+}
+
 function advanceTurn(ctx) {
   const state = ctx.state;
   if (resolveNeurodivergentActionEnd(ctx)) return;
@@ -1336,6 +1487,8 @@ function advanceTurn(ctx) {
         if (!ctx.kill(p.id, cause)) delete p.venom;
       }
     }
+  tickParasitoidism(ctx, acting, before);
+  tickRuminantRecovery(state, acting, before);
   for (const p of state.pieces) {
     moveDirection(p);
     if (
@@ -2206,6 +2359,145 @@ function resolveFeedingReach(ctx, action) {
   completeMove(ctx, piece, false, false);
 }
 
+function resolveExtendedCapture(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    option = extendedCaptureTargets(state, piece).find(
+      (candidate) =>
+        candidate.targetId === action.targetId &&
+        candidate.trait === action.trait,
+    ),
+    victim = state.pieces.find(
+      (candidate) => candidate.id === option?.targetId,
+    );
+  if (!piece || !option || !victim)
+    throw Error("Captura por alcance corporal indisponível.");
+
+  const bypassAll = option.queenBypass;
+  if (bypassAll)
+    emitNeutralizedPhysicalDefenses(state, piece, victim, {
+      bypassAll: true,
+      sourceTrait: option.trait,
+    });
+  else {
+    emitNeutralizedPhysicalDefenses(state, piece, victim);
+    const blockingTrait = contactCaptureBlockingTrait(
+      state,
+      piece,
+      victim,
+    );
+    if (blockingTrait) {
+      const icon = TRAITS[blockingTrait]?.[0] ?? "";
+      emitPassiveEffect(
+        state,
+        blockingTrait,
+        `${icon} ${blockingTrait} evitou a captura por ${option.trait}.`,
+        {
+          pieceId: victim.id,
+          outcome: "prevented-extended-capture",
+        },
+      );
+      finishFrustratedCapture(ctx, piece, blockingTrait, victim);
+      return;
+    }
+    if (
+      has(victim, "Pele grossa") &&
+      !has(piece, "Presas") &&
+      random(state) < 1 / 4
+    ) {
+      finishFrustratedCapture(ctx, piece, "Pele grossa", victim);
+      return;
+    }
+    if (
+      has(victim, "Madeira") &&
+      !has(piece, "Roedor") &&
+      random(state) < 1 / 4
+    ) {
+      finishFrustratedCapture(ctx, piece, "Madeira", victim);
+      return;
+    }
+  }
+
+  if (triggerInkEscape(ctx, piece, victim)) return;
+  if (triggerAutotomy(ctx, piece, victim)) return;
+
+  const victimCell = square(victim.r, victim.c),
+    killed = ctx.kill(victim.id, option.trait, piece);
+  let born = 0;
+  if (killed) {
+    state.lastSuccessfulCaptureRound = round(state);
+    state.offensiveStagnation = null;
+    if (
+      option.trait === "Tromba" &&
+      predatoryReproductionAvailable(piece, victim)
+    )
+      born = reproduce(ctx, piece, null, "predação", {
+        resourceKind: "prey",
+        trophicEfficiency: true,
+      });
+    if (
+      born > 0 &&
+      option.trait === "Tromba" &&
+      multicellularLineage(piece)
+    )
+      markOrganicResidue(
+        state,
+        victimCell,
+        fecalPathogenDiseaseIdsForHost(state, piece),
+      );
+    else markCarcass(state, victimCell);
+    log(
+      state,
+      `${OWNERS[piece.owner]}: ${TRAITS[option.trait][0]} ${option.trait} capturou sem deslocamento em ${coord(victim.r, victim.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      option.trait,
+      `${TRAITS[option.trait][0]} ${option.trait} realizou uma captura estacionária.`,
+      {
+        pieceId: piece.id,
+        outcome: "extended-capture",
+      },
+    );
+  }
+  if (born > 0 && deferReproductionPlacement(state, piece)) return;
+  completeMove(ctx, piece, false, false);
+}
+
+function resolveRhizome(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    target = rhizomeTargets(state, piece).find(
+      (candidate) => candidate.r === action.r && candidate.c === action.c,
+    );
+  if (!piece || !target) throw Error("Rizoma indisponível.");
+  const born = rhizome(ctx, piece, target);
+  if (born) {
+    log(
+      state,
+      `${OWNERS[piece.owner]}: 🫚 Rizoma propagou um clone até ${coord(target.r, target.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Rizoma",
+      "🫚 Rizoma propagou um clone por corredor subterrâneo.",
+      {
+        pieceId: piece.id,
+        outcome: "rhizome-clone",
+        value: 1,
+      },
+    );
+  }
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function triggerInkEscape(ctx, attacker, victim) {
   const state = ctx.state;
   if (
@@ -2959,7 +3251,7 @@ function executeMove(ctx, action) {
     emitPassiveEffect(
       state,
       "Visão Noturna",
-      "👁️ Visão Noturna neutralizou 🌙 Notívago.",
+      "🦉 Visão Noturna neutralizou 🌙 Notívago.",
       { pieceId: p.id, outcome: "neutralized-nocturnal-evasion" },
     );
   const nocturnalEvasion =
@@ -3126,7 +3418,8 @@ function executeMove(ctx, action) {
     victim.owner !== p.owner &&
     distance(p, victim) === 1
   ) {
-    const blockingTrait = contactCaptureBlockingTrait(state, victim);
+    emitNeutralizedPhysicalDefenses(state, p, victim);
+    const blockingTrait = contactCaptureBlockingTrait(state, p, victim);
     if (blockingTrait) {
       const icon = TRAITS[blockingTrait]?.[0] ?? "";
       log(
@@ -3260,6 +3553,55 @@ function executeMove(ctx, action) {
   )
     return;
   if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    distance(p, victim) === 1 &&
+    has(p, "Parasitoidismo") &&
+    !p.parasitoidism &&
+    !victim.parasitoidism &&
+    !canPhotosynthesize(victim) &&
+    !state.pieces.some(
+      (candidate) => candidate.parasitoidism?.sourceId === p.id,
+    )
+  ) {
+    const originalOwner = victim.owner;
+    if (victim.pairedWithId) {
+      const partner = state.pieces.find(
+        (candidate) => candidate.id === victim.pairedWithId,
+      );
+      if (partner?.pairedWithId === victim.id) partner.pairedWithId = null;
+      victim.pairedWithId = null;
+    }
+    victim.owner = p.owner;
+    victim.pawnDir = p.owner === "blue" ? -1 : 1;
+    victim.parasitoidism = {
+      originalOwner,
+      controllerOwner: p.owner,
+      sourceId: p.id,
+      remaining: 3,
+      infectedTurn: state.turn,
+    };
+    state.lastSuccessfulCaptureRound = round(state);
+    state.offensiveStagnation = null;
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🌀 Parasitoidismo assumiu o controle temporário da criatura em ${coord(victim.r, victim.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Parasitoidismo",
+      "🌀 Hospedeiro controlado por três turnos antes da morte parasitoide.",
+      {
+        pieceId: p.id,
+        outcome: "parasitoid-controlled-host",
+        value: 3,
+      },
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+  if (
     botanicalPredation &&
     pieceCapture &&
     victim.owner !== p.owner
@@ -3373,6 +3715,8 @@ function executeMove(ctx, action) {
     delete p.decompositionImmunity;
   p.r = target.r;
   p.c = target.c;
+  if (p.rumination && p.rumination.block !== ruminationBlock(p))
+    p.rumination = null;
   if (!target.stay) {
     p.stationarySinceRound = round(state);
     p.webCreatedStationarySinceRound = null;
@@ -4722,6 +5066,10 @@ export function transition(previous, action) {
     resolveElectricDischarge(ctx, action);
   else if (action.type === "FEEDING_REACH" && state.phase === "move")
     resolveFeedingReach(ctx, action);
+  else if (action.type === "EXTENDED_CAPTURE" && state.phase === "move")
+    resolveExtendedCapture(ctx, action);
+  else if (action.type === "RHIZOME" && state.phase === "move")
+    resolveRhizome(ctx, action);
   else if (
     action.type === "LAY_OVOVIVIPAROUS" &&
     state.phase === "move"

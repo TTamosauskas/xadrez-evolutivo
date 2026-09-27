@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 29;
+export const STATE_VERSION = 30;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -415,12 +415,20 @@ export const TRAITS = {
     "🦏",
     "Tem 25% de chance de resistir a uma captura. Presas do agressor anulam essa proteção.",
   ],
+  Mandíbula: [
+    "🦈",
+    "Neutraliza as reduções de captura de contato oferecidas por Contorcionismo, Corpo Gelatinoso e Esclerotização.",
+  ],
+  Dentes: [
+    "🦷",
+    "Especialização vertebrada da mandíbula que neutraliza a redução de captura oferecida por Escamas.",
+  ],
   Presas: [
     "▽",
-    "Neutraliza a proteção oferecida por Pele grossa.",
+    "Especialização carnívora dos dentes que neutraliza a proteção oferecida por Pele grossa.",
   ],
   "Visão Noturna": [
-    "👁️",
+    "🦉",
     "Neutraliza integralmente a evasão de criaturas Notívagas durante rodadas noturnas.",
   ],
   Resistência: ["🧬", "Impede infecções por patógenos ecológicos e reduz em 75% a mortalidade individual causada por patógenos de pressão populacional."],
@@ -614,6 +622,26 @@ export const TRAITS = {
     "🪹",
     "Infiltra uma ninhada ovípara inimiga. Um slot da próxima reprodução do hospedeiro é substituído por descendente do parasita; Incubação permite rejeitá-lo gastando uma ação.",
   ],
+  Parasitoidismo: [
+    "🌀",
+    "Ao concluir uma captura adjacente de um animal, converte o hospedeiro em unidade temporariamente controlada por três turnos do parasitoide antes de ele morrer.",
+  ],
+  Tromba: [
+    "🐘",
+    "Captura fotossintéticos sem deslocamento usando a geometria curta que falta à forma; Rainha neutraliza resistências físicas passivas.",
+  ],
+  "Rabo Chicote": [
+    "🦕",
+    "Golpe estacionário contra não fotossintéticos usando a geometria curta que falta à forma; Rainha neutraliza resistências físicas passivas e o golpe não reproduz.",
+  ],
+  Rizoma: [
+    "🫚",
+    "Propaga um clone a duas casas ortogonais por um corredor subterrâneo contínuo, consumindo recurso reprodutivo e aplicando recuperação metabólica normal.",
+  ],
+  Ruminante: [
+    "🐄",
+    "Após reproduzir, acelera a recuperação metabólica enquanto permanece no mesmo bloco de quatro casas, reduzindo uma rodada adicional por turno próprio.",
+  ],
   "Mutação Letal": ["💀", "A peça morre após três rodadas completas."],
   "Mutação Disfuncional": [
     "❌",
@@ -756,6 +784,8 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Neocórtex Desenvolvido": ["Córtex Pré-Frontal"],
   Veneno: ["Toxicidade"],
   Peçonha: ["Veneno", "Toxicidade"],
+  Dentes: ["Mandíbula"],
+  Presas: ["Dentes", "Mandíbula"],
 };
 export const has = (piece, trait) => {
   const activeTraits = [

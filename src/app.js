@@ -148,6 +148,9 @@ const boardActionLabel = (action) => {
   if (action.type === "ELECTRODISCHARGE") return "⚡ Eletrodescarga";
   if (action.type === "FEEDING_REACH")
     return `${TRAITS[action.trait]?.[0] ?? "🧬"} ${action.trait}`;
+  if (action.type === "EXTENDED_CAPTURE")
+    return `${TRAITS[action.trait]?.[0] ?? "🧬"} ${action.trait}`;
+  if (action.type === "RHIZOME") return "🫚 Rizoma";
   return action.type;
 };
 
@@ -338,7 +341,9 @@ $("board").addEventListener("click", (event) => {
   if (actor?.owner === state.current) {
     const targetActions = actionsForPiece(state, actor).filter(
       (action) =>
-        (action.type === "MOVE" && action.r === r && action.c === c) ||
+        ((action.type === "MOVE" || action.type === "RHIZOME") &&
+          action.r === r &&
+          action.c === c) ||
         (p &&
           [
             "PARASITIZE",
@@ -347,6 +352,7 @@ $("board").addEventListener("click", (event) => {
             "BIO_PROJECTILE",
             "ELECTRODISCHARGE",
             "FEEDING_REACH",
+            "EXTENDED_CAPTURE",
           ].includes(action.type) &&
           action.targetId === p.id),
     );
