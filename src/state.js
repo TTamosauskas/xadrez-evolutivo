@@ -8,6 +8,7 @@ import {
   PATHOGEN_AGENT_IDS,
   PATHOGEN_TRANSMISSION_IDS,
   PIECE_LIFE_HISTORY,
+  CHESS_PIECE_VALUES,
   STATE_VERSION,
 } from "./constants.js";
 import {
@@ -1848,32 +1849,46 @@ export function activateOrigin(state) {
   return true;
 }
 
-const lineagePositiveTraits = (piece) =>
-  (piece?.traits ?? []).filter(
-    (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
-  ).length;
+const NON_PHOTOSYNTHETIC_PIECE_VALUES = Object.freeze([1, 3, 4, 5, 2, 6]);
 
-const lineagePositiveGenome = (piece) =>
+const expressedPositiveGenes = (piece) =>
   new Set(
-    genomeCarriedTraits(piece?.genome).filter(
+    (piece?.traits ?? []).filter(
       (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
     ),
   ).size;
 
-const lineagePositiveAncestry = (piece) =>
+const carriedNegativeMutations = (piece) =>
   new Set(
-    (piece?.ancestry ?? piece?.traits ?? []).filter(
-      (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
+    genomeCarriedTraits(piece?.genome).filter((trait) =>
+      NEGATIVE_TRAITS.has(trait),
     ),
   ).size;
+
+const hiddenPositiveRecessives = (piece) =>
+  hiddenRecessiveTraits(piece).filter((trait) => !NEGATIVE_TRAITS.has(trait))
+    .length;
+
+function survivorPieceValue(piece) {
+  const values = canPhotosynthesize(piece)
+    ? CHESS_PIECE_VALUES
+    : NON_PHOTOSYNTHETIC_PIECE_VALUES;
+  return values[piece?.rank] ?? 0;
+}
+
+export function compareSurvivorPower(a, b) {
+  return (
+    survivorPieceValue(b) - survivorPieceValue(a) ||
+    expressedPositiveGenes(b) - expressedPositiveGenes(a) ||
+    carriedNegativeMutations(a) - carriedNegativeMutations(b) ||
+    hiddenPositiveRecessives(a) - hiddenPositiveRecessives(b) ||
+    (b?.generation ?? 0) - (a?.generation ?? 0) ||
+    signature(a).localeCompare(signature(b), "pt-BR")
+  );
+}
 
 function compareLineageStrength(a, b) {
-  return (
-    lineagePositiveTraits(b) - lineagePositiveTraits(a) ||
-    lineagePositiveGenome(b) - lineagePositiveGenome(a) ||
-    lineagePositiveAncestry(b) - lineagePositiveAncestry(a) ||
-    (b?.generation ?? 0) - (a?.generation ?? 0)
-  );
+  return compareSurvivorPower(a, b);
 }
 
 function energyRepresentativeSnapshot(piece) {
@@ -1907,6 +1922,22 @@ export function signature(p) {
   const ancestry = [...(p.ancestry ?? p.traits ?? [])].sort().join("|");
   return `${p.rank}|${[...p.traits].sort().join("|")}|${ancestry}|${genomeSignature(p.genome)}`;
 }
+function livingPieces(state) {
+  const active = [...state.pieces],
+    suspended = (state.thanatosis ?? []).map((entry) => entry.piece);
+  return [...active, ...suspended];
+}
+
+export function strongestSurvivor(state, owner = null, predicate = null) {
+  const pieces = livingPieces(state).filter(
+      (piece) =>
+        (!owner || piece.owner === owner) &&
+        (!predicate || predicate(piece)),
+    ),
+    selected = [...pieces].sort(compareSurvivorPower)[0] ?? null;
+  return { piece: selected, count: selected ? 1 : 0, total: pieces.length };
+}
+
 export function dominantLineage(state, owner = null, predicate = null) {
   const pieces = state.pieces.filter(
       (piece) =>
@@ -1990,46 +2021,26 @@ function cleanArenaGenome(piece, branchId = arenaPieceBranch(piece)) {
 }
 
 function arenaSurvivorEntries(state, owner) {
-  const groups = new Map();
-  for (const piece of state.pieces.filter((candidate) => candidate.owner === owner)) {
-    const key = signature(piece),
-      group = groups.get(key);
-    if (group) group.count++;
-    else groups.set(key, { piece, count: 1 });
-  }
-  const ranked = [...groups.values()].sort(
-      (a, b) =>
-        b.count - a.count ||
-        b.piece.generation - a.piece.generation ||
-        signature(a.piece).localeCompare(signature(b.piece), "pt-BR"),
-    ),
-    extinctionFounder =
-      state.result?.extinctionFounder?.owner === owner
-        ? state.result.extinctionFounder
-        : null,
-    fallbackSources = state.arenaFounders?.[owner]
-      ? [
-          state.arenaFounders[owner].primary,
-          state.arenaFounders[owner].companion,
-        ]
-      : [];
+  const fallbackSources = state.arenaFounders?.[owner]
+    ? [
+        state.arenaFounders[owner].primary,
+        state.arenaFounders[owner].companion,
+      ]
+    : [];
 
   return ["animal", "plant"].map((branchId, index) => {
-    const extinction =
-        extinctionFounder &&
-        arenaPieceBranch(extinctionFounder) === branchId
-          ? extinctionFounder
-          : null,
-      living =
-        ranked.find(({ piece }) => arenaPieceBranch(piece) === branchId)?.piece ??
-        null,
+    const living = strongestSurvivor(
+        state,
+        owner,
+        (piece) => arenaPieceBranch(piece) === branchId,
+      ).piece,
       fallback =
         fallbackSources.find(
           (piece) => arenaPieceBranch(piece) === branchId,
         ) ??
         fallbackSources[index] ??
         null,
-      source = extinction ?? living ?? fallback ?? { rank: 4 };
+      source = living ?? fallback ?? { rank: 4 };
     return {
       source,
       genome: cleanArenaGenome(source, branchId),
@@ -2149,19 +2160,14 @@ function archeanBranchFallback(branch) {
 }
 
 function earthBranchFounder(previous, branch, fallback) {
-  const living = dominantLineage(
-      previous,
-      null,
-      (piece) => piece.traits?.includes(branch),
-    ).piece,
-    remembered = previous.energyBranchRepresentatives?.[branch] ?? null,
-    source =
-      living && remembered
-        ? compareLineageStrength(living, remembered) <= 0
-          ? living
-          : remembered
-        : living ?? remembered;
-  return founderProfile(previous, source) ?? fallback;
+  const living = strongestSurvivor(
+    previous,
+    null,
+    branch === "Fotossíntese"
+      ? (piece) => canPhotosynthesize(piece)
+      : (piece) => !canPhotosynthesize(piece),
+  ).piece;
+  return founderProfile(previous, living) ?? fallback;
 }
 
 function createEarthSuccessorState(previous, seed) {
@@ -2325,22 +2331,34 @@ export function createSuccessorState(previous, seed = Date.now()) {
     return state;
   }
   const winner = previous.result?.winner ?? null,
-    selected = dominantLineage(previous, winner),
-    founder = founderProfile(previous, selected.piece),
-    founderIsPhotosynthetic = founder?.traits.includes("Fotossíntese") ?? false,
-    counterpart = dominantLineage(
+    photosynthetic = strongestSurvivor(
+      previous,
+      winner,
+      (piece) => canPhotosynthesize(piece),
+    ),
+    nonPhotosynthetic = strongestSurvivor(
+      previous,
+      winner,
+      (piece) => !canPhotosynthesize(piece),
+    ),
+    fallbackPhotosynthetic = strongestSurvivor(
       previous,
       null,
-      founderIsPhotosynthetic
-        ? (piece) => !piece.traits.includes("Fotossíntese")
-        : (piece) => piece.traits.includes("Fotossíntese"),
+      (piece) => canPhotosynthesize(piece),
     ),
-    companion =
-      counterpart.piece &&
-      (!selected.piece ||
-        signature(counterpart.piece) !== signature(selected.piece))
-        ? founderProfile(previous, counterpart.piece)
-        : null,
+    fallbackNonPhotosynthetic = strongestSurvivor(
+      previous,
+      null,
+      (piece) => !canPhotosynthesize(piece),
+    ),
+    founder = founderProfile(
+      previous,
+      photosynthetic.piece ?? fallbackPhotosynthetic.piece,
+    ),
+    companion = founderProfile(
+      previous,
+      nonPhotosynthetic.piece ?? fallbackNonPhotosynthetic.piece,
+    ),
     founders =
       founder && companion
         ? { primary: founder, companion }
