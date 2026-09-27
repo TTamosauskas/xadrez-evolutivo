@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 30;
+export const STATE_VERSION = 31;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -21,6 +21,34 @@ export const TRAITS = {
   "Reparo Celular": [
     "🩹",
     "Reduz pela metade a ocorrência de novas mutações negativas, normalizando a estabilidade celular e genômica.",
+  ],
+  Eucarionte: [
+    "🔘",
+    "A compartimentalização celular amortece a primeira ativação funcional de até duas mutações negativas recém-adquiridas durante a vida.",
+  ],
+  Endossimbiose: [
+    "🔋",
+    "Permite antecipar uma reprodução quando falta exatamente uma rodada de recuperação, cobrando duas rodadas adicionais de débito metabólico depois.",
+  ],
+  Quimiossíntese: [
+    "♨️",
+    "Antes da especialização energética, usa uma casa hostil não letal como fonte química para gerar um descendente e esgotar o substrato.",
+  ],
+  Biomineralização: [
+    "🪨",
+    "Ao morrer, deixa por três rodadas um remanescente mineral que bloqueia a primeira captura de contato contra quem ocupar a casa.",
+  ],
+  "Imunidade Adaptativa": [
+    "🎯",
+    "Ao sobreviver a um perfil patogênico, memoriza a combinação de agente e transmissão e bloqueia exposições futuras ao mesmo perfil.",
+  ],
+  Estômatos: [
+    "🌬️",
+    "Alterna automaticamente entre dois turnos abertos, com Fotossíntese ampliada, e dois fechados, que conservam fertilidade e bloqueiam exposição ambiental ou por esporos.",
+  ],
+  Endotermia: [
+    "🔥",
+    "Quando um ambiente hostil comum causaria morte, converte o risco em uma rodada adicional de recuperação metabólica, no máximo uma vez por turno.",
   ],
   Multicelularismo: [
     "🫧",
@@ -788,10 +816,11 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   Presas: ["Dentes", "Mandíbula"],
 };
 export const has = (piece, trait) => {
-  const activeTraits = [
-    ...(piece?.traits ?? []),
-    ...(piece?.somaticMutations ?? []),
-  ];
+  const buffered = new Set(piece?.eukaryoteBufferedTraits ?? []),
+    activeTraits = [
+      ...(piece?.traits ?? []),
+      ...(piece?.somaticMutations ?? []),
+    ].filter((candidate) => !buffered.has(candidate));
   return (
     activeTraits.includes(trait) ||
     activeTraits.some((active) =>

@@ -133,6 +133,21 @@ export const organicResidueAt = (state, r, c) => {
 export const fecalResidueAt = organicResidueAt;
 export const carcassAt = (state, r, c) =>
   state.carcasses?.find((entry) => entry.cell === square(r, c)) ?? null;
+export const mineralRemnantAt = (state, r, c) =>
+  (state.mineralRemnants ?? []).find(
+    (entry) =>
+      entry.cell === square(r, c) && entry.expiresRound >= round(state),
+  ) ?? null;
+const chemosynthesisEventKey = (state) =>
+  state.event
+    ? `${state.event.id}:${state.event.startTurn ?? state.event.startRound ?? 0}`
+    : "none";
+export const chemosynthesisExhaustedAt = (state, r, c) =>
+  (state.chemosynthesisExhausted ?? []).some(
+    (entry) =>
+      entry.cell === square(r, c) &&
+      entry.eventKey === chemosynthesisEventKey(state),
+  );
 export const captureDisturbanceAt = (state, r, c) =>
   state.captureDisturbances?.find((entry) => entry.cell === square(r, c)) ??
   null;
@@ -392,6 +407,12 @@ export const juvenile = (state, piece) =>
   multicellular(piece) &&
   Number.isInteger(piece.maturesRound) &&
   round(state) < piece.maturesRound;
+export const endosymbiosisAdvanceAvailable = (state, piece) =>
+  !!piece &&
+  has(piece, "Endossimbiose") &&
+  (piece.endosymbiosisDebtUntilRound ?? -1) <= round(state) &&
+  (piece.nextReproductionRound ?? 0) === round(state) + 1;
+
 export const reproductionReady = (state, piece) =>
   !!piece &&
   has(piece, "Respiração anaeróbia") &&
@@ -405,7 +426,88 @@ export const reproductionReady = (state, piece) =>
   !(piece.pregnancies ?? []).some(
     (pregnancy) => pregnancy.kind === "ovoviviparous",
   ) &&
-  round(state) >= (piece.nextReproductionRound ?? 0);
+  (round(state) >= (piece.nextReproductionRound ?? 0) ||
+    endosymbiosisAdvanceAvailable(state, piece));
+
+export const stomataOpen = (state, piece) => {
+  if (!piece || !has(piece, "Estômatos")) return null;
+  const started = piece.stomataStartedRound ?? piece.bornRound ?? round(state);
+  return Math.floor(Math.max(0, round(state) - started) / 2) % 2 === 0;
+};
+
+const EUKARYOTE_BUFFER_TRIGGERS = Object.freeze({
+  reproduction: new Set([
+    "Esterilidade",
+    "Insuficiência Respiratória",
+    "Filho único",
+    "Subfertilidade",
+    "Má absorção Alimentar",
+    "Semelparidade",
+    "Regressão Evolutiva",
+    "Assimetria Flutuante",
+    "Anemia Falciforme",
+    "Mutação Mutadora",
+  ]),
+  action: new Set([
+    "Mutação Disfuncional",
+    "Deficiência Motora",
+    "Deficiência Sensorial",
+    "Ataxia",
+    "Nanismo",
+    "Gigantismo",
+  ]),
+  pathogen: new Set(["Imunodeficiência"]),
+  lethal: new Set(["Mutação Letal"]),
+});
+
+export function bufferEukaryoteNegative(state, piece, trait) {
+  if (
+    !piece ||
+    !trait ||
+    !has(piece, "Eucarionte") ||
+    (piece.eukaryoteBufferUses ?? 0) >= 2 ||
+    (piece.eukaryoteBufferedTraits ?? []).includes(trait)
+  )
+    return false;
+  piece.eukaryoteBufferedTraits ??= [];
+  piece.eukaryoteBufferedTraits.push(trait);
+  piece.eukaryoteBufferUses = (piece.eukaryoteBufferUses ?? 0) + 1;
+  if (trait === "Mutação Letal")
+    piece.deleteriousDue = round(state) + 3;
+  return true;
+}
+
+export function releaseEukaryoteBuffers(state, piece, trigger) {
+  const eligible = EUKARYOTE_BUFFER_TRIGGERS[trigger];
+  if (!piece || !eligible || !(piece.eukaryoteBufferedTraits ?? []).length)
+    return [];
+  const released = piece.eukaryoteBufferedTraits.filter((trait) =>
+    eligible.has(trait),
+  );
+  if (!released.length) return [];
+  piece.eukaryoteBufferedTraits = piece.eukaryoteBufferedTraits.filter(
+    (trait) => !eligible.has(trait),
+  );
+  for (const trait of released) {
+    if (trait === "Nanismo") piece.rank = 0;
+    if (trait === "Mutação Letal")
+      piece.deleteriousDue = round(state) + 3;
+    log(
+      state,
+      `${TRAITS.Eucarionte[0]} Eucarionte amortizou a primeira ativação de ${trait}; o fenótipo passa a se expressar nas próximas ativações.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Eucarionte",
+      `🔘 Eucarionte amortizou a primeira ativação de ${trait} · ${Math.max(0, 2 - (piece.eukaryoteBufferUses ?? 0))} proteção(ões) ainda não comprometida(s).`,
+      {
+        pieceId: piece.id,
+        outcome: "buffered-negative-activation",
+      },
+    );
+  }
+  return released;
+}
 export function log(state, text) {
   state.logs.unshift({ turn: state.turn, text });
   state.logs.length = Math.min(state.logs.length, 160);
@@ -506,6 +608,19 @@ export function newPiece(state, owner, r, c, source = {}) {
       rumination: source.rumination
         ? structuredClone(source.rumination)
         : null,
+      eukaryoteBufferUses: source.eukaryoteBufferUses ?? 0,
+      eukaryoteBufferedTraits: Array.isArray(source.eukaryoteBufferedTraits)
+        ? [...source.eukaryoteBufferedTraits]
+        : [],
+      endosymbiosisDebtUntilRound:
+        source.endosymbiosisDebtUntilRound ?? null,
+      adaptiveImmuneMemory: Array.isArray(source.adaptiveImmuneMemory)
+        ? [...new Set(source.adaptiveImmuneMemory)]
+        : [],
+      adaptiveImmuneNotifiedDisease:
+        source.adaptiveImmuneNotifiedDisease ?? null,
+      stomataStartedRound: source.stomataStartedRound ?? bornRound,
+      endothermyUsedTurn: source.endothermyUsedTurn ?? null,
       webTrapped: source.webTrapped ?? null,
       webCreatedStationarySinceRound:
         source.webCreatedStationarySinceRound ?? null,
@@ -1171,6 +1286,8 @@ export function createState(seed = Date.now(), options = {}) {
     deathSites: [],
     fertileTraces: [],
     carcasses: [],
+    mineralRemnants: [],
+    chemosynthesisExhausted: [],
     thanatosis: [],
     captureDisturbances: [],
     fertilityRecovery: [],
@@ -2458,6 +2575,23 @@ export function assertState(state) {
     !Array.isArray(state.deathSites) ||
     !Array.isArray(state.fertileTraces) ||
     !Array.isArray(state.carcasses) ||
+    !Array.isArray(state.mineralRemnants ?? []) ||
+    (state.mineralRemnants ?? []).some(
+      (entry) =>
+        !entry ||
+        !integer(entry.cell, 0, 63) ||
+        !integer(entry.expiresRound, 0),
+    ) ||
+    new Set((state.mineralRemnants ?? []).map((entry) => entry.cell)).size !==
+      (state.mineralRemnants ?? []).length ||
+    !Array.isArray(state.chemosynthesisExhausted ?? []) ||
+    (state.chemosynthesisExhausted ?? []).some(
+      (entry) =>
+        !entry ||
+        !integer(entry.cell, 0, 63) ||
+        typeof entry.eventKey !== "string" ||
+        !entry.eventKey
+    ) ||
     !(
       state.captureDisturbances === undefined ||
       Array.isArray(state.captureDisturbances)
@@ -2834,6 +2968,37 @@ export function assertState(state) {
         (typeof p.rumination.block !== "string" ||
           !/^[0-3],[0-3]$/.test(p.rumination.block) ||
           !integer(p.rumination.startedTurn, 0))) ||
+      !integer(p.eukaryoteBufferUses ?? 0, 0, 2) ||
+      !Array.isArray(p.eukaryoteBufferedTraits ?? []) ||
+      (p.eukaryoteBufferedTraits ?? []).some(
+        (trait) => !NEGATIVE_TRAITS.has(trait)
+      ) ||
+      new Set(p.eukaryoteBufferedTraits ?? []).size !==
+        (p.eukaryoteBufferedTraits ?? []).length ||
+      !(
+        p.endosymbiosisDebtUntilRound === null ||
+        p.endosymbiosisDebtUntilRound === undefined ||
+        integer(p.endosymbiosisDebtUntilRound, 0)
+      ) ||
+      !Array.isArray(p.adaptiveImmuneMemory ?? []) ||
+      (p.adaptiveImmuneMemory ?? []).some(
+        (key) =>
+          typeof key !== "string" ||
+          !/^(virus|bacteria|fungus):(contact|trail|environmental|sexual|fecal|spore)$/.test(key)
+      ) ||
+      new Set(p.adaptiveImmuneMemory ?? []).size !==
+        (p.adaptiveImmuneMemory ?? []).length ||
+      !(
+        p.adaptiveImmuneNotifiedDisease === null ||
+        p.adaptiveImmuneNotifiedDisease === undefined ||
+        integer(p.adaptiveImmuneNotifiedDisease, 1)
+      ) ||
+      !integer(p.stomataStartedRound ?? p.bornRound, 0) ||
+      !(
+        p.endothermyUsedTurn === null ||
+        p.endothermyUsedTurn === undefined ||
+        integer(p.endothermyUsedTurn, 0)
+      ) ||
       (p.webTrapped !== undefined &&
         p.webTrapped !== null &&
         (!integer(p.webTrapped.sourceId, 1) ||

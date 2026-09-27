@@ -131,6 +131,7 @@ function dispatch(action) {
 const VIVIFICATION_LABELS = Object.freeze({
   MOVE: "Reproduzir",
   BUD: "Brotar",
+  CHEMOSYNTHESIS: "♨️ Quimiossíntese",
   PUPATE: "Metamorfosear",
   PARASITIZE: "Fertilizar por Parasitismo",
   PARTHENOGENESIS: "Partenogênese",
@@ -151,6 +152,7 @@ const boardActionLabel = (action) => {
   if (action.type === "EXTENDED_CAPTURE")
     return `${TRAITS[action.trait]?.[0] ?? "🧬"} ${action.trait}`;
   if (action.type === "RHIZOME") return "🫚 Rizoma";
+  if (action.type === "CHEMOSYNTHESIS") return "♨️ Quimiossíntese";
   return action.type;
 };
 

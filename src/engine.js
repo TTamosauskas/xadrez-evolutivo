@@ -38,6 +38,9 @@ import {
   organicResidueHazardousTo,
   inkCloudAt,
   allelopathySourceAt,
+  mineralRemnantAt,
+  stomataOpen,
+  releaseEukaryoteBuffers,
 } from "./state.js";
 import {
   movesFor,
@@ -71,6 +74,7 @@ import {
   hematophagyTargets,
   broodParasitismTargets,
   canRejectBroodParasite,
+  chemosynthesisAvailable,
 } from "./moves.js";
 import {
   reproduce,
@@ -169,6 +173,33 @@ function applyChemicalCaptureDefense(state, dead, attacker) {
   }
 }
 
+function leaveMineralRemnant(state, dead) {
+  if (!has(dead, "Biomineralização")) return false;
+  const cell = square(dead.r, dead.c),
+    expiresRound = round(state) + 3,
+    existing = (state.mineralRemnants ?? []).find(
+      (entry) => entry.cell === cell,
+    );
+  state.mineralRemnants ??= [];
+  if (existing) existing.expiresRound = expiresRound;
+  else state.mineralRemnants.push({ cell, expiresRound });
+  log(
+    state,
+    `${OWNERS[dead.owner]}: 🪨 Biomineralização deixou um remanescente mineral em ${coord(dead.r, dead.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Biomineralização",
+    `🪨 Biomineralização deixou um remanescente mineral em ${coord(dead.r, dead.c)}.`,
+    {
+      pieceId: dead.id,
+      outcome: "left-mineral-remnant",
+      value: 3,
+    },
+  );
+  return true;
+}
+
 function tanatosisEligible(state, dead, attacker, options = {}) {
   return (
     !!attacker &&
@@ -247,6 +278,7 @@ export function context(state) {
         return true;
       }
       if (!options.consumed) releaseCarriedPlantSeeds(state, dead);
+      leaveMineralRemnant(state, dead);
       state.pieces = state.pieces.filter((p) => p.id !== id);
       if (bonded?.pairedWithId === dead.id) bonded.pairedWithId = null;
       if (state.chain === id) state.chain = null;
@@ -577,7 +609,37 @@ export function retaliatoryDefenseChance(attacker, trait) {
   return has(attacker, "Osteodermos") ? base / 2 : base;
 }
 
-function hostileHazardKills(state, piece, normalHostile = false) {
+function endothermyRescues(state, piece, normalHostile) {
+  if (
+    !normalHostile ||
+    !has(piece, "Endotermia") ||
+    piece.endothermyUsedTurn === state.turn
+  )
+    return false;
+  const now = round(state);
+  piece.nextReproductionRound =
+    (piece.nextReproductionRound ?? now) <= now
+      ? now + 1
+      : piece.nextReproductionRound + 1;
+  piece.endothermyUsedTurn = state.turn;
+  emitPassiveEffect(
+    state,
+    "Endotermia",
+    "🔥 Endotermia converteu o estresse ambiental em custo metabólico · recuperação +1.",
+    {
+      pieceId: piece.id,
+      outcome: "endothermy-rescued-hostile-risk",
+      value: 1,
+    },
+  );
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🔥 Endotermia evitou a morte ambiental e acrescentou 1 rodada de recuperação.`,
+  );
+  return true;
+}
+
+export function hostileHazardKills(state, piece, normalHostile = false) {
   if (random(state) >= 1 / 2) return false;
   if (
     normalHostile &&
@@ -610,8 +672,10 @@ function hostileHazardKills(state, piece, normalHostile = false) {
     );
     return false;
   }
-  if (!has(piece, "Carapaça")) return true;
-  if (random(state) >= 1 / 4) return true;
+  if (!has(piece, "Carapaça"))
+    return !endothermyRescues(state, piece, normalHostile);
+  if (random(state) >= 1 / 4)
+    return !endothermyRescues(state, piece, normalHostile);
   emitPassiveEffect(
     state,
     "Carapaça",
@@ -1216,14 +1280,52 @@ function maturePhotosynthesis(state, owner) {
     ) {
       state.board[cell] = "fertile";
       const extras = photosynthesisExtraCells(state, p);
+      if (has(p, "Estômatos") && stomataOpen(state, p)) {
+        const used = new Set(extras.map((extra) => square(extra.r, extra.c))),
+          stomatalCandidates = [
+            [-1, 0],
+            [1, 0],
+            [0, -1],
+            [0, 1],
+          ]
+            .map(([dr, dc]) => ({ r: p.r + dr, c: p.c + dc }))
+            .filter(
+              ({ r, c }) =>
+                inside(r, c) &&
+                terrain(state, r, c) === "neutral" &&
+                !used.has(square(r, c)) &&
+                !at(state, r, c) &&
+                !eggAt(state, r, c) &&
+                !plantSeedAt(state, r, c) &&
+                !barrierAt(state, r, c) &&
+                !allelopathySourceAt(state, r, c, p.owner),
+            ),
+          stomatal = pick(state, stomatalCandidates);
+        if (stomatal) extras.push({ ...stomatal, stomata: true });
+      }
       for (const extra of extras) {
         state.board[square(extra.r, extra.c)] = "fertile";
-        log(
-          state,
-          has(p, "Angiospermas") && at(state, extra.r, extra.c)?.owner === p.owner
-            ? `${OWNERS[p.owner]}: 🌸 Angiospermas tornou ${coord(extra.r, extra.c)} fértil.`
-            : `${OWNERS[p.owner]}: 🟢 arquitetura vegetal tornou ${coord(extra.r, extra.c)} fértil.`,
-        );
+        if (extra.stomata) {
+          log(
+            state,
+            `${OWNERS[p.owner]}: 🌬️ Estômatos abertos ampliaram a Fotossíntese para ${coord(extra.r, extra.c)}.`,
+          );
+          emitPassiveEffect(
+            state,
+            "Estômatos",
+            `🌬️ Estômatos abertos ampliaram a Fotossíntese para ${coord(extra.r, extra.c)}.`,
+            {
+              pieceId: p.id,
+              outcome: "open-stomata-expanded-photosynthesis",
+            },
+          );
+        } else
+          log(
+            state,
+            has(p, "Angiospermas") && at(state, extra.r, extra.c)?.owner === p.owner
+              ? `${OWNERS[p.owner]}: 🌸 Angiospermas tornou ${coord(extra.r, extra.c)} fértil.`
+              : `${OWNERS[p.owner]}: 🟢 arquitetura vegetal tornou ${coord(extra.r, extra.c)} fértil.`,
+          );
       }
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
@@ -1244,6 +1346,7 @@ function actionActorId(state, action) {
   if (
     [
       "MOVE",
+      "CHEMOSYNTHESIS",
       "NURSE",
       "NICHE_BUILD",
       "BUD",
@@ -1509,6 +1612,16 @@ function advanceTurn(ctx) {
   state.inkClouds = (state.inkClouds ?? []).filter(
     (entry) => entry.expiresTurn >= state.turn,
   );
+  state.mineralRemnants = (state.mineralRemnants ?? []).filter(
+    (entry) => entry.expiresRound >= round(state),
+  );
+  state.chemosynthesisExhausted = (state.chemosynthesisExhausted ?? []).filter(
+    (entry) =>
+      entry.eventKey ===
+      (state.event
+        ? `${state.event.id}:${state.event.startTurn ?? state.event.startRound ?? 0}`
+        : "none"),
+  );
   for (const piece of state.pieces)
     if (
       piece.broodParasite &&
@@ -1532,9 +1645,18 @@ function advanceTurn(ctx) {
     if (extinction(state)) return;
     restoreExtremophyteFertility(state);
     tickDiseases(ctx);
-    for (const p of [...state.pieces])
+    for (const p of [...state.pieces]) {
+      const bufferedLethal =
+        (p.eukaryoteBufferedTraits ?? []).includes("Mutação Letal") &&
+        Number.isInteger(p.deleteriousDue) &&
+        p.deleteriousDue <= round(state);
+      if (bufferedLethal) {
+        releaseEukaryoteBuffers(state, p, "lethal");
+        continue;
+      }
       if (has(p, "Mutação Letal") && p.deleteriousDue <= round(state))
         ctx.kill(p.id, "Mutação Letal");
+    }
     for (const p of [...state.pieces])
       if (
         (terrain(state, p.r, p.c) === "hostile" ||
@@ -2467,6 +2589,54 @@ function resolveExtendedCapture(ctx, action) {
   completeMove(ctx, piece, false, false);
 }
 
+function resolveChemosynthesis(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!piece || !chemosynthesisAvailable(state, piece))
+    throw Error("Quimiossíntese indisponível.");
+
+  const cell = square(piece.r, piece.c),
+    born = reproduce(ctx, piece, null, "Quimiossíntese", {
+      forcedCount: 1,
+      immediateDevelopment: true,
+      resourceKind: "chemical",
+    });
+  if (born) {
+    const eventHazard = state.event?.hazards?.includes(cell);
+    state.board[cell] = "neutral";
+    if (eventHazard) {
+      const eventKey = `${state.event.id}:${state.event.startTurn ?? state.event.startRound ?? 0}`;
+      state.chemosynthesisExhausted ??= [];
+      if (
+        !state.chemosynthesisExhausted.some(
+          (entry) => entry.cell === cell && entry.eventKey === eventKey,
+        )
+      )
+        state.chemosynthesisExhausted.push({ cell, eventKey });
+    }
+    log(
+      state,
+      `${OWNERS[piece.owner]}: ♨️ Quimiossíntese consumiu o ambiente químico em ${coord(piece.r, piece.c)} e gerou um descendente.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Quimiossíntese",
+      "♨️ Quimiossíntese converteu terreno hostil em energia reprodutiva.",
+      {
+        pieceId: piece.id,
+        outcome: "chemosynthetic-reproduction",
+        value: 1,
+      },
+    );
+  }
+  if (born > 0 && deferReproductionPlacement(state, piece)) return;
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveRhizome(ctx, action) {
   const state = ctx.state,
     piece = state.pieces.find(
@@ -3061,6 +3231,33 @@ function executeMove(ctx, action) {
     );
     finishFrustratedCapture(ctx, p, "Cuidado Parental", victim);
     return;
+  }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    distance(p, victim) === 1
+  ) {
+    const remnant = mineralRemnantAt(state, victim.r, victim.c);
+    if (remnant) {
+      state.mineralRemnants = state.mineralRemnants.filter(
+        (entry) => entry !== remnant,
+      );
+      log(
+        state,
+        `🪨 O remanescente mineral em ${coord(victim.r, victim.c)} bloqueou a captura e se rompeu.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Biomineralização",
+        "🪨 O remanescente mineral bloqueou a captura de contato e se rompeu.",
+        {
+          pieceId: victim.id,
+          outcome: "mineral-remnant-blocked-capture",
+        },
+      );
+      finishFrustratedCapture(ctx, p, "Biomineralização", victim);
+      return;
+    }
   }
   if (
     pieceCapture &&
@@ -5037,6 +5234,8 @@ export function transition(previous, action) {
     executeMove(ctx, action);
   else if (action.type === "PARTNER" && state.phase === "move")
     resolveDirectPartner(ctx, action);
+  else if (action.type === "CHEMOSYNTHESIS" && state.phase === "move")
+    resolveChemosynthesis(ctx, action);
   else if (action.type === "PARTHENOGENESIS" && state.phase === "move")
     resolveParthenogenesis(ctx, action);
   else if (action.type === "AGGRESSIVE_MATE" && state.phase === "move")
@@ -5139,6 +5338,10 @@ export function transition(previous, action) {
         resolveConwayStagnation(ctx);
     }
   } else throw Error("Ação incompatível com a fase da partida.");
+  if (action.type === "MOVE") {
+    const acted = state.pieces.find((piece) => piece.id === action.id);
+    if (acted) releaseEukaryoteBuffers(state, acted, "action");
+  }
   logBoardChanges(previous, state);
   state.revision++;
   return assertState(state);

@@ -152,6 +152,7 @@ export function actionableTraitsForPiece(state, piece) {
       actionable.add("Parasitismo de Ninhada");
     if (action.type === "REJECT_BROOD_PARASITE") actionable.add("Incubação");
     if (action.type === "RHIZOME") actionable.add("Rizoma");
+    if (action.type === "CHEMOSYNTHESIS") actionable.add("Quimiossíntese");
     if (
       ["FEEDING_REACH", "EXTENDED_CAPTURE"].includes(action.type) &&
       action.trait
@@ -193,6 +194,24 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Parasitoidismo");
 
   if (piece.rumination) actionable.add("Ruminante");
+  if (
+    has(piece, "Eucarionte") &&
+    (piece.eukaryoteBufferUses ?? 0) < 2
+  )
+    actionable.add("Eucarionte");
+  if (
+    has(piece, "Endossimbiose") &&
+    (piece.nextReproductionRound ?? 0) === round(state) + 1
+  )
+    actionable.add("Endossimbiose");
+  if ((piece.adaptiveImmuneMemory ?? []).length)
+    actionable.add("Imunidade Adaptativa");
+  if (has(piece, "Estômatos")) actionable.add("Estômatos");
+  if (
+    has(piece, "Endotermia") &&
+    terrain(state, piece.r, piece.c) === "hostile"
+  )
+    actionable.add("Endotermia");
 
   if (
     has(piece, "Autotomia") &&

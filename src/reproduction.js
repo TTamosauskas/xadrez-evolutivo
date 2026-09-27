@@ -30,6 +30,9 @@ import {
   emitPassiveEffect,
   registerDiscoveries,
   reproductionReady,
+  endosymbiosisAdvanceAvailable,
+  bufferEukaryoteNegative,
+  releaseEukaryoteBuffers,
   ecologicalDomainBlocked,
   consumeFertileTerrain,
   lethalHazardAt,
@@ -318,7 +321,15 @@ function mutation(
         ...(p.traits ?? []),
       ]),
     ];
-    if (choice.geneGain === "Regressão Evolutiva") {
+    if (choice.geneGain === "Estômatos" && has(p, "Estômatos"))
+      p.stomataStartedRound = round(state);
+    const negativeExpressed =
+        NEGATIVE_GENETIC_TRAITS.has(choice.geneGain) &&
+        has(p, choice.geneGain),
+      bufferedNegative =
+        negativeExpressed &&
+        bufferEukaryoteNegative(state, p, choice.geneGain);
+    if (choice.geneGain === "Regressão Evolutiva" && !bufferedNegative) {
       const hidden = applyRegressionEffect(state, p);
       if (hidden.length)
         log(
@@ -578,7 +589,7 @@ function missingArcheanEnergyBranch(state) {
   if (
     state.scenario !== "earth" ||
     state.geologicalStage !== "archean" ||
-    state.cycle !== 1
+    state.cycle !== 2
   )
     return null;
   const history = new Set(state.historicalTraits ?? []),
@@ -1614,8 +1625,15 @@ export function reproduce(
     )
       return 0;
   }
-  const paedogenic =
-    !mates.length && (options.paedogenesis || paedogenesisReady(state, parent));
+  const endosymbioticAdvanceIds = new Set(
+      options.ignoreReadiness
+        ? []
+        : [parent, ...mates]
+            .filter((piece) => endosymbiosisAdvanceAvailable(state, piece))
+            .map((piece) => piece.id),
+    ),
+    paedogenic =
+      !mates.length && (options.paedogenesis || paedogenesisReady(state, parent));
   if (
     !options.ignoreReadiness &&
     (!(reproductionReady(state, parent) || paedogenic) ||
@@ -1801,6 +1819,20 @@ export function reproduce(
     applyCooldown = () => {
       const apply = (piece, feeder = false) => {
         piece.nextReproductionRound = cooldown(piece, feeder);
+        if (endosymbioticAdvanceIds.has(piece.id)) {
+          piece.nextReproductionRound += 2;
+          piece.endosymbiosisDebtUntilRound = piece.nextReproductionRound;
+          emitPassiveEffect(
+            state,
+            "Endossimbiose",
+            "🔋 Endossimbiose antecipou a reprodução · débito energético +2.",
+            {
+              pieceId: piece.id,
+              outcome: "endosymbiotic-energy-debt",
+              value: 2,
+            },
+          );
+        }
         if (
           has(piece, "Ruminante") &&
           piece.nextReproductionRound > round(state)
@@ -2073,6 +2105,23 @@ export function reproduce(
       state.phase === "domestic-placement";
     recordSemelparity(ctx, parent, deferredParentDeath);
     for (const candidate of mates) recordSemelparity(ctx, candidate, false);
+
+    const releaseAfterReproduction = (piece) => {
+      const released = releaseEukaryoteBuffers(state, piece, "reproduction");
+      if (released.includes("Regressão Evolutiva")) {
+        const hidden = applyRegressionEffect(state, piece);
+        if (hidden.length)
+          log(
+            state,
+            `${OWNERS[piece.owner]}: 🦤 Regressão Evolutiva passou a se expressar e tornou recessiva(s) ${hidden.join(", ")}.`,
+          );
+      }
+    };
+    if (state.pieces.some((piece) => piece.id === parent.id))
+      releaseAfterReproduction(parent);
+    for (const candidate of mates)
+      if (state.pieces.some((piece) => piece.id === candidate.id))
+        releaseAfterReproduction(candidate);
   }
   return produced;
 }

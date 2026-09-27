@@ -602,10 +602,18 @@ export function legacyReproGenesFromGenome(source) {
 
 function applyFormExpression(profile, traits) {
   if (!profile) return traits;
-  const expressedProfile = { ...profile, traits };
+  let expressed = [...traits];
+  if (
+    expressed.includes("Quimiossíntese") &&
+    ["Fotossíntese", "Predação", "Mixotrofia"].some((trait) =>
+      expressed.includes(trait),
+    )
+  )
+    expressed = expressed.filter((trait) => trait !== "Quimiossíntese");
+  const expressedProfile = { ...profile, traits: expressed };
   return largeFunctionalForm(expressedProfile)
-    ? traits.filter((trait) => trait !== "Forésia")
-    : traits;
+    ? expressed.filter((trait) => trait !== "Forésia")
+    : expressed;
 }
 
 export function syncGenomePhenotype(profile, preferredEnergy = null) {
