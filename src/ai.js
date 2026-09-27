@@ -6,7 +6,6 @@ import {
   square,
   distance,
   canPhotosynthesize,
-  CHESS_PIECE_VALUES,
 } from "./constants.js";
 import {
   eggAt,
@@ -16,6 +15,14 @@ import {
   captureDisturbanceAt,
   lethalHazardAt,
   reproductionReady,
+  terrain,
+  round,
+  ecologicalQuadrant,
+  strongestSurvivor,
+  survivorPieceValue,
+  expressedPositiveGenes,
+  carriedNegativeMutations,
+  hiddenPositiveRecessives,
 } from "./state.js";
 import {
   canUseBasalFertility,
@@ -23,6 +30,53 @@ import {
 } from "./reproduction-traits.js";
 import { corticalActionBonus } from "./positioning.js";
 import { NEGATIVE_TRAITS } from "./geology.js";
+
+export const AI_ACTION_TYPES = Object.freeze([
+  "MOVE",
+  "PARTNER",
+  "AGGRESSIVE_MATE",
+  "CHEMOSYNTHESIS",
+  "PARTHENOGENESIS",
+  "NURSE",
+  "LAY_OVOVIVIPAROUS",
+  "EXTENDED_CAPTURE",
+  "RHIZOME",
+  "HEMATOPHAGY",
+  "BROOD_PARASITIZE",
+  "REJECT_BROOD_PARASITE",
+  "BIO_PROJECTILE",
+  "ELECTRODISCHARGE",
+  "FEEDING_REACH",
+  "PARASITIZE",
+  "BUD",
+  "PUPATE",
+  "NICHE_BUILD",
+  "DOMAIN_COLLAPSE",
+  "SEROTONIN_REPOSITION",
+  "SKIP_SEROTONIN_REPOSITION",
+  "MANIPULATE",
+  "SKIP_MANIPULATION",
+  "BUILD",
+  "SKIP_BUILD",
+  "PLACE_EGG",
+  "PLACE_DOMESTIC",
+  "SOCIAL_SACRIFICE",
+  "PASS",
+]);
+
+export const AI_SEARCH_PROFILES = Object.freeze({
+  easy: Object.freeze({ budget: 0, maxNodes: 0, depth: 0, branchWidth: 0 }),
+  medium: Object.freeze({ budget: 180, maxNodes: 320, depth: 1, branchWidth: 16 }),
+  hard: Object.freeze({ budget: 900, maxNodes: 1800, depth: 3, branchWidth: 12 }),
+});
+
+const CORTICAL_SEARCH_PROFILE = Object.freeze({
+  budget: 240,
+  maxNodes: 420,
+  depth: 2,
+  branchWidth: 10,
+});
+
 export function fallbackAction(state) {
   const actions = legalActions(state);
   return (
@@ -41,28 +95,28 @@ function futureCaptureOptions(state, piece, action) {
   )
     return 0;
   const occupied = state.pieces.find(
-    (other) =>
-      other.id !== piece.id &&
-      other.r === action.r &&
-      other.c === action.c,
+    (otherPiece) =>
+      otherPiece.id !== piece.id &&
+      otherPiece.r === action.r &&
+      otherPiece.c === action.c,
   );
   if (occupied) return 0;
   const moved = { ...piece, r: action.r, c: action.c },
     hypothetical = {
       ...state,
       chain: null,
-      pieces: state.pieces.map((other) =>
-        other.id === piece.id ? moved : other,
+      pieces: state.pieces.map((otherPiece) =>
+        otherPiece.id === piece.id ? moved : otherPiece,
       ),
     };
   return movesFor(hypothetical, moved, { ignoreChain: true }).filter(
     (target) => {
       if (!target.capture) return false;
       const victim = hypothetical.pieces.find(
-        (other) =>
-          other.id !== moved.id &&
-          other.r === target.r &&
-          other.c === target.c,
+        (otherPiece) =>
+          otherPiece.id !== moved.id &&
+          otherPiece.r === target.r &&
+          otherPiece.c === target.c,
       );
       return victim && victim.owner !== moved.owner;
     },
@@ -72,48 +126,141 @@ function futureCaptureOptions(state, piece, action) {
 export function crowdingPenalty(count) {
   return count > 12 ? Math.min(36, (count - 12) * 2) : 0;
 }
+
+const compressedRankValue = (piece) =>
+  Math.log2(Math.max(0, survivorPieceValue(piece)) + 1) * 4;
+
+export function strategicPieceValue(state, piece) {
+  if (!piece) return 0;
+  const positive = expressedPositiveGenes(piece),
+    negative = carriedNegativeMutations(piece),
+    hiddenPositive = hiddenPositiveRecessives(piece),
+    currentRound = round(state),
+    unavailable =
+      (piece.maturesRound ?? 0) > currentRound ||
+      (piece.nextReproductionRound ?? 0) > currentRound,
+    impaired =
+      (piece.pupaUntilRound ?? 0) > currentRound ||
+      (piece.neurodivergenceRestThroughRound ?? -1) >= currentRound ||
+      (piece.intoxicationRestThroughRound ?? -1) >= currentRound ||
+      !!piece.webTrapped,
+    terrainPenalty = lethalHazardAt(state, piece.r, piece.c)
+      ? 18
+      : terrain(state, piece.r, piece.c) === "hostile"
+        ? has(piece, "Dormência") ||
+          has(piece, "Endotermia") ||
+          has(piece, "Extremotolerância")
+          ? 0.75
+          : 2.5
+        : 0;
+  return (
+    8 +
+    compressedRankValue(piece) +
+    positive * 1.35 -
+    negative * 2.75 -
+    hiddenPositive * 0.45 -
+    (piece.infection ? 5 : 0) -
+    (piece.venom ? 5 : 0) -
+    (piece.broodParasite ? 2 : 0) -
+    (piece.autotomyRecovery ? 1.5 : 0) -
+    (unavailable ? 1.25 : 0) -
+    (impaired ? 2 : 0) -
+    terrainPenalty
+  );
+}
+
+function nearestEnemyDistance(state, owner, r, c) {
+  const enemies = state.pieces.filter((piece) => piece.owner !== owner);
+  return enemies.length
+    ? Math.min(...enemies.map((piece) => distance({ r, c }, piece)))
+    : 8;
+}
+
+function adjacentBalance(state, owner, r, c) {
+  let allies = 0,
+    enemies = 0;
+  for (const piece of state.pieces) {
+    if (distance({ r, c }, piece) !== 1) continue;
+    if (piece.owner === owner) allies++;
+    else enemies++;
+  }
+  return { allies, enemies };
+}
+
+function placementPriority(state, action, owner = state.current) {
+  if (!Number.isInteger(action.r) || !Number.isInteger(action.c)) return 0;
+  if (lethalHazardAt(state, action.r, action.c)) return -10000;
+  const targetTerrain = terrain(state, action.r, action.c),
+    balance = adjacentBalance(state, owner, action.r, action.c),
+    enemyDistance = nearestEnemyDistance(state, owner, action.r, action.c);
+  return (
+    (targetTerrain === "fertile" ? 3 : targetTerrain === "hostile" ? -3 : 0) +
+    balance.allies * 1.5 -
+    balance.enemies * 2 +
+    Math.min(6, enemyDistance) * 0.35
+  );
+}
+
+function barrierPriority(state, action) {
+  if (!Number.isInteger(action.r) || !Number.isInteger(action.c)) return 0;
+  const balance = adjacentBalance(state, state.current, action.r, action.c);
+  return 3 + balance.enemies * 2 - balance.allies;
+}
+
 export function actionPriority(state, a) {
-  if (a.type === "CHEMOSYNTHESIS") return 11;
+  if (a.type === "DOMAIN_COLLAPSE") return 1000;
+  if (a.type === "CHEMOSYNTHESIS") return 13;
   if (a.type === "EXTENDED_CAPTURE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
-    return (a.trait === "Tromba" ? 15 : 12) + (target?.rank ?? 0) * 2;
+    return (a.trait === "Tromba" ? 16 : 13) + strategicPieceValue(state, target) * 0.16;
   }
-  if (a.type === "RHIZOME") return 8;
+  if (a.type === "RHIZOME") return 10 + placementPriority(state, a);
   if (a.type === "HEMATOPHAGY") {
     const actor = state.pieces.find((piece) => piece.id === a.id),
       target = state.pieces.find((piece) => piece.id === a.targetId);
-    return (actor?.autotomyRecovery ? 22 : 13) + (target?.rank ?? 0);
+    return (
+      (actor?.autotomyRecovery ? 22 : 14) +
+      strategicPieceValue(state, target) * 0.12
+    );
   }
   if (a.type === "BROOD_PARASITIZE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
-    return 10 + (target?.rank ?? 0);
+    return 11 + strategicPieceValue(state, target) * 0.08;
   }
-  if (a.type === "REJECT_BROOD_PARASITE") return 11;
+  if (a.type === "REJECT_BROOD_PARASITE") return 14;
   if (a.type === "ELECTRODISCHARGE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
-    return 18 + (target?.rank ?? 0) * 2;
+    return 19 + strategicPieceValue(state, target) * 0.18;
   }
   if (a.type === "FEEDING_REACH") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
-    return 14 + (target?.rank ?? 0) * 2;
+    return 15 + strategicPieceValue(state, target) * 0.17;
   }
   if (a.type === "BIO_PROJECTILE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
-    return 7 + (target?.rank ?? 0);
+    return 9 + strategicPieceValue(state, target) * 0.1;
   }
-  if (a.type === "BUD") return 12;
-  if (a.type === "PUPATE") {
-    const piece = state.pieces.find((candidate) => candidate.id === a.id);
-    return 7 + (piece?.rank ?? 0) * 2;
+  if (a.type === "PARASITIZE") {
+    const target = state.pieces.find((piece) => piece.id === a.targetId);
+    return target
+      ? 9 + strategicPieceValue(state, target) * 0.08
+      : 7;
   }
-  if (a.type === "PARTNER")
-    return state.pieces.find((p) => p.id === a.id)?.rank * 2 || 0;
-  if (a.type === "PARTHENOGENESIS") return 8;
+  if (a.type === "BUD") return 13;
+  if (a.type === "PUPATE") return 5;
+  if (a.type === "PARTNER") {
+    const mate = state.pieces.find((piece) => piece.id === a.id);
+    return 8 + strategicPieceValue(state, mate) * 0.08;
+  }
+  if (a.type === "PARTHENOGENESIS") return 9;
   if (a.type === "AGGRESSIVE_MATE")
-    return 8 + (state.pieces.find((p) => p.id === a.id)?.rank ?? 0);
+    return 9 + strategicPieceValue(
+      state,
+      state.pieces.find((piece) => piece.id === a.id),
+    ) * 0.06;
   if (a.type === "NURSE") {
     const child = state.pieces.find((piece) => piece.id === a.childId);
-    return 6 + (child?.rank ?? 0);
+    return 7 + strategicPieceValue(state, child) * 0.08;
   }
   if (a.type === "PLACE_EGG" || a.type === "LAY_OVOVIVIPAROUS") {
     let free = 0;
@@ -136,24 +283,34 @@ export function actionPriority(state, a) {
         )
           free++;
       }
-    const enemies = state.pieces.filter(
-        (piece) => piece.owner !== state.current,
-      ),
-      safety = enemies.length
-        ? Math.min(
-            6,
-            Math.min(
-              ...enemies.map((enemy) =>
-                distance({ r: a.r, c: a.c }, enemy),
-              ),
-            ),
-          )
-        : 3;
-    return 6 + free * 2 + safety;
+    return 8 + free * 1.5 + placementPriority(state, a);
   }
-  if (a.type === "NICHE_BUILD") return 4;
-  if (a.type === "BUILD") return 3;
-  if (a.type === "SKIP_BUILD") return 0;
+  if (a.type === "PLACE_DOMESTIC")
+    return 12 + placementPriority(state, a);
+  if (a.type === "NICHE_BUILD") return 5 + barrierPriority(state, a);
+  if (a.type === "BUILD") return 4 + barrierPriority(state, a);
+  if (a.type === "SKIP_BUILD") return -1;
+  if (a.type === "MANIPULATE") {
+    const pending = state.manipulation,
+      balance = adjacentBalance(state, state.current, a.r, a.c);
+    return pending?.terrain === "hostile"
+      ? 6 + balance.enemies * 2 - balance.allies
+      : 6 + balance.allies * 2 - balance.enemies;
+  }
+  if (a.type === "SKIP_MANIPULATION") return -2;
+  if (a.type === "SEROTONIN_REPOSITION")
+    return 8 + placementPriority(state, a);
+  if (a.type === "SKIP_SEROTONIN_REPOSITION") return -3;
+  if (a.type === "SOCIAL_SACRIFICE") {
+    const sacrifice = state.pieces.find((piece) => piece.id === a.id),
+      recommended = hierarchySacrificeRecommendation(state);
+    return (
+      18 -
+      strategicPieceValue(state, sacrifice) * 0.3 +
+      (recommended?.id === a.id ? 8 : 0)
+    );
+  }
+
   const p = state.pieces.find(
       (piece) => piece.id === (a.id ?? state.serotoninReposition?.id),
     ),
@@ -189,39 +346,39 @@ export function actionPriority(state, a) {
       enemies.length &&
       Number.isInteger(a.r) &&
       !enemyVictim
-        ? Math.min(12, futureCaptureOptions(state, p, a) * 4)
+        ? Math.min(14, futureCaptureOptions(state, p, a) * 4)
         : 0,
     captureValue = enemyVictim
       ? 10 +
-        victim.rank * 2 +
-        (has(victim, "Fotossíntese") ? 8 : 0) +
-        (predatoryReproductionAvailable(p, victim) ? 6 : 0) +
-        (targetTerrain === "fertile" ? 4 : 0) +
+        strategicPieceValue(state, victim) * 0.45 +
+        (has(victim, "Fotossíntese") ? 5 : 0) +
+        (predatoryReproductionAvailable(p, victim) ? 7 : 0) +
+        (targetTerrain === "fertile" ? 3 : 0) +
         (enemies.length <= 2 ? 30 : 0)
       : 0,
     cannibalValue = alliedVictim
       ? ownPopulation > 12
-        ? 4 + (ownPopulation - 12) * 2 - victim.rank
-        : -8 - victim.rank
+        ? 4 + (ownPopulation - 12) * 2 - strategicPieceValue(state, victim) * 0.1
+        : -10 - strategicPieceValue(state, victim) * 0.15
       : 0,
     fertileValue =
       !victim && targetTerrain === "fertile" && canUseBasalFertility(state, p)
-        ? 4
+        ? 5
         : 0,
     fecalValue =
       p && targetCell !== null && organicResidueAt(state, a.r, a.c)
         ? canPhotosynthesize(p)
           ? 8
           : has(p, "Coprofagia")
-            ? 6
+            ? 7
             : -8
         : 0,
     carcassValue =
       p && targetCell !== null && carcassAt(state, a.r, a.c)
         ? has(p, "Necrófago")
-          ? 8
+          ? 9
           : has(p, "Onívoro Oportunista")
-            ? 6
+            ? 7
             : 0
         : 0,
     scavengerSafe =
@@ -236,7 +393,14 @@ export function actionPriority(state, a) {
         ? 8
         : 0,
     lethalPenalty =
-      targetCell !== null && lethalHazardAt(state, a.r, a.c) ? 10000 : 0;
+      targetCell !== null && lethalHazardAt(state, a.r, a.c) ? 10000 : 0,
+    hostilePenalty =
+      targetTerrain === "hostile" &&
+      !has(p, "Dormência") &&
+      !has(p, "Endotermia") &&
+      !has(p, "Extremotolerância")
+        ? 8
+        : 0;
   return (
     familyReproductionBonus +
     hunt +
@@ -246,12 +410,14 @@ export function actionPriority(state, a) {
     fecalValue +
     carcassValue +
     corticalActionBonus(state, a) +
+    placementPriority(state, a, p?.owner ?? state.current) * 0.25 +
     (egg && egg.owner !== state.current ? 6 + egg.brood.length : 0) -
-    (targetTerrain === "hostile" && !has(p, "Dormência") ? 8 : 0) -
+    hostilePenalty -
     disturbancePenalty -
     lethalPenalty
   );
 }
+
 function evaluationStateForPiece(state, piece) {
   return {
     ...state,
@@ -347,9 +513,10 @@ export function hierarchySacrificeRecommendation(state) {
       bestMove = bestMoveSuggestion(state, piece),
       vector = [
         reproductionReady(state, piece) ? 0 : 1,
-        -(CHESS_PIECE_VALUES[piece.rank] ?? 1),
+        -survivorPieceValue(piece),
         negatives,
         -positives,
+        hiddenPositiveRecessives(piece),
         -(bestMove?.score ?? -100000),
       ];
     if (
@@ -365,54 +532,194 @@ export function hierarchySacrificeRecommendation(state) {
   return chosen;
 }
 
-function evaluate(state, owner) {
+
+function founderBranchValue(state, owner, photosynthetic) {
+  const piece = strongestSurvivor(
+    state,
+    owner,
+    photosynthetic
+      ? (candidate) => canPhotosynthesize(candidate)
+      : (candidate) => !canPhotosynthesize(candidate),
+  ).piece;
+  if (!piece) return -12;
+  return (
+    8 +
+    compressedRankValue(piece) * 0.7 +
+    expressedPositiveGenes(piece) * 0.8 -
+    carriedNegativeMutations(piece) * 1.4 -
+    hiddenPositiveRecessives(piece) * 0.35
+  );
+}
+
+function pendingBroodValue(state, owner) {
+  let value = 0;
+  for (const egg of state.eggs ?? [])
+    if (egg.owner === owner)
+      value += 2 + Math.min(6, (egg.brood ?? []).length * 1.4);
+  for (const seed of state.plantSeeds ?? [])
+    if (seed.owner === owner) value += seed.transport ? 0.75 : 2;
+  for (const fragment of state.fragments ?? [])
+    if (fragment.owner === owner) value += 1.5;
+  for (const piece of state.pieces)
+    if (piece.owner === owner) {
+      value += Math.min(3, piece.seeds ?? 0) * 0.75;
+      value += Math.min(
+        8,
+        (piece.pregnancies ?? []).reduce(
+          (sum, pregnancy) => sum + (pregnancy.brood?.length ?? 0) * 1.4,
+          0,
+        ),
+      );
+      value += Math.min(5, (piece.marsupialPouch ?? []).length * 1.2);
+    }
+  return value;
+}
+
+function ecologicalDomainValue(state, owner) {
+  if (!state.ecologicalDomain?.active) return 0;
+  let value = 0;
+  for (let quadrant = 0; quadrant < 4; quadrant++) {
+    const entry = state.ecologicalDomain.quadrants?.[quadrant];
+    if (!entry) continue;
+    if (entry.consolidated)
+      value += entry.owner === owner ? 45 : -45;
+    else if (entry.owner)
+      value += (entry.owner === owner ? 1 : -1) * (entry.progress ?? 0) * 8;
+
+    let own = 0,
+      enemy = 0;
+    for (const piece of state.pieces)
+      if (ecologicalQuadrant(piece.r, piece.c) === quadrant) {
+        if (piece.owner === owner) own++;
+        else enemy++;
+      }
+    value += Math.max(-4, Math.min(4, own - enemy)) * 1.5;
+  }
+  return value;
+}
+
+function sideValue(state, owner) {
+  const pieces = state.pieces
+      .filter((piece) => piece.owner === owner)
+      .reduce((sum, piece) => sum + strategicPieceValue(state, piece), 0),
+    population = state.pieces.filter((piece) => piece.owner === owner).length,
+    branchValue =
+      founderBranchValue(state, owner, true) +
+      founderBranchValue(state, owner, false),
+    brood = pendingBroodValue(state, owner),
+    domain = ecologicalDomainValue(state, owner);
+  return pieces + branchValue * 0.45 + brood + domain - crowdingPenalty(population);
+}
+
+export function evaluateForAI(state, owner) {
   if (state.result)
     return state.result.winner === owner
       ? 100000
       : state.result.winner
         ? -100000
         : 0;
-  const pieces = state.pieces.reduce(
-      (n, p) =>
-        n +
-        (p.owner === owner ? 1 : -1) *
-          (12 +
-            p.rank * 2 +
-            p.traits.length +
-            (p.infection ? -6 : 0) +
-            Math.min(3, p.seeds) +
-            Math.min(
-              4,
-              (p.pregnancies ?? []).reduce(
-                (sum, pregnancy) => sum + pregnancy.brood.length,
-                0,
-              ),
-            )),
-      0,
-    ),
-    eggs = state.eggs.reduce(
-      (n, egg) =>
-        n +
-        (egg.owner === owner ? 1 : -1) * (1 + Math.min(2, egg.brood.length)),
-      0,
-    );
-  const population = {
-      own: state.pieces.filter((piece) => piece.owner === owner).length,
-      enemy: state.pieces.filter((piece) => piece.owner !== owner).length,
-    },
-    crowding = crowdingPenalty;
-  return pieces + eggs - crowding(population.own) + crowding(population.enemy);
+  return sideValue(state, owner) - sideValue(state, other(owner));
 }
+
+function orderedActions(state, limit = Infinity) {
+  return legalActions(state)
+    .sort(
+      (a, b) =>
+        actionPriority(state, b) - actionPriority(state, a) ||
+        String(a.type).localeCompare(String(b.type)) ||
+        (a.id ?? 0) - (b.id ?? 0) ||
+        (a.r ?? 0) - (b.r ?? 0) ||
+        (a.c ?? 0) - (b.c ?? 0),
+    )
+    .slice(0, limit);
+}
+
+function searchValue(
+  state,
+  owner,
+  depth,
+  context,
+  alpha = -Infinity,
+  beta = Infinity,
+  continuationSteps = 8,
+) {
+  if (
+    state.result ||
+    depth <= 0 ||
+    continuationSteps <= 0 ||
+    context.nodes >= context.maxNodes ||
+    context.now() > context.deadline
+  )
+    return evaluateForAI(state, owner);
+
+  const actions = orderedActions(state, context.branchWidth);
+  if (!actions.length) return evaluateForAI(state, owner);
+
+  const maximizing = state.current === owner;
+  let best = maximizing ? -Infinity : Infinity;
+  for (const action of actions) {
+    if (
+      context.nodes >= context.maxNodes ||
+      context.now() > context.deadline
+    )
+      break;
+    const beforeOwner = state.current,
+      next = simulate(state, action),
+      turnAdvanced = next.current !== beforeOwner,
+      nextDepth = Math.max(0, depth - (turnAdvanced ? 1 : 0));
+    context.nodes++;
+    const value = searchValue(
+      next,
+      owner,
+      nextDepth,
+      context,
+      alpha,
+      beta,
+      continuationSteps - 1,
+    );
+    if (maximizing) {
+      best = Math.max(best, value);
+      alpha = Math.max(alpha, best);
+    } else {
+      best = Math.min(best, value);
+      beta = Math.min(beta, best);
+    }
+    if (beta <= alpha) break;
+  }
+  return Number.isFinite(best) ? best : evaluateForAI(state, owner);
+}
+
+function profileFor(difficulty, cortexAvailable, options) {
+  const base =
+      difficulty === "easy" && cortexAvailable
+        ? CORTICAL_SEARCH_PROFILE
+        : AI_SEARCH_PROFILES[difficulty] ?? AI_SEARCH_PROFILES.medium,
+    override = (key) =>
+      Number.isFinite(options?.[key]) ? options[key] : base[key];
+  return {
+    budget: override("budget"),
+    maxNodes: override("maxNodes"),
+    depth: override("depth"),
+    branchWidth: override("branchWidth"),
+  };
+}
+
 /** Bounded search runs only inside a worker. The UI has its own independent timeout. */
 export function chooseAction(
   state,
   difficulty = "medium",
-  { now = () => performance.now(), budget = 180, maxNodes = 300 } = {},
+  {
+    now = () => performance.now(),
+    budget,
+    maxNodes,
+    depth,
+    branchWidth,
+    stats = null,
+  } = {},
 ) {
-  const actions = legalActions(state).sort(
-    (a, b) => actionPriority(state, b) - actionPriority(state, a),
-  );
+  const actions = orderedActions(state);
   if (!actions.length) return { type: "PASS" };
+
   const cortexAvailable = actions.some(
     (action) =>
       action.type === "MOVE" &&
@@ -421,48 +728,65 @@ export function chooseAction(
         "Neocórtex Desenvolvido",
       ),
   );
+
   if (difficulty === "easy" && !cortexAvailable)
     return state.scenario === "arena"
       ? actions[(state.rng >>> 0) % actions.length]
       : actions[(state.rng >>> 0) % Math.min(actions.length, 3)];
-  const deadline = now() + budget,
-    owner = state.current;
+
+  const profile = profileFor(
+      difficulty,
+      cortexAvailable,
+      { budget, maxNodes, depth, branchWidth },
+    ),
+    deadline = now() + profile.budget,
+    owner = state.current,
+    context = {
+      now,
+      deadline,
+      maxNodes: profile.maxNodes,
+      branchWidth: profile.branchWidth,
+      nodes: 0,
+    };
+
   let best = actions[0],
     score = -Infinity,
-    nodes = 0;
+    completedRoots = 0;
   for (const action of actions) {
-    if (nodes >= maxNodes || now() > deadline) break;
-    const next = simulate(state, action);
-    nodes++;
-    let value = evaluate(next, owner);
-    const actor =
-      action.type === "MOVE"
-        ? state.pieces.find((piece) => piece.id === action.id)
-        : null;
-    if (
-      (difficulty === "hard" || has(actor, "Neocórtex Desenvolvido")) &&
-      !next.result
-    ) {
-      const replies = legalActions(next)
-        .sort((a, b) => actionPriority(next, b) - actionPriority(next, a))
-        .slice(0, 8);
-      let replyScore = next.current === other(owner) ? Infinity : -Infinity;
-      for (const reply of replies) {
-        if (nodes >= maxNodes || now() > deadline) break;
-        const v = evaluate(simulate(next, reply), owner);
-        nodes++;
-        replyScore =
-          next.current === other(owner)
-            ? Math.min(replyScore, v)
-            : Math.max(replyScore, v);
-      }
-      if (Number.isFinite(replyScore)) value = replyScore;
-    }
-    value += actionPriority(state, action) * 0.1;
+    if (context.nodes >= context.maxNodes || now() > deadline) break;
+    const next = simulate(state, action),
+      turnAdvanced = next.current !== state.current,
+      actor =
+        action.type === "MOVE"
+          ? state.pieces.find((piece) => piece.id === action.id)
+          : null,
+      rootDepth =
+        difficulty === "medium" && has(actor, "Neocórtex Desenvolvido")
+          ? Math.max(2, profile.depth)
+          : profile.depth,
+      remainingDepth = Math.max(0, rootDepth - (turnAdvanced ? 1 : 0));
+    context.nodes++;
+
+    let value =
+      remainingDepth > 0 || next.current === state.current
+        ? searchValue(next, owner, remainingDepth, context)
+        : evaluateForAI(next, owner);
+    value += actionPriority(state, action) * 0.08;
+
     if (value > score) {
       score = value;
       best = action;
     }
+    completedRoots++;
   }
+
+  if (stats && typeof stats === "object")
+    Object.assign(stats, {
+      nodes: context.nodes,
+      completedRoots,
+      depth: profile.depth,
+      branchWidth: profile.branchWidth,
+      budget: profile.budget,
+    });
   return best;
 }
