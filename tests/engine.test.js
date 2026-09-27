@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { fixture, move } from "./helpers.js";
 import {
   createCampaignState,
+  createPeriodState,
   createState,
   createSuccessorState,
   clone,
@@ -111,6 +112,7 @@ import {
   GEOLOGICAL_STAGES,
   habitatProfile,
   aquaticFertilityRegime,
+  conwayUnlocked,
   captureUnlocked,
   contactCaptureUnlocked,
 } from "../src/geology.js";
@@ -3108,23 +3110,19 @@ test("first-cycle mutation attempts never fall back to deleterious outcomes", ()
 });
 
 function sexualInnovationState(seed) {
-  const s = createState(seed, {
-    scenario: "earth",
-    geologicalStage: "proterozoic",
-    cycle: 1,
-    totalCycles: 1,
-    historicalTraits: [
-      ...GEOLOGICAL_STAGES[0].required,
-      ...GEOLOGICAL_STAGES[1].required,
-      "Eucarionte",
-      "Respiração aeróbia",
-      "Endossimbiose",
-      "Multicelularismo",
-      "Resistência",
-      "Regeneração",
-    ],
-    naturalBarriers: false,
-  });
+  const calymmianIndex = GEOLOGICAL_STAGES.findIndex(
+      (stage) => stage.id === "calymmian",
+    ),
+    s = createState(seed, {
+      scenario: "earth",
+      geologicalStage: "calymmian",
+      cycle: 1,
+      totalCycles: 9,
+      historicalTraits: GEOLOGICAL_STAGES.slice(0, calymmianIndex).flatMap(
+        (stage) => stage.required,
+      ),
+      naturalBarriers: false,
+    });
   s.pieces = [];
   s.nextId = 1;
   s.board.fill("neutral");
