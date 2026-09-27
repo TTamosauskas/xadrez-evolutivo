@@ -1978,8 +1978,20 @@ test("Hierarquia highlights a recommended social sacrifice without choosing it",
 test("Superorganismo pulses allied members and marks the recommended member and move", () => {
   const dom = setup(),
     s = fixture([
-      { owner: "blue", r: 7, c: 7, rank: 0, traits: ["Superorganismo"] },
-      { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Superorganismo"] },
+      {
+        owner: "blue",
+        r: 7,
+        c: 7,
+        rank: 0,
+        traits: ["Artrópode", "Eusocialidade", "Percepção Espacial", "Superorganismo"],
+      },
+      {
+        owner: "blue",
+        r: 4,
+        c: 3,
+        rank: 2,
+        traits: ["Artrópode", "Eusocialidade", "Percepção Espacial", "Superorganismo"],
+      },
       { owner: "amber", r: 4, c: 6, rank: 4 },
       { owner: "amber", r: 0, c: 0, rank: 0 },
     ]),
