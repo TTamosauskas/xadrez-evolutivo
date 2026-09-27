@@ -101,17 +101,15 @@ test("Autotomia reduz a forma e a próxima reprodução restaura sem criar prole
   assert.equal(defender.rank, 4);
   assert.deepEqual(defender.autotomyRecovery, { originalRank: 5 });
 
-  const population = state.pieces.length;
   state.current = "amber";
   state.phase = "move";
-  state.board[square(defender.r, defender.c)] = "fertile";
   defender.nextReproductionRound = round(state);
-  state = simulate(state, move(defender, defender.r, defender.c));
+  state = simulate(state, move(defender, 4, 3));
 
   defender = state.pieces.find((piece) => piece.id === defenderId);
   assert.equal(defender.rank, 5);
   assert.equal(defender.autotomyRecovery, null);
-  assert.equal(state.pieces.length, population);
+  assert.equal(state.pieces.length, 1);
   assertState(state);
 });
 
@@ -204,7 +202,7 @@ test("Parasitismo de Ninhada substitui um slot da próxima postura", () => {
     {
       owner: "blue",
       r: 4,
-      c: 4,
+      c: 5,
       rank: 0,
       traits: ["Ovíparo", "Parasitismo", "Parasitismo de Ninhada"],
     },
@@ -230,9 +228,8 @@ test("Parasitismo de Ninhada substitui um slot da próxima postura", () => {
 
   state.current = "amber";
   state.phase = "move";
-  state.board[square(host.r, host.c)] = "fertile";
   host.nextReproductionRound = round(state);
-  state = simulate(state, move(host, host.r, host.c));
+  state = simulate(state, move(host, 4, 5));
 
   host = state.pieces.find((piece) => piece.id === hostId);
   assert.equal(host.broodParasite, null);
@@ -250,7 +247,7 @@ test("Incubação pode gastar a ação para rejeitar Parasitismo de Ninhada", ()
     {
       owner: "blue",
       r: 4,
-      c: 4,
+      c: 5,
       traits: ["Ovíparo", "Parasitismo", "Parasitismo de Ninhada"],
     },
     {
