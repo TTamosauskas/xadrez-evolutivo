@@ -4716,14 +4716,14 @@ test("Incubação protects adjacent eggs from Ovífagia", () => {
   assertState(s);
 });
 
-test("Construtor de Nicho neutralizes a stable hostile landing after survival", () => {
+test("Zoorremediação neutralizes the stable hostile landing formerly handled by Construtor de Nicho", () => {
   let s = fixture([
     {
       owner: "blue",
       r: 4,
       c: 3,
       rank: 3,
-      traits: ["Construtor de Nicho", "Voo"],
+      traits: ["Zoorremediação", "Voo"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -4733,7 +4733,62 @@ test("Construtor de Nicho neutralizes a stable hostile landing after survival", 
   assert.equal(s.board[36], "neutral");
   assert.equal(s.pieces[0].r, 4);
   assert.equal(s.pieces[0].c, 4);
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Zoorremediação" &&
+        effect.outcome === "neutralized-hostile-terrain",
+    ),
+  );
   assertState(s);
+});
+
+test("Construtor de Nicho Vivifies exactly one orthogonal square from a corner into a barrier", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 0,
+      c: 0,
+      rank: 3,
+      traits: ["Construtor de Nicho"],
+    },
+    { owner: "amber", r: 7, c: 7 },
+  ]);
+  const builder = s.pieces[0],
+    builds = legalActions(s).filter(
+      (action) => action.type === "NICHE_BUILD" && action.id === builder.id,
+    );
+  assert.deepEqual(
+    builds.map(({ r, c }) => [r, c]).sort(),
+    [[0, 1], [1, 0]],
+  );
+
+  s = simulate(s, builds.find((action) => action.r === 0 && action.c === 1));
+  assert.ok(s.barriers.includes(1));
+  assert.equal(s.pieces.find((piece) => piece.id === builder.id).r, 0);
+  assert.equal(s.pieces.find((piece) => piece.id === builder.id).c, 0);
+  assert.equal(s.turn, 1);
+  assertState(s);
+});
+
+test("Construtor de Nicho offers no construction away from the four corners", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 1,
+        c: 1,
+        rank: 3,
+        traits: ["Construtor de Nicho"],
+      },
+      { owner: "amber", r: 7, c: 7 },
+    ]),
+    builder = s.pieces[0];
+  assert.equal(
+    legalActions(s).some(
+      (action) => action.type === "NICHE_BUILD" && action.id === builder.id,
+    ),
+    false,
+  );
 });
 
 test("Polegar Opositor offers adjacent transfer and preserves terrain type", () => {
@@ -4762,7 +4817,7 @@ test("Polegar Opositor offers adjacent transfer and preserves terrain type", () 
       r: 4,
       c: 3,
       rank: 3,
-      traits: ["Polegar Opositor", "Construtor de Nicho", "Voo"],
+      traits: ["Polegar Opositor", "Zoorremediação", "Voo"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);

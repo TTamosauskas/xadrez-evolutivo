@@ -18,6 +18,7 @@ import {
 import {
   movesFor,
   actionsForPiece,
+  nicheConstructionTargets,
   dormant,
   pieceActionState,
 } from "./moves.js";
@@ -529,6 +530,26 @@ function addActiveStateTraits(state, piece, traits) {
     traits.add("Extremófitas");
 
   if (buddingCanProgress(state, piece)) traits.add("Brotamento");
+
+  if (
+    state.phase === "move" &&
+    piece.owner === state.current &&
+    has(piece, "Construtor de Nicho") &&
+    nicheConstructionTargets(state, piece).length
+  )
+    traits.add("Construtor de Nicho");
+
+  if (
+    has(piece, "Zoorremediação") &&
+    piece.owner === state.current &&
+    movesFor(state, piece).some(
+      (target) =>
+        !target.capture &&
+        !target.stay &&
+        terrain(state, target.r, target.c) === "hostile",
+    )
+  )
+    traits.add("Zoorremediação");
 
   if (terrain(state, piece.r, piece.c) === "hostile") {
     if (has(piece, "Penas")) traits.add("Penas");

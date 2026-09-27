@@ -46,6 +46,7 @@ import {
   dormant,
   manipulationTargets,
   constructionTargets,
+  nicheConstructionTargets,
   nursingTargets,
   eggPlacementTargets,
   domesticPlacementTargets,
@@ -2335,12 +2336,18 @@ function executeMove(ctx, action) {
     !pieceCapture &&
     stableLanding &&
     landingTerrain === "hostile" &&
-    has(p, "Construtor de Nicho")
+    has(p, "Zoorremediação")
   ) {
     state.board[cell] = "neutral";
     log(
       state,
-      `${OWNERS[p.owner]}: 🧱 Construtor de Nicho neutralizou ${coord(p.r, p.c)}.`,
+      `${OWNERS[p.owner]}: ✨ Zoorremediação neutralizou ${coord(p.r, p.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Zoorremediação",
+      "✨ Zoorremediação neutralizou a casa hostil de chegada.",
+      { pieceId: p.id, outcome: "neutralized-hostile-terrain" },
     );
   }
   if (fruitConsumption && plantSeed) {
@@ -2700,6 +2707,32 @@ function executeMove(ctx, action) {
     movementContinuation,
   );
 }
+function resolveNicheBuild(ctx, action) {
+  const state = ctx.state,
+    p = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    ),
+    target = nicheConstructionTargets(state, p).find(
+      (cell) => cell.r === action.r && cell.c === action.c,
+    );
+  if (!p || !target)
+    throw Error("Construtor de Nicho só pode erguer uma barreira ortogonal a partir de um canto.");
+  const cell = square(target.r, target.c);
+  state.barriers.push(cell);
+  log(
+    state,
+    `${OWNERS[p.owner]}: 🧱 Construtor de Nicho criou uma barreira em ${coord(target.r, target.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Construtor de Nicho",
+    "🧱 Construtor de Nicho criou uma barreira ortogonal.",
+    { pieceId: p.id, outcome: "built-corner-barrier" },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveBudding(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -3198,6 +3231,8 @@ export function transition(previous, action) {
     resolveDirectPartner(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
     resolveNursing(ctx, action);
+  else if (action.type === "NICHE_BUILD" && state.phase === "move")
+    resolveNicheBuild(ctx, action);
   else if (action.type === "BUD" && state.phase === "move")
     resolveBudding(ctx, action);
   else if (action.type === "PUPATE" && state.phase === "move")

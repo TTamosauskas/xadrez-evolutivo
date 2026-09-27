@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 22;
+export const STATE_VERSION = 23;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -263,6 +263,10 @@ export const TRAITS = {
   ],
   "Construtor de Nicho": [
     "🧱",
+    "Quando está em um canto do tabuleiro, pode Vivificar uma casa ortogonal adjacente vazia para criar nela uma barreira.",
+  ],
+  Zoorremediação: [
+    "✨",
     "Neutraliza a casa hostil de chegada quando a criatura sobrevive.",
   ],
   "Antropização": [
