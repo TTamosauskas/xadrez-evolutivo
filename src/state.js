@@ -1859,11 +1859,14 @@ const expressedPositiveGenes = (piece) =>
   ).size;
 
 const carriedNegativeMutations = (piece) =>
-  new Set(
-    genomeCarriedTraits(piece?.genome).filter((trait) =>
+  new Set([
+    ...genomeCarriedTraits(piece?.genome).filter((trait) =>
       NEGATIVE_TRAITS.has(trait),
     ),
-  ).size;
+    ...(piece?.somaticMutations ?? []).filter((trait) =>
+      NEGATIVE_TRAITS.has(trait),
+    ),
+  ]).size;
 
 const hiddenPositiveRecessives = (piece) =>
   hiddenRecessiveTraits(piece).filter((trait) => !NEGATIVE_TRAITS.has(trait))
