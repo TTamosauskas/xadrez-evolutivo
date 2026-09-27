@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -205,6 +205,14 @@ function normalizeLegacyZoochory(state) {
   return state;
 }
 
+function normalizeLegacyNeurodivergenceState(state) {
+  state.neurofocus ??= null;
+  state.neurodivergenceAction ??= null;
+  for (const piece of state.pieces ?? [])
+    piece.neurodivergenceRestThroughRound ??= null;
+  return state;
+}
+
 function preserveLegacyNicheRemediation(value) {
   if (!value || typeof value !== "object") return;
   if (
@@ -316,6 +324,7 @@ function migrateLegacy(data) {
   state.version = STATE_VERSION;
   normalizeLegacyTraitNames(state);
   normalizeStoredGenomes(state);
+  normalizeLegacyNeurodivergenceState(state);
   preserveLegacyLactationLineage(state);
   if (data.version <= 22) {
     preserveLegacyNicheRemediation(state);
