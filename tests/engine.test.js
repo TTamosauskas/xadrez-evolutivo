@@ -5359,23 +5359,32 @@ test("Sociabilidade lets a connected group of four choose a sacrifice", () => {
   assertState(s);
 });
 
-test("Mimetismo can redirect capture damage to an adjacent piece", () => {
+test("Mimetismo swaps with an attacker ally and redirects the capture", () => {
   const base = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
+    { owner: "blue", r: 3, c: 4 },
     { owner: "amber", r: 4, c: 4, traits: ["Mimetismo"] },
-    { owner: "amber", r: 3, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
   let result = null;
-  for (let seed = 1; seed < 10000 && !result; seed++) {
+  for (let seed = 1; seed < 20000 && !result; seed++) {
     const probe = structuredClone(base);
     probe.rng = seed;
     const next = simulate(probe, move(probe.pieces[0], 4, 4));
-    if (next.logs.some((entry) => entry.text.includes("🫥 Mimetismo desviou")))
+    if (
+      next.logs.some((entry) =>
+        entry.text.includes("🥸 Mimetismo trocou o alvo"),
+      )
+    )
       result = next;
   }
   assert.ok(result);
-  assert.ok(result.pieces.some((piece) => piece.id === 2));
+  assert.ok(
+    result.pieces.some(
+      (piece) => piece.id === 3 && piece.r === 3 && piece.c === 4,
+    ),
+  );
+  assert.ok(!result.pieces.some((piece) => piece.id === 2));
   assert.equal(result.passiveEffects.at(-1)?.trait, "Mimetismo");
   assert.equal(result.passiveEffects.at(-1)?.outcome, "redirected-capture");
   assertState(result);
