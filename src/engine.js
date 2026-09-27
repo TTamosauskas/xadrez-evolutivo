@@ -511,9 +511,13 @@ export function retaliatoryDefenseChance(attacker, trait) {
   return has(attacker, "Osteodermos") ? base / 2 : base;
 }
 
-function hostileHazardKills(state, piece) {
+function hostileHazardKills(state, piece, normalHostile = false) {
   if (random(state) >= 1 / 2) return false;
-  if (has(piece, "Extremotolerância") && random(state) < 1 / 2) {
+  if (
+    normalHostile &&
+    has(piece, "Extremotolerância") &&
+    random(state) < 1 / 2
+  ) {
     emitPassiveEffect(
       state,
       "Extremotolerância",
@@ -606,7 +610,7 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
       "hostile",
     );
     piece.hostileRiskRound = round(state) + 1;
-    if (hostileHazardKills(state, piece)) {
+    if (hostileHazardKills(state, piece, terrain(state, r, c) === "hostile")) {
       const killed = ctx.kill(piece.id, reason + " em casa hostil");
       if (killed && terrain(state, r, c) === "hostile")
         markCarcass(state, destination);
@@ -1259,7 +1263,13 @@ function advanceTurn(ctx) {
         p.hostileRiskRound !== round(state)
       ) {
         p.hostileRiskRound = round(state);
-        if (hostileHazardKills(state, p)) {
+        if (
+          hostileHazardKills(
+            state,
+            p,
+            terrain(state, p.r, p.c) === "hostile",
+          )
+        ) {
           const cell = square(p.r, p.c);
           const killed = ctx.kill(p.id, "casa hostil");
           if (killed && terrain(state, p.r, p.c) === "hostile")
@@ -2029,7 +2039,7 @@ function executeMove(ctx, action) {
         ["Casas vermelhas oferecem perigo de morte."],
         "hostile",
       );
-      if (hostileHazardKills(state, p)) {
+      if (hostileHazardKills(state, p, terrain(state, r, c) === "hostile")) {
         if (state.movementTrace) {
           const stopIndex = state.movementTrace.path.findIndex(
             (cell) => cell.r === r && cell.c === c,
@@ -2833,7 +2843,7 @@ function executeMove(ctx, action) {
       "hostile",
     );
     p.hostileRiskRound = round(state) + 1;
-    if (hostileHazardKills(state, p)) {
+    if (hostileHazardKills(state, p, landingTerrain === "hostile")) {
       const killed = ctx.kill(p.id, "casa hostil após captura");
       if (killed && terrain(state, p.r, p.c) === "hostile")
         markCarcass(state, cell);
