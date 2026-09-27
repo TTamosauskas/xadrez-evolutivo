@@ -45,6 +45,7 @@ import {
   canWaitForBirth,
   dormant,
   adjacentAlliesCount,
+  intoxicationResting,
   manipulationTargets,
   constructionTargets,
   nicheConstructionTargets,
@@ -114,11 +115,56 @@ import {
   repairConwayStagnation,
   offensiveActionCount,
 } from "./environment.js";
+function applyChemicalCaptureDefense(state, dead, attacker) {
+  if (!attacker || attacker.owner === dead.owner) return;
+  if (has(dead, "Veneno")) {
+    attacker.venom = { remaining: 2, infectedTurn: state.turn };
+    return;
+  }
+  if (
+    has(dead, "Toxicidade") &&
+    distance(attacker, dead) === 1
+  ) {
+    const currentRound = round(state);
+    attacker.intoxicationRestThroughRound = Math.max(
+      attacker.intoxicationRestThroughRound ?? -1,
+      currentRound + 1,
+    );
+    if ((attacker.nextReproductionRound ?? currentRound) > currentRound)
+      attacker.nextReproductionRound++;
+    log(
+      state,
+      `${OWNERS[dead.owner]}: 😵‍💫 Toxicidade intoxicou o agressor por um turno próprio.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Toxicidade",
+      "😵‍💫 Toxicidade: agressor intoxicado por 1 turno.",
+      {
+        pieceId: dead.id,
+        outcome: "intoxicated-attacker",
+        value: 1,
+      },
+    );
+  }
+}
+
+function tanatosisEligible(state, dead, attacker, options = {}) {
+  return (
+    !!attacker &&
+    attacker.owner !== dead.owner &&
+    has(dead, "Tanatose") &&
+    !options.suppressTanatosis &&
+    !intoxicationResting(state, dead) &&
+    !has(attacker, "Necrófago")
+  );
+}
+
 export function context(state) {
   const ctx = {
     state,
     reserved: new Set(),
-    kill(id, reason, attacker = null, force = false) {
+    kill(id, reason, attacker = null, force = false, options = {}) {
       const dead = state.pieces.find((p) => p.id === id);
       if (!dead) return false;
       if (!force && !attacker && has(dead, "Regeneração") && !dead.regenerationUsed) {
@@ -140,6 +186,46 @@ export function context(state) {
       const bonded = dead.pairedWithId
         ? state.pieces.find((piece) => piece.id === dead.pairedWithId)
         : null;
+      if (
+        attacker &&
+        attacker.owner !== dead.owner &&
+        has(dead, "Tanatose") &&
+        has(attacker, "Necrófago") &&
+        !options.suppressTanatosis
+      )
+        emitPassiveEffect(
+          state,
+          "Necrófago",
+          "🐺 Necrófago neutralizou ⚰️ Tanatose.",
+          { pieceId: attacker.id, outcome: "neutralized-thanatosis" },
+        );
+      if (tanatosisEligible(state, dead, attacker, options)) {
+        releaseCarriedPlantSeeds(state, dead);
+        const stored = clone(dead),
+          cell = square(dead.r, dead.c);
+        state.pieces = state.pieces.filter((piece) => piece.id !== id);
+        if (state.chain === id) clearLocomotionChain(state);
+        if (state.neurofocus === id) state.neurofocus = null;
+        if (state.neurodivergenceAction?.id === id)
+          state.neurodivergenceAction = null;
+        applyChemicalCaptureDefense(state, dead, attacker);
+        state.thanatosis.push({
+          piece: stored,
+          cell,
+          captorId: attacker.id,
+        });
+        log(
+          state,
+          `${OWNERS[dead.owner]}: ⚰️ Tanatose retirou temporariamente a criatura de ${coord(dead.r, dead.c)}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Tanatose",
+          "⚰️ Tanatose: a criatura aparentou morrer.",
+          { pieceId: dead.id, outcome: "entered-thanatosis" },
+        );
+        return true;
+      }
       releaseCarriedPlantSeeds(state, dead);
       state.pieces = state.pieces.filter((p) => p.id !== id);
       if (bonded?.pairedWithId === dead.id) bonded.pairedWithId = null;
@@ -149,8 +235,7 @@ export function context(state) {
         state.neurodivergenceAction = null;
   state.chainTrait = null;
       if (attacker) {
-        if (has(dead, "Veneno"))
-          attacker.venom = { remaining: 2, infectedTurn: state.turn };
+        applyChemicalCaptureDefense(state, dead, attacker);
         const disease = state.diseases.find(
           (d) => d.id === dead.infection?.disease,
         );
@@ -229,8 +314,12 @@ function markHadeanTutorialStep(state, step) {
 }
 function extinction(state) {
   if (state.result) return true;
-  const blue = state.pieces.some((p) => p.owner === "blue"),
-    amber = state.pieces.some((p) => p.owner === "amber");
+  const blue =
+      state.pieces.some((p) => p.owner === "blue") ||
+      state.thanatosis.some((entry) => entry.piece.owner === "blue"),
+    amber =
+      state.pieces.some((p) => p.owner === "amber") ||
+      state.thanatosis.some((entry) => entry.piece.owner === "amber");
   if (!blue || !amber) {
     const simultaneous = !blue && !amber,
       extinctionFounder = simultaneous ? state.lastDeathPiece ?? null : null,
@@ -1160,8 +1249,64 @@ function recycleOccupiedOrganicResidue(state) {
   return recycled;
 }
 
+function resolveThanatosis(state) {
+  let resolved = 0;
+  for (const entry of [...state.thanatosis]) {
+    const captor = state.pieces.find(
+      (piece) => piece.id === entry.captorId,
+    );
+    if (captor && square(captor.r, captor.c) === entry.cell) continue;
+
+    state.thanatosis = state.thanatosis.filter(
+      (candidate) => candidate.piece.id !== entry.piece.id,
+    );
+    const r = Math.floor(entry.cell / 8),
+      c = entry.cell % 8,
+      occupied =
+        !!at(state, r, c) ||
+        !!eggAt(state, r, c) ||
+        !!plantSeedAt(state, r, c) ||
+        !!fragmentAt(state, r, c) ||
+        !!barrierAt(state, r, c) ||
+        !!lethalHazardAt(state, r, c);
+    if (occupied || random(state) >= 1 / 4) {
+      log(
+        state,
+        `${OWNERS[entry.piece.owner]}: ⚰️ Tanatose não conseguiu restabelecer a criatura em ${coord(r, c)}.`,
+      );
+      resolved++;
+      continue;
+    }
+
+    const revived = entry.piece;
+    revived.r = r;
+    revived.c = c;
+    revived.stationarySinceRound = round(state);
+    state.carcasses = state.carcasses.filter(
+      (carcass) => carcass.cell !== entry.cell,
+    );
+    state.captureDisturbances = (state.captureDisturbances ?? []).filter(
+      (disturbance) => disturbance.cell !== entry.cell,
+    );
+    state.pieces.push(revived);
+    log(
+      state,
+      `${OWNERS[revived.owner]}: ⚰️ Tanatose permitiu o retorno em ${coord(r, c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Tanatose",
+      "⚰️ Tanatose: a criatura retomou a atividade.",
+      { pieceId: revived.id, outcome: "returned-from-thanatosis" },
+    );
+    resolved++;
+  }
+  return resolved;
+}
+
 function settle(ctx) {
   const state = ctx.state;
+  resolveThanatosis(state);
   recycleOccupiedOrganicResidue(state);
   if (
     state.result ||
