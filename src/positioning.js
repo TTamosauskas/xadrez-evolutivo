@@ -120,6 +120,28 @@ export function socialPositionScore(state, profile, cell) {
   ];
 }
 
+export function fertileProximityScore(state, cell, origin = null) {
+  const fertile = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (
+        state.board[r * 8 + c] === "fertile" &&
+        !(origin && origin.r === r && origin.c === c)
+      )
+        fertile.push({ r, c });
+  return [-nearestDistance(fertile, cell)];
+}
+
+export function photosyntheticAllyProximityScore(state, profile, cell) {
+  const plants = state.pieces.filter(
+    (piece) =>
+      piece.id !== profile.id &&
+      piece.owner === profile.owner &&
+      has(piece, "Fotossíntese"),
+  );
+  return [-nearestDistance(plants, cell)];
+}
+
 function bestCells(cells, score) {
   if (!cells.length) return [];
   let best = [],
@@ -153,6 +175,38 @@ export function offspringPlacementPreference(state, cells, origin, profile) {
     );
     if (next.length < preferred.length) appliedTraits.push("Corticosteroides");
     preferred = next;
+  } else if (has(profile, "Forrageamento")) {
+    const plants = state.pieces.filter(
+      (piece) =>
+        piece.id !== profile.id &&
+        piece.owner === profile.owner &&
+        has(piece, "Fotossíntese"),
+    );
+    if (plants.length) {
+      const next = bestCells(preferred, (cell) =>
+        photosyntheticAllyProximityScore(state, profile, cell),
+      );
+      if (next.length < preferred.length) appliedTraits.push("Forrageamento");
+      preferred = next;
+    }
+  }
+
+  if (has(profile, "Tropismo")) {
+    const fertile = [];
+    for (let r = 0; r < 8; r++)
+      for (let c = 0; c < 8; c++)
+        if (
+          state.board[r * 8 + c] === "fertile" &&
+          !(origin && origin.r === r && origin.c === c)
+        )
+          fertile.push({ r, c });
+    if (fertile.length) {
+      const next = bestCells(preferred, (cell) =>
+        fertileProximityScore(state, cell, origin),
+      );
+      if (next.length < preferred.length) appliedTraits.push("Tropismo");
+      preferred = next;
+    }
   }
 
   if (has(profile, "Ocitocina")) {
