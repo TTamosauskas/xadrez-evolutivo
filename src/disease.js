@@ -14,6 +14,7 @@ import {
   pick,
   log,
   notice,
+  emitPassiveEffect,
   fecalResidueAt,
   barrierAt,
   lethalHazardAt,
@@ -74,6 +75,43 @@ const defaultPathogenTransmission = (agent) =>
 
 const fullyImmuneToEcologicalPathogen = (piece) =>
   has(piece, "Resistência") && !has(piece, "Imunodeficiência");
+
+export function tegumentBlocksPathogenExposure(state, piece, disease) {
+  if (!piece || !disease || disease.source === "vector") return false;
+  const transmission = disease.transmission;
+  let trait = null,
+    icon = null,
+    chance = 0;
+  if (
+    has(piece, "Pele Glandular") &&
+    ["trail", "environmental", "spore"].includes(transmission)
+  ) {
+    trait = "Pele Glandular";
+    icon = "🐸";
+    chance = 0.3;
+  } else if (
+    has(piece, "Pelos") &&
+    ["contact", "trail", "environmental", "spore"].includes(transmission)
+  ) {
+    trait = "Pelos";
+    icon = "🦣";
+    chance = 0.2;
+  }
+  if (!chance || random(state) >= chance) return false;
+  const text =
+    trait === "Pele Glandular"
+      ? "🐸 Pele Glandular neutralizou a exposição ambiental."
+      : "🦣 Pelos bloquearam a exposição ao patógeno.";
+  log(
+    state,
+    `${OWNERS[piece.owner]}: ${icon} ${trait} bloqueou exposição a ${agentDefinition(disease).name}.`,
+  );
+  emitPassiveEffect(state, trait, text, {
+    pieceId: piece.id,
+    outcome: "blocked-pathogen-exposure",
+  });
+  return true;
+}
 
 function sexualPathogenCandidates(state) {
   return state.pieces.filter(
@@ -232,6 +270,7 @@ export function infect(state, piece, disease) {
     disease.survivors.includes(piece.id)
   )
     return false;
+  if (tegumentBlocksPathogenExposure(state, piece, disease)) return false;
   piece.infection = {
     disease: disease.id,
     due: round(state) + disease.delay,
@@ -389,7 +428,10 @@ export function startDisease(
   state.cyclePathogenProfile ??= { agent, transmission };
   recordDiscovery(state, "events", "pathogen");
   if (agent === "fungus") {
-    if (!fullyImmuneToEcologicalPathogen(seed))
+    if (
+      !fullyImmuneToEcologicalPathogen(seed) &&
+      !tegumentBlocksPathogenExposure(state, seed, disease)
+    )
       recordPathogenExposure(state, seed, disease);
   } else if (infect(state, seed, disease))
     recordPathogenExposure(state, seed, disease);
@@ -834,6 +876,7 @@ function fungalSporeContact(state, disease, spore, exposures) {
     random(state) >= FUNGAL_SPORE_CONTACT_CHANCE
   )
     return false;
+  if (tegumentBlocksPathogenExposure(state, piece, disease)) return false;
   exposures.add(piece);
   if (!disease.infected.includes(piece.id)) disease.infected.push(piece.id);
   return true;
@@ -1006,6 +1049,11 @@ export function tickDiseases(ctx) {
           if (
             disease.source === "eco" &&
             fullyImmuneToEcologicalPathogen(piece)
+          )
+            continue;
+          if (
+            disease.agent === "fungus" &&
+            tegumentBlocksPathogenExposure(state, piece, disease)
           )
             continue;
           exposures.add(piece);
