@@ -1,4 +1,4 @@
-import { legalActions, movesFor } from "./moves.js";
+import { legalActions, movesFor, actionsForPiece } from "./moves.js";
 import { simulate } from "./engine.js";
 import { has, other, square, distance, canPhotosynthesize } from "./constants.js";
 import {
@@ -8,16 +8,18 @@ import {
   carcassAt,
   captureDisturbanceAt,
   lethalHazardAt,
+  reproductionReady,
 } from "./state.js";
 import {
   canUseBasalFertility,
   predatoryReproductionAvailable,
 } from "./reproduction-traits.js";
 import { corticalActionBonus } from "./positioning.js";
+import { NEGATIVE_TRAITS } from "./geology.js";
 export function fallbackAction(state) {
   const actions = legalActions(state);
   return (
-    actions.sort((a, b) => priority(state, b) - priority(state, a))[0] ?? {
+    actions.sort((a, b) => actionPriority(state, b) - actionPriority(state, a))[0] ?? {
       type: "PASS",
     }
   );
@@ -63,7 +65,7 @@ function futureCaptureOptions(state, piece, action) {
 export function crowdingPenalty(count) {
   return count > 12 ? Math.min(36, (count - 12) * 2) : 0;
 }
-function priority(state, a) {
+export function actionPriority(state, a) {
   if (a.type === "BUD") return 12;
   if (a.type === "PUPATE") {
     const piece = state.pieces.find((candidate) => candidate.id === a.id);
@@ -200,6 +202,121 @@ function priority(state, a) {
     lethalPenalty
   );
 }
+function evaluationStateForPiece(state, piece) {
+  return {
+    ...state,
+    current: piece.owner,
+    phase: "move",
+    chain: null,
+    chainTrait: null,
+    chainOptions: [],
+    chainOrigin: null,
+    neurofocus: null,
+    neurodivergenceAction: null,
+    socialDefense: null,
+    serotoninReposition: null,
+    manipulation: null,
+    building: null,
+    eggPlacement: null,
+    domesticPlacement: null,
+  };
+}
+
+export function bestMoveSuggestion(state, piece) {
+  if (!piece) return null;
+  const hypothetical = evaluationStateForPiece(state, piece),
+    candidate = hypothetical.pieces.find((entry) => entry.id === piece.id);
+  if (!candidate) return null;
+  const moves = actionsForPiece(hypothetical, candidate, {
+      ignoreTurn: true,
+    }).filter((action) => action.type === "MOVE");
+  if (!moves.length) return null;
+  let best = null,
+    bestScore = -Infinity;
+  for (const action of moves) {
+    const score = actionPriority(hypothetical, action);
+    if (
+      score > bestScore ||
+      (score === bestScore &&
+        (!best ||
+          action.r < best.r ||
+          (action.r === best.r && action.c < best.c)))
+    ) {
+      best = action;
+      bestScore = score;
+    }
+  }
+  return best ? { action: best, score: bestScore } : null;
+}
+
+export function superorganismRecommendation(state, selected) {
+  if (!selected || !has(selected, "Superorganismo")) return null;
+  const members = state.pieces.filter(
+    (piece) =>
+      piece.owner === selected.owner && has(piece, "Superorganismo"),
+  );
+  let best = null;
+  for (const member of members) {
+    const suggestion = bestMoveSuggestion(state, member);
+    if (!suggestion) continue;
+    if (
+      !best ||
+      suggestion.score > best.score ||
+      (suggestion.score === best.score && member.id < best.memberId)
+    )
+      best = {
+        memberId: member.id,
+        action: suggestion.action,
+        score: suggestion.score,
+      };
+  }
+  return best;
+}
+
+const CHESS_SACRIFICE_VALUE = Object.freeze([1, 3, 3, 5, 100, 9]);
+
+function compareSacrificeVectors(a, b) {
+  for (let index = 0; index < Math.max(a.length, b.length); index++) {
+    const delta = (a[index] ?? 0) - (b[index] ?? 0);
+    if (delta) return delta;
+  }
+  return 0;
+}
+
+export function hierarchySacrificeRecommendation(state) {
+  if (state.phase !== "social-defense" || !state.socialDefense) return null;
+  const ids = new Set(state.socialDefense.memberIds ?? []),
+    members = state.pieces.filter((piece) => ids.has(piece.id));
+  if (!members.some((piece) => has(piece, "Hierarquia"))) return null;
+
+  let chosen = null,
+    chosenVector = null;
+  for (const piece of members) {
+    const negatives = (piece.traits ?? []).filter((trait) =>
+        NEGATIVE_TRAITS.has(trait),
+      ).length,
+      positives = (piece.traits ?? []).length - negatives,
+      bestMove = bestMoveSuggestion(state, piece),
+      vector = [
+        reproductionReady(state, piece) ? 0 : 1,
+        -(CHESS_SACRIFICE_VALUE[piece.rank] ?? 1),
+        negatives,
+        -positives,
+        -(bestMove?.score ?? -100000),
+      ];
+    if (
+      chosenVector === null ||
+      compareSacrificeVectors(vector, chosenVector) > 0 ||
+      (compareSacrificeVectors(vector, chosenVector) === 0 &&
+        piece.id < chosen.id)
+    ) {
+      chosen = piece;
+      chosenVector = vector;
+    }
+  }
+  return chosen;
+}
+
 function evaluate(state, owner) {
   if (state.result)
     return state.result.winner === owner
@@ -245,7 +362,7 @@ export function chooseAction(
   { now = () => performance.now(), budget = 180, maxNodes = 300 } = {},
 ) {
   const actions = legalActions(state).sort(
-    (a, b) => priority(state, b) - priority(state, a),
+    (a, b) => actionPriority(state, b) - actionPriority(state, a),
   );
   if (!actions.length) return { type: "PASS" };
   const cortexAvailable = actions.some(
@@ -279,7 +396,7 @@ export function chooseAction(
       !next.result
     ) {
       const replies = legalActions(next)
-        .sort((a, b) => priority(next, b) - priority(next, a))
+        .sort((a, b) => actionPriority(next, b) - actionPriority(next, a))
         .slice(0, 8);
       let replyScore = next.current === other(owner) ? Infinity : -Infinity;
       for (const reply of replies) {
@@ -293,7 +410,7 @@ export function chooseAction(
       }
       if (Number.isFinite(replyScore)) value = replyScore;
     }
-    value += priority(state, action) * 0.1;
+    value += actionPriority(state, action) * 0.1;
     if (value > score) {
       score = value;
       best = action;
