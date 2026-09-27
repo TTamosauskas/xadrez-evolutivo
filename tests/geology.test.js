@@ -890,6 +890,10 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
   p.ancestry.push("Escavador");
   assert.equal(traitUnlocked(s, "Construtor de Nicho", p), true);
   assert.equal(traitUnlocked(s, "Construtor de Nicho", unrelated), false);
+  p.ancestry.push("Construtor de Nicho");
+  assert.equal(traitUnlocked(s, "Zoorremediação", p), true);
+  assert.equal(traitUnlocked(s, "Zoorremediação", unrelated), false);
+  assert.equal(periodCompletionInnovations(s).includes("Zoorremediação"), false);
 
   s.geologicalStage = "devonian";
   s.historicalTraits = [
