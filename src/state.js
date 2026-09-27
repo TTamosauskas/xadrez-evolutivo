@@ -90,7 +90,17 @@ export const barrierAt = (state, r, c) =>
   builtBarrierAt(state, r, c) ||
   naturalBarrierAt(state, r, c) ||
   eventBarrierAt(state, r, c);
-export const terrain = (state, r, c) => state.board[square(r, c)];
+export const chemicalHazardAt = (state, r, c) =>
+  (state.chemicalHazards ?? []).find(
+    (entry) => entry.cell === square(r, c) && state.turn <= entry.expiresTurn,
+  ) ?? null;
+export const webAt = (state, r, c) =>
+  (state.webs ?? []).find(
+    (entry) =>
+      entry.cell === square(r, c) && entry.expiresRound >= round(state),
+  ) ?? null;
+export const terrain = (state, r, c) =>
+  chemicalHazardAt(state, r, c) ? "hostile" : state.board[square(r, c)];
 export const organicResidueAt = (state, r, c) => {
   const cell = square(r, c);
   return (
@@ -335,7 +345,7 @@ export function deterministicDeathNextTurn(state, piece) {
     piece.venom.infectedTurn < state.turn &&
     !regenerationAvailable
   )
-    return "Veneno";
+    return piece.venom.source === "Peçonha" ? "Peçonha" : "Veneno";
 
   if (!reachesNextRound) return null;
 
@@ -457,6 +467,9 @@ export function newPiece(state, owner, r, c, source = {}) {
       semelparityDeathPending: source.semelparityDeathPending ?? false,
       neurodivergenceRestThroughRound: source.neurodivergenceRestThroughRound ?? null,
       intoxicationRestThroughRound: source.intoxicationRestThroughRound ?? null,
+      webTrapped: source.webTrapped ?? null,
+      webCreatedStationarySinceRound:
+        source.webCreatedStationarySinceRound ?? null,
       stationarySinceRound: source.stationarySinceRound ?? bornRound,
       budded: source.budded ?? false,
       colonyId: source.colonyId ?? null,
@@ -1132,6 +1145,8 @@ export function createState(seed = Date.now(), options = {}) {
     nextPlantSeed: 1,
     plantSeeds: [],
     trails: [],
+    webs: [],
+    chemicalHazards: [],
     nextFragment: 1,
     fragments: [],
     nextColonyId: 1,
@@ -2412,6 +2427,25 @@ export function assertState(state) {
     !Array.isArray(state.eggs) ||
     !Array.isArray(state.plantSeeds) ||
     (state.trails !== undefined && !Array.isArray(state.trails)) ||
+    (state.webs !== undefined && !Array.isArray(state.webs)) ||
+    (state.chemicalHazards !== undefined &&
+      !Array.isArray(state.chemicalHazards)) ||
+    (state.webs ?? []).some(
+      (entry) =>
+        !entry ||
+        !integer(entry.sourceId, 1) ||
+        !["blue", "amber"].includes(entry.owner) ||
+        !integer(entry.cell, 0, 63) ||
+        !integer(entry.expiresRound, 0),
+    ) ||
+    (state.chemicalHazards ?? []).some(
+      (entry) =>
+        !entry ||
+        !integer(entry.sourceId, 1) ||
+        !["blue", "amber"].includes(entry.owner) ||
+        !integer(entry.cell, 0, 63) ||
+        !integer(entry.expiresTurn, 0),
+    ) ||
     !Array.isArray(state.pathogenSpores) ||
     !Array.isArray(state.fragments) ||
     !Array.isArray(state.barriers) ||
@@ -2718,6 +2752,13 @@ export function assertState(state) {
       (p.intoxicationRestThroughRound !== undefined &&
         p.intoxicationRestThroughRound !== null &&
         !integer(p.intoxicationRestThroughRound)) ||
+      (p.webTrapped !== undefined &&
+        p.webTrapped !== null &&
+        (!integer(p.webTrapped.sourceId, 1) ||
+          !integer(p.webTrapped.cell, 0, 63))) ||
+      (p.webCreatedStationarySinceRound !== undefined &&
+        p.webCreatedStationarySinceRound !== null &&
+        !integer(p.webCreatedStationarySinceRound, 0)) ||
       (p.photosynthesisCell !== undefined &&
         !integer(p.photosynthesisCell, 0, 63)) ||
       (p.photosynthesisSinceTurn !== undefined &&
