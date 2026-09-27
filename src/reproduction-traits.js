@@ -225,6 +225,7 @@ export function canPupate(state, piece) {
   return !!(
     piece &&
     has(piece, "Metamorfose") &&
+    !piece.autotomyRecovery &&
     juvenile(state, piece) &&
     !piece.metamorphosisUsed &&
     !Number.isInteger(piece.pupaUntilRound) &&
