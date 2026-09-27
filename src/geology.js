@@ -1752,7 +1752,7 @@ export function periodTraitReachable(state, trait) {
 
 const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
   "Imunidade Adaptativa",
-  Endotermia,
+  "Endotermia",
   "Pele Glandular",
   "Escamas",
   "Osteodermos",
