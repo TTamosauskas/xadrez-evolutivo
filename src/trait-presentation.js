@@ -127,6 +127,17 @@ export const TRAIT_SUMMARIES = Object.freeze({
   "Mutação Letal": "Morre após 3 rodadas.",
   "Mutação Disfuncional": "Após mover, descansa na rodada seguinte.",
   Coletor: "Armazena fertilidade e pode usá-la para reproduzir parado.",
+  "Pele Glandular": "Bloqueia 30% das exposições ambientais por trilha bacteriana, fungos ou esporos.",
+  Escamas: "Reduz em 20% multiplicativos o sucesso de capturas adjacentes.",
+  Osteodermos: "Reduz pela metade o risco de contra-ataque por Espinhos ou Chifre.",
+  Pelos: "Reduz risco hostil em 10%, exposições externas em 20% e reforça Camuflagem contra diagonais.",
+  Penas: "Reduz risco hostil em 15% e reforça Camuflagem contra diagonais.",
+  Endozoocoria: "Produz 🍎 consumível que dispersa a prole vegetal por 💩.",
+  Capsaicina: "Transforma 🍎 em 🌶️ e dobra a recuperação metabólica de consumidores com Pelos.",
+  Epizoocoria: "Sementes 🌾 aderem a Pelos ou Penas por três rodadas antes de se estabelecer.",
+  Sinzoocoria: "Sementes 🌰 armazenadas por Coletor dispersam-se após três rodadas se permanecerem sem uso.",
+  Mirmecocoria: "Diásporos 🍒 usam Artrópodes eusociais próximos para um transporte único.",
+  Roedor: "Neutraliza a proteção de Madeira durante a captura.",
 });
 
 export const traitSummary = (name, fallback = "") =>
