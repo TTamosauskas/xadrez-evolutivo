@@ -20,10 +20,10 @@ test("novas mutações ocupam períodos e loci funcionais coerentes", () => {
   assert.equal(TRAIT_STAGE.Peçonha, "devonian");
   assert.equal(TRAIT_STAGE.Teia, "carboniferous");
   assert.equal(TRAIT_STAGE["Projétil Biológico"], "carboniferous");
-  assert.equal(TRAIT_STAGE["Predação em Massa"], "paleogene");
-  assert.equal(TRAIT_STAGE.Garras, "paleogene");
-  assert.equal(TRAIT_STAGE.Eletrodescarga, "paleogene");
-  assert.equal(TRAIT_STAGE["Pescoço Verticalizado"], "neogene");
+  assert.equal(TRAIT_STAGE["Predação em Massa"], "eocene");
+  assert.equal(TRAIT_STAGE.Garras, "paleocene");
+  assert.equal(TRAIT_STAGE.Eletrodescarga, "oligocene");
+  assert.equal(TRAIT_STAGE["Pescoço Verticalizado"], "miocene");
   assert.equal(
     traitCombinationValid(["Garras", "Pescoço Verticalizado"]),
     false,
