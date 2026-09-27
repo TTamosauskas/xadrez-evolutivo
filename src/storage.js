@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -120,27 +120,17 @@ function normalizePathogenEvolution(state) {
       (state.historicalTraits ?? []).includes("Reprodução Sexuada")
     ) {
       const order = [
-        "hadean",
-        "archean",
-        "proterozoic",
-        "ediacaran",
-        "cambrian",
-        "ordovician",
-        "silurian",
-        "devonian",
-        "carboniferous",
-        "permian",
-        "triassic",
-        "jurassic",
-        "cretaceous",
-        "paleogene",
-        "neogene",
-        "quaternary",
+        "hadean", "eoarchean", "paleoarchean", "mesoarchean", "neoarchean",
+        "siderian", "rhyacian", "orosirian", "statherian", "calymmian",
+        "ectasian", "stenian", "tonian", "cryogenian", "ediacaran",
+        "cambrian", "ordovician", "silurian", "devonian", "carboniferous",
+        "permian", "triassic", "jurassic", "cretaceous", "paleocene",
+        "eocene", "oligocene", "miocene", "pliocene", "pleistocene", "holocene",
       ];
       const stageIndex = order.indexOf(state.geologicalStage),
-        proterozoicIndex = order.indexOf("proterozoic");
+        sexualIndex = order.indexOf("calymmian");
       state.sexualPathogenUnlockTotalCycle =
-        stageIndex > proterozoicIndex
+        stageIndex > sexualIndex
           ? state.totalCycles
           : (state.totalCycles ?? 1) + 1;
     }
@@ -335,6 +325,71 @@ function preserveLegacyLactationLineage(value) {
   }
 }
 
+const OLD_GEOLOGY_EXPANSION = Object.freeze({
+  archean: ["eoarchean", "paleoarchean", "mesoarchean", "neoarchean"],
+  proterozoic: ["siderian", "rhyacian", "orosirian", "statherian", "calymmian", "ectasian", "stenian", "tonian", "cryogenian"],
+  paleogene: ["paleocene", "eocene", "oligocene"],
+  neogene: ["miocene", "pliocene"],
+  quaternary: ["pleistocene", "holocene"],
+});
+
+function detailedLegacyStage(state) {
+  const history = new Set(state.historicalTraits ?? []);
+  if (state.geologicalStage === "archean")
+    return ["eoarchean", "paleoarchean", "mesoarchean", "neoarchean"][
+      Math.min(3, Math.max(0, (state.cycle ?? 1) - 1))
+    ];
+  if (state.geologicalStage === "proterozoic") {
+    if (history.has("Carnívoro")) return "stenian";
+    if (history.has("Ingestão")) return "ectasian";
+    if (history.has("Reprodução Sexuada")) return "calymmian";
+    if (history.has("Regeneração") || history.has("Brotamento")) return "statherian";
+    if (history.has("Multicelularismo")) return "orosirian";
+    if (history.has("Eucarionte") || history.has("Endossimbiose")) return "rhyacian";
+    return "siderian";
+  }
+  if (state.geologicalStage === "paleogene") {
+    if (["Eletrodescarga", "Interceptação preditiva", "Superorganismo", "Sinzoocoria", "Mirmecocoria"].some((trait) => history.has(trait)))
+      return "oligocene";
+    if (["Predação em Massa", "Ovulação Induzida", "Ecolocalização", "Caça Cooperativa", "Epizoocoria"].some((trait) => history.has(trait)))
+      return "eocene";
+    return "paleocene";
+  }
+  if (state.geologicalStage === "neogene")
+    return ["Polegar Opositor", "Bipedalismo", "Córtex Pré-Frontal", "Neurodivergência"].some((trait) => history.has(trait))
+      ? "pliocene"
+      : "miocene";
+  if (state.geologicalStage === "quaternary")
+    return ["Antropização", "Plantas Domesticadas", "Animais Domésticos"].some((trait) => history.has(trait))
+      ? "holocene"
+      : "pleistocene";
+  return state.geologicalStage;
+}
+
+function migrateDetailedGeology(state) {
+  const oldStage = state.geologicalStage,
+    nextStage = detailedLegacyStage(state);
+  if (nextStage === oldStage) return state;
+  state.geologicalStage = nextStage;
+  state.cycle = 1;
+
+  if (state.discoveries) {
+    const geology = state.discoveries.geology ?? [];
+    state.discoveries.geology = [
+      ...new Set(
+        geology.flatMap((id) => OLD_GEOLOGY_EXPANSION[id] ?? [id]),
+      ),
+    ];
+    state.discoveries.read = (state.discoveries.read ?? []).flatMap((key) => {
+      if (!key.startsWith("geology:")) return [key];
+      const id = key.slice("geology:".length),
+        expanded = OLD_GEOLOGY_EXPANSION[id];
+      return expanded ? expanded.map((stage) => `geology:${stage}`) : [key];
+    });
+  }
+  return state;
+}
+
 function migrateLegacy(data) {
   let state = normalizeLegacyZoochory(structuredClone(data));
   if (
@@ -368,7 +423,8 @@ function migrateLegacy(data) {
   if (state.phase === "origin" || state.origin) {
     const discoveries = structuredClone(state.discoveries ?? {});
     discoveries.geology = (discoveries.geology ?? []).filter(
-      (id) => id !== "archean",
+      (id) =>
+        !["archean", "eoarchean", "paleoarchean", "mesoarchean", "neoarchean"].includes(id),
     );
     state = createCampaignState(
       state.rng ?? Date.now(),
@@ -379,7 +435,8 @@ function migrateLegacy(data) {
       ...discoveries,
       geology: [...new Set(["hadean", ...(discoveries.geology ?? [])])],
       read: (discoveries.read ?? []).filter(
-        (key) => key !== "geology:archean",
+        (key) =>
+          !["geology:archean", "geology:eoarchean", "geology:paleoarchean", "geology:mesoarchean", "geology:neoarchean"].includes(key),
       ),
     };
     state.version = STATE_VERSION;
@@ -394,6 +451,7 @@ function migrateLegacy(data) {
     if (state.event) state.event.lethalHazards ??= [];
     for (const piece of state.pieces ?? []) delete piece.decompositionImmunity;
   }
+  migrateDetailedGeology(state);
   state.version = STATE_VERSION;
   normalizeLegacyTraitNames(state);
   if (Array.isArray(state?.discoveries?.read))
