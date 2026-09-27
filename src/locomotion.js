@@ -6,6 +6,7 @@ import {
   fragmentAt,
   barrierAt,
   ecologicalDomainBlocked,
+  inkCloudAt,
 } from "./state.js";
 
 const ORTH = Object.freeze([
@@ -233,7 +234,8 @@ export function jetPropulsionTargets(state, piece) {
 export function echolocationTargets(state, piece, baseTargets) {
   if (
     !has(piece, "Ecolocalização") ||
-    has(piece, "Deficiência Sensorial")
+    has(piece, "Deficiência Sensorial") ||
+    inkCloudAt(state, piece.r, piece.c)
   )
     return [];
   const result = [],
