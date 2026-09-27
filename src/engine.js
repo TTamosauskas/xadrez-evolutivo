@@ -1,4 +1,4 @@
-import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance } from "./constants.js";
+import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance, TRAITS } from "./constants.js";
 import {
   activateOrigin,
   clone,
@@ -513,6 +513,15 @@ export function retaliatoryDefenseChance(attacker, trait) {
 
 function hostileHazardKills(state, piece) {
   if (random(state) >= 1 / 2) return false;
+  if (has(piece, "Extremotolerância") && random(state) < 1 / 2) {
+    emitPassiveEffect(
+      state,
+      "Extremotolerância",
+      "𖢥 Extremotolerância reduziu o impacto do ambiente hostil.",
+      { pieceId: piece.id, outcome: "blocked-hostile-risk" },
+    );
+    return false;
+  }
   if (has(piece, "Penas") && random(state) < 0.15) {
     emitPassiveEffect(
       state,
@@ -632,6 +641,117 @@ function proteanEscapeCells(state, victim) {
       cells.push({ r, c });
     }
   return cells;
+}
+
+const CONTACT_CAPTURE_REDUCTIONS = Object.freeze([
+  ["Contorcionismo", 0.05],
+  ["Corpo Gelatinoso", 0.1],
+  ["Esclerotização", 0.2],
+  ["Escamas", 0.2],
+]);
+
+export function contactCaptureSuccessMultiplier(victim) {
+  return CONTACT_CAPTURE_REDUCTIONS.reduce(
+    (chance, [trait, reduction]) =>
+      has(victim, trait) ? chance * (1 - reduction) : chance,
+    1,
+  );
+}
+
+function contactCaptureBlockingTrait(state, victim) {
+  const active = CONTACT_CAPTURE_REDUCTIONS.filter(([trait]) =>
+    has(victim, trait),
+  );
+  if (!active.length) return null;
+  const roll = random(state);
+  let success = 1;
+  for (const [trait, reduction] of active) {
+    const next = success * (1 - reduction);
+    if (roll >= next && roll < success) return trait;
+    success = next;
+  }
+  return null;
+}
+
+function mimicryModels(state, attacker, victim) {
+  return state.pieces.filter(
+    (piece) =>
+      piece.id !== attacker.id &&
+      piece.id !== victim.id &&
+      piece.owner === attacker.owner &&
+      distance(piece, victim) === 1,
+  );
+}
+
+function movementDazzleReady(state, victim) {
+  const allies = state.pieces.filter(
+    (piece) =>
+      piece.id !== victim.id &&
+      piece.owner === victim.owner &&
+      has(piece, "Ofuscamento por movimento") &&
+      distance(piece, victim) === 1,
+  );
+  return allies.length >= 2 && proteanEscapeCells(state, victim).length > 0;
+}
+
+function behavioralDefenseTraits(state, attacker, victim) {
+  if (!victim || intoxicationResting(state, victim)) return [];
+  const traits = [];
+  if (has(victim, "Mimetismo") && mimicryModels(state, attacker, victim).length)
+    traits.push("Mimetismo");
+  if (
+    nocturnalRound(state) &&
+    has(victim, "Notívago") &&
+    !has(attacker, "Visão Noturna")
+  )
+    traits.push("Notívago");
+  if (
+    has(victim, "Exibição deimática") &&
+    proteanEscapeCells(state, attacker).length
+  )
+    traits.push("Exibição deimática");
+  else if (has(victim, "Tanatose") && !has(attacker, "Necrófago"))
+    traits.push("Tanatose");
+  else if (
+    has(victim, "Ofuscamento por movimento") &&
+    movementDazzleReady(state, victim)
+  )
+    traits.push("Ofuscamento por movimento");
+  else if (
+    has(victim, "Movimento proteano") &&
+    !has(attacker, "Interceptação preditiva") &&
+    proteanEscapeCells(state, victim).length
+  )
+    traits.push("Movimento proteano");
+  else if (has(victim, "Adrenalina") && adrenalineEscapeCells(state, victim).length)
+    traits.push("Adrenalina");
+  else if (
+    has(victim, "Velocidade") &&
+    !has(attacker, "Velocidade")
+  )
+    traits.push("Velocidade");
+  return traits;
+}
+
+function aggressiveMimicrySuppression(state, attacker, victim) {
+  if (!has(attacker, "Mimetismo Agressivo")) return null;
+  const defenses = behavioralDefenseTraits(state, attacker, victim);
+  if (!defenses.length || random(state) >= 1 / 4) return null;
+  const trait = defenses[0];
+  emitPassiveEffect(
+    state,
+    "Mimetismo Agressivo",
+    `👺 Mimetismo Agressivo neutralizou ${TRAITS[trait]?.[0] ?? ""} ${trait}.`,
+    {
+      pieceId: attacker.id,
+      outcome: "neutralized-behavioral-defense",
+    },
+  );
+  log(
+    state,
+    `${OWNERS[attacker.owner]}: 👺 Mimetismo Agressivo impediu a resposta de ${trait}.`,
+  );
+  return trait;
 }
 
 function adrenalineEscapeCells(state, victim) {
@@ -2039,7 +2159,13 @@ function executeMove(ctx, action) {
       !!plantSeed && target.fruitConsume === plantSeed.id,
     synzooCollection =
       !!plantSeed && target.synzooCollect === plantSeed.id,
-    capture = pieceCapture || eggCapture || seedCapture;
+    capture = pieceCapture || eggCapture || seedCapture,
+    reactiveDefensesActive =
+      !pieceCapture || !intoxicationResting(state, victim),
+    aggressiveNeutralizedTrait =
+      pieceCapture && victim.owner !== p.owner
+        ? aggressiveMimicrySuppression(state, p, victim)
+        : null;
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -2080,7 +2206,11 @@ function executeMove(ctx, action) {
     finishFrustratedCapture(ctx, p, "Cuidado Parental");
     return;
   }
-  if (pieceCapture && has(victim, "Espinhos")) {
+  if (
+    pieceCapture &&
+    reactiveDefensesActive &&
+    has(victim, "Espinhos")
+  ) {
     const roll = random(state),
       threshold = retaliatoryDefenseChance(p, "Espinhos");
     if (
@@ -2116,6 +2246,7 @@ function executeMove(ctx, action) {
   }
   if (
     pieceCapture &&
+    reactiveDefensesActive &&
     has(victim, "Chifre") &&
     has(p, "Carapaça")
   )
@@ -2127,6 +2258,7 @@ function executeMove(ctx, action) {
     );
   if (
     pieceCapture &&
+    reactiveDefensesActive &&
     has(victim, "Chifre") &&
     !has(p, "Carapaça")
   ) {
@@ -2166,25 +2298,38 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
-    has(victim, "Mimetismo")
+    reactiveDefensesActive &&
+    has(victim, "Mimetismo") &&
+    aggressiveNeutralizedTrait !== "Mimetismo"
   ) {
-    const adjacent = state.pieces.filter(
-      (piece) => piece.id !== victim.id && distance(piece, victim) === 1,
-    );
-    if (adjacent.length && random(state) < 1 / adjacent.length) {
-      const redirected = pick(state, adjacent),
-        redirectedCell = square(redirected.r, redirected.c);
-      ctx.kill(redirected.id, "Mimetismo", null, true);
-      markCarcass(state, redirectedCell);
-      markCaptureDisturbance(state, redirectedCell);
+    const models = mimicryModels(state, p, victim);
+    if (models.length && random(state) < 1 / 4) {
+      const redirected = pick(state, models),
+        victimOrigin = { r: victim.r, c: victim.c },
+        redirectedOrigin = { r: redirected.r, c: redirected.c };
+      victim.r = redirectedOrigin.r;
+      victim.c = redirectedOrigin.c;
+      redirected.r = victimOrigin.r;
+      redirected.c = victimOrigin.c;
+      const killed = ctx.kill(
+        redirected.id,
+        "captura desviada por Mimetismo",
+        p,
+        true,
+      );
+      if (killed) {
+        const redirectedCell = square(victimOrigin.r, victimOrigin.c);
+        markCarcass(state, redirectedCell);
+        markCaptureDisturbance(state, redirectedCell);
+      }
       log(
         state,
-        `${OWNERS[victim.owner]}: 🫥 Mimetismo desviou o ataque para ${coord(redirected.r, redirected.c)}.`,
+        `${OWNERS[victim.owner]}: 🥸 Mimetismo trocou o alvo por uma criatura do agressor em ${coord(victimOrigin.r, victimOrigin.c)}.`,
       );
       emitPassiveEffect(
         state,
         "Mimetismo",
-        "🫥 Mimetismo desviou o ataque.",
+        "🥸 Mimetismo confundiu a identidade do alvo.",
         { pieceId: victim.id, outcome: "redirected-capture" },
       );
       advanceTurn(ctx);
@@ -2224,6 +2369,8 @@ function executeMove(ctx, action) {
   const nocturnalEvasion =
     pieceCapture &&
     victim.owner !== p.owner &&
+    reactiveDefensesActive &&
+    aggressiveNeutralizedTrait !== "Notívago" &&
     nocturnalRound(state) &&
     has(victim, "Notívago") &&
     !has(p, "Visão Noturna");
@@ -2245,7 +2392,71 @@ function executeMove(ctx, action) {
   } else if (
     pieceCapture &&
     victim.owner !== p.owner &&
-    has(victim, "Movimento proteano")
+    reactiveDefensesActive &&
+    has(victim, "Exibição deimática") &&
+    aggressiveNeutralizedTrait !== "Exibição deimática"
+  ) {
+    const cells = proteanEscapeCells(state, p);
+    if (cells.length && random(state) < 1 / 4) {
+      const retreat = pick(state, cells);
+      reactiveRelocation(
+        ctx,
+        p,
+        retreat.r,
+        retreat.c,
+        "recuo por Exibição deimática",
+      );
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 🐡 Exibição deimática fez o agressor recuar para ${coord(retreat.r, retreat.c)}.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Exibição deimática",
+        "🐡 Exibição deimática assustou o agressor.",
+        { pieceId: victim.id, outcome: "repelled-attacker" },
+      );
+      advanceTurn(ctx);
+      settle(ctx);
+      return;
+    }
+  } else if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    reactiveDefensesActive &&
+    has(victim, "Ofuscamento por movimento") &&
+    aggressiveNeutralizedTrait !== "Ofuscamento por movimento"
+  ) {
+    const cells = proteanEscapeCells(state, victim);
+    if (movementDazzleReady(state, victim) && cells.length && random(state) < 1 / 4) {
+      const escape = pick(state, cells);
+      reactiveRelocation(
+        ctx,
+        victim,
+        escape.r,
+        escape.c,
+        "fuga por Ofuscamento por movimento",
+      );
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 🦓 Ofuscamento por movimento desviou a criatura para ${coord(escape.r, escape.c)}.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Ofuscamento por movimento",
+        "🦓 Ofuscamento por movimento confundiu o agressor.",
+        { pieceId: victim.id, outcome: "escaped-capture" },
+      );
+      advanceTurn(ctx);
+      settle(ctx);
+      return;
+    }
+  } else if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    reactiveDefensesActive &&
+    has(victim, "Movimento proteano") &&
+    aggressiveNeutralizedTrait !== "Movimento proteano"
   ) {
     if (has(p, "Interceptação preditiva")) {
       emitPassiveEffect(
@@ -2283,13 +2494,17 @@ function executeMove(ctx, action) {
   } else if (
     pieceCapture &&
     victim.owner !== p.owner &&
-    has(victim, "Adrenalina")
+    reactiveDefensesActive &&
+    has(victim, "Adrenalina") &&
+    aggressiveNeutralizedTrait !== "Adrenalina"
   ) {
     if (triggerAdrenalineEscape(ctx, p, victim)) return;
   } else if (
     pieceCapture &&
     victim.owner !== p.owner &&
+    reactiveDefensesActive &&
     has(victim, "Velocidade") &&
+    aggressiveNeutralizedTrait !== "Velocidade" &&
     !has(p, "Velocidade") &&
     random(state) < 1 / 4
   ) {
@@ -2305,6 +2520,28 @@ function executeMove(ctx, action) {
     );
     finishFrustratedCapture(ctx, p, "Velocidade");
     return;
+  }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    distance(p, victim) === 1
+  ) {
+    const blockingTrait = contactCaptureBlockingTrait(state, victim);
+    if (blockingTrait) {
+      const icon = TRAITS[blockingTrait]?.[0] ?? "";
+      log(
+        state,
+        `${OWNERS[victim.owner]}: ${icon} ${blockingTrait} reduziu o sucesso da captura em ${coord(victim.r, victim.c)}.`,
+      );
+      emitPassiveEffect(
+        state,
+        blockingTrait,
+        `${icon} ${blockingTrait} evitou a captura de contato.`,
+        { pieceId: victim.id, outcome: "prevented-contact-capture" },
+      );
+      finishFrustratedCapture(ctx, p, blockingTrait);
+      return;
+    }
   }
   if (
     pieceCapture &&
@@ -2336,26 +2573,6 @@ function executeMove(ctx, action) {
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
     finishFrustratedCapture(ctx, p, "Pele grossa");
-    return;
-  }
-  if (
-    pieceCapture &&
-    victim.owner !== p.owner &&
-    distance(p, victim) === 1 &&
-    has(victim, "Escamas") &&
-    random(state) < 0.2
-  ) {
-    log(
-      state,
-      `${OWNERS[victim.owner]}: ◆ Escamas resistiram à captura em ${coord(victim.r, victim.c)}.`,
-    );
-    emitPassiveEffect(
-      state,
-      "Escamas",
-      "◆ Escamas bloquearam a captura de contato.",
-      { pieceId: victim.id, outcome: "prevented-capture" },
-    );
-    finishFrustratedCapture(ctx, p, "Escamas");
     return;
   }
   if (
@@ -2470,6 +2687,11 @@ function executeMove(ctx, action) {
       victim.id,
       cannibalism ? "canibalismo" : "captura",
       p,
+      false,
+      {
+        suppressTanatosis:
+          aggressiveNeutralizedTrait === "Tanatose",
+      },
     );
     capturedPieceKilled = killed;
     if (killed && victim.owner !== p.owner) {
