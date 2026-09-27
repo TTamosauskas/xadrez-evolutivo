@@ -133,14 +133,14 @@ test("Superorganismo recommends the member with the strongest AI-priority move",
         rank: 0,
         traits: ["Artrópode", "Eusocialidade", "Percepção Espacial", "Superorganismo"],
       },
-      { owner: "amber", r: 4, c: 6, rank: 4 },
+      { owner: "amber", r: 1, c: 6, rank: 4 },
       { owner: "amber", r: 0, c: 0, rank: 0 },
     ]),
     recommendation = superorganismRecommendation(s, s.pieces[0]);
   assert.equal(recommendation?.memberId, s.pieces[0].id);
   assert.deepEqual(
     [recommendation?.action.r, recommendation?.action.c],
-    [4, 6],
+    [1, 6],
   );
 });
 
