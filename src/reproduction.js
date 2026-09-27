@@ -74,6 +74,7 @@ import {
   COLONY_BUD_COOLDOWN,
   FRAGMENT_LIFETIME,
   MARSUPIAL_CARRY_ROUNDS,
+  mutualismPartner,
   paedogenesisReady,
   buddingResource,
   canUseFertileResource,
@@ -1299,7 +1300,11 @@ export function pieceLifeHistory(profile) {
 
 export function metabolicReproductionCooldown(profile) {
   const base = pieceLifeHistory(profile).metabolism,
-    aerobic = has(profile, "Respiração aeróbia") ? -1 : 0,
+    aerobic =
+      has(profile, "Respiração aeróbia") &&
+      !has(profile, "Anemia Falciforme")
+        ? -1
+        : 0,
     terrestrialCost =
       has(profile, "Locomoção Terrestre") &&
       !has(profile, "Respiração Pulmonar")
@@ -1709,6 +1714,36 @@ export function reproduce(
         round(state) <= piece.intoxicationRestThroughRound
       )
         metabolic += 1;
+
+      if (
+        has(piece, "Anemia Falciforme") &&
+        has(piece, "Respiração aeróbia")
+      )
+        emitPassiveEffect(
+          state,
+          "Anemia Falciforme",
+          "🛑 Anemia Falciforme anulou a eficiência metabólica de 🔵 Respiração aeróbia.",
+          {
+            pieceId: piece.id,
+            outcome: "neutralized-aerobic-metabolism",
+            value: 1,
+          },
+        );
+
+      const mutualist = mutualismPartner(state, piece);
+      if (mutualist && metabolic > 1) {
+        metabolic = Math.max(1, metabolic - 1);
+        emitPassiveEffect(
+          state,
+          "Mutualismo",
+          "🫂 Mutualismo reduziu a recuperação metabólica em 1 rodada.",
+          {
+            pieceId: piece.id,
+            outcome: "reduced-metabolic-recovery",
+            value: 1,
+          },
+        );
+      }
 
       let pressure =
         populationReproductionCooldown(
