@@ -47,7 +47,6 @@ import { createPassiveEffectToastPresenter } from "./passive-toast.js";
 import { animateMovementTrace } from "./movement-animation.js";
 import {
   ARENA_RECESSIVE_COUNT,
-  ARENA_TRAIT_BUDGET,
   arenaAISide,
   arenaGenomeValid,
   arenaRecessivePairs,
@@ -366,7 +365,7 @@ function arenaValidCurrent() {
   if (arenaFlow.kind === "setup")
     return arenaFlow.current.every(
       (genome) =>
-        arenaGenomeValid(genome, ARENA_TRAIT_BUDGET) &&
+        arenaGenomeValid(genome) &&
         arenaRecessivePairs(genome).length > 0,
     );
   return arenaInterventionCount(arenaFlow.baseline, arenaFlow.current).valid;
@@ -375,17 +374,18 @@ function arenaValidCurrent() {
 function arenaStatusText() {
   if (!arenaFlow) return "";
   if (arenaFlow.kind === "setup") {
-    const [a, b] = arenaFlow.current.map(arenaTraitCost);
-    const complete =
-      a === ARENA_TRAIT_BUDGET && b === ARENA_TRAIT_BUDGET,
+    const [a, b] = arenaFlow.current.map(arenaTraitCost),
+      genomesValid = arenaFlow.current.every((genome) =>
+        arenaGenomeValid(genome),
+      ),
       recessiveReady = arenaFlow.current.every(
         (genome) => arenaRecessivePairs(genome).length > 0,
       );
-    return complete && recessiveReady
-      ? `Genomas válidos. Ao iniciar, ${ARENA_RECESSIVE_COUNT} das ${ARENA_TRAIT_BUDGET} características de cada linhagem serão sorteadas como recessivas.`
-      : complete
-        ? `A combinação precisa permitir ${ARENA_RECESSIVE_COUNT} características recessivas sem quebrar dependências do fenótipo.`
-        : `Escolha exatamente ${ARENA_TRAIT_BUDGET} mutações por linhagem. Dependências são incluídas automaticamente.`;
+    return genomesValid && recessiveReady
+      ? `Genomas válidos · ${a} e ${b} mutações selecionadas. Ao iniciar, ${ARENA_RECESSIVE_COUNT} características de cada linhagem serão sorteadas como recessivas.`
+      : genomesValid
+        ? `Cada linhagem precisa permitir ${ARENA_RECESSIVE_COUNT} características recessivas sem quebrar dependências do fenótipo.`
+        : "A combinação contém mutações incompatíveis. Dependências continuam sendo incluídas automaticamente.";
   }
   const changes = arenaInterventionCount(
     arenaFlow.baseline,
@@ -405,7 +405,7 @@ function renderArenaDesigner() {
       : `Engenharia Genética · ${arenaOwnerName(owner)}`;
   $("arena-copy").textContent =
     arenaFlow.kind === "setup"
-      ? "Monte duas linhagens. Respiração anaeróbia, Reparo Celular e Simetria Bilateral são fundações estruturais gratuitas quando exigidas; os demais pré-requisitos consomem o orçamento. Duas das seis características pagas serão sorteadas como genes recessivos ocultos."
+      ? "Monte duas linhagens sem limite fixo de mutações. Respiração anaeróbia, Reparo Celular e Simetria Bilateral são fundações estruturais automáticas quando exigidas; os demais pré-requisitos também são incluídos automaticamente. Duas características elegíveis serão sorteadas como genes recessivos ocultos."
       : "As linhagens sobreviventes seguem adiante. Você pode fazer até duas substituições genéticas entre as duas linhagens.";
   $("arena-status").textContent = arenaStatusText();
 
@@ -441,7 +441,7 @@ function renderArenaDesigner() {
     const count = arenaTraitCost(arenaFlow.current[index]);
     $(index === 0 ? "arena-primary-count" : "arena-companion-count").textContent =
       arenaFlow.kind === "setup"
-        ? `· ${count}/${ARENA_TRAIT_BUDGET}`
+        ? `· ${count} mutações selecionadas`
         : `· ${count} características herdadas`;
   }
   $("arena-confirm").disabled = !arenaValidCurrent();
