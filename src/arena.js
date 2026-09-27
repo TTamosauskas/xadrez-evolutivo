@@ -140,10 +140,11 @@ export function arenaBranchLimit(branchId) {
   return ARENA_TRAIT_LIMITS[branchId] ?? Infinity;
 }
 
-const sorted = (traits) =>
-  [...new Set(traits)].sort(
+function sorted(traits) {
+  return [...new Set(traits)].sort(
     (a, b) => (order.get(a) ?? 999) - (order.get(b) ?? 999),
   );
+}
 
 function sanitizeEnergy(set, preferred) {
   const prefersPlant =
