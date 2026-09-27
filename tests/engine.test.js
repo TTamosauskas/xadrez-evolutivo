@@ -3312,7 +3312,7 @@ test("mutation toast only announces outcomes that have not appeared before", () 
   assert.ok(!s.notices.some((n) => n.title === "Novas mutações"));
   assertState(s);
 });
-test("mass extinction starts a new Era from the dominant surviving lineage", () => {
+test("mass extinction starts a new Era from the strongest surviving forms", () => {
   const s = fixture([
     {
       owner: "blue",
@@ -3363,24 +3363,25 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   assert.equal(next.maxGenerationReached, 0);
   assert.equal(next.nextHabitatGeneration, 3);
   assert.equal(next.nextEventGeneration, 4);
-  assert.equal(next.pieces.length, 2);
-  assert.deepEqual(
-    [...new Set(next.pieces.map((p) => p.rank))],
-    [3],
-  );
-  assert.ok(
-    next.pieces.every(
-      (p) =>
-        p.generation === 0 &&
-        p.mutations === 0 &&
-        p.traits.includes("Voo") &&
-        p.traits.includes("Necrófago") &&
-        !p.traits.includes("Esterilidade") &&
-        !p.traits.includes("Mutação Letal"),
-    ),
-  );
-  assert.equal(next.pieces.filter((p) => p.owner === "blue").length, 1);
-  assert.equal(next.pieces.filter((p) => p.owner === "amber").length, 1);
+  assert.equal(next.pieces.length, 4);
+
+  for (const owner of ["blue", "amber"]) {
+    const founders = next.pieces.filter((piece) => piece.owner === owner),
+      photosynthetic = founders.filter((piece) =>
+        piece.traits.includes("Fotossíntese"),
+      ),
+      nonPhotosynthetic = founders.filter(
+        (piece) => !piece.traits.includes("Fotossíntese"),
+      );
+    assert.equal(founders.length, 2);
+    assert.equal(photosynthetic.length, 1);
+    assert.equal(nonPhotosynthetic.length, 1);
+    assert.equal(nonPhotosynthetic[0].rank, 5);
+    assert.ok(nonPhotosynthetic[0].traits.includes("Onívoro"));
+    assert.equal(nonPhotosynthetic[0].generation, 0);
+    assert.equal(nonPhotosynthetic[0].mutations, 0);
+  }
+
   const canonicalPool = new Set(
     CANONICAL_FOUNDER_CELLS.map(({ r, c }) => `${r},${c}`),
   );
@@ -3391,10 +3392,8 @@ test("mass extinction starts a new Era from the dominant surviving lineage", () 
   );
   assert.equal(
     new Set(next.pieces.map((piece) => `${piece.r},${piece.c}`)).size,
-    2,
+    4,
   );
-  for (const p of next.pieces)
-    assert.ok(hiddenRecessiveTraits(p).includes("Vivíparo"));
   assertState(next);
 });
 test("Ovíparo stores the brood in one mobile egg and hatches on fertile terrain after three rounds", () => {
