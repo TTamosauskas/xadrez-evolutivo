@@ -568,7 +568,7 @@ export const ACTIVE_TRAIT_FAMILIES = [
   },
   {
     id: "feeding-reach",
-    traits: ["Garras", "Pescoço Verticalizado", "Rabo Chicote", "Tromba"],
+    traits: ["Rabo Chicote", "Garras", "Pescoço Verticalizado", "Tromba"],
   },
   {
     id: "parasite-specialization",
