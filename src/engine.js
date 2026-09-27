@@ -36,6 +36,8 @@ import {
   captureDisturbanceAt,
   lethalHazardAt,
   organicResidueHazardousTo,
+  inkCloudAt,
+  allelopathySourceAt,
 } from "./state.js";
 import {
   movesFor,
@@ -64,6 +66,9 @@ import {
   biologicalProjectileTargets,
   electricDischargeTargets,
   feedingReachTargets,
+  hematophagyTargets,
+  broodParasitismTargets,
+  canRejectBroodParasite,
 } from "./moves.js";
 import {
   reproduce,
@@ -95,6 +100,7 @@ import {
   aquaticFertilityRegime,
   conwayUnlocked,
 } from "./geology.js";
+import { cloneGenome } from "./genetics.js";
 import {
   attemptHorizontalTransfer,
   canBud,
@@ -1060,7 +1066,12 @@ function photosynthesisExtraCells(state, p) {
 
       const r = p.r + dr,
         c = p.c + dc;
-      if (!inside(r, c) || terrain(state, r, c) !== "neutral") continue;
+      if (
+        !inside(r, c) ||
+        terrain(state, r, c) !== "neutral" ||
+        allelopathySourceAt(state, r, c, p.owner)
+      )
+        continue;
 
       const piece = at(state, r, c);
       if (has(p, "Angiospermas") && piece?.owner === p.owner)
@@ -1168,6 +1179,9 @@ function actionActorId(state, action) {
       "BUD",
       "PUPATE",
       "PARASITIZE",
+      "HEMATOPHAGY",
+      "BROOD_PARASITIZE",
+      "REJECT_BROOD_PARASITE",
       "BIO_PROJECTILE",
       "ELECTRODISCHARGE",
       "FEEDING_REACH",
@@ -1339,6 +1353,15 @@ function advanceTurn(ctx) {
   state.chemicalHazards = (state.chemicalHazards ?? []).filter(
     (entry) => entry.expiresTurn >= state.turn,
   );
+  state.inkClouds = (state.inkClouds ?? []).filter(
+    (entry) => entry.expiresTurn >= state.turn,
+  );
+  for (const piece of state.pieces)
+    if (
+      piece.broodParasite &&
+      piece.broodParasite.expiresRound < round(state)
+    )
+      piece.broodParasite = null;
   tickWebs(state);
   matureWebs(state);
   state.trails = (state.trails ?? []).filter(
@@ -2183,6 +2206,99 @@ function resolveFeedingReach(ctx, action) {
   completeMove(ctx, piece, false, false);
 }
 
+function triggerInkEscape(ctx, attacker, victim) {
+  const state = ctx.state;
+  if (
+    !victim ||
+    !has(victim, "Tinta") ||
+    round(state) < (victim.inkReadyRound ?? 0)
+  )
+    return false;
+  const cells = proteanEscapeCells(state, victim);
+  if (!cells.length) return false;
+
+  if (distance(attacker, victim) === 1)
+    inoculatePeconha(state, attacker, victim);
+
+  const cloudCells = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      const r = victim.r + dr,
+        c = victim.c + dc;
+      if (inside(r, c)) cloudCells.push(square(r, c));
+    }
+  state.inkClouds = (state.inkClouds ?? []).filter(
+    (entry) => entry.sourceId !== victim.id,
+  );
+  state.inkClouds.push({
+    sourceId: victim.id,
+    owner: victim.owner,
+    cells: cloudCells,
+    expiresTurn: state.turn + 2,
+  });
+  victim.inkReadyRound =
+    round(state) + metabolicReproductionCooldown(victim);
+  const escape = pick(state, cells);
+  reactiveRelocation(ctx, victim, escape.r, escape.c, "fuga por Tinta");
+  log(
+    state,
+    `${OWNERS[victim.owner]}: 🌫️ Tinta obscureceu a região e permitiu fuga para ${coord(escape.r, escape.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Tinta",
+    "🌫️ Tinta obscureceu a região e abriu uma rota de fuga.",
+    { pieceId: victim.id, outcome: "ink-escape" },
+  );
+  if (offerSerotoninReposition(ctx, attacker, "Tinta")) return true;
+  advanceTurn(ctx);
+  settle(ctx);
+  return true;
+}
+
+function lowerAutotomyRank(piece) {
+  if (!piece || piece.rank <= 0) return null;
+  if (has(piece, "Artrópode")) {
+    const lower = new Map([
+      [4, 2],
+      [2, 1],
+      [1, 0],
+    ]);
+    return lower.get(piece.rank) ?? null;
+  }
+  return piece.rank - 1;
+}
+
+function triggerAutotomy(ctx, attacker, victim) {
+  if (
+    !victim ||
+    !has(victim, "Autotomia") ||
+    victim.autotomyRecovery
+  )
+    return false;
+  const reducedRank = lowerAutotomyRank(victim);
+  if (!Number.isInteger(reducedRank)) return false;
+  const originalRank = victim.rank;
+  victim.rank = reducedRank;
+  victim.autotomyRecovery = { originalRank };
+  log(
+    ctx.state,
+    `${OWNERS[victim.owner]}: ✂️ Autotomia sacrificou a forma ${PIECES[originalRank]} e preservou a criatura como ${PIECES[reducedRank]}.`,
+  );
+  emitPassiveEffect(
+    ctx.state,
+    "Autotomia",
+    `✂️ Autotomia: ${PIECES[originalRank]} sobreviveu como ${PIECES[reducedRank]}.`,
+    {
+      pieceId: victim.id,
+      outcome: "autotomy-survival",
+      value: reducedRank,
+    },
+  );
+  finishFrustratedCapture(ctx, attacker, "Autotomia", victim);
+  return true;
+}
+
 function executeMove(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -2938,7 +3054,11 @@ function executeMove(ctx, action) {
     has(victim, "Movimento proteano") &&
     aggressiveNeutralizedTrait !== "Movimento proteano"
   ) {
-    if (has(p, "Interceptação preditiva")) {
+    if (
+      has(p, "Interceptação preditiva") &&
+      !inkCloudAt(state, p.r, p.c) &&
+      !inkCloudAt(state, victim.r, victim.c)
+    ) {
       emitPassiveEffect(
         state,
         "Interceptação preditiva",
@@ -3126,6 +3246,19 @@ function executeMove(ctx, action) {
     finishFrustratedCapture(ctx, p, "cuidado biparental", victim);
     return;
   }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    reactiveDefensesActive &&
+    triggerInkEscape(ctx, p, victim)
+  )
+    return;
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    triggerAutotomy(ctx, p, victim)
+  )
+    return;
   if (
     botanicalPredation &&
     pieceCapture &&
@@ -3550,6 +3683,7 @@ function executeMove(ctx, action) {
   const sexualPartners = partnersFor(state, p);
   if (
     sexualResourceHere &&
+    !p.autotomyRecovery &&
     has(p, "Reprodução Sexuada") &&
     !has(p, "Esterilidade") &&
     sexualPartners.length
@@ -3764,6 +3898,130 @@ function executeMove(ctx, action) {
     movementContinuation,
   );
 }
+function resolveHematophagy(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    target = hematophagyTargets(state, piece).find(
+      (candidate) => candidate.id === action.targetId,
+    );
+  if (!piece || !target) throw Error("Hematofagia indisponível.");
+
+  const repairing = !!piece.autotomyRecovery;
+  target.hematophagyDepletedUntilRound = round(state) + 2;
+  const result = reproduce(ctx, piece, null, "predação", {
+    forcedCount: 1,
+    resourceKind: "prey",
+    trophicEfficiency: true,
+  });
+  if (repairing && result)
+    emitPassiveEffect(
+      state,
+      "Hematofagia",
+      "🩸 Hematofagia forneceu energia para regenerar a forma perdida.",
+      {
+        pieceId: piece.id,
+        outcome: "blood-fed-autotomy-repair",
+        value: 1,
+      },
+    );
+  else if (result)
+    emitPassiveEffect(
+      state,
+      "Hematofagia",
+      "🩸 Hematofagia forneceu alimento para uma reprodução predatória.",
+      {
+        pieceId: piece.id,
+        outcome: "blood-fed-reproduction",
+        value: 1,
+      },
+    );
+  else
+    emitPassiveEffect(
+      state,
+      "Hematofagia",
+      "🩸 Hematofagia alimentou a criatura, mas não houve prole.",
+      { pieceId: piece.id, outcome: "blood-fed" },
+    );
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🩸 Hematofagia drenou o hospedeiro em ${coord(target.r, target.c)} sem matá-lo.`,
+  );
+  if (result > 0 && deferReproductionPlacement(state, piece)) return;
+  completeMove(ctx, piece, false, false);
+}
+
+function broodParasiteProfile(piece) {
+  return {
+    owner: piece.owner,
+    rank: piece.rank,
+    traits: [...piece.traits],
+    ancestry: [...(piece.ancestry ?? piece.traits ?? [])],
+    genome: cloneGenome(piece.genome),
+    mutations: piece.mutations ?? 0,
+    generation: (piece.generation ?? 0) + 1,
+    parentId: piece.id,
+    parentIds: [piece.id],
+  };
+}
+
+function resolveBroodParasitism(ctx, action) {
+  const state = ctx.state,
+    parasite = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    host = broodParasitismTargets(state, parasite).find(
+      (candidate) => candidate.id === action.targetId,
+    );
+  if (!parasite || !host)
+    throw Error("Parasitismo de Ninhada indisponível.");
+
+  host.broodParasite = {
+    parasiteId: parasite.id,
+    parasiteOwner: parasite.owner,
+    profile: broodParasiteProfile(parasite),
+    expiresRound: round(state) + 3,
+  };
+  log(
+    state,
+    `${OWNERS[parasite.owner]}: 🪹 Parasitismo de Ninhada infiltrou ${coord(host.r, host.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Parasitismo de Ninhada",
+    "🪹 Um ovo parasita foi infiltrado na próxima ninhada do hospedeiro.",
+    { pieceId: parasite.id, outcome: "brood-parasitized" },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveBroodParasiteRejection(ctx, action) {
+  const state = ctx.state,
+    host = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!canRejectBroodParasite(state, host))
+    throw Error("Não há ovo parasita reconhecível para rejeitar.");
+  host.broodParasite = null;
+  log(
+    state,
+    `${OWNERS[host.owner]}: 🪺 Incubação reconheceu e rejeitou o ovo parasita.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Incubação",
+    "🪺 Incubação reconheceu e rejeitou o ovo parasita.",
+    { pieceId: host.id, outcome: "rejected-brood-parasite" },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveNicheBuild(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -4449,6 +4707,15 @@ export function transition(previous, action) {
     resolvePupation(ctx, action);
   else if (action.type === "PARASITIZE" && state.phase === "move")
     resolveParasitism(ctx, action);
+  else if (action.type === "HEMATOPHAGY" && state.phase === "move")
+    resolveHematophagy(ctx, action);
+  else if (action.type === "BROOD_PARASITIZE" && state.phase === "move")
+    resolveBroodParasitism(ctx, action);
+  else if (
+    action.type === "REJECT_BROOD_PARASITE" &&
+    state.phase === "move"
+  )
+    resolveBroodParasiteRejection(ctx, action);
   else if (action.type === "BIO_PROJECTILE" && state.phase === "move")
     resolveBiologicalProjectile(ctx, action);
   else if (action.type === "ELECTRODISCHARGE" && state.phase === "move")
