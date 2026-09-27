@@ -4,6 +4,7 @@ import {
   PLANT_DERIVED_TRAITS,
   PLANT_INCOMPATIBLE_TRAITS,
   TRAIT_DEPENDENCIES,
+  TRAIT_BRANCH_SCOPE,
   NEGATIVE_TRAITS,
   normalizeActiveTraits,
   traitCombinationValid,
@@ -20,22 +21,76 @@ export const ARENA_FOUNDATIONAL_TRAITS = new Set([
   "Reparo Celular",
   "Simetria Bilateral",
 ]);
+export const ARENA_BRANCHES = Object.freeze([
+  {
+    id: "animal",
+    label: "Ramo Animal",
+    energy: "Predação",
+    scope: "predation",
+    limit: 14,
+  },
+  {
+    id: "plant",
+    label: "Ramo Vegetal",
+    energy: "Fotossíntese",
+    scope: "photosynthesis",
+    limit: 10,
+  },
+]);
+export const ARENA_TRAIT_LIMITS = Object.freeze(
+  Object.fromEntries(ARENA_BRANCHES.map((branch) => [branch.id, branch.limit])),
+);
+const ARENA_BRANCH_EXCLUSIONS = new Set(["Quimiossíntese", "Mixotrofia"]);
 export const arenaTraitCost = (genome) =>
   new Set(
     (genome ?? []).filter((trait) => !ARENA_FOUNDATIONAL_TRAITS.has(trait)),
   ).size;
 const order = new Map(Object.keys(TRAITS).map((trait, index) => [trait, index]));
 
-export const ARENA_ARCHETYPES = [
-  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Percepção Espacial"],
-  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Artrópode", "Locomoção Articulada", "Camuflagem"],
-  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Artrópode", "Locomoção Articulada", "Carapaça"],
-  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Notívago"],
-  ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Madeira", "Espinhos"],
-  ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Extremófitas"],
-  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Ovíparo"],
-  ["Predação", "Multicelularismo", "Locomoção Primitiva", "Artrópode", "Locomoção Articulada", "Visão Binocular"],
-];
+export const ARENA_PRESETS = Object.freeze({
+  animal: [
+    { id: "microbial-predator", stage: "archean", label: "Predador microbiano", traits: ["Predação", "Transferência Horizontal", "Dormência"] },
+    { id: "protoanimal", stage: "proterozoic", label: "Protoanimal filtrador", traits: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada"] },
+    { id: "dickinsonia", stage: "ediacaran", label: "Dickinsonia", traits: ["Predação", "Multicelularismo", "Regeneração", "Simetria Bilateral", "Locomoção Primitiva"] },
+    { id: "anomalocaris", stage: "cambrian", label: "Anomalocaris", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Carnívoro", "Carapaça"] },
+    { id: "nautiloid", stage: "ordovician", label: "Nautiloide gigante", traits: ["Predação", "Multicelularismo", "Jatopropulsão", "Corpo Gelatinoso", "Carnívoro", "Ovíparo", "Camuflagem"] },
+    { id: "eurypterid", stage: "silurian", label: "Euriptérido", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Carapaça"] },
+    { id: "dunkleosteus", stage: "devonian", label: "Dunkleosteus", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Carnívoro", "Mandíbula", "Dentes", "Carapaça"] },
+    { id: "meganeura", stage: "carboniferous", label: "Meganeura", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Voo", "Carnívoro", "Visão Binocular"] },
+    { id: "dimetrodon", stage: "permian", label: "Dimetrodon", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Presas"] },
+    { id: "coelophysis", stage: "triassic", label: "Coelophysis", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Endotermia", "Ovíparos Amniotas"] },
+    { id: "archaeopteryx", stage: "jurassic", label: "Archaeopteryx", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Voo", "Penas", "Ovíparos Amniotas"] },
+    { id: "tyrannosaurus", stage: "cretaceous", label: "Tiranossauro rex", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Presas", "Visão Binocular", "Endotermia"] },
+    { id: "basilosaurus", stage: "paleogene", label: "Basilosaurus", traits: ["Predação", "Vertebrado", "Carnívoro", "Respiração Pulmonar", "Predação em Massa", "Longevidade"] },
+    { id: "megalodon", stage: "neogene", label: "Megalodon", traits: ["Predação", "Vertebrado", "Carnívoro", "Mandíbula", "Dentes", "Presas", "Longevidade"] },
+    { id: "mammoth", stage: "quaternary", label: "Mamute", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Herbívoro", "Pelos", "Tromba", "Manada", "Vivíparo", "Lactação"] },
+    { id: "kangaroo", stage: "quaternary", label: "Canguru-gigante", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Herbívoro", "Pelos", "Marsupial", "Pulo"] },
+    { id: "homo-sapiens", stage: "quaternary", label: "Homo sapiens", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Bipedalismo", "Polegar Opositor", "Córtex Pré-Frontal", "Neocórtex Desenvolvido", "Sociabilidade", "Caça Cooperativa"] },
+  ],
+  plant: [
+    { id: "photosynthetic-mat", stage: "archean", label: "Tapete fotossintético", traits: ["Fotossíntese", "Dormência"] },
+    { id: "multicellular-alga", stage: "proterozoic", label: "Alga multicelular", traits: ["Fotossíntese", "Multicelularismo", "Reprodução Sexuada", "Fragmentação"] },
+    { id: "ediacaran-macroalga", stage: "ediacaran", label: "Macroalga ediacarana", traits: ["Fotossíntese", "Multicelularismo", "Fragmentação", "Séssil"] },
+    { id: "calcareous-alga", stage: "cambrian", label: "Alga calcária", traits: ["Fotossíntese", "Multicelularismo", "Carapaça", "Colônia"] },
+    { id: "early-embryophyte", stage: "ordovician", label: "Embriófita pioneira", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Tropismo"] },
+    { id: "cooksonia", stage: "silurian", label: "Cooksonia", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Estômatos"] },
+    { id: "archaeopteris", stage: "devonian", label: "Archaeopteris", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Madeira", "Espinhos"] },
+    { id: "lepidodendron", stage: "carboniferous", label: "Lepidodendron", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Madeira", "Estômatos", "Trepadeira"] },
+    { id: "glossopteris", stage: "permian", label: "Glossopteris", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Madeira", "Extremófitas"] },
+    { id: "cycad", stage: "triassic", label: "Cicadácea", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Espinhos", "Extremófitas"] },
+    { id: "araucaria", stage: "jurassic", label: "Araucária", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Madeira", "Extremófitas"] },
+    { id: "cretaceous-flower", stage: "cretaceous", label: "Angiosperma cretácea", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Perfume Floral"] },
+    { id: "palm", stage: "paleogene", label: "Palmeira", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Endozoocoria"] },
+    { id: "pepper", stage: "neogene", label: "Pimenteira", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Endozoocoria", "Capsaicina"] },
+    { id: "mandacaru", stage: "quaternary", label: "Mandacaru", traits: ["Fotossíntese", "Multicelularismo", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Espinhos", "Extremófitas"] },
+  ],
+});
+
+export const ARENA_ARCHETYPES = Object.freeze(
+  [...ARENA_PRESETS.animal.slice(3, 7), ...ARENA_PRESETS.plant.slice(5, 9)].map(
+    (preset) => preset.traits,
+  ),
+);
 
 const COUNTERS = {
   Camuflagem: "Visão Binocular",
@@ -49,13 +104,37 @@ const COUNTERS = {
   Fotossíntese: "Herbívoro",
 };
 
-export function arenaSelectableTraits() {
-  return Object.keys(TRAITS).filter(
-    (trait) =>
-      trait !== BASAL &&
-      !NEGATIVE.has(trait) &&
-      !ARENA_FOUNDATIONAL_TRAITS.has(trait),
+export function arenaTraitBranch(trait) {
+  if (trait === "Predação") return "predation";
+  if (trait === "Fotossíntese") return "photosynthesis";
+  return (
+    TRAIT_BRANCH_SCOPE[trait] ??
+    (PLANT_DERIVED_TRAITS.has(trait)
+      ? "photosynthesis"
+      : PLANT_INCOMPATIBLE_TRAITS.has(trait)
+        ? "predation"
+        : "shared")
   );
+}
+
+export function arenaSelectableTraits(branchId = null) {
+  const branch = ARENA_BRANCHES.find((candidate) => candidate.id === branchId);
+  return Object.keys(TRAITS).filter((trait) => {
+    if (
+      trait === BASAL ||
+      NEGATIVE.has(trait) ||
+      ARENA_FOUNDATIONAL_TRAITS.has(trait) ||
+      ARENA_BRANCH_EXCLUSIONS.has(trait)
+    )
+      return false;
+    if (!branch) return true;
+    const scope = arenaTraitBranch(trait);
+    return scope === "shared" || scope === branch.scope;
+  });
+}
+
+export function arenaBranchLimit(branchId) {
+  return ARENA_TRAIT_LIMITS[branchId] ?? Infinity;
 }
 
 const sorted = (traits) =>
@@ -83,6 +162,32 @@ function sanitizeEnergy(set, preferred) {
   }
 }
 
+function preferredArenaScope(preferred) {
+  if (
+    preferred === "Fotossíntese" ||
+    preferred === "plant" ||
+    PLANT_DERIVED_TRAITS.has(preferred)
+  )
+    return "photosynthesis";
+  if (
+    preferred === "Predação" ||
+    preferred === "animal" ||
+    PLANT_INCOMPATIBLE_TRAITS.has(preferred)
+  )
+    return "predation";
+  return null;
+}
+
+function preferredDependency(dependencies, preferred) {
+  const scope = preferredArenaScope(preferred);
+  return (
+    dependencies.find((dependency) => arenaTraitBranch(dependency) === scope) ??
+    dependencies.find((dependency) => arenaTraitBranch(dependency) === "shared") ??
+    dependencies[0] ??
+    null
+  );
+}
+
 export function completeArenaGenome(input, preferred = null) {
   const set = new Set(
     (input ?? []).filter(
@@ -101,7 +206,7 @@ export function completeArenaGenome(input, preferred = null) {
         }
       }
       const deps = TRAIT_DEPENDENCIES[trait];
-      for (const dependency of deps?.lineage ?? []) {
+      for (const dependency of [...(deps?.lineage ?? []), ...(deps?.active ?? [])]) {
         if (dependency === BASAL) continue;
         if (!set.has(dependency)) {
           set.add(dependency);
@@ -112,8 +217,8 @@ export function completeArenaGenome(input, preferred = null) {
         deps?.lineageAny?.length &&
         !deps.lineageAny.some((dependency) => set.has(dependency))
       ) {
-        const dependency = deps.lineageAny[0];
-        if (dependency !== BASAL) {
+        const dependency = preferredDependency(deps.lineageAny, preferred);
+        if (dependency && dependency !== BASAL) {
           set.add(dependency);
           changed = true;
         }
@@ -124,8 +229,27 @@ export function completeArenaGenome(input, preferred = null) {
   return sorted(set);
 }
 
-export function arenaGenomeValid(genome) {
-  const normalized = completeArenaGenome(genome),
+export function completeArenaBranchGenome(input, branchId) {
+  const branch = ARENA_BRANCHES.find((candidate) => candidate.id === branchId);
+  if (!branch) return completeArenaGenome(input);
+  const allowed = new Set(arenaSelectableTraits(branchId)),
+    filtered = (input ?? []).filter(
+      (trait) =>
+        ARENA_FOUNDATIONAL_TRAITS.has(trait) ||
+        trait === branch.energy ||
+        allowed.has(trait),
+    );
+  return completeArenaGenome(
+    [branch.energy, ...filtered],
+    branch.energy,
+  );
+}
+
+export function arenaGenomeValid(genome, branchId = null) {
+  const branch = ARENA_BRANCHES.find((candidate) => candidate.id === branchId),
+    normalized = branch
+      ? completeArenaBranchGenome(genome, branchId)
+      : completeArenaGenome(genome),
     input = new Set(
       (genome ?? []).filter(
         (trait) => TRAITS[trait] && !ARENA_FOUNDATIONAL_TRAITS.has(trait),
@@ -136,9 +260,36 @@ export function arenaGenomeValid(genome) {
     );
   if (normalized.includes("Vertebrado") && normalized.includes("Artrópode"))
     return false;
+  if (branch) {
+    if (!normalized.includes(branch.energy)) return false;
+    const wrongScope = branch.scope === "predation" ? "photosynthesis" : "predation";
+    if (
+      [...input].some((trait) => arenaTraitBranch(trait) === wrongScope)
+    )
+      return false;
+  }
   if (normalizedBillable.length !== input.size) return false;
-  const traits = normalizeActiveTraits([BASAL, ...normalized]);
+  const traits = normalizeActiveTraits(
+    [BASAL, ...normalized],
+    branch?.energy ?? null,
+  );
   return traitCombinationValid(traits);
+}
+
+export function arenaSetupGenomeValid(genome, branchId) {
+  return (
+    arenaGenomeValid(genome, branchId) &&
+    arenaTraitCost(genome) <= arenaBranchLimit(branchId)
+  );
+}
+
+export function arenaPresetGenome(branchId, presetId) {
+  const preset = ARENA_PRESETS[branchId]?.find(
+    (candidate) => candidate.id === presetId,
+  );
+  return preset
+    ? completeArenaBranchGenome(preset.traits, branchId)
+    : completeArenaBranchGenome([], branchId);
 }
 
 export function arenaProfile(genome, rank = 4) {
@@ -165,17 +316,18 @@ function lcg(seed) {
   };
 }
 
-function archetypePool() {
-  return ARENA_ARCHETYPES.map((genome) => completeArenaGenome(genome));
+function archetypePool(branchId) {
+  return (ARENA_PRESETS[branchId] ?? [])
+    .map((preset) => arenaPresetGenome(branchId, preset.id))
+    .filter((genome) => arenaSetupGenomeValid(genome, branchId));
 }
 
 export function randomArenaSide(seed = Date.now()) {
-  const random = lcg(seed),
-    pool = archetypePool(),
-    first = Math.floor(random() * pool.length);
-  let second = Math.floor(random() * (pool.length - 1));
-  if (second >= first) second++;
-  return [pool[first], pool[second]];
+  const random = lcg(seed);
+  return ARENA_BRANCHES.map((branch) => {
+    const pool = archetypePool(branch.id);
+    return pool[Math.floor(random() * pool.length)] ?? completeArenaBranchGenome([], branch.id);
+  });
 }
 
 function counterScore(genome, opponentGenomes) {
@@ -195,26 +347,23 @@ export function arenaAISide(
   seed = Date.now(),
 ) {
   if (difficulty === "easy") return randomArenaSide(seed);
-  const pool = archetypePool();
   if (difficulty === "hard" && opponentGenomes?.length) {
-    return pool
-      .map((genome, index) => ({
-        genome,
-        index,
-        score: counterScore(genome, opponentGenomes),
-      }))
-      .sort((a, b) => b.score - a.score || a.index - b.index)
-      .slice(0, 2)
-      .map((entry) => entry.genome);
+    return ARENA_BRANCHES.map((branch) => {
+      const pool = archetypePool(branch.id);
+      return pool
+        .map((genome, index) => ({
+          genome,
+          index,
+          score: counterScore(genome, opponentGenomes),
+        }))
+        .sort((a, b) => b.score - a.score || a.index - b.index)[0]?.genome ??
+        completeArenaBranchGenome([], branch.id);
+    });
   }
-  const pairs = [
-    [0, 4],
-    [1, 5],
-    [2, 7],
-    [3, 6],
-  ];
-  const pair = pairs[(seed >>> 0) % pairs.length];
-  return pair.map((index) => pool[index]);
+  return ARENA_BRANCHES.map((branch, index) => {
+    const pool = archetypePool(branch.id);
+    return pool[((seed >>> 0) + index * 7) % pool.length];
+  });
 }
 
 export function arenaInterventionCount(before, after) {
@@ -284,12 +433,21 @@ export function engineerArenaAISide(
   } else if (difficulty === "medium") {
     wanted = arenaAISide("medium", null, seed).flat();
   } else {
-    const all = arenaSelectableTraits();
-    wanted = Array.from({ length: 8 }, () => all[Math.floor(random() * all.length)]);
+    wanted = ARENA_BRANCHES.flatMap((branch) => {
+      const all = arenaSelectableTraits(branch.id);
+      return Array.from(
+        { length: 4 },
+        () => all[Math.floor(random() * all.length)],
+      );
+    });
   }
   for (let change = 0; change < ARENA_ENGINEERING_CHANGES; change++) {
-    const index = change % 2;
-    result[index] = swapToward(result[index], wanted);
+    const index = change % 2,
+      branch = ARENA_BRANCHES[index],
+      branchWanted = wanted.filter((trait) =>
+        arenaSelectableTraits(branch.id).includes(trait),
+      );
+    result[index] = swapToward(result[index], branchWanted);
   }
   return result;
 }
