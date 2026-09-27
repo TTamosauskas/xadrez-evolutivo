@@ -1534,6 +1534,70 @@ export function applyTraitLoss(traits, ancestry, trait) {
   return normalizeActiveTraits(next);
 }
 
+const LOSS_FOUNDATION_DEPENDENCIES = Object.freeze({
+  Multicelularismo: ["Eucarionte", "Endossimbiose"],
+});
+
+function carriedTraitsForLoss(piece) {
+  const genome = piece?.genome,
+    carriedFromGenome =
+      genome && typeof genome === "object"
+        ? Object.entries(genome)
+            .filter(
+              ([, pair]) =>
+                Array.isArray(pair) &&
+                pair.some((allele) => allele?.value === "derived"),
+            )
+            .map(([trait]) => trait)
+        : [];
+  return new Set(
+    carriedFromGenome.length
+      ? carriedFromGenome
+      : piece?.traits ?? [],
+  );
+}
+
+function positiveDependentRequiresTrait(piece, dependent, trait, carried) {
+  if (
+    dependent === trait ||
+    NEGATIVE_TRAITS.has(dependent)
+  )
+    return false;
+
+  if (
+    trait === "Multicelularismo" &&
+    MULTICELLULAR_DEPENDENT_TRAITS.has(dependent)
+  )
+    return true;
+  if (
+    trait === "Fotossíntese" &&
+    PLANT_DERIVED_TRAITS.has(dependent)
+  )
+    return true;
+  if (
+    (LOSS_FOUNDATION_DEPENDENCIES[dependent] ?? []).includes(trait)
+  )
+    return true;
+
+  const dependencies = TRAIT_DEPENDENCIES[dependent] ?? {};
+  if ((dependencies.lineage ?? []).includes(trait)) return true;
+
+  if ((dependencies.lineageAny ?? []).includes(trait)) {
+    const alternativeStillCarried = dependencies.lineageAny.some(
+      (candidate) => candidate !== trait && carried.has(candidate),
+    );
+    if (!alternativeStillCarried) return true;
+  }
+
+  if (
+    (dependencies.active ?? []).includes(trait) &&
+    (piece?.traits ?? []).includes(dependent)
+  )
+    return true;
+
+  return false;
+}
+
 export function traitLossAllowed(piece, trait) {
   if (
     trait === "Respiração anaeróbia" ||
@@ -1541,17 +1605,11 @@ export function traitLossAllowed(piece, trait) {
     ENERGY_BRANCH_TRAITS.has(trait)
   )
     return false;
-  if (
-    trait === "Simetria Bilateral" &&
-    (piece?.traits ?? []).some((candidate) =>
-      BODY_PLAN_TRAITS.has(candidate),
-    )
-  )
-    return false;
-  if (trait !== "Multicelularismo") return true;
-  return !(piece?.traits ?? []).some(
-    (candidate) =>
-      candidate !== trait && MULTICELLULAR_DEPENDENT_TRAITS.has(candidate),
+  if (NEGATIVE_TRAITS.has(trait)) return true;
+
+  const carried = carriedTraitsForLoss(piece);
+  return ![...carried].some((dependent) =>
+    positiveDependentRequiresTrait(piece, dependent, trait, carried),
   );
 }
 
