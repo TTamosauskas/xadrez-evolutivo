@@ -111,6 +111,7 @@ function priority(state, a) {
         : 3;
     return 6 + free * 2 + safety;
   }
+  if (a.type === "NICHE_BUILD") return 4;
   if (a.type === "BUILD") return 3;
   if (a.type === "SKIP_BUILD") return 0;
   const p = state.pieces.find(
