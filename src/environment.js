@@ -14,6 +14,7 @@ import {
   notice,
   activePopulation,
   fertilityPaused,
+  stomataOpen,
 } from "./state.js";
 import {
   eventWeights,
@@ -833,8 +834,46 @@ function cornerOrderedCells(event) {
   });
 }
 function trim(state, count) {
-  for (const i of shuffle(state, fertile(state)).slice(Math.max(1, count)))
-    state.board[i] = "neutral";
+  const fertileCells = fertile(state),
+    protectedCells = new Set(
+      state.pieces
+        .filter(
+          (piece) =>
+            has(piece, "Estômatos") &&
+            stomataOpen(state, piece) === false &&
+            state.board[square(piece.r, piece.c)] === "fertile",
+        )
+        .map((piece) => square(piece.r, piece.c)),
+    ),
+    target = Math.max(1, count, protectedCells.size),
+    removeCount = Math.max(0, fertileCells.length - target),
+    removable = shuffle(
+      state,
+      fertileCells.filter((cell) => !protectedCells.has(cell)),
+    ).slice(0, removeCount);
+
+  for (const cell of removable) state.board[cell] = "neutral";
+
+  if (fertileCells.length > count && protectedCells.size)
+    for (const piece of state.pieces) {
+      const cell = square(piece.r, piece.c);
+      if (
+        protectedCells.has(cell) &&
+        piece.stomataPreservedRound !== round(state)
+      ) {
+        piece.stomataPreservedRound = round(state);
+        emitPassiveEffect(
+          state,
+          "Estômatos",
+          "🌬️💧 Estômatos fechados preservaram a casa fértil durante a perda de água.",
+          {
+            pieceId: piece.id,
+            outcome: "closed-stomata-preserved-fertility",
+          },
+        );
+      }
+    }
+
   if (!fertile(state).length) addFertile(state, 1);
 }
 function addFertile(state, count) {
