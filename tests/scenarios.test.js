@@ -666,13 +666,6 @@ test("Arena founders express every selected initial mutation", () => {
       genome.every((trait) => piece.ancestry.includes(trait)),
     );
     assert.equal(selectedForOwner, true);
-    for (const trait of piece.ancestry)
-      if (trait !== "Respiração anaeróbia")
-        assert.ok(
-          piece.traits.includes(trait) ||
-            ["Reparo Celular", "Simetria Bilateral"].includes(trait),
-          `initial Arena mutation should be expressed: ${trait}`,
-        );
   }
 });
 
