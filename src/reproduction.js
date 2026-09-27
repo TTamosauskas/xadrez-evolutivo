@@ -589,7 +589,7 @@ function missingArcheanEnergyBranch(state) {
   if (
     state.scenario !== "earth" ||
     state.geologicalStage !== "archean" ||
-    state.cycle !== 1
+    state.cycle !== 2
   )
     return null;
   const history = new Set(state.historicalTraits ?? []),
