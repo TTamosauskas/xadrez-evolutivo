@@ -32,6 +32,7 @@ import {
   CANONICAL_FOUNDER_CELLS,
   canonicalFounderStarts,
   dominantLineage,
+  strongestSurvivor,
   arenaSurvivorGenomes,
   registerDiscoveries,
   newPiece,
@@ -214,6 +215,112 @@ test("Vida na Terra carries the last extinct winner into the next generation", (
   );
 });
 
+test("strongest survivor uses branch-specific piece value before genetic tie-breaks", () => {
+  const s = createState(1706, {
+    geologicalStage: "quaternary",
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+
+  const king = newPiece(s, "blue", 4, 2, {
+      rank: 4,
+      traits: ["Predação", "Reparo Celular", "Dormência"],
+    }),
+    knight = newPiece(s, "blue", 4, 3, {
+      rank: 1,
+      traits: ["Predação"],
+    }),
+    bishop = newPiece(s, "blue", 4, 4, {
+      rank: 2,
+      traits: ["Predação"],
+    });
+  s.pieces.push(king, knight, bishop);
+
+  assert.equal(
+    strongestSurvivor(
+      s,
+      "blue",
+      (piece) => !piece.traits.includes("Fotossíntese"),
+    ).piece.id,
+    bishop.id,
+  );
+
+  const plantQueen = newPiece(s, "amber", 3, 2, {
+      rank: 5,
+      traits: ["Fotossíntese", "Embriófitas", "Traqueófitas"],
+    }),
+    plantKing = newPiece(s, "amber", 3, 3, {
+      rank: 4,
+      traits: ["Fotossíntese"],
+    });
+  s.pieces.push(plantQueen, plantKing);
+
+  assert.equal(
+    strongestSurvivor(
+      s,
+      "amber",
+      (piece) => piece.traits.includes("Fotossíntese"),
+    ).piece.id,
+    plantKing.id,
+  );
+});
+
+test("strongest survivor prefers positive genes, then fewer negatives, then fewer positive recessives", () => {
+  const s = createState(1707, {
+    geologicalStage: "quaternary",
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+
+  const base = ["Respiração anaeróbia", "Predação"],
+    morePositive = newPiece(s, "blue", 4, 1, {
+      rank: 2,
+      traits: [...base, "Reparo Celular"],
+      genome: genomeFromTraits([...base, "Reparo Celular"]),
+    }),
+    fewerPositive = newPiece(s, "blue", 4, 2, {
+      rank: 2,
+      traits: base,
+      genome: genomeFromTraits(base),
+    });
+  s.pieces.push(fewerPositive, morePositive);
+  assert.equal(strongestSurvivor(s, "blue").piece.id, morePositive.id);
+
+  const negativeCarrier = newPiece(s, "amber", 3, 1, {
+      rank: 2,
+      traits: [...base, "Reparo Celular"],
+      genome: genomeFromTraits([...base, "Reparo Celular"], ["Ataxia"]),
+    }),
+    clean = newPiece(s, "amber", 3, 2, {
+      rank: 2,
+      traits: [...base, "Reparo Celular"],
+      genome: genomeFromTraits([...base, "Reparo Celular"]),
+    });
+  s.pieces = [negativeCarrier, clean];
+  assert.equal(strongestSurvivor(s, "amber").piece.id, clean.id);
+
+  const positiveCarrier = newPiece(s, "amber", 3, 3, {
+      rank: 2,
+      traits: [...base, "Reparo Celular"],
+      genome: genomeFromTraits(
+        [...base, "Reparo Celular"],
+        ["Camuflagem"],
+      ),
+    }),
+    noHiddenPositive = newPiece(s, "amber", 3, 4, {
+      rank: 2,
+      traits: [...base, "Reparo Celular"],
+      genome: genomeFromTraits([...base, "Reparo Celular"]),
+    });
+  s.pieces = [positiveCarrier, noHiddenPositive];
+  assert.equal(
+    strongestSurvivor(s, "amber").piece.id,
+    noHiddenPositive.id,
+  );
+});
+
 test("derived lineages outrank larger basal clone groups when choosing a founder", () => {
   const s = createState(706, {
     geologicalStage: "archean",
@@ -315,7 +422,7 @@ test("Vida na Terra carries living and remembered energy branches into the next 
   assert.ok(next.historicalTraits.includes("Predação"));
 });
 
-test("a stronger recorded branch representative outranks weaker surviving copies", () => {
+test("dead recorded representatives no longer outrank living survivors", () => {
   const prior = createState(711, {
     scenario: "earth",
     geologicalStage: "archean",
@@ -336,43 +443,27 @@ test("a stronger recorded branch representative outranks weaker surviving copies
     Predação: null,
   };
 
-  const derivedPredator = newPiece(prior, "blue", 4, 2, {
-      rank: 4,
+  const deadPredator = newPiece(prior, "blue", 4, 2, {
+      rank: 5,
       traits: ["Predação", "Reparo Celular"],
-      ancestry: [
-        "Respiração anaeróbia",
-        "Predação",
-        "Reparo Celular",
-      ],
       generation: 3,
     }),
-    weakPredatorA = newPiece(prior, "amber", 3, 5, {
-      rank: 4,
+    livingPredator = newPiece(prior, "amber", 3, 5, {
+      rank: 2,
       traits: ["Predação"],
-      ancestry: ["Respiração anaeróbia", "Predação"],
-      generation: 4,
-    }),
-    weakPredatorB = newPiece(prior, "amber", 3, 4, {
-      rank: 4,
-      traits: ["Predação"],
-      ancestry: ["Respiração anaeróbia", "Predação"],
       generation: 4,
     }),
     plant = newPiece(prior, "blue", 5, 3, {
       rank: 4,
       traits: ["Fotossíntese"],
-      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
       generation: 2,
     });
 
-  prior.pieces.push(derivedPredator, weakPredatorA, weakPredatorB, plant);
-  registerDiscoveries(prior, derivedPredator);
-  registerDiscoveries(prior, weakPredatorA);
-  registerDiscoveries(prior, weakPredatorB);
+  prior.pieces.push(deadPredator, livingPredator, plant);
+  registerDiscoveries(prior, deadPredator);
+  registerDiscoveries(prior, livingPredator);
   registerDiscoveries(prior, plant);
-
-  // The powerful predator dies, while two simpler predatory copies survive.
-  prior.pieces = [weakPredatorA, weakPredatorB, plant];
+  prior.pieces = [livingPredator, plant];
   prior.result = { winner: "amber", reason: "Extinção total." };
   prior.phase = "over";
 
@@ -380,7 +471,9 @@ test("a stronger recorded branch representative outranks weaker surviving copies
     predators = next.pieces.filter((piece) => piece.traits.includes("Predação"));
 
   assert.equal(predators.length, 2);
-  assert.ok(predators.every((piece) => piece.traits.includes("Reparo Celular")));
+  assert.ok(
+    predators.every((piece) => !piece.traits.includes("Reparo Celular")),
+  );
 });
 
 test("first Archean successor supplies a missing fundamental branch as a final fixation fallback", () => {
