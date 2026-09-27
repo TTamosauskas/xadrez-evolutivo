@@ -1890,8 +1890,32 @@ export function compareSurvivorPower(a, b) {
   );
 }
 
+const lineagePositiveTraits = (piece) =>
+  (piece?.traits ?? []).filter(
+    (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
+  ).length;
+
+const lineagePositiveGenome = (piece) =>
+  new Set(
+    genomeCarriedTraits(piece?.genome).filter(
+      (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
+    ),
+  ).size;
+
+const lineagePositiveAncestry = (piece) =>
+  new Set(
+    (piece?.ancestry ?? piece?.traits ?? []).filter(
+      (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
+    ),
+  ).size;
+
 function compareLineageStrength(a, b) {
-  return compareSurvivorPower(a, b);
+  return (
+    lineagePositiveTraits(b) - lineagePositiveTraits(a) ||
+    lineagePositiveGenome(b) - lineagePositiveGenome(a) ||
+    lineagePositiveAncestry(b) - lineagePositiveAncestry(a) ||
+    (b?.generation ?? 0) - (a?.generation ?? 0)
+  );
 }
 
 function energyRepresentativeSnapshot(piece) {
