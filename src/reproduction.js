@@ -1830,7 +1830,7 @@ export function reproduce(
         );
       }
       if (broodParasiteInserted) {
-        delete parent.broodParasite;
+        parent.broodParasite = null;
         const parasite = state.pieces.find(
           (candidate) => candidate.id === activeBroodParasite.parasiteId,
         );
