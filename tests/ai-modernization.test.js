@@ -9,19 +9,21 @@ import {
   strategicPieceValue,
 } from "../src/ai.js";
 import { genomeFromTraits } from "../src/genetics.js";
+import { arenaAISide, arenaSetupGenomeValid } from "../src/arena.js";
 import { fixture } from "./helpers.js";
 
 test("AI explicitly tracks every legal action type exposed by moves.js", () => {
   const source = readFileSync(new URL("../src/moves.js", import.meta.url), "utf8"),
     actionTypes = [
       ...new Set(
-        [...source.matchAll(/type:\\s*"([A-Z][A-Z0-9_-]+)"/g)].map(
+        [...source.matchAll(/type:\s*"([A-Z][A-Z0-9_-]+)"/g)].map(
           (match) => match[1],
         ),
       ),
     ].sort(),
     known = new Set(AI_ACTION_TYPES);
 
+  assert.ok(actionTypes.length >= 25);
   assert.deepEqual(
     actionTypes.filter((type) => !known.has(type)),
     [],
@@ -81,4 +83,18 @@ test("hard mode performs a bounded multi-ply search while medium remains one-ply
   assert.equal(mediumStats.depth, 1);
   assert.equal(hardStats.depth, 3);
   assert.ok(hardStats.nodes > mediumStats.nodes);
+});
+
+
+test("hard Arena setup can add a legal counter that is absent from static presets", () => {
+  const opponent = [
+      ["Predação", "Multicelularismo"],
+      ["Fotossíntese", "Multicelularismo"],
+    ],
+    hard = arenaAISide("hard", opponent, 9301);
+
+  assert.equal(hard.length, 2);
+  assert.ok(hard[0].includes("Herbívoro"));
+  assert.ok(arenaSetupGenomeValid(hard[0], "animal"));
+  assert.ok(arenaSetupGenomeValid(hard[1], "plant"));
 });
