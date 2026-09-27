@@ -38,6 +38,9 @@ import {
   organicResidueHazardousTo,
   inkCloudAt,
   allelopathySourceAt,
+  mineralRemnantAt,
+  stomataOpen,
+  releaseEukaryoteBuffers,
 } from "./state.js";
 import {
   movesFor,
@@ -71,6 +74,7 @@ import {
   hematophagyTargets,
   broodParasitismTargets,
   canRejectBroodParasite,
+  chemosynthesisAvailable,
 } from "./moves.js";
 import {
   reproduce,
@@ -169,6 +173,33 @@ function applyChemicalCaptureDefense(state, dead, attacker) {
   }
 }
 
+function leaveMineralRemnant(state, dead) {
+  if (!has(dead, "Biomineralização")) return false;
+  const cell = square(dead.r, dead.c),
+    expiresRound = round(state) + 3,
+    existing = (state.mineralRemnants ?? []).find(
+      (entry) => entry.cell === cell,
+    );
+  state.mineralRemnants ??= [];
+  if (existing) existing.expiresRound = expiresRound;
+  else state.mineralRemnants.push({ cell, expiresRound });
+  log(
+    state,
+    `${OWNERS[dead.owner]}: 🪨 Biomineralização deixou um remanescente mineral em ${coord(dead.r, dead.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Biomineralização",
+    `🪨 Biomineralização deixou um remanescente mineral em ${coord(dead.r, dead.c)}.`,
+    {
+      pieceId: dead.id,
+      outcome: "left-mineral-remnant",
+      value: 3,
+    },
+  );
+  return true;
+}
+
 function tanatosisEligible(state, dead, attacker, options = {}) {
   return (
     !!attacker &&
@@ -247,6 +278,7 @@ export function context(state) {
         return true;
       }
       if (!options.consumed) releaseCarriedPlantSeeds(state, dead);
+      leaveMineralRemnant(state, dead);
       state.pieces = state.pieces.filter((p) => p.id !== id);
       if (bonded?.pairedWithId === dead.id) bonded.pairedWithId = null;
       if (state.chain === id) state.chain = null;
