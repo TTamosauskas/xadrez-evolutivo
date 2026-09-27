@@ -184,6 +184,8 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Bioadesão");
   if (targets.some((target) => target.arboreal))
     actionable.add("Arborícola");
+  if (targets.some((target) => target.phoresy))
+    actionable.add("Forésia");
   if (targets.some((target) => target.serpentine))
     actionable.add("Serpenteamento");
   if (targets.some((target) => target.trail))
