@@ -645,6 +645,7 @@ function searchValue(
 ) {
   if (
     state.result ||
+    state.notices?.length ||
     depth <= 0 ||
     continuationSteps <= 0 ||
     context.nodes >= context.maxNodes ||
