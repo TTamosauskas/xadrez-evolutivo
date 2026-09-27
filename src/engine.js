@@ -2161,11 +2161,7 @@ function executeMove(ctx, action) {
       !!plantSeed && target.synzooCollect === plantSeed.id,
     capture = pieceCapture || eggCapture || seedCapture,
     reactiveDefensesActive =
-      !pieceCapture || !intoxicationResting(state, victim),
-    aggressiveNeutralizedTrait =
-      pieceCapture && victim.owner !== p.owner
-        ? aggressiveMimicrySuppression(state, p, victim)
-        : null;
+      !pieceCapture || !intoxicationResting(state, victim);
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -2295,6 +2291,11 @@ function executeMove(ctx, action) {
       return;
     }
   }
+  const aggressiveNeutralizedTrait =
+    pieceCapture && victim.owner !== p.owner && reactiveDefensesActive
+      ? aggressiveMimicrySuppression(state, p, victim)
+      : null;
+
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
