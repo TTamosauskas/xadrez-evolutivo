@@ -32,6 +32,7 @@ import {
   CANONICAL_FOUNDER_CELLS,
   canonicalFounderStarts,
   dominantLineage,
+  arenaSurvivorGenomes,
   registerDiscoveries,
   newPiece,
 } from "../src/state.js";
@@ -746,6 +747,35 @@ test("Arena founders express every selected initial mutation", () => {
     );
     assert.equal(selectedForOwner, true);
   }
+});
+
+test("Arena survivor selection preserves Animal first and Plant second even if one branch disappears", () => {
+  const animal = arenaPresetGenome("animal", "tyrannosaurus"),
+    plant = arenaPresetGenome("plant", "cooksonia"),
+    state = createArenaState(
+      {
+        blue: [animal, plant],
+        amber: [
+          arenaPresetGenome("animal", "anomalocaris"),
+          arenaPresetGenome("plant", "glossopteris"),
+        ],
+      },
+      607,
+    );
+
+  state.pieces = state.pieces.filter(
+    (piece) =>
+      piece.owner !== "blue" || !piece.traits.includes("Fotossíntese"),
+  );
+
+  const [survivingAnimal, restoredPlant] = arenaSurvivorGenomes(
+    state,
+    "blue",
+  );
+  assert.ok(survivingAnimal.includes("Predação"));
+  assert.equal(survivingAnimal.includes("Fotossíntese"), false);
+  assert.ok(restoredPlant.includes("Fotossíntese"));
+  assert.equal(restoredPlant.includes("Predação"), false);
 });
 
 test("Arena carries survivor piece forms into the next engineered phase", () => {
