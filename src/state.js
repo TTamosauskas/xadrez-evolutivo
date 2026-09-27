@@ -1380,7 +1380,10 @@ export function createState(seed = Date.now(), options = {}) {
       rememberEnergyBranchRepresentative(state, piece);
     }
   }
-  if (options.naturalBarriers !== false && !aquaticFertilityRegime(state))
+  if (
+    options.naturalBarriers !== false &&
+    (habitatProfile(state).naturalBarriers?.[1] ?? 0) > 0
+  )
     seedNaturalBarriers(state);
   seedHabitat(state);
   recordDiscovery(state, "mutations", "Respiração anaeróbia");
