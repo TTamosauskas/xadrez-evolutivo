@@ -1305,6 +1305,7 @@ export function partnersFor(state, p, { requireResource = true } = {}) {
       x.id === p.id ||
       x.owner !== p.owner ||
       !has(x, "Reprodução Sexuada") ||
+      has(x, "Assimetria Flutuante") ||
       !reproductionReady(state, x) ||
       resting(state, x) ||
       dormant(state, x) ||

@@ -1598,6 +1598,8 @@ test("Paleogene waits for reachable period innovations instead of auto-completin
     "Ovulação Induzida",
     "Ecolocalização",
     "Interceptação preditiva",
+    "Superorganismo",
+    "Caça Cooperativa",
     "Monogamia",
     "Epizoocoria",
     "Sinzoocoria",
