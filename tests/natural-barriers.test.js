@@ -321,7 +321,7 @@ test("volcanoes, meteors and earthquakes can reshape natural barriers", () => {
       ],
       seed,
     );
-    s.geologicalStage = "quaternary";
+    s.geologicalStage = "holocene";
     s.naturalBarriers = [square(3, 3), square(3, 4), square(4, 3)];
     startEvent(context(s), id);
     assert.ok(s.event);

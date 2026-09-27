@@ -162,13 +162,17 @@ test("Serotonina follows the same universal fertile landing rule before the Silu
   assert.deepEqual(serotoninRepositionTargets(state), [{ r: 4, c: 5 }]);
 });
 
-test("aquatic stages through the Ordovician remain fully fertile for the new progression", () => {
+test("aquatic phases through the Ordovician keep aquatic rules but use distinct habitat presets", () => {
   const stages = ["ediacaran", "cambrian", "ordovician"].map((id) =>
     GEOLOGICAL_STAGES.find((stage) => stage.id === id),
   );
-  assert.ok(stages.every((stage) => stage?.habitat?.fertile === 64));
   assert.deepEqual(
-    GEOLOGICAL_STAGES.find((stage) => stage.id === "silurian")?.required,
-    ["Locomoção Terrestre", "Coletor"],
+    stages.map((stage) => stage.habitat.pattern),
+    ["shallow-sea", "reef", "continental-shelves"],
+  );
+  assert.ok(stages.every((stage) => stage.habitat.fertile > stage.habitat.hostile));
+  assert.deepEqual(
+    GEOLOGICAL_STAGES.find((stage) => stage.id === "silurian")?.cycles,
+    [["Locomoção Terrestre"], ["Coletor"]],
   );
 });

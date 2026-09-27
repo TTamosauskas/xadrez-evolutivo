@@ -26,8 +26,8 @@ test("novas especializações têm períodos, loci e emojis coerentes", () => {
   assert.equal(TRAIT_STAGE["Rizoma"], "devonian");
   assert.equal(TRAIT_STAGE["Parasitoidismo"], "triassic");
   assert.equal(TRAIT_STAGE["Rabo Chicote"], "jurassic");
-  assert.equal(TRAIT_STAGE["Ruminante"], "paleogene");
-  assert.equal(TRAIT_STAGE["Tromba"], "neogene");
+  assert.equal(TRAIT_STAGE["Ruminante"], "paleocene");
+  assert.equal(TRAIT_STAGE["Tromba"], "miocene");
   assert.equal(traitCombinationValid(["Tromba", "Rabo Chicote"]), false);
   assert.equal(traitCombinationValid(["Brotamento", "Rizoma"]), false);
   assert.equal(

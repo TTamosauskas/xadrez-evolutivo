@@ -24,9 +24,9 @@ import { TRAIT_STAGE } from "../src/geology.js";
 
 test("sete inovações têm emojis exclusivos e períodos esperados", () => {
   const expected = {
-    Quimiossíntese: ["♨️", "archean"],
-    Eucarionte: ["🔘", "proterozoic"],
-    Endossimbiose: ["🔋", "proterozoic"],
+    Quimiossíntese: ["♨️", "eoarchean"],
+    Eucarionte: ["🔘", "rhyacian"],
+    Endossimbiose: ["🔋", "rhyacian"],
     Biomineralização: ["🪨", "ediacaran"],
     "Imunidade Adaptativa": ["🎯", "cambrian"],
     Estômatos: ["🌬️", "silurian"],

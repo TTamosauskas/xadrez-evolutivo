@@ -635,8 +635,7 @@ function pairSexualFounders(brood, sexualMutants) {
 function missingArcheanEnergyBranch(state) {
   if (
     state.scenario !== "earth" ||
-    state.geologicalStage !== "archean" ||
-    state.cycle !== 2
+    state.geologicalStage !== "paleoarchean"
   )
     return null;
   const history = new Set(state.historicalTraits ?? []),
@@ -2096,7 +2095,7 @@ export function reproduce(
     const direction = preLocomotionPredation
       ? { preferCapture: true }
       : aquaticFertilityRegime(state) && !primitiveLocomotionReached
-        ? { strict: state.geologicalStage === "archean" }
+        ? { strict: ["eoarchean", "paleoarchean", "mesoarchean", "neoarchean"].includes(state.geologicalStage) }
         : null;
     produced = placeBrood(ctx, brood, parent, dispersal, direction);
   }

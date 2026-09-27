@@ -116,12 +116,17 @@ function earthTimelineLines() {
   return GEOLOGICAL_STAGES.map((stage) => {
     if (stage.id === "hadean")
       return `${stage.group} · ${stage.period}: ⚪ Respiração anaeróbia → dividir → capturar; termina por extinção`;
-    if (stage.id === "archean")
-      return `${stage.group} · ${stage.period}: 1º Ciclo — herda Respiração anaeróbia e abre Fotossíntese / Predação; 2º Ciclo — Reparo Celular (+ Transferência Horizontal opcional); 3º Ciclo — Dormência`;
-    const innovations = stage.required.length
-      ? stage.required.map(traitLabel).join(" → ")
-      : "período de transição, sem inovação obrigatória";
-    return `${stage.group} · ${stage.period}: ${innovations}`;
+    const cycles = stage.cycles?.length
+        ? stage.cycles
+            .map(
+              (traits, index) =>
+                `${index + 1}º Ciclo — ${traits.length ? traits.map(traitLabel).join(" + ") : "transição"}`,
+            )
+            .join("; ")
+        : stage.required.length
+          ? stage.required.map(traitLabel).join(" → ")
+          : "fase de diversificação, sem inovação obrigatória";
+    return `${stage.group} · ${stage.period}: ${cycles}`;
   });
 }
 

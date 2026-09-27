@@ -300,8 +300,8 @@ test("new traits keep their approved chronology and negative availability", () =
   assert.equal(TRAIT_STAGE.Forrageamento, "devonian");
   assert.equal(TRAIT_STAGE.Mutualismo, "devonian");
   assert.equal(TRAIT_STAGE.Hierarquia, "cretaceous");
-  assert.equal(TRAIT_STAGE.Superorganismo, "paleogene");
-  assert.equal(TRAIT_STAGE["Caça Cooperativa"], "paleogene");
+  assert.equal(TRAIT_STAGE.Superorganismo, "oligocene");
+  assert.equal(TRAIT_STAGE["Caça Cooperativa"], "eocene");
 
   const s = fixture([
     {

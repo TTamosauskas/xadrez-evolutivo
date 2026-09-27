@@ -385,8 +385,8 @@ test("new life-history traits unlock in their intended optional periods", () => 
   p.ancestry.push("Respiração Pulmonar");
   assert.equal(traitUnlocked(s, "Sacos Aéreos", p), true);
 
-  s.geologicalStage = "paleogene";
-  s.historicalTraits = historyBefore("paleogene");
+  s.geologicalStage = "eocene";
+  s.historicalTraits = historyBefore("eocene");
   p.traits = ["Multicelularismo", "Vivíparo"];
   assert.equal(traitUnlocked(s, "Ovulação Induzida", p), false);
   p.traits.push("Reprodução Sexuada");
@@ -400,7 +400,6 @@ test("new life-history traits unlock in their intended optional periods", () => 
           "Canibalismo",
           "Lactação",
           "Respiração Cutânea",
-          "Respiração Pulmonar",
           "Sacos Aéreos",
           "Ovovivíparo",
           "Ovulação Induzida",
