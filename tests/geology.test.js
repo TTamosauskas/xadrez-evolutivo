@@ -1560,6 +1560,10 @@ test("Paleogene waits for reachable period innovations instead of auto-completin
     "Ecolocalização",
     "Interceptação preditiva",
     "Monogamia",
+    "Epizoocoria",
+    "Sinzoocoria",
+    "Mirmecocoria",
+    "Roedor",
   ]);
   assert.deepEqual(periodCompletionInnovations(s), []);
   assert.equal(stageComplete(s), true);
