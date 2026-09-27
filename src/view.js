@@ -708,7 +708,6 @@ export function render(
           superMembers.has(p.id),
         superBestMember =
           !!p &&
-          p.id !== actor?.id &&
           p.id === superRecommendation?.memberId,
         superMoveTarget =
           !!actor &&
