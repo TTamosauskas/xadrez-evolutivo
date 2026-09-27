@@ -56,6 +56,7 @@ import {
   parasitismTargets,
   vivificationActionsForPiece,
   pieceActionState,
+  neurodivergenceResting,
 } from "./moves.js";
 import { corticalMoveSuggestions } from "./positioning.js";
 const element = (doc, tag, text, cls) => {
@@ -77,6 +78,7 @@ const WAIT_STATUS_LABELS = Object.freeze({
   "Bloqueada por Domínio Ecológico": "bloqueio por Domínio Ecológico",
   Metamorfose: "metamorfose",
   "Recuperação por Regeneração": "regeneração",
+  "Sobrecarga por Neurodivergência": "sobrecarga",
   "Descanso por Mutação Disfuncional": "mutação disfuncional",
   "Dormência em terreno hostil": "dormência em terreno hostil",
   "Maturidade sexual": "maturidade sexual",
@@ -238,6 +240,7 @@ export function render(
       state.building?.id ??
       state.partner?.id ??
       state.serotoninReposition?.id ??
+      state.neurofocus ??
       state.chain ??
       selected,
     actor = state.pieces.find((p) => p.id === actorId),
@@ -300,7 +303,7 @@ export function render(
           : state.result.winner
             ? `${OWNERS[state.result.winner]} venceram`
             : "Empate"
-        : `Vez das ${OWNERS[state.current]}${
+        : `Vez das ${OWNERS[state.current]}${state.neurofocus ? " · ♾️ Hiperfoco" : ""}${
             busy === "conway"
               ? " · habitat evoluindo…"
               : busy
@@ -865,6 +868,8 @@ export function render(
         }
 
         const statusBadges = [];
+        if (p.id === state.neurofocus) statusBadges.push("♾️×2");
+        if (neurodivergenceResting(state, p)) statusBadges.push("♾️⏳");
         if (p.venom) statusBadges.push("☠");
         if (p.seeds) statusBadges.push(`${p.seeds}🌰`);
         if (
@@ -953,6 +958,12 @@ export function render(
         : null,
       boardElement.querySelector(".cell.lethal-hazard")
         ? { marker: "☠️", label: "Letal" }
+        : null,
+      state.neurofocus
+        ? { marker: "♾️", label: "Hiperfoco · 2ª ação" }
+        : null,
+      state.pieces.some((piece) => neurodivergenceResting(state, piece))
+        ? { marker: "♾️", label: "Sobrecarga · sem ação" }
         : null,
       boardElement.querySelector(
         ".cell.vivification-target, .cell.partner",
