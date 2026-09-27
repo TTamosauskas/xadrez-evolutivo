@@ -112,8 +112,9 @@ export const GEOLOGICAL_STAGES = [
     id: "archean",
     group: "Pré-Cambriano",
     period: "Arqueano",
-    required: ["Fotossíntese", "Predação", "Reparo Celular", "Dormência"],
+    required: ["Quimiossíntese", "Fotossíntese", "Predação", "Reparo Celular", "Dormência"],
     cycles: [
+      ["Quimiossíntese"],
       ["Fotossíntese", "Predação"],
       ["Reparo Celular"],
       ["Dormência"],
@@ -129,6 +130,9 @@ export const GEOLOGICAL_STAGES = [
     group: "Pré-Cambriano",
     period: "Proterozoico",
     required: [
+      "Eucarionte",
+      "Respiração aeróbia",
+      "Endossimbiose",
       "Multicelularismo",
       "Resistência",
       "Regeneração",
@@ -150,7 +154,7 @@ export const GEOLOGICAL_STAGES = [
     id: "ediacaran",
     group: "Pré-Cambriano",
     period: "Ediacarano",
-    required: ["Simetria Bilateral", "Locomoção Primitiva", "Escavador", "Construtor de Nicho"],
+    required: ["Biomineralização", "Simetria Bilateral", "Locomoção Primitiva", "Escavador", "Construtor de Nicho"],
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: {
       abundance: 3,
@@ -312,7 +316,14 @@ const byId = new Map(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
 export const TRAIT_STAGE = {
   "Respiração anaeróbia": "hadean",
   "Reparo Celular": "archean",
+  Quimiossíntese: "archean",
+  Eucarionte: "proterozoic",
   "Respiração aeróbia": "proterozoic",
+  Endossimbiose: "proterozoic",
+  Biomineralização: "ediacaran",
+  "Imunidade Adaptativa": "cambrian",
+  Estômatos: "silurian",
+  Endotermia: "triassic",
   "Respiração Pulmonar": "devonian",
   Adrenalina: "devonian",
   Testosterona: "devonian",
@@ -618,7 +629,18 @@ export function activeTraitFamily(trait) {
 }
 
 export const TRAIT_DEPENDENCIES = {
-  Multicelularismo: { lineage: ["Reparo Celular"] },
+  Multicelularismo: {
+    lineage: ["Reparo Celular", "Eucarionte", "Endossimbiose"],
+  },
+  Quimiossíntese: { lineage: ["Respiração anaeróbia"] },
+  Eucarionte: { lineage: ["Reparo Celular"] },
+  Endossimbiose: {
+    lineage: ["Eucarionte", "Respiração aeróbia"],
+  },
+  Biomineralização: { lineage: ["Multicelularismo"] },
+  "Imunidade Adaptativa": { lineage: ["Vertebrado"] },
+  Estômatos: { lineage: ["Embriófitas"] },
+  Endotermia: { lineage: ["Vertebrado", "Respiração aeróbia"] },
   "Simetria Bilateral": { lineage: ["Multicelularismo"] },
   "Reprodução Sexuada": {
     lineage: ["Respiração anaeróbia", "Multicelularismo"],
@@ -691,7 +713,7 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Ingestão"],
     lineageAny: ["Vertebrado", "Artrópode"],
   },
-  Dentes: { lineage: ["Vertebrado", "Mandíbula"] },
+  Dentes: { lineage: ["Vertebrado", "Mandíbula", "Biomineralização"] },
   Rizoma: { lineage: ["Traqueófitas", "Brotamento"] },
   Parasitoidismo: { lineage: ["Artrópode", "Parasitismo"] },
   "Rabo Chicote": {
@@ -736,7 +758,7 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Sociabilidade", "Locomoção Terrestre"],
   },
   Escamas: { lineage: ["Vertebrado", "Ovíparos Amniotas"] },
-  Osteodermos: { lineage: ["Vertebrado", "Locomoção Terrestre"] },
+  Osteodermos: { lineage: ["Vertebrado", "Locomoção Terrestre", "Biomineralização"] },
   Pelos: { lineage: ["Vertebrado", "Ovíparos Amniotas"] },
   Penas: { lineage: ["Vertebrado", "Ovíparos Amniotas"] },
   Presas: { lineage: ["Carnívoro", "Dentes"] },
@@ -918,6 +940,9 @@ export const BODY_PLAN_TRAITS = new Set(["Vertebrado", "Artrópode"]);
 
 export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Simetria Bilateral",
+  "Biomineralização",
+  "Imunidade Adaptativa",
+  "Endotermia",
   "Regeneração",
   "Reprodução Sexuada",
   "Partenogênese",
@@ -1109,6 +1134,7 @@ export function normalizeMulticellularTraits(traits) {
 
 export const PLANT_DERIVED_TRAITS = new Set([
   "Embriófitas",
+  "Estômatos",
   "Traqueófitas",
   "Espinhos",
   "Madeira",
@@ -1131,6 +1157,9 @@ export const PLANT_DERIVED_TRAITS = new Set([
 
 export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Predação",
+  "Biomineralização",
+  "Imunidade Adaptativa",
+  "Endotermia",
   "Simetria Bilateral",
   "Locomoção Primitiva",
   "Jatopropulsão",
@@ -1264,6 +1293,13 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
 ]);
 
 export const TRAIT_BRANCH_SCOPE = Object.freeze({
+  Quimiossíntese: "shared",
+  Eucarionte: "shared",
+  Endossimbiose: "shared",
+  Biomineralização: "predation",
+  "Imunidade Adaptativa": "predation",
+  Estômatos: "photosynthesis",
+  Endotermia: "predation",
   "Transferência Horizontal": "predation",
   "Respiração Pulmonar": "predation",
   Brotamento: "shared",
@@ -1715,6 +1751,8 @@ export function periodTraitReachable(state, trait) {
 }
 
 const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
+  "Imunidade Adaptativa",
+  Endotermia,
   "Pele Glandular",
   "Escamas",
   "Osteodermos",
