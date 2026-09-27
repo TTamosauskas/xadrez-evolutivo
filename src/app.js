@@ -298,30 +298,6 @@ $("board").addEventListener("click", (event) => {
       return;
     }
   }
-  if (actor?.owner === state.current) {
-    const targetActions = actionsForPiece(state, actor).filter(
-      (action) =>
-        (action.type === "MOVE" && action.r === r && action.c === c) ||
-        (p &&
-          [
-            "PARASITIZE",
-            "BIO_PROJECTILE",
-            "ELECTRODISCHARGE",
-            "FEEDING_REACH",
-          ].includes(action.type) &&
-          action.targetId === p.id),
-    );
-    if (targetActions.length) {
-      chooseActions(targetActions, {
-        title: "Ação biológica",
-        copy:
-          targetActions.length > 1
-            ? "Este alvo admite mais de uma ação. Escolha a estratégia."
-            : "Ação disponível.",
-      });
-      return;
-    }
-  }
   if (
     actor?.owner === state.current &&
     p &&
@@ -354,6 +330,30 @@ $("board").addEventListener("click", (event) => {
   ) {
     dispatch({ type: "LAY_OVOVIVIPAROUS", id: actor.id, r, c });
     return;
+  }
+  if (actor?.owner === state.current) {
+    const targetActions = actionsForPiece(state, actor).filter(
+      (action) =>
+        (action.type === "MOVE" && action.r === r && action.c === c) ||
+        (p &&
+          [
+            "PARASITIZE",
+            "BIO_PROJECTILE",
+            "ELECTRODISCHARGE",
+            "FEEDING_REACH",
+          ].includes(action.type) &&
+          action.targetId === p.id),
+    );
+    if (targetActions.length) {
+      chooseActions(targetActions, {
+        title: "Ação biológica",
+        copy:
+          targetActions.length > 1
+            ? "Este alvo admite mais de uma ação. Escolha a estratégia."
+            : "Ação disponível.",
+      });
+      return;
+    }
   }
   selected = p?.id ?? null;
   controller.refresh();
