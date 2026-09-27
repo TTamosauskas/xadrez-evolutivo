@@ -1,4 +1,4 @@
-import { TRAITS } from "./constants.js";
+import { TRAITS, largeFunctionalForm } from "./constants.js";
 import {
   BODY_PLAN_TRAITS,
   ENERGY_BRANCH_TRAITS,
@@ -600,6 +600,13 @@ export function legacyReproGenesFromGenome(source) {
   return result;
 }
 
+function applyFormExpression(profile, traits) {
+  if (!profile) return traits;
+  return largeFunctionalForm(profile)
+    ? traits.filter((trait) => trait !== "Forésia")
+    : traits;
+}
+
 export function syncGenomePhenotype(profile, preferredEnergy = null) {
   const previous = [...(profile.traits ?? [])];
   profile.genome = normalizeGenome(
@@ -616,17 +623,23 @@ export function syncGenomePhenotype(profile, preferredEnergy = null) {
         trait === activeEnergy
           ? [derivedAllele("dominant"), derivedAllele("dominant")]
           : ancestralPair();
-  profile.traits = expressGenome(
-    profile.genome,
-    previous,
-    activeEnergy,
+  profile.traits = applyFormExpression(
+    profile,
+    expressGenome(
+      profile.genome,
+      previous,
+      activeEnergy,
+    ),
   );
   return profile;
 }
 
 export function phenotypeMatchesGenome(profile) {
   if (!validGenome(profile?.genome)) return false;
-  const expressed = expressGenome(profile.genome, profile.traits),
+  const expressed = applyFormExpression(
+      profile,
+      expressGenome(profile.genome, profile.traits),
+    ),
     current = [...new Set(profile.traits ?? [])];
   return (
     current.length === expressed.length &&
