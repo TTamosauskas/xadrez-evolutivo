@@ -1,7 +1,5 @@
-import { TRAITS, has } from "./constants.js";
+import { TRAITS } from "./constants.js";
 import {
-  BODY_PLAN_TRAITS,
-  ENERGY_BRANCH_TRAITS,
   MULTICELLULAR_DEPENDENT_TRAITS,
   PLANT_DERIVED_TRAITS,
   PLANT_INCOMPATIBLE_TRAITS,
@@ -13,13 +11,11 @@ import {
 import { ARENA_ENGINEERING_CHANGES } from "./scenarios.js";
 import {
   genomeFromTraits,
-  hiddenRecessiveTraits,
   syncGenomePhenotype,
 } from "./genetics.js";
 
 const NEGATIVE = NEGATIVE_TRAITS;
 const BASAL = "Respiração anaeróbia";
-export const ARENA_RECESSIVE_COUNT = 2;
 export const ARENA_FOUNDATIONAL_TRAITS = new Set([
   "Reparo Celular",
   "Simetria Bilateral",
@@ -145,103 +141,18 @@ export function arenaGenomeValid(genome) {
   return traitCombinationValid(traits);
 }
 
-function phenotypeSupportsGenome(active) {
-  const profile = { traits: [BASAL, ...active] };
-  for (const trait of active) {
-    if (
-      MULTICELLULAR_DEPENDENT_TRAITS.has(trait) &&
-      trait !== "Multicelularismo" &&
-      !has(profile, "Multicelularismo")
-    )
-      return false;
-    const deps = TRAIT_DEPENDENCIES[trait];
-    if (
-      deps?.lineage?.some(
-        (dependency) => dependency !== BASAL && !has(profile, dependency),
-      )
-    )
-      return false;
-    if (
-      deps?.lineageAny?.length &&
-      !deps.lineageAny.some(
-        (dependency) => dependency === BASAL || has(profile, dependency),
-      )
-    )
-      return false;
-    if (PLANT_DERIVED_TRAITS.has(trait) && !has(profile, "Fotossíntese"))
-      return false;
-  }
-  return traitCombinationValid(normalizeActiveTraits(profile.traits));
-}
-
-export function arenaRecessivePairs(genome) {
+export function arenaProfile(genome, rank = 4) {
   const completed = completeArenaGenome(genome),
-    pairs = [];
-  for (let i = 0; i < completed.length; i++)
-    for (let j = i + 1; j < completed.length; j++) {
-      const hidden = [completed[i], completed[j]];
-      if (
-        hidden.some(
-          (trait) =>
-            BODY_PLAN_TRAITS.has(trait) ||
-            ENERGY_BRANCH_TRAITS.has(trait) ||
-            ARENA_FOUNDATIONAL_TRAITS.has(trait),
-        )
-      )
-        continue;
-      const hiddenSet = new Set(hidden),
-        active = completed.filter((trait) => !hiddenSet.has(trait));
-      if (phenotypeSupportsGenome(active)) {
-        const profile = arenaProfile(completed, 4, hidden),
-          expressedHidden = hiddenRecessiveTraits(profile);
-        if (hidden.every((trait) => expressedHidden.includes(trait)))
-          pairs.push(hidden);
-      }
-    }
-  return pairs;
-}
-
-export function chooseArenaRecessives(
-  genome,
-  seed = Date.now(),
-  preferred = [],
-) {
-  const pairs = arenaRecessivePairs(genome);
-  if (!pairs.length) return [];
-  const wanted = new Set(preferred ?? []),
-    preferredPairs = pairs.filter((pair) =>
-      pair.every((trait) => wanted.has(trait)),
-    ),
-    partialPairs = pairs
-      .map((pair) => ({
-        pair,
-        kept: pair.filter((trait) => wanted.has(trait)).length,
-      }))
-      .sort((a, b) => b.kept - a.kept),
-    bestKept = partialPairs[0]?.kept ?? 0,
-    candidates = preferredPairs.length
-      ? preferredPairs
-      : partialPairs
-          .filter((entry) => entry.kept === bestKept)
-          .map((entry) => entry.pair),
-    random = lcg(seed);
-  return [...candidates[Math.floor(random() * candidates.length)]];
-}
-
-export function arenaProfile(genome, rank = 4, recessiveTraits = []) {
-  const completed = completeArenaGenome(genome),
-    hidden = new Set(recessiveTraits),
-    active = completed.filter((trait) => !hidden.has(trait)),
-    preferred = active.includes("Fotossíntese")
+    preferred = completed.includes("Fotossíntese")
       ? "Fotossíntese"
-      : active.includes("Predação")
+      : completed.includes("Predação")
         ? "Predação"
         : null,
     profile = {
       rank,
-      traits: normalizeActiveTraits([BASAL, ...active], preferred),
+      traits: normalizeActiveTraits([BASAL, ...completed], preferred),
       ancestry: [BASAL, ...completed],
-      genome: genomeFromTraits([BASAL, ...active], [...hidden]),
+      genome: genomeFromTraits([BASAL, ...completed]),
     };
   return syncGenomePhenotype(profile, preferred);
 }

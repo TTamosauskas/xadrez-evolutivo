@@ -46,10 +46,8 @@ import {
 import { createPassiveEffectToastPresenter } from "./passive-toast.js";
 import { animateMovementTrace } from "./movement-animation.js";
 import {
-  ARENA_RECESSIVE_COUNT,
   arenaAISide,
   arenaGenomeValid,
-  arenaRecessivePairs,
   arenaInterventionCount,
   arenaSelectableTraits,
   arenaTraitCost,
@@ -363,11 +361,7 @@ const arenaOwnerName = (owner) => (owner === "blue" ? "Brancas" : "Pretas");
 function arenaValidCurrent() {
   if (!arenaFlow) return false;
   if (arenaFlow.kind === "setup")
-    return arenaFlow.current.every(
-      (genome) =>
-        arenaGenomeValid(genome) &&
-        arenaRecessivePairs(genome).length > 0,
-    );
+    return arenaFlow.current.every((genome) => arenaGenomeValid(genome));
   return arenaInterventionCount(arenaFlow.baseline, arenaFlow.current).valid;
 }
 
@@ -377,15 +371,10 @@ function arenaStatusText() {
     const [a, b] = arenaFlow.current.map(arenaTraitCost),
       genomesValid = arenaFlow.current.every((genome) =>
         arenaGenomeValid(genome),
-      ),
-      recessiveReady = arenaFlow.current.every(
-        (genome) => arenaRecessivePairs(genome).length > 0,
       );
-    return genomesValid && recessiveReady
-      ? `Genomas válidos · ${a} e ${b} mutações selecionadas. Ao iniciar, ${ARENA_RECESSIVE_COUNT} características de cada linhagem serão sorteadas como recessivas.`
-      : genomesValid
-        ? `Cada linhagem precisa permitir ${ARENA_RECESSIVE_COUNT} características recessivas sem quebrar dependências do fenótipo.`
-        : "A combinação contém mutações incompatíveis. Dependências continuam sendo incluídas automaticamente.";
+    return genomesValid
+      ? `Genomas válidos · ${a} e ${b} mutações selecionadas. Todas começam expressas.`
+      : "A combinação contém mutações incompatíveis. Dependências continuam sendo incluídas automaticamente.";
   }
   const changes = arenaInterventionCount(
     arenaFlow.baseline,
@@ -405,7 +394,7 @@ function renderArenaDesigner() {
       : `Engenharia Genética · ${arenaOwnerName(owner)}`;
   $("arena-copy").textContent =
     arenaFlow.kind === "setup"
-      ? "Monte duas linhagens sem limite fixo de mutações. Respiração anaeróbia, Reparo Celular e Simetria Bilateral são fundações estruturais automáticas quando exigidas; os demais pré-requisitos também são incluídos automaticamente. Duas características elegíveis serão sorteadas como genes recessivos ocultos."
+      ? "Monte duas linhagens sem limite fixo de mutações. Respiração anaeróbia, Reparo Celular e Simetria Bilateral são fundações estruturais automáticas quando exigidas; os demais pré-requisitos também são incluídos automaticamente. Todas as mutações iniciais selecionadas começam expressas."
       : "As linhagens sobreviventes seguem adiante. Você pode fazer até duas substituições genéticas entre as duas linhagens.";
   $("arena-status").textContent = arenaStatusText();
 

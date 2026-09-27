@@ -49,9 +49,7 @@ import {
   validScenario,
 } from "./scenarios.js";
 import {
-  ARENA_RECESSIVE_COUNT,
   arenaProfile,
-  chooseArenaRecessives,
   completeArenaGenome,
 } from "./arena.js";
 export const clone = (value) => structuredClone(value);
@@ -1867,21 +1865,10 @@ function arenaProfiles(
       const genomes = ownerGenomes[owner],
         sources = survivorEntries?.[owner] ?? [],
         profileFor = (index) => {
-          const source = sources[index]?.source ?? null,
-            preferred = source ? hiddenRecessiveTraits(source) : [],
-            recessives = chooseArenaRecessives(
-              genomes[index],
-              (seed + ownerIndex * 101 + index * 17) >>> 0,
-              preferred,
-            );
-          if (recessives.length !== ARENA_RECESSIVE_COUNT)
-            throw Error(
-              "Genoma da Arena não permite dois genes recessivos sem quebrar dependências.",
-            );
+          const source = sources[index]?.source ?? null;
           return arenaProfile(
             genomes[index],
             source?.rank ?? 4,
-            recessives,
           );
         };
       return [
