@@ -1,4 +1,4 @@
-import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance, TRAITS, functionalSizeClass } from "./constants.js";
+import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance, TRAITS, PIECES, functionalSizeClass } from "./constants.js";
 import {
   activateOrigin,
   clone,
