@@ -2060,21 +2060,27 @@ export function arenaSurvivorGenomes(state, owner) {
   return arenaSurvivorEntries(state, owner).map(({ genome }) => genome);
 }
 
+export function arenaSurvivorSelections(state, owner) {
+  return arenaSurvivorEntries(state, owner).map(({ source, genome }) => ({
+    genome: [...genome],
+    rank: source?.rank ?? 4,
+  }));
+}
+
 function arenaProfiles(
   ownerGenomes,
   survivorEntries = null,
   seed = Date.now(),
+  ownerRanks = null,
 ) {
   return Object.fromEntries(
     ["blue", "amber"].map((owner, ownerIndex) => {
       const genomes = ownerGenomes[owner],
         sources = survivorEntries?.[owner] ?? [],
         profileFor = (index) => {
-          const source = sources[index]?.source ?? null;
-          return arenaProfile(
-            genomes[index],
-            source?.rank ?? 4,
-          );
+          const source = sources[index]?.source ?? null,
+            rank = ownerRanks?.[owner]?.[index] ?? source?.rank ?? 4;
+          return arenaProfile(genomes[index], rank);
         };
       return [
         owner,
@@ -2091,8 +2097,9 @@ export function createArenaState(
   ownerGenomes,
   seed = Date.now(),
   discoveries = null,
+  ownerRanks = null,
 ) {
-  const profiles = arenaProfiles(ownerGenomes, null, seed),
+  const profiles = arenaProfiles(ownerGenomes, null, seed, ownerRanks),
     historicalTraits = [
       ...new Set([
         "Respiração anaeróbia",
