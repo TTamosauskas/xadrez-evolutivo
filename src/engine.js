@@ -1346,6 +1346,7 @@ function actionActorId(state, action) {
   if (
     [
       "MOVE",
+      "CHEMOSYNTHESIS",
       "NURSE",
       "NICHE_BUILD",
       "BUD",
@@ -2586,6 +2587,54 @@ function resolveExtendedCapture(ctx, action) {
   }
   if (born > 0 && deferReproductionPlacement(state, piece)) return;
   completeMove(ctx, piece, false, false);
+}
+
+function resolveChemosynthesis(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!piece || !chemosynthesisAvailable(state, piece))
+    throw Error("Quimiossíntese indisponível.");
+
+  const cell = square(piece.r, piece.c),
+    born = reproduce(ctx, piece, null, "Quimiossíntese", {
+      forcedCount: 1,
+      immediateDevelopment: true,
+      resourceKind: "chemical",
+    });
+  if (born) {
+    const eventHazard = state.event?.hazards?.includes(cell);
+    state.board[cell] = "neutral";
+    if (eventHazard) {
+      const eventKey = `${state.event.id}:${state.event.startTurn ?? state.event.startRound ?? 0}`;
+      state.chemosynthesisExhausted ??= [];
+      if (
+        !state.chemosynthesisExhausted.some(
+          (entry) => entry.cell === cell && entry.eventKey === eventKey,
+        )
+      )
+        state.chemosynthesisExhausted.push({ cell, eventKey });
+    }
+    log(
+      state,
+      `${OWNERS[piece.owner]}: ♨️ Quimiossíntese consumiu o ambiente químico em ${coord(piece.r, piece.c)} e gerou um descendente.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Quimiossíntese",
+      "♨️ Quimiossíntese converteu terreno hostil em energia reprodutiva.",
+      {
+        pieceId: piece.id,
+        outcome: "chemosynthetic-reproduction",
+        value: 1,
+      },
+    );
+  }
+  if (born > 0 && deferReproductionPlacement(state, piece)) return;
+  advanceTurn(ctx);
+  settle(ctx);
 }
 
 function resolveRhizome(ctx, action) {
@@ -5185,6 +5234,8 @@ export function transition(previous, action) {
     executeMove(ctx, action);
   else if (action.type === "PARTNER" && state.phase === "move")
     resolveDirectPartner(ctx, action);
+  else if (action.type === "CHEMOSYNTHESIS" && state.phase === "move")
+    resolveChemosynthesis(ctx, action);
   else if (action.type === "PARTHENOGENESIS" && state.phase === "move")
     resolveParthenogenesis(ctx, action);
   else if (action.type === "AGGRESSIVE_MATE" && state.phase === "move")
@@ -5287,6 +5338,10 @@ export function transition(previous, action) {
         resolveConwayStagnation(ctx);
     }
   } else throw Error("Ação incompatível com a fase da partida.");
+  if (action.type === "MOVE") {
+    const acted = state.pieces.find((piece) => piece.id === action.id);
+    if (acted) releaseEukaryoteBuffers(state, acted, "action");
+  }
   logBoardChanges(previous, state);
   state.revision++;
   return assertState(state);
