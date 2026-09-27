@@ -95,17 +95,28 @@ export const ARENA_ARCHETYPES = Object.freeze([
     .map((preset) => completeArenaBranchGenome(preset.traits, "plant")),
 ]);
 
-const COUNTERS = {
-  Camuflagem: "Visão Binocular",
-  Notívago: "Visão Noturna",
-  Velocidade: "Velocidade",
-  "Pele grossa": "Presas",
-  Ovíparo: "Ovífagia",
-  "Ovíparos Amniotas": "Ovífagia",
-  Ovovivíparo: "Ovífagia",
-  Chifre: "Carapaça",
-  Fotossíntese: "Herbívoro",
-};
+const COUNTER_RULES = Object.freeze([
+  ["Camuflagem", ["Visão Binocular"], 2],
+  ["Notívago", ["Visão Noturna"], 2],
+  ["Movimento proteano", ["Interceptação preditiva"], 3],
+  ["Velocidade", ["Velocidade"], 2],
+  ["Pele grossa", ["Presas"], 2],
+  ["Madeira", ["Roedor"], 3],
+  ["Ovíparo", ["Ovífagia"], 2],
+  ["Ovíparos Amniotas", ["Ovífagia"], 2],
+  ["Ovovivíparo", ["Ovífagia"], 2],
+  ["Chifre", ["Carapaça", "Osteodermos"], 3],
+  ["Espinhos", ["Osteodermos"], 2],
+  ["Parasitismo de Ninhada", ["Incubação"], 3],
+  ["Tanatose", ["Necrófago"], 2],
+  ["Mimetismo", ["Mimetismo Agressivo"], 2],
+  ["Exibição deimática", ["Mimetismo Agressivo"], 1],
+  ["Adrenalina", ["Mimetismo Agressivo"], 1],
+  ["Ofuscamento por movimento", ["Mimetismo Agressivo"], 1],
+  ["Fotossíntese", ["Herbívoro"], 3],
+  ["Herbívoro", ["Espinhos", "Madeira"], 2],
+  ["Presas", ["Carapaça"], 1],
+]);
 
 export function arenaTraitBranch(trait) {
   if (trait === "Predação") return "predation";
@@ -334,15 +345,41 @@ export function randomArenaSide(seed = Date.now()) {
   });
 }
 
+function counterTargets(opponentGenomes) {
+  const opponent = new Set((opponentGenomes ?? []).flat()),
+    wanted = [];
+  for (const [threat, counters, weight] of COUNTER_RULES)
+    if (opponent.has(threat))
+      for (const counter of counters)
+        wanted.push({ trait: counter, weight, threat });
+  return wanted;
+}
+
 function counterScore(genome, opponentGenomes) {
-  const own = new Set(genome),
-    opponent = new Set((opponentGenomes ?? []).flat()),
-    wanted = new Set(
-      [...opponent].map((trait) => COUNTERS[trait]).filter(Boolean),
-    );
+  const own = new Set(genome);
   let score = 0;
-  for (const trait of wanted) if (own.has(trait)) score++;
-  return Math.min(3, score);
+  for (const { trait, weight } of counterTargets(opponentGenomes))
+    if (own.has(trait)) score += weight;
+  return score;
+}
+
+function adaptSetupGenome(genome, branchId, opponentGenomes) {
+  let result = completeArenaBranchGenome(genome, branchId);
+  const wanted = counterTargets(opponentGenomes)
+    .filter(({ trait }) => arenaSelectableTraits(branchId).includes(trait))
+    .sort((a, b) => b.weight - a.weight)
+    .map(({ trait }) => trait);
+  for (const trait of wanted) {
+    if (result.includes(trait)) continue;
+    const expanded = completeArenaBranchGenome([...result, trait], branchId);
+    if (arenaSetupGenomeValid(expanded, branchId)) {
+      result = expanded;
+      continue;
+    }
+    const swapped = swapToward(result, [trait], branchId);
+    if (arenaSetupGenomeValid(swapped, branchId)) result = swapped;
+  }
+  return result;
 }
 
 export function arenaAISide(
@@ -353,15 +390,23 @@ export function arenaAISide(
   if (difficulty === "easy") return randomArenaSide(seed);
   if (difficulty === "hard" && opponentGenomes?.length) {
     return ARENA_BRANCHES.map((branch) => {
-      const pool = archetypePool(branch.id);
-      return pool
-        .map((genome, index) => ({
-          genome,
-          index,
-          score: counterScore(genome, opponentGenomes),
-        }))
-        .sort((a, b) => b.score - a.score || a.index - b.index)[0]?.genome ??
-        completeArenaBranchGenome([], branch.id);
+      const pool = archetypePool(branch.id),
+        candidates = pool.map((genome, index) => {
+          const adapted = adaptSetupGenome(genome, branch.id, opponentGenomes);
+          return {
+            genome: adapted,
+            index,
+            score: counterScore(adapted, opponentGenomes),
+            breadth: adapted.length,
+          };
+        });
+      return candidates
+        .sort(
+          (a, b) =>
+            b.score - a.score ||
+            b.breadth - a.breadth ||
+            a.index - b.index,
+        )[0]?.genome ?? completeArenaBranchGenome([], branch.id);
     });
   }
   return ARENA_BRANCHES.map((branch, index) => {
@@ -435,8 +480,9 @@ export function engineerArenaAISide(
   const random = lcg(seed);
   let wanted;
   if (difficulty === "hard") {
-    const opponent = new Set((opponentGenomes ?? []).flat());
-    wanted = [...new Set([...opponent].map((trait) => COUNTERS[trait]).filter(Boolean))];
+    wanted = [
+      ...new Set(counterTargets(opponentGenomes).map((entry) => entry.trait)),
+    ];
   } else if (difficulty === "medium") {
     wanted = arenaAISide("medium", null, seed).flat();
   } else {
