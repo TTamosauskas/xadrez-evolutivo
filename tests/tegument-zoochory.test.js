@@ -105,25 +105,30 @@ test("Pelos with Camuflagem blocks adjacent diagonal capture until Visão Binocu
   );
 });
 
-test("Escamas blocks an adjacent capture with its own probabilistic layer", () => {
-  const state = fixture([
-      { owner: "blue", r: 4, c: 4, rank: 4 },
-      { owner: "amber", r: 3, c: 4, rank: 4, traits: ["Escamas"] },
-      { owner: "amber", r: 0, c: 0, rank: 4 },
-    ], 2126),
-    attacker = state.pieces[0],
-    victim = state.pieces[1];
-  state.rng = 1972;
-
-  const next = transition(state, move(attacker, victim.r, victim.c));
-  assert.ok(next.pieces.some((piece) => piece.id === victim.id));
-  assert.ok(
-    next.passiveEffects.some(
-      (effect) =>
-        effect.trait === "Escamas" &&
-        effect.outcome === "prevented-capture",
-    ),
-  );
+test("Escamas participates in the multiplicative contact-capture layer", () => {
+  const base = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 4 },
+    { owner: "amber", r: 3, c: 4, rank: 4, traits: ["Escamas"] },
+    { owner: "amber", r: 0, c: 0, rank: 4 },
+  ]);
+  let next = null;
+  for (let seed = 1; seed < 20000 && !next; seed++) {
+    const probe = structuredClone(base);
+    probe.rng = seed;
+    const attacker = probe.pieces[0],
+      victim = probe.pieces[1],
+      result = transition(probe, move(attacker, victim.r, victim.c));
+    if (
+      result.passiveEffects.some(
+        (effect) =>
+          effect.trait === "Escamas" &&
+          effect.outcome === "prevented-contact-capture",
+      )
+    )
+      next = result;
+  }
+  assert.ok(next);
+  assert.ok(next.pieces.some((piece) => piece.id === base.pieces[1].id));
 });
 
 test("Osteodermos halves Espinhos and Chifre retaliation instead of duplicating capture resistance", () => {

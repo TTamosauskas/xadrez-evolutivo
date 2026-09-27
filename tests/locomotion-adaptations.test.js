@@ -29,9 +29,12 @@ test("evasion and locomotion families include the new derived phenotypes", () =>
     "Bipedalismo",
   ]);
   assert.deepEqual(evasion.traits, [
+    "Exibição deimática",
+    "Tanatose",
     "Adrenalina",
     "Velocidade",
     "Movimento proteano",
+    "Ofuscamento por movimento",
   ]);
   assert.deepEqual(
     normalizeActiveTraits(

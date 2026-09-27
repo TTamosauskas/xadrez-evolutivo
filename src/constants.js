@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 24;
+export const STATE_VERSION = 25;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -290,8 +290,12 @@ export const TRAITS = {
     "Ao deslocar um membro para uma casa vazia, aliados conectados com Manada podem acompanhar uma casa na mesma direção, quando houver espaço legal.",
   ],
   Mimetismo: [
-    "🫥",
-    "Confunde captores imitando outros seres.",
+    "🥸",
+    "Ao ser atacada, se houver uma criatura aliada do agressor adjacente, tem 25% de chance de trocar de posição com ela e redirecionar o ataque.",
+  ],
+  "Mimetismo Agressivo": [
+    "👺",
+    "Ao iniciar uma captura contra um alvo com defesa comportamental aplicável, tem 25% de chance de neutralizar a primeira dessas defesas.",
   ],
   Chifre: [
     "🫎",
@@ -489,7 +493,11 @@ export const TRAITS = {
     "🕷",
     "Depois de uma reprodução bem-sucedida em casa fértil, fica preparada; ao morrer, libera uma prole nas casas livres ao redor.",
   ],
-  Veneno: ["🫟", "Condena o agressor à morte após dois turnos próprios."],
+  Toxicidade: [
+    "😵‍💫",
+    "Ao ser capturada por contato, intoxica o agressor: ele perde o próximo turno próprio, tem as defesas reativas suspensas e sua recuperação metabólica é adiada em uma rodada.",
+  ],
+  Veneno: ["🫟", "Especialização de Toxicidade que condena o agressor à morte após dois turnos próprios."],
   "Mutação Letal": ["💀", "A peça morre após três rodadas completas."],
   "Mutação Disfuncional": [
     "❌",
@@ -502,6 +510,34 @@ export const TRAITS = {
   "Pele Glandular": [
     "🐸",
     "Tegumento úmido especializado: tem 30% de chance de bloquear exposições por trilha bacteriana, fungo ambiental ou esporos.",
+  ],
+  Extremotolerância: [
+    "𖢥",
+    "Em Artrópodes terrestres, reduz em 50% multiplicativos a mortalidade causada por casas hostis normais.",
+  ],
+  Contorcionismo: [
+    "〰",
+    "Reduz em 5% multiplicativos o sucesso de capturas adjacentes por flexibilidade corporal.",
+  ],
+  "Corpo Gelatinoso": [
+    "🧫",
+    "Reduz em 10% multiplicativos o sucesso de capturas adjacentes; é autoexcludente com Esclerotização.",
+  ],
+  Esclerotização: [
+    "⛉",
+    "Reduz em 20% multiplicativos o sucesso de capturas adjacentes; é autoexcludente com Corpo Gelatinoso e incompatível com Contorcionismo.",
+  ],
+  "Exibição deimática": [
+    "🐡",
+    "Ao ser atacada, tem 25% de chance de forçar o agressor a recuar para uma casa adjacente vazia válida.",
+  ],
+  Tanatose: [
+    "⚰️",
+    "Após ser capturada, pode permanecer fora do tabuleiro fingindo-se de morta; quando o captor deixa a casa, tem 25% de chance de retornar. Necrófago neutraliza o efeito.",
+  ],
+  "Ofuscamento por movimento": [
+    "🦓",
+    "Com pelo menos dois aliados adjacentes que também expressem Ofuscamento por movimento, tem 25% de chance de fugir para uma casa adjacente vazia ao ser atacada.",
   ],
   Escamas: [
     "◆",
@@ -602,6 +638,7 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   Eusocialidade: ["Sociabilidade"],
   "Acasalamento Múltiplo": ["Promiscuidade"],
   "Neocórtex Desenvolvido": ["Córtex Pré-Frontal"],
+  Veneno: ["Toxicidade"],
 };
 export const has = (piece, trait) => {
   const activeTraits = [

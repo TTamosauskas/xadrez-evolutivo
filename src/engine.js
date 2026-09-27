@@ -1,4 +1,4 @@
-import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance } from "./constants.js";
+import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance, TRAITS } from "./constants.js";
 import {
   activateOrigin,
   clone,
@@ -45,6 +45,7 @@ import {
   canWaitForBirth,
   dormant,
   adjacentAlliesCount,
+  intoxicationResting,
   manipulationTargets,
   constructionTargets,
   nicheConstructionTargets,
@@ -114,11 +115,56 @@ import {
   repairConwayStagnation,
   offensiveActionCount,
 } from "./environment.js";
+function applyChemicalCaptureDefense(state, dead, attacker) {
+  if (!attacker || attacker.owner === dead.owner) return;
+  if (has(dead, "Veneno")) {
+    attacker.venom = { remaining: 2, infectedTurn: state.turn };
+    return;
+  }
+  if (
+    has(dead, "Toxicidade") &&
+    distance(attacker, dead) === 1
+  ) {
+    const currentRound = round(state);
+    attacker.intoxicationRestThroughRound = Math.max(
+      attacker.intoxicationRestThroughRound ?? -1,
+      currentRound + 1,
+    );
+    if ((attacker.nextReproductionRound ?? currentRound) > currentRound)
+      attacker.nextReproductionRound++;
+    log(
+      state,
+      `${OWNERS[dead.owner]}: 😵‍💫 Toxicidade intoxicou o agressor por um turno próprio.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Toxicidade",
+      "😵‍💫 Toxicidade: agressor intoxicado por 1 turno.",
+      {
+        pieceId: dead.id,
+        outcome: "intoxicated-attacker",
+        value: 1,
+      },
+    );
+  }
+}
+
+function tanatosisEligible(state, dead, attacker, options = {}) {
+  return (
+    !!attacker &&
+    attacker.owner !== dead.owner &&
+    has(dead, "Tanatose") &&
+    !options.suppressTanatosis &&
+    !intoxicationResting(state, dead) &&
+    !has(attacker, "Necrófago")
+  );
+}
+
 export function context(state) {
   const ctx = {
     state,
     reserved: new Set(),
-    kill(id, reason, attacker = null, force = false) {
+    kill(id, reason, attacker = null, force = false, options = {}) {
       const dead = state.pieces.find((p) => p.id === id);
       if (!dead) return false;
       if (!force && !attacker && has(dead, "Regeneração") && !dead.regenerationUsed) {
@@ -140,6 +186,46 @@ export function context(state) {
       const bonded = dead.pairedWithId
         ? state.pieces.find((piece) => piece.id === dead.pairedWithId)
         : null;
+      if (
+        attacker &&
+        attacker.owner !== dead.owner &&
+        has(dead, "Tanatose") &&
+        has(attacker, "Necrófago") &&
+        !options.suppressTanatosis
+      )
+        emitPassiveEffect(
+          state,
+          "Necrófago",
+          "🐺 Necrófago neutralizou ⚰️ Tanatose.",
+          { pieceId: attacker.id, outcome: "neutralized-thanatosis" },
+        );
+      if (tanatosisEligible(state, dead, attacker, options)) {
+        releaseCarriedPlantSeeds(state, dead);
+        const stored = clone(dead),
+          cell = square(dead.r, dead.c);
+        state.pieces = state.pieces.filter((piece) => piece.id !== id);
+        if (state.chain === id) clearLocomotionChain(state);
+        if (state.neurofocus === id) state.neurofocus = null;
+        if (state.neurodivergenceAction?.id === id)
+          state.neurodivergenceAction = null;
+        applyChemicalCaptureDefense(state, dead, attacker);
+        state.thanatosis.push({
+          piece: stored,
+          cell,
+          captorId: attacker.id,
+        });
+        log(
+          state,
+          `${OWNERS[dead.owner]}: ⚰️ Tanatose retirou temporariamente a criatura de ${coord(dead.r, dead.c)}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Tanatose",
+          "⚰️ Tanatose: a criatura aparentou morrer.",
+          { pieceId: dead.id, outcome: "entered-thanatosis" },
+        );
+        return true;
+      }
       releaseCarriedPlantSeeds(state, dead);
       state.pieces = state.pieces.filter((p) => p.id !== id);
       if (bonded?.pairedWithId === dead.id) bonded.pairedWithId = null;
@@ -149,8 +235,7 @@ export function context(state) {
         state.neurodivergenceAction = null;
   state.chainTrait = null;
       if (attacker) {
-        if (has(dead, "Veneno"))
-          attacker.venom = { remaining: 2, infectedTurn: state.turn };
+        applyChemicalCaptureDefense(state, dead, attacker);
         const disease = state.diseases.find(
           (d) => d.id === dead.infection?.disease,
         );
@@ -229,8 +314,12 @@ function markHadeanTutorialStep(state, step) {
 }
 function extinction(state) {
   if (state.result) return true;
-  const blue = state.pieces.some((p) => p.owner === "blue"),
-    amber = state.pieces.some((p) => p.owner === "amber");
+  const blue =
+      state.pieces.some((p) => p.owner === "blue") ||
+      state.thanatosis.some((entry) => entry.piece.owner === "blue"),
+    amber =
+      state.pieces.some((p) => p.owner === "amber") ||
+      state.thanatosis.some((entry) => entry.piece.owner === "amber");
   if (!blue || !amber) {
     const simultaneous = !blue && !amber,
       extinctionFounder = simultaneous ? state.lastDeathPiece ?? null : null,
@@ -422,8 +511,21 @@ export function retaliatoryDefenseChance(attacker, trait) {
   return has(attacker, "Osteodermos") ? base / 2 : base;
 }
 
-function hostileHazardKills(state, piece) {
+function hostileHazardKills(state, piece, normalHostile = false) {
   if (random(state) >= 1 / 2) return false;
+  if (
+    normalHostile &&
+    has(piece, "Extremotolerância") &&
+    random(state) < 1 / 2
+  ) {
+    emitPassiveEffect(
+      state,
+      "Extremotolerância",
+      "𖢥 Extremotolerância reduziu o impacto do ambiente hostil.",
+      { pieceId: piece.id, outcome: "blocked-hostile-risk" },
+    );
+    return false;
+  }
   if (has(piece, "Penas") && random(state) < 0.15) {
     emitPassiveEffect(
       state,
@@ -508,7 +610,7 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
       "hostile",
     );
     piece.hostileRiskRound = round(state) + 1;
-    if (hostileHazardKills(state, piece)) {
+    if (hostileHazardKills(state, piece, terrain(state, r, c) === "hostile")) {
       const killed = ctx.kill(piece.id, reason + " em casa hostil");
       if (killed && terrain(state, r, c) === "hostile")
         markCarcass(state, destination);
@@ -543,6 +645,117 @@ function proteanEscapeCells(state, victim) {
       cells.push({ r, c });
     }
   return cells;
+}
+
+const CONTACT_CAPTURE_REDUCTIONS = Object.freeze([
+  ["Contorcionismo", 0.05],
+  ["Corpo Gelatinoso", 0.1],
+  ["Esclerotização", 0.2],
+  ["Escamas", 0.2],
+]);
+
+export function contactCaptureSuccessMultiplier(victim) {
+  return CONTACT_CAPTURE_REDUCTIONS.reduce(
+    (chance, [trait, reduction]) =>
+      has(victim, trait) ? chance * (1 - reduction) : chance,
+    1,
+  );
+}
+
+function contactCaptureBlockingTrait(state, victim) {
+  const active = CONTACT_CAPTURE_REDUCTIONS.filter(([trait]) =>
+    has(victim, trait),
+  );
+  if (!active.length) return null;
+  const roll = random(state);
+  let success = 1;
+  for (const [trait, reduction] of active) {
+    const next = success * (1 - reduction);
+    if (roll >= next && roll < success) return trait;
+    success = next;
+  }
+  return null;
+}
+
+function mimicryModels(state, attacker, victim) {
+  return state.pieces.filter(
+    (piece) =>
+      piece.id !== attacker.id &&
+      piece.id !== victim.id &&
+      piece.owner === attacker.owner &&
+      distance(piece, victim) === 1,
+  );
+}
+
+function movementDazzleReady(state, victim) {
+  const allies = state.pieces.filter(
+    (piece) =>
+      piece.id !== victim.id &&
+      piece.owner === victim.owner &&
+      has(piece, "Ofuscamento por movimento") &&
+      distance(piece, victim) === 1,
+  );
+  return allies.length >= 2 && proteanEscapeCells(state, victim).length > 0;
+}
+
+function behavioralDefenseTraits(state, attacker, victim) {
+  if (!victim || intoxicationResting(state, victim)) return [];
+  const traits = [];
+  if (has(victim, "Mimetismo") && mimicryModels(state, attacker, victim).length)
+    traits.push("Mimetismo");
+  if (
+    nocturnalRound(state) &&
+    has(victim, "Notívago") &&
+    !has(attacker, "Visão Noturna")
+  )
+    traits.push("Notívago");
+  if (
+    has(victim, "Exibição deimática") &&
+    proteanEscapeCells(state, attacker).length
+  )
+    traits.push("Exibição deimática");
+  else if (has(victim, "Tanatose") && !has(attacker, "Necrófago"))
+    traits.push("Tanatose");
+  else if (
+    has(victim, "Ofuscamento por movimento") &&
+    movementDazzleReady(state, victim)
+  )
+    traits.push("Ofuscamento por movimento");
+  else if (
+    has(victim, "Movimento proteano") &&
+    !has(attacker, "Interceptação preditiva") &&
+    proteanEscapeCells(state, victim).length
+  )
+    traits.push("Movimento proteano");
+  else if (has(victim, "Adrenalina") && adrenalineEscapeCells(state, victim).length)
+    traits.push("Adrenalina");
+  else if (
+    has(victim, "Velocidade") &&
+    !has(attacker, "Velocidade")
+  )
+    traits.push("Velocidade");
+  return traits;
+}
+
+function aggressiveMimicrySuppression(state, attacker, victim) {
+  if (!has(attacker, "Mimetismo Agressivo")) return null;
+  const defenses = behavioralDefenseTraits(state, attacker, victim);
+  if (!defenses.length || random(state) >= 1 / 4) return null;
+  const trait = defenses[0];
+  emitPassiveEffect(
+    state,
+    "Mimetismo Agressivo",
+    `👺 Mimetismo Agressivo neutralizou ${TRAITS[trait]?.[0] ?? ""} ${trait}.`,
+    {
+      pieceId: attacker.id,
+      outcome: "neutralized-behavioral-defense",
+    },
+  );
+  log(
+    state,
+    `${OWNERS[attacker.owner]}: 👺 Mimetismo Agressivo impediu a resposta de ${trait}.`,
+  );
+  return trait;
 }
 
 function adrenalineEscapeCells(state, victim) {
@@ -1050,7 +1263,13 @@ function advanceTurn(ctx) {
         p.hostileRiskRound !== round(state)
       ) {
         p.hostileRiskRound = round(state);
-        if (hostileHazardKills(state, p)) {
+        if (
+          hostileHazardKills(
+            state,
+            p,
+            terrain(state, p.r, p.c) === "hostile",
+          )
+        ) {
           const cell = square(p.r, p.c);
           const killed = ctx.kill(p.id, "casa hostil");
           if (killed && terrain(state, p.r, p.c) === "hostile")
@@ -1160,8 +1379,64 @@ function recycleOccupiedOrganicResidue(state) {
   return recycled;
 }
 
+function resolveThanatosis(state) {
+  let resolved = 0;
+  for (const entry of [...state.thanatosis]) {
+    const captor = state.pieces.find(
+      (piece) => piece.id === entry.captorId,
+    );
+    if (captor && square(captor.r, captor.c) === entry.cell) continue;
+
+    state.thanatosis = state.thanatosis.filter(
+      (candidate) => candidate.piece.id !== entry.piece.id,
+    );
+    const r = Math.floor(entry.cell / 8),
+      c = entry.cell % 8,
+      occupied =
+        !!at(state, r, c) ||
+        !!eggAt(state, r, c) ||
+        !!plantSeedAt(state, r, c) ||
+        !!fragmentAt(state, r, c) ||
+        !!barrierAt(state, r, c) ||
+        !!lethalHazardAt(state, r, c);
+    if (occupied || random(state) >= 1 / 4) {
+      log(
+        state,
+        `${OWNERS[entry.piece.owner]}: ⚰️ Tanatose não conseguiu restabelecer a criatura em ${coord(r, c)}.`,
+      );
+      resolved++;
+      continue;
+    }
+
+    const revived = entry.piece;
+    revived.r = r;
+    revived.c = c;
+    revived.stationarySinceRound = round(state);
+    state.carcasses = state.carcasses.filter(
+      (carcass) => carcass.cell !== entry.cell,
+    );
+    state.captureDisturbances = (state.captureDisturbances ?? []).filter(
+      (disturbance) => disturbance.cell !== entry.cell,
+    );
+    state.pieces.push(revived);
+    log(
+      state,
+      `${OWNERS[revived.owner]}: ⚰️ Tanatose permitiu o retorno em ${coord(r, c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Tanatose",
+      "⚰️ Tanatose: a criatura retomou a atividade.",
+      { pieceId: revived.id, outcome: "returned-from-thanatosis" },
+    );
+    resolved++;
+  }
+  return resolved;
+}
+
 function settle(ctx) {
   const state = ctx.state;
+  resolveThanatosis(state);
   recycleOccupiedOrganicResidue(state);
   if (
     state.result ||
@@ -1764,7 +2039,7 @@ function executeMove(ctx, action) {
         ["Casas vermelhas oferecem perigo de morte."],
         "hostile",
       );
-      if (hostileHazardKills(state, p)) {
+      if (hostileHazardKills(state, p, terrain(state, r, c) === "hostile")) {
         if (state.movementTrace) {
           const stopIndex = state.movementTrace.path.findIndex(
             (cell) => cell.r === r && cell.c === c,
@@ -1894,7 +2169,9 @@ function executeMove(ctx, action) {
       !!plantSeed && target.fruitConsume === plantSeed.id,
     synzooCollection =
       !!plantSeed && target.synzooCollect === plantSeed.id,
-    capture = pieceCapture || eggCapture || seedCapture;
+    capture = pieceCapture || eggCapture || seedCapture,
+    reactiveDefensesActive =
+      !pieceCapture || !intoxicationResting(state, victim);
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -1935,7 +2212,11 @@ function executeMove(ctx, action) {
     finishFrustratedCapture(ctx, p, "Cuidado Parental");
     return;
   }
-  if (pieceCapture && has(victim, "Espinhos")) {
+  if (
+    pieceCapture &&
+    reactiveDefensesActive &&
+    has(victim, "Espinhos")
+  ) {
     const roll = random(state),
       threshold = retaliatoryDefenseChance(p, "Espinhos");
     if (
@@ -1971,6 +2252,7 @@ function executeMove(ctx, action) {
   }
   if (
     pieceCapture &&
+    reactiveDefensesActive &&
     has(victim, "Chifre") &&
     has(p, "Carapaça")
   )
@@ -1982,6 +2264,7 @@ function executeMove(ctx, action) {
     );
   if (
     pieceCapture &&
+    reactiveDefensesActive &&
     has(victim, "Chifre") &&
     !has(p, "Carapaça")
   ) {
@@ -2018,28 +2301,46 @@ function executeMove(ctx, action) {
       return;
     }
   }
+  const aggressiveNeutralizedTrait =
+    pieceCapture && victim.owner !== p.owner && reactiveDefensesActive
+      ? aggressiveMimicrySuppression(state, p, victim)
+      : null;
+
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
-    has(victim, "Mimetismo")
+    reactiveDefensesActive &&
+    has(victim, "Mimetismo") &&
+    aggressiveNeutralizedTrait !== "Mimetismo"
   ) {
-    const adjacent = state.pieces.filter(
-      (piece) => piece.id !== victim.id && distance(piece, victim) === 1,
-    );
-    if (adjacent.length && random(state) < 1 / adjacent.length) {
-      const redirected = pick(state, adjacent),
-        redirectedCell = square(redirected.r, redirected.c);
-      ctx.kill(redirected.id, "Mimetismo", null, true);
-      markCarcass(state, redirectedCell);
-      markCaptureDisturbance(state, redirectedCell);
+    const models = mimicryModels(state, p, victim);
+    if (models.length && random(state) < 1 / 4) {
+      const redirected = pick(state, models),
+        victimOrigin = { r: victim.r, c: victim.c },
+        redirectedOrigin = { r: redirected.r, c: redirected.c };
+      victim.r = redirectedOrigin.r;
+      victim.c = redirectedOrigin.c;
+      redirected.r = victimOrigin.r;
+      redirected.c = victimOrigin.c;
+      const killed = ctx.kill(
+        redirected.id,
+        "captura desviada por Mimetismo",
+        p,
+        true,
+      );
+      if (killed) {
+        const redirectedCell = square(victimOrigin.r, victimOrigin.c);
+        markCarcass(state, redirectedCell);
+        markCaptureDisturbance(state, redirectedCell);
+      }
       log(
         state,
-        `${OWNERS[victim.owner]}: 🫥 Mimetismo desviou o ataque para ${coord(redirected.r, redirected.c)}.`,
+        `${OWNERS[victim.owner]}: 🥸 Mimetismo trocou o alvo por uma criatura do agressor em ${coord(victimOrigin.r, victimOrigin.c)}.`,
       );
       emitPassiveEffect(
         state,
         "Mimetismo",
-        "🫥 Mimetismo desviou o ataque.",
+        "🥸 Mimetismo confundiu a identidade do alvo.",
         { pieceId: victim.id, outcome: "redirected-capture" },
       );
       advanceTurn(ctx);
@@ -2079,6 +2380,8 @@ function executeMove(ctx, action) {
   const nocturnalEvasion =
     pieceCapture &&
     victim.owner !== p.owner &&
+    reactiveDefensesActive &&
+    aggressiveNeutralizedTrait !== "Notívago" &&
     nocturnalRound(state) &&
     has(victim, "Notívago") &&
     !has(p, "Visão Noturna");
@@ -2100,7 +2403,71 @@ function executeMove(ctx, action) {
   } else if (
     pieceCapture &&
     victim.owner !== p.owner &&
-    has(victim, "Movimento proteano")
+    reactiveDefensesActive &&
+    has(victim, "Exibição deimática") &&
+    aggressiveNeutralizedTrait !== "Exibição deimática"
+  ) {
+    const cells = proteanEscapeCells(state, p);
+    if (cells.length && random(state) < 1 / 4) {
+      const retreat = pick(state, cells);
+      reactiveRelocation(
+        ctx,
+        p,
+        retreat.r,
+        retreat.c,
+        "recuo por Exibição deimática",
+      );
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 🐡 Exibição deimática fez o agressor recuar para ${coord(retreat.r, retreat.c)}.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Exibição deimática",
+        "🐡 Exibição deimática assustou o agressor.",
+        { pieceId: victim.id, outcome: "repelled-attacker" },
+      );
+      advanceTurn(ctx);
+      settle(ctx);
+      return;
+    }
+  } else if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    reactiveDefensesActive &&
+    has(victim, "Ofuscamento por movimento") &&
+    aggressiveNeutralizedTrait !== "Ofuscamento por movimento"
+  ) {
+    const cells = proteanEscapeCells(state, victim);
+    if (movementDazzleReady(state, victim) && cells.length && random(state) < 1 / 4) {
+      const escape = pick(state, cells);
+      reactiveRelocation(
+        ctx,
+        victim,
+        escape.r,
+        escape.c,
+        "fuga por Ofuscamento por movimento",
+      );
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 🦓 Ofuscamento por movimento desviou a criatura para ${coord(escape.r, escape.c)}.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Ofuscamento por movimento",
+        "🦓 Ofuscamento por movimento confundiu o agressor.",
+        { pieceId: victim.id, outcome: "escaped-capture" },
+      );
+      advanceTurn(ctx);
+      settle(ctx);
+      return;
+    }
+  } else if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    reactiveDefensesActive &&
+    has(victim, "Movimento proteano") &&
+    aggressiveNeutralizedTrait !== "Movimento proteano"
   ) {
     if (has(p, "Interceptação preditiva")) {
       emitPassiveEffect(
@@ -2138,13 +2505,17 @@ function executeMove(ctx, action) {
   } else if (
     pieceCapture &&
     victim.owner !== p.owner &&
-    has(victim, "Adrenalina")
+    reactiveDefensesActive &&
+    has(victim, "Adrenalina") &&
+    aggressiveNeutralizedTrait !== "Adrenalina"
   ) {
     if (triggerAdrenalineEscape(ctx, p, victim)) return;
   } else if (
     pieceCapture &&
     victim.owner !== p.owner &&
+    reactiveDefensesActive &&
     has(victim, "Velocidade") &&
+    aggressiveNeutralizedTrait !== "Velocidade" &&
     !has(p, "Velocidade") &&
     random(state) < 1 / 4
   ) {
@@ -2160,6 +2531,28 @@ function executeMove(ctx, action) {
     );
     finishFrustratedCapture(ctx, p, "Velocidade");
     return;
+  }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    distance(p, victim) === 1
+  ) {
+    const blockingTrait = contactCaptureBlockingTrait(state, victim);
+    if (blockingTrait) {
+      const icon = TRAITS[blockingTrait]?.[0] ?? "";
+      log(
+        state,
+        `${OWNERS[victim.owner]}: ${icon} ${blockingTrait} reduziu o sucesso da captura em ${coord(victim.r, victim.c)}.`,
+      );
+      emitPassiveEffect(
+        state,
+        blockingTrait,
+        `${icon} ${blockingTrait} evitou a captura de contato.`,
+        { pieceId: victim.id, outcome: "prevented-contact-capture" },
+      );
+      finishFrustratedCapture(ctx, p, blockingTrait);
+      return;
+    }
   }
   if (
     pieceCapture &&
@@ -2191,26 +2584,6 @@ function executeMove(ctx, action) {
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
     finishFrustratedCapture(ctx, p, "Pele grossa");
-    return;
-  }
-  if (
-    pieceCapture &&
-    victim.owner !== p.owner &&
-    distance(p, victim) === 1 &&
-    has(victim, "Escamas") &&
-    random(state) < 0.2
-  ) {
-    log(
-      state,
-      `${OWNERS[victim.owner]}: ◆ Escamas resistiram à captura em ${coord(victim.r, victim.c)}.`,
-    );
-    emitPassiveEffect(
-      state,
-      "Escamas",
-      "◆ Escamas bloquearam a captura de contato.",
-      { pieceId: victim.id, outcome: "prevented-capture" },
-    );
-    finishFrustratedCapture(ctx, p, "Escamas");
     return;
   }
   if (
@@ -2325,6 +2698,11 @@ function executeMove(ctx, action) {
       victim.id,
       cannibalism ? "canibalismo" : "captura",
       p,
+      false,
+      {
+        suppressTanatosis:
+          aggressiveNeutralizedTrait === "Tanatose",
+      },
     );
     capturedPieceKilled = killed;
     if (killed && victim.owner !== p.owner) {
@@ -2465,7 +2843,7 @@ function executeMove(ctx, action) {
       "hostile",
     );
     p.hostileRiskRound = round(state) + 1;
-    if (hostileHazardKills(state, p)) {
+    if (hostileHazardKills(state, p, landingTerrain === "hostile")) {
       const killed = ctx.kill(p.id, "casa hostil após captura");
       if (killed && terrain(state, p.r, p.c) === "hostile")
         markCarcass(state, cell);

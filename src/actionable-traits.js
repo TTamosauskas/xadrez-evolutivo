@@ -570,6 +570,7 @@ function addActiveStateTraits(state, piece, traits) {
   if (terrain(state, piece.r, piece.c) === "hostile") {
     if (has(piece, "Penas")) traits.add("Penas");
     if (has(piece, "Pelos")) traits.add("Pelos");
+    if (has(piece, "Extremotolerância")) traits.add("Extremotolerância");
   }
 
   if (
@@ -732,10 +733,29 @@ function markCaptureContext(state, attacker, victim, byId) {
   if (
     has(victim, "Mimetismo") &&
     state.pieces.some(
-      (piece) => piece.id !== victim.id && distance(piece, victim) === 1,
+      (piece) =>
+        piece.id !== attacker.id &&
+        piece.id !== victim.id &&
+        piece.owner === attacker.owner &&
+        distance(piece, victim) === 1,
     )
   )
     victimTraits.add("Mimetismo");
+
+  if (
+    has(attacker, "Mimetismo Agressivo") &&
+    [
+      "Mimetismo",
+      "Notívago",
+      "Exibição deimática",
+      "Tanatose",
+      "Ofuscamento por movimento",
+      "Movimento proteano",
+      "Adrenalina",
+      "Velocidade",
+    ].some((trait) => has(victim, trait))
+  )
+    attackerTraits.add("Mimetismo Agressivo");
 
   if (victim.owner !== attacker.owner) {
     const social = sociableGroup(state, victim);
@@ -753,6 +773,26 @@ function markCaptureContext(state, attacker, victim, byId) {
 
     const nocturnalEvasion =
       nocturnal && !has(attacker, "Visão Noturna");
+    if (!nocturnalEvasion && has(victim, "Exibição deimática"))
+      victimTraits.add("Exibição deimática");
+    if (!nocturnalEvasion && has(victim, "Tanatose")) {
+      victimTraits.add("Tanatose");
+      if (has(attacker, "Necrófago")) attackerTraits.add("Necrófago");
+    }
+    if (!nocturnalEvasion && has(victim, "Ofuscamento por movimento")) {
+      const support = state.pieces.filter(
+        (piece) =>
+          piece.id !== victim.id &&
+          piece.owner === victim.owner &&
+          has(piece, "Ofuscamento por movimento") &&
+          distance(piece, victim) === 1,
+      );
+      if (support.length >= 2) {
+        victimTraits.add("Ofuscamento por movimento");
+        for (const ally of support)
+          byId.get(ally.id)?.add("Ofuscamento por movimento");
+      }
+    }
     if (!nocturnalEvasion && has(victim, "Movimento proteano")) {
       victimTraits.add("Movimento proteano");
       if (has(attacker, "Interceptação preditiva"))
@@ -773,8 +813,14 @@ function markCaptureContext(state, attacker, victim, byId) {
       if (has(attacker, "Presas")) attackerTraits.add("Presas");
     }
 
-    if (has(victim, "Escamas") && distance(attacker, victim) === 1)
-      victimTraits.add("Escamas");
+    if (distance(attacker, victim) === 1)
+      for (const trait of [
+        "Contorcionismo",
+        "Corpo Gelatinoso",
+        "Esclerotização",
+        "Escamas",
+      ])
+        if (has(victim, trait)) victimTraits.add(trait);
     if (has(victim, "Madeira")) {
       victimTraits.add("Madeira");
       if (has(attacker, "Roedor")) attackerTraits.add("Roedor");
@@ -784,6 +830,7 @@ function markCaptureContext(state, attacker, victim, byId) {
   }
 
   if (has(victim, "Veneno")) victimTraits.add("Veneno");
+  else if (has(victim, "Toxicidade")) victimTraits.add("Toxicidade");
   if (has(victim, "Fragmentação")) victimTraits.add("Fragmentação");
   if (has(victim, "Ooteca") && victim.oothecaPrimed)
     victimTraits.add("Ooteca");

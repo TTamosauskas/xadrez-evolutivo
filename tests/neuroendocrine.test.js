@@ -31,7 +31,7 @@ test("new loci keep one active evasion, offspring orientation and cognitive phen
       (family) =>
         family.id === "evasion" &&
         family.traits.join("|") ===
-          "Adrenalina|Velocidade|Movimento proteano",
+          "Exibição deimática|Tanatose|Adrenalina|Velocidade|Movimento proteano|Ofuscamento por movimento",
     ),
   );
   assert.deepEqual(

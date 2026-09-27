@@ -65,6 +65,9 @@ export const regenerationResting = (state, p) =>
 export const neurodivergenceResting = (state, p) =>
   Number.isInteger(p?.neurodivergenceRestThroughRound) &&
   round(state) <= p.neurodivergenceRestThroughRound;
+export const intoxicationResting = (state, p) =>
+  Number.isInteger(p?.intoxicationRestThroughRound) &&
+  round(state) <= p.intoxicationRestThroughRound;
 export const adjacentAlliesCount = (state, p) =>
   p
     ? state.pieces.filter(
@@ -96,6 +99,7 @@ export const resting = (state, p) =>
   dysfunctionalResting(state, p) ||
   regenerationResting(state, p) ||
   neurodivergenceResting(state, p) ||
+  intoxicationResting(state, p) ||
   pupating(state, p);
 
 export function serotoninRepositionTargets(state) {
@@ -1623,6 +1627,15 @@ export function pieceActionState(state, piece) {
       remainingRounds: Math.max(
         1,
         piece.neurodivergenceRestThroughRound - currentRound + 1,
+      ),
+    };
+  if (intoxicationResting(state, piece))
+    return {
+      waiting: true,
+      reason: "Intoxicação por Toxicidade",
+      remainingRounds: Math.max(
+        1,
+        piece.intoxicationRestThroughRound - currentRound + 1,
       ),
     };
   if (dysfunctionalResting(state, piece))

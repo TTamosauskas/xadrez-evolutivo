@@ -155,7 +155,7 @@ export const GEOLOGICAL_STAGES = [
       "Percepção Espacial",
       "Carapaça",
       "Camuflagem",
-      "Veneno",
+      "Toxicidade",
     ],
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "aquatic" },
     events: {
@@ -379,6 +379,7 @@ export const TRAIT_STAGE = {
   Ecolocalização: "paleogene",
   "Interceptação preditiva": "paleogene",
   Mimetismo: "permian",
+  "Mimetismo Agressivo": "triassic",
   Notívago: "triassic",
   "Movimento proteano": "triassic",
   Sociabilidade: "jurassic",
@@ -421,6 +422,14 @@ export const TRAIT_STAGE = {
   Mirmecocoria: "paleogene",
   Roedor: "paleogene",
   Capsaicina: "neogene",
+  Extremotolerância: "devonian",
+  Contorcionismo: "ediacaran",
+  "Corpo Gelatinoso": "ediacaran",
+  Esclerotização: "cambrian",
+  Toxicidade: "cambrian",
+  "Exibição deimática": "cambrian",
+  Tanatose: "cambrian",
+  "Ofuscamento por movimento": "jurassic",
 };
 
 export const ENERGY_BRANCH_TRAITS = new Set(["Fotossíntese", "Predação"]);
@@ -452,7 +461,14 @@ export const ACTIVE_TRAIT_FAMILIES = [
   },
   {
     id: "evasion",
-    traits: ["Adrenalina", "Velocidade", "Movimento proteano"],
+    traits: [
+      "Exibição deimática",
+      "Tanatose",
+      "Adrenalina",
+      "Velocidade",
+      "Movimento proteano",
+      "Ofuscamento por movimento",
+    ],
   },
   {
     id: "parasitism",
@@ -493,6 +509,14 @@ export const ACTIVE_TRAIT_FAMILIES = [
   {
     id: "zoochory",
     traits: ["Endozoocoria", "Epizoocoria", "Sinzoocoria", "Mirmecocoria"],
+  },
+  {
+    id: "body-consistency",
+    traits: ["Corpo Gelatinoso", "Esclerotização"],
+  },
+  {
+    id: "chemical-defense",
+    traits: ["Toxicidade", "Veneno"],
   },
 ];
 
@@ -558,6 +582,33 @@ export const TRAIT_DEPENDENCIES = {
   "Pele grossa": { lineage: ["Herbívoro"] },
   "Pele Glandular": {
     lineage: ["Vertebrado", "Respiração Cutânea"],
+  },
+  Extremotolerância: {
+    lineage: ["Artrópode", "Locomoção Terrestre"],
+  },
+  Contorcionismo: {
+    lineage: ["Simetria Bilateral", "Locomoção Primitiva"],
+  },
+  "Corpo Gelatinoso": {
+    lineage: ["Multicelularismo", "Locomoção Primitiva"],
+  },
+  Esclerotização: {
+    lineage: ["Artrópode", "Locomoção Articulada"],
+  },
+  Toxicidade: {
+    lineage: ["Multicelularismo", "Predação"],
+  },
+  Veneno: {
+    lineage: ["Toxicidade"],
+  },
+  "Exibição deimática": {
+    lineage: ["Locomoção Primitiva", "Percepção Espacial"],
+  },
+  Tanatose: {
+    lineage: ["Multicelularismo", "Locomoção Primitiva"],
+  },
+  "Ofuscamento por movimento": {
+    lineage: ["Sociabilidade", "Locomoção Terrestre"],
   },
   Escamas: { lineage: ["Vertebrado", "Ovíparos Amniotas"] },
   Osteodermos: { lineage: ["Vertebrado", "Locomoção Terrestre"] },
@@ -645,6 +696,10 @@ export const TRAIT_DEPENDENCIES = {
   "Interceptação preditiva": {
     lineage: ["Percepção Espacial"],
     lineageAny: ["Carnívoro", "Onívoro"],
+  },
+  Mimetismo: { lineage: ["Camuflagem"] },
+  "Mimetismo Agressivo": {
+    lineage: ["Predação", "Mimetismo"],
   },
   "Construtor de Nicho": { lineage: ["Escavador"] },
   Zoorremediação: { lineage: ["Construtor de Nicho"] },
@@ -824,6 +879,16 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Pelos",
   "Penas",
   "Roedor",
+  "Extremotolerância",
+  "Contorcionismo",
+  "Corpo Gelatinoso",
+  "Esclerotização",
+  "Toxicidade",
+  "Veneno",
+  "Exibição deimática",
+  "Tanatose",
+  "Ofuscamento por movimento",
+  "Mimetismo Agressivo",
   "Endozoocoria",
   "Capsaicina",
   "Epizoocoria",
@@ -932,6 +997,16 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Animais Domésticos",
   "Sociabilidade",
   "Mimetismo",
+  "Mimetismo Agressivo",
+  "Extremotolerância",
+  "Contorcionismo",
+  "Corpo Gelatinoso",
+  "Esclerotização",
+  "Toxicidade",
+  "Veneno",
+  "Exibição deimática",
+  "Tanatose",
+  "Ofuscamento por movimento",
   "Onívoro Oportunista",
   "Acasalamento Preferencial",
   "Promiscuidade",
@@ -995,6 +1070,17 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Roedor: "predation",
   Zoorremediação: "predation",
   Neurodivergência: "predation",
+  Extremotolerância: "predation",
+  Contorcionismo: "predation",
+  "Corpo Gelatinoso": "predation",
+  Esclerotização: "predation",
+  Toxicidade: "predation",
+  Veneno: "predation",
+  "Exibição deimática": "predation",
+  Tanatose: "predation",
+  "Ofuscamento por movimento": "predation",
+  Mimetismo: "predation",
+  "Mimetismo Agressivo": "predation",
   Endozoocoria: "photosynthesis",
   Capsaicina: "photosynthesis",
   Epizoocoria: "photosynthesis",
@@ -1004,6 +1090,8 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
 
 export const TRAIT_INCOMPATIBILITIES = Object.freeze({
   Fragmentação: ["Vertebrado", "Artrópode", "Ooteca"],
+  Contorcionismo: ["Esclerotização"],
+  Esclerotização: ["Contorcionismo"],
   Coprofagia: ["Mixotrofia"],
   Mixotrofia: ["Coprofagia"],
   Vertebrado: ["Fragmentação"],
@@ -1369,6 +1457,15 @@ const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
   "Roedor",
   "Zoorremediação",
   "Neurodivergência",
+  "Extremotolerância",
+  "Contorcionismo",
+  "Corpo Gelatinoso",
+  "Esclerotização",
+  "Veneno",
+  "Exibição deimática",
+  "Tanatose",
+  "Ofuscamento por movimento",
+  "Mimetismo Agressivo",
 ]);
 
 export function periodCompletionInnovations(state) {

@@ -207,7 +207,7 @@ test("period innovations follow the didactic sequence", () => {
     "Percepção Espacial",
     "Carapaça",
     "Camuflagem",
-    "Veneno",
+    "Toxicidade",
   ]);
   assert.deepEqual(required.ordovician, ["Ovíparo"]);
   assert.deepEqual(required.silurian, ["Locomoção Terrestre", "Coletor"]);
@@ -1626,7 +1626,7 @@ test("new social, mimicry and domestication mutations unlock in the intended per
     }),
     animal = {
       traits: ["Predação", "Multicelularismo"],
-      ancestry: ["Incubação"],
+      ancestry: ["Incubação", "Camuflagem"],
     },
     plant = {
       traits: ["Fotossíntese", "Multicelularismo"],
