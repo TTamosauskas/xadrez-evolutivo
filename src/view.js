@@ -696,7 +696,7 @@ export function render(
                   epizoocoria: "semente epizoocórica 🌾",
                   sinzoocoria: "semente sinzoocórica 🌰",
                   mirmecocoria: "diásporo mirmecocórico 🍒",
-                }[plantSeed.zoochory] ?? "semente 🌰"
+                }[plantSeed.zoochory] ?? "semente"
               } das ${OWNERS[plantSeed.owner]}, idade ${plantSeed.age ?? 3 - (plantSeed.movesRemaining ?? 3)} de 3 rodada(s) mínimas; ${(plantSeed.age ?? 3 - (plantSeed.movesRemaining ?? 3)) >= 3 ? "madura" : "em dispersão"}`
           : "",
         pathogenSporeLabel = pathogenSpore
