@@ -506,10 +506,8 @@ export function hierarchySacrificeRecommendation(state) {
   let chosen = null,
     chosenVector = null;
   for (const piece of members) {
-    const negatives = (piece.traits ?? []).filter((trait) =>
-        NEGATIVE_TRAITS.has(trait),
-      ).length,
-      positives = (piece.traits ?? []).length - negatives,
+    const negatives = carriedNegativeMutations(piece),
+      positives = expressedPositiveGenes(piece),
       bestMove = bestMoveSuggestion(state, piece),
       vector = [
         reproductionReady(state, piece) ? 0 : 1,
