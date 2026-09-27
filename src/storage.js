@@ -205,6 +205,30 @@ function normalizeLegacyZoochory(state) {
   return state;
 }
 
+function preserveLegacyLactationLineage(value) {
+  if (!value || typeof value !== "object") return;
+  if (
+    Array.isArray(value.traits) &&
+    value.traits.includes("Lactação") &&
+    value.genome?.Pelos &&
+    value.genome.Pelos.every((allele) => allele?.value === "ancestral")
+  ) {
+    value.genome.Pelos = [
+      { value: "derived", dominance: "recessive" },
+      { value: "ancestral", dominance: "neutral" },
+    ];
+    if (Array.isArray(value.ancestry) && !value.ancestry.includes("Pelos"))
+      value.ancestry.push("Pelos");
+  }
+  for (const child of Object.values(value)) {
+    if (child === value.genome) continue;
+    if (Array.isArray(child))
+      for (const item of child) preserveLegacyLactationLineage(item);
+    else if (child && typeof child === "object")
+      preserveLegacyLactationLineage(child);
+  }
+}
+
 function migrateLegacy(data) {
   let state = normalizeLegacyZoochory(structuredClone(data));
   if (
@@ -267,6 +291,7 @@ function migrateLegacy(data) {
   state.version = STATE_VERSION;
   normalizeLegacyTraitNames(state);
   normalizeStoredGenomes(state);
+  preserveLegacyLactationLineage(state);
   return normalizeCycleInnovationPressure(state);
 }
 
