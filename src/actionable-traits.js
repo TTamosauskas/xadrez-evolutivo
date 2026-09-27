@@ -541,7 +541,7 @@ function addActiveStateTraits(state, piece, traits) {
       (
         state.phase === "move" &&
         piece.owner === state.current &&
-        [0, 2, 3, 4, 5, 6, 7, 8].includes(adjacentAlliesCount(state, piece))
+        adjacentAlliesCount(state, piece) !== 1
       )
     )
   )
