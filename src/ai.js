@@ -66,6 +66,16 @@ export function crowdingPenalty(count) {
   return count > 12 ? Math.min(36, (count - 12) * 2) : 0;
 }
 export function actionPriority(state, a) {
+  if (a.type === "HEMATOPHAGY") {
+    const actor = state.pieces.find((piece) => piece.id === a.id),
+      target = state.pieces.find((piece) => piece.id === a.targetId);
+    return (actor?.autotomyRecovery ? 22 : 13) + (target?.rank ?? 0);
+  }
+  if (a.type === "BROOD_PARASITIZE") {
+    const target = state.pieces.find((piece) => piece.id === a.targetId);
+    return 10 + (target?.rank ?? 0);
+  }
+  if (a.type === "REJECT_BROOD_PARASITE") return 11;
   if (a.type === "ELECTRODISCHARGE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
     return 18 + (target?.rank ?? 0) * 2;
