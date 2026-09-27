@@ -788,21 +788,97 @@ function clusteredSelection(state, candidates, count, groups = 3) {
 
 function habitatSelection(state, candidates, count, pattern, type) {
   if (!count || !candidates.length) return [];
-  const limited = Math.min(count, candidates.length);
-  if (pattern === "corridors") {
+  const limited = Math.min(count, candidates.length),
+    rc = (cell) => [Math.floor(cell / 8), cell % 8],
+    ranked = (score) =>
+      shuffle(state, candidates)
+        .sort((a, b) => score(a) - score(b))
+        .slice(0, limited),
+    edgeDistance = (cell) => {
+      const [r, c] = rc(cell);
+      return Math.min(r, c, 7 - r, 7 - c);
+    },
+    centerDistance = (cell) => {
+      const [r, c] = rc(cell);
+      return Math.abs(r - 3.5) + Math.abs(c - 3.5);
+    },
+    bandDistance = (cell, axes, vertical = false) => {
+      const [r, c] = rc(cell),
+        coordinate = vertical ? c : r;
+      return Math.min(...axes.map((axis) => Math.abs(coordinate - axis)));
+    };
+
+  if (pattern === "corridors" || pattern === "savanna") {
     const horizontal = random(state) < 0.5,
-      axes = random(state) < 0.5 ? [2, 5] : [1, 6],
-      score = (cell) => {
-        const r = Math.floor(cell / 8),
-          c = cell % 8,
-          coordinate = horizontal ? r : c,
-          distanceToCorridor = Math.min(...axes.map((axis) => Math.abs(coordinate - axis)));
-        return type === "fertile" ? distanceToCorridor : -distanceToCorridor;
-      };
-    return shuffle(state, candidates)
-      .sort((a, b) => score(a) - score(b))
-      .slice(0, limited);
+      axes = pattern === "savanna" ? [2, 5] : random(state) < 0.5 ? [2, 5] : [1, 6];
+    return ranked((cell) => {
+      const distance = bandDistance(cell, axes, !horizontal);
+      return type === "fertile" ? distance : -distance;
+    });
   }
+
+  if (pattern === "volcanic-ocean" || pattern === "glacial-ocean")
+    return ranked((cell) =>
+      type === "fertile" ? centerDistance(cell) : -centerDistance(cell),
+    );
+
+  if (pattern === "continental-shelves" || pattern === "supercontinent-coast")
+    return ranked((cell) =>
+      type === "fertile" ? edgeDistance(cell) : -edgeDistance(cell),
+    );
+
+  if (pattern === "inland-seas")
+    return ranked((cell) => {
+      const [r, c] = rc(cell),
+        distance = Math.min(Math.abs(r - 3), Math.abs(r - 4), Math.abs(c - 3), Math.abs(c - 4));
+      return type === "fertile" ? distance : -distance;
+    });
+
+  if (pattern === "rift-seas")
+    return ranked((cell) => {
+      const [r, c] = rc(cell),
+        distance = Math.min(Math.abs(c - 3), Math.abs(c - 4));
+      return type === "fertile" ? distance : -distance;
+    });
+
+  if (pattern === "banded-iron" || pattern === "microbial-mats")
+    return ranked((cell) => {
+      const [r, c] = rc(cell),
+        stripe = pattern === "banded-iron" ? (r + c) % 3 : Math.min(Math.abs(r - 2), Math.abs(r - 5));
+      return type === "fertile" ? stripe : -stripe;
+    });
+
+  if (pattern === "impact-basins")
+    return ranked((cell) => {
+      const [r, c] = rc(cell),
+        basins = [[2, 2], [5, 5]],
+        distance = Math.min(...basins.map(([br, bc]) => Math.abs(r - br) + Math.abs(c - bc)));
+      return type === "fertile" ? distance : -distance;
+    });
+
+  if (pattern === "steppe")
+    return ranked((cell) => {
+      const [r, c] = rc(cell),
+        stripe = Math.min(Math.abs(r - 2), Math.abs(r - 5)) + Math.abs(c - 3.5) * 0.08;
+      return type === "fertile" ? stripe : -stripe;
+    });
+
+  if (pattern === "anthropic")
+    return ranked((cell) => {
+      const [r, c] = rc(cell),
+        checker = (r + c) % 2,
+        central = centerDistance(cell) * 0.1;
+      return type === "fertile" ? checker + central : (1 - checker) - central;
+    });
+
+  if (pattern === "snowball")
+    return clusteredSelection(state, candidates, limited, type === "fertile" ? 2 : 5);
+  if (pattern === "hydrothermal" || pattern === "oxygen-oases")
+    return clusteredSelection(state, candidates, limited, type === "fertile" ? 4 : 3);
+  if (pattern === "shallow-sea" || pattern === "reef" || pattern === "recovery")
+    return clusteredSelection(state, candidates, limited, type === "fertile" ? 4 : 3);
+  if (pattern === "swamp" || pattern === "rainforest")
+    return clusteredSelection(state, candidates, limited, type === "fertile" ? 5 : 2);
   if (pattern === "islands")
     return clusteredSelection(state, candidates, limited, type === "fertile" ? 3 : 2);
   if (pattern === "forest" || pattern === "dense" || pattern === "clusters")
