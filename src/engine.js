@@ -408,6 +408,12 @@ function moveDirection(p) {
   }
 }
 
+export function retaliatoryDefenseChance(attacker, trait) {
+  const base =
+    trait === "Espinhos" ? 1 / 10 : trait === "Chifre" ? 1 / 5 : 0;
+  return has(attacker, "Osteodermos") ? base / 2 : base;
+}
+
 function hostileHazardKills(state, piece) {
   if (random(state) >= 1 / 2) return false;
   if (has(piece, "Penas") && random(state) < 0.15) {
@@ -1783,7 +1789,7 @@ function executeMove(ctx, action) {
   }
   if (pieceCapture && has(victim, "Espinhos")) {
     const roll = random(state),
-      threshold = has(p, "Osteodermos") ? 1 / 20 : 1 / 10;
+      threshold = retaliatoryDefenseChance(p, "Espinhos");
     if (
       has(p, "Osteodermos") &&
       roll >= threshold &&
@@ -1832,7 +1838,7 @@ function executeMove(ctx, action) {
     !has(p, "Carapaça")
   ) {
     const roll = random(state),
-      threshold = has(p, "Osteodermos") ? 1 / 10 : 1 / 5;
+      threshold = retaliatoryDefenseChance(p, "Chifre");
     if (
       has(p, "Osteodermos") &&
       roll >= threshold &&
