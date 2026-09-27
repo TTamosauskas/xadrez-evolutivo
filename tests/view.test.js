@@ -2083,8 +2083,18 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.match(noticeDialog.textContent, /Passe a Vez/);
     click("notice-ok");
 
+    const emptyCell = [...d.querySelectorAll(".cell")].find(
+      (cell) => !cell.classList.contains("occupied"),
+    );
+    assert.ok(emptyCell);
+    emptyCell.click();
+    assert.equal(d.getElementById("selected-title").textContent, "Casa selecionada");
+    assert.ok(d.querySelector(".cell.cell-selected-info"));
+    assert.match(d.getElementById("selected").textContent, /Casa (Fértil|Hostil|Neutra)/);
+
     const blue = d.querySelector(".piece.blue");
     blue.parentElement.click();
+    assert.equal(d.getElementById("selected-title").textContent, "Peça selecionada");
     const selectedCell = d.querySelector(
       `[data-r="${blue.parentElement.dataset.r}"][data-c="${blue.parentElement.dataset.c}"]`,
     );
@@ -2110,6 +2120,74 @@ test("application UI starts with the Hadean common ancestor, then plays division
   }
 });
 
+
+test("selected empty cells expose terrain and relevant board facts", () => {
+  const dom = setup(),
+    s = createState(530, { geologicalStage: "quaternary" }),
+    r = 3,
+    c = 3,
+    cellIndex = r * 8 + c,
+    now = round(s);
+  s.pieces = s.pieces.filter((piece) => piece.r !== r || piece.c !== c);
+  s.board[cellIndex] = "hostile";
+  s.carcasses.push({
+    cell: cellIndex,
+    dueRound: now + 2,
+    base: "neutral",
+  });
+  s.mineralRemnants.push({
+    cell: cellIndex,
+    expiresRound: now + 1,
+  });
+
+  render(dom.window.document, s, { selectedCell: { r, c } });
+
+  const d = dom.window.document,
+    panel = d.getElementById("selected"),
+    cell = d.querySelector(`[data-r="${r}"][data-c="${c}"]`),
+    mobile = d.getElementById("mobile-selected-summary");
+  assert.equal(d.getElementById("selected-title").textContent, "Casa selecionada");
+  assert.ok(cell.classList.contains("cell-selected-info"));
+  assert.match(panel.textContent, /Casa Hostil/);
+  assert.match(panel.textContent, /50%/);
+  assert.match(panel.textContent, /Carcaça/);
+  assert.match(panel.textContent, /2 rodadas restantes/);
+  assert.match(panel.textContent, /Biomineralização/);
+  assert.match(panel.textContent, /Bloqueia a primeira captura de contato/);
+  assert.match(cell.getAttribute("aria-label"), /Biomineralização/);
+  assert.equal(mobile.hidden, false);
+  assert.match(mobile.textContent, /Casa Hostil/);
+  assert.match(mobile.textContent, /Carcaça/);
+
+  s.board[cellIndex] = "fertile";
+  s.carcasses = [];
+  s.mineralRemnants = [];
+  s.plantSeeds.push({
+    id: s.nextPlantSeed++,
+    owner: "blue",
+    r,
+    c,
+    parentId: s.pieces[0]?.id ?? 1,
+    age: 2,
+    movesRemaining: 1,
+    sprouting: false,
+    sproutReadyRound: null,
+    profile: {
+      owner: "blue",
+      rank: 0,
+      traits: ["Fotossíntese", "Gimnospermas"],
+      mutations: 2,
+      generation: 1,
+    },
+  });
+
+  render(dom.window.document, s, { selectedCell: { r, c } });
+  assert.match(panel.textContent, /Casa Fértil/);
+  assert.match(panel.textContent, /Semente das Brancas/);
+  assert.match(panel.textContent, /Idade 2\/3/);
+  assert.match(panel.textContent, /em dispersão/);
+  dom.window.close();
+});
 
 test("renders domestic placement and Sociabilidade sacrifice targets", () => {
   const dom = setup(),
