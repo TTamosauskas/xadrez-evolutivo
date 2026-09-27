@@ -220,6 +220,12 @@ main {
   color: #161713;
   touch-action: manipulation;
 }
+.cell.cell-selected-info {
+  outline: 3px solid #f1e6c9;
+  outline-offset: -5px;
+  z-index: 6;
+}
+
 .cell.dark {
   background: #877456;
 }
@@ -922,6 +928,43 @@ main {
   flex: 0 0 auto;
   font-size: 30px;
 }
+.selected-cell-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 750;
+  color: #ebe8de;
+}
+.selected-cell-symbol {
+  flex: 0 0 auto;
+  font-size: 22px;
+}
+.cell-info-item {
+  margin: 0 0 12px;
+  padding: 10px 11px;
+  border: 1px solid #363e32;
+  border-radius: 7px;
+  background: #1d231c;
+}
+.cell-info-item strong {
+  display: block;
+  color: #ebe8de;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.cell-info-item small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.cell-info-item.terrain-info {
+  border-color: #465140;
+}
+
 .selected-trait {
   margin: 13px 0;
 }
