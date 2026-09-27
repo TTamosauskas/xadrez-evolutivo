@@ -1217,7 +1217,12 @@ test("new combat specializations unlock in the intended periods and lineages", (
     historicalTraits: historyBefore("permian"),
   });
   assert.equal(traitUnlocked(permian, "Pele grossa", herbivore), true);
-  assert.equal(traitUnlocked(permian, "Presas", carnivore), true);
+  assert.equal(traitUnlocked(permian, "Presas", carnivore), false);
+  const toothedCarnivore = {
+    ...carnivore,
+    ancestry: [...carnivore.ancestry, "Mandíbula", "Dentes"],
+  };
+  assert.equal(traitUnlocked(permian, "Presas", toothedCarnivore), true);
   assert.equal(traitUnlocked(permian, "Pele grossa", carnivore), false);
   assert.equal(traitUnlocked(permian, "Presas", herbivore), false);
 
@@ -1595,6 +1600,7 @@ test("Paleogene waits for reachable period innovations instead of auto-completin
   });
   assert.equal(currentGeologicalStage(s).period, "Paleógeno");
   assert.deepEqual(periodInnovations(s), [
+    "Ruminante",
     "Predação em Massa",
     "Garras",
     "Eletrodescarga",
