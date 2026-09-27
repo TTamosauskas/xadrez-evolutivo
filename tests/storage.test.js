@@ -220,6 +220,26 @@ test("v22 migration preserves the former Construtor de Nicho remediation as Zoor
   assertState(restored);
 });
 
+test("v23 migration initializes Neurodivergência transient state for schema v24", () => {
+  const legacy = createState(2401);
+  legacy.version = 23;
+  delete legacy.neurofocus;
+  delete legacy.neurodivergenceAction;
+  for (const piece of legacy.pieces)
+    delete piece.neurodivergenceRestThroughRound;
+
+  const restored = deserialize(JSON.stringify(legacy));
+  assert.equal(restored.version, STATE_VERSION);
+  assert.equal(restored.neurofocus, null);
+  assert.equal(restored.neurodivergenceAction, null);
+  assert.ok(
+    restored.pieces.every(
+      (piece) => piece.neurodivergenceRestThroughRound === null,
+    ),
+  );
+  assertState(restored);
+});
+
 test("deserialize migrates supported legacy saves and rejects older or invalid saves", () => {
   assert.throws(() => deserialize("{"), /inválido/i);
 
