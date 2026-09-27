@@ -29,7 +29,6 @@ import {
   predatoryReproductionAvailable,
 } from "./reproduction-traits.js";
 import { corticalActionBonus } from "./positioning.js";
-import { NEGATIVE_TRAITS } from "./geology.js";
 
 export const AI_ACTION_TYPES = Object.freeze([
   "MOVE",
