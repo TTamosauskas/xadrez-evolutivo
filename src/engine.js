@@ -1402,7 +1402,9 @@ function executeMove(ctx, action) {
                 ? "bioadhesion"
                 : target.arboreal
                   ? "arboreal"
-                  : target.serpentine
+                  : target.phoresy
+                    ? "phoresy"
+                    : target.serpentine
               ? "serpentine"
               : target.trail
                 ? "trail"
@@ -1519,6 +1521,7 @@ function executeMove(ctx, action) {
       !target.escalation &&
       !target.bioadhesion &&
       !target.arboreal &&
+      !target.phoresy &&
       !target.serpentine &&
       !target.trail &&
       !target.tigmotaxis &&
@@ -1535,9 +1538,10 @@ function executeMove(ctx, action) {
   for (const [r, c] of target.path)
     if (
       lethalHazardAt(state, r, c) &&
-      (!has(p, "Voo") &&
-        !target.arboreal ||
-        (r === target.r && c === target.c))
+      (
+        (r === target.r && c === target.c) ||
+        (!has(p, "Voo") && !target.arboreal && !target.phoresy)
+      )
     ) {
       if (state.movementTrace) {
         const stopIndex = state.movementTrace.path.findIndex(
@@ -1568,7 +1572,7 @@ function executeMove(ctx, action) {
         c === target.c
       ) &&
       !(
-        (has(p, "Voo") || target.arboreal) &&
+        (has(p, "Voo") || target.arboreal || target.phoresy) &&
         (r !== target.r || c !== target.c)
       ) &&
       !(has(p, "Dormência") && r === target.r && c === target.c) &&
@@ -2145,6 +2149,15 @@ function executeMove(ctx, action) {
       pieceId: p.id,
       outcome: "crossed-allied-canopy",
       value: supports,
+    });
+  }
+  if (target.phoresy) {
+    const carriers = target.phoresyCarrierIds?.length ?? 0;
+    log(state, `${OWNERS[p.owner]}: 🐀 Forésia utilizou ${carriers} aliado(s) não fotossintético(s) como transporte até ${coord(p.r, p.c)}.`);
+    emitPassiveEffect(state, "Forésia", "🐀 Forésia utilizou aliados como transporte.", {
+      pieceId: p.id,
+      outcome: "crossed-allied-carriers",
+      value: carriers,
     });
   }
   if (target.serpentine) {
