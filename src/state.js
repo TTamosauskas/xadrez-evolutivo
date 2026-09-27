@@ -51,7 +51,9 @@ import {
   validScenario,
 } from "./scenarios.js";
 import {
+  ARENA_BRANCHES,
   arenaProfile,
+  arenaSetupSelectionValid,
   completeArenaBranchGenome,
 } from "./arena.js";
 export const clone = (value) => structuredClone(value);
@@ -2099,6 +2101,21 @@ export function createArenaState(
   discoveries = null,
   ownerRanks = null,
 ) {
+  if (ownerRanks)
+    for (const owner of ["blue", "amber"])
+      for (let index = 0; index < ARENA_BRANCHES.length; index++) {
+        const branch = ARENA_BRANCHES[index];
+        if (
+          !arenaSetupSelectionValid(
+            ownerGenomes?.[owner]?.[index],
+            ownerRanks?.[owner]?.[index],
+            branch.id,
+          )
+        )
+          throw Error(
+            `Forma inválida para ${branch.label} de ${owner} na Arena.`,
+          );
+      }
   const profiles = arenaProfiles(ownerGenomes, null, seed, ownerRanks),
     historicalTraits = [
       ...new Set([
