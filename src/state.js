@@ -1832,14 +1832,14 @@ export function activateOrigin(state) {
 
 const NON_PHOTOSYNTHETIC_PIECE_VALUES = Object.freeze([1, 3, 4, 5, 2, 6]);
 
-const expressedPositiveGenes = (piece) =>
+export const expressedPositiveGenes = (piece) =>
   new Set(
     (piece?.traits ?? []).filter(
       (trait) => trait !== "Respiração anaeróbia" && !NEGATIVE_TRAITS.has(trait),
     ),
   ).size;
 
-const carriedNegativeMutations = (piece) =>
+export const carriedNegativeMutations = (piece) =>
   new Set([
     ...genomeCarriedTraits(piece?.genome).filter((trait) =>
       NEGATIVE_TRAITS.has(trait),
@@ -1849,11 +1849,11 @@ const carriedNegativeMutations = (piece) =>
     ),
   ]).size;
 
-const hiddenPositiveRecessives = (piece) =>
+export const hiddenPositiveRecessives = (piece) =>
   hiddenRecessiveTraits(piece).filter((trait) => !NEGATIVE_TRAITS.has(trait))
     .length;
 
-function survivorPieceValue(piece) {
+export function survivorPieceValue(piece) {
   const values = canPhotosynthesize(piece)
     ? CHESS_PIECE_VALUES
     : NON_PHOTOSYNTHETIC_PIECE_VALUES;
