@@ -1992,7 +1992,7 @@ test("Superorganismo pulses allied members and marks the recommended member and 
         rank: 2,
         traits: ["Artrópode", "Eusocialidade", "Percepção Espacial", "Superorganismo"],
       },
-      { owner: "amber", r: 4, c: 6, rank: 4 },
+      { owner: "amber", r: 1, c: 6, rank: 4 },
       { owner: "amber", r: 0, c: 0, rank: 0 },
     ]),
     selected = s.pieces[0],
@@ -2010,7 +2010,7 @@ test("Superorganismo pulses allied members and marks the recommended member and 
   );
 
   render(dom.window.document, s, { selected: recommended.id });
-  const target = dom.window.document.querySelector('[data-r="4"][data-c="6"]');
+  const target = dom.window.document.querySelector('[data-r="1"][data-c="6"]');
   assert.ok(target.classList.contains("superorganism-suggested-target"));
   assert.match(target.title, /movimento sugerido pelo Superorganismo/);
   dom.window.close();
