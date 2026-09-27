@@ -60,7 +60,12 @@ test("legacy v27 saves rename the old Garras trait to Presas", () => {
 
   const restored = deserialize(JSON.stringify(state)),
     restoredPiece = restored.pieces.find((candidate) => candidate.id === piece.id);
-  assert.equal(JSON.stringify(restored).includes('"Garras"'), false);
+  assert.equal(restoredPiece.traits.includes("Garras"), false);
+  assert.ok(
+    restoredPiece.genome.Garras.every(
+      (allele) => allele.value === "ancestral",
+    ),
+  );
   assert.ok(restoredPiece.traits.includes("Presas"));
   assert.ok(restoredPiece.ancestry.includes("Presas"));
   assert.ok(restoredPiece.genome.Presas.some((allele) => allele.value === "derived"));
