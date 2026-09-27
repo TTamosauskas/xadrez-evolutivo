@@ -85,7 +85,7 @@ test("Partenogênese is available only as a no-partner fallback and generates on
       r: 4,
       c: 4,
       rank: 4,
-      traits: ["Reprodução Sexuada", "Partenogênese"],
+      traits: ["Herbívoro", "Reprodução Sexuada", "Partenogênese"],
     },
     { owner: "amber", r: 0, c: 0, rank: 4 },
   ]);
@@ -248,6 +248,7 @@ test("Canibalismo Sexual consumes the mate and produces a two-offspring biparent
       c: 4,
       rank: 4,
       traits: [
+        "Herbívoro",
         "Reprodução Sexuada",
         "Canibalismo",
         "Canibalismo Sexual",
@@ -289,7 +290,7 @@ test("Cópula Agressiva uses an enemy as genetic partner but keeps the offspring
       r: 4,
       c: 4,
       rank: 4,
-      traits: ["Reprodução Sexuada", "Cópula Agressiva"],
+      traits: ["Herbívoro", "Reprodução Sexuada", "Cópula Agressiva"],
     },
     {
       owner: "amber",
