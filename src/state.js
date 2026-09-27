@@ -72,7 +72,9 @@ export const at = (state, r, c) =>
 export const eggAt = (state, r, c) =>
   state.eggs?.find((egg) => egg.r === r && egg.c === c);
 export const plantSeedAt = (state, r, c) =>
-  state.plantSeeds?.find((seed) => seed.r === r && seed.c === c);
+  state.plantSeeds?.find(
+    (seed) => !seed.transport && seed.r === r && seed.c === c,
+  );
 export const pathogenSporeAt = (state, r, c) =>
   state.pathogenSpores?.find((spore) => spore.r === r && spore.c === c);
 export const fragmentAt = (state, r, c) =>
