@@ -403,8 +403,6 @@ export function arenaProfile(genome, rank = 4) {
         : branchId === "animal"
           ? "Predação"
           : null;
-  if (branchId && !arenaRankValid(completed, rank, branchId))
-    throw Error(arenaRankRestrictionReason(completed, rank, branchId));
   const profile = {
     rank,
     traits: normalizeActiveTraits([BASAL, ...completed], preferred),
