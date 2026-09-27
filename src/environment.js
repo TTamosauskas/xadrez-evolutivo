@@ -48,7 +48,9 @@ function depletePausedFertility(state) {
   const occupied = new Set([
       ...state.pieces.map((piece) => square(piece.r, piece.c)),
       ...state.eggs.map((egg) => square(egg.r, egg.c)),
-      ...state.plantSeeds.map((seed) => square(seed.r, seed.c)),
+      ...state.plantSeeds
+        .filter((seed) => !seed.transport)
+        .map((seed) => square(seed.r, seed.c)),
     ]),
     hazards = new Set(state.event?.hazards ?? []),
     eligible = allCells().filter((cell) => {
