@@ -790,9 +790,13 @@ function placeBrood(
   let born = 0;
 
   const hasDirectedPlacement = (profile) =>
-    ["Testosterona", "Corticosteroides", "Ocitocina"].some((trait) =>
-      has(profile, trait),
-    );
+    [
+      "Testosterona",
+      "Corticosteroides",
+      "Forrageamento",
+      "Tropismo",
+      "Ocitocina",
+    ].some((trait) => has(profile, trait));
 
   const placeGroup = (profiles, placementProfile = null) => {
     if (!profiles.length) return;
@@ -852,6 +856,10 @@ function placeBrood(
       "🐊 Testosterona orientou a prole para posições ofensivas.",
     Corticosteroides:
       "🦎 Corticosteroides orientaram a prole para posições protegidas.",
+    Forrageamento:
+      "🐔 Forrageamento aproximou a prole de aliados fotossintéticos.",
+    Tropismo:
+      "🌻 Tropismo orientou a prole para uma zona fértil.",
     Ocitocina:
       "🐶 Ocitocina aproximou a prole do grupo aliado.",
   };
