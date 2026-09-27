@@ -2402,14 +2402,25 @@ export function createSuccessorState(previous, seed = Date.now()) {
       null,
       (piece) => !canPhotosynthesize(piece),
     ),
+    extinctionFounder = previous.result?.extinctionFounder ?? null,
+    photosyntheticExtinctionFounder =
+      extinctionFounder && canPhotosynthesize(extinctionFounder)
+        ? extinctionFounder
+        : null,
+    nonPhotosyntheticExtinctionFounder =
+      extinctionFounder && !canPhotosynthesize(extinctionFounder)
+        ? extinctionFounder
+        : null,
     photosyntheticSource =
       photosynthetic.piece ??
       fallbackPhotosynthetic.piece ??
+      photosyntheticExtinctionFounder ??
       previous.energyBranchRepresentatives?.Fotossíntese ??
       null,
     nonPhotosyntheticSource =
       nonPhotosynthetic.piece ??
       fallbackNonPhotosynthetic.piece ??
+      nonPhotosyntheticExtinctionFounder ??
       previous.energyBranchRepresentatives?.Predação ??
       null,
     founder =
