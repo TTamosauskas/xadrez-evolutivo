@@ -94,6 +94,7 @@ import {
 } from "./environment.js";
 
 const NEGATIVE = [...NEGATIVE_GENETIC_TRAITS];
+export const NEGATIVE_REVERSAL_CHANCE = 0.05;
 const POSITIVE = Object.keys(TRAITS).filter(
   (trait) =>
     trait !== BASAL_GENETIC_TRAIT && !NEGATIVE_GENETIC_TRAITS.has(trait),
@@ -193,6 +194,47 @@ export function negativeMutationChance(piece) {
     : repairAdjusted;
 }
 
+export function deleteriousMutationPools(state, piece) {
+  const carriedTraits = genomeCarriedTraits(piece.genome),
+    lossTraits = genomeLossOptions(piece),
+    positiveLosses = lossTraits
+      .filter(
+        (trait) =>
+          !NEGATIVE_GENETIC_TRAITS.has(trait) &&
+          traitLossAllowed(piece, trait),
+      )
+      .map((trait) => ({ geneLoss: trait })),
+    negativeReversions = lossTraits
+      .filter((trait) => NEGATIVE_GENETIC_TRAITS.has(trait))
+      .map((trait) => ({ geneLoss: trait, reversal: true })),
+    deleteriousOptions = [];
+  if (DERIVED_FORM_PREVIOUS.has(piece.rank))
+    deleteriousOptions.push({
+      rank: DERIVED_FORM_PREVIOUS.get(piece.rank),
+    });
+  deleteriousOptions.push(...positiveLosses);
+  for (const trait of NEGATIVE)
+    if (
+      !carriedTraits.includes(trait) &&
+      negativeTraitUnlocked(state, trait, piece)
+    )
+      deleteriousOptions.push({ geneGain: trait });
+  return {
+    positiveLosses,
+    negativeReversions,
+    deleteriousOptions,
+  };
+}
+
+export function chooseDeleteriousMutation(state, pools) {
+  const reversal =
+    pools.negativeReversions.length > 0 &&
+    random(state) < NEGATIVE_REVERSAL_CHANCE;
+  return reversal
+    ? pick(state, pools.negativeReversions)
+    : pick(state, pools.deleteriousOptions);
+}
+
 export function applyRegressionEffect(state, piece) {
   if (!has(piece, "Regressão Evolutiva")) return [];
   const protectedTraits = new Set([
@@ -253,18 +295,7 @@ function mutation(
         weight: innovationWeight(state, trait, p),
       });
 
-  const losses = [];
-  if (DERIVED_FORM_PREVIOUS.has(p.rank))
-    losses.push({ rank: DERIVED_FORM_PREVIOUS.get(p.rank) });
-  for (const trait of genomeLossOptions(p))
-    if (traitLossAllowed(p, trait))
-      losses.push({ geneLoss: trait });
-  for (const trait of NEGATIVE)
-    if (
-      !genomeCarriedTraits(p.genome).includes(trait) &&
-      negativeTraitUnlocked(state, trait, p)
-    )
-      losses.push({ geneGain: trait });
+  const mutationPools = deleteriousMutationPools(state, p);
 
   const forcedChoice = forcedGeneGain
       ? gains.find((option) => option.geneGain === forcedGeneGain) ?? null
@@ -275,12 +306,15 @@ function mutation(
       !forcedChoice &&
       negativeAllowed &&
       random(state) < negativeMutationChance(p);
-  let options = negative ? losses : gains;
-  if (!options.length)
-    options =
-      positiveOnly || !negativeAllowed ? [] : negative ? gains : losses;
-  const choice = forcedChoice ??
-    (negative ? pick(state, options) : weightedPick(state, options));
+  let choice = forcedChoice ?? null;
+  if (!choice && negative) {
+    choice = chooseDeleteriousMutation(state, mutationPools);
+    if (!choice) choice = weightedPick(state, gains);
+  } else if (!choice) {
+    choice = weightedPick(state, gains);
+    if (!choice && !positiveOnly && negativeAllowed)
+      choice = pick(state, mutationPools.deleteriousOptions);
+  }
   if (!choice) return null;
 
   let label;
@@ -354,7 +388,18 @@ function mutation(
     p.ancestry = [
       ...new Set([...(p.ancestry ?? []), ...(p.traits ?? [])]),
     ];
-    label = `Perda de ${choice.geneLoss}`;
+    if (
+      choice.reversal &&
+      !(p.traits ?? []).includes(choice.geneLoss)
+    ) {
+      p.eukaryoteBufferedTraits = (p.eukaryoteBufferedTraits ?? []).filter(
+        (trait) => trait !== choice.geneLoss,
+      );
+      if (choice.geneLoss === "Mutação Letal") delete p.deleteriousDue;
+    }
+    label = choice.reversal
+      ? `Reversão de ${choice.geneLoss}`
+      : `Perda de ${choice.geneLoss}`;
   }
   normalizePhotosyntheticRank(p);
   p.mutations++;
@@ -364,7 +409,9 @@ function mutation(
     const mutationTrait = choice.geneGain ?? choice.geneLoss ?? p.traits[0] ?? "Respiração anaeróbia",
       lostTrait = label.startsWith("Perda de ")
         ? label.slice("Perda de ".length)
-        : null,
+        : label.startsWith("Reversão de ")
+          ? label.slice("Reversão de ".length)
+          : null,
       traitName = TRAITS[label] ? label : lostTrait,
       icon = traitName && TRAITS[traitName] ? TRAITS[traitName][0] : "🧬";
     p.newMutationToast = {
