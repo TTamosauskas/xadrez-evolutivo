@@ -792,48 +792,47 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     )
       return;
 
-    const directions = [...ORTH, ...DIAG],
-      visited = new Set([square(p.r, p.c)]);
-    const explore = (r, c, path, previousDirection, turns) => {
-      if (path.length >= 5) return;
-      for (const [dr, dc] of directions) {
-        const nextTurns =
-          previousDirection &&
-          (previousDirection[0] !== dr || previousDirection[1] !== dc)
-            ? turns + 1
-            : turns;
-        if (nextTurns > 2) continue;
-        const rr = r + dr,
-          cc = c + dc;
-        if (
-          !inside(rr, cc) ||
-          ecologicalDomainBlocked(state, p.owner, rr, cc)
+    const clearSerpentineCell = (r, c) =>
+      inside(r, c) &&
+      terrain(state, r, c) !== "hostile" &&
+      !ecologicalDomainBlocked(state, p.owner, r, c) &&
+      !at(state, r, c) &&
+      !plantSeedAt(state, r, c) &&
+      !hardMovementBlock(r, c);
+    const addSerpentine = (r, c, path) => {
+      if (
+        targets.some(
+          (target) =>
+            target.r === r &&
+            target.c === c &&
+            !target.capture &&
+            !target.eggCapture &&
+            !target.seedCapture,
         )
-          continue;
-        const cell = square(rr, cc);
-        if (visited.has(cell) || hardMovementBlock(rr, cc)) continue;
-
-        const occupant = at(state, rr, cc),
-          nextPath = [...path, [rr, cc]],
-          alreadyOrdinary = targets.some(
-            (target) =>
-              target.r === rr &&
-              target.c === cc &&
-              !!target.capture === !!occupant,
-          );
-        if (!alreadyOrdinary)
-          add(rr, cc, nextPath, {
-            serpentine: true,
-            noContinuation: true,
-          });
-        if (occupant) continue;
-
-        visited.add(cell);
-        explore(rr, cc, nextPath, [dr, dc], nextTurns);
-        visited.delete(cell);
-      }
+      )
+        return;
+      add(r, c, path, {
+        serpentine: true,
+        noContinuation: true,
+      });
     };
-    explore(p.r, p.c, [], null, 0);
+
+    for (const dr of [-1, 1]) {
+      const row = p.r + dr;
+      if (!clearSerpentineCell(row, p.c)) continue;
+
+      const entryPath = [[row, p.c]];
+      addSerpentine(row, p.c, [...entryPath]);
+
+      for (const dc of [-1, 1]) {
+        const path = [...entryPath];
+        for (let c = p.c + dc; inside(row, c); c += dc) {
+          if (!clearSerpentineCell(row, c)) break;
+          path.push([row, c]);
+          addSerpentine(row, c, [...path]);
+        }
+      }
+    }
   }
 
   function trailMovementTargets() {

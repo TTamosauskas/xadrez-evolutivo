@@ -74,40 +74,116 @@ test("Movimento Lateral percorre a linha e troca com o primeiro aliado", () => {
   );
 });
 
-test("Serpenteamento cria trajetórias de até cinco passos com no máximo duas curvas", () => {
+test("Serpenteamento alcança casas livres das linhas horizontais superior e inferior", () => {
   const state = fixture([
-      { owner: "blue", r: 4, c: 4, rank: 0 },
+      { owner: "blue", r: 4, c: 4, rank: 4 },
       { owner: "amber", r: 0, c: 0, rank: 4 },
     ]),
     actor = exactTraits(
       state.pieces[0],
       animalTraits(["Serpenteamento"]),
     ),
-    target = movesFor(state, actor).find(
+    targets = movesFor(state, actor),
+    upperLeft = targets.find(
       (candidate) =>
         candidate.serpentine &&
-        candidate.path.length >= 3 &&
-        candidate.r === 1 &&
+        candidate.r === 3 &&
+        candidate.c === 0,
+    ),
+    lowerRight = targets.find(
+      (candidate) =>
+        candidate.serpentine &&
+        candidate.r === 5 &&
         candidate.c === 7,
     );
 
-  assert.ok(target);
-  assert.ok(target.path.length <= 5);
-  let changes = 0,
-    previous = null,
-    origin = [actor.r, actor.c];
-  for (const [r, c] of target.path) {
-    const direction = [Math.sign(r - origin[0]), Math.sign(c - origin[1])];
-    if (
-      previous &&
-      (previous[0] !== direction[0] || previous[1] !== direction[1])
-    )
-      changes++;
-    previous = direction;
-    origin = [r, c];
-  }
-  assert.ok(changes <= 2);
-  assert.equal(target.noContinuation, true);
+  assert.ok(upperLeft);
+  assert.deepEqual(upperLeft.path, [
+    [3, 4],
+    [3, 3],
+    [3, 2],
+    [3, 1],
+    [3, 0],
+  ]);
+  assert.ok(lowerRight);
+  assert.deepEqual(lowerRight.path, [
+    [5, 4],
+    [5, 5],
+    [5, 6],
+    [5, 7],
+  ]);
+  assert.equal(
+    targets.some(
+      (candidate) =>
+        candidate.serpentine &&
+        candidate.r !== 3 &&
+        candidate.r !== 5,
+    ),
+    false,
+  );
+  assert.equal(upperLeft.noContinuation, true);
+  assert.equal(lowerRight.noContinuation, true);
+});
+
+test("Serpenteamento interrompe a rota diante de peça, barreira e casa hostil", () => {
+  const state = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 0 },
+      { owner: "amber", r: 3, c: 2, rank: 0 },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    actor = exactTraits(
+      state.pieces[0],
+      animalTraits(["Serpenteamento"]),
+    );
+
+  state.barriers.push(5 * 8 + 6);
+  state.board[3 * 8 + 6] = "hostile";
+
+  const targets = movesFor(state, actor);
+
+  assert.equal(
+    targets.some(
+      (candidate) =>
+        candidate.serpentine &&
+        candidate.r === 3 &&
+        candidate.c <= 2,
+    ),
+    false,
+  );
+  assert.equal(
+    targets.some(
+      (candidate) =>
+        candidate.serpentine &&
+        candidate.r === 3 &&
+        candidate.c >= 6,
+    ),
+    false,
+  );
+  assert.equal(
+    targets.some(
+      (candidate) =>
+        candidate.serpentine &&
+        candidate.r === 5 &&
+        candidate.c >= 6,
+    ),
+    false,
+  );
+  assert.ok(
+    targets.some(
+      (candidate) =>
+        candidate.serpentine &&
+        candidate.r === 3 &&
+        candidate.c === 5,
+    ),
+  );
+  assert.ok(
+    targets.some(
+      (candidate) =>
+        candidate.serpentine &&
+        candidate.r === 5 &&
+        candidate.c === 5,
+    ),
+  );
 });
 
 test("Trilhas percorre a rede aliada, amplia uma casa e renova as marcas usadas", () => {
