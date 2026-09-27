@@ -76,6 +76,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Chifre: "Tem 20% de chance de matar o agressor; Carapaça anula.",
   "Polegar Opositor": "Pode transferir o terreno de chegada para casa neutra adjacente.",
   "Córtex Pré-Frontal": "Ao selecionar a peça, destaca a melhor posição ofensiva e a melhor posição defensiva.",
+  Neurodivergência: "0 aliados adjacentes: Hiperfoco concede 2ª ação; 2+ aliados: Sobrecarga pausa 2 turnos próprios, ou 1 com Neocórtex Desenvolvido.",
   "Neocórtex Desenvolvido": "Permite desfazer sua ação e a resposta adversária uma vez.",
   Eusocialidade: "Estéreis aparentados adjacentes aumentam a prole em até 2.",
   Regeneração: "Uma vez por vida, evita morte não causada por captura e força descanso.",
