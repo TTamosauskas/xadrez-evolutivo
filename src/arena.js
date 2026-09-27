@@ -390,24 +390,26 @@ export function arenaInterventionCount(before, after) {
     valid:
       removed === added &&
       removed <= ARENA_ENGINEERING_CHANGES &&
-      (after ?? []).every((genome) => arenaGenomeValid(genome)),
+      (after ?? []).every((genome, index) =>
+        arenaGenomeValid(genome, ARENA_BRANCHES[index]?.id ?? null),
+      ),
   };
 }
 
-function swapToward(genome, wanted) {
-  const base = completeArenaGenome(genome),
+function swapToward(genome, wanted, branchId) {
+  const base = completeArenaBranchGenome(genome, branchId),
     wantedSet = new Set(wanted);
   for (const add of wanted) {
     if (base.includes(add)) continue;
     for (const remove of base) {
       if (wantedSet.has(remove)) continue;
-      const candidate = completeArenaGenome(
+      const candidate = completeArenaBranchGenome(
         [...base.filter((trait) => trait !== remove), add],
-        add,
+        branchId,
       );
       if (
         candidate.length === base.length &&
-        arenaGenomeValid(candidate) &&
+        arenaGenomeValid(candidate, branchId) &&
         !candidate.includes(remove) &&
         candidate.includes(add)
       )
@@ -447,7 +449,11 @@ export function engineerArenaAISide(
       branchWanted = wanted.filter((trait) =>
         arenaSelectableTraits(branch.id).includes(trait),
       );
-    result[index] = swapToward(result[index], branchWanted);
+    result[index] = swapToward(
+      result[index],
+      branchWanted,
+      branch.id,
+    );
   }
   return result;
 }
