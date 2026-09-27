@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -205,6 +205,31 @@ function normalizeLegacyZoochory(state) {
   return state;
 }
 
+function preserveLegacyNicheRemediation(value) {
+  if (!value || typeof value !== "object") return;
+  if (
+    Array.isArray(value.traits) &&
+    value.traits.includes("Construtor de Nicho") &&
+    value.genome?.Zoorremediação
+  ) {
+    if (!value.traits.includes("Zoorremediação"))
+      value.traits.push("Zoorremediação");
+    if (Array.isArray(value.ancestry) && !value.ancestry.includes("Zoorremediação"))
+      value.ancestry.push("Zoorremediação");
+    value.genome.Zoorremediação = [
+      { value: "derived", dominance: "dominant" },
+      { value: "derived", dominance: "dominant" },
+    ];
+  }
+  for (const child of Object.values(value)) {
+    if (child === value.genome) continue;
+    if (Array.isArray(child))
+      for (const item of child) preserveLegacyNicheRemediation(item);
+    else if (child && typeof child === "object")
+      preserveLegacyNicheRemediation(child);
+  }
+}
+
 function preserveLegacyLactationLineage(value) {
   if (!value || typeof value !== "object") return;
   if (
@@ -292,6 +317,15 @@ function migrateLegacy(data) {
   normalizeLegacyTraitNames(state);
   normalizeStoredGenomes(state);
   preserveLegacyLactationLineage(state);
+  if (data.version <= 22) {
+    preserveLegacyNicheRemediation(state);
+    if (
+      Array.isArray(state.historicalTraits) &&
+      state.historicalTraits.includes("Construtor de Nicho") &&
+      !state.historicalTraits.includes("Zoorremediação")
+    )
+      state.historicalTraits.push("Zoorremediação");
+  }
   return normalizeCycleInnovationPressure(state);
 }
 
