@@ -24,6 +24,7 @@ import {
   serotoninRepositionTargets,
   ovoviviparousPlacementTargets,
   parasitismTargets,
+  actionsForPiece,
   vivificationActionsForPiece,
 } from "./moves.js";
 import { at } from "./state.js";
@@ -136,26 +137,50 @@ const VIVIFICATION_LABELS = Object.freeze({
 });
 const vivificationLabel = (action) =>
   VIVIFICATION_LABELS[action?.type] ?? "Vivificar";
+const boardActionLabel = (action) => {
+  if (action.type === "MOVE") return "Mover ou capturar normalmente";
+  if (action.type === "PARASITIZE") return "🪱 Parasitismo";
+  if (action.type === "BIO_PROJECTILE") return "🪲 Projétil Biológico";
+  if (action.type === "ELECTRODISCHARGE") return "⚡ Eletrodescarga";
+  if (action.type === "FEEDING_REACH")
+    return `${TRAITS[action.trait]?.[0] ?? "🧬"} ${action.trait}`;
+  return action.type;
+};
 
-function chooseVivification(actions) {
+function chooseActions(
+  actions,
+  {
+    title = "Escolha a ação",
+    copy = "Mais de uma ação está disponível para este alvo.",
+    label = boardActionLabel,
+  } = {},
+) {
   if (actions.length === 1) {
     dispatch(actions[0]);
     return;
   }
   const dialog = $("vivify-dialog"),
     options = $("vivify-options");
-  $("vivify-copy").textContent =
-    "Mais de uma ação pode ser realizada nesta casa. Escolha como vivificar.";
+  $("vivify-title").textContent = title;
+  $("vivify-copy").textContent = copy;
   options.replaceChildren();
   for (const action of actions) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "primary";
-    button.textContent = vivificationLabel(action);
+    button.textContent = label(action);
     button.dataset.vivifyAction = JSON.stringify(action);
     options.append(button);
   }
   dialog.showModal();
+}
+
+function chooseVivification(actions) {
+  chooseActions(actions, {
+    title: "Vivificar",
+    copy: "Mais de uma ação pode ser realizada nesta casa. Escolha como vivificar.",
+    label: vivificationLabel,
+  });
 }
 $("board").addEventListener("click", (event) => {
   const cell = event.target.closest(".cell");
@@ -273,13 +298,29 @@ $("board").addEventListener("click", (event) => {
       return;
     }
   }
-  if (
-    actor?.owner === state.current &&
-    p &&
-    parasitismTargets(state, actor).some((target) => target.id === p.id)
-  ) {
-    dispatch({ type: "PARASITIZE", id: actor.id, targetId: p.id });
-    return;
+  if (actor?.owner === state.current) {
+    const targetActions = actionsForPiece(state, actor).filter(
+      (action) =>
+        (action.type === "MOVE" && action.r === r && action.c === c) ||
+        (p &&
+          [
+            "PARASITIZE",
+            "BIO_PROJECTILE",
+            "ELECTRODISCHARGE",
+            "FEEDING_REACH",
+          ].includes(action.type) &&
+          action.targetId === p.id),
+    );
+    if (targetActions.length) {
+      chooseActions(targetActions, {
+        title: "Ação biológica",
+        copy:
+          targetActions.length > 1
+            ? "Este alvo admite mais de uma ação. Escolha a estratégia."
+            : "Ação disponível.",
+      });
+      return;
+    }
   }
   if (
     actor?.owner === state.current &&
@@ -312,13 +353,6 @@ $("board").addEventListener("click", (event) => {
     )
   ) {
     dispatch({ type: "LAY_OVOVIVIPAROUS", id: actor.id, r, c });
-    return;
-  }
-  if (
-    actor?.owner === state.current &&
-    movesFor(state, actor).some((t) => t.r === r && t.c === c)
-  ) {
-    dispatch({ type: "MOVE", id: actor.id, r, c });
     return;
   }
   selected = p?.id ?? null;
