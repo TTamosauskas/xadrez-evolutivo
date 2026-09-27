@@ -13,6 +13,7 @@ import {
 } from "./constants.js";
 import {
   GEOLOGICAL_STAGES,
+  geologicalStage as resolveGeologicalStage,
   currentGeologicalStage,
   nextGeologicalStage,
   geologicalLabel,
@@ -1131,11 +1132,12 @@ const founderTransform = ([r, c], mode) => {
 };
 
 export function earthFounderStarts(geologicalStage, cycle = 1, state = null) {
-  const stage = GEOLOGICAL_STAGES.find((entry) => entry.id === geologicalStage);
+  const normalizedStage = resolveGeologicalStage(geologicalStage).id,
+    stage = GEOLOGICAL_STAGES.find((entry) => entry.id === normalizedStage);
   if (!stage?.founderLayout) return null;
   const mode = state ? pick(state, [0, 1, 2, 3]) : 0,
     cells = stage.founderLayout.map((cell) => founderTransform(cell, mode));
-  if (geologicalStage === "hadean")
+  if (normalizedStage === "hadean")
     return [
       ["blue", cells[0][0], cells[0][1], null],
       ["amber", cells[2][0], cells[2][1], null],
@@ -1159,7 +1161,8 @@ export function createState(seed = Date.now(), options = {}) {
     originPrelude = !!options.originPrelude,
     canonicalPair = !!options.canonicalPair,
     scenario = options.scenario ?? "alternative",
-    geologicalStage = options.geologicalStage ?? "eoarchean",
+    requestedGeologicalStage = options.geologicalStage ?? "eoarchean",
+    geologicalStage = resolveGeologicalStage(requestedGeologicalStage).id,
     totalCycles = options.totalCycles ?? 1,
     historicalTraits = [
       ...new Set([
@@ -1542,13 +1545,14 @@ export function createPeriodState(
   discoveries = null,
   scenario = "earth",
 ) {
-  const stageIndex = GEOLOGICAL_STAGES.findIndex(
-    (stage) => stage.id === geologicalStage,
-  );
+  const normalizedStage = resolveGeologicalStage(geologicalStage).id,
+    stageIndex = GEOLOGICAL_STAGES.findIndex(
+      (stage) => stage.id === normalizedStage,
+    );
   if (stageIndex < 0) throw Error("Período geológico inválido.");
-  if (geologicalStage === "hadean")
+  if (normalizedStage === "hadean")
     return createState(seed, {
-      geologicalStage,
+      geologicalStage: normalizedStage,
       cycle: 1,
       totalCycles: 1,
       discoveries,
@@ -1564,7 +1568,7 @@ export function createPeriodState(
       );
   return createState(seed, {
     scenario,
-    geologicalStage,
+    geologicalStage: normalizedStage,
     cycle: 1,
     totalCycles: completedCycles + 1,
     historicalTraits: preview.historicalTraits,
