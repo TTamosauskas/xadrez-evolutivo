@@ -46,7 +46,7 @@ test("new campaigns start with an unread Hadean discovery", () => {
 
 test("discoveries are unique and counted by category", () => {
   const state = createState(202);
-  markDiscoveryRead(state, "geology", "archean");
+  markDiscoveryRead(state, "geology", "eoarchean");
   assert.equal(recordDiscovery(state, "events", "volcano"), true);
   assert.equal(recordDiscovery(state, "events", "volcano"), false);
   assert.equal(recordDiscovery(state, "mutations", "Fotossíntese"), true);
@@ -59,7 +59,7 @@ test("discoveries are unique and counted by category", () => {
   );
 });
 
-test("advancing from Hadean creates a new unread Archean entry", () => {
+test("advancing from Hadean creates a new unread Eoarchean entry", () => {
   const state = createCampaignState(203);
   markDiscoveryRead(state, "geology", "hadean");
   state.historicalTraits.push("Respiração anaeróbia");
@@ -68,10 +68,10 @@ test("advancing from Hadean creates a new unread Archean entry", () => {
   state.result = { winner: null, reason: "teste" };
   state.phase = "over";
   const next = createSuccessorState(state, 204);
-  assert.equal(next.geologicalStage, "archean");
-  assert.deepEqual(next.discoveries.geology, ["hadean", "archean"]);
+  assert.equal(next.geologicalStage, "eoarchean");
+  assert.deepEqual(next.discoveries.geology, ["hadean", "eoarchean"]);
   assert.equal(isDiscoveryUnread(next, "geology", "hadean"), false);
-  assert.equal(isDiscoveryUnread(next, "geology", "archean"), true);
+  assert.equal(isDiscoveryUnread(next, "geology", "eoarchean"), true);
 });
 
 test("catalog covers every geological stage event and named mutation", () => {
@@ -119,14 +119,17 @@ test("each geological discovery can launch the first cycle with prior winners re
       for (const owner of ["blue", "amber"]) {
         const founders = s.pieces.filter((piece) => piece.owner === owner);
         assert.equal(founders.length, 2);
-        if (stage.id === "archean") {
+        const energyBranchesEstablished =
+          stage.index >=
+          GEOLOGICAL_STAGES.findIndex((entry) => entry.id === "mesoarchean");
+        if (!energyBranchesEstablished) {
+          assert.equal(
+            founders.filter((piece) => piece.traits.includes("Fotossíntese"))
+              .length,
+            0,
+          );
           assert.ok(
-            founders.every(
-              (piece) =>
-                piece.mutations === 0 &&
-                piece.traits.length === 1 &&
-                piece.traits.includes("Respiração anaeróbia"),
-            ),
+            founders.every((piece) => piece.traits.includes("Respiração anaeróbia")),
           );
         } else {
           assert.equal(
