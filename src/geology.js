@@ -439,11 +439,13 @@ export const GEOLOGICAL_STAGES = [
 ].map((stage, index) => ({ ...stage, index }));
 
 export const LEGACY_GEOLOGICAL_STAGE_ALIASES = Object.freeze({
-  archean: "eoarchean",
-  proterozoic: "siderian",
-  paleogene: "paleocene",
-  neogene: "miocene",
-  quaternary: "pleistocene",
+  // Old aggregate IDs represent the complete historical interval.
+  // Saves are migrated more precisely from their discovered traits in storage.js.
+  archean: "neoarchean",
+  proterozoic: "cryogenian",
+  paleogene: "oligocene",
+  neogene: "pliocene",
+  quaternary: "holocene",
 });
 
 const byId = new Map(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
