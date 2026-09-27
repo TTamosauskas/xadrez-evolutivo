@@ -27,6 +27,7 @@ import {
   sporePathogenUnlocked,
   negativeTraitUnlocked,
   SOMATIC_NEGATIVE_TRAITS,
+  activeTraitFamily,
 } from "./geology.js";
 import { recordDiscovery } from "./discoveries.js";
 import { chooseDistantCells } from "./dispersal.js";
@@ -239,11 +240,15 @@ export function recordPathogenExposure(state, piece, disease) {
   )
     return true;
 
-  const available = NEGATIVE_SOMATIC_MUTATIONS.filter(
-    (trait) =>
-      !has(piece, trait) &&
-      negativeTraitUnlocked(state, trait, piece, { somatic: true }),
-  );
+  const available = NEGATIVE_SOMATIC_MUTATIONS.filter((trait) => {
+    if (
+      has(piece, trait) ||
+      !negativeTraitUnlocked(state, trait, piece, { somatic: true })
+    )
+      return false;
+    const family = activeTraitFamily(trait);
+    return !family?.traits.some((member) => has(piece, member));
+  });
   const trait = pick(state, available);
   if (!trait) {
     piece.pathogenMutationDiseases.push(disease.id);
