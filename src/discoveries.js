@@ -232,6 +232,34 @@ const mutationTopics = {
     "Parasitismo de ninhada",
     "Parasitas de ninhada transferem parte do custo de criação para hospedeiros; no jogo, um descendente da próxima ninhada inimiga é substituído pelo parasita.",
   ],
+  Tromba: [
+    "Tromba de elefante",
+    "A tromba dos proboscídeos combina alcance e manipulação precisa do alimento; no jogo, amplia a captura estacionária de organismos fotossintéticos.",
+  ],
+  "Rabo Chicote": [
+    "Arma caudal",
+    "Caudas robustas evoluíram como armas em diferentes vertebrados; no jogo, o golpe alcança animais próximos sem deslocar o portador.",
+  ],
+  Parasitoidismo: [
+    "Parasitoide",
+    "Parasitoides desenvolvem-se associados a um hospedeiro e normalmente culminam em sua morte; no jogo, isso é abstraído como controle temporário seguido de morte programada.",
+  ],
+  Mandíbula: [
+    "Mandíbula",
+    "Mandíbulas surgiram independentemente como estruturas alimentares especializadas em grandes linhagens animais; no jogo, superam defesas corporais flexíveis ou endurecidas.",
+  ],
+  Dentes: [
+    "Dente",
+    "Dentes permitem apreensão e processamento mecânico especializado em vertebrados mandibulados; no jogo, neutralizam Escamas e antecedem Presas.",
+  ],
+  Rizoma: [
+    "Rizoma",
+    "Rizomas são caules subterrâneos capazes de armazenar recursos e propagar clones horizontalmente; no jogo, conectam a planta a um novo indivíduo a duas casas.",
+  ],
+  Ruminante: [
+    "Ruminação",
+    "A ruminação alterna alimentação, processamento e repouso para aproveitar material vegetal fibroso; no jogo, permanecer numa pequena área acelera a recuperação metabólica após reprodução.",
+  ],
   "Predação em Massa": [
     "Alimentação por filtração",
     "A alimentação em massa permite explorar concentrações de presas pequenas; no jogo, formas grandes podem engolfar até duas presas menores adicionais após uma captura.",
