@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   ARENA_BRANCHES,
+  ARENA_PRESETS,
   arenaAISideSetup,
   arenaAllowedRanks,
   arenaInterventionCount,
@@ -46,6 +47,17 @@ test("Arena restricts chess forms from the selected branch and body plan", () =>
     arenaAllowedRanks(plant("Traqueófitas"), "plant"),
     [0, 1, 2, 3, 4, 5],
   );
+});
+
+test("every Arena preset leaves at least one legal chess form", () => {
+  for (const branch of ARENA_BRANCHES)
+    for (const preset of ARENA_PRESETS[branch.id]) {
+      const genome = completeArenaBranchGenome(preset.traits, branch.id);
+      assert.ok(
+        arenaAllowedRanks(genome, branch.id).length > 0,
+        `${branch.id}: ${preset.id}`,
+      );
+    }
 });
 
 test("Arena mutations can further restrict the available chess form", () => {
