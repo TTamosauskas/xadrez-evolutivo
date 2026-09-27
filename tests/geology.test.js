@@ -14,6 +14,7 @@ import {
   fecalPathogenUnlocked,
   sporePathogenUnlocked,
   aquaticTerrainCell,
+  habitatProfile,
   conwayUnlocked,
   deleteriousMutationUnlocked,
   NEGATIVE_TRAITS,
@@ -868,7 +869,11 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
   s.cycle = 2;
   s.historicalTraits = [
     ...new Set([
-      ...GEOLOGICAL_STAGES.slice(0, 6).flatMap((stage) => stage.required),
+      ...GEOLOGICAL_STAGES.slice(
+        0,
+        GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "devonian"),
+      ).flatMap((stage) => stage.required),
+      "Respiração Pulmonar",
     ]),
   ];
   p.ancestry.push(
@@ -1138,9 +1143,13 @@ test("Herbívoro unlocks in the Ordovician and Onívoro can descend from either 
 
   s.geologicalStage = "devonian";
   s.cycle = 2;
-  s.historicalTraits = GEOLOGICAL_STAGES.slice(0, 6).flatMap(
-    (stage) => stage.required,
-  );
+  s.historicalTraits = [
+    ...GEOLOGICAL_STAGES.slice(
+      0,
+      GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "devonian"),
+    ).flatMap((stage) => stage.required),
+    "Respiração Pulmonar",
+  ];
   const herbivore = {
       traits: ["Multicelularismo", "Predação", "Ingestão", "Herbívoro"],
       ancestry: ["Predação", "Multicelularismo", "Ingestão", "Herbívoro"],
