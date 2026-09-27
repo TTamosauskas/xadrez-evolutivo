@@ -1116,7 +1116,8 @@ function maturePhotosynthesis(state, owner) {
 }
 function actionActorId(state, action) {
   if (!action || state.phase !== "move") return null;
-  if (action.type === "PARTNER") return action.parentId ?? null;
+  if (["PARTNER", "AGGRESSIVE_MATE"].includes(action.type))
+    return action.parentId ?? null;
   if (
     [
       "MOVE",
@@ -1127,7 +1128,6 @@ function actionActorId(state, action) {
       "PARASITIZE",
       "LAY_OVOVIVIPAROUS",
       "PARTHENOGENESIS",
-      "AGGRESSIVE_MATE",
     ].includes(action.type)
   )
     return action.id ?? null;
@@ -3496,6 +3496,98 @@ function consumeSexualResource(state, parent, mate) {
   return resource;
 }
 
+function finishSpecialReproduction(ctx, parent, born, resource) {
+  const state = ctx.state,
+    build =
+      born > 0 &&
+      resource?.kind === "fertile" &&
+      has(parent, "Antropização");
+  if (
+    born > 0 &&
+    deferReproductionPlacement(state, parent, { build })
+  )
+    return;
+  state.phase = "move";
+  finishMovement(ctx, parent, null, false, false, build);
+}
+
+function resolveParthenogenesis(ctx, action) {
+  const state = ctx.state,
+    parent = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    );
+  if (!parent || !parthenogenesisAvailable(state, parent))
+    throw Error("Partenogênese indisponível.");
+  const resource = consumeSexualResource(state, parent, null);
+  if (!resource) throw Error("Partenogênese precisa de um recurso fértil.");
+  const born = reproduce(ctx, parent, null, "Partenogênese", {
+    forcedCount: 1,
+    fertileReproduction: resource.kind === "fertile",
+    resourceKind: resource.kind,
+  });
+  if (born)
+    emitPassiveEffect(
+      state,
+      "Partenogênese",
+      "♀️ Partenogênese gerou uma prole sem parceiro sexual.",
+      { pieceId: parent.id, outcome: "asexual-fallback", value: born },
+    );
+  finishSpecialReproduction(ctx, parent, born, resource);
+}
+
+function resolveAggressiveMate(ctx, action) {
+  const state = ctx.state,
+    parent = state.pieces.find(
+      (piece) =>
+        piece.id === action.parentId && piece.owner === state.current,
+    ),
+    mate = aggressivePartnersFor(state, parent).find(
+      (candidate) => candidate.id === action.id,
+    );
+  if (!parent || !mate) throw Error("Cópula Agressiva indisponível.");
+
+  if (has(mate, "Cópula Agressiva")) {
+    ctx.kill(
+      parent.id,
+      "contra-agressão por Cópula Agressiva",
+      mate,
+      true,
+      { consumed: true, suppressTanatosis: true },
+    );
+    emitPassiveEffect(
+      state,
+      "Cópula Agressiva",
+      "🦆 Cópula Agressiva encontrou resistência equivalente: o agressor morreu.",
+      { pieceId: mate.id, outcome: "killed-aggressive-mate" },
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+
+  const resource = consumeSexualResource(state, parent, null);
+  if (!resource)
+    throw Error("Cópula Agressiva precisa de um recurso fértil do atacante.");
+  const born = reproduce(ctx, parent, mate, "Cópula Agressiva", {
+    forcedCount: 1,
+    fertileReproduction: resource.kind === "fertile",
+    resourceKind: resource.kind,
+  });
+  if (born) {
+    log(
+      state,
+      `${OWNERS[parent.owner]}: 🦆 Cópula Agressiva gerou uma prole usando um parceiro adversário.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Cópula Agressiva",
+      "🦆 Cópula Agressiva gerou uma prole usando um parceiro adversário.",
+      { pieceId: parent.id, outcome: "aggressive-mating", value: born },
+    );
+  }
+  finishSpecialReproduction(ctx, parent, born, resource);
+}
+
 function resolveDirectPartner(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -3571,17 +3663,38 @@ function choosePartner(ctx, id) {
   if (!firstMate) throw Error("Parceiro inicial indisponível.");
   const resource = consumeSexualResource(state, p, firstMate);
   if (!resource) throw Error("O casal precisa de um recurso fértil disponível.");
-  const born = reproduce(
-    ctx,
-    p,
-    firstMate,
-    secondMate ? "acasalamento múltiplo" : "reprodução sexuada",
-    {
-      fertileReproduction: resource.kind === "fertile",
-      additionalMate: secondMate,
-      resourceKind: resource.kind,
-    },
-  );
+  const sexualCannibalism = has(p, "Canibalismo Sexual"),
+    born = reproduce(
+      ctx,
+      p,
+      firstMate,
+      sexualCannibalism
+        ? "Canibalismo Sexual"
+        : secondMate
+          ? "acasalamento múltiplo"
+          : "reprodução sexuada",
+      {
+        forcedCount: sexualCannibalism ? 2 : undefined,
+        fertileReproduction: resource.kind === "fertile",
+        additionalMate: sexualCannibalism ? null : secondMate,
+        resourceKind: resource.kind,
+      },
+    );
+  if (sexualCannibalism) {
+    ctx.kill(
+      firstMate.id,
+      "Canibalismo Sexual",
+      p,
+      true,
+      { consumed: true, suppressTanatosis: true },
+    );
+    emitPassiveEffect(
+      state,
+      "Canibalismo Sexual",
+      `𒌐 Canibalismo Sexual consumiu o parceiro e gerou ${born} prole(s).`,
+      { pieceId: p.id, outcome: "consumed-sexual-partner", value: born },
+    );
+  }
   state.partner = null;
   if (
     born > 0 &&
@@ -3927,6 +4040,10 @@ export function transition(previous, action) {
     executeMove(ctx, action);
   else if (action.type === "PARTNER" && state.phase === "move")
     resolveDirectPartner(ctx, action);
+  else if (action.type === "PARTHENOGENESIS" && state.phase === "move")
+    resolveParthenogenesis(ctx, action);
+  else if (action.type === "AGGRESSIVE_MATE" && state.phase === "move")
+    resolveAggressiveMate(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
     resolveNursing(ctx, action);
   else if (action.type === "NICHE_BUILD" && state.phase === "move")
