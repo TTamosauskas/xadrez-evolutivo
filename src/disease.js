@@ -18,6 +18,9 @@ import {
   fecalResidueAt,
   barrierAt,
   lethalHazardAt,
+  stomataOpen,
+  bufferEukaryoteNegative,
+  releaseEukaryoteBuffers,
 } from "./state.js";
 import {
   availablePathogenAgents,
@@ -74,11 +77,92 @@ const defaultPathogenTransmission = (agent) =>
       ? "environmental"
       : "contact";
 
+const bufferedImmunodeficiency = (piece) =>
+  (piece?.eukaryoteBufferedTraits ?? []).includes("Imunodeficiência");
+
 const fullyImmuneToEcologicalPathogen = (piece) =>
-  has(piece, "Resistência") && !has(piece, "Imunodeficiência");
+  has(piece, "Resistência") &&
+  !has(piece, "Imunodeficiência") &&
+  !bufferedImmunodeficiency(piece);
+
+const pathogenProfileKey = (disease) =>
+  `${disease?.agent ?? "virus"}:${disease?.transmission ?? defaultPathogenTransmission(disease?.agent)}`;
+
+function adaptiveImmunityBlocks(state, piece, disease) {
+  if (
+    !piece ||
+    !disease ||
+    !has(piece, "Imunidade Adaptativa") ||
+    has(piece, "Imunodeficiência") ||
+    !(piece.adaptiveImmuneMemory ?? []).includes(pathogenProfileKey(disease))
+  )
+    return false;
+  if (piece.adaptiveImmuneNotifiedDisease !== disease.id) {
+    piece.adaptiveImmuneNotifiedDisease = disease.id;
+    emitPassiveEffect(
+      state,
+      "Imunidade Adaptativa",
+      `🎯 Memória imune neutralizou nova exposição a ${agentDefinition(disease).name} por ${disease.transmission}.`,
+      {
+        pieceId: piece.id,
+        outcome: "adaptive-immunity-blocked-exposure",
+      },
+    );
+  }
+  return true;
+}
+
+function rememberAdaptiveImmunity(state, piece, disease) {
+  if (
+    !piece ||
+    !disease ||
+    !has(piece, "Imunidade Adaptativa") ||
+    has(piece, "Imunodeficiência")
+  )
+    return false;
+  const key = pathogenProfileKey(disease);
+  piece.adaptiveImmuneMemory ??= [];
+  if (piece.adaptiveImmuneMemory.includes(key)) return false;
+  piece.adaptiveImmuneMemory.push(key);
+  emitPassiveEffect(
+    state,
+    "Imunidade Adaptativa",
+    `🎯 Imunidade Adaptativa memorizou ${agentDefinition(disease).name} · ${disease.transmission}.`,
+    {
+      pieceId: piece.id,
+      outcome: "adaptive-immunity-memory",
+    },
+  );
+  return true;
+}
 
 export function tegumentBlocksPathogenExposure(state, piece, disease) {
-  if (!piece || !disease || disease.source === "vector") return false;
+  if (!piece || !disease) return false;
+  if (adaptiveImmunityBlocks(state, piece, disease)) return true;
+  if (
+    bufferedImmunodeficiency(piece) &&
+    has(piece, "Resistência")
+  ) {
+    releaseEukaryoteBuffers(state, piece, "pathogen");
+    return true;
+  }
+  if (disease.source === "vector") return false;
+  if (
+    has(piece, "Estômatos") &&
+    stomataOpen(state, piece) === false &&
+    ["environmental", "spore"].includes(disease.transmission)
+  ) {
+    emitPassiveEffect(
+      state,
+      "Estômatos",
+      `🌬️💧 Estômatos fechados bloquearam exposição por ${disease.transmission === "spore" ? "esporos" : "via ambiental"}.`,
+      {
+        pieceId: piece.id,
+        outcome: "closed-stomata-blocked-pathogen",
+      },
+    );
+    return true;
+  }
   const transmission = disease.transmission;
   let trait = null,
     icon = null,
@@ -257,7 +341,9 @@ export function recordPathogenExposure(state, piece, disease) {
 
   piece.somaticMutations.push(trait);
   piece.pathogenMutationDiseases.push(disease.id);
-  if (trait === "Mutação Letal") piece.deleteriousDue = now + 3;
+  const buffered = bufferEukaryoteNegative(state, piece, trait);
+  if (trait === "Mutação Letal" && !buffered)
+    piece.deleteriousDue = now + 3;
   log(
     state,
     `${OWNERS[piece.owner]}: 🧬 exposição a ${agentDefinition(disease).name} induziu ${trait} somática.`,
@@ -267,13 +353,18 @@ export function recordPathogenExposure(state, piece, disease) {
 
 export function infect(state, piece, disease) {
   if (!piece || !disease || disease.agent === "fungus") return false;
+  if (adaptiveImmunityBlocks(state, piece, disease)) return false;
+  const bufferedImmune = bufferedImmunodeficiency(piece);
   if (
-    (has(piece, "Resistência") &&
-      !has(piece, "Imunodeficiência") &&
-      !["population", "vector"].includes(disease.source)) ||
-    piece.infection ||
-    disease.survivors.includes(piece.id)
-  )
+    has(piece, "Resistência") &&
+    !has(piece, "Imunodeficiência") &&
+    !["population", "vector"].includes(disease.source)
+  ) {
+    if (bufferedImmune)
+      releaseEukaryoteBuffers(state, piece, "pathogen");
+    return false;
+  }
+  if (piece.infection || disease.survivors.includes(piece.id))
     return false;
   if (tegumentBlocksPathogenExposure(state, piece, disease)) return false;
   piece.infection = {
@@ -944,6 +1035,7 @@ function resolveInfectionMortality(ctx, piece, disease) {
       else {
         disease.survivors.push(piece.id);
         delete piece.infection;
+        rememberAdaptiveImmunity(state, piece, disease);
         log(
           state,
           `${OWNERS[piece.owner]}: uma peça regenerou e sobreviveu a ${agentDefinition(disease).name}.`,
@@ -952,6 +1044,7 @@ function resolveInfectionMortality(ctx, piece, disease) {
     } else {
       disease.survivors.push(piece.id);
       delete piece.infection;
+      rememberAdaptiveImmunity(state, piece, disease);
       log(
         state,
         has(piece, "Resistência")
@@ -970,6 +1063,7 @@ function resolveInfectionMortality(ctx, piece, disease) {
     else {
       disease.survivors.push(piece.id);
       delete piece.infection;
+      rememberAdaptiveImmunity(state, piece, disease);
       log(
         state,
         `${OWNERS[piece.owner]}: uma peça regenerou e sobreviveu a ${agentDefinition(disease).name}.`,
@@ -978,6 +1072,7 @@ function resolveInfectionMortality(ctx, piece, disease) {
   } else {
     disease.survivors.push(piece.id);
     delete piece.infection;
+    rememberAdaptiveImmunity(state, piece, disease);
     log(
       state,
       `${OWNERS[piece.owner]}: uma peça sobreviveu a ${agentDefinition(disease).name}.`,
@@ -986,12 +1081,17 @@ function resolveInfectionMortality(ctx, piece, disease) {
 }
 
 function resolveFungalExposure(ctx, piece, disease) {
+  if (adaptiveImmunityBlocks(ctx.state, piece, disease)) return;
   const chance = fungalExposureMortalityChance(piece, disease);
-  if (chance <= 0 || random(ctx.state) >= chance) return;
+  if (chance <= 0 || random(ctx.state) >= chance) {
+    rememberAdaptiveImmunity(ctx.state, piece, disease);
+    return;
+  }
   if (ctx.kill(piece.id, agentDefinition(disease).name)) {
     disease.deaths++;
     return;
   }
+  rememberAdaptiveImmunity(ctx.state, piece, disease);
   log(
     ctx.state,
     `${OWNERS[piece.owner]}: uma peça regenerou após exposição a ${agentDefinition(disease).name}.`,
