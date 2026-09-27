@@ -2057,7 +2057,6 @@ export function vivificationActionsForPiece(state, piece) {
         action.r === piece.r &&
         action.c === piece.c) ||
       action.type === "BUD" ||
-      action.type === "RHIZOME" ||
       action.type === "PUPATE" ||
       action.type === "PARTHENOGENESIS" ||
       action.type === "REJECT_BROOD_PARASITE" ||
