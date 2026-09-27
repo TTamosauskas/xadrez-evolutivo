@@ -1052,6 +1052,16 @@ select {
   color: var(--muted);
   font-weight: 500;
 }
+.arena-presets {
+  margin-bottom: 9px;
+}
+.arena-presets:empty {
+  display: none;
+}
+.arena-presets select {
+  width: 100%;
+  font-size: 12px;
+}
 .arena-trait-grid {
   display: grid;
   gap: 6px;

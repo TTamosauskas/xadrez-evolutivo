@@ -50,7 +50,7 @@ import {
 } from "./scenarios.js";
 import {
   arenaProfile,
-  completeArenaGenome,
+  completeArenaBranchGenome,
 } from "./arena.js";
 export const clone = (value) => structuredClone(value);
 export function random(state) {
@@ -1970,23 +1970,22 @@ function founderProfile(previous, piece) {
   return syncGenomePhenotype(profile);
 }
 
-function cleanArenaGenome(piece) {
+function arenaPieceBranch(piece) {
+  return piece?.traits?.includes("Fotossíntese") ? "plant" : "animal";
+}
+
+function cleanArenaGenome(piece, branchId = arenaPieceBranch(piece)) {
   const excluded = new Set([
     "Respiração anaeróbia",
     "Esterilidade",
     "Mutação Letal",
     "Mutação Disfuncional",
   ]);
-  const preferred = piece?.traits?.includes("Fotossíntese")
-    ? "Fotossíntese"
-    : piece?.traits?.includes("Predação")
-      ? "Predação"
-      : null;
-  return completeArenaGenome(
+  return completeArenaBranchGenome(
     genomeCarriedTraits(piece?.genome).filter(
       (trait) => !excluded.has(trait),
     ),
-    preferred,
+    branchId,
   );
 }
 
@@ -1998,43 +1997,44 @@ function arenaSurvivorEntries(state, owner) {
     if (group) group.count++;
     else groups.set(key, { piece, count: 1 });
   }
-  const selected = [...groups.values()]
-    .sort(
+  const ranked = [...groups.values()].sort(
       (a, b) =>
         b.count - a.count ||
         b.piece.generation - a.piece.generation ||
         signature(a.piece).localeCompare(signature(b.piece), "pt-BR"),
-    )
-    .slice(0, 2)
-    .map(({ piece }) => ({ source: piece, genome: cleanArenaGenome(piece) }));
-  const extinctionFounder =
+    ),
+    extinctionFounder =
       state.result?.extinctionFounder?.owner === owner
         ? state.result.extinctionFounder
-        : null;
-  if (extinctionFounder)
-    selected.unshift({
-      source: extinctionFounder,
-      genome: cleanArenaGenome(extinctionFounder),
-    });
-  const fallback = state.arenaFounders?.[owner]
-    ? [
-        state.arenaFounders[owner].primary,
-        state.arenaFounders[owner].companion,
-      ].map((source) => ({ source, genome: cleanArenaGenome(source) }))
-    : [];
-  for (const entry of fallback)
-    if (selected.length < 2 && entry.genome.length) selected.push(entry);
-  if (!selected.length)
-    selected.push({
-      source: { rank: 4 },
-      genome: ["Multicelularismo"],
-    });
-  while (selected.length < 2)
-    selected.push({
-      source: selected[0].source,
-      genome: [...selected[0].genome],
-    });
-  return selected.slice(0, 2);
+        : null,
+    fallbackSources = state.arenaFounders?.[owner]
+      ? [
+          state.arenaFounders[owner].primary,
+          state.arenaFounders[owner].companion,
+        ]
+      : [];
+
+  return ["animal", "plant"].map((branchId, index) => {
+    const extinction =
+        extinctionFounder &&
+        arenaPieceBranch(extinctionFounder) === branchId
+          ? extinctionFounder
+          : null,
+      living =
+        ranked.find(({ piece }) => arenaPieceBranch(piece) === branchId)?.piece ??
+        null,
+      fallback =
+        fallbackSources.find(
+          (piece) => arenaPieceBranch(piece) === branchId,
+        ) ??
+        fallbackSources[index] ??
+        null,
+      source = extinction ?? living ?? fallback ?? { rank: 4 };
+    return {
+      source,
+      genome: cleanArenaGenome(source, branchId),
+    };
+  });
 }
 
 export function arenaSurvivorGenomes(state, owner) {

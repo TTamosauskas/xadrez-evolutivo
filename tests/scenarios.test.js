@@ -8,10 +8,18 @@ import {
 } from "../src/geology.js";
 import {
   ARENA_ARCHETYPES,
+  ARENA_BRANCHES,
+  ARENA_PRESETS,
+  ARENA_TRAIT_LIMITS,
   arenaGenomeValid,
   arenaInterventionCount,
+  arenaSelectableTraits,
+  arenaSetupGenomeValid,
+  arenaPresetGenome,
   completeArenaGenome,
+  completeArenaBranchGenome,
   arenaTraitCost,
+  randomArenaSide,
 } from "../src/arena.js";
 import {
   createArenaState,
@@ -24,6 +32,7 @@ import {
   CANONICAL_FOUNDER_CELLS,
   canonicalFounderStarts,
   dominantLineage,
+  arenaSurvivorGenomes,
   registerDiscoveries,
   newPiece,
 } from "../src/state.js";
@@ -547,39 +556,110 @@ test("all built-in Arena archetypes are valid", () => {
     assert.equal(arenaGenomeValid(genome), true);
 });
 
-test("Arena accepts valid genomes with more than six selected mutations", () => {
-  const expanded = completeArenaGenome(
-    [
-      ...ARENA_ARCHETYPES[0],
-      "Locomoção Terrestre",
-      "Escalador",
-      "Bioadesão",
-    ],
-    "Bioadesão",
-  );
-  assert.ok(arenaTraitCost(expanded) > 6);
-  assert.equal(arenaGenomeValid(expanded), true);
+test("Arena separates selectable mutations by Animal and Plant branches", () => {
+  const animal = new Set(arenaSelectableTraits("animal")),
+    plant = new Set(arenaSelectableTraits("plant"));
 
-  const state = createArenaState(
-    {
-      blue: [expanded, ARENA_ARCHETYPES[1]],
-      amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[5]],
-    },
-    605,
+  assert.ok(animal.has("Predação"));
+  assert.equal(animal.has("Fotossíntese"), false);
+  assert.ok(animal.has("Vertebrado"));
+  assert.equal(animal.has("Angiospermas"), false);
+
+  assert.ok(plant.has("Fotossíntese"));
+  assert.equal(plant.has("Predação"), false);
+  assert.ok(plant.has("Angiospermas"));
+  assert.equal(plant.has("Vertebrado"), false);
+
+  assert.ok(animal.has("Multicelularismo"));
+  assert.ok(plant.has("Multicelularismo"));
+  assert.equal(animal.has("Quimiossíntese"), false);
+  assert.equal(plant.has("Mixotrofia"), false);
+});
+
+test("Arena presets cover every post-Hadean period and stay within branch limits", () => {
+  const periods = [
+    "archean",
+    "proterozoic",
+    "ediacaran",
+    "cambrian",
+    "ordovician",
+    "silurian",
+    "devonian",
+    "carboniferous",
+    "permian",
+    "triassic",
+    "jurassic",
+    "cretaceous",
+    "paleogene",
+    "neogene",
+    "quaternary",
+  ];
+  for (const branch of ARENA_BRANCHES) {
+    const presetPeriods = new Set(
+      ARENA_PRESETS[branch.id].map((preset) => preset.stage),
+    );
+    for (const period of periods)
+      assert.ok(presetPeriods.has(period), `${branch.id}: ${period}`);
+
+    for (const preset of ARENA_PRESETS[branch.id]) {
+      const genome = arenaPresetGenome(branch.id, preset.id);
+      assert.equal(
+        arenaSetupGenomeValid(genome, branch.id),
+        true,
+        `${branch.id}: ${preset.label} (${arenaTraitCost(genome)}/${branch.limit})`,
+      );
+      assert.ok(arenaTraitCost(genome) <= ARENA_TRAIT_LIMITS[branch.id]);
+    }
+  }
+});
+
+test("Arena includes the requested landmark presets", () => {
+  const labels = new Set(
+    [...ARENA_PRESETS.animal, ...ARENA_PRESETS.plant].map(
+      (preset) => preset.label,
+    ),
   );
-  const expandedFounder = state.pieces.find(
-    (piece) =>
-      piece.owner === "blue" &&
-      piece.ancestry.includes("Bioadesão"),
+  for (const label of [
+    "Tiranossauro rex",
+    "Homo sapiens",
+    "Mamute",
+    "Canguru-gigante",
+    "Cooksonia",
+    "Archaeopteris",
+    "Lepidodendron",
+    "Glossopteris",
+  ])
+    assert.ok(labels.has(label), label);
+});
+
+test("Arena setup caps Animal at 14 and Plant at 10 completed mutations", () => {
+  const tyrannosaurus = arenaPresetGenome("animal", "tyrannosaurus"),
+    homo = arenaPresetGenome("animal", "homo-sapiens"),
+    kangaroo = arenaPresetGenome("animal", "kangaroo"),
+    pepper = arenaPresetGenome("plant", "pepper");
+  assert.equal(ARENA_TRAIT_LIMITS.animal, 14);
+  assert.equal(ARENA_TRAIT_LIMITS.plant, 10);
+  for (const genome of [tyrannosaurus, homo, kangaroo])
+    assert.equal(arenaSetupGenomeValid(genome, "animal"), true);
+  assert.equal(arenaSetupGenomeValid(pepper, "plant"), true);
+
+  const overloadedAnimal = completeArenaBranchGenome(
+    [...kangaroo, "Presas", "Visão Binocular", "Camuflagem"],
+    "animal",
   );
-  assert.ok(expandedFounder);
-  assert.ok(
-    arenaTraitCost(
-      expandedFounder.ancestry.filter(
-        (trait) => trait !== "Respiração anaeróbia",
-      ),
-    ) > 6,
-  );
+  assert.ok(arenaTraitCost(overloadedAnimal) > ARENA_TRAIT_LIMITS.animal);
+  assert.equal(arenaSetupGenomeValid(overloadedAnimal, "animal"), false);
+  assert.equal(arenaGenomeValid(overloadedAnimal, "animal"), true);
+});
+
+test("Arena randomizer always returns one Animal and one Plant branch", () => {
+  for (const seed of [1, 7, 99, 605]) {
+    const [animal, plant] = randomArenaSide(seed);
+    assert.equal(arenaGenomeValid(animal, "animal"), true);
+    assert.equal(arenaGenomeValid(plant, "plant"), true);
+    assert.ok(animal.includes("Predação"));
+    assert.ok(plant.includes("Fotossíntese"));
+  }
 });
 
 test("Vida na Terra seeds post-sexual founders with historical recessive variation", () => {
@@ -633,8 +713,8 @@ test("Cenários Alternativos preserve the survivor genome between cycles", () =>
 test("Arena starts with four engineered founders and ignores geological chronology for later mutations", () => {
   const state = createArenaState(
     {
-      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[1]],
-      amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[5]],
+      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[4]],
+      amber: [ARENA_ARCHETYPES[1], ARENA_ARCHETYPES[5]],
     },
     6,
   );
@@ -655,8 +735,8 @@ test("Arena starts with four engineered founders and ignores geological chronolo
 
 test("Arena founders express every selected initial mutation", () => {
   const selected = {
-      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[1]],
-      amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[7]],
+      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[4]],
+      amber: [ARENA_ARCHETYPES[1], ARENA_ARCHETYPES[7]],
     },
     state = createArenaState(selected, 606);
 
@@ -669,11 +749,40 @@ test("Arena founders express every selected initial mutation", () => {
   }
 });
 
+test("Arena survivor selection preserves Animal first and Plant second even if one branch disappears", () => {
+  const animal = arenaPresetGenome("animal", "tyrannosaurus"),
+    plant = arenaPresetGenome("plant", "cooksonia"),
+    state = createArenaState(
+      {
+        blue: [animal, plant],
+        amber: [
+          arenaPresetGenome("animal", "anomalocaris"),
+          arenaPresetGenome("plant", "glossopteris"),
+        ],
+      },
+      607,
+    );
+
+  state.pieces = state.pieces.filter(
+    (piece) =>
+      piece.owner !== "blue" || !piece.traits.includes("Fotossíntese"),
+  );
+
+  const [survivingAnimal, restoredPlant] = arenaSurvivorGenomes(
+    state,
+    "blue",
+  );
+  assert.ok(survivingAnimal.includes("Predação"));
+  assert.equal(survivingAnimal.includes("Fotossíntese"), false);
+  assert.ok(restoredPlant.includes("Fotossíntese"));
+  assert.equal(restoredPlant.includes("Predação"), false);
+});
+
 test("Arena carries survivor piece forms into the next engineered phase", () => {
   const state = createArenaState(
     {
-      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[1]],
-      amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[5]],
+      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[4]],
+      amber: [ARENA_ARCHETYPES[1], ARENA_ARCHETYPES[5]],
     },
     8,
   );
@@ -682,8 +791,8 @@ test("Arena carries survivor piece forms into the next engineered phase", () => 
   const next = createArenaSuccessorState(
     state,
     {
-      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[1]],
-      amber: [ARENA_ARCHETYPES[4], ARENA_ARCHETYPES[5]],
+      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[4]],
+      amber: [ARENA_ARCHETYPES[1], ARENA_ARCHETYPES[5]],
     },
     9,
   );
@@ -691,7 +800,7 @@ test("Arena carries survivor piece forms into the next engineered phase", () => 
     next.pieces
       .filter((piece) => piece.owner === "blue")
       .map((piece) => piece.rank),
-    [3, 2],
+    [2, 3],
   );
   assert.equal(next.arenaPhase, 2);
 });
@@ -720,7 +829,7 @@ test("Arena engineering counts substitutions rather than raw edits", () => {
     ],
     after = [
       ARENA_ARCHETYPES[0].map((trait) =>
-        trait === "Percepção Espacial" ? "Camuflagem" : trait,
+        trait === "Carapaça" ? "Camuflagem" : trait,
       ),
       [...ARENA_ARCHETYPES[4]],
     ],

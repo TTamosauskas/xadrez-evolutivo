@@ -49,12 +49,16 @@ import {
 import { createPassiveEffectToastPresenter } from "./passive-toast.js";
 import { animateMovementTrace } from "./movement-animation.js";
 import {
+  ARENA_BRANCHES,
+  ARENA_PRESETS,
   arenaAISide,
-  arenaGenomeValid,
   arenaInterventionCount,
   arenaSelectableTraits,
   arenaTraitCost,
-  completeArenaGenome,
+  arenaBranchLimit,
+  arenaSetupGenomeValid,
+  arenaPresetGenome,
+  completeArenaBranchGenome,
   engineerArenaAISide,
   randomArenaSide,
 } from "./arena.js";
@@ -425,26 +429,40 @@ $("notice-dialog").addEventListener("cancel", (event) => {
   acknowledge();
 });
 
-const arenaTraits = arenaSelectableTraits();
-const arenaOwnerName = (owner) => (owner === "blue" ? "Brancas" : "Pretas");
+const arenaOwnerName = (owner) => (owner === "blue" ? "Brancas" : "Pretas"),
+  arenaPeriodName = new Map(
+    GEOLOGICAL_STAGES.map((stage) => [stage.id, stage.period]),
+  );
+
+function emptyArenaBranches() {
+  return ARENA_BRANCHES.map((branch) =>
+    completeArenaBranchGenome([], branch.id),
+  );
+}
 
 function arenaValidCurrent() {
   if (!arenaFlow) return false;
   if (arenaFlow.kind === "setup")
-    return arenaFlow.current.every((genome) => arenaGenomeValid(genome));
+    return arenaFlow.current.every((genome, index) =>
+      arenaSetupGenomeValid(genome, ARENA_BRANCHES[index].id),
+    );
   return arenaInterventionCount(arenaFlow.baseline, arenaFlow.current).valid;
 }
 
 function arenaStatusText() {
   if (!arenaFlow) return "";
   if (arenaFlow.kind === "setup") {
-    const [a, b] = arenaFlow.current.map(arenaTraitCost),
-      genomesValid = arenaFlow.current.every((genome) =>
-        arenaGenomeValid(genome),
-      );
-    return genomesValid
-      ? `Genomas válidos · ${a} e ${b} mutações selecionadas. Todas começam expressas.`
-      : "A combinação contém mutações incompatíveis. Dependências continuam sendo incluídas automaticamente.";
+    const costs = arenaFlow.current.map(arenaTraitCost),
+      valid = arenaFlow.current.every((genome, index) =>
+        arenaSetupGenomeValid(genome, ARENA_BRANCHES[index].id),
+      ),
+      costText = ARENA_BRANCHES.map(
+        (branch, index) =>
+          `${branch.label}: ${costs[index]}/${arenaBranchLimit(branch.id)}`,
+      ).join(" · ");
+    return valid
+      ? `${costText}. Dependências são incluídas automaticamente.`
+      : `${costText}. Reduza o ramo acima do limite ou corrija uma combinação incompatível.`;
   }
   const changes = arenaInterventionCount(
     arenaFlow.baseline,
@@ -464,17 +482,49 @@ function renderArenaDesigner() {
       : `Engenharia Genética · ${arenaOwnerName(owner)}`;
   $("arena-copy").textContent =
     arenaFlow.kind === "setup"
-      ? "Monte duas linhagens sem limite fixo de mutações. Respiração anaeróbia, Reparo Celular e Simetria Bilateral são fundações estruturais automáticas quando exigidas; os demais pré-requisitos também são incluídos automaticamente. Todas as mutações iniciais selecionadas começam expressas."
-      : "As linhagens sobreviventes seguem adiante. Você pode fazer até duas substituições genéticas entre as duas linhagens.";
+      ? "Monte um Ramo Animal predatorial e um Ramo Vegetal fotossintético. Pré-requisitos são incluídos automaticamente; Reparo Celular e Simetria Bilateral não consomem o limite."
+      : "As linhagens Animal e Vegetal sobreviventes seguem adiante. Você pode fazer até duas substituições genéticas entre os dois ramos.";
   $("arena-status").textContent = arenaStatusText();
 
-  for (const [index, id] of [
-    [0, "arena-primary"],
-    [1, "arena-companion"],
+  for (const [index, id, presetId] of [
+    [0, "arena-primary", "arena-animal-presets"],
+    [1, "arena-companion", "arena-plant-presets"],
   ]) {
-    const container = $(id),
-      selectedTraits = new Set(arenaFlow.current[index]);
+    const branch = ARENA_BRANCHES[index],
+      container = $(id),
+      presetContainer = $(presetId),
+      selectedTraits = new Set(arenaFlow.current[index]),
+      arenaTraits = arenaSelectableTraits(branch.id);
     container.replaceChildren();
+    presetContainer.replaceChildren();
+
+    if (arenaFlow.kind === "setup") {
+      const select = document.createElement("select"),
+        placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Conjunto pré-definido…";
+      select.append(placeholder);
+      for (const preset of ARENA_PRESETS[branch.id]) {
+        const option = document.createElement("option"),
+          period = arenaPeriodName.get(preset.stage) ?? preset.stage,
+          genome = arenaPresetGenome(branch.id, preset.id),
+          cost = arenaTraitCost(genome);
+        option.value = preset.id;
+        option.textContent = `${period} · ${preset.label} (${cost}/${branch.limit})`;
+        option.disabled = cost > branch.limit;
+        select.append(option);
+      }
+      select.addEventListener("change", () => {
+        if (!select.value) return;
+        arenaFlow.current[index] = arenaPresetGenome(
+          branch.id,
+          select.value,
+        );
+        renderArenaDesigner();
+      });
+      presetContainer.append(select);
+    }
+
     for (const trait of arenaTraits) {
       const label = document.createElement("label"),
         input = document.createElement("input"),
@@ -483,14 +533,32 @@ function renderArenaDesigner() {
       input.type = "checkbox";
       input.value = trait;
       input.checked = selectedTraits.has(trait);
-      copy.textContent = `${TRAITS[trait][0]} ${trait}`;
+      if (trait === branch.energy) {
+        input.checked = true;
+        input.disabled = true;
+      }
+      if (
+        trait !== branch.energy &&
+        arenaFlow.kind === "setup" &&
+        !input.checked
+      ) {
+        const candidate = completeArenaBranchGenome(
+          [...selectedTraits, trait],
+          branch.id,
+        );
+        input.disabled = arenaTraitCost(candidate) > branch.limit;
+      }
+      copy.textContent =
+        trait === branch.energy
+          ? `${TRAITS[trait][0]} ${trait} · raiz fixa`
+          : `${TRAITS[trait][0]} ${trait}`;
       input.addEventListener("change", () => {
         const genome = new Set(arenaFlow.current[index]);
         if (input.checked) genome.add(trait);
         else genome.delete(trait);
-        arenaFlow.current[index] = completeArenaGenome(
+        arenaFlow.current[index] = completeArenaBranchGenome(
           [...genome],
-          input.checked ? trait : null,
+          branch.id,
         );
         renderArenaDesigner();
       });
@@ -500,7 +568,7 @@ function renderArenaDesigner() {
     const count = arenaTraitCost(arenaFlow.current[index]);
     $(index === 0 ? "arena-primary-count" : "arena-companion-count").textContent =
       arenaFlow.kind === "setup"
-        ? `· ${count} mutações selecionadas`
+        ? `· ${count}/${branch.limit} mutações`
         : `· ${count} características herdadas`;
   }
   $("arena-confirm").disabled = !arenaValidCurrent();
@@ -527,7 +595,7 @@ function finishArenaFlow() {
     flow.current =
       flow.kind === "engineering"
         ? flow.baseline.map((genome) => [...genome])
-        : [[], []];
+        : emptyArenaBranches();
     renderArenaDesigner();
     return;
   }
@@ -588,7 +656,7 @@ function openArenaSetup() {
     kind: "setup",
     owners: controller.mode === "multi" ? ["blue", "amber"] : ["blue"],
     ownerIndex: 0,
-    current: [[], []],
+    current: emptyArenaBranches(),
     baseline: null,
     baselines: null,
     results: {},
