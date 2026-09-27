@@ -387,7 +387,7 @@ test("timeline and dependencies place the new defenses in their intended periods
     }),
     p = s.pieces[0];
   p.traits = [...new Set([...p.traits, "Mimetismo"])];
-  p.ancestry = [...new Set([...p.ancestry, "Mimetismo", "Camuflagem"])];
+  p.ancestry = [...new Set([...p.ancestry, "Predação", "Mimetismo", "Camuflagem"])];
   assert.equal(traitUnlocked(s, "Mimetismo Agressivo", p), true);
   assert.equal(
     periodCompletionInnovations(s).includes("Mimetismo Agressivo"),
