@@ -5,6 +5,7 @@ import {
   square,
   energyBranch,
   canPhotosynthesize,
+  largeFunctionalForm,
 } from "./constants.js";
 import {
   at,
@@ -726,6 +727,62 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
   }
 
+  function phoresyTargets() {
+    if (
+      !has(p, "Forésia") ||
+      largeFunctionalForm(p) ||
+      !has(p, "Locomoção Terrestre") ||
+      !has(p, "Sociabilidade") ||
+      has(p, "Deficiência Motora")
+    )
+      return;
+
+    for (const [dr, dc] of [...ORTH, ...DIAG]) {
+      const path = [],
+        carrierIds = [];
+      let r = p.r + dr,
+        c = p.c + dc;
+
+      while (inside(r, c)) {
+        if (ecologicalDomainBlocked(state, p.owner, r, c)) break;
+        const occupant = at(state, r, c);
+
+        if (
+          occupant &&
+          occupant.owner === p.owner &&
+          !canPhotosynthesize(occupant)
+        ) {
+          path.push([r, c]);
+          carrierIds.push(occupant.id);
+          r += dr;
+          c += dc;
+          continue;
+        }
+
+        if (!carrierIds.length || occupant) break;
+        if (
+          eggAt(state, r, c) ||
+          fragmentAt(state, r, c) ||
+          barrierAt(state, r, c)
+        )
+          break;
+
+        path.push([r, c]);
+        if (
+          !targets.some(
+            (target) => target.r === r && target.c === c,
+          )
+        )
+          add(r, c, [...path], {
+            phoresy: true,
+            phoresyCarrierIds: [...carrierIds],
+            noContinuation: true,
+          });
+        break;
+      }
+    }
+  }
+
   function serpentineMovementTargets() {
     if (
       !has(p, "Serpenteamento") ||
@@ -982,6 +1039,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     escalationTargets();
     bioadhesionTargets();
     arborealTargets();
+    phoresyTargets();
     serpentineMovementTargets();
     trailMovementTargets();
   } else if (
