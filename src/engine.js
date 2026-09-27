@@ -1280,14 +1280,52 @@ function maturePhotosynthesis(state, owner) {
     ) {
       state.board[cell] = "fertile";
       const extras = photosynthesisExtraCells(state, p);
+      if (has(p, "Estômatos") && stomataOpen(state, p)) {
+        const used = new Set(extras.map((extra) => square(extra.r, extra.c))),
+          stomatalCandidates = [
+            [-1, 0],
+            [1, 0],
+            [0, -1],
+            [0, 1],
+          ]
+            .map(([dr, dc]) => ({ r: p.r + dr, c: p.c + dc }))
+            .filter(
+              ({ r, c }) =>
+                inside(r, c) &&
+                terrain(state, r, c) === "neutral" &&
+                !used.has(square(r, c)) &&
+                !at(state, r, c) &&
+                !eggAt(state, r, c) &&
+                !plantSeedAt(state, r, c) &&
+                !barrierAt(state, r, c) &&
+                !allelopathySourceAt(state, r, c, p.owner),
+            ),
+          stomatal = pick(state, stomatalCandidates);
+        if (stomatal) extras.push({ ...stomatal, stomata: true });
+      }
       for (const extra of extras) {
         state.board[square(extra.r, extra.c)] = "fertile";
-        log(
-          state,
-          has(p, "Angiospermas") && at(state, extra.r, extra.c)?.owner === p.owner
-            ? `${OWNERS[p.owner]}: 🌸 Angiospermas tornou ${coord(extra.r, extra.c)} fértil.`
-            : `${OWNERS[p.owner]}: 🟢 arquitetura vegetal tornou ${coord(extra.r, extra.c)} fértil.`,
-        );
+        if (extra.stomata) {
+          log(
+            state,
+            `${OWNERS[p.owner]}: 🌬️ Estômatos abertos ampliaram a Fotossíntese para ${coord(extra.r, extra.c)}.`,
+          );
+          emitPassiveEffect(
+            state,
+            "Estômatos",
+            `🌬️ Estômatos abertos ampliaram a Fotossíntese para ${coord(extra.r, extra.c)}.`,
+            {
+              pieceId: p.id,
+              outcome: "open-stomata-expanded-photosynthesis",
+            },
+          );
+        } else
+          log(
+            state,
+            has(p, "Angiospermas") && at(state, extra.r, extra.c)?.owner === p.owner
+              ? `${OWNERS[p.owner]}: 🌸 Angiospermas tornou ${coord(extra.r, extra.c)} fértil.`
+              : `${OWNERS[p.owner]}: 🟢 arquitetura vegetal tornou ${coord(extra.r, extra.c)} fértil.`,
+          );
       }
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
@@ -1573,6 +1611,16 @@ function advanceTurn(ctx) {
   state.inkClouds = (state.inkClouds ?? []).filter(
     (entry) => entry.expiresTurn >= state.turn,
   );
+  state.mineralRemnants = (state.mineralRemnants ?? []).filter(
+    (entry) => entry.expiresRound >= round(state),
+  );
+  state.chemosynthesisExhausted = (state.chemosynthesisExhausted ?? []).filter(
+    (entry) =>
+      entry.eventKey ===
+      (state.event
+        ? `${state.event.id}:${state.event.startTurn ?? state.event.startRound ?? 0}`
+        : "none"),
+  );
   for (const piece of state.pieces)
     if (
       piece.broodParasite &&
@@ -1596,9 +1644,18 @@ function advanceTurn(ctx) {
     if (extinction(state)) return;
     restoreExtremophyteFertility(state);
     tickDiseases(ctx);
-    for (const p of [...state.pieces])
+    for (const p of [...state.pieces]) {
+      const bufferedLethal =
+        (p.eukaryoteBufferedTraits ?? []).includes("Mutação Letal") &&
+        Number.isInteger(p.deleteriousDue) &&
+        p.deleteriousDue <= round(state);
+      if (bufferedLethal) {
+        releaseEukaryoteBuffers(state, p, "lethal");
+        continue;
+      }
       if (has(p, "Mutação Letal") && p.deleteriousDue <= round(state))
         ctx.kill(p.id, "Mutação Letal");
+    }
     for (const p of [...state.pieces])
       if (
         (terrain(state, p.r, p.c) === "hostile" ||
