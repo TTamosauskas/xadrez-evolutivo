@@ -43,6 +43,7 @@ test("death while crossing hostile terrain stops the visual path and leaves a ca
   );
   const actor = state.pieces[0];
   state.board[4 * 8 + 1] = "hostile";
+  state.rng = 1;
 
   state = simulate(state, move(actor, 4, 4));
 
