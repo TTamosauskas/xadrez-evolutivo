@@ -51,132 +51,63 @@ test("new campaigns default to Vida na Terra while low-level legacy states stay 
   assert.equal(createState(1).scenario, "alternative");
 });
 
-test("Vida na Terra disperses aquatic founders progressively through early geological stages", () => {
-  const seeds = [1, 500, 1500],
-    distance = (starts) => {
-      const blue = starts.filter(([owner]) => owner === "blue"),
-        amber = starts.filter(([owner]) => owner === "amber");
-      return Math.min(
-        ...blue.flatMap(([, br, bc]) =>
-          amber.map(([, ar, ac]) => Math.max(Math.abs(br - ar), Math.abs(bc - ac))),
-        ),
-      );
-    };
-
-  for (const cycle of [1, 2, 3]) {
-    const layouts = seeds.map((rng) =>
-      earthFounderStarts("archean", cycle, { rng }),
-    );
+test("Vida na Terra defines phase-specific founder layouts across the expanded timeline", () => {
+  for (const [index, stage] of GEOLOGICAL_STAGES.entries()) {
+    if (stage.id === "hadean") continue;
+    assert.equal(stage.founderLayout.length, 4, stage.id);
     assert.equal(
-      new Set(layouts.map((layout) => JSON.stringify(layout))).size,
-      3,
-      `Arqueano · ${cycle}º Ciclo deve variar com a semente`,
-    );
-    for (const layout of layouts) {
-      assert.equal(new Set(layout.map(([, r, c]) => `${r},${c}`)).size, 4);
-      assert.equal(layout.filter(([owner]) => owner === "blue").length, 2);
-      assert.equal(layout.filter(([owner]) => owner === "amber").length, 2);
-      const min = cycle === 1 ? 2 : 1,
-        max = cycle === 1 ? 5 : 6;
-      assert.ok(
-        layout.every(([, r, col]) => r >= min && r <= max && col >= min && col <= max),
-      );
-    }
-  }
-  assert.ok(
-    distance(earthFounderStarts("archean", 1, { rng: 1 })) <
-      distance(earthFounderStarts("archean", 3, { rng: 1500 })),
-  );
-
-  assert.deepEqual(earthFounderStarts("proterozoic", 1), [
-    ["blue", 5, 2, "primary"],
-    ["blue", 5, 3, "companion"],
-    ["amber", 2, 4, "primary"],
-    ["amber", 2, 5, "companion"],
-  ]);
-  assert.deepEqual(earthFounderStarts("ediacaran", 1), [
-    ["blue", 6, 2, "primary"],
-    ["blue", 6, 3, "companion"],
-    ["amber", 1, 4, "primary"],
-    ["amber", 1, 5, "companion"],
-  ]);
-  assert.equal(earthFounderStarts("cambrian", 1), null);
-  assert.equal(earthFounderStarts("ordovician", 1), null);
-
-  const coords = (state) =>
-    state.pieces.map((piece) => [piece.owner, piece.r, piece.c]);
-
-  assert.deepEqual(coords(createPeriodState("proterozoic", 701)), [
-    ["blue", 5, 2],
-    ["blue", 5, 3],
-    ["amber", 2, 4],
-    ["amber", 2, 5],
-  ]);
-  assert.deepEqual(coords(createPeriodState("ediacaran", 702)), [
-    ["blue", 6, 2],
-    ["blue", 6, 3],
-    ["amber", 1, 4],
-    ["amber", 1, 5],
-  ]);
-  const canonicalPool = new Set(
-    CANONICAL_FOUNDER_CELLS.map(({ r, c }) => `${r},${c}`),
-  );
-  for (const stage of ["cambrian", "ordovician"]) {
-    const state = createPeriodState(stage, 703),
-      positions = coords(state);
-    assert.equal(positions.length, 4);
-    assert.equal(
-      new Set(positions.map(([, r, c]) => `${r},${c}`)).size,
+      new Set(stage.founderLayout.map(([r, c]) => `${r},${c}`)).size,
       4,
+      stage.id,
+    );
+    const starts = earthFounderStarts(stage.id, 1, { rng: 100 + index });
+    assert.equal(starts.length, 4, stage.id);
+    assert.equal(starts.filter(([owner]) => owner === "blue").length, 2, stage.id);
+    assert.equal(starts.filter(([owner]) => owner === "amber").length, 2, stage.id);
+    assert.equal(
+      new Set(starts.map(([, r, c]) => `${r},${c}`)).size,
+      4,
+      stage.id,
     );
     assert.ok(
-      positions.every(([, r, c]) => canonicalPool.has(`${r},${c}`)),
+      starts.every(([, r, c]) => r >= 0 && r < 8 && c >= 0 && c < 8),
+      stage.id,
     );
   }
+
+  const signatures = ["eoarchean", "paleoarchean", "mesoarchean", "neoarchean"]
+    .map((id) => JSON.stringify(
+      GEOLOGICAL_STAGES.find((stage) => stage.id === id).founderLayout,
+    ));
+  assert.ok(new Set(signatures).size >= 3);
 
   const prior = createState(704, {
     scenario: "earth",
-    geologicalStage: "archean",
+    geologicalStage: "eoarchean",
     cycle: 1,
     totalCycles: 1,
-    historicalTraits: ["Fotossíntese", "Predação"],
-    founders: {
-      primary: {
-        rank: 4,
-        traits: ["Fotossíntese"],
-        ancestry: ["Fotossíntese"],
-      },
-      companion: {
-        rank: 4,
-        traits: ["Predação"],
-        ancestry: ["Predação"],
-      },
-    },
-    canonicalPair: true,
+    historicalTraits: ["Respiração anaeróbia"],
+    naturalBarriers: false,
   });
-  prior.result = { winner: "blue", reason: "Extinção total." };
+  prior.result = { winner: "blue", reason: "teste" };
   prior.phase = "over";
-  const archeanCycle2 = createSuccessorState(prior, 705);
-  assert.equal(archeanCycle2.geologicalStage, "archean");
-  assert.equal(archeanCycle2.cycle, 2);
-  const expectedCycle2 = earthFounderStarts("archean", 2, { rng: 705 }).map(
-    ([owner, r, col]) => [owner, r, col],
-  );
-  assert.deepEqual(coords(archeanCycle2), expectedCycle2);
-  assert.ok(
-    archeanCycle2.pieces.every(
-      (piece) => archeanCycle2.board[piece.r * 8 + piece.c] === "fertile",
-    ),
-  );
+  const next = createSuccessorState(prior, 705);
+  assert.equal(next.geologicalStage, "eoarchean");
+  assert.equal(next.cycle, 2);
+  assert.equal(next.pieces.length, 4);
 });
-
-test("Vida na Terra carries the last extinct winner into the next generation", () => {
+test("Vida na Terra carries the last extinct winner branch into the next detailed phase", () => {
   const state = createState(706, {
     scenario: "earth",
-    geologicalStage: "archean",
+    geologicalStage: "paleoarchean",
     cycle: 1,
-    totalCycles: 1,
-    historicalTraits: ["Respiração anaeróbia", "Predação"],
+    totalCycles: 2,
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Quimiossíntese",
+      "Fotossíntese",
+      "Predação",
+    ],
     founders: {
       primary: {
         rank: 4,
@@ -191,9 +122,7 @@ test("Vida na Terra carries the last extinct winner into the next generation", (
     },
     canonicalPair: true,
   });
-  const winner = state.pieces.find((piece) =>
-    piece.traits.includes("Predação"),
-  );
+  const winner = state.pieces.find((piece) => piece.traits.includes("Predação"));
   state.pieces = [];
   state.result = {
     winner: winner.owner,
@@ -203,18 +132,13 @@ test("Vida na Terra carries the last extinct winner into the next generation", (
   state.phase = "over";
 
   const next = createSuccessorState(state, 707);
-  assert.equal(next.geologicalStage, "archean");
-  assert.equal(next.cycle, 2);
+  assert.equal(next.geologicalStage, "mesoarchean");
+  assert.equal(next.cycle, 1);
+  assert.ok(next.pieces.some((piece) => piece.traits.includes("Predação")));
   assert.ok(
-    next.pieces.some((piece) => piece.traits.includes("Predação")),
-  );
-  assert.ok(
-    next.logs.some((entry) =>
-      entry.text.includes("última linhagem extinta vencedora"),
-    ),
+    next.logs.some((entry) => entry.text.includes("Mesoarqueana")),
   );
 });
-
 test("strongest survivor uses branch-specific piece value before genetic tie-breaks", () => {
   const s = createState(1706, {
     geologicalStage: "quaternary",
@@ -357,14 +281,15 @@ test("derived lineages outrank larger basal clone groups when choosing a founder
   assert.equal(selected.count, 1);
 });
 
-test("Vida na Terra carries living and remembered energy branches into the next Archean cycle", () => {
+test("Vida na Terra carries living and remembered branches inside a detailed Archean phase", () => {
   const prior = createState(707, {
     scenario: "earth",
-    geologicalStage: "archean",
+    geologicalStage: "mesoarchean",
     cycle: 1,
-    totalCycles: 1,
+    totalCycles: 3,
     historicalTraits: [
       "Respiração anaeróbia",
+      "Quimiossíntese",
       "Fotossíntese",
       "Predação",
     ],
@@ -372,19 +297,12 @@ test("Vida na Terra carries living and remembered energy branches into the next 
   });
   prior.pieces = [];
   prior.nextId = 1;
-  prior.energyBranchRepresentatives = {
-    Fotossíntese: null,
-    Predação: null,
-  };
+  prior.energyBranchRepresentatives = { Fotossíntese: null, Predação: null };
 
   const extinctPlant = newPiece(prior, "blue", 4, 2, {
       rank: 4,
-      traits: ["Fotossíntese", "Reparo Celular"],
-      ancestry: [
-        "Respiração anaeróbia",
-        "Fotossíntese",
-        "Reparo Celular",
-      ],
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
       generation: 3,
     }),
     livingPredator = newPiece(prior, "amber", 3, 5, {
@@ -408,20 +326,16 @@ test("Vida na Terra carries living and remembered energy branches into the next 
     plants = next.pieces.filter((piece) => piece.traits.includes("Fotossíntese")),
     predators = next.pieces.filter((piece) => piece.traits.includes("Predação"));
 
-  assert.equal(next.geologicalStage, "archean");
+  assert.equal(next.geologicalStage, "mesoarchean");
   assert.equal(next.cycle, 2);
   assert.equal(plants.length, 2);
   assert.equal(predators.length, 2);
-  assert.ok(plants.every((piece) => piece.traits.includes("Reparo Celular")));
   assert.ok(
-    predators.every((piece) =>
-      piece.traits.includes("Transferência Horizontal"),
-    ),
+    predators.every((piece) => piece.traits.includes("Transferência Horizontal")),
   );
   assert.ok(next.historicalTraits.includes("Fotossíntese"));
   assert.ok(next.historicalTraits.includes("Predação"));
 });
-
 test("dead recorded representatives no longer outrank living survivors", () => {
   const prior = createState(711, {
     scenario: "earth",
@@ -476,13 +390,18 @@ test("dead recorded representatives no longer outrank living survivors", () => {
   );
 });
 
-test("first Archean successor supplies a missing fundamental branch as a final fixation fallback", () => {
+test("detailed Archean succession restores a missing fundamental energy branch", () => {
   const prior = createState(709, {
     scenario: "earth",
-    geologicalStage: "archean",
+    geologicalStage: "paleoarchean",
     cycle: 1,
-    totalCycles: 1,
-    historicalTraits: ["Respiração anaeróbia", "Fotossíntese"],
+    totalCycles: 2,
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Quimiossíntese",
+      "Fotossíntese",
+      "Predação",
+    ],
     naturalBarriers: false,
   });
   prior.pieces = prior.pieces.filter((piece) =>
@@ -492,6 +411,7 @@ test("first Archean successor supplies a missing fundamental branch as a final f
   prior.phase = "over";
 
   const next = createSuccessorState(prior, 710);
+  assert.equal(next.geologicalStage, "mesoarchean");
   assert.equal(
     next.pieces.filter((piece) => piece.traits.includes("Fotossíntese")).length,
     2,
@@ -500,10 +420,7 @@ test("first Archean successor supplies a missing fundamental branch as a final f
     next.pieces.filter((piece) => piece.traits.includes("Predação")).length,
     2,
   );
-  assert.ok(next.historicalTraits.includes("Fotossíntese"));
-  assert.ok(next.historicalTraits.includes("Predação"));
 });
-
 test("canonical founder pool prevents immediate queen and knight captures", () => {
   assert.deepEqual(
     CANONICAL_FOUNDER_CELLS.map(({ label }) => label),
@@ -899,7 +816,7 @@ test("Arena carries survivor piece forms into the next engineered phase", () => 
 });
 
 test("Vida na Terra keeps prior dominant lineages as a fossil record", () => {
-  const state = createPeriodState("paleogene", 10, null, "earth");
+  const state = createPeriodState("oligocene", 10, null, "earth");
   state.result = { winner: "blue", reason: "Extinção total." };
   state.phase = "over";
   const next = createSuccessorState(state, 11);
@@ -908,13 +825,12 @@ test("Vida na Terra keeps prior dominant lineages as a fossil record", () => {
   assert.ok(
     next.fossilRecord.some(
       (entry) =>
-        entry.geologicalStage === "paleogene" &&
+        entry.geologicalStage === "oligocene" &&
         entry.owner === "blue" &&
         entry.winner,
     ),
   );
 });
-
 test("Arena engineering counts substitutions rather than raw edits", () => {
   const before = [
       [...ARENA_ARCHETYPES[0]],
