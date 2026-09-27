@@ -16,7 +16,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Bioadesão: "Na borda, percorre continuamente o perímetro, contorna cantos e pode trocar com o primeiro aliado encontrado.",
   Arborícola: "Atravessa sequências contíguas de aliados fotossintéticos e pousa na primeira casa livre além delas.",
   Forésia: "Peão, Rei, Cavalo e Bispo atravessam sequências contíguas de aliados não fotossintéticos; Torre e Rainha mantêm a característica apenas como legado.",
-  Serpenteamento: "Percorre até 5 passos adjacentes com até 2 mudanças de direção.",
+  Serpenteamento: "Move para qualquer casa livre da linha horizontal imediatamente superior ou inferior, desde que toda a rota esteja livre de peças, barreiras e casas hostis.",
   Trilhas: "Deixa trilhas temporárias e pode usar a rede aliada para ampliá-la em uma casa.",
   Tigmotaxia: "Ao chegar a um canto, pode continuar 1 ou 2 casas pela borda.",
   Recuo: "Após captura adjacente bem-sucedida, pode retornar à casa de origem.",
