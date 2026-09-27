@@ -6,7 +6,7 @@ import {
   createArenaState,
   createArenaSuccessorState,
   createPassiveToastTestState,
-  arenaSurvivorGenomes,
+  arenaSurvivorSelections,
 } from "./state.js";
 import { Controller } from "./controller.js";
 import { render } from "./view.js";
@@ -29,7 +29,7 @@ import {
 } from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
-import { TRAITS } from "./constants.js";
+import { PIECES, SYMBOLS, TRAITS } from "./constants.js";
 import { howToPlayLines } from "./help.js";
 import {
   GEOLOGICAL_STAGES,
@@ -51,16 +51,19 @@ import { animateMovementTrace } from "./movement-animation.js";
 import {
   ARENA_BRANCHES,
   ARENA_PRESETS,
-  arenaAISide,
+  arenaAISideSetup,
   arenaInterventionCount,
   arenaSelectableTraits,
   arenaTraitCost,
   arenaBranchLimit,
-  arenaSetupGenomeValid,
+  arenaSetupSelectionValid,
+  arenaRankValid,
+  arenaRankRestrictionReason,
+  arenaPreferredRank,
   arenaPresetGenome,
   completeArenaBranchGenome,
   engineerArenaAISide,
-  randomArenaSide,
+  randomArenaSetupSide,
 } from "./arena.js";
 const $ = (id) => document.getElementById(id);
 let selected = null,
@@ -454,37 +457,67 @@ function emptyArenaBranches() {
   );
 }
 
+const emptyArenaRanks = () => ARENA_BRANCHES.map(() => 4);
+
 function arenaValidCurrent() {
   if (!arenaFlow) return false;
   if (arenaFlow.kind === "setup")
     return arenaFlow.current.every((genome, index) =>
-      arenaSetupGenomeValid(genome, ARENA_BRANCHES[index].id),
+      arenaSetupSelectionValid(
+        genome,
+        arenaFlow.ranks[index],
+        ARENA_BRANCHES[index].id,
+      ),
     );
-  return arenaInterventionCount(arenaFlow.baseline, arenaFlow.current).valid;
+  return arenaInterventionCount(
+    arenaFlow.baseline,
+    arenaFlow.current,
+    arenaFlow.ranks,
+  ).valid;
 }
 
 function arenaStatusText() {
   if (!arenaFlow) return "";
+  const formText = ARENA_BRANCHES.map(
+    (branch, index) =>
+      `${branch.label}: ${PIECES[arenaFlow.ranks[index]] ?? "?"}`,
+  ).join(" · ");
   if (arenaFlow.kind === "setup") {
     const costs = arenaFlow.current.map(arenaTraitCost),
       valid = arenaFlow.current.every((genome, index) =>
-        arenaSetupGenomeValid(genome, ARENA_BRANCHES[index].id),
+        arenaSetupSelectionValid(
+          genome,
+          arenaFlow.ranks[index],
+          ARENA_BRANCHES[index].id,
+        ),
       ),
       costText = ARENA_BRANCHES.map(
         (branch, index) =>
           `${branch.label}: ${costs[index]}/${arenaBranchLimit(branch.id)}`,
       ).join(" · ");
-    return valid
-      ? `${costText}. Dependências são incluídas automaticamente.`
+    if (valid)
+      return `${costText}. ${formText}. Dependências são incluídas automaticamente.`;
+    const rankIssue = arenaFlow.current
+      .map((genome, index) =>
+        arenaRankRestrictionReason(
+          genome,
+          arenaFlow.ranks[index],
+          ARENA_BRANCHES[index].id,
+        ),
+      )
+      .find(Boolean);
+    return rankIssue
+      ? `${costText}. ${rankIssue}`
       : `${costText}. Reduza o ramo acima do limite ou corrija uma combinação incompatível.`;
   }
   const changes = arenaInterventionCount(
     arenaFlow.baseline,
     arenaFlow.current,
+    arenaFlow.ranks,
   );
   if (changes.substitutions === Infinity)
-    return "Engenharia deve trocar características: o número de adições e remoções precisa ser igual.";
-  return `Intervenções: ${changes.substitutions}/2 substituições.`;
+    return "Engenharia deve trocar características: o número de adições e remoções precisa ser igual, sem tornar a forma herdada incompatível.";
+  return `Intervenções: ${changes.substitutions}/2 substituições. ${formText} · formas herdadas.`;
 }
 
 function renderArenaDesigner() {
@@ -508,9 +541,38 @@ function renderArenaDesigner() {
       container = $(id),
       presetContainer = $(presetId),
       selectedTraits = new Set(arenaFlow.current[index]),
-      arenaTraits = arenaSelectableTraits(branch.id);
+      arenaTraits = arenaSelectableTraits(branch.id),
+      currentRank = arenaFlow.ranks[index];
     container.replaceChildren();
     presetContainer.replaceChildren();
+
+    const rankLabel = document.createElement("label"),
+      rankCopy = document.createElement("span"),
+      rankSelect = document.createElement("select");
+    rankLabel.className = "arena-rank";
+    rankCopy.textContent =
+      arenaFlow.kind === "setup" ? "Forma da peça: " : "Forma herdada: ";
+    for (let rank = 0; rank < PIECES.length; rank++) {
+      const option = document.createElement("option"),
+        reason = arenaRankRestrictionReason(
+          arenaFlow.current[index],
+          rank,
+          branch.id,
+        );
+      option.value = String(rank);
+      option.selected = rank === currentRank;
+      option.disabled = !!reason;
+      option.textContent = `${SYMBOLS[owner][rank]} ${PIECES[rank]}${reason ? ` — ${reason}` : ""}`;
+      if (reason) option.title = reason;
+      rankSelect.append(option);
+    }
+    rankSelect.disabled = arenaFlow.kind === "engineering";
+    rankSelect.addEventListener("change", () => {
+      arenaFlow.ranks[index] = Number(rankSelect.value);
+      renderArenaDesigner();
+    });
+    rankLabel.append(rankCopy, rankSelect);
+    presetContainer.append(rankLabel);
 
     if (arenaFlow.kind === "setup") {
       const select = document.createElement("select"),
@@ -530,9 +592,12 @@ function renderArenaDesigner() {
       }
       select.addEventListener("change", () => {
         if (!select.value) return;
-        arenaFlow.current[index] = arenaPresetGenome(
+        const genome = arenaPresetGenome(branch.id, select.value);
+        arenaFlow.current[index] = genome;
+        arenaFlow.ranks[index] = arenaPreferredRank(
+          genome,
           branch.id,
-          select.value,
+          arenaFlow.ranks[index],
         );
         renderArenaDesigner();
       });
@@ -551,16 +616,29 @@ function renderArenaDesigner() {
         input.checked = true;
         input.disabled = true;
       }
-      if (
-        trait !== branch.energy &&
-        arenaFlow.kind === "setup" &&
-        !input.checked
-      ) {
+      if (trait !== branch.energy) {
+        const candidateTraits = new Set(selectedTraits);
+        if (input.checked) candidateTraits.delete(trait);
+        else candidateTraits.add(trait);
         const candidate = completeArenaBranchGenome(
-          [...selectedTraits, trait],
-          branch.id,
-        );
-        input.disabled = arenaTraitCost(candidate) > branch.limit;
+            [...candidateTraits],
+            branch.id,
+          ),
+          rankCompatible = arenaRankValid(
+            candidate,
+            currentRank,
+            branch.id,
+          ),
+          overLimit =
+            arenaFlow.kind === "setup" &&
+            !input.checked &&
+            arenaTraitCost(candidate) > branch.limit;
+        if (!rankCompatible || overLimit) {
+          input.disabled = true;
+          label.title = !rankCompatible
+            ? arenaRankRestrictionReason(candidate, currentRank, branch.id)
+            : `Limite de ${branch.limit} mutações excedido.`;
+        }
       }
       copy.textContent =
         trait === branch.energy
@@ -598,7 +676,10 @@ function finishArenaFlow() {
   const flow = arenaFlow;
   if (!flow) return;
   const owner = flow.owners[flow.ownerIndex];
-  flow.results[owner] = flow.current.map((genome) => [...genome]);
+  flow.results[owner] = {
+    genomes: flow.current.map((genome) => [...genome]),
+    ranks: [...flow.ranks],
+  };
   flow.ownerIndex++;
   if (flow.ownerIndex < flow.owners.length) {
     const nextOwner = flow.owners[flow.ownerIndex];
@@ -610,6 +691,10 @@ function finishArenaFlow() {
       flow.kind === "engineering"
         ? flow.baseline.map((genome) => [...genome])
         : emptyArenaBranches();
+    flow.ranks =
+      flow.kind === "engineering"
+        ? [...flow.rankBaselines[nextOwner]]
+        : emptyArenaRanks();
     renderArenaDesigner();
     return;
   }
@@ -618,36 +703,54 @@ function finishArenaFlow() {
   let blue = flow.results.blue,
     amber = flow.results.amber;
   if (flow.kind === "setup") {
-    if (!blue) blue = arenaAISide(controller.difficulty, null, Date.now());
+    if (!blue) blue = arenaAISideSetup(controller.difficulty, null, Date.now());
     if (!amber)
-      amber = arenaAISide(
+      amber = arenaAISideSetup(
         controller.difficulty,
         controller.difficulty === "hard" ? blue : null,
         Date.now() + 1,
       );
   } else {
     if (!blue)
-      blue = engineerArenaAISide(
-        flow.baselines.blue,
-        controller.difficulty,
-        flow.baselines.amber,
-        Date.now(),
-      );
+      blue = {
+        genomes: engineerArenaAISide(
+          flow.baselines.blue,
+          controller.difficulty,
+          flow.baselines.amber,
+          Date.now(),
+          flow.rankBaselines.blue,
+        ),
+        ranks: [...flow.rankBaselines.blue],
+      };
     if (!amber)
-      amber = engineerArenaAISide(
-        flow.baselines.amber,
-        controller.difficulty,
-        controller.difficulty === "hard" ? blue : flow.baselines.blue,
-        Date.now() + 1,
-      );
+      amber = {
+        genomes: engineerArenaAISide(
+          flow.baselines.amber,
+          controller.difficulty,
+          controller.difficulty === "hard"
+            ? blue.genomes
+            : flow.baselines.blue,
+          Date.now() + 1,
+          flow.rankBaselines.amber,
+        ),
+        ranks: [...flow.rankBaselines.amber],
+      };
   }
   if ($("arena-dialog").open) $("arena-dialog").close();
   arenaFlow = null;
   clearSelection();
   const next =
     flow.kind === "setup"
-      ? createArenaState({ blue, amber })
-      : createArenaSuccessorState(previous, { blue, amber });
+      ? createArenaState(
+          { blue: blue.genomes, amber: amber.genomes },
+          Date.now(),
+          null,
+          { blue: blue.ranks, amber: amber.ranks },
+        )
+      : createArenaSuccessorState(previous, {
+          blue: blue.genomes,
+          amber: amber.genomes,
+        });
   replaceCycleState(next);
   controller.pause(false);
 }
@@ -655,14 +758,21 @@ function finishArenaFlow() {
 function openArenaSetup() {
   controller.pause(true);
   if (controller.mode === "auto") {
-    const blue = arenaAISide(controller.difficulty, null, Date.now()),
-      amber = arenaAISide(
+    const blue = arenaAISideSetup(controller.difficulty, null, Date.now()),
+      amber = arenaAISideSetup(
         controller.difficulty,
         controller.difficulty === "hard" ? blue : null,
         Date.now() + 1,
       );
     clearSelection();
-    replaceCycleState(createArenaState({ blue, amber }));
+    replaceCycleState(
+      createArenaState(
+        { blue: blue.genomes, amber: amber.genomes },
+        Date.now(),
+        null,
+        { blue: blue.ranks, amber: amber.ranks },
+      ),
+    );
     controller.pause(false);
     return;
   }
@@ -671,8 +781,10 @@ function openArenaSetup() {
     owners: controller.mode === "multi" ? ["blue", "amber"] : ["blue"],
     ownerIndex: 0,
     current: emptyArenaBranches(),
+    ranks: emptyArenaRanks(),
     baseline: null,
     baselines: null,
+    rankBaselines: null,
     results: {},
     previous: null,
   };
@@ -682,10 +794,22 @@ function openArenaSetup() {
 
 function openArenaEngineering() {
   const previous = controller.state,
-    baselines = {
-      blue: arenaSurvivorGenomes(previous, "blue"),
-      amber: arenaSurvivorGenomes(previous, "amber"),
-    };
+    survivorSelections = {
+      blue: arenaSurvivorSelections(previous, "blue"),
+      amber: arenaSurvivorSelections(previous, "amber"),
+    },
+    baselines = Object.fromEntries(
+      Object.entries(survivorSelections).map(([owner, selections]) => [
+        owner,
+        selections.map(({ genome }) => [...genome]),
+      ]),
+    ),
+    rankBaselines = Object.fromEntries(
+      Object.entries(survivorSelections).map(([owner, selections]) => [
+        owner,
+        selections.map(({ rank }) => rank),
+      ]),
+    );
   controller.pause(true);
   if (controller.mode === "auto") {
     const blue = engineerArenaAISide(
@@ -693,12 +817,14 @@ function openArenaEngineering() {
         controller.difficulty,
         baselines.amber,
         Date.now(),
+        rankBaselines.blue,
       ),
       amber = engineerArenaAISide(
         baselines.amber,
         controller.difficulty,
         controller.difficulty === "hard" ? blue : baselines.blue,
         Date.now() + 1,
+        rankBaselines.amber,
       );
     clearSelection();
     replaceCycleState(createArenaSuccessorState(previous, { blue, amber }));
@@ -712,7 +838,9 @@ function openArenaEngineering() {
     ownerIndex: 0,
     baseline: baselines[owners[0]].map((genome) => [...genome]),
     baselines,
+    rankBaselines,
     current: baselines[owners[0]].map((genome) => [...genome]),
+    ranks: [...rankBaselines[owners[0]]],
     results: {},
     previous,
   };
@@ -722,15 +850,19 @@ function openArenaEngineering() {
 
 $("arena-randomize").addEventListener("click", () => {
   if (!arenaFlow) return;
-  arenaFlow.current =
-    arenaFlow.kind === "setup"
-      ? randomArenaSide(Date.now())
-      : engineerArenaAISide(
-          arenaFlow.baseline,
-          "easy",
-          null,
-          Date.now(),
-        );
+  if (arenaFlow.kind === "setup") {
+    const setup = randomArenaSetupSide(Date.now());
+    arenaFlow.current = setup.genomes;
+    arenaFlow.ranks = setup.ranks;
+  } else {
+    arenaFlow.current = engineerArenaAISide(
+      arenaFlow.baseline,
+      "easy",
+      null,
+      Date.now(),
+      arenaFlow.ranks,
+    );
+  }
   renderArenaDesigner();
 });
 $("arena-confirm").addEventListener("click", finishArenaFlow);

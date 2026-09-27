@@ -40,6 +40,11 @@ export const ARENA_BRANCHES = Object.freeze([
 export const ARENA_TRAIT_LIMITS = Object.freeze(
   Object.fromEntries(ARENA_BRANCHES.map((branch) => [branch.id, branch.limit])),
 );
+export const ARENA_RANKS = Object.freeze([0, 1, 2, 3, 4, 5]);
+const ARENA_BRANCH_RANK_VALUES = Object.freeze({
+  animal: Object.freeze([1, 3, 4, 5, 2, 6]),
+  plant: Object.freeze([1, 3, 3, 5, 100, 9]),
+});
 const ARENA_BRANCH_EXCLUSIONS = new Set(["Quimiossíntese", "Mixotrofia"]);
 export const arenaTraitCost = (genome) =>
   new Set(
@@ -61,7 +66,7 @@ export const ARENA_PRESETS = Object.freeze({
     { id: "coelophysis", stage: "triassic", label: "Coelophysis", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Endotermia", "Ovíparos Amniotas"] },
     { id: "archaeopteryx", stage: "jurassic", label: "Archaeopteryx", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Voo", "Penas", "Ovíparos Amniotas"] },
     { id: "tyrannosaurus", stage: "cretaceous", label: "Tiranossauro rex", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Presas", "Visão Binocular"] },
-    { id: "basilosaurus", stage: "paleogene", label: "Basilosaurus", traits: ["Predação", "Vertebrado", "Carnívoro", "Respiração Pulmonar", "Predação em Massa", "Longevidade"] },
+    { id: "basilosaurus", stage: "paleogene", label: "Basilosaurus", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Carnívoro", "Respiração Pulmonar", "Predação em Massa", "Longevidade"] },
     { id: "megalodon", stage: "neogene", label: "Megalodon", traits: ["Predação", "Vertebrado", "Carnívoro", "Mandíbula", "Dentes", "Presas", "Longevidade"] },
     { id: "mammoth", stage: "quaternary", label: "Mamute", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Herbívoro", "Pelos", "Tromba", "Cuidado Parental"] },
     { id: "kangaroo", stage: "quaternary", label: "Canguru-gigante", traits: ["Predação", "Marsupial", "Pulo"] },
@@ -260,6 +265,84 @@ export function completeArenaBranchGenome(input, branchId) {
   );
 }
 
+export function arenaAllowedRanks(genome, branchId) {
+  const completed = completeArenaBranchGenome(genome, branchId);
+  if (completed.includes("Nanismo")) return [0];
+
+  let allowed;
+  if (branchId === "plant") {
+    allowed = completed.includes("Traqueófitas")
+      ? [...ARENA_RANKS]
+      : completed.includes("Multicelularismo")
+        ? [0, 1, 2, 4]
+        : [0, 4];
+  } else {
+    const articulated = completed.includes("Locomoção Articulada");
+    if (articulated && completed.includes("Vertebrado"))
+      allowed = [...ARENA_RANKS];
+    else if (articulated && completed.includes("Artrópode"))
+      allowed = [0, 1, 2, 4];
+    else allowed = [0, 4];
+  }
+
+  if (completed.includes("Sacos Aéreos"))
+    allowed = allowed.filter((rank) => rank !== 0);
+  if (completed.includes("Predação em Massa"))
+    allowed = allowed.filter((rank) => [3, 5].includes(rank));
+  return allowed;
+}
+
+export function arenaRankValid(genome, rank, branchId) {
+  return (
+    Number.isInteger(rank) &&
+    ARENA_RANKS.includes(rank) &&
+    arenaAllowedRanks(genome, branchId).includes(rank)
+  );
+}
+
+export function arenaRankRestrictionReason(genome, rank, branchId) {
+  if (arenaRankValid(genome, rank, branchId)) return null;
+  const completed = completeArenaBranchGenome(genome, branchId);
+  if (completed.includes("Nanismo") && rank !== 0)
+    return "Nanismo força a forma Peão.";
+  if (completed.includes("Sacos Aéreos") && rank === 0)
+    return "Sacos Aéreos exige Cavalo ou forma superior.";
+  if (completed.includes("Predação em Massa") && ![3, 5].includes(rank))
+    return "Predação em Massa exige uma forma grande: Torre ou Rainha.";
+  if (branchId === "plant") {
+    if (!completed.includes("Multicelularismo") && ![0, 4].includes(rank))
+      return "O ramo vegetal precisa de Multicelularismo para formas derivadas.";
+    if (
+      completed.includes("Multicelularismo") &&
+      !completed.includes("Traqueófitas") &&
+      [3, 5].includes(rank)
+    )
+      return "Torre e Rainha vegetais exigem Traqueófitas.";
+  } else {
+    if (completed.includes("Artrópode") && [3, 5].includes(rank))
+      return "Artrópodes não podem assumir Torre ou Rainha.";
+    if (
+      [1, 2, 3, 5].includes(rank) &&
+      (!completed.includes("Locomoção Articulada") ||
+        (!completed.includes("Vertebrado") && !completed.includes("Artrópode")))
+    )
+      return "Formas derivadas animais exigem Locomoção Articulada e Vertebrado ou Artrópode.";
+  }
+  return "Esta forma é incompatível com o genoma selecionado.";
+}
+
+export function arenaPreferredRank(genome, branchId, preferred = 4) {
+  const allowed = arenaAllowedRanks(genome, branchId);
+  if (allowed.includes(preferred)) return preferred;
+  if (allowed.includes(4)) return 4;
+  return allowed[0] ?? 4;
+}
+
+export function arenaSetupSelectionValid(genome, rank, branchId) {
+  return arenaSetupGenomeValid(genome, branchId) &&
+    arenaRankValid(genome, rank, branchId);
+}
+
 export function arenaGenomeValid(genome, branchId = null) {
   const branch = ARENA_BRANCHES.find((candidate) => candidate.id === branchId),
     normalized = branch
@@ -309,17 +392,23 @@ export function arenaPresetGenome(branchId, presetId) {
 
 export function arenaProfile(genome, rank = 4) {
   const completed = completeArenaGenome(genome),
-    preferred = completed.includes("Fotossíntese")
-      ? "Fotossíntese"
+    branchId = completed.includes("Fotossíntese")
+      ? "plant"
       : completed.includes("Predação")
-        ? "Predação"
+        ? "animal"
         : null,
-    profile = {
-      rank,
-      traits: normalizeActiveTraits([BASAL, ...completed], preferred),
-      ancestry: [BASAL, ...completed],
-      genome: genomeFromTraits([BASAL, ...completed]),
-    };
+    preferred =
+      branchId === "plant"
+        ? "Fotossíntese"
+        : branchId === "animal"
+          ? "Predação"
+          : null;
+  const profile = {
+    rank,
+    traits: normalizeActiveTraits([BASAL, ...completed], preferred),
+    ancestry: [BASAL, ...completed],
+    genome: genomeFromTraits([BASAL, ...completed]),
+  };
   return syncGenomePhenotype(profile, preferred);
 }
 
@@ -343,6 +432,18 @@ export function randomArenaSide(seed = Date.now()) {
     const pool = archetypePool(branch.id);
     return pool[Math.floor(random() * pool.length)] ?? completeArenaBranchGenome([], branch.id);
   });
+}
+
+export function randomArenaSetupSide(seed = Date.now()) {
+  const random = lcg(seed),
+    genomes = randomArenaSide(seed);
+  return {
+    genomes,
+    ranks: genomes.map((genome, index) => {
+      const allowed = arenaAllowedRanks(genome, ARENA_BRANCHES[index].id);
+      return allowed[Math.floor(random() * allowed.length)] ?? 4;
+    }),
+  };
 }
 
 function counterTargets(opponentGenomes) {
@@ -415,7 +516,28 @@ export function arenaAISide(
   });
 }
 
-export function arenaInterventionCount(before, after) {
+export function arenaAISideSetup(
+  difficulty = "medium",
+  opponentSetup = null,
+  seed = Date.now(),
+) {
+  if (difficulty === "easy") return randomArenaSetupSide(seed);
+  const opponentGenomes = opponentSetup?.genomes ?? opponentSetup ?? null,
+    genomes = arenaAISide(difficulty, opponentGenomes, seed),
+    ranks = genomes.map((genome, index) => {
+      const branch = ARENA_BRANCHES[index],
+        allowed = arenaAllowedRanks(genome, branch.id);
+      if (difficulty !== "hard")
+        return arenaPreferredRank(genome, branch.id, 4);
+      const values = ARENA_BRANCH_RANK_VALUES[branch.id];
+      return [...allowed].sort(
+        (a, b) => (values[b] ?? 0) - (values[a] ?? 0) || b - a,
+      )[0] ?? 4;
+    });
+  return { genomes, ranks };
+}
+
+export function arenaInterventionCount(before, after, ranks = null) {
   let removed = 0,
     added = 0;
   for (let i = 0; i < 2; i++) {
@@ -439,13 +561,17 @@ export function arenaInterventionCount(before, after) {
     valid:
       removed === added &&
       removed <= ARENA_ENGINEERING_CHANGES &&
-      (after ?? []).every((genome, index) =>
-        arenaGenomeValid(genome, ARENA_BRANCHES[index]?.id ?? null),
-      ),
+      (after ?? []).every((genome, index) => {
+        const branchId = ARENA_BRANCHES[index]?.id ?? null;
+        return (
+          arenaGenomeValid(genome, branchId) &&
+          (!ranks || arenaRankValid(genome, ranks[index], branchId))
+        );
+      }),
   };
 }
 
-function swapToward(genome, wanted, branchId) {
+function swapToward(genome, wanted, branchId, rank = null) {
   const base = completeArenaBranchGenome(genome, branchId),
     wantedSet = new Set(wanted);
   for (const add of wanted) {
@@ -459,6 +585,7 @@ function swapToward(genome, wanted, branchId) {
       if (
         candidate.length === base.length &&
         arenaGenomeValid(candidate, branchId) &&
+        (rank === null || arenaRankValid(candidate, rank, branchId)) &&
         !candidate.includes(remove) &&
         candidate.includes(add)
       )
@@ -473,6 +600,7 @@ export function engineerArenaAISide(
   difficulty = "medium",
   opponentGenomes = null,
   seed = Date.now(),
+  ranks = null,
 ) {
   let result = ARENA_BRANCHES.map((branch, index) =>
     completeArenaBranchGenome(baseGenomes?.[index] ?? [], branch.id),
@@ -504,6 +632,7 @@ export function engineerArenaAISide(
       result[index],
       branchWanted,
       branch.id,
+      ranks?.[index] ?? null,
     );
   }
   return result;
