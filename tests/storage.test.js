@@ -191,7 +191,36 @@ test("current save schema preserves active phases and temporary event data", () 
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
 });
 
-test("deserialize migrates v17-v20 and rejects older or invalid saves", () => {
+test("v22 migration preserves the former Construtor de Nicho remediation as Zoorremediação", () => {
+  const legacy = createState(2301),
+    piece = legacy.pieces[0];
+  piece.traits = ["Multicelularismo", "Predação", "Escavador", "Construtor de Nicho"];
+  piece.ancestry = [...piece.traits];
+  piece.genome = genomeFromTraits(piece.traits);
+  legacy.historicalTraits = ["Escavador", "Construtor de Nicho"];
+  legacy.seenMutations = ["Construtor de Nicho"];
+  legacy.discoveries.mutations = ["Construtor de Nicho"];
+  legacy.version = 22;
+
+  const restored = deserialize(JSON.stringify(legacy)),
+    migrated = restored.pieces.find((candidate) => candidate.id === piece.id);
+  assert.equal(restored.version, STATE_VERSION);
+  assert.ok(migrated.traits.includes("Construtor de Nicho"));
+  assert.ok(migrated.traits.includes("Zoorremediação"));
+  assert.ok(migrated.ancestry.includes("Zoorremediação"));
+  assert.ok(
+    migrated.genome.Zoorremediação.every(
+      (allele) =>
+        allele.value === "derived" && allele.dominance === "dominant",
+    ),
+  );
+  assert.ok(restored.historicalTraits.includes("Zoorremediação"));
+  assert.ok(restored.seenMutations.includes("Zoorremediação"));
+  assert.ok(restored.discoveries.mutations.includes("Zoorremediação"));
+  assertState(restored);
+});
+
+test("deserialize migrates supported legacy saves and rejects older or invalid saves", () => {
   assert.throws(() => deserialize("{"), /inválido/i);
 
   const renamed = createState(20),
