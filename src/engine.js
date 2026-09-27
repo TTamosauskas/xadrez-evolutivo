@@ -1,4 +1,4 @@
-import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance, TRAITS } from "./constants.js";
+import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance, TRAITS, functionalSizeClass } from "./constants.js";
 import {
   activateOrigin,
   clone,
@@ -61,9 +61,13 @@ import {
   canParasitize,
   canParasitizeSelf,
   parasitismTargets,
+  biologicalProjectileTargets,
+  electricDischargeTargets,
+  feedingReachTargets,
 } from "./moves.js";
 import {
   reproduce,
+  metabolicReproductionCooldown,
   harvest,
   scatterSeeds,
   tickReproduction,
@@ -121,7 +125,11 @@ import {
 function applyChemicalCaptureDefense(state, dead, attacker) {
   if (!attacker || attacker.owner === dead.owner) return;
   if (has(dead, "Veneno")) {
-    attacker.venom = { remaining: 2, infectedTurn: state.turn };
+    attacker.venom = {
+      remaining: 2,
+      infectedTurn: state.turn,
+      source: "Veneno",
+    };
     return;
   }
   if (
@@ -173,7 +181,7 @@ export function context(state) {
       if (!force && !attacker && has(dead, "Regeneração") && !dead.regenerationUsed) {
         dead.regenerationUsed = true;
         dead.regenerationRestThroughRound = round(state) + 1;
-        if (reason === "Veneno") delete dead.venom;
+        if (["Veneno", "Peçonha"].includes(reason)) delete dead.venom;
         log(
           state,
           `${OWNERS[dead.owner]}: ♻️ Regeneração evitou a morte por ${reason}.`,
@@ -626,6 +634,7 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
   piece.r = r;
   piece.c = c;
   piece.stationarySinceRound = round(state);
+  piece.webCreatedStationarySinceRound = null;
   if (has(piece, "Mutação Disfuncional"))
     piece.lastMoveRound = round(state) + 1;
   exposePathogenCell(state, piece);
@@ -904,7 +913,40 @@ function offerSerotoninReposition(ctx, attacker, defense) {
   return false;
 }
 
-function finishFrustratedCapture(ctx, attacker, defense) {
+function inoculatePeconha(state, attacker, victim) {
+  if (
+    !attacker ||
+    !victim ||
+    attacker.owner === victim.owner ||
+    !has(attacker, "Peçonha") ||
+    distance(attacker, victim) !== 1
+  )
+    return false;
+  const current = victim.venom;
+  victim.venom = {
+    remaining: Math.min(current?.remaining ?? 2, 2),
+    infectedTurn: state.turn,
+    source: "Peçonha",
+  };
+  log(
+    state,
+    `${OWNERS[attacker.owner]}: 🦂 Peçonha foi inoculada em ${coord(victim.r, victim.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Peçonha",
+    "🦂 Peçonha inoculada: morte em 2 turnos próprios.",
+    {
+      pieceId: attacker.id,
+      outcome: "envenomed-target",
+      value: 2,
+    },
+  );
+  return true;
+}
+
+function finishFrustratedCapture(ctx, attacker, defense, victim = null) {
+  if (victim) inoculatePeconha(ctx.state, attacker, victim);
   if (offerSerotoninReposition(ctx, attacker, defense)) return;
   advanceTurn(ctx);
   settle(ctx);
@@ -1126,6 +1168,9 @@ function actionActorId(state, action) {
       "BUD",
       "PUPATE",
       "PARASITIZE",
+      "BIO_PROJECTILE",
+      "ELECTRODISCHARGE",
+      "FEEDING_REACH",
       "LAY_OVOVIVIPAROUS",
       "PARTHENOGENESIS",
     ].includes(action.type)
@@ -1272,7 +1317,10 @@ function advanceTurn(ctx) {
   for (const p of [...state.pieces])
     if (p.owner === acting && p.venom && p.venom.infectedTurn < before) {
       p.venom.remaining--;
-      if (p.venom.remaining <= 0 && !ctx.kill(p.id, "Veneno")) delete p.venom;
+      if (p.venom.remaining <= 0) {
+        const cause = p.venom.source === "Peçonha" ? "Peçonha" : "Veneno";
+        if (!ctx.kill(p.id, cause)) delete p.venom;
+      }
     }
   for (const p of state.pieces) {
     moveDirection(p);
@@ -1288,6 +1336,11 @@ function advanceTurn(ctx) {
   recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
+  state.chemicalHazards = (state.chemicalHazards ?? []).filter(
+    (entry) => entry.expiresTurn >= state.turn,
+  );
+  tickWebs(state);
+  matureWebs(state);
   state.trails = (state.trails ?? []).filter(
     (trail) => trail.expiresRound >= round(state),
   );
@@ -1869,6 +1922,267 @@ function moveHerd(ctx, leader, followers, origin, target) {
   return moving.length;
 }
 
+const SIZE_ORDER = Object.freeze({ small: 0, medium: 1, large: 2 });
+
+function resolveMassPredation(ctx, predator, primaryVictim) {
+  const state = ctx.state;
+  if (
+    !predator ||
+    !primaryVictim ||
+    !has(predator, "Predação em Massa") ||
+    functionalSizeClass(predator) !== "large" ||
+    SIZE_ORDER[functionalSizeClass(primaryVictim)] >=
+      SIZE_ORDER[functionalSizeClass(predator)]
+  )
+    return 0;
+
+  const candidates = state.pieces.filter(
+    (piece) =>
+      piece.owner !== predator.owner &&
+      piece.id !== primaryVictim.id &&
+      distance(piece, primaryVictim) === 1 &&
+      SIZE_ORDER[functionalSizeClass(piece)] <
+        SIZE_ORDER[functionalSizeClass(predator)],
+  );
+  let consumed = 0;
+  for (const prey of candidates) {
+    if (consumed >= 2) break;
+    if (random(state) >= 0.5) continue;
+    const cell = square(prey.r, prey.c);
+    ctx.reserved.add(cell);
+    const killed = ctx.kill(prey.id, "Predação em Massa", predator);
+    ctx.reserved.delete(cell);
+    if (!killed) continue;
+    consumed++;
+    markCarcass(state, cell);
+    markCaptureDisturbance(state, cell, predator.id);
+  }
+  if (consumed) {
+    log(
+      state,
+      `${OWNERS[predator.owner]}: 🐋 Predação em Massa engolfou ${consumed} presa(s) adicional(is).`,
+    );
+    emitPassiveEffect(
+      state,
+      "Predação em Massa",
+      `🐋 Predação em Massa: ${consumed} presa${consumed === 1 ? "" : "s"} adicional${consumed === 1 ? "" : "is"} engolfada${consumed === 1 ? "" : "s"}.`,
+      {
+        pieceId: predator.id,
+        outcome: "mass-predation",
+        value: consumed,
+      },
+    );
+  }
+  return consumed;
+}
+
+function matureWebs(state) {
+  const now = round(state);
+  for (const piece of state.pieces) {
+    if (
+      !has(piece, "Teia") ||
+      piece.webTrapped ||
+      !Number.isInteger(piece.stationarySinceRound) ||
+      now - piece.stationarySinceRound < 5 ||
+      piece.webCreatedStationarySinceRound === piece.stationarySinceRound
+    )
+      continue;
+    state.webs = (state.webs ?? []).filter(
+      (web) => web.sourceId !== piece.id,
+    );
+    state.webs.push({
+      sourceId: piece.id,
+      owner: piece.owner,
+      cell: square(piece.r, piece.c),
+      expiresRound: now + 6,
+    });
+    piece.webCreatedStationarySinceRound = piece.stationarySinceRound;
+    log(
+      state,
+      `${OWNERS[piece.owner]}: 🕸️ Teia foi estabelecida em ${coord(piece.r, piece.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Teia",
+      `🕸️ Teia estabelecida em ${coord(piece.r, piece.c)}.`,
+      { pieceId: piece.id, outcome: "web-created" },
+    );
+  }
+}
+
+function tickWebs(state) {
+  const now = round(state);
+  state.webs = (state.webs ?? []).filter(
+    (web) => web.expiresRound >= now,
+  );
+  for (const piece of state.pieces)
+    if (
+      piece.webTrapped &&
+      !state.webs.some(
+        (web) =>
+          web.sourceId === piece.webTrapped.sourceId &&
+          web.cell === piece.webTrapped.cell,
+      )
+    )
+      piece.webTrapped = null;
+}
+
+function resolveBiologicalProjectile(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    target = biologicalProjectileTargets(state, piece).find(
+      (candidate) => candidate.id === action.targetId,
+    );
+  if (!piece || !target) throw Error("Projétil Biológico indisponível.");
+
+  const cell = square(target.r, target.c);
+  state.chemicalHazards = (state.chemicalHazards ?? []).filter(
+    (entry) => entry.cell !== cell,
+  );
+  state.chemicalHazards.push({
+    sourceId: piece.id,
+    owner: piece.owner,
+    cell,
+    expiresTurn: state.turn + 2,
+  });
+  piece.nextReproductionRound = Math.max(
+    piece.nextReproductionRound ?? 0,
+    round(state) + metabolicReproductionCooldown(piece),
+  );
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🪲 Projétil Biológico tornou ${coord(target.r, target.c)} temporariamente hostil.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Projétil Biológico",
+    `🪲 Projétil Biológico tornou ${coord(target.r, target.c)} hostil.`,
+    { pieceId: piece.id, outcome: "temporary-hostility" },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveElectricDischarge(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    target = electricDischargeTargets(state, piece).find(
+      (candidate) => candidate.id === action.targetId,
+    );
+  if (!piece || !target) throw Error("Eletrodescarga indisponível.");
+
+  const cell = square(target.r, target.c),
+    killed = ctx.kill(target.id, "Eletrodescarga");
+  if (killed) {
+    markCarcass(state, cell);
+    state.lastSuccessfulCaptureRound = round(state);
+    state.offensiveStagnation = null;
+  }
+  const cooldown = metabolicReproductionCooldown(piece) * 3;
+  piece.nextReproductionRound = Math.max(
+    piece.nextReproductionRound ?? 0,
+    round(state) + cooldown,
+  );
+  log(
+    state,
+    `${OWNERS[piece.owner]}: ⚡ Eletrodescarga atingiu ${coord(target.r, target.c)}; recuperação metabólica ${cooldown} rodada(s).`,
+  );
+  emitPassiveEffect(
+    state,
+    "Eletrodescarga",
+    `⚡ Eletrodescarga: recuperação metabólica por ${cooldown} rodada(s).`,
+    {
+      pieceId: piece.id,
+      outcome: killed ? "electrical-kill" : "electrical-hit",
+      value: cooldown,
+    },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveFeedingReach(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    option = feedingReachTargets(state, piece).find(
+      (candidate) =>
+        candidate.targetId === action.targetId &&
+        candidate.landingR === action.landingR &&
+        candidate.landingC === action.landingC &&
+        candidate.trait === action.trait,
+    ),
+    victim = state.pieces.find(
+      (candidate) => candidate.id === option?.targetId,
+    );
+  if (!piece || !option || !victim)
+    throw Error("Alcance alimentar indisponível.");
+
+  const origin = { r: piece.r, c: piece.c };
+  state.movementTrace = {
+    pieceId: piece.id,
+    owner: piece.owner,
+    rank: piece.rank,
+    origin,
+    path: (option.path ?? [[option.landingR, option.landingC]]).map(
+      ([r, c]) => ({ r, c }),
+    ),
+    stop: { r: option.landingR, c: option.landingC },
+    outcome: "moved",
+    kind: "move",
+    jumpedCell: null,
+    knightCorrection: false,
+  };
+  const survived = reactiveRelocation(
+    ctx,
+    piece,
+    option.landingR,
+    option.landingC,
+    `deslocamento por ${option.trait}`,
+  );
+  if (
+    !survived ||
+    !state.pieces.some((candidate) => candidate.id === piece.id)
+  ) {
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+
+  const victimCell = square(victim.r, victim.c),
+    killed = ctx.kill(victim.id, option.trait, piece);
+  let born = 0;
+  if (killed) {
+    state.lastSuccessfulCaptureRound = round(state);
+    state.offensiveStagnation = null;
+    if (predatoryReproductionAvailable(piece, victim))
+      born = reproduce(ctx, piece, null, "predação", {
+        resourceKind: "prey",
+      });
+    if (!born) markCarcass(state, victimCell);
+    log(
+      state,
+      `${OWNERS[piece.owner]}: ${TRAITS[option.trait][0]} ${option.trait} capturou uma presa adjacente a partir de ${coord(piece.r, piece.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      option.trait,
+      `${TRAITS[option.trait][0]} ${option.trait} alcançou uma presa adjacente.`,
+      { pieceId: piece.id, outcome: "feeding-reach-capture" },
+    );
+  }
+  if (born > 0 && deferReproductionPlacement(state, piece)) return;
+  completeMove(ctx, piece, false, false);
+}
+
 function executeMove(ctx, action) {
   const state = ctx.state,
     p = state.pieces.find(
@@ -1876,8 +2190,8 @@ function executeMove(ctx, action) {
     );
   const matchingTargets = movesFor(state, p).filter(
       (t) => t.r === action.r && t.c === action.c,
-    ),
-    target =
+    );
+  let target =
       matchingTargets.find(
         (t) =>
           t.lateralSwapId ||
@@ -1887,6 +2201,66 @@ function executeMove(ctx, action) {
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
+  if (target.webEscape) {
+    const trapped = p.webTrapped;
+    state.webs = (state.webs ?? []).filter(
+      (web) =>
+        !(
+          trapped &&
+          web.sourceId === trapped.sourceId &&
+          web.cell === trapped.cell
+        ),
+    );
+    p.webTrapped = null;
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🕸️ a criatura gastou a ação para romper a Teia.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Teia",
+      "🕸️ A criatura rompeu a Teia e se libertou.",
+      { pieceId: p.id, outcome: "escaped-web" },
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+  const webIndex = (target.path ?? []).findIndex(([r, c]) =>
+    (state.webs ?? []).some(
+      (web) =>
+        web.owner !== p.owner &&
+        web.cell === square(r, c) &&
+        web.expiresRound >= round(state),
+    ),
+  );
+  if (webIndex >= 0) {
+    const [wr, wc] = target.path[webIndex],
+      web = (state.webs ?? []).find(
+        (entry) =>
+          entry.owner !== p.owner &&
+          entry.cell === square(wr, wc) &&
+          entry.expiresRound >= round(state),
+      ),
+      finalCell = wr === target.r && wc === target.c;
+    if (!finalCell)
+      target = {
+        ...target,
+        r: wr,
+        c: wc,
+        path: target.path.slice(0, webIndex + 1),
+        capture: false,
+        cannibal: false,
+        filialCannibal: false,
+        matriphagy: false,
+        eggCapture: null,
+        seedCapture: null,
+        fruitConsume: null,
+        synzooCollect: null,
+      };
+    target.webTriggeredSourceId = web?.sourceId ?? null;
+    target.noContinuation = true;
+  }
   const movementDistance = distance(p, target),
     jumpedPiece = target.jumpedPieceId
       ? state.pieces.find((piece) => piece.id === target.jumpedPieceId)
@@ -2277,7 +2651,7 @@ function executeMove(ctx, action) {
       "🐠 Cuidado Parental protegeu a cria.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    finishFrustratedCapture(ctx, p, "Cuidado Parental");
+    finishFrustratedCapture(ctx, p, "Cuidado Parental", victim);
     return;
   }
   if (
@@ -2492,7 +2866,7 @@ function executeMove(ctx, action) {
         "🌙 Notívago evitou a captura.",
         { pieceId: victim.id, outcome: "prevented-capture" },
       );
-      finishFrustratedCapture(ctx, p, "Notívago");
+      finishFrustratedCapture(ctx, p, "Notívago", victim);
       return;
     }
   } else if (
@@ -2624,7 +2998,7 @@ function executeMove(ctx, action) {
       "💨 Velocidade evitou a captura.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    finishFrustratedCapture(ctx, p, "Velocidade");
+    finishFrustratedCapture(ctx, p, "Velocidade", victim);
     return;
   }
   if (
@@ -2645,7 +3019,7 @@ function executeMove(ctx, action) {
         `${icon} ${blockingTrait} evitou a captura de contato.`,
         { pieceId: victim.id, outcome: "prevented-contact-capture" },
       );
-      finishFrustratedCapture(ctx, p, blockingTrait);
+      finishFrustratedCapture(ctx, p, blockingTrait, victim);
       return;
     }
   }
@@ -2678,7 +3052,7 @@ function executeMove(ctx, action) {
       "🦏 Pele grossa bloqueou a captura.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    finishFrustratedCapture(ctx, p, "Pele grossa");
+    finishFrustratedCapture(ctx, p, "Pele grossa", victim);
     return;
   }
   if (
@@ -2710,7 +3084,7 @@ function executeMove(ctx, action) {
       "🪵 Madeira bloqueou a captura.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    finishFrustratedCapture(ctx, p, "Madeira");
+    finishFrustratedCapture(ctx, p, "Madeira", victim);
     return;
   }
   if (
@@ -2729,7 +3103,7 @@ function executeMove(ctx, action) {
       "🐧 Monogamia ajudou a evitar a captura.",
       { pieceId: victim.id, outcome: "prevented-capture" },
     );
-    finishFrustratedCapture(ctx, p, "Monogamia");
+    finishFrustratedCapture(ctx, p, "Monogamia", victim);
     return;
   }
   if (
@@ -2749,7 +3123,7 @@ function executeMove(ctx, action) {
       "🐧 Cuidado biparental absorveu a captura.",
       { pieceId: victim.id, outcome: "guarded-offspring" },
     );
-    finishFrustratedCapture(ctx, p, "cuidado biparental");
+    finishFrustratedCapture(ctx, p, "cuidado biparental", victim);
     return;
   }
   if (
@@ -2866,7 +3240,26 @@ function executeMove(ctx, action) {
     delete p.decompositionImmunity;
   p.r = target.r;
   p.c = target.c;
-  if (!target.stay) p.stationarySinceRound = round(state);
+  if (!target.stay) {
+    p.stationarySinceRound = round(state);
+    p.webCreatedStationarySinceRound = null;
+  }
+  if (target.webTriggeredSourceId) {
+    p.webTrapped = {
+      sourceId: target.webTriggeredSourceId,
+      cell: square(p.r, p.c),
+    };
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🕸️ a criatura ficou presa na Teia em ${coord(p.r, p.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Teia",
+      `🕸️ Teia prendeu a criatura em ${coord(p.r, p.c)}.`,
+      { pieceId: p.id, outcome: "trapped-in-web" },
+    );
+  }
   exposePathogenCell(state, p);
   moveDirection(p);
   if (target.crawler) {
@@ -2993,6 +3386,8 @@ function executeMove(ctx, action) {
       return;
     }
   }
+
+  if (capturedEnemy) resolveMassPredation(ctx, p, capturedEnemy);
 
   if (
     !pieceCapture &&
@@ -4054,6 +4449,12 @@ export function transition(previous, action) {
     resolvePupation(ctx, action);
   else if (action.type === "PARASITIZE" && state.phase === "move")
     resolveParasitism(ctx, action);
+  else if (action.type === "BIO_PROJECTILE" && state.phase === "move")
+    resolveBiologicalProjectile(ctx, action);
+  else if (action.type === "ELECTRODISCHARGE" && state.phase === "move")
+    resolveElectricDischarge(ctx, action);
+  else if (action.type === "FEEDING_REACH" && state.phase === "move")
+    resolveFeedingReach(ctx, action);
   else if (
     action.type === "LAY_OVOVIVIPAROUS" &&
     state.phase === "move"
