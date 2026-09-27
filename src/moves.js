@@ -62,6 +62,18 @@ export const dysfunctionalResting = (state, p) =>
 export const regenerationResting = (state, p) =>
   Number.isInteger(p.regenerationRestThroughRound) &&
   round(state) <= p.regenerationRestThroughRound;
+export const neurodivergenceResting = (state, p) =>
+  Number.isInteger(p?.neurodivergenceRestThroughRound) &&
+  round(state) <= p.neurodivergenceRestThroughRound;
+export const adjacentAlliesCount = (state, p) =>
+  p
+    ? state.pieces.filter(
+        (candidate) =>
+          candidate.id !== p.id &&
+          candidate.owner === p.owner &&
+          distance(candidate, p) === 1,
+      ).length
+    : 0;
 export const decompositionImmune = (state, p) =>
   p?.decompositionImmunity?.cell === square(p.r, p.c) &&
   state.turn <= p.decompositionImmunity.throughTurn;
@@ -83,6 +95,7 @@ export const pupating = (state, p) =>
 export const resting = (state, p) =>
   dysfunctionalResting(state, p) ||
   regenerationResting(state, p) ||
+  neurodivergenceResting(state, p) ||
   pupating(state, p);
 
 export function serotoninRepositionTargets(state) {
@@ -211,6 +224,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     !p ||
     state.result ||
     !state.pieces.some((x) => x.id === p.id) ||
+    (state.neurofocus && state.neurofocus !== p.id) ||
     ecologicalDomainBlocked(state, p.owner, p.r, p.c) ||
     resting(state, p) ||
     dormant(state, p)
@@ -1464,6 +1478,8 @@ function pieceEvaluationState(state, piece) {
     chainTrait: null,
     chainOptions: [],
     chainOrigin: null,
+    neurofocus: null,
+    neurodivergenceAction: null,
   };
 }
 
@@ -1480,7 +1496,11 @@ export function actionsForPiece(
     return [];
   if (
     !ignoreTurn &&
-    (state.phase !== "move" || piece.owner !== state.current)
+    (
+      state.phase !== "move" ||
+      piece.owner !== state.current ||
+      (state.neurofocus && state.neurofocus !== piece.id)
+    )
   )
     return [];
 
@@ -1594,6 +1614,15 @@ export function pieceActionState(state, piece) {
       remainingRounds: Math.max(
         1,
         piece.regenerationRestThroughRound - currentRound + 1,
+      ),
+    };
+  if (neurodivergenceResting(state, piece))
+    return {
+      waiting: true,
+      reason: "Sobrecarga por Neurodivergência",
+      remainingRounds: Math.max(
+        1,
+        piece.neurodivergenceRestThroughRound - currentRound + 1,
       ),
     };
   if (dysfunctionalResting(state, piece))

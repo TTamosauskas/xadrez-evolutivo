@@ -58,6 +58,181 @@ test("new loci keep one active evasion, offspring orientation and cognitive phen
     has({ traits: ["Neocórtex Desenvolvido"] }, "Córtex Pré-Frontal"),
     true,
   );
+  assert.deepEqual(
+    normalizeActiveTraits([
+      "Neocórtex Desenvolvido",
+      "Neurodivergência",
+    ]),
+    ["Neocórtex Desenvolvido", "Neurodivergência"],
+  );
+});
+
+test("Neurodivergência grants exactly one full second action when starting without adjacent allies", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 4,
+      traits: ["Neurodivergência"],
+    },
+    { owner: "blue", r: 0, c: 0, rank: 4 },
+    { owner: "amber", r: 0, c: 7, rank: 4 },
+  ]);
+  const actor = s.pieces[0],
+    otherBlue = s.pieces[1];
+
+  s = simulate(s, move(actor, 4, 5));
+  assert.equal(s.current, "blue");
+  assert.equal(s.turn, 0);
+  assert.equal(s.neurofocus, actor.id);
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Neurodivergência" &&
+        effect.outcome === "neurodivergent-hyperfocus",
+    ),
+  );
+  assert.ok(
+    legalActions(s).every(
+      (action) =>
+        (action.id ?? action.parentId ?? actor.id) === actor.id,
+    ),
+  );
+  assert.equal(
+    legalActions(s).some(
+      (action) => action.id === otherBlue.id || action.parentId === otherBlue.id,
+    ),
+    false,
+  );
+
+  const focused = s.pieces.find((piece) => piece.id === actor.id);
+  s = simulate(s, move(focused, 4, 6));
+  assert.equal(s.current, "amber");
+  assert.equal(s.turn, 1);
+  assert.equal(s.neurofocus, null);
+  assert.equal(s.neurodivergenceAction, null);
+  assertState(s);
+});
+
+test("Neurodivergência is neutral with exactly one adjacent ally", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 4,
+      traits: ["Neurodivergência"],
+    },
+    { owner: "blue", r: 4, c: 5, rank: 4 },
+    { owner: "amber", r: 0, c: 7, rank: 4 },
+  ]);
+  const actor = s.pieces[0];
+  s = simulate(s, move(actor, 3, 4));
+  const moved = s.pieces.find((piece) => piece.id === actor.id);
+  assert.equal(s.current, "amber");
+  assert.equal(s.turn, 1);
+  assert.equal(s.neurofocus, null);
+  assert.equal(moved.neurodivergenceRestThroughRound, null);
+  assertState(s);
+});
+
+test("Neurodivergência overload pauses two own turns after acting with two adjacent allies", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 4,
+      traits: ["Neurodivergência"],
+    },
+    { owner: "blue", r: 4, c: 5, rank: 4 },
+    { owner: "blue", r: 5, c: 4, rank: 4 },
+    { owner: "amber", r: 0, c: 7, rank: 4 },
+  ]);
+  const actorId = s.pieces[0].id;
+  s = simulate(s, move(s.pieces[0], 3, 4));
+  let actor = s.pieces.find((piece) => piece.id === actorId);
+  assert.equal(actor.neurodivergenceRestThroughRound, 2);
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Neurodivergência" &&
+        effect.outcome === "neurodivergent-overload" &&
+        effect.value === 2,
+    ),
+  );
+
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.current, "blue");
+  assert.equal(
+    legalActions(s).some(
+      (action) => action.id === actorId || action.parentId === actorId,
+    ),
+    false,
+  );
+  s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.current, "blue");
+  assert.equal(
+    legalActions(s).some(
+      (action) => action.id === actorId || action.parentId === actorId,
+    ),
+    false,
+  );
+  s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
+  actor = s.pieces.find((piece) => piece.id === actorId);
+  assert.equal(s.current, "blue");
+  assert.ok(
+    legalActions(s).some(
+      (action) => action.id === actorId || action.parentId === actorId,
+    ),
+  );
+  assertState(s);
+});
+
+test("Neocórtex Desenvolvido reduces Neurodivergência overload from two own turns to one", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 4,
+      traits: ["Neurodivergência", "Neocórtex Desenvolvido"],
+    },
+    { owner: "blue", r: 4, c: 5, rank: 4 },
+    { owner: "blue", r: 5, c: 4, rank: 4 },
+    { owner: "amber", r: 0, c: 7, rank: 4 },
+  ]);
+  const actorId = s.pieces[0].id;
+  s = simulate(s, move(s.pieces[0], 3, 4));
+  const actor = s.pieces.find((piece) => piece.id === actorId);
+  assert.equal(actor.neurodivergenceRestThroughRound, 1);
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Neocórtex Desenvolvido" &&
+        effect.outcome === "reduced-neurodivergent-overload",
+    ),
+  );
+
+  s = simulate(s, { type: "PASS" });
+  assert.equal(
+    legalActions(s).some(
+      (action) => action.id === actorId || action.parentId === actorId,
+    ),
+    false,
+  );
+  s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
+  assert.equal(s.current, "blue");
+  assert.ok(
+    legalActions(s).some(
+      (action) => action.id === actorId || action.parentId === actorId,
+    ),
+  );
+  assertState(s);
 });
 
 test("Serotonina opens an optional reposition after a resisted capture", () => {

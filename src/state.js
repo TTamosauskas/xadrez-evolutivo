@@ -450,6 +450,7 @@ export function newPiece(state, owner, r, c, source = {}) {
       lifetimeReproductions: source.lifetimeReproductions ?? 0,
       lifetimeOffspring: source.lifetimeOffspring ?? 0,
       semelparityDeathPending: source.semelparityDeathPending ?? false,
+      neurodivergenceRestThroughRound: source.neurodivergenceRestThroughRound ?? null,
       stationarySinceRound: source.stationarySinceRound ?? bornRound,
       budded: source.budded ?? false,
       colonyId: source.colonyId ?? null,
@@ -1024,6 +1025,8 @@ export function createState(seed = Date.now(), options = {}) {
     chainTrait: null,
     chainOptions: [],
     chainOrigin: null,
+    neurofocus: null,
+    neurodivergenceAction: null,
     partner: null,
     manipulation: null,
     building: null,
@@ -2502,6 +2505,25 @@ export function assertState(state) {
     !Number.isInteger(state.rng)
   )
     throw Error("Turno inválido.");
+  if (
+    !(
+      state.neurofocus === null ||
+      (integer(state.neurofocus, 1) &&
+        state.pieces.some(
+          (piece) =>
+            piece.id === state.neurofocus && piece.owner === state.current,
+        ))
+    ) ||
+    !(
+      state.neurodivergenceAction === null ||
+      (state.neurodivergenceAction &&
+        integer(state.neurodivergenceAction.id, 1) &&
+        ["primary", "second"].includes(state.neurodivergenceAction.stage) &&
+        typeof state.neurodivergenceAction.hyperfocus === "boolean" &&
+        integer(state.neurodivergenceAction.overloadTurns, 0, 2))
+    )
+  )
+    throw Error("Estado de Neurodivergência inválido.");
   const chainTraits = state.chainOptions?.length
     ? state.chainOptions
     : state.chainTrait && state.chainTrait !== "Locomoção Especial"
@@ -2681,6 +2703,9 @@ export function assertState(state) {
         typeof p.regenerationUsed !== "boolean") ||
       (p.regenerationRestThroughRound !== undefined &&
         !integer(p.regenerationRestThroughRound)) ||
+      (p.neurodivergenceRestThroughRound !== undefined &&
+        p.neurodivergenceRestThroughRound !== null &&
+        !integer(p.neurodivergenceRestThroughRound)) ||
       (p.photosynthesisCell !== undefined &&
         !integer(p.photosynthesisCell, 0, 63)) ||
       (p.photosynthesisSinceTurn !== undefined &&

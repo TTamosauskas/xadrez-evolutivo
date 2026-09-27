@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 23;
+export const STATE_VERSION = 24;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -304,6 +304,10 @@ export const TRAITS = {
   "Córtex Pré-Frontal": [
     "🤔",
     "Ao selecionar a peça, destaca a posição legal com melhor potencial ofensivo e a posição legal com melhor segurança defensiva.",
+  ],
+  Neurodivergência: [
+    "♾️",
+    "Se iniciar o turno sem aliados nas 8 casas adjacentes, entra em Hiperfoco e pode realizar uma segunda ação completa consecutiva com a mesma criatura. Se iniciar com 2 ou mais aliados adjacentes, após agir entra em Sobrecarga por 2 turnos próprios; Neocórtex Desenvolvido reduz a pausa para 1.",
   ],
   "Neocórtex Desenvolvido": [
     "🧠",

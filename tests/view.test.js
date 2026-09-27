@@ -1917,6 +1917,31 @@ test("Polegar Opositor renders colored adjacent transfer choices", () => {
   dom.window.close();
 });
 
+test("Neurodivergência legend distinguishes Hiperfoco and Sobrecarga", () => {
+  const dom = setup(),
+    s = createState(2404),
+    p = s.pieces[0];
+  p.traits = ["Neurodivergência"];
+  p.ancestry = ["Respiração anaeróbia", "Neurodivergência"];
+  s.neurofocus = p.id;
+
+  render(dom.window.document, s, { selected: p.id });
+  let legend = dom.window.document.getElementById("board-legend").textContent;
+  assert.match(legend, /Hiperfoco · 2ª ação/);
+  assert.match(dom.window.document.getElementById("turn").textContent, /Hiperfoco/);
+
+  s.neurofocus = null;
+  p.neurodivergenceRestThroughRound = 2;
+  render(dom.window.document, s, { selected: p.id });
+  legend = dom.window.document.getElementById("board-legend").textContent;
+  assert.match(legend, /Sobrecarga · sem ação/);
+  assert.match(
+    dom.window.document.getElementById("selected").textContent,
+    /Sobrecarga|sobrecarga/,
+  );
+  dom.window.close();
+});
+
 test("application UI starts with the Hadean common ancestor, then plays division, saves and resets", async () => {
   const dom = setup(),
     w = dom.window;

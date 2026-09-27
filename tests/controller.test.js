@@ -458,6 +458,54 @@ test("Neocórtex rollback survives the opponent response and restores determinis
   c.dispose();
 });
 
+test("Neocórtex rollback treats both Hiperfoco actions as the same observed turn", () => {
+  const s = fixture(
+    [
+      {
+        owner: "blue",
+        r: 4,
+        c: 0,
+        rank: 4,
+        traits: ["Neurodivergência", "Neocórtex Desenvolvido"],
+      },
+      { owner: "blue", r: 7, c: 0, rank: 4 },
+      { owner: "amber", r: 0, c: 7, rank: 4 },
+    ],
+    2403,
+  );
+  const c = new Controller(s, { render: () => {} }),
+    before = clone(c.state),
+    actorId = c.state.pieces[0].id;
+
+  assert.equal(
+    c.dispatch({ type: "MOVE", id: actorId, r: 4, c: 1 }),
+    true,
+  );
+  assert.equal(c.state.turn, before.turn);
+  assert.equal(c.state.current, "blue");
+  assert.equal(c.state.neurofocus, actorId);
+  assert.equal(c.canUndoNeocortex(), false);
+
+  assert.equal(
+    c.dispatch({ type: "MOVE", id: actorId, r: 4, c: 2 }),
+    true,
+  );
+  assert.equal(c.state.current, "amber");
+  assert.equal(c.canUndoNeocortex(), true);
+
+  const amber = c.state.pieces.find((piece) => piece.owner === "amber");
+  assert.equal(
+    c.dispatch({ type: "MOVE", id: amber.id, r: 0, c: 6 }),
+    true,
+  );
+  assert.equal(c.state.current, "blue");
+  assert.equal(c.undoNeocortex(), true);
+  const restored = clone(c.state);
+  restored.revision = before.revision;
+  assert.deepEqual(restored, before);
+  c.dispose();
+});
+
 test("native browser timers are called without binding the controller as their receiver", () => {
   const originalSet = globalThis.setTimeout,
     originalClear = globalThis.clearTimeout;

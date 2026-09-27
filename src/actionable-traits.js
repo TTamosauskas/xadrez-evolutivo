@@ -19,6 +19,8 @@ import {
   movesFor,
   actionsForPiece,
   nicheConstructionTargets,
+  adjacentAlliesCount,
+  neurodivergenceResting,
   dormant,
   pieceActionState,
 } from "./moves.js";
@@ -530,6 +532,20 @@ function addActiveStateTraits(state, piece, traits) {
     traits.add("Extremófitas");
 
   if (buddingCanProgress(state, piece)) traits.add("Brotamento");
+
+  if (
+    has(piece, "Neurodivergência") &&
+    (
+      state.neurofocus === piece.id ||
+      neurodivergenceResting(state, piece) ||
+      (
+        state.phase === "move" &&
+        piece.owner === state.current &&
+        adjacentAlliesCount(state, piece) !== 1
+      )
+    )
+  )
+    traits.add("Neurodivergência");
 
   if (
     state.phase === "move" &&

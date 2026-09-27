@@ -1548,6 +1548,41 @@ test("Coprofagia is a Cretaceous predatory specialization incompatible with Mixo
   assert.ok(!mutated.includes("Mixotrofia"));
 });
 
+test("Neurodivergência is an optional Neogene specialization of spatial and prefrontal cognition", () => {
+  const prior = GEOLOGICAL_STAGES.slice(
+      0,
+      GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "neogene"),
+    ).flatMap((stage) => stage.required),
+    s = createState(2402, {
+      geologicalStage: "neogene",
+      historicalTraits: prior,
+    }),
+    p = s.pieces[0];
+
+  p.traits = ["Multicelularismo", "Predação", "Neocórtex Desenvolvido"];
+  p.ancestry = [
+    ...new Set([
+      ...(p.ancestry ?? []),
+      "Percepção Espacial",
+      "Polegar Opositor",
+      "Córtex Pré-Frontal",
+    ]),
+  ];
+
+  assert.equal(TRAIT_STAGE.Neurodivergência, "neogene");
+  assert.equal(traitUnlocked(s, "Neurodivergência", p), true);
+  assert.equal(
+    periodCompletionInnovations(s).includes("Neurodivergência"),
+    false,
+  );
+
+  const missingSpatial = {
+    ...p,
+    ancestry: p.ancestry.filter((trait) => trait !== "Percepção Espacial"),
+  };
+  assert.equal(traitUnlocked(s, "Neurodivergência", missingSpatial), false);
+});
+
 test("Paleogene waits for reachable period innovations instead of auto-completing", () => {
   const prior = GEOLOGICAL_STAGES.slice(
     0,

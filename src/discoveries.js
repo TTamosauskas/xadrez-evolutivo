@@ -171,6 +171,7 @@ const mutationTopics = {
   "Mimetismo": ["Mimetismo", "Mimetismo ocorre quando um organismo se assemelha a outro ser ou sinal biológico, alterando a percepção de predadores ou outras espécies."],
   "Polegar Opositor": ["Polegar opositor", "Um polegar oponível amplia a capacidade de agarrar e manipular objetos com precisão."],
   "Córtex Pré-Frontal": ["Córtex pré-frontal", "Regiões pré-frontais participam de planejamento, avaliação de alternativas e controle do comportamento; no jogo, a característica destaca posições ofensivas e defensivas promissoras sem executar a decisão pelo jogador."],
+  Neurodivergência: ["Neurodiversidade", "Neurodivergência é um termo amplo para variações no funcionamento neurocognitivo. Pessoas neurodivergentes são muito diversas e não compartilham uma única combinação de capacidades ou dificuldades; no jogo, essa diversidade é abstraída apenas como um contraste possível entre hiperfoco em baixa densidade social e sobrecarga em alta densidade de estímulos."],
   "Neocórtex Desenvolvido": ["Neocórtex", "O neocórtex é uma região do córtex cerebral dos mamíferos associada à integração sensorial e a funções cognitivas complexas."],
   "Esterilidade": ["Esterilidade", "Esterilidade é a incapacidade de produzir descendentes viáveis por causas genéticas, fisiológicas ou ambientais."],
   "Insuficiência Respiratória": ["Insuficiência respiratória", "Comprometimento respiratório reduz a eficiência das trocas gasosas e do suprimento de oxigênio; no jogo, isso prolonga a recuperação metabólica entre reproduções."],

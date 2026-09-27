@@ -390,6 +390,7 @@ export const TRAIT_STAGE = {
   "Polegar Opositor": "neogene",
   Bipedalismo: "neogene",
   "Córtex Pré-Frontal": "neogene",
+  Neurodivergência: "neogene",
   Chifre: "neogene",
   "Antropização": "quaternary",
   "Plantas Domesticadas": "quaternary",
@@ -656,6 +657,9 @@ export const TRAIT_DEPENDENCIES = {
   },
   "Antropização": { lineage: ["Neocórtex Desenvolvido"] },
   "Córtex Pré-Frontal": { lineage: ["Polegar Opositor"] },
+  Neurodivergência: {
+    lineage: ["Córtex Pré-Frontal", "Percepção Espacial"],
+  },
   "Neocórtex Desenvolvido": { lineage: ["Córtex Pré-Frontal"] },
   Sociabilidade: { lineage: ["Incubação"] },
   Manada: { lineage: ["Sociabilidade"] },
@@ -922,6 +926,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Construtor de Nicho",
   "Zoorremediação",
   "Polegar Opositor",
+  "Neurodivergência",
   "Neocórtex Desenvolvido",
   "Antropização",
   "Animais Domésticos",
@@ -989,6 +994,7 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Penas: "predation",
   Roedor: "predation",
   Zoorremediação: "predation",
+  Neurodivergência: "predation",
   Endozoocoria: "photosynthesis",
   Capsaicina: "photosynthesis",
   Epizoocoria: "photosynthesis",
@@ -1362,6 +1368,7 @@ const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
   "Mirmecocoria",
   "Roedor",
   "Zoorremediação",
+  "Neurodivergência",
 ]);
 
 export function periodCompletionInnovations(state) {
