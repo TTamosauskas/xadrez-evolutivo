@@ -936,6 +936,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Tanatose",
   "Ofuscamento por movimento",
   "Mimetismo Agressivo",
+  "Tropismo",
   "Forrageamento",
   "Hierarquia",
   "Superorganismo",
