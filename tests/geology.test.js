@@ -39,6 +39,7 @@ import {
   createPeriodState,
   createState,
   createSuccessorState,
+  strongestSurvivor,
   newPiece,
   registerDiscoveries,
   restoreAquaticFertility,
@@ -775,7 +776,7 @@ test("unfinished reachable optional innovations add cycles to the same period", 
   assert.equal(stageComplete(s), true);
 });
 
-test("Earth canonical founders stay Kings until Primitive Locomotion is completed", () => {
+test("Earth successors carry the strongest living form while fresh period starts keep canonical chronology", () => {
   const archean = createState(198, {
     scenario: "earth",
     geologicalStage: "archean",
@@ -786,10 +787,44 @@ test("Earth canonical founders stay Kings until Primitive Locomotion is complete
   archean.result = { winner: "blue", reason: "teste" };
   archean.phase = "over";
 
-  const secondArchean = createSuccessorState(archean, 199);
+  const bestPhoto =
+      strongestSurvivor(
+        archean,
+        "blue",
+        (piece) => piece.traits.includes("Fotossíntese"),
+      ).piece ??
+      strongestSurvivor(
+        archean,
+        null,
+        (piece) => piece.traits.includes("Fotossíntese"),
+      ).piece,
+    bestNonPhoto =
+      strongestSurvivor(
+        archean,
+        "blue",
+        (piece) => !piece.traits.includes("Fotossíntese"),
+      ).piece ??
+      strongestSurvivor(
+        archean,
+        null,
+        (piece) => !piece.traits.includes("Fotossíntese"),
+      ).piece,
+    secondArchean = createSuccessorState(archean, 199);
+
   assert.equal(secondArchean.geologicalStage, "archean");
   assert.equal(secondArchean.cycle, 2);
-  assert.ok(secondArchean.pieces.every((piece) => piece.rank === 4));
+  if (bestPhoto)
+    assert.ok(
+      secondArchean.pieces
+        .filter((piece) => piece.traits.includes("Fotossíntese"))
+        .every((piece) => piece.rank === bestPhoto.rank),
+    );
+  if (bestNonPhoto)
+    assert.ok(
+      secondArchean.pieces
+        .filter((piece) => !piece.traits.includes("Fotossíntese"))
+        .every((piece) => piece.rank === bestNonPhoto.rank),
+    );
 
   const proterozoic = createPeriodState("proterozoic", 200),
     ediacaran = createPeriodState("ediacaran", 201),
@@ -873,28 +908,34 @@ test("a photosynthetic winner also gives both sides the strongest non-photosynth
   );
 });
 
-test("without a distinct ecological counterpart the dominant founder still seeds both sides", () => {
+test("a missing ecological branch is restored while the strongest living counterpart is preserved", () => {
   const s = createState(123);
   s.pieces = [];
   s.nextId = 1;
   s.pieces.push(
     newPiece(s, "blue", 7, 0, { rank: 4, traits: ["Predação"] }),
-    newPiece(s, "blue", 7, 1, { rank: 4, traits: ["Predação"] }),
-    newPiece(s, "amber", 0, 0, { rank: 4, traits: [] }),
+    newPiece(s, "blue", 7, 1, { rank: 1, traits: ["Predação"] }),
+    newPiece(s, "amber", 0, 0, { rank: 0, traits: [] }),
   );
   s.result = { winner: "blue", reason: "teste" };
   s.phase = "over";
 
   const next = createSuccessorState(s, 124);
-  assert.ok(
-    next.pieces.every(
-      (piece) =>
-        piece.rank === 4 &&
-        piece.traits.includes("Respiração anaeróbia") &&
-        piece.traits.includes("Predação") &&
-        piece.traits.length === 2,
-    ),
-  );
+  assert.equal(next.pieces.length, 4);
+  for (const owner of ["blue", "amber"]) {
+    const founders = next.pieces.filter((piece) => piece.owner === owner);
+    assert.equal(founders.length, 2);
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Fotossíntese")).length,
+      1,
+    );
+    const nonPhoto = founders.find(
+      (piece) => !piece.traits.includes("Fotossíntese"),
+    );
+    assert.ok(nonPhoto);
+    assert.ok(nonPhoto.traits.includes("Predação"));
+    assert.equal(nonPhoto.rank, 1);
+  }
 });
 
 test("late-period founders separate compact active phenotype from full ancestry", () => {
