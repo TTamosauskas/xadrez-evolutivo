@@ -698,6 +698,16 @@ function movementDazzleReady(state, victim) {
   return allies.length >= 2 && proteanEscapeCells(state, victim).length > 0;
 }
 
+function cooperativeHunters(state, attacker, victim) {
+  if (!attacker || !victim || !has(attacker, "Caça Cooperativa")) return [];
+  return state.pieces.filter(
+    (piece) =>
+      piece.owner === attacker.owner &&
+      has(piece, "Caça Cooperativa") &&
+      distance(piece, victim) === 1,
+  );
+}
+
 function behavioralDefenseTraits(state, attacker, victim) {
   if (!victim || intoxicationResting(state, victim)) return [];
   const traits = [];
@@ -2171,7 +2181,11 @@ function executeMove(ctx, action) {
       !!plantSeed && target.synzooCollect === plantSeed.id,
     capture = pieceCapture || eggCapture || seedCapture,
     reactiveDefensesActive =
-      !pieceCapture || !intoxicationResting(state, victim);
+      !pieceCapture || !intoxicationResting(state, victim),
+    cooperativeHunt =
+      pieceCapture &&
+      victim.owner !== p.owner &&
+      cooperativeHunters(state, p, victim).length >= 2;
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -2215,7 +2229,20 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     reactiveDefensesActive &&
-    has(victim, "Espinhos")
+    has(victim, "Espinhos") &&
+    cooperativeHunt
+  )
+    emitPassiveEffect(
+      state,
+      "Caça Cooperativa",
+      "🐬 Caça Cooperativa neutralizou 🌵 Espinhos.",
+      { pieceId: p.id, outcome: "neutralized-spines" },
+    );
+  if (
+    pieceCapture &&
+    reactiveDefensesActive &&
+    has(victim, "Espinhos") &&
+    !cooperativeHunt
   ) {
     const roll = random(state),
       threshold = retaliatoryDefenseChance(p, "Espinhos");
@@ -2254,6 +2281,19 @@ function executeMove(ctx, action) {
     pieceCapture &&
     reactiveDefensesActive &&
     has(victim, "Chifre") &&
+    cooperativeHunt
+  )
+    emitPassiveEffect(
+      state,
+      "Caça Cooperativa",
+      "🐬 Caça Cooperativa neutralizou 🫎 Chifre.",
+      { pieceId: p.id, outcome: "neutralized-horn" },
+    );
+  if (
+    pieceCapture &&
+    reactiveDefensesActive &&
+    has(victim, "Chifre") &&
+    !cooperativeHunt &&
     has(p, "Carapaça")
   )
     emitPassiveEffect(
@@ -2266,6 +2306,7 @@ function executeMove(ctx, action) {
     pieceCapture &&
     reactiveDefensesActive &&
     has(victim, "Chifre") &&
+    !cooperativeHunt &&
     !has(p, "Carapaça")
   ) {
     const roll = random(state),
@@ -3731,6 +3772,40 @@ function logBoardChanges(previous, state) {
   );
 }
 
+function resolveAtaxicMove(state, action) {
+  if (action?.type !== "MOVE" || state.phase !== "move") return action;
+  const piece = state.pieces.find(
+    (candidate) => candidate.id === action.id && candidate.owner === state.current,
+  );
+  if (!piece || !has(piece, "Ataxia")) return action;
+  const moves = legalActions(state).filter(
+      (candidate) => candidate.type === "MOVE" && candidate.id === piece.id,
+    ),
+    requested = moves.find(
+      (candidate) => candidate.r === action.r && candidate.c === action.c,
+    ),
+    alternatives = moves.filter(
+      (candidate) => candidate.r !== action.r || candidate.c !== action.c,
+    );
+  if (!requested || !alternatives.length || random(state) >= 1 / 4)
+    return action;
+  const redirected = pick(state, alternatives);
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🥴 Ataxia desviou o movimento de ${coord(action.r, action.c)} para ${coord(redirected.r, redirected.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Ataxia",
+    `🥴 Ataxia desviou o movimento para ${coord(redirected.r, redirected.c)}.`,
+    {
+      pieceId: piece.id,
+      outcome: "redirected-move",
+    },
+  );
+  return { ...action, ...redirected };
+}
+
 /** One atomic command: validate, copy, execute domain rules, verify, commit. No DOM/timers. */
 export function transition(previous, action) {
   if (action.revision !== undefined && action.revision !== previous.revision)
@@ -3743,8 +3818,9 @@ export function transition(previous, action) {
     return state;
   }
   if (previous.result || previous.notices.length) return previous;
-  const state = clone(previous),
-    ctx = context(state);
+  const state = clone(previous);
+  action = resolveAtaxicMove(state, action);
+  const ctx = context(state);
   state.movementTrace = null;
   beginNeurodivergentAction(state, action);
   if (action.type === "DOMAIN_COLLAPSE" && state.phase === "collapse")
