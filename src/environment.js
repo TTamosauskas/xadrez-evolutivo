@@ -666,7 +666,7 @@ function advancePatternedHabitat(ctx) {
 function advanceBlockedConway(ctx) {
   const state = ctx.state,
     event = state.event;
-  if (currentGeologicalStage(state).id === "proterozoic")
+  if (currentGeologicalStage(state).chronology?.eon === "Proterozoico")
     return advancePrimordialConway(ctx);
 
   if (event)
@@ -765,7 +765,7 @@ export function advanceConway(ctx, options = {}) {
   if (!conwayUnlocked(ctx.state)) return;
   if (options.blocked) return advanceBlockedConway(ctx);
   const state = ctx.state;
-  if (currentGeologicalStage(state).id === "proterozoic")
+  if (currentGeologicalStage(state).chronology?.eon === "Proterozoico")
     return advancePrimordialConway(ctx);
   return advancePatternedHabitat(ctx);
 }
