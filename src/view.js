@@ -23,6 +23,8 @@ import {
   terrain,
   webAt,
   chemicalHazardAt,
+  inkCloudAt,
+  allelopathySourceAt,
 } from "./state.js";
 import {
   currentGeologicalStage,
@@ -525,6 +527,8 @@ export function render(
         fragment = fragmentAt(state, r, c),
         web = webAt(state, r, c),
         chemicalHazard = chemicalHazardAt(state, r, c),
+        inkCloud = inkCloudAt(state, r, c),
+        allelopathy = allelopathySourceAt(state, r, c),
         cellTerrain = terrain(state, r, c),
         originHere = !!origin && origin.r === r && origin.c === c,
         targetEntry =
@@ -616,6 +620,8 @@ export function render(
                     "BIO_PROJECTILE",
                     "ELECTRODISCHARGE",
                     "FEEDING_REACH",
+                    "HEMATOPHAGY",
+                    "BROOD_PARASITIZE",
                   ].includes(action.type) && action.targetId === p.id,
               ) ?? null
             : null,
@@ -624,9 +630,13 @@ export function render(
             ? "🪲"
             : specialAction?.type === "ELECTRODISCHARGE"
               ? "⚡"
-              : specialAction?.type === "FEEDING_REACH"
-                ? TRAITS[specialAction.trait]?.[0] ?? "🧬"
-                : null,
+              : specialAction?.type === "HEMATOPHAGY"
+                ? "🩸"
+                : specialAction?.type === "BROOD_PARASITIZE"
+                  ? "🪹"
+                  : specialAction?.type === "FEEDING_REACH"
+                    ? TRAITS[specialAction.trait]?.[0] ?? "🧬"
+                    : null,
         attackTarget = captureTarget || parasitismTarget || !!specialAction,
         predatoryReproductionTarget = !!(
           actor &&
@@ -780,7 +790,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}${domainClass}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}${domainClass}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -841,6 +851,10 @@ export function render(
       }
       if (web)
         cell.append(make("span", "🕸️", "decomposition-mark web-mark"));
+      if (inkCloud)
+        cell.append(make("span", "🌫️", "decomposition-mark ink-cloud-mark"));
+      if (allelopathy)
+        cell.append(make("span", "🍂", "decomposition-mark allelopathy-mark"));
       if (chemicalHazard)
         cell.append(
           make("span", "🪲", "decomposition-mark chemical-hazard-mark"),
@@ -982,6 +996,19 @@ export function render(
         if (neurodivergenceResting(state, p)) statusBadges.push("♾️⏳");
         if (intoxicationResting(state, p)) statusBadges.push("😵‍💫");
         if (p.webTrapped) statusBadges.push("🕸️⏳");
+        if (p.autotomyRecovery) statusBadges.push("✂️↻");
+        if (
+          Number.isInteger(p.hematophagyDepletedUntilRound) &&
+          p.hematophagyDepletedUntilRound > currentRound
+        )
+          statusBadges.push("🩸⏳");
+        if (p.broodParasite) statusBadges.push("🪹⏳");
+        if (
+          has(p, "Tinta") &&
+          Number.isInteger(p.inkReadyRound) &&
+          p.inkReadyRound > currentRound
+        )
+          statusBadges.push("🌫️⏳");
         if (p.venom)
           statusBadges.push(
             p.venom.source === "Peçonha"
@@ -1069,6 +1096,12 @@ export function render(
             marker: "🪲",
             label: "Projétil Biológico · hostilidade temporária",
           }
+        : null,
+      boardElement.querySelector(".cell.ink-cloud")
+        ? { marker: "🌫️", label: "Tinta · percepção e ataques direcionados suprimidos" }
+        : null,
+      boardElement.querySelector(".cell.allelopathy-zone")
+        ? { marker: "🍂", label: "Alelopatia · pressão vegetal territorial" }
         : null,
       (state.thanatosis ?? []).length
         ? { marker: "⚰️", label: "Tanatose · retorno pendente" }
