@@ -60,6 +60,25 @@ export const canUseBasalFertility = (state, piece) =>
   canUseFertileResource(state, piece) &&
   !has(piece, "Reprodução Sexuada");
 
+export function mutualismPartner(state, piece) {
+  if (!piece || !has(piece, "Mutualismo")) return null;
+  const branch = energyBranch(piece);
+  if (!branch) return null;
+  return (
+    state.pieces.find((candidate) => {
+      if (
+        candidate.id === piece.id ||
+        candidate.owner !== piece.owner ||
+        !has(candidate, "Mutualismo") ||
+        distance(candidate, piece) !== 1
+      )
+        return false;
+      const candidateBranch = energyBranch(candidate);
+      return !!candidateBranch && candidateBranch !== branch;
+    }) ?? null
+  );
+}
+
 export function predatoryReproductionAvailable(attacker, victim) {
   return !!(
     attacker &&
