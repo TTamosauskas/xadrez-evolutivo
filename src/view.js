@@ -242,11 +242,363 @@ function evolutionarySummary(state, owner) {
   };
 }
 /** Rendering only reads state. No observers, commands, timers or rule callbacks. */
+
+const CELL_TERRAIN_PRESENTATION = Object.freeze({
+  fertile: { icon: "🟩", title: "Casa Fértil", label: "casa fértil" },
+  hostile: { icon: "🟥", title: "Casa Hostil", label: "casa hostil" },
+  neutral: { icon: "⬜", title: "Casa Neutra", label: "casa neutra" },
+});
+
+function timeRemaining(value, current, unit = "rodada") {
+  const remaining = Math.max(0, value - current);
+  return remaining === 0
+    ? `expira nesta ${unit}`
+    : `${remaining} ${unit}${remaining === 1 ? "" : "s"} restante${remaining === 1 ? "" : "s"}`;
+}
+
+function plantSeedPresentation(seed) {
+  if (!seed) return null;
+  if (seed.sprouting)
+    return {
+      icon: "🌱",
+      title: `Broto das ${OWNERS[seed.owner]}`,
+      detail: "Aguardando estabelecimento como prole vegetal.",
+      objectLabel: `broto 🌱 das ${OWNERS[seed.owner]}, aguardando estabelecimento`,
+      summary: "🌱 Broto",
+    };
+  const age = seed.age ?? 3 - (seed.movesRemaining ?? 3),
+    presentation =
+      {
+        endozoocoria: ["🍎", "Fruto endozoocórico"],
+        capsaicina: ["🌶️", "Fruto com capsaicina"],
+        epizoocoria: ["🌾", "Semente epizoocórica"],
+        sinzoocoria: ["🌰", "Semente sinzoocórica"],
+        mirmecocoria: ["🍒", "Diásporo mirmecocórico"],
+      }[seed.zoochory] ?? ["🌰", "Semente"],
+    mature = age >= 3;
+  return {
+    icon: presentation[0],
+    title: `${presentation[1]} das ${OWNERS[seed.owner]}`,
+    detail: `Idade ${age}/3 · ${mature ? "madura; procura terreno fértil para estabelecimento" : "em dispersão"}.`,
+    objectLabel:
+      seed.zoochory
+        ? `${presentation[1].toLowerCase()} ${presentation[0]} das ${OWNERS[seed.owner]}, idade ${age} de 3 rodada(s) mínimas; ${mature ? "madura" : "em dispersão"}`
+        : `semente das ${OWNERS[seed.owner]}, idade ${age} de 3 rodada(s) mínimas; ${mature ? "madura" : "em dispersão"}`,
+    summary: `${presentation[0]} ${mature ? "Semente madura" : `Semente ${age}/3`}`,
+  };
+}
+
+function cellSelectionInfo(state, r, c) {
+  const currentRound = round(state),
+    cell = square(r, c),
+    cellTerrain = terrain(state, r, c),
+    terrainPresentation =
+      CELL_TERRAIN_PRESENTATION[cellTerrain] ??
+      CELL_TERRAIN_PRESENTATION.neutral,
+    geological = currentGeologicalStage(state),
+    terrainDetail =
+      cellTerrain === "fertile"
+        ? geological.index < geologicalStage("cambrian").index
+          ? "Recurso ambiental que pode sustentar Vivificação de linhagens aptas."
+          : "Recurso de Vivificação para Fotossíntese, Mixotrofia, Herbívoro e Onívoro."
+        : cellTerrain === "hostile"
+          ? "Oferece 50% de risco ambiental por exposição normal; adaptações podem modificar esse risco."
+          : "Sem recurso ou risco ambiental próprio.",
+    facts = [],
+    add = (group, icon, title, detail, summary, accessible = null) =>
+      facts.push({
+        group,
+        icon,
+        title,
+        detail,
+        summary: summary ?? `${icon} ${title}`,
+        accessible: accessible ?? `${title}: ${detail}`,
+      });
+
+  const egg = eggAt(state, r, c),
+    seed = plantSeedAt(state, r, c),
+    fragment = fragmentAt(state, r, c),
+    residue = organicResidueAt(state, r, c),
+    carcass = carcassAt(state, r, c),
+    mineralRemnant = mineralRemnantAt(state, r, c),
+    spore = pathogenSporeAt(state, r, c),
+    web = webAt(state, r, c),
+    chemicalHazard = chemicalHazardAt(state, r, c),
+    inkCloud = inkCloudAt(state, r, c),
+    allelopathy = allelopathySourceAt(state, r, c),
+    captureDisturbance = captureDisturbanceAt(state, r, c),
+    lethalHazard = lethalHazardAt(state, r, c),
+    pathogenAgents = pathogenAgentAt(state, r, c),
+    thanatosis =
+      (state.thanatosis ?? []).find((entry) => entry.cell === cell) ?? null,
+    builtBarrier = state.barriers?.includes(cell),
+    naturalBarrier = state.naturalBarriers?.includes(cell),
+    eventBarrier = eventBarrierAt(state, r, c),
+    seedPresentation = plantSeedPresentation(seed);
+
+  let objectLabel = null;
+  if (egg) {
+    const hatchIn = Math.max(0, egg.hatchRound - currentRound),
+      expireIn = Math.max(0, egg.expireRound - currentRound),
+      eggKind =
+        egg.mode === "basal"
+          ? "Ovo aquático"
+          : egg.mode === "amniote"
+            ? "Ovo amniótico"
+            : "Ovo ovovivíparo",
+      detail =
+        egg.mode === "basal"
+          ? `${egg.brood.length} descendente(s) · maturação em ${hatchIn} rodada(s) · busca terreno fértil · expira em ${expireIn} rodada(s).`
+          : `${egg.brood.length} descendente(s) · eclode em ${hatchIn} rodada(s).`;
+    add(
+      "content",
+      egg.mode === "basal" ? "⚪" : "🥚",
+      `${eggKind} das ${OWNERS[egg.owner]}`,
+      detail,
+      `${egg.mode === "basal" ? "⚪" : "🥚"} ${hatchIn} t`,
+      `${eggKind.toLowerCase()} das ${OWNERS[egg.owner]}, ${detail}`,
+    );
+    objectLabel =
+      egg.mode === "basal"
+        ? `ovo aquático das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), maturação em ${hatchIn} rodada(s), busca terreno fértil, expira em ${expireIn} rodada(s)`
+        : `ovo ${egg.mode === "amniote" ? "amniótico" : "ovovivíparo"} das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${hatchIn} rodada(s)`;
+  } else if (seedPresentation) {
+    add(
+      "content",
+      seedPresentation.icon,
+      seedPresentation.title,
+      seedPresentation.detail,
+      seedPresentation.summary,
+      seedPresentation.objectLabel,
+    );
+    objectLabel = seedPresentation.objectLabel;
+  } else if (fragment) {
+    const remaining = Math.max(0, fragment.expireRound - currentRound);
+    add(
+      "content",
+      "𓇼",
+      `Fragmento das ${OWNERS[fragment.owner]}`,
+      `Expira em ${remaining} rodada(s).`,
+      `𓇼 Fragmento · ${remaining} t`,
+    );
+    objectLabel = `fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${remaining} rodada(s)`;
+  }
+
+  if (carcass)
+    add(
+      "content",
+      "🦴",
+      "Carcaça",
+      `${timeRemaining(carcass.dueRound, currentRound)}. Pode ser consumida por Necrófago ou Onívoro Oportunista para reprodução.`,
+      `🦴 Carcaça · ${Math.max(0, carcass.dueRound - currentRound)} t`,
+    );
+  if (residue)
+    add(
+      "content",
+      "💩",
+      "Fezes",
+      `${timeRemaining(residue.dueRound ?? currentRound, currentRound)}. Fotossintéticos e mixotróficos podem reciclá-las em fertilidade; Coprofagia pode usá-las para reprodução.`,
+      `💩 Fezes · ${Math.max(0, (residue.dueRound ?? currentRound) - currentRound)} t`,
+    );
+  if (mineralRemnant)
+    add(
+      "content",
+      "🪨",
+      "Remanescente mineral · Biomineralização",
+      `${timeRemaining(mineralRemnant.expiresRound, currentRound)}. Bloqueia a primeira captura de contato contra uma criatura que ocupe esta casa e então se rompe.`,
+      `🪨 Biomineralização · ${Math.max(0, mineralRemnant.expiresRound - currentRound)} t`,
+    );
+  if (thanatosis)
+    add(
+      "content",
+      "⚰️",
+      "Criatura em Tanatose",
+      "Retorno ao tabuleiro permanece pendente enquanto a condição da Tanatose puder ser resolvida.",
+      "⚰️ Tanatose",
+    );
+
+  if (lethalHazard)
+    add(
+      "condition",
+      "☠️",
+      "Ambiente letal",
+      "Entrar ou pousar nesta casa causa morte certa.",
+      "☠️ Letal",
+    );
+  if (eventBarrier || naturalBarrier || builtBarrier)
+    add(
+      "condition",
+      "🟫",
+      eventBarrier
+        ? "Barreira temporária"
+        : naturalBarrier
+          ? "Barreira natural"
+          : "Barreira construída",
+      "Bloqueia trajetórias, salvo adaptações específicas.",
+      "🟫 Barreira",
+    );
+  if (captureDisturbance)
+    add(
+      "condition",
+      "🟥",
+      "Perturbação de captura",
+      captureDisturbance.dueRound
+        ? `${timeRemaining(captureDisturbance.dueRound, currentRound)}. A casa oferece risco ambiental adicional durante a perturbação.`
+        : "A casa oferece risco ambiental adicional durante a perturbação.",
+      "🟥 Perturbação",
+    );
+  if (chemicalHazard)
+    add(
+      "condition",
+      "🪲",
+      "Hostilidade química temporária",
+      `Projétil Biológico mantém a casa hostil por mais ${Math.max(0, chemicalHazard.expiresTurn - state.turn)} turno(s).`,
+      "🪲 Hostilidade química",
+    );
+  if (web)
+    add(
+      "condition",
+      "🕸️",
+      "Teia",
+      `${timeRemaining(web.expiresRound, currentRound)}. Adversários que pousam ou atravessam podem ficar presos e gastar a próxima ação para se libertar.`,
+      `🕸️ Teia · ${Math.max(0, web.expiresRound - currentRound)} t`,
+    );
+  if (inkCloud)
+    add(
+      "condition",
+      "🌫️",
+      "Nuvem de tinta",
+      `Permanece ativa por mais ${Math.max(0, inkCloud.expiresTurn - state.turn)} turno(s) e suprime percepção e ataques direcionados afetados pela regra.`,
+      "🌫️ Tinta",
+    );
+  if (allelopathy)
+    add(
+      "condition",
+      "🍂",
+      "Alelopatia",
+      `Pressão territorial criada por uma planta das ${OWNERS[allelopathy.owner]} adjacente.`,
+      "🍂 Alelopatia",
+    );
+  if (spore)
+    add(
+      "condition",
+      "◌",
+      "Esporo fúngico",
+      `${spore.movesRemaining} etapa(s) de dispersão restante(s).`,
+      `◌ Esporo · ${spore.movesRemaining}`,
+      `esporo fúngico, ${spore.movesRemaining} etapa(s) de dispersão restante(s)`,
+    );
+  for (const agent of pathogenAgents) {
+    const definition = PATHOGEN_AGENTS[agent] ?? PATHOGEN_AGENTS.virus;
+    add(
+      "condition",
+      definition.icon,
+      definition.name,
+      agent === "fungus"
+        ? "Exposição territorial ativa nesta casa."
+        : "Exposição patogênica ativa nesta casa.",
+      `${definition.icon} ${definition.name}`,
+    );
+  }
+
+  const domainIndex = ecologicalQuadrant(r, c),
+    domainQuadrant = state.ecologicalDomain?.active
+      ? state.ecologicalDomain.quadrants[domainIndex]
+      : null;
+  if (
+    domainQuadrant?.owner &&
+    (domainQuadrant.progress > 0 || domainQuadrant.consolidated)
+  ) {
+    const progress = domainQuadrant.consolidated ? 3 : domainQuadrant.progress;
+    add(
+      "strategic",
+      "◉",
+      `Domínio das ${OWNERS[domainQuadrant.owner]}`,
+      `Estabilidade ${progress}/3${domainQuadrant.consolidated ? " · quadrante consolidado" : ""}.`,
+      `◉ Domínio ${progress}/3`,
+    );
+  }
+
+  return {
+    coordinate: coord(r, c),
+    terrain: {
+      ...terrainPresentation,
+      detail: terrainDetail,
+    },
+    facts,
+    objectLabel,
+    accessibleFacts: facts
+      .filter(
+        (fact) =>
+          !["Ovo aquático", "Ovo amniótico", "Ovo ovovivíparo"].some((name) =>
+            fact.title.startsWith(name),
+          ) &&
+          !fact.title.startsWith("Semente") &&
+          !fact.title.startsWith("Fruto") &&
+          !fact.title.startsWith("Diásporo") &&
+          !fact.title.startsWith("Broto") &&
+          !fact.title.startsWith("Fragmento"),
+      )
+      .map((fact) => fact.accessible),
+  };
+}
+
+function renderSelectedCell(doc, state, selectedCell, make) {
+  const info = cellSelectionInfo(state, selectedCell.r, selectedCell.c),
+    heading = make("div", undefined, "selected-cell-heading");
+  heading.append(
+    make("span", info.terrain.icon, "selected-cell-symbol"),
+    doc.createTextNode(
+      ` ${info.coordinate} · ${info.terrain.title}`,
+    ),
+  );
+  const content = [
+    heading,
+    make("div", "Terreno", "selected-group-heading"),
+    (() => {
+      const row = make("div", undefined, "cell-info-item terrain-info");
+      row.append(
+        make("strong", `${info.terrain.icon} ${info.terrain.title}`),
+        make("small", info.terrain.detail),
+      );
+      return row;
+    })(),
+  ];
+  const groups = [
+    ["content", "Conteúdo"],
+    ["condition", "Riscos e modificadores"],
+    ["strategic", "Situação estratégica"],
+  ];
+  for (const [group, title] of groups) {
+    const facts = info.facts.filter((fact) => fact.group === group);
+    if (!facts.length) continue;
+    content.push(make("div", title, "selected-group-heading"));
+    for (const fact of facts) {
+      const row = make("div", undefined, "cell-info-item");
+      row.append(
+        make("strong", `${fact.icon} ${fact.title}`),
+        make("small", fact.detail),
+      );
+      content.push(row);
+    }
+  }
+  if (!info.facts.length)
+    content.push(
+      make(
+        "p",
+        "Nenhum recurso, estrutura, perigo ou modificador adicional ativo nesta casa.",
+        "selected-status",
+      ),
+    );
+  return { info, content };
+}
+
 export function render(
   doc,
   state,
   {
     selected = null,
+    selectedCell = null,
     busy = false,
     mode = "multi",
     showResult = true,
@@ -391,7 +743,27 @@ export function render(
   const mobileSummary = $("mobile-selected-summary");
   mobileSummary.replaceChildren();
   mobileSummary.hidden = true;
-  if (!state.result && actor) {
+  if (!state.result && selectedCell) {
+    const { info } = renderSelectedCell(doc, state, selectedCell, make),
+      heading = make("div", undefined, "mobile-selected-heading");
+    heading.append(
+      make("span", info.terrain.icon, "mobile-selected-symbol"),
+      doc.createTextNode(`${info.coordinate} · ${info.terrain.title}`),
+    );
+    const details = make("div", undefined, "mobile-selected-traits"),
+      summaries = info.facts.slice(0, 3);
+    if (summaries.length)
+      for (const fact of summaries)
+        details.append(
+          make("span", fact.summary, "mobile-actionable-trait"),
+        );
+    else
+      details.append(
+        make("span", "Sem conteúdo adicional.", "mobile-selected-more"),
+      );
+    mobileSummary.append(heading, details);
+    mobileSummary.hidden = false;
+  } else if (!state.result && actor) {
     const actorActionState = pieceActionState(state, actor),
       ownerName = actor.owner === "blue" ? "Branco" : "Preto",
       actionable = [...actionableTraitsForPiece(state, actor)].sort(
@@ -806,48 +1178,24 @@ export function render(
           : "",
         zoochoryClass = plantSeed?.zoochory
           ? ` plant-seed-zoo-${plantSeed.zoochory}`
-          : "";
+          : "",
+        selectedCellHere =
+          selectedCell?.r === r && selectedCell?.c === c,
+        cellInfo = cellSelectionInfo(state, r, c);
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${mineralRemnant ? " mineral-remnant" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction || rhizomeAction ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}${domainClass}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${mineralRemnant ? " mineral-remnant" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${selectedCellHere ? " cell-selected-info" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction || rhizomeAction ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}${domainClass}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
       cell.dataset.c = c;
       cell.dataset.domainQuadrant = domainIndex;
-      const terrainLabel = {
-        fertile: "casa fértil",
-        hostile: "casa hostil",
-        neutral: "casa neutra",
-      }[cellTerrain];
-      const eggLabel = egg
-          ? egg.mode === "basal"
-            ? `, ovo aquático das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), maturação em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s), busca terreno fértil, expira em ${Math.max(0, egg.expireRound - currentRound)} rodada(s)`
-            : `, ovo ${egg.mode === "amniote" ? "amniótico" : "ovovivíparo"} das ${OWNERS[egg.owner]}, ${egg.brood.length} descendente(s), eclode em ${Math.max(0, egg.hatchRound - currentRound)} rodada(s)`
-          : "",
-        plantSeedLabel = plantSeed
-          ? plantSeed.sprouting
-            ? `, broto 🌱 das ${OWNERS[plantSeed.owner]}, aguardando estabelecimento`
-            : `, ${
-                {
-                  endozoocoria: "fruto endozoocórico 🍎",
-                  capsaicina: "fruto com capsaicina 🌶️",
-                  epizoocoria: "semente epizoocórica 🌾",
-                  sinzoocoria: "semente sinzoocórica 🌰",
-                  mirmecocoria: "diásporo mirmecocórico 🍒",
-                }[plantSeed.zoochory] ?? "semente"
-              } das ${OWNERS[plantSeed.owner]}, idade ${plantSeed.age ?? 3 - (plantSeed.movesRemaining ?? 3)} de 3 rodada(s) mínimas; ${(plantSeed.age ?? 3 - (plantSeed.movesRemaining ?? 3)) >= 3 ? "madura" : "em dispersão"}`
-          : "",
-        pathogenSporeLabel = pathogenSpore
-          ? `, esporo fúngico, ${pathogenSpore.movesRemaining} etapa(s) de dispersão restante(s)`
-          : "",
+      const terrainLabel = cellInfo.terrain.label,
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza, Respiração anaeróbia${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrainLabel}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : egg ? eggLabel : plantSeed ? plantSeedLabel : barrier ? "" : ", vazia"}${fecalResidue ? ", fezes" : ""}${carcass ? ", carcaça" : ""}${thanatosis ? ", criatura em Tanatose" : ""}${captureDisturbance ? ", perturbação temporária" : ""}${lethalHazard ? ", ambiente letal" : ""}${pathogenSporeLabel}${pathogenAgents.length ? `, exposição: ${pathogenAgents.map((agent) => PATHOGEN_AGENTS[agent]?.name ?? agent).join(", ")}` : ""}${target ? ", destino disponível" : ""}${crawlerTarget ? ", travessia de borda por Rastejante" : ""}${lateralTarget ? targetEntry?.lateralSwapId ? ", troca lateral com aliado" : ", Movimento Lateral" : ""}${escalationTarget ? targetEntry?.escalationSwapId ? ", troca vertical por Escansão" : ", deslocamento por Escansão" : ""}${bioadhesionTarget ? targetEntry?.bioadhesionSwapId ? ", troca periférica por Bioadesão" : ", percurso do perímetro por Bioadesão" : ""}${arborealTarget ? ", travessia de dossel por Arborícola" : ""}${arborealSupport ? ", apoio de rota Arborícola" : ""}${phoresyTarget ? ", transporte por Forésia" : ""}${phoresyCarrier ? ", transportador aliado de Forésia" : ""}${serpentineTarget ? ", trajetória por Serpenteamento" : ""}${trailTarget ? ", extensão de Trilhas" : ""}${tigmotaxisTarget ? ", continuação por Tigmotaxia" : ""}${recoilTarget ? ", retorno por Recuo" : ""}${slidingTarget ? ", continuação por Deslizamento" : ""}${vivificationTarget ? nicheBuildTarget ? ", vivificação disponível: 🧱 criar barreira por Construtor de Nicho" : zoochoryResourceTarget ? targetEntry?.fruitConsume ? ", vivificação disponível: consumir fruto zoocórico" : ", vivificação disponível: armazenar semente sinzoocórica" : selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? has(actor, "Necrófago") ? ", vivificação disponível: Necrofagia" : ", vivificação disponível: Onívoro Oportunista" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : cannibalReproductionTarget ? ", alvo de Canibalismo com reprodução" : granivoryReproductionTarget ? ", semente consumível por Granívoro com reprodução" : eggReproductionTarget ? has(actor, "Ovífagia") ? ", alvo de Ovífagia com reprodução" : ", ovo consumível por Onívoro Oportunista com reprodução" : predatoryReproductionTarget ? ", alvo de ataque com reprodução predatória" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${aggressivePartner ? aggressiveCounter ? ", 🦆 parceiro adversário; contra-agressão letal" : ", 🦆 parceiro adversário para Cópula Agressiva" : ""}${filialCannibalTarget ? ", 🐹 cria filial consumível para encerrar recuperação metabólica" : ""}${matriphagyTarget ? ", 🕷️ progenitor consumível por Matrifagia" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}${hierarchyRecommended ? ", 🐃 membro recomendado pela Hierarquia para sacrifício" : ""}${superBestMember ? ", 🐝 membro com melhor movimento sugerido pelo Superorganismo" : superMemberPulse ? ", membro sinalizado pelo Superorganismo" : ""}${superMoveTarget ? ", 🐝 movimento sugerido pelo Superorganismo" : ""}${serotoninTarget ? ", destino de reposicionamento por Serotonina" : ""}${cortexOffensive ? ", melhor posição ofensiva sugerida pelo Córtex Pré-Frontal" : ""}${cortexDefensive ? ", melhor posição defensiva sugerida pelo Córtex Pré-Frontal" : ""}`;
-      const baseAccessibleLabel = fragment
-          ? `${label}, fragmento 𓇼 das ${OWNERS[fragment.owner]}, expira em ${Math.max(0, fragment.expireRound - currentRound)} rodada(s)`
-          : label,
+          : `${coord(r, c)}, ${terrainLabel}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : cellInfo.objectLabel ? `, ${cellInfo.objectLabel}` : barrier ? "" : ", vazia"}${cellInfo.accessibleFacts.length ? `, ${cellInfo.accessibleFacts.join(", ")}` : ""}${target ? ", destino disponível" : ""}${crawlerTarget ? ", travessia de borda por Rastejante" : ""}${lateralTarget ? targetEntry?.lateralSwapId ? ", troca lateral com aliado" : ", Movimento Lateral" : ""}${escalationTarget ? targetEntry?.escalationSwapId ? ", troca vertical por Escansão" : ", deslocamento por Escansão" : ""}${bioadhesionTarget ? targetEntry?.bioadhesionSwapId ? ", troca periférica por Bioadesão" : ", percurso do perímetro por Bioadesão" : ""}${arborealTarget ? ", travessia de dossel por Arborícola" : ""}${arborealSupport ? ", apoio de rota Arborícola" : ""}${phoresyTarget ? ", transporte por Forésia" : ""}${phoresyCarrier ? ", transportador aliado de Forésia" : ""}${serpentineTarget ? ", trajetória por Serpenteamento" : ""}${trailTarget ? ", extensão de Trilhas" : ""}${tigmotaxisTarget ? ", continuação por Tigmotaxia" : ""}${recoilTarget ? ", retorno por Recuo" : ""}${slidingTarget ? ", continuação por Deslizamento" : ""}${vivificationTarget ? nicheBuildTarget ? ", vivificação disponível: 🧱 criar barreira por Construtor de Nicho" : zoochoryResourceTarget ? targetEntry?.fruitConsume ? ", vivificação disponível: consumir fruto zoocórico" : ", vivificação disponível: armazenar semente sinzoocórica" : selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? has(actor, "Necrófago") ? ", vivificação disponível: Necrofagia" : ", vivificação disponível: Onívoro Oportunista" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : cannibalReproductionTarget ? ", alvo de Canibalismo com reprodução" : granivoryReproductionTarget ? ", semente consumível por Granívoro com reprodução" : eggReproductionTarget ? has(actor, "Ovífagia") ? ", alvo de Ovífagia com reprodução" : ", ovo consumível por Onívoro Oportunista com reprodução" : predatoryReproductionTarget ? ", alvo de ataque com reprodução predatória" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${partner ? ", parceiro disponível" : ""}${aggressivePartner ? aggressiveCounter ? ", 🦆 parceiro adversário; contra-agressão letal" : ", 🦆 parceiro adversário para Cópula Agressiva" : ""}${filialCannibalTarget ? ", 🐹 cria filial consumível para encerrar recuperação metabólica" : ""}${matriphagyTarget ? ", 🕷️ progenitor consumível por Matrifagia" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}${hierarchyRecommended ? ", 🐃 membro recomendado pela Hierarquia para sacrifício" : ""}${superBestMember ? ", 🐝 membro com melhor movimento sugerido pelo Superorganismo" : superMemberPulse ? ", membro sinalizado pelo Superorganismo" : ""}${superMoveTarget ? ", 🐝 movimento sugerido pelo Superorganismo" : ""}${serotoninTarget ? ", destino de reposicionamento por Serotonina" : ""}${cortexOffensive ? ", melhor posição ofensiva sugerida pelo Córtex Pré-Frontal" : ""}${cortexDefensive ? ", melhor posição defensiva sugerida pelo Córtex Pré-Frontal" : ""}`;
+      const baseAccessibleLabel = label,
         accessibleLabel = terminalDeath
           ? `${baseAccessibleLabel}, morte determinada no próximo turno: ${terminalDeath}`
           : baseAccessibleLabel;
@@ -1282,7 +1630,13 @@ export function render(
       : state.chain
         ? "Encerrar movimento"
         : "Passar vez";
-  if (actor) {
+  const selectedTitle = $("selected-title");
+  if (selectedCell) {
+    selectedTitle.textContent = "Casa selecionada";
+    const { content } = renderSelectedCell(doc, state, selectedCell, make);
+    $("selected").replaceChildren(...content);
+  } else if (actor) {
+    selectedTitle.textContent = "Peça selecionada";
     const actorActionState = pieceActionState(state, actor),
       ownerName = actor.owner === "blue" ? "Branco" : "Preto",
       heading = make("div", undefined, "selected-piece-heading"),
@@ -1502,6 +1856,7 @@ export function render(
     }
     $("selected").replaceChildren(...selectedContent);
   } else if (origin?.selected) {
+    selectedTitle.textContent = "Peça selecionada";
     const heading = make("div", undefined, "selected-piece-heading"),
       trait = make("div", undefined, "trait selected-trait");
     heading.append(
@@ -1534,6 +1889,7 @@ export function render(
       trait,
     );
   } else {
+    selectedTitle.textContent = "Peça selecionada";
     $("selected").replaceChildren(
       make(
         "span",
