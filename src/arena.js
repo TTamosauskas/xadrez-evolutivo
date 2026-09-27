@@ -363,6 +363,25 @@ function counterScore(genome, opponentGenomes) {
   return score;
 }
 
+function adaptSetupGenome(genome, branchId, opponentGenomes) {
+  let result = completeArenaBranchGenome(genome, branchId);
+  const wanted = counterTargets(opponentGenomes)
+    .filter(({ trait }) => arenaSelectableTraits(branchId).includes(trait))
+    .sort((a, b) => b.weight - a.weight)
+    .map(({ trait }) => trait);
+  for (const trait of wanted) {
+    if (result.includes(trait)) continue;
+    const expanded = completeArenaBranchGenome([...result, trait], branchId);
+    if (arenaSetupGenomeValid(expanded, branchId)) {
+      result = expanded;
+      continue;
+    }
+    const swapped = swapToward(result, [trait], branchId);
+    if (arenaSetupGenomeValid(swapped, branchId)) result = swapped;
+  }
+  return result;
+}
+
 export function arenaAISide(
   difficulty = "medium",
   opponentGenomes = null,
@@ -371,15 +390,23 @@ export function arenaAISide(
   if (difficulty === "easy") return randomArenaSide(seed);
   if (difficulty === "hard" && opponentGenomes?.length) {
     return ARENA_BRANCHES.map((branch) => {
-      const pool = archetypePool(branch.id);
-      return pool
-        .map((genome, index) => ({
-          genome,
-          index,
-          score: counterScore(genome, opponentGenomes),
-        }))
-        .sort((a, b) => b.score - a.score || a.index - b.index)[0]?.genome ??
-        completeArenaBranchGenome([], branch.id);
+      const pool = archetypePool(branch.id),
+        candidates = pool.map((genome, index) => {
+          const adapted = adaptSetupGenome(genome, branch.id, opponentGenomes);
+          return {
+            genome: adapted,
+            index,
+            score: counterScore(adapted, opponentGenomes),
+            breadth: adapted.length,
+          };
+        });
+      return candidates
+        .sort(
+          (a, b) =>
+            b.score - a.score ||
+            b.breadth - a.breadth ||
+            a.index - b.index,
+        )[0]?.genome ?? completeArenaBranchGenome([], branch.id);
     });
   }
   return ARENA_BRANCHES.map((branch, index) => {
