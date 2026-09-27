@@ -680,6 +680,10 @@ main {
   background: #6d384f99;
   box-shadow: 0 0 0 1px #f2a6cb99;
 }
+.trait-badge[data-trait="Escamas"] {
+  color: #45d06f;
+  text-shadow: 0 0 2px #0b3518, 0 1px 1px #000b;
+}
 .trait-slot-0 { left: 50%; top: 94%; }
 .trait-slot-1 { left: 25%; top: 94%; }
 .trait-slot-2 { left: 6%; top: 75%; }
