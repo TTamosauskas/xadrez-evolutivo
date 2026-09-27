@@ -212,6 +212,26 @@ const mutationTopics = {
   Nanismo: ["Nanismo", "Nanismo descreve fenótipos de crescimento corporal reduzido; no jogo, força a forma funcional de Peão e reduz o tamanho visual da peça."],
   Gigantismo: ["Gigantismo", "Gigantismo descreve aumento extremo de tamanho corporal; no jogo, amplia o tamanho visual e impõe um custo de mobilidade."],
   "Mutação Mutadora": ["Fenótipo mutador", "Fenótipos mutadores apresentam taxas de mutação elevadas, frequentemente por alterações em mecanismos de manutenção do genoma; no jogo, aumentam a chance de mutações negativas."],
+  Hematofagia: [
+    "Hematofagia",
+    "Hematófagos obtêm nutrientes diretamente do sangue de hospedeiros; no jogo, a refeição mantém o hospedeiro vivo e alimenta uma reprodução predatória limitada.",
+  ],
+  Autotomia: [
+    "Autotomia",
+    "Autotomia é a perda voluntária de uma parte do corpo para escapar de uma ameaça; no jogo, a forma reduzida precisa investir a próxima oportunidade reprodutiva para se regenerar.",
+  ],
+  Tinta: [
+    "Tinta de cefalópode",
+    "Cefalópodes podem liberar tinta para confundir predadores e favorecer a fuga; no jogo, a nuvem também suprime percepção e ataques direcionados.",
+  ],
+  Alelopatia: [
+    "Alelopatia",
+    "Alelopatia descreve interferências químicas entre plantas; no jogo, uma planta estabelecida dificulta germinação, reprodução e expansão vegetal rival ao redor.",
+  ],
+  "Parasitismo de Ninhada": [
+    "Parasitismo de ninhada",
+    "Parasitas de ninhada transferem parte do custo de criação para hospedeiros; no jogo, um descendente da próxima ninhada inimiga é substituído pelo parasita.",
+  ],
   "Predação em Massa": [
     "Alimentação por filtração",
     "A alimentação em massa permite explorar concentrações de presas pequenas; no jogo, formas grandes podem engolfar até duas presas menores adicionais após uma captura.",

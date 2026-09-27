@@ -147,6 +147,10 @@ export function actionableTraitsForPiece(state, piece) {
   for (const action of actions) {
     if (action.type === "BIO_PROJECTILE") actionable.add("Projétil Biológico");
     if (action.type === "ELECTRODISCHARGE") actionable.add("Eletrodescarga");
+    if (action.type === "HEMATOPHAGY") actionable.add("Hematofagia");
+    if (action.type === "BROOD_PARASITIZE")
+      actionable.add("Parasitismo de Ninhada");
+    if (action.type === "REJECT_BROOD_PARASITE") actionable.add("Incubação");
     if (action.type === "FEEDING_REACH" && action.trait)
       actionable.add(action.trait);
   }
@@ -165,6 +169,26 @@ export function actionableTraitsForPiece(state, piece) {
     ]),
     hasDetritusAt = (r, c) =>
       !!organicResidueAt(state, r, c) || !!carcassAt(state, r, c);
+
+  if (
+    has(piece, "Autotomia") &&
+    (piece.autotomyRecovery || piece.rank > 0)
+  )
+    actionable.add("Autotomia");
+
+  if (
+    has(piece, "Tinta") &&
+    round(state) >= (piece.inkReadyRound ?? 0)
+  )
+    actionable.add("Tinta");
+
+  if (
+    has(piece, "Alelopatia") &&
+    round(state) -
+      (piece.stationarySinceRound ?? piece.bornRound ?? round(state)) >
+      0
+  )
+    actionable.add("Alelopatia");
 
   if (
     has(piece, "Teia") &&

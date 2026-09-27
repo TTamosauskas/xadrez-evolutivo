@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 28;
+export const STATE_VERSION = 29;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const SYMBOLS = {
@@ -593,6 +593,26 @@ export const TRAITS = {
   Eletrodescarga: [
     "⚡",
     "Mata um inimigo na geometria do Cavalo sem deslocamento nem reprodução; o disparo impõe recuperação metabólica triplicada.",
+  ],
+  Hematofagia: [
+    "🩸",
+    "Alimenta-se de um animal inimigo adjacente sem matá-lo e usa a refeição para reprodução predatória de no máximo um descendente. O mesmo hospedeiro fica temporariamente depletado.",
+  ],
+  Autotomia: [
+    "✂️",
+    "Quando uma captura seria concluída, perde uma forma para sobreviver. A próxima oportunidade reprodutiva restaura a forma original em vez de gerar prole.",
+  ],
+  Tinta: [
+    "🌫️",
+    "Ao sofrer uma captura com rota de fuga disponível, libera uma nuvem temporária, foge para uma casa adjacente e suprime capacidades sensoriais e ataques direcionados na região.",
+  ],
+  Alelopatia: [
+    "🍂",
+    "Após três rodadas imóvel, estabelece pressão química ortogonal: atrasa germinação rival, aumenta a recuperação reprodutiva de plantas inimigas e bloqueia sua fertilização expansiva.",
+  ],
+  "Parasitismo de Ninhada": [
+    "🪹",
+    "Infiltra uma ninhada ovípara inimiga. Um slot da próxima reprodução do hospedeiro é substituído por descendente do parasita; Incubação permite rejeitá-lo gastando uma ação.",
   ],
   "Mutação Letal": ["💀", "A peça morre após três rodadas completas."],
   "Mutação Disfuncional": [

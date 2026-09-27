@@ -28,6 +28,7 @@ import {
   lethalHazardAt,
   organicResidueHazardousTo,
   webAt,
+  inkCloudAt,
 } from "./state.js";
 import {
   captureUnlocked,
@@ -41,6 +42,7 @@ import {
   connectedAlliesWithin,
   paedogenesisReady,
   parentalCareProtects,
+  predatoryReproductionAvailable,
   sortPreferredMates,
 } from "./reproduction-traits.js";
 import { specialLocomotionTargets } from "./locomotion.js";
@@ -426,7 +428,9 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       victim &&
       has(victim, "Camuflagem") &&
       !extra.crawler &&
-      !has(p, "Visão Binocular") &&
+      (!has(p, "Visão Binocular") ||
+        inkCloudAt(state, p.r, p.c) ||
+        inkCloudAt(state, victim.r, victim.c)) &&
       (
         distance(p, victim) > 1 ||
         (
@@ -511,7 +515,10 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
             break;
         } else if (occupied) {
           const distantCapture =
-            n > 1 && !has(p, "Percepção Espacial");
+            n > 1 &&
+            (!has(p, "Percepção Espacial") ||
+              inkCloudAt(state, p.r, p.c) ||
+              inkCloudAt(state, r, c));
           if (!distantCapture && captureAllowed) add(r, c, [...path]);
         } else if (!captureOnly && movementAllowed) {
           add(r, c, [...path]);
@@ -1628,21 +1635,27 @@ function knightEnemyTargets(state, piece) {
 export function biologicalProjectileTargets(state, piece) {
   if (
     !has(piece, "Projétil Biológico") ||
-    !metabolicActionReady(state, piece)
+    !metabolicActionReady(state, piece) ||
+    inkCloudAt(state, piece.r, piece.c)
   )
     return [];
   return knightEnemyTargets(state, piece).filter(
-    (target) => terrain(state, target.r, target.c) !== "hostile",
+    (target) =>
+      terrain(state, target.r, target.c) !== "hostile" &&
+      !inkCloudAt(state, target.r, target.c),
   );
 }
 
 export function electricDischargeTargets(state, piece) {
   if (
     !has(piece, "Eletrodescarga") ||
-    !metabolicActionReady(state, piece)
+    !metabolicActionReady(state, piece) ||
+    inkCloudAt(state, piece.r, piece.c)
   )
     return [];
-  return knightEnemyTargets(state, piece);
+  return knightEnemyTargets(state, piece).filter(
+    (target) => !inkCloudAt(state, target.r, target.c),
+  );
 }
 
 export function feedingReachTargets(state, piece) {
@@ -1651,7 +1664,13 @@ export function feedingReachTargets(state, piece) {
       : has(piece, "Pescoço Verticalizado")
         ? "Pescoço Verticalizado"
         : null;
-  if (!trait || resting(state, piece) || dormant(state, piece)) return [];
+  if (
+    !trait ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    inkCloudAt(state, piece.r, piece.c)
+  )
+    return [];
 
   const landings = movesFor(state, piece, { ignoreChain: true })
       .filter(
@@ -1690,6 +1709,7 @@ export function feedingReachTargets(state, piece) {
           parentalCareProtects(state, victim)
         )
           continue;
+        if (inkCloudAt(state, victim.r, victim.c)) continue;
         const photosynthetic = canPhotosynthesize(victim);
         if (
           (trait === "Garras" && photosynthetic) ||
@@ -1706,6 +1726,61 @@ export function feedingReachTargets(state, piece) {
           });
       }
   return [...byVictim.values()];
+}
+
+export function hematophagyTargets(state, piece) {
+  if (
+    !piece ||
+    !has(piece, "Hematofagia") ||
+    !reproductionReady(state, piece) ||
+    resting(state, piece) ||
+    dormant(state, piece)
+  )
+    return [];
+  return state.pieces.filter(
+    (target) =>
+      target.owner !== piece.owner &&
+      distance(piece, target) === 1 &&
+      !canPhotosynthesize(target) &&
+      predatoryReproductionAvailable(piece, target) &&
+      round(state) >= (target.hematophagyDepletedUntilRound ?? 0),
+  );
+}
+
+export function broodParasitismTargets(state, piece) {
+  if (
+    !piece ||
+    !has(piece, "Parasitismo de Ninhada") ||
+    resting(state, piece) ||
+    dormant(state, piece)
+  )
+    return [];
+  const alreadyActive = state.pieces.some(
+    (candidate) =>
+      candidate.broodParasite?.parasiteId === piece.id &&
+      candidate.broodParasite.expiresRound >= round(state),
+  );
+  if (alreadyActive) return [];
+  return state.pieces.filter(
+    (target) =>
+      target.owner !== piece.owner &&
+      distance(piece, target) === 1 &&
+      !juvenile(state, target) &&
+      !target.broodParasite &&
+      ["Ovíparo", "Ovíparos Amniotas", "Ooteca"].some((trait) =>
+        has(target, trait),
+      ),
+  );
+}
+
+export function canRejectBroodParasite(state, piece) {
+  return !!(
+    piece?.broodParasite &&
+    piece.broodParasite.expiresRound >= round(state) &&
+    has(piece, "Incubação") &&
+    !resting(state, piece) &&
+    !dormant(state, piece)
+  );
 }
 
 function pieceEvaluationState(state, piece) {
@@ -1806,6 +1881,19 @@ export function actionsForPiece(
       r: target.r,
       c: target.c,
     })),
+    ...hematophagyTargets(source, piece).map((target) => ({
+      type: "HEMATOPHAGY",
+      id: piece.id,
+      targetId: target.id,
+    })),
+    ...broodParasitismTargets(source, piece).map((target) => ({
+      type: "BROOD_PARASITIZE",
+      id: piece.id,
+      targetId: target.id,
+    })),
+    ...(canRejectBroodParasite(source, piece)
+      ? [{ type: "REJECT_BROOD_PARASITE", id: piece.id }]
+      : []),
     ...biologicalProjectileTargets(source, piece).map((target) => ({
       type: "BIO_PROJECTILE",
       id: piece.id,
@@ -1858,6 +1946,7 @@ export function vivificationActionsForPiece(state, piece) {
       action.type === "BUD" ||
       action.type === "PUPATE" ||
       action.type === "PARTHENOGENESIS" ||
+      action.type === "REJECT_BROOD_PARASITE" ||
       (action.type === "PARASITIZE" &&
         !Number.isInteger(action.targetId)),
   );

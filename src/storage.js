@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -168,8 +168,13 @@ function normalizeCycleInnovationPressure(state) {
   state.movementTrace = null;
   state.webs ??= [];
   state.chemicalHazards ??= [];
+  state.inkClouds ??= [];
   for (const piece of state?.pieces ?? []) {
     piece.lifetimeOffspring ??= 0;
+    piece.hematophagyDepletedUntilRound ??= null;
+    piece.autotomyRecovery ??= null;
+    piece.inkReadyRound ??= piece.bornRound ?? 0;
+    piece.broodParasite ??= null;
     piece.webTrapped ??= null;
     piece.webCreatedStationarySinceRound ??= null;
   }
