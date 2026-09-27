@@ -209,6 +209,7 @@ export function howToPlayLines() {
     "Perdas e mutações negativas entram no pool a partir do segundo Ciclo da campanha; na Arena, elas seguem as regras próprias desse cenário.",
     section("Disponibilidade das mutações negativas"),
     "As mutações negativas espontâneas exigem o 2º Ciclo da campanha. O período abaixo é o período geológico mínimo; pré-requisitos usam a ancestralidade da própria linhagem. Na Arena, a cronologia é ignorada, mas essas mutações continuam fora do construtor inicial e seus pré-requisitos permanecem válidos.",
+    `${traitLabel("Assimetria Flutuante")} impede que o portador seja escolhido como parceiro-alvo de Reprodução Sexuada, embora ele ainda possa iniciar o acasalamento e escolher outro parceiro. ${traitLabel("Ataxia")} ocupa o locus negativo motor com Deficiência Motora e tem 25% de chance de desviar uma ação MOVE para outro destino legal da mesma criatura quando houver alternativa. ${traitLabel("Anemia Falciforme")} ocupa o locus de comprometimento metabólico com Insuficiência Respiratória e anula especificamente a redução de uma rodada fornecida por Respiração aeróbia.`,
     ...negativeMutationRuleLines(),
 
     section("Os três cenários"),
