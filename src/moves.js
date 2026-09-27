@@ -147,35 +147,63 @@ export function manipulationTargets(state) {
   return targets;
 }
 
-export function constructionTargets(state) {
-  const pending = state.building;
-  if (state.phase !== "build" || !pending) return [];
-  const parent = state.pieces.find((piece) => piece.id === pending.id);
-  if (!parent) return [];
-  const decomposition = new Set([
+function constructionCellAvailable(state, parent, r, c) {
+  const cell = square(r, c),
+    decomposition = new Set([
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
       ...state.carcasses.map((entry) => entry.cell),
       ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
       ...(state.event?.lethalHazards ?? []),
-    ]),
-    targets = [];
+    ]);
+  return (
+    inside(r, c) &&
+    !at(state, r, c) &&
+    !eggAt(state, r, c) &&
+    !ecologicalDomainBlocked(state, parent.owner, r, c) &&
+    !barrierAt(state, r, c) &&
+    !decomposition.has(cell)
+  );
+}
+
+export function constructionTargets(state) {
+  const pending = state.building;
+  if (state.phase !== "build" || !pending) return [];
+  const parent = state.pieces.find((piece) => piece.id === pending.id);
+  if (!parent) return [];
+  const targets = [];
   for (let dr = -1; dr <= 1; dr++)
     for (let dc = -1; dc <= 1; dc++) {
       if (!dr && !dc) continue;
       const r = parent.r + dr,
-        c = parent.c + dc,
-        cell = square(r, c);
-      if (
-        inside(r, c) &&
-        !at(state, r, c) &&
-        !eggAt(state, r, c) &&
-        !ecologicalDomainBlocked(state, parent.owner, r, c) &&
-        !barrierAt(state, r, c) &&
-        !decomposition.has(cell)
-      )
+        c = parent.c + dc;
+      if (constructionCellAvailable(state, parent, r, c))
         targets.push({ r, c });
     }
+  return targets;
+}
+
+export function nicheConstructionTargets(state, piece) {
+  if (
+    !piece ||
+    !has(piece, "Construtor de Nicho") ||
+    !state.pieces.some((candidate) => candidate.id === piece.id) ||
+    ecologicalDomainBlocked(state, piece.owner, piece.r, piece.c) ||
+    !([0, 7].includes(piece.r) && [0, 7].includes(piece.c))
+  )
+    return [];
+  const targets = [];
+  for (const [dr, dc] of [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ]) {
+    const r = piece.r + dr,
+      c = piece.c + dc;
+    if (constructionCellAvailable(state, piece, r, c))
+      targets.push({ r, c });
+  }
   return targets;
 }
 export function movesFor(state, p, { ignoreChain = false } = {}) {
@@ -1511,6 +1539,12 @@ export function actionsForPiece(
       : []),
     ...(canBud(source, piece) ? [{ type: "BUD", id: piece.id }] : []),
     ...(canPupate(source, piece) ? [{ type: "PUPATE", id: piece.id }] : []),
+    ...nicheConstructionTargets(source, piece).map((target) => ({
+      type: "NICHE_BUILD",
+      id: piece.id,
+      r: target.r,
+      c: target.c,
+    })),
   ];
 }
 
