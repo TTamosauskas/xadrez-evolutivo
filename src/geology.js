@@ -1074,6 +1074,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Parasitismo",
   "Vetor Patógeno",
   "Embriófitas",
+  "Estômatos",
   "Traqueófitas",
   "Espinhos",
   "Madeira",
