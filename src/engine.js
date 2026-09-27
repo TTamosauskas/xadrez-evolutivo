@@ -2161,7 +2161,7 @@ function executeMove(ctx, action) {
     });
   }
   if (target.serpentine) {
-    log(state, `${OWNERS[p.owner]}: ⚕️ Serpenteamento percorreu uma trajetória sinuosa até ${coord(p.r, p.c)}.`);
+    log(state, `${OWNERS[p.owner]}: ⚕️ Serpenteamento percorreu uma linha horizontal adjacente até ${coord(p.r, p.c)}.`);
     emitPassiveEffect(state, "Serpenteamento", "⚕️ Serpenteamento contornou a geometria comum.", {
       pieceId: p.id,
       outcome: "serpentine-movement",
