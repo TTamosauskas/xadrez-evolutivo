@@ -472,7 +472,8 @@ export function bufferEukaryoteNegative(state, piece, trait) {
   piece.eukaryoteBufferedTraits ??= [];
   piece.eukaryoteBufferedTraits.push(trait);
   piece.eukaryoteBufferUses = (piece.eukaryoteBufferUses ?? 0) + 1;
-  if (trait === "Mutação Letal") delete piece.deleteriousDue;
+  if (trait === "Mutação Letal")
+    piece.deleteriousDue = round(state) + 3;
   return true;
 }
 
@@ -616,6 +617,8 @@ export function newPiece(state, owner, r, c, source = {}) {
       adaptiveImmuneMemory: Array.isArray(source.adaptiveImmuneMemory)
         ? [...new Set(source.adaptiveImmuneMemory)]
         : [],
+      adaptiveImmuneNotifiedDisease:
+        source.adaptiveImmuneNotifiedDisease ?? null,
       stomataStartedRound: source.stomataStartedRound ?? bornRound,
       endothermyUsedTurn: source.endothermyUsedTurn ?? null,
       webTrapped: source.webTrapped ?? null,
@@ -2985,6 +2988,11 @@ export function assertState(state) {
       ) ||
       new Set(p.adaptiveImmuneMemory ?? []).size !==
         (p.adaptiveImmuneMemory ?? []).length ||
+      !(
+        p.adaptiveImmuneNotifiedDisease === null ||
+        p.adaptiveImmuneNotifiedDisease === undefined ||
+        integer(p.adaptiveImmuneNotifiedDisease, 1)
+      ) ||
       !integer(p.stomataStartedRound ?? p.bornRound, 0) ||
       !(
         p.endothermyUsedTurn === null ||
