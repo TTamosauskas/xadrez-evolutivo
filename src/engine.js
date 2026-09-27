@@ -1537,6 +1537,7 @@ function executeMove(ctx, action) {
     herdFollowers =
       !second &&
       has(p, "Manada") &&
+      !target.noContinuation &&
       !target.crawler &&
       !target.lateral &&
       !target.escalation &&
@@ -1744,9 +1745,17 @@ function executeMove(ctx, action) {
     pieceCapture &&
     victim.owner !== p.owner &&
     !target.crawler &&
-    distance(p, victim) > 1 &&
     has(victim, "Camuflagem") &&
-    has(p, "Visão Binocular")
+    has(p, "Visão Binocular") &&
+    (
+      distance(p, victim) > 1 ||
+      (
+        distance(p, victim) === 1 &&
+        Math.abs(p.r - victim.r) === 1 &&
+        Math.abs(p.c - victim.c) === 1 &&
+        (has(victim, "Pelos") || has(victim, "Penas"))
+      )
+    )
   )
     emitPassiveEffect(
       state,
