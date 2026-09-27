@@ -1942,6 +1942,82 @@ test("Neurodivergência legend distinguishes Hiperfoco and Sobrecarga", () => {
   dom.window.close();
 });
 
+test("Hierarquia highlights a recommended social sacrifice without choosing it", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 0, traits: ["Sociabilidade", "Hierarquia"] },
+      { owner: "blue", r: 4, c: 5, rank: 5, traits: ["Sociabilidade"] },
+      { owner: "blue", r: 5, c: 4, rank: 3, traits: ["Sociabilidade"] },
+      { owner: "blue", r: 5, c: 5, rank: 1, traits: ["Sociabilidade"] },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    unavailable = s.pieces[1];
+  unavailable.nextReproductionRound = round(s) + 4;
+  s.phase = "social-defense";
+  s.current = "blue";
+  s.socialDefense = {
+    attackerId: s.pieces[4].id,
+    victimId: s.pieces[0].id,
+    attackerOwner: "amber",
+    memberIds: s.pieces.slice(0, 4).map((piece) => piece.id),
+  };
+
+  render(dom.window.document, s);
+  const cell = dom.window.document.querySelector(
+    `[data-r="${unavailable.r}"][data-c="${unavailable.c}"]`,
+  );
+  assert.ok(cell.classList.contains("hierarchy-recommended-sacrifice"));
+  assert.match(cell.title, /Hierarquia/);
+  assert.match(
+    dom.window.document.getElementById("board-legend").textContent,
+    /Sacrifício recomendado pela Hierarquia/,
+  );
+  dom.window.close();
+});
+
+test("Superorganismo pulses allied members and marks the recommended member and move", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 7, c: 7, rank: 0, traits: ["Superorganismo"] },
+      { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Superorganismo"] },
+      { owner: "amber", r: 4, c: 6, rank: 4 },
+      { owner: "amber", r: 0, c: 0, rank: 0 },
+    ]),
+    selected = s.pieces[0],
+    recommended = s.pieces[1];
+
+  render(dom.window.document, s, { selected: selected.id });
+  const recommendedCell = dom.window.document.querySelector(
+    `[data-r="${recommended.r}"][data-c="${recommended.c}"]`,
+  );
+  assert.ok(recommendedCell.classList.contains("superorganism-member-pulse"));
+  assert.ok(recommendedCell.classList.contains("superorganism-best-member"));
+  assert.match(
+    dom.window.document.getElementById("board-legend").textContent,
+    /Membro recomendado pelo Superorganismo/,
+  );
+
+  render(dom.window.document, s, { selected: recommended.id });
+  const target = dom.window.document.querySelector('[data-r="4"][data-c="6"]');
+  assert.ok(target.classList.contains("superorganism-suggested-target"));
+  assert.match(target.title, /movimento sugerido pelo Superorganismo/);
+  dom.window.close();
+});
+
+test("Ataxia exposes a contextual movement-risk legend when alternatives exist", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 4, traits: ["Ataxia"] },
+      { owner: "amber", r: 0, c: 0, rank: 0 },
+    ]);
+  render(dom.window.document, s, { selected: s.pieces[0].id });
+  assert.match(
+    dom.window.document.getElementById("board-legend").textContent,
+    /Movimento sujeito a desvio por Ataxia/,
+  );
+  dom.window.close();
+});
+
 test("application UI starts with the Hadean common ancestor, then plays division, saves and resets", async () => {
   const dom = setup(),
     w = dom.window;
