@@ -1626,7 +1626,7 @@ test("new social, mimicry and domestication mutations unlock in the intended per
     }),
     animal = {
       traits: ["Predação", "Multicelularismo"],
-      ancestry: ["Incubação"],
+      ancestry: ["Incubação", "Camuflagem"],
     },
     plant = {
       traits: ["Fotossíntese", "Multicelularismo"],
