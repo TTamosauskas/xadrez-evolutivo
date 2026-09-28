@@ -2595,6 +2595,7 @@ test("victory dialog uses the concise extinction model", () => {
   assert.match(body, /Características predominantes:/);
   assert.match(body, /Chifre/);
   assert.doesNotMatch(body, /linhagem sobrevivente/);
+  assert.equal(d.getElementById("game-over-new").textContent, "Próximo Ciclo");
   dom.window.close();
 });
 
