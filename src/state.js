@@ -574,12 +574,20 @@ export function newPiece(state, owner, r, c, source = {}) {
       ...source,
       traits: basalTraits,
     },
+    sexualGeneticsActive =
+      state.scenario === "arena" ||
+      (state.historicalTraits ?? []).includes("Reprodução Sexuada"),
     inheritedGenome = source.genome
       ? cloneGenome(source.genome)
-      : genomeFromLegacyProfile(legacyProfile),
-    genome = (state.historicalTraits ?? []).includes("Reprodução Sexuada")
-      ? inheritedGenome
-      : dominantizeGenome(inheritedGenome),
+      : genomeFromLegacyProfile(
+          sexualGeneticsActive
+            ? legacyProfile
+            : { ...legacyProfile, recessiveTraits: [] },
+        ),
+    genome =
+      !sexualGeneticsActive && source.genome
+        ? dominantizeGenome(inheritedGenome)
+        : inheritedGenome,
     piece = {
       id: state.nextId++,
       owner,
