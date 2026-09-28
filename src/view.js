@@ -214,8 +214,7 @@ export function traitFrameEntries(
 }
 
 function evolutionarySummary(state, owner) {
-  const established = establishedTraits(state),
-    pieces = state.pieces.filter((p) => p.owner === owner),
+  const pieces = state.pieces.filter((p) => p.owner === owner),
     selected = dominantLineage(state, owner),
     representative = selected.piece,
     extinctionFounder =
@@ -230,9 +229,16 @@ function evolutionarySummary(state, owner) {
       : survivingPopulation
         ? Math.round((selected.count / survivingPopulation) * 100)
         : 0,
-    traits = (representative?.traits ?? [])
-      .filter((trait) => !established.has(trait))
-      .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
+    traitNames = [
+      ...new Set([
+        ...(representative?.traits ?? []),
+        ...(representative?.somaticMutations ?? []),
+      ]),
+    ].filter((trait) => trait !== "Respiração anaeróbia"),
+    traits = traitNames.map((name) => ({
+      name,
+      icon: TRAITS[name]?.[0] || "●",
+    }));
 
   return {
     lineages,
