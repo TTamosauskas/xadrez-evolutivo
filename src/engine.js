@@ -4564,19 +4564,6 @@ function executeMove(ctx, action) {
     state,
     `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
   );
-  if (fertile && !state.seen.includes("reproduction")) {
-    state.seen.push("reproduction");
-    emitPassiveEffect(
-      state,
-      "Reprodução",
-      "Reprodução disponível.",
-      {
-        pieceId: p.id,
-        outcome: "reproduction-tutorial",
-        theme: "fertile",
-      },
-    );
-  }
   const sexualPartners = partnersFor(state, p);
   if (
     sexualResourceHere &&
