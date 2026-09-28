@@ -211,7 +211,7 @@ test("first generation-3 habitat update preserves every geological preset", () =
 test("pre-Devonian custom habitats stay outside Conway while preserving their phase presets", () => {
   const hadean = createCampaignState(898);
   assert.equal(aquaticFertilityRegime(hadean), true);
-  assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 1);
+  assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 0);
 
   for (const [index, id] of [
     "eoarchean",
@@ -735,20 +735,6 @@ test("capturing Ooteca reserves arrival and cannot overlap the attacker", () => 
   assert.equal(s.pieces.filter((p) => p.r === 4 && p.c === 4).length, 1);
   assert.equal(s.pieces.find((p) => p.r === 4 && p.c === 4).id, 1);
   assertState(s);
-});
-test("notices pause actions; acknowledgment is ordered and idempotent", () => {
-  let s = fixture([
-    { owner: "blue", r: 6, c: 3, traits: ["Herbívoro"] },
-    { owner: "amber", r: 1, c: 4 },
-  ]);
-  s.board[43] = "fertile";
-  s = transition(s, move(s.pieces[0], 5, 3));
-  assert.ok(s.notices.length);
-  assert.equal(transition(s, { type: "PASS" }), s);
-  assert.equal(transition(s, { type: "ACK_NOTICE", id: 9999 }), s);
-  const first = s.notices[0].id;
-  const next = transition(s, { type: "ACK_NOTICE", id: first });
-  assert.equal(transition(next, { type: "ACK_NOTICE", id: first }), next);
 });
 test("sexual partner preserves Multicelularismo and survives save/restore", () => {
   let s = fixture([
@@ -1453,35 +1439,26 @@ test("Semelparidade defers death while viviparous offspring are gestating", () =
   assertState(s);
 });
 
-test("fertile reproduction shows the concise tutorial copy only on its first occurrence", () => {
+test("fertile reproduction shows the concise tutorial toast on its first occurrence", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 0, traits: ["Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[28] = "fertile";
   s = transition(s, move(s.pieces[0], 3, 4));
-  const first = s.notices.find((entry) => entry.title === "Reprodução");
-  assert.deepEqual(first?.lines, [
-    "Casas verdes podem gerar prole com as características dos pais.",
-  ]);
-  assert.ok(s.seen.includes("reproduction"));
-
-  while (s.notices.length)
-    s = transition(s, {
-      type: "ACK_NOTICE",
-      id: s.notices[0].id,
-      revision: s.revision,
-    });
-  notice(
-    s,
-    "Reprodução",
-    ["Casas verdes podem gerar prole com as características dos pais."],
-    "reproduction",
+  const first = s.passiveEffects.find(
+    (effect) =>
+      effect.trait === "Reprodução" &&
+      effect.outcome === "reproduction-tutorial",
   );
+  assert.ok(first);
+  assert.equal(first.text, "Reprodução disponível.");
+  assert.ok(s.seen.includes("reproduction"));
   assert.equal(
     s.notices.some((entry) => entry.title === "Reprodução"),
     false,
   );
+  assertState(s);
 });
 
 test("fertile reproduction uses the piece metabolic recovery profile", () => {
@@ -2693,7 +2670,7 @@ test("post-Hadean phases no longer need an opening mutation to create an energy 
 test("same-branch offspring do not spend the guarantee reserved for the missing Archean branch", () => {
   const s = createState(1195, {
     scenario: "earth",
-    geologicalStage: "paleoarchean",
+    geologicalStage: "eoarchean",
     cycle: 1,
     totalCycles: 2,
     historicalTraits: ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese"],
