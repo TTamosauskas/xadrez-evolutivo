@@ -1701,6 +1701,38 @@ function hadeanHostileTarget(state) {
   return pick(state, occupied.length ? occupied : inward);
 }
 
+function scheduleHadeanChemosynthesis(state, piece) {
+  if (
+    state.geologicalStage !== "hadean" ||
+    !piece ||
+    !has(piece, "Quimiossíntese")
+  )
+    return false;
+  const cell = square(piece.r, piece.c);
+  if (state.board[cell] !== "hostile") return false;
+  state.hadeanEnvironment ??= {
+    hostileDeathExplained: false,
+    fertileExplained: false,
+    pendingFertility: [],
+  };
+  if (
+    state.hadeanEnvironment.pendingFertility.some(
+      (entry) => entry.pieceId === piece.id && entry.cell === cell,
+    )
+  )
+    return true;
+  state.hadeanEnvironment.pendingFertility.push({
+    pieceId: piece.id,
+    cell,
+    dueTurn: state.turn + 1,
+  });
+  log(
+    state,
+    `♨️ Quimiossíntese começou a aproveitar a pressão química em ${coord(piece.r, piece.c)}; a casa ficará fértil no próximo turno.`,
+  );
+  return true;
+}
+
 function matureHadeanFertility(state) {
   if (state.geologicalStage !== "hadean" || !state.hadeanEnvironment)
     return 0;
@@ -1754,6 +1786,8 @@ function advanceHadeanEnvironment(state) {
     pendingFertility: [],
   };
   matureHadeanFertility(state);
+  for (const piece of state.pieces)
+    scheduleHadeanChemosynthesis(state, piece);
 
   const target = hadeanHostileTarget(state);
   if (!target) return false;
@@ -1763,23 +1797,7 @@ function advanceHadeanEnvironment(state) {
   const piece = at(state, target.r, target.c);
   if (!piece) return true;
 
-  if (has(piece, "Quimiossíntese")) {
-    if (
-      !state.hadeanEnvironment.pendingFertility.some(
-        (entry) => entry.pieceId === piece.id && entry.cell === cell,
-      )
-    )
-      state.hadeanEnvironment.pendingFertility.push({
-        pieceId: piece.id,
-        cell,
-        dueTurn: state.turn + 1,
-      });
-    log(
-      state,
-      `♨️ Quimiossíntese começou a aproveitar a pressão química em ${coord(piece.r, piece.c)}; a casa ficará fértil no próximo turno.`,
-    );
-    return true;
-  }
+  if (scheduleHadeanChemosynthesis(state, piece)) return true;
 
   if (!piece.hadeanHostileDeathPending && random(state) < 1 / 2) {
     piece.hadeanHostileDeathPending = true;
