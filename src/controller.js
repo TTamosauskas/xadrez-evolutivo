@@ -1,4 +1,8 @@
-import { transition, mutuallyBlocked } from "./engine.js";
+import {
+  transition,
+  mutuallyBlocked,
+  lethalDeathsDue,
+} from "./engine.js";
 import { assertState, clone } from "./state.js";
 import { has } from "./constants.js";
 import { fallbackAction } from "./ai.js";
@@ -20,6 +24,7 @@ export class Controller {
       timeout = 2000,
       aiDelay = 850,
       conwayDelay = 700,
+      lethalDelay = 700,
       collapseDelay = 250,
       resultDelay = 1000,
     } = {},
@@ -34,6 +39,7 @@ export class Controller {
     this.timeout = timeout;
     this.aiDelay = aiDelay;
     this.conwayDelay = conwayDelay;
+    this.lethalDelay = lethalDelay;
     this.collapseDelay = collapseDelay;
     this.resultDelay = resultDelay;
     this.mode = "multi";
@@ -42,6 +48,7 @@ export class Controller {
     this.generation = 0;
     this.job = null;
     this.conwayTimer = null;
+    this.lethalTimer = null;
     this.resultTimer = null;
     this.resultReady = false;
     this.neocortexPending = null;
@@ -61,6 +68,10 @@ export class Controller {
       this.clearTimer(this.conwayTimer);
       this.conwayTimer = null;
     }
+    if (this.lethalTimer !== null) {
+      this.clearTimer(this.lethalTimer);
+      this.lethalTimer = null;
+    }
     if (this.resultTimer !== null) {
       this.clearTimer(this.resultTimer);
       this.resultTimer = null;
@@ -79,14 +90,51 @@ export class Controller {
           this.render(this.state, false, true);
         }, this.resultDelay);
       }
-      const busy = this.conwayTimer !== null ? "conway" : !!this.job;
+      const busy =
+        this.lethalTimer !== null
+          ? "lethal"
+          : this.conwayTimer !== null
+            ? "conway"
+            : !!this.job;
       this.render(this.state, busy, this.resultReady, movementTrace);
       return;
     }
     this.resultReady = false;
-    if (!this.scheduleConway()) this.schedule();
-    const busy = this.conwayTimer !== null ? "conway" : !!this.job;
+    if (!this.scheduleLethalDeaths() && !this.scheduleConway()) this.schedule();
+    const busy =
+      this.lethalTimer !== null
+        ? "lethal"
+        : this.conwayTimer !== null
+          ? "conway"
+          : !!this.job;
     this.render(this.state, busy, true, movementTrace);
+  }
+
+  scheduleLethalDeaths() {
+    if (
+      this.lethalTimer !== null ||
+      this.job ||
+      this.conwayTimer !== null ||
+      this.paused ||
+      this.state.result ||
+      this.state.notices.length ||
+      !lethalDeathsDue(this.state)
+    )
+      return this.lethalTimer !== null;
+
+    const token = this.generation,
+      revision = this.state.revision;
+    this.lethalTimer = this.setTimer(() => {
+      if (
+        this.paused ||
+        this.generation !== token ||
+        this.state.revision !== revision
+      )
+        return;
+      this.lethalTimer = null;
+      this.dispatch({ type: "RESOLVE_LETHAL", revision }, { ai: true });
+    }, this.lethalDelay);
+    return true;
   }
 
   scheduleConway() {
@@ -158,7 +206,8 @@ export class Controller {
   dispatch(action, { ai = false } = {}) {
     if (
       this.paused ||
-      (!ai && this.conwayTimer !== null) ||
+      (!ai &&
+        (this.conwayTimer !== null || this.lethalTimer !== null)) ||
       (!ai &&
         ((this.mode === "single" && this.state.current === "amber") ||
           this.mode === "auto") &&

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { square } from "../src/constants.js";
-import { simulate } from "../src/engine.js";
+import { lethalDeathsDue, simulate } from "../src/engine.js";
 import { movesFor } from "../src/moves.js";
 import {
   assertState,
@@ -35,7 +35,7 @@ function earlyEarthState(stage, seed) {
   return state;
 }
 
-test("ordinary movement can enter a lethal cell and the mover dies there", () => {
+test("ordinary movement keeps a piece visible on a lethal cell until the next turn resolves it", () => {
   const state = earlyEarthState("eoarchean", 9501),
     mover = newPiece(state, "blue", 1, 1, {
       rank: 4,
@@ -72,16 +72,25 @@ test("ordinary movement can enter a lethal cell and the mover dies there", () =>
       (target) => target.r === 0 && target.c === 0 && !target.capture,
     ),
   );
-  const next = simulate(state, move(mover, 0, 0));
+  const landed = simulate(state, move(mover, 0, 0)),
+    doomed = landed.pieces.find((piece) => piece.id === mover.id);
 
+  assert.ok(doomed);
+  assert.deepEqual([doomed.r, doomed.c], [0, 0]);
+  assert.equal(doomed.lethalDeathRound, round(landed) + 1);
+  assert.equal(lethalDeathsDue(landed), false);
+  assert.ok(landed.logs.some((entry) => /letal/.test(entry.text)));
+
+  const nextRound = simulate(landed, { type: "PASS" });
+  assert.equal(lethalDeathsDue(nextRound), true);
+  const next = simulate(nextRound, { type: "RESOLVE_LETHAL" });
   assert.equal(next.pieces.some((piece) => piece.id === mover.id), false);
   assert.ok(next.pieces.some((piece) => piece.id === blueAlly.id));
   assert.ok(next.pieces.some((piece) => piece.id === amber.id));
-  assert.ok(next.logs.some((entry) => /ambiente letal/.test(entry.text)));
   assertState(next);
 });
 
-test("a capture into a lethal Hadean cell removes the victim before killing the attacker", () => {
+test("a capture into a lethal Hadean cell removes the victim but leaves the doomed attacker visible", () => {
   const state = earlyEarthState("hadean", 9502);
   state.hadeanTutorial = {
     moved: true,
@@ -119,17 +128,25 @@ test("a capture into a lethal Hadean cell removes the victim before killing the 
       (target) => target.r === 1 && target.c === 1 && target.capture,
     ),
   );
-  const next = simulate(state, move(attacker, 1, 1));
+  const landed = simulate(state, move(attacker, 1, 1)),
+    doomed = landed.pieces.find((piece) => piece.id === attacker.id);
 
-  assert.equal(next.pieces.some((piece) => piece.id === victim.id), false);
+  assert.equal(landed.pieces.some((piece) => piece.id === victim.id), false);
+  assert.ok(doomed);
+  assert.deepEqual([doomed.r, doomed.c], [1, 1]);
+  assert.equal(lethalDeathsDue(landed), false);
+  assert.equal(landed.hadeanTutorial.captured, true);
+
+  const nextRound = simulate(landed, { type: "PASS" });
+  assert.equal(lethalDeathsDue(nextRound), true);
+  const next = simulate(nextRound, { type: "RESOLVE_LETHAL" });
   assert.equal(next.pieces.some((piece) => piece.id === attacker.id), false);
-  assert.equal(next.hadeanTutorial.captured, true);
   assert.ok(next.pieces.some((piece) => piece.id === blueAlly.id));
   assert.ok(next.pieces.some((piece) => piece.id === amberAlly.id));
   assertState(next);
 });
 
-test("Hadean reproduction may place a newborn in a lethal cell and the newborn dies", () => {
+test("Hadean reproduction may place a newborn in a lethal cell and keeps it visible until resolution", () => {
   const state = earlyEarthState("hadean", 9503);
   state.hadeanTutorial = {
     moved: true,
@@ -160,14 +177,22 @@ test("Hadean reproduction may place a newborn in a lethal cell and the newborn d
     }
 
   const beforeNextId = state.nextId,
-    next = simulate(state, move(parent, parent.r, parent.c));
+    landed = simulate(state, move(parent, parent.r, parent.c)),
+    newborn = landed.pieces.find((piece) => piece.id >= beforeNextId);
 
-  assert.ok(next.nextId > beforeNextId);
+  assert.ok(landed.nextId > beforeNextId);
+  assert.ok(newborn);
+  assert.deepEqual([newborn.r, newborn.c], [1, 1]);
+  assert.equal(lethalDeathsDue(landed), false);
+  assert.ok(landed.logs.some((entry) => /letal/.test(entry.text)));
+
+  const nextRound = simulate(landed, { type: "PASS" });
+  assert.equal(lethalDeathsDue(nextRound), true);
+  const next = simulate(nextRound, { type: "RESOLVE_LETHAL" });
   assert.equal(
-    next.pieces.some((piece) => piece.r === 1 && piece.c === 1),
+    next.pieces.some((piece) => piece.id === newborn.id),
     false,
   );
-  assert.ok(next.logs.some((entry) => /ambiente letal/.test(entry.text)));
   assertState(next);
 });
 
