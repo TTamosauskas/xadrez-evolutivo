@@ -1310,7 +1310,7 @@ export function render(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting ? " waiting" : ""}`,
+            `piece ${p.owner}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting && actionState.reason !== "Sem ação legal disponível" ? " waiting" : ""}`,
           ),
         );
 
@@ -1319,7 +1319,7 @@ export function render(
           const energyCore = make(
             "span",
             TRAITS[branch][0],
-            `piece-energy-core ${p.owner} ${branch === "Fotossíntese" ? "photosynthetic" : branch === "Predação" ? "predatory" : "chemosynthetic"}${juvenile(state, p) || has(p, "Nanismo") ? " compact" : ""}${actionState?.waiting ? " waiting" : ""}`,
+            `piece-energy-core ${p.owner} ${branch === "Fotossíntese" ? "photosynthetic" : branch === "Predação" ? "predatory" : "chemosynthetic"}${juvenile(state, p) || has(p, "Nanismo") ? " compact" : ""}${actionState?.waiting && actionState.reason !== "Sem ação legal disponível" ? " waiting" : ""}`,
           );
           energyCore.dataset.trait = branch;
           energyCore.title = `Ramo energético: ${branch}`;

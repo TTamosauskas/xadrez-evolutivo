@@ -407,7 +407,7 @@ function firstOpeningReproduction(seed = 1) {
   return { state, child, parent };
 }
 
-test("Hadean founder Kings use normal fertile reproduction and only the first child is guaranteed chemosynthesis in the 2x2", () => {
+test("each original Hadean King guarantees chemosynthesis on its first reproduction", () => {
   let s = createCampaignState(401);
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ORIGIN_CLICK" });
@@ -477,7 +477,63 @@ test("Hadean founder Kings use normal fertile reproduction and only the first ch
     ),
     true,
   );
+
+  const amberFounder = s.pieces.find((piece) => piece.id === amber.id),
+    beforeAmber = new Set(s.pieces.map((piece) => piece.id));
+  s = transition(s, {
+    type: "MOVE",
+    id: amberFounder.id,
+    r: amberFounder.r,
+    c: amberFounder.c,
+  });
+  const amberFirstChild = s.pieces.find(
+    (piece) => piece.owner === "amber" && !beforeAmber.has(piece.id),
+  );
+  assert.ok(amberFirstChild);
+  assert.ok(amberFirstChild.traits.includes("Quimiossíntese"));
+  assert.ok(
+    s.pieces.find((piece) => piece.id === amber.id).nextReproductionRound <=
+      round(s),
+  );
   assertState(s);
+});
+
+test("later Hadean offspring use an exact 50 percent chemosynthesis gate", () => {
+  const offspringForRng = (rng) => {
+    const s = fixture([
+        { owner: "blue", r: 4, c: 4 },
+        { owner: "amber", r: 0, c: 0 },
+      ]),
+      parent = s.pieces[0];
+    s.geologicalStage = "hadean";
+    parent.rank = 4;
+    parent.generation = 1;
+    parent.lifetimeOffspring = 1;
+    parent.traits = ["Respiração anaeróbia"];
+    parent.ancestry = [...parent.traits];
+    parent.genome = genomeFromTraits(parent.traits);
+    syncGenomePhenotype(parent);
+    parent.nextReproductionRound = round(s);
+    s.board[square(parent.r, parent.c)] = "fertile";
+    s.rng = rng;
+    const before = new Set(s.pieces.map((piece) => piece.id)),
+      born = reproduce(context(s), parent, null, "teste", {
+        forcedCount: 1,
+        immediateDevelopment: true,
+        ignoreReadiness: true,
+        resourceKind: "fertile",
+      });
+    assert.equal(born, 1);
+    return s.pieces.find(
+      (piece) => piece.owner === parent.owner && !before.has(piece.id),
+    );
+  };
+
+  assert.ok(offspringForRng(1).traits.includes("Quimiossíntese"));
+  assert.equal(
+    offspringForRng(1000).traits.includes("Quimiossíntese"),
+    false,
+  );
 });
 
 
@@ -557,9 +613,16 @@ test("Hadean chemosynthesis turns a cell fertile one turn after hostile pressure
   );
   assert.equal(s.hadeanTutorial.fertile, false);
 
+  const cooldownBeforeConversion = s.pieces.find(
+    (piece) => piece.id === sample.child.id,
+  ).nextReproductionRound;
   s = transition(s, { type: "PASS" });
   assert.equal(s.board[cell], "fertile");
   assert.equal(s.hadeanTutorial.fertile, true);
+  assert.equal(
+    s.pieces.find((piece) => piece.id === sample.child.id).nextReproductionRound,
+    cooldownBeforeConversion,
+  );
   assert.equal(
     s.passiveEffects.some(
       (effect) =>

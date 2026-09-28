@@ -696,10 +696,20 @@ function makeChildProfile(
   };
   syncGenomePhenotype(child);
   let mutationLabel = null;
-  const hadeanFirstChild =
-    state.geologicalStage === "hadean" &&
-    !state.pieces.some((piece) => (piece.generation ?? 0) > 0);
-  if (hadeanFirstChild) {
+  const hadeanChemosynthesisCandidate =
+      state.geologicalStage === "hadean" &&
+      !has(child, "Quimiossíntese"),
+    originalFounderFirstReproduction =
+      hadeanChemosynthesisCandidate &&
+      parent.rank === 4 &&
+      (parent.generation ?? 0) === 0 &&
+      parent.parentId == null &&
+      (parent.lifetimeOffspring ?? 0) === 0,
+    hadeanChemosynthesisMutation =
+      hadeanChemosynthesisCandidate &&
+      (originalFounderFirstReproduction || random(state) < 0.5);
+
+  if (hadeanChemosynthesisMutation) {
     child.genome = forceGenomeTrait(child.genome, "Quimiossíntese");
     child.ancestry = [...new Set([...child.ancestry, "Quimiossíntese"])];
     child.mutations++;
@@ -726,13 +736,17 @@ function makeChildProfile(
         (!missingEnergyBranch || !!complementaryBranch),
       mutationAttempt =
         openingGuarantee ||
-        random(state) < (state.event?.id === "solar" ? 1 : 1 / 3);
+        random(state) < (state.event?.id === "solar" ? 1 : 1 / 3),
+      mutationExclusions =
+        state.geologicalStage === "hadean"
+          ? new Set([...(excludedMutationTraits ?? []), "Quimiossíntese"])
+          : excludedMutationTraits;
     if (mutationAttempt)
       mutationLabel = mutation(
         state,
         child,
         !!mate,
-        excludedMutationTraits,
+        mutationExclusions,
         complementaryBranch,
       );
     if (
