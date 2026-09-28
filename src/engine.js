@@ -1682,6 +1682,7 @@ function maturePostHadeanChemosynthesis(state) {
         (hazardCell) => hazardCell !== cell,
       );
     state.board[cell] = "fertile";
+    piece.chemosynthesisFertileCell = cell;
     matured++;
     log(
       state,
@@ -1702,8 +1703,15 @@ function hadeanHostileTarget(state) {
       if (
         hadeanCentralCell(r, c) &&
         state.board[square(r, c)] === "neutral"
-      )
-        neutral.push({ r, c });
+      ) {
+        const occupant = at(state, r, c);
+        if (
+          !occupant ||
+          !Number.isInteger(occupant.chemosynthesisNeutralThroughTurn) ||
+          occupant.chemosynthesisNeutralThroughTurn < state.turn
+        )
+          neutral.push({ r, c });
+      }
 
   if (!neutral.length) return null;
 
@@ -1800,6 +1808,7 @@ function matureHadeanFertility(state) {
       );
       if (!piece || state.board[entry.cell] === "fertile") return false;
       state.board[entry.cell] = "fertile";
+      piece.chemosynthesisFertileCell = entry.cell;
       state.hadeanTutorial.fertile = true;
       matured++;
       log(
