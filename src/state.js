@@ -156,13 +156,15 @@ export const captureDisturbanceAt = (state, r, c) =>
   state.captureDisturbances?.find((entry) => entry.cell === square(r, c)) ??
   null;
 export const hadeanPlayableCell = (r, c) =>
-  r >= 0 && r <= 7 && c >= 0 && c <= 7;
-export const hadeanCentralCell = (r, c) =>
+  r >= 2 && r <= 5 && c >= 2 && c <= 5;
+export const hadeanCentralCell = hadeanPlayableCell;
+export const hadeanCoreCell = (r, c) =>
   r >= 3 && r <= 4 && c >= 3 && c <= 4;
 export const hadeanOuterCell = (r, c) =>
-  r === 0 || r === 7 || c === 0 || c === 7;
-const outerBoardCell = hadeanOuterCell;
+  hadeanPlayableCell(r, c) && !hadeanCoreCell(r, c);
+const outerBoardCell = (r, c) => r === 0 || r === 7 || c === 0 || c === 7;
 export const lethalHazardAt = (state, r, c) =>
+  (state.geologicalStage === "hadean" && !hadeanPlayableCell(r, c)) ||
   (state.geologicalStage === "eoarchean" &&
     state.cycle === 1 &&
     outerBoardCell(r, c)) ||
