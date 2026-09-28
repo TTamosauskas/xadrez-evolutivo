@@ -847,7 +847,7 @@ function spawnChild(state, profile, r, c) {
     child.lethalDeathReason = "nascimento em ambiente letal";
     log(
       state,
-      `${OWNERS[child.owner]}: ☠️ um descendente nasceu em ${coord(r, c)} e morrerá no início do próximo turno.`,
+      `${OWNERS[child.owner]}: ☠️ um descendente nasceu em casa letal em ${coord(r, c)} e morrerá no início do próximo turno.`,
     );
   }
   state.pieces.push(child);
