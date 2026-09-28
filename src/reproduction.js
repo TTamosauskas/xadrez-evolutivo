@@ -235,7 +235,11 @@ export function chooseDeleteriousMutation(state, pools) {
 }
 
 export function applyRegressionEffect(state, piece) {
-  if (!has(piece, "Regressão Evolutiva")) return [];
+  if (
+    !has(piece, "Regressão Evolutiva") ||
+    !(state.historicalTraits ?? []).includes("Reprodução Sexuada")
+  )
+    return [];
   const protectedTraits = new Set([
       ...NEGATIVE,
       BASAL_GENETIC_TRAIT,
@@ -344,6 +348,7 @@ function mutation(
         p.genome,
         choice.geneGain,
         () => random(state),
+        !(state.historicalTraits ?? []).includes("Reprodução Sexuada"),
       );
       syncGenomePhenotype(p);
     }
@@ -378,12 +383,20 @@ function mutation(
       state.historicalTraits.push(choice.geneGain);
     label = choice.geneGain;
   } else if (choice.geneLoss) {
-    p.genome = loseGenomeAllele(
-      p.genome,
-      choice.geneLoss,
-      () => random(state),
+    const restoreChemosynthesis =
+      ["Fotossíntese", "Predação"].includes(choice.geneLoss) &&
+      (p.ancestry ?? []).includes("Quimiossíntese");
+    p.genome = restoreChemosynthesis
+      ? withoutGenomeTraits(p.genome, [choice.geneLoss])
+      : loseGenomeAllele(
+          p.genome,
+          choice.geneLoss,
+          () => random(state),
+        );
+    syncGenomePhenotype(
+      p,
+      restoreChemosynthesis ? "Quimiossíntese" : null,
     );
-    syncGenomePhenotype(p);
     p.ancestry = [
       ...new Set([...(p.ancestry ?? []), ...(p.traits ?? [])]),
     ];
