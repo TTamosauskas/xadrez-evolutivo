@@ -2093,6 +2093,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.match(d.getElementById("mutation-dialog-real").textContent, /^Na vida: /);
     assert.match(d.getElementById("mutation-dialog-game").textContent, /^No jogo: /);
     click("mutation-dialog-close");
+    await new Promise((resolve) => w.setTimeout(resolve, 0));
 
     const emptyCell = [...d.querySelectorAll(".cell")].find(
       (cell) => !cell.classList.contains("occupied"),
