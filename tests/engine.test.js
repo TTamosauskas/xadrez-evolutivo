@@ -2376,9 +2376,9 @@ test("natural death is certain at age 48, bypasses Regeneração and leaves no t
 
 test("mutual blocking ends immediately by ecological-domain population", () => {
   const s = fixture([
-    { owner: "blue", r: 7, c: 7, rank: 4 },
-    { owner: "blue", r: 7, c: 6, rank: 4 },
-    { owner: "amber", r: 0, c: 0, rank: 4 },
+    { owner: "blue", r: 7, c: 7, rank: 4, traits: ["Carnívoro", "Voo"] },
+    { owner: "blue", r: 7, c: 6, rank: 4, traits: ["Carnívoro", "Voo"] },
+    { owner: "amber", r: 0, c: 0, rank: 4, traits: ["Carnívoro", "Voo"] },
   ]);
   s.board.fill("neutral");
   s.current = "blue";
@@ -2398,8 +2398,8 @@ test("mutual blocking ends immediately by ecological-domain population", () => {
 
 test("mutual blocking with equal populations ends in an ecological-domain draw", () => {
   const s = fixture([
-    { owner: "blue", r: 7, c: 7, rank: 4 },
-    { owner: "amber", r: 0, c: 0, rank: 4 },
+    { owner: "blue", r: 7, c: 7, rank: 4, traits: ["Carnívoro", "Voo"] },
+    { owner: "amber", r: 0, c: 0, rank: 4, traits: ["Carnívoro", "Voo"] },
   ]);
   s.board.fill("neutral");
   assert.equal(mutuallyBlocked(s), true);
