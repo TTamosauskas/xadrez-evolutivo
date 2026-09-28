@@ -99,8 +99,8 @@ export const GEOLOGICAL_STAGES = [
     group: "Hadeano",
     period: "Hadeano",
     chronology: { eon: "Hadeano" },
-    required: ["Respiração anaeróbia", "Fotossíntese", "Predação"],
-    habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "primordial" },
+    required: ["Respiração anaeróbia", "Quimiossíntese"],
+    habitat: { fertile: 0, hostile: 0, founderFertile: false, naturalBarriers: [0, 0], pattern: "primordial" },
     events: {},
     founderLayout: [[5, 2], [5, 3], [2, 4], [2, 5]],
   },
@@ -109,8 +109,8 @@ export const GEOLOGICAL_STAGES = [
     group: "Arqueano",
     period: "Eoarqueana",
     chronology: { eon: "Arqueano", era: "Eoarqueana" },
-    required: ["Quimiossíntese"],
-    cycles: [["Quimiossíntese"]],
+    required: ["Fotossíntese", "Predação"],
+    cycles: [["Fotossíntese", "Predação"]],
     habitat: { fertile: 36, hostile: 20, founderFertile: true, naturalBarriers: [0, 0], pattern: "volcanic-ocean" },
     events: { volcano: 5, earthquake: 4, solar: 3, meteor: 3, grb: 1 },
     founderLayout: [[5, 2], [5, 3], [2, 4], [2, 5]],
@@ -452,7 +452,7 @@ const byId = new Map(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
 export const TRAIT_STAGE = {
   "Respiração anaeróbia": "hadean",
   "Reparo Celular": "mesoarchean",
-  "Quimiossíntese": "eoarchean",
+  "Quimiossíntese": "hadean",
   "Eucarionte": "rhyacian",
   "Respiração aeróbia": "siderian",
   "Endossimbiose": "rhyacian",
@@ -465,7 +465,7 @@ export const TRAIT_STAGE = {
   "Testosterona": "devonian",
   "Corticosteroides": "devonian",
   "Forrageamento": "devonian",
-  "Fotossíntese": "hadean",
+  "Fotossíntese": "eoarchean",
   "Embriófitas": "ordovician",
   "Traqueófitas": "silurian",
   "Espinhos": "devonian",
@@ -2023,9 +2023,11 @@ export function missingInnovations(state) {
 export function stageProgress(state) {
   if (currentGeologicalStage(state).id === "hadean") {
     const tutorial = state.hadeanTutorial ?? {},
+      history = new Set(state.historicalTraits ?? []),
       steps = [
-        ["Dividir", !!tutorial.divided],
-        ["Capturar", !!tutorial.captured],
+        ["Reproduzir", !!tutorial.divided],
+        ["Quimiossíntese", history.has("Quimiossíntese")],
+        ["Casa fértil", !!tutorial.fertile],
       ],
       required = steps.map(([label]) => label),
       discovered = steps.filter(([, done]) => done).map(([label]) => label),
@@ -2122,7 +2124,7 @@ export function traitUnlocked(state, trait, piece = null) {
       const activeRequired = cycleRequiredInnovations(state),
         nextRequired = activeRequired.find((candidate) => !history.has(candidate)),
         parallelArcheanMetabolism =
-          current.id === "paleoarchean" &&
+          current.id === "eoarchean" &&
           activeRequired.includes("Fotossíntese") &&
           activeRequired.includes("Predação") &&
           ["Fotossíntese", "Predação"].includes(trait);
