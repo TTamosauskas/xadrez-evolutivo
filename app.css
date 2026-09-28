@@ -91,7 +91,7 @@ main {
   width: max-content;
   max-width: min(calc(100vw - 24px), 680px);
   min-height: 52px;
-  padding: 14px 118px 14px 48px;
+  padding: 14px 156px 14px 16px;
   overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 10px 32px #000c;
@@ -141,7 +141,7 @@ main {
 }
 
 .toastify.xe-passive-toast .toast-dismiss {
-  left: 10px;
+  right: 10px;
   width: 30px;
   min-height: 30px;
   padding: 0;
@@ -155,7 +155,7 @@ main {
 }
 
 .toastify.xe-passive-toast .toast-more {
-  right: 10px;
+  right: 48px;
   padding: 7px 10px;
   font-size: 12px;
   letter-spacing: 0.03em;
