@@ -849,6 +849,7 @@ export function hadeanOpeningReproduce(ctx, parent) {
       state,
       `Nova Mutação: ${OWNERS[child.owner]} · ♨️ Quimiossíntese surgiu na primeira prole em ${coord(child.r, child.c)}.`,
     );
+  }
   return child;
 }
 
