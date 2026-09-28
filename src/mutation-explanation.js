@@ -1,6 +1,29 @@
 import { TRAITS } from "./constants.js";
 import { DISCOVERY_CONTENT } from "./discoveries.js";
 
+const SPECIAL_EXPLANATIONS = Object.freeze({
+  Reprodução: {
+    title: "Reprodução",
+    realWorld:
+      "Na vida: Uma hipótese para a origem da vida propõe que ribozimas (moléculas de RNA) entraram em ciclos de auto-replicação. O desafio passou a ser encontrar fontes de energia para sustentar esses ciclos.",
+    game:
+      "No jogo: Clique no círculo verde que aparece quando a célula estiver pronta para se reproduzir.",
+  },
+  "Casa Hostil": {
+    title: "🟥 Casa Hostil",
+    realWorld:
+      "Na vida: Ambientes inóspitos, como lava, toxinas, falta de água e frio ou calor extremos, podem prejudicar a continuidade da vida.",
+    game: "No jogo: Casas hostis oferecem 50% de risco de morte.",
+  },
+  "Casa Fértil": {
+    title: "🟩 Casa Fértil",
+    realWorld:
+      "Na vida: Ambientes sem toxinas, com água, nutrientes e temperatura adequada são favoráveis para a continuidade da vida.",
+    game:
+      "No jogo: Casas férteis fornecem energia para reprodução e outros efeitos benéficos.",
+  },
+});
+
 const GAME_CLAUSE = /\s*(?:[.;]\s*)?no jogo,?\s.*$/iu;
 
 export function mutationExplanation(trait) {
@@ -20,4 +43,8 @@ export function mutationExplanation(trait) {
     realWorld: `Na vida: ${realWorld}`,
     game: `No jogo: ${gameRule}`,
   };
+}
+
+export function effectExplanation(topic) {
+  return SPECIAL_EXPLANATIONS[topic] ?? mutationExplanation(topic);
 }
