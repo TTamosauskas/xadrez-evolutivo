@@ -636,7 +636,7 @@ export const ACTIVE_TRAIT_FAMILIES = [
   },
   {
     id: "energy",
-    traits: ["Fotossíntese", "Predação"],
+    traits: ["Quimiossíntese", "Fotossíntese", "Predação"],
   },
   {
     id: "diet",
