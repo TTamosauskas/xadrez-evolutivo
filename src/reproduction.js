@@ -633,7 +633,7 @@ function pairSexualFounders(brood, sexualMutants) {
 function missingArcheanEnergyBranch(state) {
   if (
     state.scenario !== "earth" ||
-    state.geologicalStage !== "paleoarchean"
+    state.geologicalStage !== "eoarchean"
   )
     return null;
   const history = new Set(state.historicalTraits ?? []),
