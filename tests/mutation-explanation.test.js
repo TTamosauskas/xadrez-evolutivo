@@ -79,13 +79,17 @@ test("Hadean energy branches explain only their current behavior", () => {
     mutationExplanation("Fotossíntese").game,
     "No jogo: Define um ramo energético hereditário incompatível com Predação. Ao maturar, torna fértil a própria casa.",
   );
+  assert.equal(
+    mutationExplanation("Quimiossíntese").game,
+    "No jogo: Enquanto for o ramo energético ativo, impede a morte em uma casa hostil e a transforma em casa fértil no turno seguinte. A reprodução consome essa fertilidade e devolve a casa ao estado neutro.",
+  );
 });
 
 test("tutorial and terrain toasts share the explanatory modal format", () => {
   assert.deepEqual(effectExplanation("Reprodução"), {
     title: "Reprodução",
     realWorld:
-      "Na vida: Uma hipótese para a origem da vida propõe que ribozimas (moléculas de RNA) entraram em ciclos de auto-replicação. O desafio passou a ser encontrar fontes de energia para sustentar esses ciclos.",
+      "Na vida: Na hipótese do Mundo de RNA, evolução biológica começou com moleculas auto-replicantes. A busca por fontes de energia começou aqui.",
     game:
       "No jogo: Clique no círculo verde que aparece quando a célula estiver pronta para se reproduzir.",
   });
