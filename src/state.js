@@ -37,6 +37,7 @@ import {
 } from "./discoveries.js";
 import {
   cloneGenome,
+  dominantizeGenome,
   genomeCarriedTraits,
   genomeFromLegacyProfile,
   genomeSignature,
@@ -573,6 +574,20 @@ export function newPiece(state, owner, r, c, source = {}) {
       ...source,
       traits: basalTraits,
     },
+    sexualGeneticsActive =
+      state.scenario === "arena" ||
+      (state.historicalTraits ?? []).includes("Reprodução Sexuada"),
+    inheritedGenome = source.genome
+      ? cloneGenome(source.genome)
+      : genomeFromLegacyProfile(
+          sexualGeneticsActive
+            ? legacyProfile
+            : { ...legacyProfile, recessiveTraits: [] },
+        ),
+    genome =
+      !sexualGeneticsActive && source.genome
+        ? dominantizeGenome(inheritedGenome)
+        : inheritedGenome,
     piece = {
       id: state.nextId++,
       owner,
@@ -587,9 +602,7 @@ export function newPiece(state, owner, r, c, source = {}) {
           ...(source.traits ?? []),
         ]),
       ],
-      genome: source.genome
-        ? cloneGenome(source.genome)
-        : genomeFromLegacyProfile(legacyProfile),
+      genome,
       mutations: source.mutations ?? 0,
       generation: source.generation ?? 0,
       parentId: source.parentId ?? null,

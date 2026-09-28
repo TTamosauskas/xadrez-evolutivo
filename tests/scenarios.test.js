@@ -694,8 +694,11 @@ test("Vida na Terra seeds post-sexual founders with historical recessive variati
     );
 });
 
-test("Cenários Alternativos preserve the survivor genome between cycles", () => {
+test("Cenários Alternativos preserve post-sexual survivor genomes between cycles", () => {
   const state = createState(52, { scenario: "alternative" });
+  state.historicalTraits = [
+    ...new Set([...(state.historicalTraits ?? []), "Reprodução Sexuada"]),
+  ];
   const blue = state.pieces.filter((piece) => piece.owner === "blue");
   for (const piece of blue) {
     piece.genome = genomeFromTraits(

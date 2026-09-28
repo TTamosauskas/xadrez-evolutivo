@@ -100,10 +100,10 @@ test("Endossimbiose antecipa uma reprodução em uma rodada e cobra dívida +2",
   assertState(state);
 });
 
-test("Quimiossíntese converte casa hostil não letal em um único descendente", () => {
+test("Quimiossíntese protege em casa hostil, fertiliza no turno seguinte e a reprodução consome a fertilidade", () => {
   let state = createState(4103, {
     scenario: "alternative",
-    geologicalStage: "archean",
+    geologicalStage: "paleoarchean",
     naturalBarriers: false,
   });
   state.pieces = [];
@@ -114,22 +114,45 @@ test("Quimiossíntese converte casa hostil não letal em um único descendente",
   const parent = newPiece(state, "blue", 4, 4, {
       rank: 0,
       traits: ["Quimiossíntese"],
+      ancestry: ["Respiração anaeróbia", "Quimiossíntese"],
     }),
     rival = newPiece(state, "amber", 0, 0, { rank: 0 });
   state.pieces.push(parent, rival);
-  state.board[square(parent.r, parent.c)] = "hostile";
+  const cell = square(parent.r, parent.c);
+  state.board[cell] = "hostile";
   parent.nextReproductionRound = round(state);
-  assert.ok(
+
+  assert.equal(
     actionsForPiece(state, parent).some(
       (action) => action.type === "CHEMOSYNTHESIS",
     ),
+    false,
   );
+
+  state = simulate(state, { type: "PASS" });
+  assert.ok(state.pieces.some((piece) => piece.id === parent.id));
+  assert.equal(state.board[cell], "hostile");
+
+  state = simulate(state, { type: "PASS" });
+  const survivor = state.pieces.find((piece) => piece.id === parent.id);
+  assert.ok(survivor);
+  assert.equal(state.board[cell], "fertile");
+
+  const reproduceAction = actionsForPiece(state, survivor).find(
+    (action) =>
+      action.type === "MOVE" &&
+      action.id === survivor.id &&
+      action.r === survivor.r &&
+      action.c === survivor.c,
+  );
+  assert.ok(reproduceAction);
   const before = state.pieces.length;
-  state = simulate(state, { type: "CHEMOSYNTHESIS", id: parent.id });
-  assert.equal(state.pieces.length, before + 1);
-  assert.equal(state.board[square(4, 4)], "neutral");
+  state = simulate(state, reproduceAction);
+  assert.ok(state.pieces.length > before);
+  assert.equal(state.board[cell], "neutral");
   assertState(state);
 });
+
 
 test("Biomineralização deixa remanescente e o remanescente bloqueia uma captura de contato", () => {
   let state = fixture([

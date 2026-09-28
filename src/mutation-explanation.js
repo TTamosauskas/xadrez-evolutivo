@@ -5,7 +5,7 @@ const SPECIAL_EXPLANATIONS = Object.freeze({
   Reprodução: {
     title: "Reprodução",
     realWorld:
-      "Na vida: Uma hipótese para a origem da vida propõe que ribozimas (moléculas de RNA) entraram em ciclos de auto-replicação. O desafio passou a ser encontrar fontes de energia para sustentar esses ciclos.",
+      "Na vida: Na hipótese do Mundo de RNA, evolução biológica começou com moleculas auto-replicantes. A busca por fontes de energia começou aqui.",
     game:
       "No jogo: Clique no círculo verde que aparece quando a célula estiver pronta para se reproduzir.",
   },

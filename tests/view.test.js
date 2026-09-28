@@ -631,6 +631,80 @@ test("non-contextual phenotype inventory stays in the selected panel instead of 
   dom.window.close();
 });
 
+test("Quimiossíntese occupies the central energy core and moves to genetic legacy under a modern branch", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: ["Quimiossíntese"],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0];
+
+  piece.ancestry = ["Respiração anaeróbia", "Quimiossíntese"];
+  render(dom.window.document, s, { selected: piece.id });
+  let d = dom.window.document,
+    cell = d.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    );
+  assert.equal(
+    cell.querySelector(".piece-energy-core")?.dataset.trait,
+    "Quimiossíntese",
+  );
+  assert.equal(cell.querySelector(".piece-energy-core")?.textContent, "♨️");
+  assert.equal(
+    [...cell.querySelectorAll(".trait-badge")].some(
+      (badge) => badge.dataset.trait === "Quimiossíntese",
+    ),
+    false,
+  );
+
+  piece.traits = ["Respiração anaeróbia", "Fotossíntese"];
+  piece.ancestry = [
+    "Respiração anaeróbia",
+    "Quimiossíntese",
+    "Fotossíntese",
+  ];
+  render(dom.window.document, s, { selected: piece.id });
+  d = dom.window.document;
+  cell = d.querySelector(
+    `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+  );
+  assert.equal(
+    cell.querySelector(".piece-energy-core")?.dataset.trait,
+    "Fotossíntese",
+  );
+  const legacy = d.querySelector("#selected .legacy-toggle");
+  assert.ok(legacy);
+  assert.match(legacy.textContent, /Quimiossíntese/);
+  dom.window.close();
+});
+
+test("recessive gene UI stays absent before the Reprodução Sexuada milestone", () => {
+  const dom = setup(),
+    s = createState(2201),
+    piece = s.pieces[0];
+  s.historicalTraits = (s.historicalTraits ?? []).filter(
+    (trait) => trait !== "Reprodução Sexuada",
+  );
+  piece.ancestry = ["Respiração anaeróbia", "Camuflagem"];
+  piece.genome = genomeFromTraits(
+    ["Respiração anaeróbia"],
+    ["Camuflagem"],
+  );
+  syncGenomePhenotype(piece);
+
+  render(dom.window.document, s, { selected: piece.id });
+  assert.equal(
+    dom.window.document.querySelector("#selected .recessive-toggle"),
+    null,
+  );
+  dom.window.close();
+});
+
 test("energy branch stays central while Mixotrofia follows contextual activity", () => {
   const dom = setup(),
     s = fixture([
@@ -883,10 +957,13 @@ test("selected panel inspects either side and explains only that piece traits", 
   assert.equal(d.querySelectorAll(".cell.legal").length, 0);
   dom.window.close();
 });
-test("selected legend shows hidden recessive genes before ancestry without duplication", () => {
+test("selected legend shows hidden recessive genes after sexual reproduction without duplication", () => {
   const dom = setup(),
     s = createState(220),
     piece = s.pieces[0];
+  s.historicalTraits = [
+    ...new Set([...(s.historicalTraits ?? []), "Reprodução Sexuada"]),
+  ];
   piece.traits = ["Respiração anaeróbia", "Multicelularismo", "Predação"];
   piece.ancestry = ["Multicelularismo", "Predação", "Ovíparo", "Locomoção Primitiva"];
   piece.genome = genomeFromTraits(piece.traits, ["Ovíparo"]);
@@ -2137,7 +2214,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     );
     assert.match(
       d.getElementById("mutation-dialog-real").textContent,
-      /^Na vida: Uma hipótese para a origem da vida/,
+      /^Na vida: Na hipótese do Mundo de RNA/,
     );
     assert.match(
       d.getElementById("mutation-dialog-game").textContent,

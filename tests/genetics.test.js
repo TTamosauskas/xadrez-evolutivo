@@ -4,18 +4,21 @@ import {
   GENETIC_TRAITS,
   ancestralGenome,
   cloneGenome,
+  dominantizeGenome,
   expressGenome,
   gainGenomeAllele,
   genomeCarriedTraits,
   genomeFromLegacyProfile,
   genomeFromTraits,
+  genomeLossOptions,
   hiddenRecessiveTraits,
   inheritSexualGenome,
   loseGenomeAllele,
   syncGenomePhenotype,
   validGenome,
+  withoutGenomeTraits,
 } from "../src/genetics.js";
-import { TRAITS } from "../src/constants.js";
+import { TRAITS, energyBranch } from "../src/constants.js";
 
 test("universal genome contains a diploid locus for every game trait", () => {
   const genome = ancestralGenome();
@@ -150,6 +153,61 @@ test("a second recessive mutation reveals a formerly hidden trait", () => {
   syncGenomePhenotype(profile, "Predação");
   assert.ok(profile.traits.includes("Camuflagem"));
   assert.equal(hiddenRecessiveTraits(profile).includes("Camuflagem"), false);
+});
+
+test("pre-sexual mutation mode forces every derived allele to dominant", () => {
+  let genome = genomeFromTraits(["Respiração anaeróbia"]);
+  genome = gainGenomeAllele(genome, "Camuflagem", () => 0.99, true);
+  assert.ok(
+    genome.Camuflagem.some(
+      (allele) =>
+        allele.value === "derived" && allele.dominance === "dominant",
+    ),
+  );
+  assert.equal(
+    genome.Camuflagem.some(
+      (allele) =>
+        allele.value === "derived" && allele.dominance === "recessive",
+    ),
+    false,
+  );
+
+  const legacy = genomeFromTraits(
+    ["Respiração anaeróbia"],
+    ["Camuflagem"],
+  );
+  assert.ok(hiddenRecessiveTraits(legacy).includes("Camuflagem"));
+  const dominant = dominantizeGenome(legacy);
+  assert.equal(hiddenRecessiveTraits(dominant).includes("Camuflagem"), false);
+  assert.ok(
+    dominant.Camuflagem.some(
+      (allele) =>
+        allele.value === "derived" && allele.dominance === "dominant",
+    ),
+  );
+});
+
+test("Quimiossíntese is the ancestral energy branch and returns after a modern branch is lost", () => {
+  const profile = {
+    traits: ["Respiração anaeróbia", "Quimiossíntese"],
+    ancestry: ["Respiração anaeróbia", "Quimiossíntese"],
+    genome: genomeFromTraits([
+      "Respiração anaeróbia",
+      "Quimiossíntese",
+      "Fotossíntese",
+    ]),
+  };
+  syncGenomePhenotype(profile, "Fotossíntese");
+  assert.equal(energyBranch(profile), "Fotossíntese");
+  assert.ok(profile.traits.includes("Fotossíntese"));
+  assert.equal(profile.traits.includes("Quimiossíntese"), false);
+  assert.ok(genomeLossOptions(profile).includes("Fotossíntese"));
+
+  profile.genome = withoutGenomeTraits(profile.genome, ["Fotossíntese"]);
+  syncGenomePhenotype(profile, "Quimiossíntese");
+  assert.equal(energyBranch(profile), "Quimiossíntese");
+  assert.ok(profile.traits.includes("Quimiossíntese"));
+  assert.equal(profile.traits.includes("Fotossíntese"), false);
 });
 
 test("sexual inheritance receives one allele from each parent at every universal locus", () => {

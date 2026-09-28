@@ -33,7 +33,7 @@ export const TRAITS = {
   ],
   Quimiossíntese: [
     "♨️",
-    "Antes da especialização energética, usa uma casa hostil não letal como fonte química para gerar um descendente e esgotar o substrato.",
+    "Enquanto for o ramo energético ativo, impede a morte em uma casa hostil e a transforma em casa fértil no turno seguinte. A reprodução consome essa fertilidade e devolve a casa ao estado neutro.",
   ],
   Biomineralização: [
     "🪨",
@@ -845,7 +845,9 @@ export const energyBranch = (piece) =>
     ? "Fotossíntese"
     : piece?.traits?.includes("Predação")
       ? "Predação"
-      : null;
+      : piece?.traits?.includes("Quimiossíntese")
+        ? "Quimiossíntese"
+        : null;
 export const canPhotosynthesize = (piece) =>
   has(piece, "Fotossíntese") || has(piece, "Mixotrofia");
 export const distance = (a, b) =>

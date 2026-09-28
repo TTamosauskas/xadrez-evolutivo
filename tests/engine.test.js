@@ -105,6 +105,7 @@ import {
   predationBirthLimit,
   metabolicReproductionCooldown,
   sexualMaturityRounds,
+  applyRegressionEffect,
 } from "../src/reproduction.js";
 import { crowdingPenalty } from "../src/ai.js";
 import { predatoryReproductionAvailable } from "../src/reproduction-traits.js";
@@ -567,9 +568,94 @@ test("Hadean chemosynthesis turns a cell fertile one turn after hostile pressure
     ),
     true,
   );
+
+  s = transition(s, { type: "PASS" });
+  const child = s.pieces.find((piece) => piece.id === sample.child.id);
+  assert.ok(
+    actionsForPiece(s, child).some(
+      (action) =>
+        action.type === "MOVE" &&
+        action.id === child.id &&
+        action.r === child.r &&
+        action.c === child.c,
+    ),
+  );
+  s = transition(s, {
+    type: "MOVE",
+    id: child.id,
+    r: child.r,
+    c: child.c,
+  });
+  assert.equal(s.board[cell], "neutral");
+  assert.equal(child.hadeanHostileDeathPending, undefined);
   assertState(s);
 });
 
+
+test("active chemosynthesis protects a post-Hadean organism and passively converts hostile terrain", () => {
+  let s = createState(4031, {
+    geologicalStage: "paleoarchean",
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Quimiossíntese",
+      "Fotossíntese",
+      "Predação",
+    ],
+  });
+  const piece = s.pieces.find((candidate) => candidate.owner === s.current);
+  piece.traits = ["Respiração anaeróbia", "Quimiossíntese"];
+  piece.ancestry = ["Respiração anaeróbia", "Quimiossíntese"];
+  piece.genome = genomeFromTraits(piece.traits);
+  syncGenomePhenotype(piece, "Quimiossíntese");
+  const cell = square(piece.r, piece.c);
+  s.board[cell] = "hostile";
+
+  s = transition(s, { type: "PASS" });
+  assert.ok(s.pieces.some((candidate) => candidate.id === piece.id));
+  const pending = s.pieces.find((candidate) => candidate.id === piece.id);
+  assert.equal(pending.chemosynthesisCell, cell);
+  assert.equal(pending.chemosynthesisReadyTurn, s.turn + 1);
+
+  s = transition(s, { type: "PASS" });
+  const survivor = s.pieces.find((candidate) => candidate.id === piece.id);
+  assert.ok(survivor);
+  assert.equal(s.board[cell], "fertile");
+  assert.equal(survivor.chemosynthesisFertileCell, cell);
+  assertState(s);
+});
+
+test("pre-sexual Hadean genomes cannot retain recessive mutations or regression-hidden traits", () => {
+  const s = createCampaignState(4032),
+    recessiveGenome = genomeFromTraits(
+      ["Respiração anaeróbia", "Regressão Evolutiva", "Camuflagem"],
+      ["Camuflagem"],
+    ),
+    piece = newPiece(s, "blue", 2, 2, {
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Regressão Evolutiva", "Camuflagem"],
+      ancestry: ["Respiração anaeróbia", "Regressão Evolutiva", "Camuflagem"],
+      genome: recessiveGenome,
+    });
+
+  assert.deepEqual(hiddenRecessiveTraits(piece), []);
+  assert.equal(
+    piece.genome.Camuflagem.some(
+      (allele) =>
+        allele.value === "derived" && allele.dominance === "recessive",
+    ),
+    false,
+  );
+  assert.deepEqual(applyRegressionEffect(s, piece), []);
+
+  s.historicalTraits.push("Reprodução Sexuada");
+  const sexualEraPiece = newPiece(s, "amber", 2, 3, {
+    rank: 4,
+    traits: ["Respiração anaeróbia"],
+    ancestry: ["Respiração anaeróbia", "Camuflagem"],
+    genome: genomeFromTraits(["Respiração anaeróbia"], ["Camuflagem"]),
+  });
+  assert.ok(hiddenRecessiveTraits(sexualEraPiece).includes("Camuflagem"));
+});
 
 test("simultaneous total extinction is won by the lineage whose last piece dies last", () => {
   const resolve = (order) => {
