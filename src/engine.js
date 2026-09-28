@@ -5478,7 +5478,7 @@ export function transition(previous, action) {
     log(state, `${OWNERS[state.current]} passaram a vez.`);
     advanceTurn(ctx);
     settle(ctx);
-  } else if (action.type === "CONWAY_STEP" && mutuallyBlocked(state)) {
+  } else if (action.type === "RESOLVE_DOMAIN" && mutuallyBlocked(state)) {
     resolveEcologicalDomain(state);
   } else throw Error("Ação incompatível com a fase da partida.");
   if (action.type === "MOVE") {
