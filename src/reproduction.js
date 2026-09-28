@@ -788,7 +788,7 @@ function mutateHadeanPredationNewborn(state, child) {
     state.hadeanCaptureUnlocked = true;
     log(
       state,
-      "Hadeano: Brancas e Pretas já produziram descendentes com 👾 Predação; a captura foi liberada.",
+      "Hadeano: Brancas e Pretas já produziram descendentes com 👾 Predação.",
     );
   }
   return true;
