@@ -17,7 +17,7 @@ export function mutationExplanation(trait) {
   return {
     trait,
     title: `${icon} ${trait}`,
-    realWorld,
+    realWorld: `Na vida: ${realWorld}`,
     game: `No jogo: ${gameRule}`,
   };
 }
