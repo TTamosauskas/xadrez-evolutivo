@@ -533,12 +533,21 @@ test("Hadean hostile pressure can condemn a later basal offspring without a skul
   assertState(resolved);
 });
 
-test("Hadean chemosynthesis turns its central birth cell fertile at the end of the next turn", () => {
+test("Hadean chemosynthesis turns a cell fertile one turn after hostile pressure reaches it", () => {
   const sample = firstOpeningReproduction();
   let s = sample.state;
   const cell = square(sample.child.r, sample.child.c);
 
-  assert.notEqual(s.board[cell], "fertile");
+  assert.equal(s.hadeanEnvironment.pendingFertility.length, 0);
+  assert.equal(s.hadeanTutorial.fertile, false);
+
+  for (let r = 2; r <= 5; r++)
+    for (let c = 2; c <= 5; c++)
+      s.board[square(r, c)] =
+        square(r, c) === cell ? "neutral" : "hostile";
+
+  s = transition(s, { type: "PASS" });
+  assert.equal(s.board[cell], "hostile");
   assert.equal(
     s.hadeanEnvironment.pendingFertility.some(
       (entry) => entry.pieceId === sample.child.id && entry.cell === cell,
@@ -560,6 +569,7 @@ test("Hadean chemosynthesis turns its central birth cell fertile at the end of t
   );
   assertState(s);
 });
+
 
 test("simultaneous total extinction is won by the lineage whose last piece dies last", () => {
   const resolve = (order) => {
