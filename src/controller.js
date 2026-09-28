@@ -252,6 +252,10 @@ export class Controller {
           this.state.pieces.map((piece) => [piece.id, piece.owner]),
         ),
         activeOwner = this.state.current,
+        seenMutationsBefore = new Set([
+          ...(this.state.discoveries?.mutations ?? []),
+          ...(this.state.historicalTraits ?? []),
+        ]),
         passiveEffectFloor = this.state.nextPassiveEffect ?? 1,
         next = transition(this.state, action);
       if (next === this.state) return false;
@@ -263,6 +267,8 @@ export class Controller {
               ownersBeforeTransition.get(effect.pieceId) ??
               next.pieces.find((piece) => piece.id === effect.pieceId)?.owner ??
               activeOwner,
+            repeatedMutation:
+              !!effect.trait && seenMutationsBefore.has(effect.trait),
           })),
         pendingConway = this.domainTimer;
       this.domainTimer = null;

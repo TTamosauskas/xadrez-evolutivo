@@ -91,14 +91,25 @@ main {
   width: max-content;
   max-width: min(calc(100vw - 24px), 680px);
   min-height: 52px;
-  padding: 14px 118px 14px 16px;
+  padding: 14px 118px 14px 48px;
+  overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 10px 32px #000c;
-  cursor: pointer;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
   font-size: 16px;
   font-weight: 700;
   line-height: 1.4;
   text-align: left;
+  transition:
+    transform 0.22s ease,
+    opacity 0.22s ease;
+}
+
+.toastify.xe-passive-toast--dragging {
+  cursor: grabbing;
+  transition: none;
 }
 
 .toastify.xe-passive-toast--black {
@@ -113,30 +124,73 @@ main {
   color: #161713;
 }
 
+.toastify.xe-passive-toast .toast-dismiss,
 .toastify.xe-passive-toast .toast-more {
   position: absolute;
   top: 50%;
-  right: 10px;
   min-height: 36px;
   margin: 0;
-  padding: 7px 10px;
   border: 1px solid currentColor;
   border-radius: 8px;
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.03em;
   transform: translateY(-50%);
   cursor: pointer;
 }
 
+.toastify.xe-passive-toast .toast-dismiss {
+  left: 10px;
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  font-size: 18px;
+}
+
+.toastify.xe-passive-toast .toast-dismiss::before {
+  content: "✕";
+}
+
+.toastify.xe-passive-toast .toast-more {
+  right: 10px;
+  padding: 7px 10px;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+}
+
+.toastify.xe-passive-toast .toast-dismiss:hover,
+.toastify.xe-passive-toast .toast-dismiss:focus-visible,
 .toastify.xe-passive-toast .toast-more:hover,
 .toastify.xe-passive-toast .toast-more:focus-visible {
   background: #ffffff2e;
   outline: 2px solid currentColor;
   outline-offset: 2px;
+}
+
+.toastify.xe-passive-toast .toast-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: currentColor;
+  opacity: 0.45;
+  pointer-events: none;
+  transform-origin: left center;
+  animation: xe-toast-progress var(--xe-toast-progress-duration, 5000ms)
+    linear forwards;
+}
+
+@keyframes xe-toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

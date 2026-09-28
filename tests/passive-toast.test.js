@@ -98,7 +98,7 @@ test("Toastify waits until blocking dialogs close before showing an effect", () 
   dom.window.close();
 });
 
-test("selectable toasts open their modal from the whole toast or Saiba Mais", () => {
+test("selectable toasts open their modal only from Saiba Mais", () => {
   const dom = new JSDOM(),
     mock = createToastifyMock(dom.window.document);
   let selected = null;
@@ -129,6 +129,10 @@ test("selectable toasts open their modal from the whole toast or Saiba Mais", ()
   );
 
   toast.click();
+  assert.equal(selected, null);
+  assert.equal(presenter.visibleCount(), 1);
+
+  more.click();
   assert.equal(selected, effect);
   assert.equal(presenter.visibleCount(), 0);
   assert.equal(dom.window.document.querySelector(".toastify"), null);
@@ -140,6 +144,59 @@ test("selectable toasts open their modal from the whole toast or Saiba Mais", ()
   secondMore.click();
   assert.equal(selected?.id, 9);
   assert.equal(presenter.visibleCount(), 0);
+
+  presenter.destroy();
+  dom.window.close();
+});
+
+test("toasts can be dismissed from the left close button or a horizontal swipe", () => {
+  const dom = new JSDOM(),
+    mock = createToastifyMock(dom.window.document),
+    presenter = createPassiveEffectToastPresenter(dom.window.document, {
+      toastify: mock.toastify,
+      onSelect: () => {},
+    }),
+    effect = {
+      id: 10,
+      owner: "blue",
+      trait: "Pele grossa",
+      text: "🦏 Pele grossa bloqueou a captura.",
+    };
+
+  presenter.show(effect);
+  const first = mock.calls[0].toastElement,
+    close = first.querySelector(".toast-dismiss");
+  assert.ok(close);
+  assert.equal(close.getAttribute("aria-label"), "Fechar notificação");
+  close.click();
+  assert.equal(presenter.visibleCount(), 0);
+
+  presenter.show({ ...effect, id: 11 });
+  const second = mock.calls.at(-1).toastElement;
+  second.dispatchEvent(
+    new dom.window.MouseEvent("pointerdown", {
+      bubbles: true,
+      button: 0,
+      clientX: 160,
+    }),
+  );
+  second.dispatchEvent(
+    new dom.window.MouseEvent("pointermove", {
+      bubbles: true,
+      buttons: 1,
+      clientX: 40,
+    }),
+  );
+  second.dispatchEvent(
+    new dom.window.MouseEvent("pointerup", {
+      bubbles: true,
+      button: 0,
+      clientX: 40,
+    }),
+  );
+
+  assert.equal(presenter.visibleCount(), 0);
+  assert.equal(dom.window.document.querySelector(".toastify"), null);
 
   presenter.destroy();
   dom.window.close();
@@ -166,6 +223,11 @@ test("new mutations use the same lineage color as other toasts", () => {
   );
   assert.equal(mock.calls[0].toastElement.dataset.owner, "amber");
   assert.equal(mock.calls[0].toastElement.dataset.trait, "Chifre");
+  assert.equal(mock.calls[0].options.duration, -1);
+  assert.equal(
+    mock.calls[0].toastElement.querySelector(".toast-progress"),
+    null,
+  );
 
   presenter.destroy();
   dom.window.close();
@@ -286,6 +348,8 @@ test("realized passive effect reaches Toastify from engine through Controller", 
       { owner: "amber", r: 0, c: 0 },
     ]);
   state.rng = 0;
+  if (!state.discoveries.mutations.includes("Pele grossa"))
+    state.discoveries.mutations.push("Pele grossa");
 
   const controller = new Controller(state, {
       render: () => {},
@@ -316,6 +380,10 @@ test("realized passive effect reaches Toastify from engine through Controller", 
   assert.equal(toast.dataset.trait, "Pele grossa");
   assert.equal(toast.dataset.owner, "amber");
   assert.ok(toast.classList.contains("xe-passive-toast--black"));
+  assert.ok(toast.classList.contains("xe-passive-toast--timed"));
+  assert.equal(toast.dataset.repeatedMutation, "true");
+  assert.equal(mock.calls[0].options.duration, 5000);
+  assert.ok(toast.querySelector(".toast-progress"));
   assert.equal(toast.textContent, "🦏 Pele grossa bloqueou a captura.");
 
   presenter.destroy();
