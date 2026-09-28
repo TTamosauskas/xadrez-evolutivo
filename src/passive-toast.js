@@ -1,6 +1,11 @@
 export function createPassiveEffectToastPresenter(
   doc,
-  { toastify = globalThis.Toastify, duration = 6000, maxVisible = 2 } = {},
+  {
+    toastify = globalThis.Toastify,
+    duration = 6000,
+    maxVisible = 2,
+    onSelect = null,
+  } = {},
 ) {
   const queue = [],
     visible = new Set(),
@@ -14,6 +19,13 @@ export function createPassiveEffectToastPresenter(
 
   function present(effect) {
     let toast;
+    const selectable = typeof onSelect === "function" && !!effect?.trait,
+      activate = () => {
+        if (!selectable) return;
+        onSelect(effect);
+        toast?.hideToast?.();
+      };
+
     toast = toastify({
       text: effect.text,
       duration,
@@ -23,6 +35,7 @@ export function createPassiveEffectToastPresenter(
       stopOnFocus: true,
       escapeMarkup: true,
       ariaLive: "polite",
+      onClick: selectable ? activate : undefined,
       className: `xe-passive-toast xe-passive-toast--${
         effect.owner === "amber" ? "black" : "white"
       }`,
@@ -41,7 +54,25 @@ export function createPassiveEffectToastPresenter(
       toast.toastElement.dataset.effectId = String(effect.id ?? "");
       toast.toastElement.dataset.trait = effect.trait ?? "";
       toast.toastElement.dataset.owner = effect.owner ?? "blue";
-      toast.toastElement.setAttribute("role", "status");
+      if (selectable) {
+        toast.toastElement.tabIndex = 0;
+        toast.toastElement.setAttribute("role", "button");
+        toast.toastElement.setAttribute(
+          "aria-label",
+          `Abrir explicação de ${effect.trait}`,
+        );
+        toast.toastElement.addEventListener("keydown", (event) => {
+          if (
+            event.target !== toast.toastElement ||
+            !["Enter", " "].includes(event.key)
+          )
+            return;
+          event.preventDefault();
+          activate();
+        });
+      } else {
+        toast.toastElement.setAttribute("role", "status");
+      }
       toast.toastElement
         .querySelector(".toast-close")
         ?.setAttribute("aria-label", "Fechar notificação");
