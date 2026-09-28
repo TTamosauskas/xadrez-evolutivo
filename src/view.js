@@ -82,6 +82,7 @@ const element = (doc, tag, text, cls) => {
 };
 const VIVIFICATION_LABELS = Object.freeze({
   MOVE: "Reprodução",
+  HADEAN_REPRODUCE: "Reprodução",
   BUD: "Brotamento",
   CHEMOSYNTHESIS: "♨️ Quimiossíntese",
   PUPATE: "Metamorfose",
@@ -1137,6 +1138,7 @@ export function render(
           nicheBuildTarget ||
           selfVivificationTarget ||
           !!rhizomeAction ||
+          !!p?.hadeanOpeningReproductionReady ||
           (originHere && origin?.selected),
         nurse = nursing.some((child) => child.id === p?.id),
         eggPlacementTarget = eggPlacement.some(
@@ -1882,7 +1884,7 @@ export function render(
       heading,
       make(
         "p",
-        "Ancestral comum das duas linhagens. Já possui metabolismo anaeróbio; toque novamente no Rei cinza para dividi-lo em dois Reis protocelulares, um branco e um preto, ainda sem Fotossíntese ou Predação.",
+        "Ancestral comum das duas linhagens. Já possui metabolismo anaeróbio; toque novamente no Rei cinza para completar a primeira reprodução e originar os Reis branco e preto.",
         "selected-ancestral",
       ),
       make("div", "Vantagens Evolutivas", "selected-group-heading"),
