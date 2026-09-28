@@ -144,7 +144,7 @@ test("mutual blocking resolves ecological domain after a short visible delay", (
 
   controller.refresh();
   assert.equal(delays[0], 700);
-  assert.equal(renders.at(-1).busy, "domain");
+  assert.equal(renders.at(-1).busy, "blocked");
   const before = [...controller.state.board];
 
   const first = [...timers.values()][0];
