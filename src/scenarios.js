@@ -18,8 +18,8 @@ export const ARENA_HABITAT = {
 
 export const EARTH_FOUNDER_GENOMES = Object.freeze({
   eoarchean: {
-    plant: ["Respiração anaeróbia", "Fotossíntese"],
-    animal: ["Respiração anaeróbia", "Predação"],
+    plant: ["Respiração anaeróbia", "Quimiossíntese"],
+    animal: ["Respiração anaeróbia", "Quimiossíntese"],
     rank: 4,
   },
   paleoarchean: {
