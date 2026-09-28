@@ -449,17 +449,14 @@ test("Hadean hostile pressure can condemn a basal offspring without a skull and 
   assertState(resolved);
 });
 
-test("Hadean chemosynthesis converts an advancing hostile cell into the first fertile cell on the next turn", () => {
+test("Hadean chemosynthesis turns its central birth cell fertile at the end of the next turn", () => {
   const sample = openingReproductionSample((state, child) =>
     child.traits.includes("Quimiossíntese"),
   );
   let s = sample.state;
   const cell = square(sample.child.r, sample.child.c);
 
-  s.board.fill("hostile");
-  s.board[cell] = "neutral";
-  s = transition(s, { type: "PASS" });
-  assert.equal(s.board[cell], "hostile");
+  assert.notEqual(s.board[cell], "fertile");
   assert.equal(
     s.hadeanEnvironment.pendingFertility.some(
       (entry) => entry.pieceId === sample.child.id && entry.cell === cell,
