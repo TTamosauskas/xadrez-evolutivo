@@ -448,7 +448,7 @@ test("canonical founder pool prevents immediate queen and knight captures", () =
     ],
     seen = new Set();
 
-  for (let seed = 1; seed <= 1024; seed++)
+  for (let seed = 1; seed <= 4096; seed++)
     for (const [, r, c] of canonicalFounderStarts({ rng: seed }, false))
       seen.add(`${r},${c}`);
 
