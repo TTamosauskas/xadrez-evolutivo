@@ -348,16 +348,26 @@ test("Hadean starts with three fertile central cells and the gray ancestor consu
         !piece.traits.includes("Quimiossíntese") &&
         !piece.traits.includes("Fotossíntese") &&
         !piece.traits.includes("Predação") &&
-        piece.hadeanOpeningReproductionReady,
+        piece.hadeanOpeningReproductionReady === undefined,
     ),
   );
-  assert.deepEqual(
-    actionsForPiece(s, blue),
-    [{ type: "HADEAN_REPRODUCE", id: blue.id }],
+  assert.ok(
+    actionsForPiece(s, blue).some(
+      (action) =>
+        action.type === "MOVE" &&
+        action.id === blue.id &&
+        action.r === blue.r &&
+        action.c === blue.c,
+    ),
   );
-  assert.deepEqual(
-    actionsForPiece(s, amber, { ignoreTurn: true }),
-    [{ type: "HADEAN_REPRODUCE", id: amber.id }],
+  assert.ok(
+    actionsForPiece(s, amber, { ignoreTurn: true }).some(
+      (action) =>
+        action.type === "MOVE" &&
+        action.id === amber.id &&
+        action.r === amber.r &&
+        action.c === amber.c,
+    ),
   );
   assert.equal(s.historicalTraits.includes("Quimiossíntese"), false);
   assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
@@ -385,8 +395,10 @@ function firstOpeningReproduction(seed = 1) {
   const parent = state.pieces.find((piece) => piece.owner === "blue"),
     before = new Set(state.pieces.map((piece) => piece.id));
   state = transition(state, {
-    type: "HADEAN_REPRODUCE",
+    type: "MOVE",
     id: parent.id,
+    r: parent.r,
+    c: parent.c,
   });
   const child = state.pieces.find(
     (piece) => piece.owner === "blue" && !before.has(piece.id),
@@ -394,21 +406,33 @@ function firstOpeningReproduction(seed = 1) {
   return { state, child, parent };
 }
 
-test("both founder Kings show vivification, while only the first Hadean child is guaranteed chemosynthesis in the last 2x2 vacancy", () => {
+test("Hadean founder Kings use normal fertile reproduction and only the first child is guaranteed chemosynthesis in the 2x2", () => {
   let s = createCampaignState(401);
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ORIGIN_CLICK" });
 
   const blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
-  assert.equal(blue.hadeanOpeningReproductionReady, true);
-  assert.equal(amber.hadeanOpeningReproductionReady, true);
-  assert.deepEqual(actionsForPiece(s, blue), [
-    { type: "HADEAN_REPRODUCE", id: blue.id },
-  ]);
-  assert.deepEqual(actionsForPiece(s, amber, { ignoreTurn: true }), [
-    { type: "HADEAN_REPRODUCE", id: amber.id },
-  ]);
+  assert.equal(blue.hadeanOpeningReproductionReady, undefined);
+  assert.equal(amber.hadeanOpeningReproductionReady, undefined);
+  assert.ok(
+    actionsForPiece(s, blue).some(
+      (action) =>
+        action.type === "MOVE" &&
+        action.id === blue.id &&
+        action.r === blue.r &&
+        action.c === blue.c,
+    ),
+  );
+  assert.ok(
+    actionsForPiece(s, amber, { ignoreTurn: true }).some(
+      (action) =>
+        action.type === "MOVE" &&
+        action.id === amber.id &&
+        action.r === amber.r &&
+        action.c === amber.c,
+    ),
+  );
 
   const occupiedCentralBefore = new Set(
       s.pieces.map((piece) => square(piece.r, piece.c)),
@@ -423,7 +447,12 @@ test("both founder Kings show vivification, while only the first Hadean child is
   );
 
   const originalIds = new Set(s.pieces.map((piece) => piece.id));
-  s = transition(s, { type: "HADEAN_REPRODUCE", id: blue.id });
+  s = transition(s, {
+    type: "MOVE",
+    id: blue.id,
+    r: blue.r,
+    c: blue.c,
+  });
   const firstChild = s.pieces.find(
     (piece) => piece.owner === "blue" && !originalIds.has(piece.id),
   );
@@ -433,11 +462,11 @@ test("both founder Kings show vivification, while only the first Hadean child is
   assert.equal(
     s.pieces.find((piece) => piece.id === blue.id)
       .hadeanOpeningReproductionReady,
-    false,
+    undefined,
   );
-  assert.ok(
-    s.pieces.find((piece) => piece.id === blue.id).nextReproductionRound >
-      round(s),
+  assert.equal(
+    s.pieces.find((piece) => piece.id === blue.id).nextReproductionRound,
+    round(s),
   );
   assert.equal(
     s.passiveEffects.some(
