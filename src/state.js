@@ -1131,7 +1131,6 @@ function canonicalFounderLayouts() {
             CANONICAL_FOUNDER_CELLS[c],
             CANONICAL_FOUNDER_CELLS[d],
           ];
-          if (!amber.every((cell) => cell.r <= 3)) continue;
           if (
             blue.some((left) =>
               amber.some((right) => foundersThreatenImmediately(left, right)),
