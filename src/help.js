@@ -164,7 +164,7 @@ export function howToPlayLines() {
   return [
     section("Objetivo e estrutura da partida"),
     "Invenit é um jogo evolutivo em tabuleiro 8×8. Brancas e Pretas alternam turnos controlando populações de organismos representadas pelas formas do xadrez. Selecione uma peça para ver as ações legais e escolha uma casa destacada; quando uma linhagem não possui ação legal, a vez pode avançar automaticamente.",
-    `Há duas formas de encerrar uma partida competitiva: extinção total de uma linhagem ou Domínio Ecológico. O Domínio Ecológico é resolvido pela população ativa quando ambos os lados ficam sem ações legais ou quando passam ${ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS} rodadas sem captura bem-sucedida e nenhuma captura está disponível. O lado com mais organismos vence; igualdade populacional produz empate. Ovos e sementes não contam como população ativa.`,
+    `Há duas formas de encerrar uma partida competitiva: extinção total de uma linhagem ou Domínio Ecológico. O Domínio Ecológico é resolvido pela população ativa quando ambos os lados ficam sem ações legais ou quando passam ${ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS} rodadas sem captura bem-sucedida e nenhuma captura está disponível. O lado com mais organismos vence. Ovos e sementes não contam como população ativa.`,
     "Formas de xadrez definem geometria e capacidade reprodutiva. Rei, Peão, Cavalo, Bispo, Torre e Rainha mantêm suas trajetórias oficiais quando a evolução libera movimento ou captura; características biológicas determinam quais dessas ações estão disponíveis.",
 
     section("Hadeano"),
@@ -263,7 +263,7 @@ export function howToPlayLines() {
     ...ecologicalEventLines(),
 
     section("Encerramento por Domínio Ecológico"),
-    `Se Brancas e Pretas ficarem simultaneamente sem ações legais, a partida termina por Domínio Ecológico e a maior população ativa vence. No Hadeano, a regra é própria: o Domínio Ecológico é declarado assim que todas as 16 casas jogáveis do núcleo 4×4 estiverem ocupadas, depois de resolver qualquer morte letal já agendada; antes disso, o avanço hostil continua. Nas demais fases, se ainda houver movimentos, mas nenhuma captura possível, o mesmo critério populacional é aplicado após ${ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS} rodadas sem captura bem-sucedida. Empate populacional encerra a partida em empate.`,
+    `Se Brancas e Pretas ficarem simultaneamente sem ações legais, a partida termina por Domínio Ecológico e a maior população ativa vence. No Hadeano, a regra é própria: o Domínio Ecológico é declarado assim que todas as 16 casas jogáveis do núcleo 4×4 estiverem ocupadas, depois de resolver qualquer morte letal já agendada; antes disso, o avanço hostil continua. Nas demais fases, se ainda houver movimentos, mas nenhuma captura possível, o mesmo critério populacional é aplicado após ${ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS} rodadas sem captura bem-sucedida. A resolução final usa critérios ecológicos do estado atual quando a população fica igual.`,
     "Conway permanece uma dinâmica ambiental universal a partir do Devoniano: ele remodela o habitat conforme a progressão geracional e fica suspenso durante eventos severos. Ele deixou de executar reparos artificiais de estagnação, corredores forçados, remoções especiais de barreiras ou reposicionamentos de organismos.",
 
     section("Controles, informação e acompanhamento"),
