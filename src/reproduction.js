@@ -1462,6 +1462,10 @@ export function dopaminePressureReductionAvailable(state, parent) {
 
 export function consumeReproductionResource(state, parent, cell) {
   if (!consumeFertileTerrain(state, cell)) return 0;
+  if (parent?.chemosynthesisFertileCell === cell) {
+    delete parent.chemosynthesisFertileCell;
+    parent.chemosynthesisNeutralThroughTurn = state.turn + 1;
+  }
   let consumed = 1;
   if (!has(parent, "Má absorção Alimentar")) return consumed;
   const r0 = Math.floor(cell / 8),
