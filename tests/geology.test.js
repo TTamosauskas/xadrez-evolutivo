@@ -346,9 +346,11 @@ test("Earth exposes required innovations only in their detailed phase window", (
     eo = createState(112, {
       scenario: "earth",
       geologicalStage: "eoarchean",
-      historicalTraits: ["Respiração anaeróbia"],
+      historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
     });
-  assert.equal(traitUnlocked(eo, "Quimiossíntese", basal), true);
+  assert.equal(traitUnlocked(eo, "Quimiossíntese", basal), false);
+  assert.equal(traitUnlocked(eo, "Fotossíntese", basal), true);
+  assert.equal(traitUnlocked(eo, "Predação", basal), true);
   assert.equal(traitUnlocked(eo, "Transferência Horizontal", basal), false);
 
   const paleo = createState(113, {
