@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Controller } from "../src/controller.js";
-import { createCampaignState, createState, clone, newPiece } from "../src/state.js";
+import { createCampaignState, createState, clone, newPiece, round } from "../src/state.js";
 import { fallbackAction, chooseAction } from "../src/ai.js";
 import { fixture } from "./helpers.js";
 function setup() {
@@ -193,7 +193,7 @@ test("lethal deaths remain visible briefly and resolve before the next action", 
       traits: ["Predação"],
       ancestry: ["Respiração anaeróbia", "Predação"],
     });
-  doomed.lethalDeathTurn = s.turn;
+  doomed.lethalDeathRound = round(s);
   doomed.lethalDeathReason = "ambiente letal";
   s.pieces.push(doomed, blue, amber);
 
