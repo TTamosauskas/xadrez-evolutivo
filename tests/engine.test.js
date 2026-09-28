@@ -2375,13 +2375,20 @@ test("natural death is certain at age 48, bypasses Regeneração and leaves no t
 });
 
 test("mutual blocking ends immediately by ecological-domain population", () => {
-  const s = fixture([
-    { owner: "blue", r: 7, c: 7, rank: 4, traits: ["Carnívoro", "Voo"] },
-    { owner: "blue", r: 7, c: 6, rank: 4, traits: ["Carnívoro", "Voo"] },
-    { owner: "amber", r: 0, c: 0, rank: 4, traits: ["Carnívoro", "Voo"] },
-  ]);
+  const s = createState(1510, {
+    geologicalStage: "devonian",
+    naturalBarriers: false,
+  });
   s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces.push(
+    newPiece(s, "blue", 7, 7, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "blue", 7, 6, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+  );
   s.current = "blue";
+  s.notices = [];
   assert.equal(mutuallyBlocked(s), true);
 
   const beforeBoard = [...s.board],
@@ -2397,11 +2404,18 @@ test("mutual blocking ends immediately by ecological-domain population", () => {
 });
 
 test("mutual blocking with equal populations ends in an ecological-domain draw", () => {
-  const s = fixture([
-    { owner: "blue", r: 7, c: 7, rank: 4, traits: ["Carnívoro", "Voo"] },
-    { owner: "amber", r: 0, c: 0, rank: 4, traits: ["Carnívoro", "Voo"] },
-  ]);
+  const s = createState(1511, {
+    geologicalStage: "devonian",
+    naturalBarriers: false,
+  });
   s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces.push(
+    newPiece(s, "blue", 7, 7, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+  );
+  s.notices = [];
   assert.equal(mutuallyBlocked(s), true);
   assert.equal(resolveEcologicalDomain(s), true);
   assert.equal(s.result?.winner, null);
