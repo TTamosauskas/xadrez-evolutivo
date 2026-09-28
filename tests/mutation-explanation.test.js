@@ -80,8 +80,12 @@ test("Hadean energy branches explain only their current behavior", () => {
     "No jogo: Define um ramo energético hereditário incompatível com Predação. Ao maturar, torna fértil a própria casa.",
   );
   assert.equal(
+    mutationExplanation("Quimiossíntese").realWorld,
+    "Na vida: Organismos quimiotróficos obtêm energia de reações com compostos inorgânicos geralmente tóxicos.",
+  );
+  assert.equal(
     mutationExplanation("Quimiossíntese").game,
-    "No jogo: Enquanto for o ramo energético ativo, impede a morte em uma casa hostil e a transforma em casa fértil no turno seguinte. A reprodução consome essa fertilidade e devolve a casa ao estado neutro.",
+    "No jogo: Transforma 🟥casa hostil em 🟩 Casa fértil",
   );
 });
 
