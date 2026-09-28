@@ -962,7 +962,7 @@ test("evolutionary precedence changes eligibility while missing innovations stay
   const eo = createState(108, {
       scenario: "earth",
       geologicalStage: "eoarchean",
-      historicalTraits: ["Respiração anaeróbia"],
+      historicalTraits: ["Respiração anaeróbia", "Fotossíntese", "Predação"],
     }),
     basal = { traits: [], ancestry: ["Respiração anaeróbia"] };
   assert.equal(innovationWeight(eo, "Quimiossíntese", basal), 4);
@@ -971,28 +971,30 @@ test("evolutionary precedence changes eligibility while missing innovations stay
   const paleo = createState(109, {
     scenario: "earth",
     geologicalStage: "paleoarchean",
-    historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
+    historicalTraits: [
+      "Respiração anaeróbia", "Fotossíntese", "Predação", "Quimiossíntese",
+    ],
   });
-  assert.equal(traitUnlocked(paleo, "Fotossíntese", basal), true);
-  assert.equal(traitUnlocked(paleo, "Predação", basal), true);
-  assert.deepEqual(missingInnovations(paleo), ["Fotossíntese", "Predação"]);
+  assert.equal(traitUnlocked(paleo, "Transferência Horizontal", basal), true);
+  assert.deepEqual(missingInnovations(paleo), ["Transferência Horizontal"]);
 });
-test("Paleoarchean energy branches remain parallel after ancestral Quimiossíntese", () => {
-  const state = createState(114, {
-      scenario: "earth",
-      geologicalStage: "paleoarchean",
-      cycle: 1,
-      historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
-    }),
-    piece = {
-      traits: ["Respiração anaeróbia"],
-      ancestry: ["Respiração anaeróbia", "Quimiossíntese"],
-    };
-
-  assert.equal(traitUnlocked(state, "Fotossíntese", piece), true);
-  assert.equal(traitUnlocked(state, "Predação", piece), true);
-  state.historicalTraits.push("Fotossíntese");
-  assert.equal(traitUnlocked(state, "Predação", piece), true);
+test("Hadean energy branches persist while Paleoarchean adds horizontal transfer", () => {
+  const state = createPeriodState("paleoarchean", 114, null, "earth");
+  for (const owner of ["blue", "amber"]) {
+    const founders = state.pieces.filter((piece) => piece.owner === owner);
+    assert.equal(
+      founders.some((piece) => piece.traits.includes("Fotossíntese")),
+      true,
+    );
+    assert.equal(
+      founders.some((piece) => piece.traits.includes("Predação")),
+      true,
+    );
+  }
+  const piece = state.pieces.find((candidate) =>
+    candidate.traits.includes("Predação"),
+  );
+  assert.equal(traitUnlocked(state, "Transferência Horizontal", piece), true);
 });
 test("deleterious mutations unlock only from the second campaign cycle", () => {
   const s = createState(115);
