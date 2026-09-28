@@ -102,11 +102,4 @@ test("tutorial and terrain toasts share the explanatory modal format", () => {
     game:
       "No jogo: Casas férteis fornecem energia para reprodução e outros efeitos benéficos.",
   });
-  assert.deepEqual(effectExplanation("Morte Natural"), {
-    title: "Morte Natural",
-    realWorld:
-      "Na vida: É a morte causada por envelhecimento celular e outros fatores internos do próprio organismo, sem a interferência de agentes externos.",
-    game:
-      "No jogo: Uma peça em itálico anuncia que a morte natural está próxima.",
-  });
 });

@@ -827,7 +827,8 @@ export function hadeanOpeningReproduce(ctx, parent) {
   parent.hadeanOpeningReproductionReady = false;
   parent.lifetimeReproductions = (parent.lifetimeReproductions ?? 0) + 1;
   parent.lifetimeOffspring = (parent.lifetimeOffspring ?? 0) + 1;
-  parent.nextReproductionRound = round(state);
+  parent.nextReproductionRound =
+    round(state) + metabolicReproductionCooldown(parent);
   state.reproductions[parent.owner] =
     (state.reproductions[parent.owner] ?? 0) + 1;
   state.maxGenerationReached = Math.max(
@@ -1795,10 +1796,7 @@ export function reproduce(
         : Math.min(populationLimit, competitivePressure.limit),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece, feeder = false) => {
-      let metabolic =
-        state.geologicalStage === "hadean"
-          ? 0
-          : metabolicReproductionCooldown(piece);
+      let metabolic = metabolicReproductionCooldown(piece);
       if (mates.length && has(piece, "Ovulação Induzida")) {
         const beforeOvulation = metabolic;
         metabolic = Math.max(1, metabolic - 1);
