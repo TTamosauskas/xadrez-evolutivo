@@ -556,8 +556,19 @@ function freeCells(ctx, origin, _dispersal, profile = null) {
   return cells;
 }
 
+function viableOffspringCells(state, cells) {
+  return cells.filter((cell) => !lethalHazardAt(state, cell.r, cell.c));
+}
+
 function chooseCells(state, cells, _origin, count, _dispersal) {
-  return shuffle(state, cells).slice(0, count);
+  const viable = viableOffspringCells(state, cells),
+    lethal = cells.filter((cell) => lethalHazardAt(state, cell.r, cell.c)),
+    safeTargets = shuffle(state, viable).slice(0, count),
+    remaining = Math.max(0, count - safeTargets.length);
+  return [
+    ...safeTargets,
+    ...shuffle(state, lethal).slice(0, remaining),
+  ];
 }
 
 function chooseCellsTowardEnemy(
@@ -568,40 +579,59 @@ function chooseCellsTowardEnemy(
   { strict = false, preferCapture = false } = {},
 ) {
   const enemies = state.pieces.filter((piece) => piece.owner !== origin.owner),
-    allies = state.pieces.filter((piece) => piece.owner === origin.owner);
-  if (!enemies.length) return shuffle(state, cells).slice(0, count);
+    allies = state.pieces.filter((piece) => piece.owner === origin.owner),
+    rankPool = (candidates, limit) => {
+      if (!candidates.length || limit <= 0) return [];
+      if (!enemies.length) return shuffle(state, candidates).slice(0, limit);
 
-  const enemyDistance = (cell) =>
-      Math.min(...enemies.map((enemy) => distance(cell, enemy))),
-    originDistance = enemyDistance(origin),
-    forward = cells.filter((cell) => enemyDistance(cell) <= originDistance),
-    pool = strict ? forward : forward.length ? forward : cells,
-    crowding = (cell) =>
-      allies.filter((ally) => distance(cell, ally) <= 1).length,
-    captureOptions = (cell) => {
-      const dir =
-        cell.r === 0
-          ? 1
-          : cell.r === 7
-            ? -1
-            : origin.owner === "blue"
-              ? -1
-              : 1;
-      return enemies.filter(
-        (enemy) =>
-          enemy.r === cell.r + dir &&
-          Math.abs(enemy.c - cell.c) === 1,
-      ).length;
-    };
+      const enemyDistance = (cell) =>
+          Math.min(...enemies.map((enemy) => distance(cell, enemy))),
+        originDistance = enemyDistance(origin),
+        forward = candidates.filter(
+          (cell) => enemyDistance(cell) <= originDistance,
+        ),
+        pool = strict ? forward : forward.length ? forward : candidates,
+        crowding = (cell) =>
+          allies.filter((ally) => distance(cell, ally) <= 1).length,
+        captureOptions = (cell) => {
+          const dir =
+            cell.r === 0
+              ? 1
+              : cell.r === 7
+                ? -1
+                : origin.owner === "blue"
+                  ? -1
+                  : 1;
+          return enemies.filter(
+            (enemy) =>
+              enemy.r === cell.r + dir &&
+              Math.abs(enemy.c - cell.c) === 1,
+          ).length;
+        };
 
-  return shuffle(state, pool)
-    .sort(
-      (a, b) =>
-        (preferCapture ? captureOptions(b) - captureOptions(a) : 0) ||
-        enemyDistance(a) - enemyDistance(b) ||
-        crowding(a) - crowding(b),
-    )
-    .slice(0, count);
+      return shuffle(state, pool)
+        .sort(
+          (a, b) =>
+            (preferCapture ? captureOptions(b) - captureOptions(a) : 0) ||
+            enemyDistance(a) - enemyDistance(b) ||
+            crowding(a) - crowding(b),
+        )
+        .slice(0, limit);
+    },
+    viable = viableOffspringCells(state, cells),
+    lethal = cells.filter((cell) => lethalHazardAt(state, cell.r, cell.c)),
+    safeTargets = rankPool(viable, Math.min(count, viable.length));
+
+  if (
+    safeTargets.length < Math.min(count, viable.length) ||
+    safeTargets.length >= count
+  )
+    return safeTargets;
+
+  return [
+    ...safeTargets,
+    ...rankPool(lethal, count - safeTargets.length),
+  ];
 }
 
 function establishSexualFounder(child, countMutation) {
@@ -869,9 +899,11 @@ function placeBrood(
     for (const profile of profiles) {
       const cells = freeCells(ctx, origin, dispersal, placementProfile);
       if (!cells.length) break;
-      const preference = offspringPlacementPreference(
+      const viable = viableOffspringCells(ctx.state, cells),
+        placementCells = viable.length ? viable : cells,
+        preference = offspringPlacementPreference(
           ctx.state,
-          cells,
+          placementCells,
           origin,
           profile,
         ),

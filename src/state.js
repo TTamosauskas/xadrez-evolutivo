@@ -1832,12 +1832,6 @@ export function activateOrigin(state) {
     throw Error("Hadeano indisponível.");
   if (!state.origin.selected) {
     state.origin.selected = true;
-    emitPassiveEffect(
-      state,
-      "Reprodução",
-      "Reprodução disponível.",
-      { outcome: "hadean-reproduction-tutorial", theme: "neutral" },
-    );
     return false;
   }
 
@@ -1877,6 +1871,14 @@ export function activateOrigin(state) {
   state.phase = "move";
   state.current = "blue";
   state.hadeanTutorial.divided = true;
+  if (!state.seen.includes("reproduction"))
+    state.seen.push("reproduction");
+  emitPassiveEffect(
+    state,
+    "Reprodução",
+    "Reprodução disponível.",
+    { outcome: "hadean-reproduction-tutorial", theme: "neutral" },
+  );
   log(
     state,
     `${geologicalLabel(state)} · 1º Ciclo: o ancestral consumiu a casa fértil primordial e se dividiu em dois Reis protocelulares sobre as duas casas férteis restantes do núcleo.`,

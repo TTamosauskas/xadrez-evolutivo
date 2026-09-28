@@ -320,12 +320,14 @@ test("Hadean starts with three fertile central cells and the gray ancestor consu
     fertile: false,
   });
 
+  const reproductionEffectsBefore = s.passiveEffects.filter(
+    (effect) => effect.trait === "Reprodução",
+  ).length;
   s = transition(s, { type: "ORIGIN_CLICK" });
   assert.equal(s.origin.selected, true);
-  assert.equal(s.passiveEffects.at(-1).trait, "Reprodução");
   assert.equal(
-    s.passiveEffects.at(-1).outcome,
-    "hadean-reproduction-tutorial",
+    s.passiveEffects.filter((effect) => effect.trait === "Reprodução").length,
+    reproductionEffectsBefore,
   );
 
   s = transition(s, { type: "ORIGIN_CLICK" });
@@ -333,6 +335,17 @@ test("Hadean starts with three fertile central cells and the gray ancestor consu
   assert.equal(s.origin, null);
   assert.equal(s.pieces.length, 2);
   assert.equal(s.hadeanTutorial.divided, true);
+  const reproductionEffects = s.passiveEffects.filter(
+    (effect) =>
+      effect.trait === "Reprodução" &&
+      effect.text === "Reprodução disponível.",
+  );
+  assert.equal(reproductionEffects.length, 1);
+  assert.equal(
+    reproductionEffects[0].outcome,
+    "hadean-reproduction-tutorial",
+  );
+  assert.ok(s.seen.includes("reproduction"));
 
   const blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
@@ -534,6 +547,52 @@ test("later Hadean offspring use an exact 50 percent chemosynthesis gate", () =>
     offspringForRng(1000).traits.includes("Quimiossíntese"),
     false,
   );
+});
+
+test("offspring exhaust viable adjacent cells before using lethal cells", () => {
+  let s = createCampaignState(1789);
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+
+  const parent = s.pieces.find((piece) => piece.owner === "blue"),
+    rival = s.pieces.find((piece) => piece.owner === "amber");
+  parent.r = 2;
+  parent.c = 2;
+  rival.r = 5;
+  rival.c = 5;
+  parent.nextReproductionRound = round(s);
+  const before = new Set(s.pieces.map((piece) => piece.id));
+
+  const born = reproduce(context(s), parent, null, "teste", {
+    forcedCount: 4,
+    immediateDevelopment: true,
+    ignoreReadiness: true,
+  });
+  assert.equal(born, 4);
+
+  const children = s.pieces.filter(
+      (piece) => piece.owner === "blue" && !before.has(piece.id),
+    ),
+    viableChildren = children.filter(
+      (piece) => !lethalHazardAt(s, piece.r, piece.c),
+    ),
+    lethalChildren = children.filter((piece) =>
+      lethalHazardAt(s, piece.r, piece.c),
+    ),
+    viableAdjacent = new Set([
+      square(2, 3),
+      square(3, 2),
+      square(3, 3),
+    ]);
+
+  assert.equal(viableChildren.length, 3);
+  assert.equal(lethalChildren.length, 1);
+  assert.deepEqual(
+    new Set(viableChildren.map((piece) => square(piece.r, piece.c))),
+    viableAdjacent,
+  );
+  assert.ok(Number.isInteger(lethalChildren[0].lethalDeathRound));
+  assertState(s);
 });
 
 
@@ -1709,23 +1768,19 @@ test("Semelparidade defers death while viviparous offspring are gestating", () =
   assertState(s);
 });
 
-test("fertile reproduction shows the concise tutorial toast on its first occurrence", () => {
+test("ordinary fertile movement does not repeat the Hadean reproduction tutorial", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 0, traits: ["Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[28] = "fertile";
   s = transition(s, move(s.pieces[0], 3, 4));
-  const first = s.passiveEffects.find(
-    (effect) =>
-      effect.trait === "Reprodução" &&
-      effect.outcome === "reproduction-tutorial",
-  );
-  assert.ok(first);
-  assert.equal(first.text, "Reprodução disponível.");
-  assert.ok(s.seen.includes("reproduction"));
   assert.equal(
-    s.notices.some((entry) => entry.title === "Reprodução"),
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Reprodução" &&
+        effect.text === "Reprodução disponível.",
+    ),
     false,
   );
   assertState(s);
