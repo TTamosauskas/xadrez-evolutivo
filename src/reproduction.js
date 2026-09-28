@@ -703,7 +703,7 @@ function makeChildProfile(
       hadeanChemosynthesisCandidate &&
       parent.rank === 4 &&
       (parent.generation ?? 0) === 0 &&
-      parent.parentId === undefined &&
+      parent.parentId == null &&
       (parent.lifetimeOffspring ?? 0) === 0,
     hadeanChemosynthesisMutation =
       hadeanChemosynthesisCandidate &&
