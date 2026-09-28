@@ -479,12 +479,13 @@ export function genomeGainOptions(source, expressedTraits = null) {
 }
 
 export function genomeLossOptions(source) {
-  const genome = normalizeGenome(source?.genome ?? source);
+  const genome = normalizeGenome(source?.genome ?? source),
+    chemosyntheticLegacy = (source?.ancestry ?? []).includes("Quimiossíntese");
   return GENETIC_TRAITS.filter(
     (trait) =>
       trait !== BASAL_GENETIC_TRAIT &&
       !BODY_PLAN_TRAITS.has(trait) &&
-      !ENERGY_BRANCH_TRAITS.has(trait) &&
+      (!ENERGY_BRANCH_TRAITS.has(trait) || chemosyntheticLegacy) &&
       genome[trait].some((allele) => allele.value === "derived"),
   );
 }
@@ -499,7 +500,12 @@ export function forceGenomeTrait(source, trait, dominance = "dominant") {
   return genome;
 }
 
-export function gainGenomeAllele(source, trait, random) {
+export function gainGenomeAllele(
+  source,
+  trait,
+  random,
+  forceDominant = false,
+) {
   const genome = cloneGenome(source?.genome ?? source);
   if (!TRAITS[trait] || trait === BASAL_GENETIC_TRAIT) return genome;
   const pair = genome[trait],
@@ -514,7 +520,8 @@ export function gainGenomeAllele(source, trait, random) {
     hiddenCarrier =
       derived.length === 1 && derived[0].allele.dominance === "recessive";
   pair[index] = derivedAllele(
-    BODY_PLAN_TRAITS.has(trait) ||
+    forceDominant ||
+      BODY_PLAN_TRAITS.has(trait) ||
       ENERGY_BRANCH_TRAITS.has(trait) ||
       DOMINANT_MUTATION_TRAITS.has(trait)
       ? "dominant"
