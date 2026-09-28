@@ -35,7 +35,6 @@ import {
   releaseEukaryoteBuffers,
   ecologicalDomainBlocked,
   consumeFertileTerrain,
-  lethalHazardAt,
   photosynthesisDelayTurns,
   hadeanHabitatSaturated,
   allelopathySourceAt,
@@ -2591,7 +2590,7 @@ export function tickReproduction(ctx) {
       occupiedHere = !!at(state, seed.r, seed.c) || !!eggAt(state, seed.r, seed.c),
       invalidHere =
         barrierAt(state, seed.r, seed.c) &&
-          !has(seed.profile, "Trepadeira"));
+        !has(seed.profile, "Trepadeira");
 
     if (seed.sprouting) {
       if (!fertileHere || invalidHere) {
