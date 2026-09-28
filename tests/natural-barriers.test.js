@@ -474,7 +474,7 @@ test("Voo crosses lethal cells but landing on one is fatal even with RegeneraÃ§Ã
   const landed = s.pieces.find((piece) => piece.id === doomed.id);
   assert.ok(landed);
   assert.deepEqual([landed.r, landed.c], [4, 4]);
-  assert.ok(Number.isInteger(landed.lethalDeathTurn));
+  assert.ok(Number.isInteger(landed.lethalDeathRound));
   assert.equal(landed.regenerationUsed, undefined);
 
   s = simulate(s, { type: "RESOLVE_LETHAL" });
