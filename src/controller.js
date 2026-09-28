@@ -23,7 +23,7 @@ export class Controller {
       clearTimer = (id) => clearTimeout(id),
       timeout = 2000,
       aiDelay = 850,
-      conwayDelay = 700,
+      domainDelay = 700,
       lethalDelay = 700,
       collapseDelay = 250,
       resultDelay = 1000,
@@ -38,7 +38,7 @@ export class Controller {
     this.clearTimer = clearTimer;
     this.timeout = timeout;
     this.aiDelay = aiDelay;
-    this.conwayDelay = conwayDelay;
+    this.domainDelay = domainDelay;
     this.lethalDelay = lethalDelay;
     this.collapseDelay = collapseDelay;
     this.resultDelay = resultDelay;
@@ -47,7 +47,7 @@ export class Controller {
     this.paused = false;
     this.generation = 0;
     this.job = null;
-    this.conwayTimer = null;
+    this.domainTimer = null;
     this.lethalTimer = null;
     this.resultTimer = null;
     this.resultReady = false;
@@ -64,9 +64,9 @@ export class Controller {
       this.job.worker?.terminate();
       this.job = null;
     }
-    if (this.conwayTimer !== null) {
-      this.clearTimer(this.conwayTimer);
-      this.conwayTimer = null;
+    if (this.domainTimer !== null) {
+      this.clearTimer(this.domainTimer);
+      this.domainTimer = null;
     }
     if (this.lethalTimer !== null) {
       this.clearTimer(this.lethalTimer);
@@ -93,19 +93,19 @@ export class Controller {
       const busy =
         this.lethalTimer !== null
           ? "lethal"
-          : this.conwayTimer !== null
-            ? "conway"
+          : this.domainTimer !== null
+            ? "domain"
             : !!this.job;
       this.render(this.state, busy, this.resultReady, movementTrace);
       return;
     }
     this.resultReady = false;
-    if (!this.scheduleLethalDeaths() && !this.scheduleConway()) this.schedule();
+    if (!this.scheduleLethalDeaths() && !this.scheduleDomainResolution()) this.schedule();
     const busy =
       this.lethalTimer !== null
         ? "lethal"
-        : this.conwayTimer !== null
-          ? "conway"
+        : this.domainTimer !== null
+          ? "domain"
           : !!this.job;
     this.render(this.state, busy, true, movementTrace);
   }
@@ -114,7 +114,7 @@ export class Controller {
     if (
       this.lethalTimer !== null ||
       this.job ||
-      this.conwayTimer !== null ||
+      this.domainTimer !== null ||
       this.paused ||
       this.state.result ||
       this.state.notices.length ||
@@ -137,29 +137,29 @@ export class Controller {
     return true;
   }
 
-  scheduleConway() {
+  scheduleDomainResolution() {
     if (
-      this.conwayTimer !== null ||
+      this.domainTimer !== null ||
       this.job ||
       this.paused ||
       this.state.result ||
       this.state.notices.length ||
       !mutuallyBlocked(this.state)
     )
-      return this.conwayTimer !== null;
+      return this.domainTimer !== null;
 
     const token = this.generation,
       revision = this.state.revision;
-    this.conwayTimer = this.setTimer(() => {
+    this.domainTimer = this.setTimer(() => {
       if (
         this.paused ||
         this.generation !== token ||
         this.state.revision !== revision
       )
         return;
-      this.conwayTimer = null;
-      this.dispatch({ type: "CONWAY_STEP", revision }, { ai: true });
-    }, this.conwayDelay);
+      this.domainTimer = null;
+      this.dispatch({ type: "RESOLVE_DOMAIN", revision }, { ai: true });
+    }, this.domainDelay);
     return true;
   }
   replace(state) {
@@ -207,7 +207,7 @@ export class Controller {
     if (
       this.paused ||
       (!ai &&
-        (this.conwayTimer !== null || this.lethalTimer !== null)) ||
+        (this.domainTimer !== null || this.lethalTimer !== null)) ||
       (!ai &&
         ((this.mode === "single" && this.state.current === "amber") ||
           this.mode === "auto") &&
@@ -264,8 +264,8 @@ export class Controller {
               next.pieces.find((piece) => piece.id === effect.pieceId)?.owner ??
               activeOwner,
           })),
-        pendingConway = this.conwayTimer;
-      this.conwayTimer = null;
+        pendingConway = this.domainTimer;
+      this.domainTimer = null;
       this.cancel();
       if (pendingConway !== null) this.clearTimer(pendingConway);
       this.pendingMovementTrace = next.movementTrace ?? null;
@@ -341,7 +341,7 @@ export class Controller {
     const state = this.state;
     if (
       this.job ||
-      this.conwayTimer !== null ||
+      this.domainTimer !== null ||
       this.paused ||
       state.result
     )
@@ -354,13 +354,6 @@ export class Controller {
       return;
     }
     if (state.notices.length) return;
-    if (state.phase === "collapse") {
-      this.scheduleAutomaticAction(
-        { type: "DOMAIN_COLLAPSE" },
-        this.collapseDelay,
-      );
-      return;
-    }
     if (this.mode === "auto" && state.phase === "origin") {
       this.scheduleAutomaticAction({ type: "ORIGIN_CLICK" });
       return;
