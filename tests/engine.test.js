@@ -2386,7 +2386,7 @@ test("mutual blocking ends immediately by ecological-domain population", () => {
 
   const beforeBoard = [...s.board],
     beforeTurn = s.turn,
-    next = simulate(s, { type: "CONWAY_STEP" });
+    next = simulate(s, { type: "RESOLVE_DOMAIN" });
 
   assert.equal(next.result?.winner, "blue");
   assert.match(next.result?.reason ?? "", /Domínio Ecológico/);
