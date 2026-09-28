@@ -47,7 +47,7 @@ import {
   unreadDiscoveries,
 } from "./discoveries.js";
 import { createPassiveEffectToastPresenter } from "./passive-toast.js";
-import { mutationExplanation } from "./mutation-explanation.js";
+import { effectExplanation } from "./mutation-explanation.js";
 import { animateMovementTrace } from "./movement-animation.js";
 import {
   ARENA_BRANCHES,
@@ -441,7 +441,7 @@ $("undo-neocortex").addEventListener("click", () => {
   if (controller.undoNeocortex()) report("↻ Cenário desfeito.");
 });
 function openMutationExplanation(effect) {
-  const copy = mutationExplanation(effect?.trait);
+  const copy = effectExplanation(effect?.trait);
   if (!copy) return;
 
   const dialog = $("mutation-dialog");
