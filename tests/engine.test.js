@@ -330,7 +330,7 @@ test("Hadean starts with one fertile gray ancestor and splits into two photosynt
         !piece.traits.includes("Predação"),
     ),
   );
-  assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
+  assert.equal(s.historicalTraits.includes("Fotossíntese"), true);
   assert.equal(s.historicalTraits.includes("Predação"), false);
   assert.deepEqual(s.seenMutations, ["Respiração anaeróbia"]);
   assert.equal(s.notices.length, 1);
@@ -573,6 +573,7 @@ test("Hadean Predação mutates the newborn that fills the last habitat cell", (
   assert.ok(newborn.traits.includes("Predação"));
   assert.equal(newborn.traits.includes("Fotossíntese"), false);
   assert.equal(captureUnlocked(s, newborn), true);
+  assert.ok(s.historicalTraits.includes("Predação"));
 
   for (const [id, traits] of livingBefore) {
     const survivor = s.pieces.find((piece) => piece.id === id);
@@ -2814,49 +2815,22 @@ test("photosynthetic offspring keep their hereditary energy branch", () => {
   assert.ok(!s.historicalTraits.includes("Predação"));
   assertState(s);
 });
-test("Archean opening guarantee fixes the missing energy branch on an eligible basal descendant", () => {
-  const s = createState(1196, {
-    scenario: "earth",
-    geologicalStage: "paleoarchean",
-    cycle: 1,
-    totalCycles: 2,
-    historicalTraits: ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese"],
-    naturalBarriers: false,
-  });
-  s.pieces = [];
-  s.nextId = 1;
-  s.board.fill("fertile");
-  s.turn = 2;
-
-  const parent = newPiece(s, "blue", 5, 2, {
-      rank: 4,
-      traits: [],
-      ancestry: ["Respiração anaeróbia"],
-    }),
-    rival = newPiece(s, "amber", 2, 5, {
-      rank: 4,
-      traits: ["Fotossíntese"],
-      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
-    });
-  s.pieces.push(parent, rival);
-
-  const before = s.nextId;
-  assert.equal(
-    reproduce(context(s), parent, null, "teste", {
-      forcedCount: 1,
-      ignoreReadiness: true,
-      immediateDevelopment: true,
-    }),
-    1,
-  );
-  const child = s.pieces.find((piece) => piece.id >= before);
-  assert.ok(child);
-  assert.ok(child.traits.includes("Predação"));
-  assert.equal(child.traits.includes("Fotossíntese"), false);
-  assert.ok(s.historicalTraits.includes("Predação"));
-  assert.equal(s.openingMutationSatisfied.blue, true);
-  assert.ok(s.energyBranchRepresentatives.Predação?.traits.includes("Predação"));
-  assertState(s);
+test("post-Hadean phases no longer need an opening mutation to create an energy branch", () => {
+  const state = createPeriodState("paleoarchean", 1196, null, "earth");
+  for (const owner of ["blue", "amber"]) {
+    const founders = state.pieces.filter((piece) => piece.owner === owner);
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Fotossíntese")).length,
+      1,
+    );
+    assert.equal(
+      founders.filter((piece) => piece.traits.includes("Predação")).length,
+      1,
+    );
+  }
+  assert.ok(state.historicalTraits.includes("Fotossíntese"));
+  assert.ok(state.historicalTraits.includes("Predação"));
+  assertState(state);
 });
 
 test("same-branch offspring do not spend the guarantee reserved for the missing Archean branch", () => {
@@ -3014,8 +2988,8 @@ test("cycle innovation pressure blocks a seventh new positive mutation without b
     s.scenario = "earth";
     s.totalCycles = 1;
     s.cycle = 1;
-    s.geologicalStage = "mesoarchean";
-    s.historicalTraits = ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese", "Predação", "Reparo Celular"];
+    s.geologicalStage = "paleoarchean";
+    s.historicalTraits = ["Respiração anaeróbia", "Fotossíntese", "Predação", "Quimiossíntese"];
     s.cyclePositiveInnovations = [...cyclePositiveInnovations];
     s.event = {
       ...EVENTS.find((event) => event.id === "solar"),
@@ -3100,7 +3074,8 @@ test("first-cycle mutation attempts never fall back to deleterious outcomes", ()
     1,
   );
   const child = s.pieces.find((piece) => piece.id >= before);
-  assert.equal(child.mutations, 0);
+  assert.equal(child.mutations, 1);
+  assert.ok(child.traits.includes("Quimiossíntese"));
   assert.ok(
     ["Esterilidade", "Mutação Letal", "Mutação Disfuncional"].every(
       (trait) => !child.traits.includes(trait),
