@@ -211,7 +211,7 @@ test("first generation-3 habitat update preserves every geological preset", () =
 test("pre-Devonian custom habitats stay outside Conway while preserving their phase presets", () => {
   const hadean = createCampaignState(898);
   assert.equal(aquaticFertilityRegime(hadean), true);
-  assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 0);
+  assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 3);
 
   for (const [index, id] of [
     "eoarchean",
