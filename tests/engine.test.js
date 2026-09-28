@@ -668,8 +668,12 @@ test("Hadean hostile pressure can condemn a later basal offspring without a skul
     sample.state.turn,
     sample.child.lethalDeathRound * 2,
   );
-  const resolved = transition(sample.state, { type: "RESOLVE_LETHAL" });
+  const deathCell = square(sample.child.r, sample.child.c),
+    resolved = transition(sample.state, { type: "RESOLVE_LETHAL" });
   assert.equal(resolved.pieces.some((piece) => piece.id === doomedId), false);
+  const carcass = resolved.carcasses.find((entry) => entry.cell === deathCell);
+  assert.ok(carcass);
+  assert.equal(carcass.dueRound, round(resolved) + 3);
   assert.equal(
     resolved.passiveEffects.some(
       (effect) =>
@@ -678,6 +682,28 @@ test("Hadean hostile pressure can condemn a later basal offspring without a skul
     ),
     false,
   );
+  assertState(resolved);
+});
+
+test("scheduled hostile death leaves a three-round carcass outside the Hadean too", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 4 },
+      { owner: "blue", r: 5, c: 5, rank: 4 },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    doomed = s.pieces[0],
+    deathCell = square(doomed.r, doomed.c);
+
+  s.board[deathCell] = "hostile";
+  doomed.lethalDeathRound = round(s);
+  doomed.lethalDeathReason = "morte por ambiente hostil";
+
+  const resolved = transition(s, { type: "RESOLVE_LETHAL" }),
+    carcass = resolved.carcasses.find((entry) => entry.cell === deathCell);
+
+  assert.equal(resolved.pieces.some((piece) => piece.id === doomed.id), false);
+  assert.ok(carcass);
+  assert.equal(carcass.dueRound, round(resolved) + 3);
   assertState(resolved);
 });
 

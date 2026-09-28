@@ -388,6 +388,13 @@ export function deterministicDeathNextTurn(state, piece) {
   )
     return piece.venom.source === "Peçonha" ? "Peçonha" : "Veneno";
 
+  if (
+    Number.isInteger(piece.lethalDeathRound) &&
+    piece.lethalDeathRound <= now + 1 &&
+    /hostil/i.test(piece.lethalDeathReason ?? "")
+  )
+    return "ambiente hostil";
+
   if (!reachesNextRound) return null;
 
   if (

@@ -447,7 +447,20 @@ function openMutationExplanation(effect) {
   const dialog = $("mutation-dialog");
   $("mutation-dialog-title").textContent = copy.title;
   $("mutation-dialog-real").textContent = copy.realWorld;
-  $("mutation-dialog-game").textContent = copy.game;
+  const gameCopy = $("mutation-dialog-game");
+  if (copy.game.includes("⭕")) {
+    const parts = copy.game.split("⭕");
+    gameCopy.replaceChildren();
+    parts.forEach((part, index) => {
+      if (index)
+        gameCopy.append(
+          Object.assign(document.createElement("span"), {
+            className: "legend-action-ring vivify inline-action-ring",
+          }),
+        );
+      gameCopy.append(document.createTextNode(part));
+    });
+  } else gameCopy.textContent = copy.game;
 
   if (!dialog.open) {
     mutationDialogResume = !controller.paused;

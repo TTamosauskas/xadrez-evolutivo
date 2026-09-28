@@ -7,7 +7,7 @@ const SPECIAL_EXPLANATIONS = Object.freeze({
     realWorld:
       "Na vida: Na hipótese do Mundo de RNA, evolução biológica começou com moleculas auto-replicantes. A busca por fontes de energia começou aqui.",
     game:
-      "No jogo: Clique no círculo verde que aparece quando a célula estiver pronta para se reproduzir.",
+      "No jogo: Clique no círculo verde ⭕ que aparece quando a reprodução estiver disponível.",
   },
   "Casa Hostil": {
     title: "🟥 Casa Hostil",

@@ -686,10 +686,13 @@ function resolveDueLethalDeaths(ctx) {
       piece.lethalDeathRound <= round(state)
     ) {
       const reason = piece.lethalDeathReason ?? "ambiente letal",
+        hostileEnvironment = /hostil/i.test(reason),
         hadeanHostile = reason === "casa hostil hadeana",
-        pieceId = piece.id;
+        pieceId = piece.id,
+        cell = square(piece.r, piece.c);
       if (ctx.kill(piece.id, reason, null, true)) {
         deaths++;
+        if (hostileEnvironment) markCarcass(state, cell);
         if (
           hadeanHostile &&
           state.hadeanEnvironment &&
