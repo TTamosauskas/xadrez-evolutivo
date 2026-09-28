@@ -681,29 +681,51 @@ function makeChildProfile(
   };
   syncGenomePhenotype(child);
   let mutationLabel = null;
-  const missingEnergyBranch = missingArcheanEnergyBranch(state),
-    complementaryBranch = complementaryArcheanEnergyBranch(state, child),
-    openingGuarantee =
-      round(state) >= 1 &&
-      state.openingMutationSatisfied?.[parent.owner] === false &&
-      (!missingEnergyBranch || !!complementaryBranch),
-    mutationAttempt =
-      openingGuarantee ||
-      random(state) < (state.event?.id === "solar" ? 1 : 1 / 3);
-  if (mutationAttempt)
-    mutationLabel = mutation(
-      state,
-      child,
-      !!mate,
-      excludedMutationTraits,
-      complementaryBranch,
-    );
-  if (
-    mutationLabel &&
-    state.openingMutationSatisfied &&
-    (!missingEnergyBranch || mutationLabel === missingEnergyBranch)
-  )
-    state.openingMutationSatisfied[parent.owner] = true;
+  const hadeanFirstChild =
+    state.geologicalStage === "hadean" &&
+    !state.pieces.some((piece) => (piece.generation ?? 0) > 0);
+  if (hadeanFirstChild) {
+    child.genome = forceGenomeTrait(child.genome, "Quimiossíntese");
+    child.ancestry = [...new Set([...child.ancestry, "Quimiossíntese"])];
+    child.mutations++;
+    syncGenomePhenotype(child);
+    mutationLabel = "Quimiossíntese";
+    if (!state.seenMutations.includes(mutationLabel)) {
+      state.seenMutations.push(mutationLabel);
+      child.newMutationToast = {
+        trait: mutationLabel,
+        text: "Nova Mutação: ♨️ Quimiossíntese.",
+      };
+      log(
+        state,
+        `Nova Mutação: ${OWNERS[child.owner]} · ♨️ Quimiossíntese.`,
+      );
+    }
+  } else {
+    const missingEnergyBranch = missingArcheanEnergyBranch(state),
+      complementaryBranch = complementaryArcheanEnergyBranch(state, child),
+      openingGuarantee =
+        round(state) >= 1 &&
+        state.openingMutationSatisfied?.[parent.owner] === false &&
+        (!missingEnergyBranch || !!complementaryBranch),
+      mutationAttempt =
+        openingGuarantee ||
+        random(state) < (state.event?.id === "solar" ? 1 : 1 / 3);
+    if (mutationAttempt)
+      mutationLabel = mutation(
+        state,
+        child,
+        !!mate,
+        excludedMutationTraits,
+        complementaryBranch,
+      );
+    if (
+      mutationLabel &&
+      state.openingMutationSatisfied &&
+      (!missingEnergyBranch || mutationLabel === missingEnergyBranch)
+    )
+      state.openingMutationSatisfied[parent.owner] = true;
+  }
   applyAirSacRankFloor(child);
   normalizeBodyPlanRank(child);
   normalizePhotosyntheticRank(child);
@@ -760,113 +782,6 @@ function spawnChild(state, profile, r, c) {
   }
   state.pieces.push(child);
   registerDiscoveries(state, child);
-  return child;
-}
-
-const HADEAN_CENTRAL_CELLS = Object.freeze([
-  Object.freeze({ r: 3, c: 3 }),
-  Object.freeze({ r: 3, c: 4 }),
-  Object.freeze({ r: 4, c: 3 }),
-  Object.freeze({ r: 4, c: 4 }),
-]);
-
-function hadeanOpeningTarget(state, centralOnly = false) {
-  const free = (cell) =>
-    !at(state, cell.r, cell.c) &&
-    !eggAt(state, cell.r, cell.c) &&
-    !plantSeedAt(state, cell.r, cell.c) &&
-    !fragmentAt(state, cell.r, cell.c) &&
-    !barrierAt(state, cell.r, cell.c);
-
-  if (centralOnly) return pick(state, HADEAN_CENTRAL_CELLS.filter(free));
-
-  const available = [];
-  for (let r = 2; r <= 5; r++)
-    for (let c = 2; c <= 5; c++)
-      if (free({ r, c })) available.push({ r, c });
-  return pick(state, available);
-}
-
-export function hadeanOpeningReproduce(ctx, parent) {
-  const state = ctx.state;
-  if (
-    state.geologicalStage !== "hadean" ||
-    !parent ||
-    parent.owner !== state.current ||
-    !parent.hadeanOpeningReproductionReady ||
-    parent.hadeanHostileDeathPending
-  )
-    return null;
-
-  const firstHadeanChild = !state.pieces.some(
-      (piece) => (piece.generation ?? 0) > 0,
-    ),
-    chemosynthetic = firstHadeanChild || random(state) < 1 / 3,
-    target = hadeanOpeningTarget(state, firstHadeanChild);
-  if (!target) return null;
-
-  const traits = chemosynthetic
-      ? ["Respiração anaeróbia", "Quimiossíntese"]
-      : ["Respiração anaeróbia"],
-    child = spawnChild(
-      state,
-      {
-        owner: parent.owner,
-        rank: parent.rank,
-        traits,
-        ancestry: [...new Set([...(parent.ancestry ?? parent.traits), ...traits])],
-        mutations: chemosynthetic ? 1 : 0,
-        generation: (parent.generation ?? 0) + 1,
-        parentId: parent.id,
-        parentIds: [parent.id],
-      },
-      target.r,
-      target.c,
-    );
-
-  parent.hadeanOpeningReproductionReady = false;
-  parent.lifetimeReproductions = (parent.lifetimeReproductions ?? 0) + 1;
-  parent.lifetimeOffspring = (parent.lifetimeOffspring ?? 0) + 1;
-  parent.nextReproductionRound =
-    round(state) + metabolicReproductionCooldown(parent);
-  state.reproductions[parent.owner] =
-    (state.reproductions[parent.owner] ?? 0) + 1;
-  state.maxGenerationReached = Math.max(
-    state.maxGenerationReached,
-    child.generation,
-  );
-
-  if (chemosynthetic) {
-    state.hadeanEnvironment ??= {
-      hostileDeathExplained: false,
-      fertileExplained: false,
-      pendingFertility: [],
-    };
-    state.hadeanEnvironment.pendingFertility.push({
-      pieceId: child.id,
-      cell: square(child.r, child.c),
-      dueTurn: state.turn + 2,
-    });
-    registerDiscoveries(state, child);
-    emitPassiveEffect(
-      state,
-      "Quimiossíntese",
-      "Nova Mutação: ♨️ Quimiossíntese.",
-      {
-        pieceId: child.id,
-        outcome: "new-mutation",
-      },
-    );
-    log(
-      state,
-      `Nova Mutação: ${OWNERS[child.owner]} · ♨️ Quimiossíntese surgiu na prole em ${coord(child.r, child.c)}.`,
-    );
-  } else {
-    log(
-      state,
-      `${OWNERS[child.owner]}: a prole permaneceu basal em ${coord(child.r, child.c)}.`,
-    );
-  }
   return child;
 }
 
@@ -1796,7 +1711,11 @@ export function reproduce(
         : Math.min(populationLimit, competitivePressure.limit),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece, feeder = false) => {
-      let metabolic = metabolicReproductionCooldown(piece);
+      const hadeanBasalFertility =
+        state.geologicalStage === "hadean" && resourceKind === "fertile";
+      let metabolic = hadeanBasalFertility
+        ? 0
+        : metabolicReproductionCooldown(piece);
       if (mates.length && has(piece, "Ovulação Induzida")) {
         const beforeOvulation = metabolic;
         metabolic = Math.max(1, metabolic - 1);
