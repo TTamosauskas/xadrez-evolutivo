@@ -2214,7 +2214,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     );
     assert.match(
       d.getElementById("mutation-dialog-real").textContent,
-      /^Na vida: Uma hipótese para a origem da vida/,
+      /^Na vida: Na hipótese do Mundo de RNA/,
     );
     assert.match(
       d.getElementById("mutation-dialog-game").textContent,
