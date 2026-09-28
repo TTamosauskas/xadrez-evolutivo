@@ -1763,7 +1763,11 @@ export function render(
         ),
       );
 
-    const recessiveTraits = hiddenRecessiveTraits(actor),
+    const recessiveTraits = (state.historicalTraits ?? []).includes(
+        "Reprodução Sexuada",
+      )
+        ? hiddenRecessiveTraits(actor)
+        : [],
       recessiveSet = new Set(recessiveTraits),
       legacyTraits = [
         ...new Set([...(actor.ancestry ?? []), ...established]),
