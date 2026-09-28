@@ -2374,6 +2374,45 @@ test("natural death is certain at age 48, bypasses Regeneração and leaves no t
   assertState(s);
 });
 
+test("Hadean ecological domain waits until every playable cell is occupied", () => {
+  const s = createState(1512, {
+    geologicalStage: "hadean",
+    naturalBarriers: false,
+  });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.notices = [];
+  s.turn = ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS * 2;
+  s.current = "blue";
+  s.lastSuccessfulCaptureRound = 0;
+
+  const playable = [];
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (r >= 2 && r <= 5 && c >= 2 && c <= 5)
+        playable.push({ r, c });
+
+  for (let index = 0; index < playable.length - 1; index++) {
+    const cell = playable[index],
+      owner = index < 8 ? "blue" : "amber";
+    s.pieces.push(newPiece(s, owner, cell.r, cell.c, { rank: 4 }));
+  }
+
+  assert.equal(offensiveActionCount(s), 0);
+  assert.equal(resolveEcologicalDomain(s), false);
+  assert.equal(s.result, null);
+
+  const last = playable.at(-1);
+  s.pieces.push(newPiece(s, "blue", last.r, last.c, { rank: 4 }));
+
+  assert.equal(resolveEcologicalDomain(s), true);
+  assert.equal(s.result?.winner, "blue");
+  assert.match(s.result?.reason ?? "", /Domínio Ecológico/);
+  assert.match(s.result?.reason ?? "", /9 × 7/);
+  assertState(s);
+});
+
 test("mutual blocking ends immediately by ecological-domain population", () => {
   const s = createState(1510, {
     geologicalStage: "devonian",

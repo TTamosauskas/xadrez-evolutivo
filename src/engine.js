@@ -39,6 +39,7 @@ import {
   releaseEukaryoteBuffers,
   hadeanCentralCell,
   hadeanOuterCell,
+  hadeanPlayableCell,
 } from "./state.js";
 import {
   movesFor,
@@ -471,6 +472,14 @@ function finishEcologicalDomain(state, trigger) {
   return true;
 }
 
+function hadeanPlayableAreaOccupied(state) {
+  if (state.geologicalStage !== "hadean") return true;
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if (hadeanPlayableCell(r, c) && !at(state, r, c)) return false;
+  return true;
+}
+
 function passiveProgressPending(state) {
   const now = round(state);
   if ((state.hadeanEnvironment?.pendingFertility?.length ?? 0) > 0)
@@ -494,6 +503,7 @@ function passiveProgressPending(state) {
 
 export function resolveEcologicalDomain(state) {
   if (state.result || state.phase !== "move") return false;
+  if (!hadeanPlayableAreaOccupied(state)) return false;
   const passivePending = passiveProgressPending(state);
   if (mutuallyBlocked(state) && !passivePending)
     return finishEcologicalDomain(state, "bloqueio total de ações");
