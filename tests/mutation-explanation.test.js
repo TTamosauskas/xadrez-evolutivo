@@ -106,7 +106,7 @@ test("tutorial and terrain toasts share the explanatory modal format", () => {
   assert.deepEqual(effectExplanation("Reprodução"), {
     title: "Reprodução",
     realWorld:
-      "Na vida: Na hipótese do Mundo de RNA, evolução biológica começou com moleculas auto-replicantes. A busca por fontes de energia começou aqui.",
+      "Na vida: A hipótese do Mundo de RNA diz que a evolução começou com moleculas auto-replicantes. Começou assim a busca por fontes de energia.",
     game:
       "No jogo: Clique no círculo verde ⭕ que aparece quando a reprodução estiver disponível.",
   });
