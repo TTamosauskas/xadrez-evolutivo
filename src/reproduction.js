@@ -843,6 +843,16 @@ export function hadeanOpeningReproduce(ctx, parent) {
   );
 
   if (chemosynthetic) {
+    state.hadeanEnvironment ??= {
+      hostileDeathExplained: false,
+      fertileExplained: false,
+      pendingFertility: [],
+    };
+    state.hadeanEnvironment.pendingFertility.push({
+      pieceId: child.id,
+      cell: square(child.r, child.c),
+      dueTurn: state.turn + 2,
+    });
     registerDiscoveries(state, child);
     emitPassiveEffect(
       state,
