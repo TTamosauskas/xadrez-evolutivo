@@ -1814,14 +1814,14 @@ export function activateOrigin(state) {
   state.phase = "move";
   state.current = "blue";
   state.hadeanTutorial.divided = true;
-  notice(
+  emitPassiveEffect(
     state,
     "Fotossíntese",
-    [
-      "As novas células precisam de tempo para acumular recursos e tornar a própria casa fértil.",
-      "Passe a Vez enquanto a casa estiver neutra. Quando ela ficar verde, poderá Vivificar.",
-    ],
-    "hadean-photosynthesis-wait",
+    "Nova Mutação: 🟢 Fotossíntese.",
+    {
+      pieceId: blue.id,
+      outcome: "new-mutation",
+    },
   );
   log(
     state,
