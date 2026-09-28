@@ -690,8 +690,8 @@ export function render(
             ? `${OWNERS[state.result.winner]} venceram`
             : "Empate"
         : `Vez das ${OWNERS[state.current]}${state.neurofocus ? " · ♾️ Hiperfoco" : ""}${
-            busy === "conway"
-              ? " · habitat evoluindo…"
+            busy === "domain"
+              ? " · resolvendo Domínio Ecológico…"
               : busy
                 ? " · IA pensando…"
                 : ""
