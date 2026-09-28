@@ -17,7 +17,6 @@ import {
   reproductionReady,
   terrain,
   round,
-  ecologicalQuadrant,
   strongestSurvivor,
   survivorPieceValue,
   expressedPositiveGenes,
@@ -572,29 +571,6 @@ function pendingBroodValue(state, owner) {
   return value;
 }
 
-function ecologicalDomainValue(state, owner) {
-  if (!state.ecologicalDomain?.active) return 0;
-  let value = 0;
-  for (let quadrant = 0; quadrant < 4; quadrant++) {
-    const entry = state.ecologicalDomain.quadrants?.[quadrant];
-    if (!entry) continue;
-    if (entry.consolidated)
-      value += entry.owner === owner ? 45 : -45;
-    else if (entry.owner)
-      value += (entry.owner === owner ? 1 : -1) * (entry.progress ?? 0) * 8;
-
-    let own = 0,
-      enemy = 0;
-    for (const piece of state.pieces)
-      if (ecologicalQuadrant(piece.r, piece.c) === quadrant) {
-        if (piece.owner === owner) own++;
-        else enemy++;
-      }
-    value += Math.max(-4, Math.min(4, own - enemy)) * 1.5;
-  }
-  return value;
-}
-
 function sideValue(state, owner) {
   const pieces = state.pieces
       .filter((piece) => piece.owner === owner)
@@ -603,9 +579,8 @@ function sideValue(state, owner) {
     branchValue =
       founderBranchValue(state, owner, true) +
       founderBranchValue(state, owner, false),
-    brood = pendingBroodValue(state, owner),
-    domain = ecologicalDomainValue(state, owner);
-  return pieces + branchValue * 0.45 + brood + domain - crowdingPenalty(population);
+    brood = pendingBroodValue(state, owner);
+  return pieces + branchValue * 0.45 + brood - crowdingPenalty(population);
 }
 
 export function evaluateForAI(state, owner) {
