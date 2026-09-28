@@ -113,9 +113,9 @@ test("mutual blocking resolves ecological domain after a short visible delay", (
   s.pieces = [];
   s.nextId = 1;
   s.pieces.push(
-    newPiece(s, "blue", 4, 4, { rank: 4, traits: [] }),
-    newPiece(s, "blue", 4, 5, { rank: 4, traits: [] }),
-    newPiece(s, "amber", 0, 0, { rank: 4, traits: [] }),
+    newPiece(s, "blue", 7, 7, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "blue", 7, 6, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Carnívoro", "Voo"] }),
   );
   s.turn = 80;
   s.current = "blue";
