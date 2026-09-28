@@ -297,7 +297,7 @@ test("computer versus computer mode schedules AI for both colors", () => {
   c.dispose();
 });
 
-test("computer versus computer mode continues after the Hadean photosynthesis toast", () => {
+test("computer versus computer mode continues into Hadean opening reproduction", () => {
   const timers = new Map(),
     workers = [];
   let nextTimer = 0;
@@ -340,7 +340,7 @@ test("computer versus computer mode continues after the Hadean photosynthesis to
   assert.equal(c.state.origin, null);
   assert.equal(c.state.pieces.length, 2);
   assert.equal(c.state.notices.length, 0);
-  assert.equal(workers.length, 0);
+  assert.equal(workers.length, 1);
   assert.ok(timers.size > 0);
 
   c.cancel();
