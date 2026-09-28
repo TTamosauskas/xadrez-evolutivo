@@ -202,6 +202,14 @@ export function cloneGenome(source) {
   return normalizeGenome(source);
 }
 
+export function dominantizeGenome(source) {
+  const genome = cloneGenome(source?.genome ?? source);
+  for (const trait of GENETIC_TRAITS)
+    for (const allele of genome[trait])
+      if (allele.value === "derived") allele.dominance = "dominant";
+  return genome;
+}
+
 export function recessivizeGenomeTrait(source, trait) {
   const genome = cloneGenome(source?.genome ?? source);
   if (!genome[trait]) return genome;
