@@ -1929,7 +1929,9 @@ export function actionsForPiece(
     !piece ||
     state.result ||
     !state.pieces.some((candidate) => candidate.id === piece.id) ||
-    piece.hadeanHostileDeathPending
+    piece.hadeanHostileDeathPending ||
+    (Number.isInteger(piece.lethalDeathRound) &&
+      /hostil/i.test(piece.lethalDeathReason ?? ""))
   )
     return [];
   if (
@@ -2094,11 +2096,18 @@ export function pieceActionState(state, piece) {
     return { waiting: false, reason: null, remainingRounds: null };
 
   const currentRound = round(state);
-  if (piece.hadeanHostileDeathPending)
+  if (
+    piece.hadeanHostileDeathPending ||
+    (Number.isInteger(piece.lethalDeathRound) &&
+      /hostil/i.test(piece.lethalDeathReason ?? ""))
+  )
     return {
       waiting: true,
       reason: "Morte por ambiente hostil",
-      remainingRounds: 1,
+      remainingRounds: Math.max(
+        1,
+        (piece.lethalDeathRound ?? currentRound + 1) - currentRound,
+      ),
     };
   if (ecologicalDomainBlocked(state, piece.owner, piece.r, piece.c))
     return {
