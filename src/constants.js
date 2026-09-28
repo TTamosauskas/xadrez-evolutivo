@@ -33,7 +33,7 @@ export const TRAITS = {
   ],
   Quimiossíntese: [
     "♨️",
-    "Enquanto for o ramo energético ativo, impede a morte em uma casa hostil e a transforma em casa fértil no turno seguinte. A reprodução consome essa fertilidade e devolve a casa ao estado neutro.",
+    "Transforma 🟥casa hostil em 🟩 Casa fértil",
   ],
   Biomineralização: [
     "🪨",

@@ -249,7 +249,7 @@ const mutationTopics = {
   ],
   Quimiossíntese: [
     "Quimiolitotrofia",
-    "Metabolismos quimiotróficos obtêm energia de reações com compostos inorgânicos; no jogo, ambientes hostis antigos tornam-se recursos reprodutivos esgotáveis.",
+    "Organismos quimiotróficos obtêm energia de reações com compostos inorgânicos geralmente tóxicos",
   ],
   Eucarionte: [
     "Eucariogênese",

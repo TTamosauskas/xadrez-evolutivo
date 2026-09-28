@@ -872,6 +872,11 @@ main {
 .legend-action-ring.vivify {
   color: #5bd66c;
 }
+.inline-action-ring {
+  margin: 0 2px;
+  vertical-align: -1px;
+  flex: 0 0 auto;
+}
 .legend-action-ring.attack {
   color: #d54242;
 }

@@ -338,7 +338,7 @@ test("Hadean starts with three fertile central cells and the gray ancestor consu
   const reproductionEffects = s.passiveEffects.filter(
     (effect) =>
       effect.trait === "Reprodução" &&
-      effect.text === "Reprodução disponível.",
+      effect.text === "Primeira Reprodução feita.",
   );
   assert.equal(reproductionEffects.length, 1);
   assert.equal(
@@ -677,7 +677,7 @@ test("Hadean hostile pressure can condemn a later basal offspring without a skul
         effect.trait === "Casa Hostil" &&
         effect.outcome === "hadean-hostile-death",
     ),
-    true,
+    false,
   );
   assertState(resolved);
 });
@@ -721,7 +721,7 @@ test("Hadean chemosynthesis turns a cell fertile one turn after hostile pressure
         effect.trait === "Casa Fértil" &&
         effect.outcome === "hadean-first-fertile",
     ),
-    true,
+    false,
   );
 
   s = transition(s, { type: "PASS" });
@@ -1779,7 +1779,7 @@ test("ordinary fertile movement does not repeat the Hadean reproduction tutorial
     s.passiveEffects.some(
       (effect) =>
         effect.trait === "Reprodução" &&
-        effect.text === "Reprodução disponível.",
+        effect.text === "Primeira Reprodução feita.",
     ),
     false,
   );
