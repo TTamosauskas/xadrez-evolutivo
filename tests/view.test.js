@@ -242,7 +242,7 @@ test("Hadean common ancestor is a gray King that splits after the second click",
     1,
   );
   assert.match(legend.textContent, /Vivificar/);
-  assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 48);
+  assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 0);
   dom.window.close();
 });
 
@@ -2311,13 +2311,13 @@ test("Hadean extinction offers the formal transition to Archean", () => {
   s.origin = null;
   s.historicalTraits = [
     "Respiração anaeróbia",
-    "Fotossíntese",
-    "Predação",
+    "Quimiossíntese",
   ];
   s.hadeanTutorial = {
     moved: true,
     divided: true,
     captured: true,
+    fertile: true,
     dividedAtTurn: 0,
   };
   s.phase = "over";
