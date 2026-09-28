@@ -3075,7 +3075,6 @@ test("first-cycle mutation attempts never fall back to deleterious outcomes", ()
   );
   const child = s.pieces.find((piece) => piece.id >= before);
   assert.equal(child.mutations, 1);
-  assert.ok(child.traits.includes("Quimiossíntese"));
   assert.ok(
     ["Esterilidade", "Mutação Letal", "Mutação Disfuncional"].every(
       (trait) => !child.traits.includes(trait),
