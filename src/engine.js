@@ -409,6 +409,12 @@ function markHadeanTutorialStep(state, step) {
 }
 function extinction(state) {
   if (state.result) return true;
+  if (
+    state.pieces.some((piece) =>
+      Number.isInteger(piece.lethalDeathTurn),
+    )
+  )
+    return false;
   const biologicallyOwnedBy = (piece, owner) =>
       piece.owner === owner ||
       piece.parasitoidism?.originalOwner === owner,
@@ -697,6 +703,48 @@ function nocturnalRound(state) {
   return (round(state) + 1) % 2 === 0;
 }
 
+function markLethalDeath(state, piece, reason = "ambiente letal") {
+  if (!piece || Number.isInteger(piece.lethalDeathTurn)) return false;
+  piece.lethalDeathTurn = state.turn + 1;
+  piece.lethalDeathReason = reason;
+  notice(
+    state,
+    "Casa letal",
+    [
+      "☠️ A criatura caiu em uma casa letal.",
+      "Ela permanecerá visível até o próximo turno e então morrerá.",
+    ],
+    "hostile",
+  );
+  log(
+    state,
+    `${OWNERS[piece.owner]}: ☠️ ${coord(piece.r, piece.c)} é letal; a criatura morrerá no início do próximo turno.`,
+  );
+  return true;
+}
+
+export const lethalDeathsDue = (state) =>
+  (state?.pieces ?? []).some(
+    (piece) =>
+      Number.isInteger(piece.lethalDeathTurn) &&
+      piece.lethalDeathTurn <= state.turn,
+  );
+
+function resolveDueLethalDeaths(ctx) {
+  const state = ctx.state;
+  let deaths = 0;
+  for (const piece of [...state.pieces])
+    if (
+      Number.isInteger(piece.lethalDeathTurn) &&
+      piece.lethalDeathTurn <= state.turn
+    ) {
+      const reason = piece.lethalDeathReason ?? "ambiente letal";
+      if (ctx.kill(piece.id, reason, null, true)) deaths++;
+    }
+  if (deaths) extinction(state);
+  return deaths;
+}
+
 function reactiveRelocation(ctx, piece, r, c, reason) {
   const state = ctx.state,
     origin = square(piece.r, piece.c),
@@ -717,7 +765,7 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
   moveDirection(piece);
 
   if (lethalHazardAt(state, r, c)) {
-    ctx.kill(piece.id, reason + " em ambiente letal", null, true);
+    markLethalDeath(state, piece, reason + " em ambiente letal");
     return false;
   }
 
@@ -1843,19 +1891,8 @@ function resolveThanatosis(state) {
   return resolved;
 }
 
-function resolveLethalOccupants(ctx) {
-  let deaths = 0;
-  for (const piece of [...ctx.state.pieces])
-    if (lethalHazardAt(ctx.state, piece.r, piece.c)) {
-      if (ctx.kill(piece.id, "ambiente letal", null, true)) deaths++;
-    }
-  if (deaths) extinction(ctx.state);
-  return deaths;
-}
-
 function settle(ctx) {
   const state = ctx.state;
-  resolveLethalOccupants(ctx);
   resolveThanatosis(state);
   recycleOccupiedOrganicResidue(state);
   if (
@@ -3027,7 +3064,14 @@ function executeMove(ctx, action) {
         state.movementTrace.stop = { r, c };
         state.movementTrace.outcome = "died-lethal";
       }
-      ctx.kill(p.id, "ambiente letal", null, true);
+      leaveBacterialTrail(state, p, square(p.r, p.c));
+      p.r = r;
+      p.c = c;
+      p.stationarySinceRound = round(state);
+      p.webCreatedStationarySinceRound = null;
+      exposePathogenCell(state, p);
+      moveDirection(p);
+      markLethalDeath(state, p, "deslocamento em ambiente letal");
       advanceTurn(ctx);
       settle(ctx);
       return;
@@ -3932,10 +3976,10 @@ function executeMove(ctx, action) {
   if (lethalHazardAt(state, p.r, p.c)) {
     if (state.movementTrace) {
       state.movementTrace.stop = { r: p.r, c: p.c };
-      state.movementTrace.outcome = "died-lethal";
+      state.movementTrace.outcome = "doomed-lethal";
     }
     ctx.reserved.delete(landingCell);
-    ctx.kill(p.id, "ambiente letal", null, true);
+    markLethalDeath(state, p, "ambiente letal");
     advanceTurn(ctx);
     settle(ctx);
     return;
@@ -5330,6 +5374,14 @@ export function transition(previous, action) {
     state.phase === "build"
   )
     resolveBuilding(ctx, action);
+  else if (
+    action.type === "RESOLVE_LETHAL" &&
+    state.phase === "move" &&
+    lethalDeathsDue(state)
+  ) {
+    resolveDueLethalDeaths(ctx);
+    if (!state.result) settle(ctx);
+  }
   else if (action.type === "PASS" && state.phase === "move") {
     log(state, `${OWNERS[state.current]} passaram a vez.`);
     advanceTurn(ctx);
@@ -5364,7 +5416,6 @@ export function transition(previous, action) {
     const acted = state.pieces.find((piece) => piece.id === action.id);
     if (acted) releaseEukaryoteBuffers(state, acted, "action");
   }
-  resolveLethalOccupants(ctx);
   logBoardChanges(previous, state);
   state.revision++;
   return assertState(state);
