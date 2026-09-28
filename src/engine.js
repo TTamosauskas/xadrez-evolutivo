@@ -1639,6 +1639,58 @@ function tickParasitoidism(ctx, acting, before) {
   }
 }
 
+function schedulePostHadeanChemosynthesis(state, piece) {
+  if (
+    state.geologicalStage === "hadean" ||
+    !piece ||
+    !has(piece, "Quimiossíntese") ||
+    terrain(state, piece.r, piece.c) !== "hostile"
+  )
+    return false;
+  const cell = square(piece.r, piece.c);
+  if (
+    piece.chemosynthesisCell === cell &&
+    Number.isInteger(piece.chemosynthesisReadyTurn)
+  )
+    return true;
+  piece.chemosynthesisCell = cell;
+  piece.chemosynthesisReadyTurn = state.turn + 1;
+  return true;
+}
+
+function maturePostHadeanChemosynthesis(state) {
+  if (state.geologicalStage === "hadean") return 0;
+  let matured = 0;
+  for (const piece of state.pieces) {
+    if (!Number.isInteger(piece.chemosynthesisReadyTurn)) continue;
+    if (piece.chemosynthesisReadyTurn > state.turn) continue;
+    const cell = piece.chemosynthesisCell;
+    delete piece.chemosynthesisCell;
+    delete piece.chemosynthesisReadyTurn;
+    if (
+      !Number.isInteger(cell) ||
+      square(piece.r, piece.c) !== cell ||
+      !has(piece, "Quimiossíntese") ||
+      terrain(state, piece.r, piece.c) !== "hostile"
+    )
+      continue;
+    state.chemicalHazards = (state.chemicalHazards ?? []).filter(
+      (entry) => entry.cell !== cell,
+    );
+    if (Array.isArray(state.event?.hazards))
+      state.event.hazards = state.event.hazards.filter(
+        (hazardCell) => hazardCell !== cell,
+      );
+    state.board[cell] = "fertile";
+    matured++;
+    log(
+      state,
+      `♨️ Quimiossíntese transformou ${coord(piece.r, piece.c)} em casa fértil.`,
+    );
+  }
+  return matured;
+}
+
 function hadeanCellDistanceToCenter(r, c) {
   return Math.abs(r - 3.5) + Math.abs(c - 3.5);
 }
@@ -1849,7 +1901,12 @@ function advanceTurn(ctx) {
   recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
-  advanceHadeanEnvironment(state);
+  maturePostHadeanChemosynthesis(state);
+  if (state.geologicalStage === "hadean")
+    advanceHadeanEnvironment(state);
+  else
+    for (const piece of state.pieces)
+      schedulePostHadeanChemosynthesis(state, piece);
   state.chemicalHazards = (state.chemicalHazards ?? []).filter(
     (entry) => entry.expiresTurn >= state.turn,
   );
@@ -1916,12 +1973,17 @@ function advanceTurn(ctx) {
         ) &&
         p.hostileRiskRound !== round(state)
       ) {
+        const hostileTerrain = terrain(state, p.r, p.c) === "hostile";
+        if (hostileTerrain && has(p, "Quimiossíntese")) {
+          schedulePostHadeanChemosynthesis(state, p);
+          continue;
+        }
         p.hostileRiskRound = round(state);
         if (
           hostileHazardKills(
             state,
             p,
-            terrain(state, p.r, p.c) === "hostile",
+            hostileTerrain,
           )
         ) {
           const cell = square(p.r, p.c);
