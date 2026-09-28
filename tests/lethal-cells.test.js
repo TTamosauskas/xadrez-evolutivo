@@ -77,11 +77,13 @@ test("ordinary movement keeps a piece visible on a lethal cell until the next tu
 
   assert.ok(doomed);
   assert.deepEqual([doomed.r, doomed.c], [0, 0]);
-  assert.equal(doomed.lethalDeathRound, round(landed));
-  assert.equal(lethalDeathsDue(landed), true);
+  assert.equal(doomed.lethalDeathRound, round(landed) + 1);
+  assert.equal(lethalDeathsDue(landed), false);
   assert.ok(landed.logs.some((entry) => /letal/.test(entry.text)));
 
-  const next = simulate(landed, { type: "RESOLVE_LETHAL" });
+  const nextRound = simulate(landed, { type: "PASS" });
+  assert.equal(lethalDeathsDue(nextRound), true);
+  const next = simulate(nextRound, { type: "RESOLVE_LETHAL" });
   assert.equal(next.pieces.some((piece) => piece.id === mover.id), false);
   assert.ok(next.pieces.some((piece) => piece.id === blueAlly.id));
   assert.ok(next.pieces.some((piece) => piece.id === amber.id));
@@ -132,10 +134,12 @@ test("a capture into a lethal Hadean cell removes the victim but leaves the doom
   assert.equal(landed.pieces.some((piece) => piece.id === victim.id), false);
   assert.ok(doomed);
   assert.deepEqual([doomed.r, doomed.c], [1, 1]);
-  assert.equal(lethalDeathsDue(landed), true);
+  assert.equal(lethalDeathsDue(landed), false);
   assert.equal(landed.hadeanTutorial.captured, true);
 
-  const next = simulate(landed, { type: "RESOLVE_LETHAL" });
+  const nextRound = simulate(landed, { type: "PASS" });
+  assert.equal(lethalDeathsDue(nextRound), true);
+  const next = simulate(nextRound, { type: "RESOLVE_LETHAL" });
   assert.equal(next.pieces.some((piece) => piece.id === attacker.id), false);
   assert.ok(next.pieces.some((piece) => piece.id === blueAlly.id));
   assert.ok(next.pieces.some((piece) => piece.id === amberAlly.id));
@@ -179,10 +183,12 @@ test("Hadean reproduction may place a newborn in a lethal cell and keeps it visi
   assert.ok(landed.nextId > beforeNextId);
   assert.ok(newborn);
   assert.deepEqual([newborn.r, newborn.c], [1, 1]);
-  assert.equal(lethalDeathsDue(landed), true);
+  assert.equal(lethalDeathsDue(landed), false);
   assert.ok(landed.logs.some((entry) => /letal/.test(entry.text)));
 
-  const next = simulate(landed, { type: "RESOLVE_LETHAL" });
+  const nextRound = simulate(landed, { type: "PASS" });
+  assert.equal(lethalDeathsDue(nextRound), true);
+  const next = simulate(nextRound, { type: "RESOLVE_LETHAL" });
   assert.equal(
     next.pieces.some((piece) => piece.id === newborn.id),
     false,
