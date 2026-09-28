@@ -368,82 +368,93 @@ test("Hadean starts neutral and the gray ancestor introduces reproduction before
   assertState(s);
 });
 
-function openingReproductionSample(predicate) {
+function firstOpeningReproduction(seed = 1) {
+  let state = createCampaignState(seed);
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  const parent = state.pieces.find((piece) => piece.owner === "blue"),
+    before = new Set(state.pieces.map((piece) => piece.id));
+  state = transition(state, {
+    type: "HADEAN_REPRODUCE",
+    id: parent.id,
+  });
+  const child = state.pieces.find(
+    (piece) => piece.owner === "blue" && !before.has(piece.id),
+  );
+  return { state, child, parent };
+}
+
+test("both founder Kings show opening reproduction and their first offspring always gain chemosynthesis in the two free central cells", () => {
+  let s = createCampaignState(401);
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+
+  const blue = s.pieces.find((piece) => piece.owner === "blue"),
+    amber = s.pieces.find((piece) => piece.owner === "amber");
+  assert.equal(blue.hadeanOpeningReproductionReady, true);
+  assert.equal(amber.hadeanOpeningReproductionReady, true);
+  assert.deepEqual(actionsForPiece(s, blue), [
+    { type: "HADEAN_REPRODUCE", id: blue.id },
+  ]);
+  assert.deepEqual(actionsForPiece(s, amber, { ignoreTurn: true }), [
+    { type: "HADEAN_REPRODUCE", id: amber.id },
+  ]);
+
+  const originalIds = new Set(s.pieces.map((piece) => piece.id));
+  s = transition(s, { type: "HADEAN_REPRODUCE", id: blue.id });
+  const blueChild = s.pieces.find(
+    (piece) => piece.owner === "blue" && !originalIds.has(piece.id),
+  );
+  assert.ok(blueChild);
+  assert.ok(blueChild.traits.includes("Quimiossíntese"));
+  assert.equal(blue.hadeanOpeningReproductionReady, false);
+
+  const afterBlueIds = new Set(s.pieces.map((piece) => piece.id));
+  const currentAmber = s.pieces.find((piece) => piece.id === amber.id);
+  s = transition(s, { type: "HADEAN_REPRODUCE", id: currentAmber.id });
+  const amberChild = s.pieces.find(
+    (piece) => piece.owner === "amber" && !afterBlueIds.has(piece.id),
+  );
+  assert.ok(amberChild);
+  assert.ok(amberChild.traits.includes("Quimiossíntese"));
+
+  const childCells = [blueChild, amberChild]
+    .map((piece) => `${piece.r},${piece.c}`)
+    .sort();
+  assert.deepEqual(childCells, ["3,3", "4,4"]);
+  assert.equal(
+    s.passiveEffects.filter(
+      (effect) =>
+        effect.trait === "Quimiossíntese" &&
+        effect.outcome === "new-mutation",
+    ).length,
+    2,
+  );
+  assertState(s);
+});
+
+function hadeanBasalHostileSample() {
   for (let seed = 1; seed <= 256; seed++) {
     let state = createCampaignState(seed);
     state = transition(state, { type: "ORIGIN_CLICK" });
     state = transition(state, { type: "ORIGIN_CLICK" });
-    const parent = state.pieces.find((piece) => piece.owner === "blue"),
-      before = new Set(state.pieces.map((piece) => piece.id));
-    state = transition(state, {
-      type: "HADEAN_REPRODUCE",
-      id: parent.id,
+    const child = newPiece(state, "blue", 2, 2, {
+      rank: 4,
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
+      generation: 1,
     });
-    const child = state.pieces.find(
-      (piece) => piece.owner === "blue" && !before.has(piece.id),
-    );
-    if (child && predicate(state, child, parent)) return { state, child, parent };
+    state.pieces.push(child);
+    state = transition(state, { type: "PASS" });
+    const current = state.pieces.find((piece) => piece.id === child.id);
+    if (current?.hadeanHostileDeathPending)
+      return { state, child: current };
   }
-  throw Error("Amostra Hadeana determinística indisponível.");
+  throw Error("Amostra Hadeana hostil indisponível.");
 }
 
-test("first Hadean reproduction gives each lineage an independent 50% chemosynthesis chance and placement rule", () => {
-  const chemo = openingReproductionSample((state, child) =>
-      child.traits.includes("Quimiossíntese"),
-    ),
-    basal = openingReproductionSample(
-      (state, child) => !child.traits.includes("Quimiossíntese"),
-    );
-
-  assert.ok([3, 4].includes(chemo.child.r));
-  assert.ok([3, 4].includes(chemo.child.c));
-  assert.ok(
-    !(
-      chemo.child.r === chemo.parent.r &&
-      chemo.child.c === chemo.parent.c
-    ),
-  );
-  assert.ok(chemo.state.historicalTraits.includes("Quimiossíntese"));
-  assert.equal(
-    chemo.state.passiveEffects.some(
-      (effect) =>
-        effect.trait === "Quimiossíntese" &&
-        effect.outcome === "new-mutation",
-    ),
-    true,
-  );
-
-  assert.equal(
-    basal.child.r >= 2 &&
-      basal.child.r <= 5 &&
-      basal.child.c >= 2 &&
-      basal.child.c <= 5,
-    true,
-  );
-  assert.equal(
-    basal.child.r === 2 ||
-      basal.child.r === 5 ||
-      basal.child.c === 2 ||
-      basal.child.c === 5,
-    true,
-  );
-  assert.equal(lethalHazardAt(basal.state, basal.child.r, basal.child.c), false);
-  assert.equal(basal.child.traits.includes("Quimiossíntese"), false);
-
-  for (let cell = 0; cell < basal.state.board.length; cell++)
-    if (basal.state.board[cell] === "hostile") {
-      const r = Math.floor(cell / 8),
-        c = cell % 8;
-      assert.ok(r >= 2 && r <= 5 && c >= 2 && c <= 5);
-    }
-});
-
-test("Hadean hostile pressure can condemn a basal offspring without a skull and explains the first actual death", () => {
-  const sample = openingReproductionSample(
-      (state, child) =>
-        !child.traits.includes("Quimiossíntese") &&
-        child.hadeanHostileDeathPending === true,
-    ),
+test("Hadean hostile pressure can condemn a later basal offspring without a skull and explains the first actual death", () => {
+  const sample = hadeanBasalHostileSample(),
     doomedId = sample.child.id;
 
   assert.equal(sample.state.board[square(sample.child.r, sample.child.c)], "hostile");
@@ -472,9 +483,7 @@ test("Hadean hostile pressure can condemn a basal offspring without a skull and 
 });
 
 test("Hadean chemosynthesis turns its central birth cell fertile at the end of the next turn", () => {
-  const sample = openingReproductionSample((state, child) =>
-    child.traits.includes("Quimiossíntese"),
-  );
+  const sample = firstOpeningReproduction();
   let s = sample.state;
   const cell = square(sample.child.r, sample.child.c);
 
