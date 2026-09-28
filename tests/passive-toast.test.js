@@ -372,7 +372,7 @@ test("the real Toastify bundle mounts an accessible fixed toast in the document 
     assert.equal(toast.style.top, "15px");
     assert.equal(toast.querySelector(".toast-close"), null);
     assert.equal(dom.window.getComputedStyle(toast).position, "fixed");
-    assert.equal(dom.window.getComputedStyle(toast).backgroundColor, "rgb(197, 181, 149)");
+    assert.equal(dom.window.getComputedStyle(toast).backgroundColor, "rgb(255, 255, 255)");
     const more = toast.querySelector('button[aria-label="Saiba mais sobre Visão Binocular"]');
     assert.ok(more);
     assert.equal(more.textContent, "SAIBA MAIS");
