@@ -448,6 +448,10 @@ function hadeanBasalHostileSample() {
       generation: 1,
     });
     state.pieces.push(child);
+    state.maxGenerationReached = Math.max(
+      state.maxGenerationReached,
+      child.generation,
+    );
     state = transition(state, { type: "PASS" });
     const current = state.pieces.find((piece) => piece.id === child.id);
     if (current?.hadeanHostileDeathPending)
