@@ -99,7 +99,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Hadeano",
     period: "Hadeano",
     chronology: { eon: "Hadeano" },
-    required: ["Respiração anaeróbia"],
+    required: ["Respiração anaeróbia", "Fotossíntese", "Predação"],
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "primordial" },
     events: {},
     founderLayout: [[5, 2], [5, 3], [2, 4], [2, 5]],
