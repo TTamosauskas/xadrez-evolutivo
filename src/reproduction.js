@@ -1713,9 +1713,8 @@ export function reproduce(
     cooldown = (piece, feeder = false) => {
       const hadeanBasalFertility =
         state.geologicalStage === "hadean" && resourceKind === "fertile";
-      let metabolic = hadeanBasalFertility
-        ? 0
-        : metabolicReproductionCooldown(piece);
+      if (hadeanBasalFertility) return round(state);
+      let metabolic = metabolicReproductionCooldown(piece);
       if (mates.length && has(piece, "Ovulação Induzida")) {
         const beforeOvulation = metabolic;
         metabolic = Math.max(1, metabolic - 1);
