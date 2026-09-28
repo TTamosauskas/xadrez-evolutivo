@@ -41,6 +41,7 @@ import {
   mineralRemnantAt,
   stomataOpen,
   releaseEukaryoteBuffers,
+  hadeanCentralCell,
   hadeanOuterCell,
 } from "./state.js";
 import {
@@ -1645,9 +1646,12 @@ function hadeanCellDistanceToCenter(r, c) {
 
 function hadeanHostileTarget(state) {
   const neutral = [];
-  for (let r = 0; r < 8; r++)
-    for (let c = 0; c < 8; c++)
-      if (state.board[square(r, c)] === "neutral")
+  for (let r = 2; r <= 5; r++)
+    for (let c = 2; c <= 5; c++)
+      if (
+        hadeanCentralCell(r, c) &&
+        state.board[square(r, c)] === "neutral"
+      )
         neutral.push({ r, c });
 
   if (!neutral.length) return null;
@@ -1660,9 +1664,16 @@ function hadeanHostileTarget(state) {
 
   const hostile = new Set(
     state.board
-      .map((terrainType, cell) => (terrainType === "hostile" ? cell : null))
+      .map((terrainType, cell) => {
+        const r = Math.floor(cell / 8),
+          c = cell % 8;
+        return terrainType === "hostile" && hadeanCentralCell(r, c)
+          ? cell
+          : null;
+      })
       .filter((cell) => cell !== null),
   );
+
   if (!hostile.size) {
     const outer = neutral.filter(({ r, c }) => hadeanOuterCell(r, c));
     return pick(state, outer);
@@ -1676,7 +1687,7 @@ function hadeanHostileTarget(state) {
       [r, c + 1],
     ].some(
       ([rr, cc]) =>
-        inside(rr, cc) && hostile.has(square(rr, cc)),
+        hadeanCentralCell(rr, cc) && hostile.has(square(rr, cc)),
     ),
   );
   if (!frontier.length) return pick(state, neutral);
