@@ -32,7 +32,6 @@ import { corticalActionBonus } from "./positioning.js";
 
 export const AI_ACTION_TYPES = Object.freeze([
   "MOVE",
-  "HADEAN_REPRODUCE",
   "PARTNER",
   "AGGRESSIVE_MATE",
   "CHEMOSYNTHESIS",
@@ -209,7 +208,6 @@ function barrierPriority(state, action) {
 
 export function actionPriority(state, a) {
   if (a.type === "DOMAIN_COLLAPSE") return 1000;
-  if (a.type === "HADEAN_REPRODUCE") return 25;
   if (a.type === "CHEMOSYNTHESIS") return 13;
   if (a.type === "EXTENDED_CAPTURE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);

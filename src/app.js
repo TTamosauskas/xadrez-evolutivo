@@ -229,14 +229,6 @@ $("board").addEventListener("click", (event) => {
       dispatch({ type: "ORIGIN_CLICK" });
     return;
   }
-  if (
-    state.phase === "move" &&
-    p?.hadeanOpeningReproductionReady &&
-    p.owner === state.current
-  ) {
-    dispatch({ type: "HADEAN_REPRODUCE", id: p.id });
-    return;
-  }
   if (state.phase === "manipulate") {
     if (
       manipulationTargets(state).some(

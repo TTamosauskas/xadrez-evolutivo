@@ -80,7 +80,6 @@ import {
 } from "./moves.js";
 import {
   reproduce,
-  hadeanOpeningReproduce,
   metabolicReproductionCooldown,
   harvest,
   scatterSeeds,
@@ -4583,6 +4582,21 @@ function executeMove(ctx, action) {
         `${OWNERS[p.owner]}: 🐻‍❄️ Canibalismo converteu a morte de um aliado em um descendente.`,
       );
   } else if (fertile || predation) {
+    const hadeanFirstFertileChild =
+        state.geologicalStage === "hadean" &&
+        fertile &&
+        !state.pieces.some((piece) => (piece.generation ?? 0) > 0),
+      hadeanCentralTarget = hadeanFirstFertileChild
+        ? pick(
+            state,
+            [27, 28, 35, 36]
+              .map((centralCell) => ({
+                r: Math.floor(centralCell / 8),
+                c: centralCell % 8,
+              }))
+              .filter((target) => !at(state, target.r, target.c)),
+          )
+        : null;
     born = reproduce(
       ctx,
       p,
@@ -4590,7 +4604,12 @@ function executeMove(ctx, action) {
       predation ? "predação" : "casa fértil",
       {
         fertileReproduction: !predation && consumedFertile,
-        forcedCount: paedogenic ? 1 : undefined,
+        forcedCount: hadeanFirstFertileChild
+          ? 1
+          : paedogenic
+            ? 1
+            : undefined,
+        fixedPlacement: hadeanCentralTarget ?? undefined,
         immediateDevelopment: paedogenic,
         paedogenesis: paedogenic,
         trophicEfficiency:
@@ -5484,15 +5503,6 @@ export function transition(previous, action) {
     activateOrigin(state);
   else if (action.type === "MOVE" && state.phase === "move")
     executeMove(ctx, action);
-  else if (action.type === "HADEAN_REPRODUCE" && state.phase === "move") {
-    const parent = state.pieces.find(
-      (piece) => piece.id === action.id && piece.owner === state.current,
-    );
-    if (hadeanOpeningReproduce(ctx, parent)) {
-      advanceTurn(ctx);
-      settle(ctx);
-    }
-  }
   else if (action.type === "PARTNER" && state.phase === "move")
     resolveDirectPartner(ctx, action);
   else if (action.type === "CHEMOSYNTHESIS" && state.phase === "move")

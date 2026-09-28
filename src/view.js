@@ -82,7 +82,6 @@ const element = (doc, tag, text, cls) => {
 };
 const VIVIFICATION_LABELS = Object.freeze({
   MOVE: "Reprodução",
-  HADEAN_REPRODUCE: "Reprodução",
   BUD: "Brotamento",
   CHEMOSYNTHESIS: "♨️ Quimiossíntese",
   PUPATE: "Metamorfose",
@@ -1124,7 +1123,6 @@ export function render(
           nicheBuildTarget ||
           selfVivificationTarget ||
           !!rhizomeAction ||
-          !!p?.hadeanOpeningReproductionReady ||
           (originHere && origin?.selected),
         nurse = nursing.some((child) => child.id === p?.id),
         eggPlacementTarget = eggPlacement.some(

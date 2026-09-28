@@ -255,6 +255,48 @@ test("Hadean common ancestor is a gray King that splits after the second click",
   dom.window.close();
 });
 
+test("Hadean founder vivification appears only after selecting the current player's King", () => {
+  const dom = setup();
+  let s = createCampaignState(303);
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  const blue = s.pieces.find((piece) => piece.owner === "blue"),
+    amber = s.pieces.find((piece) => piece.owner === "amber"),
+    d = dom.window.document;
+
+  render(d, s);
+  let blueCell = d.querySelector(
+      `[data-r="${blue.r}"][data-c="${blue.c}"]`,
+    ),
+    amberCell = d.querySelector(
+      `[data-r="${amber.r}"][data-c="${amber.c}"]`,
+    );
+  assert.ok(!blueCell.classList.contains("vivification-target"));
+  assert.ok(!amberCell.classList.contains("vivification-target"));
+
+  render(d, s, { selected: blue.id });
+  blueCell = d.querySelector(
+    `[data-r="${blue.r}"][data-c="${blue.c}"]`,
+  );
+  amberCell = d.querySelector(
+    `[data-r="${amber.r}"][data-c="${amber.c}"]`,
+  );
+  assert.ok(blueCell.classList.contains("vivification-target"));
+  assert.ok(!amberCell.classList.contains("vivification-target"));
+
+  s.current = "amber";
+  render(d, s, { selected: amber.id });
+  blueCell = d.querySelector(
+    `[data-r="${blue.r}"][data-c="${blue.c}"]`,
+  );
+  amberCell = d.querySelector(
+    `[data-r="${amber.r}"][data-c="${amber.c}"]`,
+  );
+  assert.ok(!blueCell.classList.contains("vivification-target"));
+  assert.ok(amberCell.classList.contains("vivification-target"));
+  dom.window.close();
+});
+
 test("mobile selected-piece summary stays below the board", () => {
   const dom = setup(),
     s = fixture([
@@ -2110,17 +2152,24 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.equal(d.querySelectorAll(".origin-piece").length, 0);
     assert.equal(d.querySelectorAll(".piece.blue").length, 1);
     assert.equal(d.querySelectorAll(".piece.amber").length, 1);
-    assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 2);
+    assert.equal(d.querySelectorAll("#board .piece.blue, #board .piece.amber").length, 2);
     assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
     assert.match(d.getElementById("round").textContent, /Tutorial 1\/3/);
     assert.equal(d.querySelectorAll(".cell.fertile").length, 2);
-    const blueFounder = d.querySelector(".piece.blue").parentElement,
+    let blueFounder = d.querySelector(".piece.blue").parentElement,
       amberFounder = d.querySelector(".piece.amber").parentElement;
-    assert.ok(blueFounder.classList.contains("vivification-target"));
-    assert.ok(amberFounder.classList.contains("vivification-target"));
+    assert.ok(!blueFounder.classList.contains("vivification-target"));
+    assert.ok(!amberFounder.classList.contains("vivification-target"));
 
     blueFounder.click();
-    assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 3);
+    blueFounder = d.querySelector(".piece.blue").parentElement;
+    amberFounder = d.querySelector(".piece.amber").parentElement;
+    assert.equal(d.querySelectorAll("#board .piece.blue, #board .piece.amber").length, 2);
+    assert.ok(blueFounder.classList.contains("vivification-target"));
+    assert.ok(!amberFounder.classList.contains("vivification-target"));
+
+    blueFounder.click();
+    assert.equal(d.querySelectorAll("#board .piece.blue, #board .piece.amber").length, 3);
     const firstChild = [...d.querySelectorAll(".piece.blue")]
       .find((piece) => piece.parentElement !== blueFounder);
     assert.ok(firstChild);

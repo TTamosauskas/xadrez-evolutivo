@@ -1954,16 +1954,6 @@ export function actionsForPiece(
 
   const source = ignoreTurn ? pieceEvaluationState(state, piece) : state;
   if (
-    source.geologicalStage === "hadean" &&
-    piece.hadeanOpeningReproductionReady
-  )
-    return [
-      {
-        type: "HADEAN_REPRODUCE",
-        id: piece.id,
-      },
-    ];
-  if (
     ecologicalDomainBlocked(source, piece.owner, piece.r, piece.c) ||
     (source.chain && source.chain !== piece.id)
   )
@@ -2098,7 +2088,6 @@ export function vivificationActionsForPiece(state, piece) {
         action.c === piece.c) ||
       action.type === "BUD" ||
       action.type === "CHEMOSYNTHESIS" ||
-      action.type === "HADEAN_REPRODUCE" ||
       action.type === "PUPATE" ||
       action.type === "PARTHENOGENESIS" ||
       action.type === "REJECT_BROOD_PARASITE" ||
