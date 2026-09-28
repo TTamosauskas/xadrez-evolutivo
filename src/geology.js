@@ -1735,12 +1735,10 @@ function positiveDependentRequiresTrait(piece, dependent, trait, carried) {
 }
 
 export function traitLossAllowed(piece, trait) {
-  if (
-    trait === "Respiração anaeróbia" ||
-    BODY_PLAN_TRAITS.has(trait) ||
-    ENERGY_BRANCH_TRAITS.has(trait)
-  )
+  if (trait === "Respiração anaeróbia" || BODY_PLAN_TRAITS.has(trait))
     return false;
+  if (ENERGY_BRANCH_TRAITS.has(trait))
+    return (piece?.ancestry ?? []).includes("Quimiossíntese");
   if (NEGATIVE_TRAITS.has(trait)) return true;
 
   const carried = carriedTraitsForLoss(piece);
