@@ -94,7 +94,7 @@ export class Controller {
         this.lethalTimer !== null
           ? "lethal"
           : this.domainTimer !== null
-            ? "domain"
+            ? "blocked"
             : !!this.job;
       this.render(this.state, busy, this.resultReady, movementTrace);
       return;
@@ -105,7 +105,7 @@ export class Controller {
       this.lethalTimer !== null
         ? "lethal"
         : this.domainTimer !== null
-          ? "domain"
+          ? "blocked"
           : !!this.job;
     this.render(this.state, busy, true, movementTrace);
   }
@@ -158,7 +158,7 @@ export class Controller {
       )
         return;
       this.domainTimer = null;
-      this.dispatch({ type: "RESOLVE_DOMAIN", revision }, { ai: true });
+      this.dispatch({ type: "RESOLVE_BLOCKED", revision }, { ai: true });
     }, this.domainDelay);
     return true;
   }
