@@ -237,7 +237,8 @@ export function chooseDeleteriousMutation(state, pools) {
 export function applyRegressionEffect(state, piece) {
   if (
     !has(piece, "Regressão Evolutiva") ||
-    !(state.historicalTraits ?? []).includes("Reprodução Sexuada")
+    (state.scenario !== "arena" &&
+      !(state.historicalTraits ?? []).includes("Reprodução Sexuada"))
   )
     return [];
   const protectedTraits = new Set([
@@ -348,7 +349,8 @@ function mutation(
         p.genome,
         choice.geneGain,
         () => random(state),
-        !(state.historicalTraits ?? []).includes("Reprodução Sexuada"),
+        state.scenario !== "arena" &&
+          !(state.historicalTraits ?? []).includes("Reprodução Sexuada"),
       );
       syncGenomePhenotype(p);
     }
