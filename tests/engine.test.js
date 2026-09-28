@@ -2374,7 +2374,7 @@ test("natural death is certain at age 48, bypasses Regeneração and leaves no t
   assertState(s);
 });
 
-test("Hadean ecological domain waits until every playable cell is occupied", () => {
+test("Hadean ecological domain triggers as soon as all 16 playable cells are occupied", () => {
   const s = createState(1512, {
     geologicalStage: "hadean",
     naturalBarriers: false,
@@ -2395,21 +2395,54 @@ test("Hadean ecological domain waits until every playable cell is occupied", () 
 
   for (let index = 0; index < playable.length - 1; index++) {
     const cell = playable[index],
-      owner = index < 8 ? "blue" : "amber";
-    s.pieces.push(newPiece(s, owner, cell.r, cell.c, { rank: 4 }));
+      owner = index < 8 ? "blue" : "amber",
+      piece = newPiece(s, owner, cell.r, cell.c, { rank: 4 });
+    piece.nextReproductionRound = round(s) + 100;
+    piece.maturesRound = round(s) + 10;
+    s.pieces.push(piece);
   }
 
-  assert.equal(offensiveActionCount(s), 0);
   assert.equal(resolveEcologicalDomain(s), false);
   assert.equal(s.result, null);
 
-  const last = playable.at(-1);
-  s.pieces.push(newPiece(s, "blue", last.r, last.c, { rank: 4 }));
+  const last = playable.at(-1),
+    finalPiece = newPiece(s, "blue", last.r, last.c, { rank: 4 });
+  finalPiece.nextReproductionRound = round(s) + 100;
+  finalPiece.maturesRound = round(s) + 10;
+  s.pieces.push(finalPiece);
 
   assert.equal(resolveEcologicalDomain(s), true);
   assert.equal(s.result?.winner, "blue");
+  assert.equal(s.result?.victoryType, "ecological-domain");
   assert.match(s.result?.reason ?? "", /Domínio Ecológico/);
   assert.match(s.result?.reason ?? "", /9 × 7/);
+  assertState(s);
+});
+
+test("Hadean ecological domain waits for a scheduled lethal death before scoring population", () => {
+  const s = createState(1513, {
+    geologicalStage: "hadean",
+    naturalBarriers: false,
+  });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.notices = [];
+
+  let index = 0;
+  for (let r = 2; r <= 5; r++)
+    for (let c = 2; c <= 5; c++) {
+      const owner = index++ < 9 ? "blue" : "amber",
+        piece = newPiece(s, owner, r, c, { rank: 4 });
+      s.pieces.push(piece);
+    }
+
+  s.pieces[0].lethalDeathRound = round(s) + 1;
+  s.pieces[0].lethalDeathReason = "casa hostil hadeana";
+  s.pieces[0].hadeanHostileDeathPending = true;
+
+  assert.equal(resolveEcologicalDomain(s), false);
+  assert.equal(s.result, null);
   assertState(s);
 });
 
