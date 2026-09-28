@@ -224,14 +224,14 @@ function evolutionarySummary(state, owner) {
       !!representative,
     lineages = extinctionFounder ? 1 : new Set(pieces.map(signature)).size,
     rank = representative?.rank ?? 0,
+    survivingPopulation = state.pieces.length,
     piecePercent = extinctionFounder
       ? 100
-      : pieces.length
-        ? Math.round((selected.count / pieces.length) * 100)
+      : survivingPopulation
+        ? Math.round((selected.count / survivingPopulation) * 100)
         : 0,
     traits = (representative?.traits ?? [])
       .filter((trait) => !established.has(trait))
-      .slice(0, 3)
       .map((name) => ({ name, icon: TRAITS[name]?.[0] || "●" }));
 
   return {
@@ -1856,35 +1856,27 @@ export function render(
   if (state.result && showResult) {
     const winner = state.result.winner;
     if (winner) {
-      const loser = winner === "blue" ? "amber" : "blue";
-      const summary = evolutionarySummary(state, winner);
-      const loserExtinct = state.pieces.every((p) => p.owner !== loser);
-      const extinction = make(
-        "p",
-        undefined,
-        "evolutionary-end-extinction",
-      );
-      if (loserExtinct) {
-        extinction.append(
-          `As ${OWNERS[loser]} sofreram `,
-          make("strong", "Extinção Total"),
-          ".",
+      const loser = winner === "blue" ? "amber" : "blue",
+        summary = evolutionarySummary(state, winner),
+        ecologicalDomain =
+          state.result.victoryType === "ecological-domain" ||
+          state.result.reason?.startsWith("Domínio Ecológico"),
+        victoryCause = ecologicalDomain
+          ? "Domínio Ecológico"
+          : `Extinção das ${OWNERS[loser]}`,
+        content = make("div", undefined, "evolutionary-end-summary"),
+        outcome = make(
+          "p",
+          `Vitória por ${victoryCause}`,
+          "evolutionary-end-extinction",
+        ),
+        selection = make("div", undefined, "evolutionary-end-section"),
+        traits = make(
+          "div",
+          undefined,
+          "evolutionary-end-section evolutionary-end-traits",
         );
-      } else {
-        extinction.textContent =
-          state.result.reason || `As ${OWNERS[loser]} foram superadas.`;
-      }
 
-      const lineageText = summary.extinctionFounder
-        ? "A última peça a morrer definiu a linhagem fundadora da próxima geração."
-        : `${summary.lineages} ${
-            summary.lineages === 1
-              ? "linhagem sobrevivente"
-              : "linhagens sobreviventes"
-          }`;
-      const content = make("div", undefined, "evolutionary-end-summary");
-      const lineages = make("p", lineageText, "evolutionary-end-lineages");
-      const selection = make("div", undefined, "evolutionary-end-section");
       selection.append(
         make("strong", "Seleção natural", "evolutionary-end-heading"),
         make(
@@ -1892,11 +1884,6 @@ export function render(
           `${summary.pieceName} ${summary.pieceSymbol} (${summary.piecePercent}% da população sobrevivente)`,
           "evolutionary-end-primary",
         ),
-      );
-      const traits = make(
-        "div",
-        undefined,
-        "evolutionary-end-section evolutionary-end-traits",
       );
       traits.append(
         make(
@@ -1910,30 +1897,11 @@ export function render(
             ? summary.traits
                 .map((t) => `${t.name} ${t.icon}`)
                 .join(" · ")
-            : "Nenhuma característica hereditária predominante",
+            : "Nenhuma mutação predominante",
         ),
       );
-      const progress =
-          state.scenario === "arena" ? null : stageProgress(state),
-        geologicalProgress = make(
-          "p",
-          state.scenario === "arena"
-            ? `Arena · Fase ${state.arenaPhase || state.cycle} concluída. As linhagens sobreviventes podem receber até duas substituições de Engenharia Genética.`
-            : geological.id === "hadean"
-              ? `Tutorial: ${hadeanTutorialDone} de 3 fundamentos concluídos — reproduzir, obter Quimiossíntese e formar a primeira casa fértil.`
-              : progress.required.length
-                ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
-                : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,
-          "evolutionary-end-lineages",
-        );
-      content.append(
-        extinction,
-        lineages,
-        selection,
-        traits,
-        geologicalProgress,
-      );
-      $("game-over-title").textContent = `Vitória das ${OWNERS[winner]}`;
+      content.append(outcome, selection, traits);
+      $("game-over-title").textContent = `${OWNERS[winner]} venceram`;
       $("game-over-body").replaceChildren(content);
     } else {
       const progress =
