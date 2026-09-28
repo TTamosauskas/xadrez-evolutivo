@@ -723,98 +723,6 @@ function makeRequestedBrood(count) {
   return brood;
 }
 
-export function hadeanPredationChance(state, owner) {
-  if (
-    state?.geologicalStage !== "hadean" ||
-    !["blue", "amber"].includes(owner) ||
-    state.hadeanPredationGranted?.[owner]
-  )
-    return 0;
-  return Math.min(1, Math.max(0, (state.reproductions?.[owner] ?? 0) / 3));
-}
-
-function mutateHadeanPredationNewborn(state, child) {
-  if (
-    state.geologicalStage !== "hadean" ||
-    !child ||
-    has(child, "Predação")
-  )
-    return false;
-
-  state.hadeanPredationGranted ??= {
-    blue: false,
-    amber: false,
-  };
-
-  child.genome = forceGenomeTrait(
-    child.genome,
-    "Predação",
-    "dominant",
-  );
-  syncGenomePhenotype(child, "Predação");
-  child.ancestry = [
-    ...new Set([
-      ...(child.ancestry ?? []),
-      "Fotossíntese",
-      "Predação",
-      ...child.traits,
-    ]),
-  ];
-  child.mutations = (child.mutations ?? 0) + 1;
-  delete child.photosynthesisCell;
-  delete child.photosynthesisSinceTurn;
-  delete child.photosynthesisReadyTurn;
-  state.hadeanPredationGranted[child.owner] = true;
-  registerDiscoveries(state, child);
-
-  emitPassiveEffect(
-    state,
-    "Predação",
-    "Nova Mutação: 👾 Predação.",
-    {
-      pieceId: child.id,
-      outcome: "new-mutation",
-    },
-  );
-  log(
-    state,
-    `Nova Mutação: ${OWNERS[child.owner]} · 👾 Predação surgiu no descendente em ${coord(child.r, child.c)}.`,
-  );
-
-  if (
-    state.hadeanPredationGranted.blue &&
-    state.hadeanPredationGranted.amber
-  ) {
-    state.hadeanCaptureUnlocked = true;
-    log(
-      state,
-      "Hadeano: Brancas e Pretas já produziram descendentes com 👾 Predação.",
-    );
-  }
-  return true;
-}
-
-function attemptHadeanPredationAfterReproduction(
-  state,
-  owner,
-  existingPieceIds,
-) {
-  const chance = hadeanPredationChance(state, owner);
-  if (!chance) return false;
-
-  const child = state.pieces
-    .filter(
-      (piece) =>
-        piece.owner === owner &&
-        !existingPieceIds.has(piece.id) &&
-        !has(piece, "Predação"),
-    )
-    .sort((a, b) => a.id - b.id)[0];
-  if (!child) return false;
-  if (chance < 1 && random(state) >= chance) return false;
-  return mutateHadeanPredationNewborn(state, child);
-}
-
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
   if (profile.newMutationToast)
@@ -852,6 +760,109 @@ function spawnChild(state, profile, r, c) {
   }
   state.pieces.push(child);
   registerDiscoveries(state, child);
+  return child;
+}
+
+const HADEAN_CENTRAL_CELLS = Object.freeze([
+  Object.freeze({ r: 3, c: 3 }),
+  Object.freeze({ r: 3, c: 4 }),
+  Object.freeze({ r: 4, c: 3 }),
+  Object.freeze({ r: 4, c: 4 }),
+]);
+
+function hadeanOpeningTarget(state, owner, chemosynthetic) {
+  const free = (cell) =>
+    !at(state, cell.r, cell.c) &&
+    !eggAt(state, cell.r, cell.c) &&
+    !plantSeedAt(state, cell.r, cell.c) &&
+    !fragmentAt(state, cell.r, cell.c) &&
+    !barrierAt(state, cell.r, cell.c);
+
+  if (chemosynthetic) {
+    return pick(state, HADEAN_CENTRAL_CELLS.filter(free));
+  }
+
+  const preferredRow = owner === "blue" ? 7 : 0,
+    preferred = Array.from({ length: 8 }, (_, c) => ({
+      r: preferredRow,
+      c,
+    })).filter(free),
+    outer = [];
+  if (preferred.length) return pick(state, preferred);
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      if ((r === 0 || r === 7 || c === 0 || c === 7) && free({ r, c }))
+        outer.push({ r, c });
+  return pick(state, outer);
+}
+
+export function hadeanOpeningReproduce(ctx, parent) {
+  const state = ctx.state;
+  if (
+    state.geologicalStage !== "hadean" ||
+    !parent ||
+    parent.owner !== state.current ||
+    !parent.hadeanOpeningReproductionReady ||
+    parent.hadeanHostileDeathPending
+  )
+    return null;
+
+  const chemosynthetic = random(state) < 1 / 2,
+    target = hadeanOpeningTarget(state, parent.owner, chemosynthetic);
+  if (!target) return null;
+
+  const traits = chemosynthetic
+      ? ["Respiração anaeróbia", "Quimiossíntese"]
+      : ["Respiração anaeróbia"],
+    child = spawnChild(
+      state,
+      {
+        owner: parent.owner,
+        rank: parent.rank,
+        traits,
+        ancestry: [...new Set([...(parent.ancestry ?? parent.traits), ...traits])],
+        mutations: chemosynthetic ? 1 : 0,
+        generation: (parent.generation ?? 0) + 1,
+        parentId: parent.id,
+        parentIds: [parent.id],
+      },
+      target.r,
+      target.c,
+    );
+
+  parent.hadeanOpeningReproductionReady = false;
+  parent.lifetimeReproductions = (parent.lifetimeReproductions ?? 0) + 1;
+  parent.lifetimeOffspring = (parent.lifetimeOffspring ?? 0) + 1;
+  parent.nextReproductionRound =
+    round(state) + metabolicReproductionCooldown(parent);
+  state.reproductions[parent.owner] =
+    (state.reproductions[parent.owner] ?? 0) + 1;
+  state.maxGenerationReached = Math.max(
+    state.maxGenerationReached,
+    child.generation,
+  );
+
+  if (chemosynthetic) {
+    registerDiscoveries(state, child);
+    emitPassiveEffect(
+      state,
+      "Quimiossíntese",
+      "Nova Mutação: ♨️ Quimiossíntese.",
+      {
+        pieceId: child.id,
+        outcome: "new-mutation",
+      },
+    );
+    log(
+      state,
+      `Nova Mutação: ${OWNERS[child.owner]} · ♨️ Quimiossíntese surgiu na primeira prole em ${coord(child.r, child.c)}.`,
+    );
+  } else {
+    log(
+      state,
+      `${OWNERS[child.owner]}: a primeira prole permaneceu basal e surgiu na camada externa em ${coord(child.r, child.c)}.`,
+    );
+  }
   return child;
 }
 
@@ -2154,11 +2165,6 @@ export function reproduce(
           round(state) + COLONY_BUD_COOLDOWN;
     }
     state.reproductions[parent.owner]++;
-    attemptHadeanPredationAfterReproduction(
-      state,
-      parent.owner,
-      existingPieceIds,
-    );
     tryVectorPathogen(state, parent);
     for (const candidate of mates) tryVectorPathogen(state, candidate);
     log(
