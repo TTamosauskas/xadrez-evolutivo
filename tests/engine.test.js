@@ -561,6 +561,39 @@ function hadeanBasalHostileSample() {
   throw Error("Amostra Hadeana hostil indisponível.");
 }
 
+test("Hadean founders reroll the 50 percent hostile risk every round they remain exposed", () => {
+  let s = createCampaignState(777);
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+
+  const blue = s.pieces.find((piece) => piece.owner === "blue"),
+    amber = s.pieces.find((piece) => piece.owner === "amber");
+
+  for (let r = 2; r <= 5; r++)
+    for (let c = 2; c <= 5; c++)
+      s.board[square(r, c)] = "hostile";
+
+  amber.traits = [...new Set([...amber.traits, "Quimiossíntese"])];
+  amber.ancestry = [...new Set([...amber.ancestry, "Quimiossíntese"])];
+  amber.genome = genomeFromTraits(amber.traits);
+  syncGenomePhenotype(amber, "Quimiossíntese");
+
+  s.rng = 682;
+  s = transition(s, { type: "PASS" });
+  let current = s.pieces.find((piece) => piece.id === blue.id);
+  assert.ok(current);
+  assert.equal(current.hadeanHostileDeathPending, undefined);
+  assert.equal(current.hostileRiskRound, 0);
+
+  s = transition(s, { type: "PASS" });
+  current = s.pieces.find((piece) => piece.id === blue.id);
+  assert.ok(current);
+  assert.equal(current.hostileRiskRound, 1);
+  assert.equal(current.hadeanHostileDeathPending, true);
+  assert.equal(current.lethalDeathRound, 2);
+  assertState(s);
+});
+
 test("Hadean hostile pressure can condemn a later basal offspring without a skull and explains the first actual death", () => {
   const sample = hadeanBasalHostileSample(),
     doomedId = sample.child.id;
@@ -1220,7 +1253,7 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
     simulate(s, move(s.pieces[0], 4, 4)).pieces.some((p) => p.id === 1),
   );
 });
-test("landing on hostile cell is exempt from a second roll at the same round end", () => {
+test("a hostile landing roll counts for its current round and exposure rerolls next round", () => {
   const s = fixture([
     { owner: "blue", r: 7, c: 0 },
     { owner: "amber", r: 3, c: 3, rank: 3 },
@@ -1228,10 +1261,9 @@ test("landing on hostile cell is exempt from a second roll at the same round end
   s.turn = 1;
   s.current = "amber";
   s.board[28] = "hostile";
-  s.rng = 1000;
+  s.rng = 682;
   const next = simulate(s, move(s.pieces[1], 3, 4));
-  assert.ok(next.pieces.some((p) => p.id === 2));
-  assert.equal(next.pieces.find((p) => p.id === 2).hostileRiskRound, 1);
+  assert.equal(next.pieces.some((p) => p.id === 2), false);
 });
 test("piece action source matches legal actions and exposes wait reasons", () => {
   const s = fixture([
