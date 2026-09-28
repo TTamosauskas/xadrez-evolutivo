@@ -105,6 +105,7 @@ import {
   predationBirthLimit,
   metabolicReproductionCooldown,
   sexualMaturityRounds,
+  hadeanPredationChance,
 } from "../src/reproduction.js";
 import { crowdingPenalty } from "../src/ai.js";
 import { predatoryReproductionAvailable } from "../src/reproduction-traits.js";
@@ -520,8 +521,23 @@ test("compact non-canonical cycle starts keep Brancas on the lower half", () => 
   }
 });
 
-test("Hadean Predação mutates the newborn that fills the last habitat cell", () => {
-  let s = createCampaignState(305);
+test("Hadean Predação pressure rises from one third to certainty on the third reproduction", () => {
+  const s = createCampaignState(305);
+  s.hadeanPredationGranted = { blue: false, amber: false };
+
+  s.reproductions.blue = 1;
+  assert.equal(hadeanPredationChance(s, "blue"), 1 / 3);
+  s.reproductions.blue = 2;
+  assert.equal(hadeanPredationChance(s, "blue"), 2 / 3);
+  s.reproductions.blue = 3;
+  assert.equal(hadeanPredationChance(s, "blue"), 1);
+
+  s.hadeanPredationGranted.blue = true;
+  assert.equal(hadeanPredationChance(s, "blue"), 0);
+});
+
+test("third successful Hadean reproduction guarantees Predação without habitat saturation", () => {
+  let s = createCampaignState(306);
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
@@ -530,102 +546,51 @@ test("Hadean Predação mutates the newborn that fills the last habitat cell", (
   s.board.fill("neutral");
   s.hadeanPredationGranted = { blue: false, amber: false };
   s.hadeanCaptureUnlocked = false;
+  s.reproductions.blue = 2;
 
-  const empty = square(2, 3);
-  let parent = null;
-  for (let r = 2; r <= 5; r++)
-    for (let col = 2; col <= 5; col++) {
-      const cell = square(r, col);
-      if (cell === empty) continue;
-      const owner = r === 3 && col === 3
-        ? "blue"
-        : (r + col) % 2
-          ? "blue"
-          : "amber";
-      const piece = newPiece(s, owner, r, col, {
-        rank: 4,
-        traits: ["Fotossíntese"],
-        ancestry: ["Respiração anaeróbia", "Fotossíntese"],
-      });
-      s.pieces.push(piece);
-      if (r === 3 && col === 3) parent = piece;
-    }
-
-  assert.ok(parent);
-  s.current = "blue";
-  s.board[square(parent.r, parent.c)] = "fertile";
-  parent.nextReproductionRound = round(s);
-  const livingBefore = new Map(
-    s.pieces.map((piece) => [piece.id, [...piece.traits]]),
-  );
-
-  s = simulate(s, move(parent, parent.r, parent.c));
-
-  assert.equal(s.pieces.length, 16);
-  assert.equal(s.hadeanPredationGranted.blue, true);
-  assert.equal(s.hadeanPredationGranted.amber, false);
-  assert.equal(s.hadeanCaptureUnlocked, false);
-
-  const newborn = s.pieces.find((piece) => !livingBefore.has(piece.id));
-  assert.ok(newborn);
-  assert.equal(newborn.owner, "blue");
-  assert.deepEqual([newborn.r, newborn.c], [2, 3]);
-  assert.ok(newborn.traits.includes("Predação"));
-  assert.equal(newborn.traits.includes("Fotossíntese"), false);
-  assert.equal(captureUnlocked(s, newborn), true);
-  assert.ok(s.historicalTraits.includes("Predação"));
-
-  for (const [id, traits] of livingBefore) {
-    const survivor = s.pieces.find((piece) => piece.id === id);
-    assert.ok(survivor);
-    assert.deepEqual(survivor.traits, traits);
-    assert.equal(survivor.traits.includes("Predação"), false);
-  }
-  assertState(s);
-});
-
-test("the rival's next successful Hadean reproduction produces its Predação newborn", () => {
-  let s = createCampaignState(306);
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
-  s.pieces = [];
-  s.nextId = 1;
-  s.board.fill("neutral");
-  s.hadeanPredationGranted = { blue: true, amber: false };
-  s.hadeanCaptureUnlocked = false;
-
-  const amberParent = newPiece(s, "amber", 3, 3, {
+  const parent = newPiece(s, "blue", 4, 3, {
       rank: 4,
       traits: ["Fotossíntese"],
       ancestry: ["Respiração anaeróbia", "Fotossíntese"],
     }),
-    bluePredator = newPiece(s, "blue", 5, 5, {
+    rival = newPiece(s, "amber", 2, 4, {
       rank: 4,
-      traits: ["Predação"],
-      ancestry: ["Respiração anaeróbia", "Fotossíntese", "Predação"],
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
     });
-  s.pieces.push(amberParent, bluePredator);
-  s.current = "amber";
-  s.board[square(amberParent.r, amberParent.c)] = "fertile";
-  amberParent.nextReproductionRound = round(s);
+  s.pieces.push(parent, rival);
+  s.current = "blue";
+  s.board[square(parent.r, parent.c)] = "fertile";
+  parent.nextReproductionRound = round(s);
 
   const existingIds = new Set(s.pieces.map((piece) => piece.id));
-  s = simulate(s, move(amberParent, amberParent.r, amberParent.c));
+  s = simulate(s, move(parent, parent.r, parent.c));
 
+  assert.equal(s.reproductions.blue, 3);
+  assert.equal(s.pieces.length, 3);
   const newborn = s.pieces.find((piece) => !existingIds.has(piece.id));
   assert.ok(newborn);
-  assert.equal(newborn.owner, "amber");
+  assert.equal(newborn.owner, "blue");
   assert.ok(newborn.traits.includes("Predação"));
   assert.equal(newborn.traits.includes("Fotossíntese"), false);
-  assert.equal(s.hadeanPredationGranted.amber, true);
   assert.equal(s.hadeanPredationGranted.blue, true);
-  assert.equal(s.hadeanCaptureUnlocked, true);
-  assert.equal(
-    s.pieces.find((piece) => piece.id === amberParent.id).traits.includes("Predação"),
-    false,
-  );
+  assert.equal(s.hadeanPredationGranted.amber, false);
+  assert.equal(captureUnlocked(s, newborn), true);
+  assert.ok(s.historicalTraits.includes("Predação"));
   assertState(s);
+});
+
+test("Hadean Predação pressure is tracked independently for each side", () => {
+  const s = createCampaignState(307);
+  s.hadeanPredationGranted = { blue: true, amber: false };
+  s.reproductions.blue = 1;
+  s.reproductions.amber = 2;
+
+  assert.equal(hadeanPredationChance(s, "blue"), 0);
+  assert.equal(hadeanPredationChance(s, "amber"), 2 / 3);
+
+  s.reproductions.amber = 3;
+  assert.equal(hadeanPredationChance(s, "amber"), 1);
 });
 
 test("Hadean extinction can win before the rival evolves Predação", () => {
