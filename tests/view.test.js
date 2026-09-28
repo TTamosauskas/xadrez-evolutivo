@@ -328,6 +328,46 @@ test("mobile selected-piece summary stays below the board", () => {
   dom.window.close();
 });
 
+test("passive Hadean chemosynthesis stays opaque during untimed conversion", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 3,
+        c: 3,
+        traits: ["Respiração anaeróbia", "Quimiossíntese"],
+      },
+      { owner: "amber", r: 7, c: 7, traits: ["Respiração anaeróbia"] },
+    ]),
+    piece = s.pieces[0];
+  s.geologicalStage = "hadean";
+  s.board.fill("neutral");
+  s.board[piece.r * 8 + piece.c] = "hostile";
+  s.hadeanEnvironment = {
+    hostileDeathExplained: false,
+    fertileExplained: false,
+    pendingFertility: [
+      {
+        pieceId: piece.id,
+        cell: piece.r * 8 + piece.c,
+        dueTurn: s.turn + 1,
+      },
+    ],
+  };
+
+  render(dom.window.document, s, { selected: piece.id });
+  const cell = dom.window.document.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    ),
+    boardPiece = cell.querySelector(".piece"),
+    energyCore = cell.querySelector(".piece-energy-core");
+
+  assert.match(cell.title, /Sem ação legal disponível/);
+  assert.equal(boardPiece.classList.contains("waiting"), false);
+  assert.equal(energyCore.classList.contains("waiting"), false);
+  dom.window.close();
+});
+
 test("mobile summary uses a bare hourglass for untimed waiting", () => {
   const dom = setup(),
     s = fixture([
