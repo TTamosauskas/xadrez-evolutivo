@@ -98,7 +98,7 @@ test("Toastify waits until blocking dialogs close before showing an effect", () 
   dom.window.close();
 });
 
-test("mutation toasts expose an explanation action and dismiss after selection", () => {
+test("selectable toasts open their modal from the whole toast or Saiba Mais", () => {
   const dom = new JSDOM(),
     mock = createToastifyMock(dom.window.document);
   let selected = null;
@@ -128,10 +128,18 @@ test("mutation toasts expose an explanation action and dismiss after selection",
     "Saiba mais sobre Pele grossa",
   );
 
-  more.click();
+  toast.click();
   assert.equal(selected, effect);
   assert.equal(presenter.visibleCount(), 0);
   assert.equal(dom.window.document.querySelector(".toastify"), null);
+
+  selected = null;
+  presenter.show({ ...effect, id: 9 });
+  const secondToast = mock.calls.at(-1).toastElement,
+    secondMore = secondToast.querySelector(".toast-more");
+  secondMore.click();
+  assert.equal(selected?.id, 9);
+  assert.equal(presenter.visibleCount(), 0);
 
   presenter.destroy();
   dom.window.close();
@@ -158,6 +166,28 @@ test("new mutations use the same lineage color as other toasts", () => {
   );
   assert.equal(mock.calls[0].toastElement.dataset.owner, "amber");
   assert.equal(mock.calls[0].toastElement.dataset.trait, "Chifre");
+
+  presenter.destroy();
+  dom.window.close();
+});
+
+test("Toastify presenter allows four visible effects by default", () => {
+  const dom = new JSDOM(),
+    mock = createToastifyMock(dom.window.document),
+    presenter = createPassiveEffectToastPresenter(dom.window.document, {
+      toastify: mock.toastify,
+    });
+
+  for (let id = 1; id <= 5; id++)
+    presenter.show({
+      id,
+      trait: "Pele grossa",
+      text: `efeito ${id}`,
+    });
+
+  assert.equal(mock.calls.length, 4);
+  assert.equal(presenter.visibleCount(), 4);
+  assert.equal(presenter.pendingCount(), 1);
 
   presenter.destroy();
   dom.window.close();
