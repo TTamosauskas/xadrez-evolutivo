@@ -411,7 +411,7 @@ function extinction(state) {
   if (state.result) return true;
   if (
     state.pieces.some((piece) =>
-      Number.isInteger(piece.lethalDeathTurn),
+      Number.isInteger(piece.lethalDeathRound),
     )
   )
     return false;
@@ -704,21 +704,21 @@ function nocturnalRound(state) {
 }
 
 function markLethalDeath(state, piece, reason = "ambiente letal") {
-  if (!piece || Number.isInteger(piece.lethalDeathTurn)) return false;
-  piece.lethalDeathTurn = state.turn + 1;
+  if (!piece || Number.isInteger(piece.lethalDeathRound)) return false;
+  piece.lethalDeathRound = round(state) + 1;
   piece.lethalDeathReason = reason;
   notice(
     state,
     "Casa letal",
     [
       "☠️ A criatura caiu em uma casa letal.",
-      "Ela permanecerá visível até o próximo turno e então morrerá.",
+      "Ela permanecerá visível até o próxima rodada e então morrerá.",
     ],
     "hostile",
   );
   log(
     state,
-    `${OWNERS[piece.owner]}: ☠️ ${coord(piece.r, piece.c)} é letal; a criatura morrerá no início do próximo turno.`,
+    `${OWNERS[piece.owner]}: ☠️ ${coord(piece.r, piece.c)} é letal; a criatura morrerá no início do próxima rodada.`,
   );
   return true;
 }
@@ -726,8 +726,8 @@ function markLethalDeath(state, piece, reason = "ambiente letal") {
 export const lethalDeathsDue = (state) =>
   (state?.pieces ?? []).some(
     (piece) =>
-      Number.isInteger(piece.lethalDeathTurn) &&
-      piece.lethalDeathTurn <= state.turn,
+      Number.isInteger(piece.lethalDeathRound) &&
+      piece.lethalDeathRound <= round(state),
   );
 
 function resolveDueLethalDeaths(ctx) {
@@ -735,8 +735,8 @@ function resolveDueLethalDeaths(ctx) {
   let deaths = 0;
   for (const piece of [...state.pieces])
     if (
-      Number.isInteger(piece.lethalDeathTurn) &&
-      piece.lethalDeathTurn <= state.turn
+      Number.isInteger(piece.lethalDeathRound) &&
+      piece.lethalDeathRound <= round(state)
     ) {
       const reason = piece.lethalDeathReason ?? "ambiente letal";
       if (ctx.kill(piece.id, reason, null, true)) deaths++;
