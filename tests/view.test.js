@@ -235,7 +235,7 @@ test("Hadean common ancestor is a gray King that splits after the second click",
 
   assert.ok(origin.classList.contains("vivification-target"));
   assert.match(origin.title ?? "", /Vivificar disponível/);
-  assert.match(d.getElementById("selected").textContent, /Ancestral comum/);
+  assert.match(d.getElementById("selected").textContent, /Último Ancestral Comum Universal/);
   assert.match(d.getElementById("selected").textContent, /Vantagens Evolutivas/);
   assert.match(d.getElementById("selected").textContent, /Respiração anaeróbia/);
   assert.match(d.getElementById("selected").textContent, /um branco e um preto/);
