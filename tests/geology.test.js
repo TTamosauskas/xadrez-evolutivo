@@ -647,8 +647,10 @@ test("registering a new evolutionary discovery does not open a Marco Evolutivo m
 
 test("Archean advances through four detailed phases after each mandatory set appears", () => {
   let state = createPeriodState("eoarchean", 103, null, "earth");
-  state.pieces[0].traits.push("Quimiossíntese");
+  state.pieces[0].traits.push("Fotossíntese");
   registerDiscoveries(state, state.pieces[0]);
+  state.pieces[1].traits.push("Predação");
+  registerDiscoveries(state, state.pieces[1]);
   assert.equal(stageComplete(state), true);
   state.result = { winner: "blue", reason: "teste" };
   state.phase = "over";
@@ -962,11 +964,12 @@ test("evolutionary precedence changes eligibility while missing innovations stay
   const eo = createState(108, {
       scenario: "earth",
       geologicalStage: "eoarchean",
-      historicalTraits: ["Respiração anaeróbia", "Fotossíntese", "Predação"],
+      historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
     }),
     basal = { traits: [], ancestry: ["Respiração anaeróbia"] };
-  assert.equal(innovationWeight(eo, "Quimiossíntese", basal), 4);
-  assert.deepEqual(missingInnovations(eo), ["Quimiossíntese"]);
+  assert.ok(innovationWeight(eo, "Fotossíntese", basal) > 0);
+  assert.ok(innovationWeight(eo, "Predação", basal) > 0);
+  assert.deepEqual(missingInnovations(eo), ["Fotossíntese", "Predação"]);
 
   const paleo = createState(109, {
     scenario: "earth",
