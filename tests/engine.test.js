@@ -550,22 +550,18 @@ test("later Hadean offspring use an exact 50 percent chemosynthesis gate", () =>
 });
 
 test("offspring exhaust viable adjacent cells before using lethal cells", () => {
-  const s = fixture(
-      [
-        { owner: "blue", r: 2, c: 2, traits: ["Quimiossíntese"] },
-        { owner: "amber", r: 5, c: 5, traits: ["Quimiossíntese"] },
-      ],
-      1789,
-    ),
-    parent = s.pieces[0],
-    before = new Set(s.pieces.map((piece) => piece.id));
+  let s = createCampaignState(1789);
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
 
-  s.geologicalStage = "hadean";
-  s.board.fill("neutral");
-  parent.rank = 4;
-  parent.generation = 1;
-  parent.lifetimeOffspring = 1;
+  const parent = s.pieces.find((piece) => piece.owner === "blue"),
+    rival = s.pieces.find((piece) => piece.owner === "amber");
+  parent.r = 2;
+  parent.c = 2;
+  rival.r = 5;
+  rival.c = 5;
   parent.nextReproductionRound = round(s);
+  const before = new Set(s.pieces.map((piece) => piece.id));
 
   const born = reproduce(context(s), parent, null, "teste", {
     forcedCount: 4,
