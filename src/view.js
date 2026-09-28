@@ -187,7 +187,10 @@ export function traitFrameEntries(
       })),
   ]
     .filter(
-      ({ trait }) => TRAITS[trait] && !ENERGY_BRANCH_TRAITS.has(trait),
+      ({ trait }) =>
+        TRAITS[trait] &&
+        !ENERGY_BRANCH_TRAITS.has(trait) &&
+        trait !== "Quimiossíntese",
     )
     .sort(
       (a, b) =>
@@ -1316,7 +1319,7 @@ export function render(
           const energyCore = make(
             "span",
             TRAITS[branch][0],
-            `piece-energy-core ${p.owner} ${branch === "Fotossíntese" ? "photosynthetic" : "predatory"}${juvenile(state, p) || has(p, "Nanismo") ? " compact" : ""}${actionState?.waiting ? " waiting" : ""}`,
+            `piece-energy-core ${p.owner} ${branch === "Fotossíntese" ? "photosynthetic" : branch === "Predação" ? "predatory" : "chemosynthetic"}${juvenile(state, p) || has(p, "Nanismo") ? " compact" : ""}${actionState?.waiting ? " waiting" : ""}`,
           );
           energyCore.dataset.trait = branch;
           energyCore.title = `Ramo energético: ${branch}`;
