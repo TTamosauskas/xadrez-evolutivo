@@ -1779,6 +1779,39 @@ test("imminent deterministic deaths render a centered top 🤢 marker", () => {
   dom.window.close();
 });
 
+test("one-turn hostile death shows the 🤢 terminal marker", () => {
+  const dom = setup(),
+    s = createState(441, {
+      geologicalStage: "hadean",
+      naturalBarriers: false,
+    }),
+    doomed = s.pieces[0];
+  doomed.lethalDeathRound = round(s) + 1;
+  doomed.lethalDeathReason = "casa hostil hadeana";
+  doomed.hadeanHostileDeathPending = true;
+  s.board[doomed.r * 8 + doomed.c] = "hostile";
+
+  assert.equal(
+    deterministicDeathNextTurn(s, doomed),
+    "ambiente hostil",
+  );
+
+  render(dom.window.document, s, { selected: doomed.id });
+  const cell = dom.window.document.querySelector(
+      `[data-r="${doomed.r}"][data-c="${doomed.c}"]`,
+    ),
+    marker = cell.querySelector(".terminal-death-mark");
+
+  assert.equal(marker?.textContent, "🤢");
+  assert.match(cell.title, /Morte por ambiente hostil/);
+  assert.match(cell.title, /morte determinada no próximo turno: ambiente hostil/);
+  assert.match(
+    dom.window.document.getElementById("selected").textContent,
+    /⏳ 1 t morte por ambiente hostil/i,
+  );
+  dom.window.close();
+});
+
 test("death prediction covers natural maximum age, deferred Semelparidade and terminal Veneno", () => {
   const natural = createState(45),
     elder = natural.pieces[0];
@@ -2281,9 +2314,15 @@ test("application UI starts with the Hadean common ancestor, then plays division
       d.getElementById("mutation-dialog-real").textContent,
       /^Na vida: Na hipótese do Mundo de RNA/,
     );
+    const reproductionGameCopy = d.getElementById("mutation-dialog-game");
     assert.match(
-      d.getElementById("mutation-dialog-game").textContent,
-      /^No jogo: Clique no círculo verde/,
+      reproductionGameCopy.textContent,
+      /^No jogo: Clique no círculo verde .* que aparece quando a reprodução estiver disponível\.$/,
+    );
+    assert.ok(
+      reproductionGameCopy.querySelector(
+        ".legend-action-ring.vivify.inline-action-ring",
+      ),
     );
     click("mutation-dialog-close");
     reproductionDialog.dispatchEvent(new w.Event("close"));
