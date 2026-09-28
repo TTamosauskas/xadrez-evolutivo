@@ -2527,6 +2527,18 @@ export function assertState(state) {
           typeof state.hadeanTutorial.moved === "boolean" &&
           typeof state.hadeanTutorial.divided === "boolean" &&
           typeof state.hadeanTutorial.captured === "boolean" &&
+          typeof state.hadeanTutorial.fertile === "boolean" &&
+          state.hadeanEnvironment &&
+          typeof state.hadeanEnvironment.hostileDeathExplained === "boolean" &&
+          typeof state.hadeanEnvironment.fertileExplained === "boolean" &&
+          Array.isArray(state.hadeanEnvironment.pendingFertility) &&
+          state.hadeanEnvironment.pendingFertility.every(
+            (entry) =>
+              entry &&
+              integer(entry.pieceId, 1) &&
+              integer(entry.cell, 0, 63) &&
+              integer(entry.dueTurn, 0),
+          ) &&
           (state.hadeanCaptureUnlocked === undefined ||
             typeof state.hadeanCaptureUnlocked === "boolean")
         : state.hadeanTutorial === null ||
@@ -3400,7 +3412,8 @@ export function assertState(state) {
       (effect) =>
         !integer(effect.id, 1) ||
         !integer(effect.turn) ||
-        !TRAITS[effect.trait] ||
+        (!TRAITS[effect.trait] &&
+          !PASSIVE_EXPLANATION_TOPICS.has(effect.trait)) ||
         ![null, "string"].includes(
           effect.outcome === null ? null : typeof effect.outcome,
         ) ||
