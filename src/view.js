@@ -302,10 +302,10 @@ function cellSelectionInfo(state, r, c) {
     terrainDetail =
       cellTerrain === "fertile"
         ? geological.index < geologicalStage("cambrian").index
-          ? "Recurso ambiental que pode sustentar Vivificação de linhagens aptas."
+          ? "Capaz de sustentar a continuidade da vida"
           : "Recurso de Vivificação para Fotossíntese, Mixotrofia, Herbívoro e Onívoro."
         : cellTerrain === "hostile"
-          ? "Oferece 50% de risco ambiental por exposição normal; adaptações podem modificar esse risco."
+          ? "50% de chance de morte"
           : "Sem recurso ou risco ambiental próprio.",
     facts = [],
     add = (group, icon, title, detail, summary, accessible = null) =>
@@ -425,7 +425,7 @@ function cellSelectionInfo(state, r, c) {
       "condition",
       "☠️",
       "Ambiente letal",
-      "Entrar ou pousar nesta casa causa morte certa.",
+      "100% de chance de morte",
       "☠️ Letal",
     );
   if (eventBarrier || naturalBarrier || builtBarrier)

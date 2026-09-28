@@ -3,7 +3,7 @@ export function createPassiveEffectToastPresenter(
   {
     toastify = globalThis.Toastify,
     duration = -1,
-    maxVisible = 2,
+    maxVisible = 4,
     onSelect = null,
   } = {},
 ) {
@@ -55,6 +55,17 @@ export function createPassiveEffectToastPresenter(
       toast.toastElement.dataset.owner = effect.owner ?? "blue";
       toast.toastElement.setAttribute("role", "status");
       if (selectable) {
+        toast.toastElement.tabIndex = 0;
+        toast.toastElement.setAttribute(
+          "aria-label",
+          `${effect.text} Abrir explicação sobre ${effect.trait}.`,
+        );
+        toast.toastElement.addEventListener("click", activate);
+        toast.toastElement.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          activate();
+        });
         const more = doc.createElement("button");
         more.type = "button";
         more.className = "toast-more";
