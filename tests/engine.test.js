@@ -407,7 +407,10 @@ test("both founder Kings show opening reproduction and their first offspring alw
   );
   assert.ok(blueChild);
   assert.ok(blueChild.traits.includes("Quimiossíntese"));
-  assert.equal(blue.hadeanOpeningReproductionReady, false);
+  assert.equal(
+    s.pieces.find((piece) => piece.id === blue.id).hadeanOpeningReproductionReady,
+    false,
+  );
 
   const afterBlueIds = new Set(s.pieces.map((piece) => piece.id));
   const currentAmber = s.pieces.find((piece) => piece.id === amber.id);
