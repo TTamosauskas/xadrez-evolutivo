@@ -294,16 +294,23 @@ test("Archean subdivisions use distinct custom habitats instead of cycle rings",
   assert.equal(new Set(patterns).size, 4);
   assert.ok(new Set(signatures).size >= 3);
 });
-test("Hadean starts neutral and the gray ancestor introduces reproduction before splitting", () => {
+test("Hadean starts with three fertile central cells and the gray ancestor consumes one when splitting", () => {
   let s = createCampaignState(301);
   assert.equal(s.geologicalStage, "hadean");
   assert.equal(s.phase, "origin");
   assert.ok(s.origin);
   assert.equal(s.pieces.length, 0);
-  assert.equal(s.board.filter((cell) => cell === "fertile").length, 0);
+  assert.equal(s.board.filter((cell) => cell === "fertile").length, 3);
   assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
-  assert.equal(s.board.filter((cell) => cell === "neutral").length, 64);
-  assert.equal(s.board[square(s.origin.r, s.origin.c)], "neutral");
+  assert.equal(s.board.filter((cell) => cell === "neutral").length, 61);
+  assert.equal(s.board[square(s.origin.r, s.origin.c)], "fertile");
+  for (const cell of s.board
+    .map((terrain, cell) => (terrain === "fertile" ? cell : null))
+    .filter((cell) => cell !== null)) {
+    const r = Math.floor(cell / 8),
+      c = cell % 8;
+    assert.ok([3, 4].includes(r) && [3, 4].includes(c));
+  }
   assert.deepEqual(s.origin.traits, ["Respiração anaeróbia"]);
   assert.deepEqual(s.hadeanTutorial, {
     moved: false,
@@ -328,8 +335,11 @@ test("Hadean starts neutral and the gray ancestor introduces reproduction before
 
   const blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
-  assert.deepEqual([blue.r, blue.c], [4, 3]);
-  assert.deepEqual([amber.r, amber.c], [3, 4]);
+  assert.equal(s.board.filter((cell) => cell === "fertile").length, 2);
+  assert.equal(s.board[square(blue.r, blue.c)], "fertile");
+  assert.equal(s.board[square(amber.r, amber.c)], "fertile");
+  assert.ok([3, 4].includes(blue.r) && [3, 4].includes(blue.c));
+  assert.ok([3, 4].includes(amber.r) && [3, 4].includes(amber.c));
   assert.ok(
     s.pieces.every(
       (piece) =>
@@ -384,7 +394,7 @@ function firstOpeningReproduction(seed = 1) {
   return { state, child, parent };
 }
 
-test("both founder Kings show opening reproduction and their first offspring always gain chemosynthesis in the two free central cells", () => {
+test("both founder Kings show vivification, while only the first Hadean child is guaranteed chemosynthesis in the last 2x2 vacancy", () => {
   let s = createCampaignState(401);
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ORIGIN_CLICK" });
@@ -400,39 +410,82 @@ test("both founder Kings show opening reproduction and their first offspring alw
     { type: "HADEAN_REPRODUCE", id: amber.id },
   ]);
 
+  const occupiedCentralBefore = new Set(
+      s.pieces.map((piece) => square(piece.r, piece.c)),
+    ),
+    freeCentralBefore = [27, 28, 35, 36].filter(
+      (cell) => !occupiedCentralBefore.has(cell),
+    );
+  assert.equal(freeCentralBefore.length, 2);
+  assert.equal(
+    freeCentralBefore.filter((cell) => s.board[cell] === "neutral").length,
+    2,
+  );
+
   const originalIds = new Set(s.pieces.map((piece) => piece.id));
   s = transition(s, { type: "HADEAN_REPRODUCE", id: blue.id });
-  const blueChild = s.pieces.find(
+  const firstChild = s.pieces.find(
     (piece) => piece.owner === "blue" && !originalIds.has(piece.id),
   );
-  assert.ok(blueChild);
-  assert.ok(blueChild.traits.includes("Quimiossíntese"));
+  assert.ok(firstChild);
+  assert.ok(firstChild.traits.includes("Quimiossíntese"));
+  assert.ok([3, 4].includes(firstChild.r) && [3, 4].includes(firstChild.c));
   assert.equal(
-    s.pieces.find((piece) => piece.id === blue.id).hadeanOpeningReproductionReady,
+    s.pieces.find((piece) => piece.id === blue.id)
+      .hadeanOpeningReproductionReady,
     false,
   );
-
-  const afterBlueIds = new Set(s.pieces.map((piece) => piece.id));
-  const currentAmber = s.pieces.find((piece) => piece.id === amber.id);
-  s = transition(s, { type: "HADEAN_REPRODUCE", id: currentAmber.id });
-  const amberChild = s.pieces.find(
-    (piece) => piece.owner === "amber" && !afterBlueIds.has(piece.id),
-  );
-  assert.ok(amberChild);
-  assert.ok(amberChild.traits.includes("Quimiossíntese"));
-
-  const childCells = [blueChild, amberChild]
-    .map((piece) => `${piece.r},${piece.c}`)
-    .sort();
-  assert.deepEqual(childCells, ["3,3", "4,4"]);
   assert.equal(
-    s.passiveEffects.filter(
+    s.pieces.find((piece) => piece.id === blue.id).nextReproductionRound,
+    round(s),
+  );
+  assert.equal(
+    s.passiveEffects.some(
       (effect) =>
         effect.trait === "Quimiossíntese" &&
         effect.outcome === "new-mutation",
-    ).length,
-    2,
+    ),
+    true,
   );
+  assertState(s);
+});
+
+test("Hadean founder Kings become italic in the second turn and announce natural death before dying", () => {
+  let s = createCampaignState(402);
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  const blueId = s.pieces.find((piece) => piece.owner === "blue").id,
+    amberId = s.pieces.find((piece) => piece.owner === "amber").id;
+
+  s = transition(s, { type: "HADEAN_REPRODUCE", id: blueId });
+  assert.equal(s.turn, 1);
+  assert.equal(
+    s.pieces.find((piece) => piece.id === blueId).hadeanSenescent,
+    false,
+  );
+
+  s = transition(s, { type: "PASS" });
+  assert.equal(s.turn, 2);
+  for (const id of [blueId, amberId]) {
+    const founder = s.pieces.find((piece) => piece.id === id);
+    assert.ok(founder);
+    assert.equal(founder.hadeanSenescent, true);
+    assert.equal(founder.hadeanNaturalDeathRound, 2);
+  }
+  assert.equal(
+    s.passiveEffects.filter(
+      (effect) =>
+        effect.trait === "Morte Natural" &&
+        effect.outcome === "hadean-natural-death-warning",
+    ).length,
+    1,
+  );
+
+  s = transition(s, { type: "PASS" });
+  assert.ok(s.pieces.some((piece) => piece.id === blueId));
+  s = transition(s, { type: "PASS" });
+  assert.equal(s.pieces.some((piece) => piece.id === blueId), false);
+  assert.equal(s.pieces.some((piece) => piece.id === amberId), false);
   assertState(s);
 });
 
