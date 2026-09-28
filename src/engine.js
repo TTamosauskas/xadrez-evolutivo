@@ -471,14 +471,37 @@ function finishEcologicalDomain(state, trigger) {
   return true;
 }
 
+function passiveProgressPending(state) {
+  const now = round(state);
+  if ((state.hadeanEnvironment?.pendingFertility?.length ?? 0) > 0)
+    return true;
+  if (
+    canWaitForRest(state, "blue") ||
+    canWaitForRest(state, "amber") ||
+    canWaitForBirth(state, "blue") ||
+    canWaitForBirth(state, "amber")
+  )
+    return true;
+  return state.pieces.some(
+    (piece) =>
+      Number.isInteger(piece.chemosynthesisReadyTurn) ||
+      Number.isInteger(piece.photosynthesisReadyTurn) ||
+      Number.isInteger(piece.extremophyteSinceRound) ||
+      (piece.nextReproductionRound ?? now) > now ||
+      juvenile(state, piece),
+  );
+}
+
 export function resolveEcologicalDomain(state) {
   if (state.result || state.phase !== "move") return false;
-  if (mutuallyBlocked(state))
+  const passivePending = passiveProgressPending(state);
+  if (mutuallyBlocked(state) && !passivePending)
     return finishEcologicalDomain(state, "bloqueio total de ações");
 
   const elapsed =
     round(state) - (state.lastSuccessfulCaptureRound ?? 0);
   if (
+    !passivePending &&
     offensiveActionCount(state) === 0 &&
     elapsed >= ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS
   )
