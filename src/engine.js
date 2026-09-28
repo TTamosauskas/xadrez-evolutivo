@@ -78,6 +78,7 @@ import {
 } from "./moves.js";
 import {
   reproduce,
+  hadeanOpeningReproduce,
   metabolicReproductionCooldown,
   harvest,
   scatterSeeds,
@@ -5298,6 +5299,15 @@ export function transition(previous, action) {
     activateOrigin(state);
   else if (action.type === "MOVE" && state.phase === "move")
     executeMove(ctx, action);
+  else if (action.type === "HADEAN_REPRODUCE" && state.phase === "move") {
+    const parent = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    );
+    if (hadeanOpeningReproduce(ctx, parent)) {
+      advanceTurn(ctx);
+      settle(ctx);
+    }
+  }
   else if (action.type === "PARTNER" && state.phase === "move")
     resolveDirectPartner(ctx, action);
   else if (action.type === "CHEMOSYNTHESIS" && state.phase === "move")
