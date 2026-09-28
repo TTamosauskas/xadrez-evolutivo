@@ -770,7 +770,7 @@ const HADEAN_CENTRAL_CELLS = Object.freeze([
   Object.freeze({ r: 4, c: 4 }),
 ]);
 
-function hadeanOpeningTarget(state, owner, chemosynthetic) {
+function hadeanOpeningTarget(state) {
   const free = (cell) =>
     !at(state, cell.r, cell.c) &&
     !eggAt(state, cell.r, cell.c) &&
@@ -778,25 +778,7 @@ function hadeanOpeningTarget(state, owner, chemosynthetic) {
     !fragmentAt(state, cell.r, cell.c) &&
     !barrierAt(state, cell.r, cell.c);
 
-  if (chemosynthetic) {
-    return pick(state, HADEAN_CENTRAL_CELLS.filter(free));
-  }
-
-  const preferredRow = owner === "blue" ? 5 : 2,
-    preferred = Array.from({ length: 4 }, (_, index) => ({
-      r: preferredRow,
-      c: index + 2,
-    })).filter(free),
-    outer = [];
-  if (preferred.length) return pick(state, preferred);
-  for (let r = 2; r <= 5; r++)
-    for (let c = 2; c <= 5; c++)
-      if (
-        (r === 2 || r === 5 || c === 2 || c === 5) &&
-        free({ r, c })
-      )
-        outer.push({ r, c });
-  return pick(state, outer);
+  return pick(state, HADEAN_CENTRAL_CELLS.filter(free));
 }
 
 export function hadeanOpeningReproduce(ctx, parent) {
@@ -810,13 +792,10 @@ export function hadeanOpeningReproduce(ctx, parent) {
   )
     return null;
 
-  const chemosynthetic = random(state) < 1 / 2,
-    target = hadeanOpeningTarget(state, parent.owner, chemosynthetic);
+  const target = hadeanOpeningTarget(state);
   if (!target) return null;
 
-  const traits = chemosynthetic
-      ? ["Respiração anaeróbia", "Quimiossíntese"]
-      : ["Respiração anaeróbia"],
+  const traits = ["Respiração anaeróbia", "Quimiossíntese"],
     child = spawnChild(
       state,
       {
@@ -824,7 +803,7 @@ export function hadeanOpeningReproduce(ctx, parent) {
         rank: parent.rank,
         traits,
         ancestry: [...new Set([...(parent.ancestry ?? parent.traits), ...traits])],
-        mutations: chemosynthetic ? 1 : 0,
+        mutations: 1,
         generation: (parent.generation ?? 0) + 1,
         parentId: parent.id,
         parentIds: [parent.id],
@@ -845,7 +824,7 @@ export function hadeanOpeningReproduce(ctx, parent) {
     child.generation,
   );
 
-  if (chemosynthetic) {
+  {
     state.hadeanEnvironment ??= {
       hostileDeathExplained: false,
       fertileExplained: false,
@@ -869,11 +848,6 @@ export function hadeanOpeningReproduce(ctx, parent) {
     log(
       state,
       `Nova Mutação: ${OWNERS[child.owner]} · ♨️ Quimiossíntese surgiu na primeira prole em ${coord(child.r, child.c)}.`,
-    );
-  } else {
-    log(
-      state,
-      `${OWNERS[child.owner]}: a primeira prole permaneceu basal e surgiu na camada externa em ${coord(child.r, child.c)}.`,
     );
   }
   return child;
