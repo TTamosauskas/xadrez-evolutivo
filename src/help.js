@@ -263,7 +263,7 @@ export function howToPlayLines() {
     ...ecologicalEventLines(),
 
     section("Encerramento por Domínio Ecológico"),
-    `Se Brancas e Pretas ficarem simultaneamente sem ações legais, a partida termina por Domínio Ecológico e a maior população ativa vence. No Hadeano, esse encerramento só fica elegível depois que todas as 16 casas jogáveis do núcleo 4×4 estiverem ocupadas, permitindo que o avanço hostil continue antes disso. Se ainda houver movimentos, mas nenhuma captura possível, o mesmo critério é aplicado após ${ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS} rodadas sem captura bem-sucedida; no Hadeano, a exigência de ocupação total continua valendo. Empate populacional encerra a partida em empate.`,
+    `Se Brancas e Pretas ficarem simultaneamente sem ações legais, a partida termina por Domínio Ecológico e a maior população ativa vence. No Hadeano, a regra é própria: o Domínio Ecológico é declarado assim que todas as 16 casas jogáveis do núcleo 4×4 estiverem ocupadas, depois de resolver qualquer morte letal já agendada; antes disso, o avanço hostil continua. Nas demais fases, se ainda houver movimentos, mas nenhuma captura possível, o mesmo critério populacional é aplicado após ${ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS} rodadas sem captura bem-sucedida. Empate populacional encerra a partida em empate.`,
     "Conway permanece uma dinâmica ambiental universal a partir do Devoniano: ele remodela o habitat conforme a progressão geracional e fica suspenso durante eventos severos. Ele deixou de executar reparos artificiais de estagnação, corredores forçados, remoções especiais de barreiras ou reposicionamentos de organismos.",
 
     section("Controles, informação e acompanhamento"),
