@@ -460,7 +460,6 @@ function occupied(state, r, c, profile = null) {
     eggAt(state, r, c) ||
     plantSeedAt(state, r, c) ||
     fragmentAt(state, r, c) ||
-    lethalHazardAt(state, r, c) ||
     (barrierAt(state, r, c) && !has(profile, "Trepadeira"))
   );
 }
@@ -1183,7 +1182,6 @@ function zoochoryCellFree(
     !plantSeedAt(state, r, c) &&
     !fragmentAt(state, r, c) &&
     !barrierAt(state, r, c) &&
-    !lethalHazardAt(state, r, c) &&
     (allowHostile || terrain(state, r, c) !== "hostile")
   );
 }
@@ -2290,7 +2288,6 @@ function fragmentCellFree(state, fragment, r, c) {
     !eggAt(state, r, c) &&
     !plantSeedAt(state, r, c) &&
     !barrierAt(state, r, c) &&
-    !lethalHazardAt(state, r, c) &&
     !state.fragments.some(
       (other) =>
         other.id !== fragment.id && other.r === r && other.c === c,
@@ -2473,8 +2470,7 @@ export function tickReproduction(ctx) {
           !at(state, r, c) &&
           !eggAt(state, r, c) &&
           !fragmentAt(state, r, c) &&
-          !barrierAt(state, r, c) &&
-          !lethalHazardAt(state, r, c);
+          !barrierAt(state, r, c);
       state.plantSeeds = state.plantSeeds.filter(
         (candidate) => candidate.id !== seed.id,
       );
@@ -2594,8 +2590,7 @@ export function tickReproduction(ctx) {
     const fertileHere = terrain(state, seed.r, seed.c) === "fertile",
       occupiedHere = !!at(state, seed.r, seed.c) || !!eggAt(state, seed.r, seed.c),
       invalidHere =
-        lethalHazardAt(state, seed.r, seed.c) ||
-        (barrierAt(state, seed.r, seed.c) &&
+        barrierAt(state, seed.r, seed.c) &&
           !has(seed.profile, "Trepadeira"));
 
     if (seed.sprouting) {
