@@ -53,11 +53,11 @@ export const TRAITS = {
   ],
   Multicelularismo: [
     "🫧",
-    "Protege contra captura por predadores que ainda não possuem Ingestão; a proteção vale mesmo contra outros organismos multicelulares. Em linhagens fotossintéticas, libera formas vegetais Cavalo e Bispo.",
+    "Protege contra capturas alimentares de organismos incapazes de consumir formas multicelulares; a proteção vale mesmo contra outros organismos multicelulares. Em linhagens fotossintéticas, libera formas vegetais Cavalo e Bispo.",
   ],
   "Simetria Bilateral": [
     "⏸",
-    "Dobra a expectativa de vida natural das linhagens animais multicelulares e prepara a organização corporal de Vertebrados e Artrópodes.",
+    "Dobra a expectativa de vida natural das linhagens animais multicelulares e estabelece um plano corporal bilateral.",
   ],
   "Locomoção Primitiva": [
     "🔀",
@@ -85,7 +85,7 @@ export const TRAITS = {
   ],
   "Locomoção Articulada": [
     "🦵",
-    "Especialização locomotora de Vertebrados ou Artrópodes; libera a geometria completa da peça, mas sem Locomoção Terrestre movimento e captura ainda terminam apenas em casas férteis.",
+    "Especialização locomotora de Vertebrados ou Artrópodes; libera a geometria completa da peça, mantendo movimento e captura restritos a casas férteis.",
   ],
   "Locomoção Terrestre": [
     "🐛",
@@ -161,7 +161,7 @@ export const TRAITS = {
     "🦖",
     "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
   ],
-  Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Capturas alimentares válidas podem gerar reprodução; sem Ingestão, organismos multicelulares permanecem protegidos."],
+  Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Capturas alimentares válidas podem gerar reprodução."],
   Ingestão: [
     "👄",
     "Adaptação multicelular que permite capturar e consumir organismos multicelulares; exige Multicelularismo e mantém a reprodução predatória após uma captura válida.",
@@ -260,7 +260,7 @@ export const TRAITS = {
   ],
   Fotossíntese: [
     "🟢",
-    "Define um ramo energético hereditário incompatível com Predação. Ao maturar, torna fértil a própria casa; formas vegetais multicelulares também fertilizam casas neutras do entorno imediato conforme sua arquitetura.",
+    "Define um ramo energético hereditário incompatível com Predação. Ao maturar, torna fértil a própria casa.",
   ],
   Mixotrofia: [
     "☯",
@@ -268,7 +268,7 @@ export const TRAITS = {
   ],
   Embriófitas: [
     "🌱",
-    "Estabelece a linhagem vegetal terrestre e prepara a evolução de Traqueófitas e outras especializações vegetais posteriores.",
+    "Estabelece a linhagem vegetal terrestre e sua adaptação básica aos ambientes continentais.",
   ],
   Haustório: [
     "🪝",
@@ -344,7 +344,7 @@ export const TRAITS = {
   ],
   "Caça Cooperativa": [
     "🐬",
-    "Se pelo menos dois caçadores adjacentes com esta característica cercarem a presa, Espinhos e Chifre da presa são neutralizados.",
+    "Se pelo menos dois caçadores adjacentes com esta característica cercarem a presa, Espinhos e outras defesas retaliatórias são neutralizados.",
   ],
   Mutualismo: [
     "🫂",
@@ -376,7 +376,7 @@ export const TRAITS = {
   ],
   Neurodivergência: [
     "♾️",
-    "Se iniciar o turno sem aliados nas 8 casas adjacentes, entra em Hiperfoco e pode realizar uma segunda ação completa consecutiva com a mesma criatura. Se iniciar com 2 ou mais aliados adjacentes, após agir entra em Sobrecarga por 2 turnos próprios; Neocórtex Desenvolvido reduz a pausa para 1.",
+    "Se iniciar o turno sem aliados nas 8 casas adjacentes, entra em Hiperfoco e pode realizar uma segunda ação completa consecutiva com a mesma criatura. Se iniciar com 2 ou mais aliados adjacentes, após agir entra em Sobrecarga por 2 turnos próprios.",
   ],
   "Neocórtex Desenvolvido": [
     "🧠",
@@ -400,11 +400,11 @@ export const TRAITS = {
   ],
   "Imortalidade Biológica": [
     "🪼",
-    "Anula exclusivamente a morte natural por envelhecimento; captura, ambiente, patógenos, veneno, mutações letais e outras mortes continuam funcionando.",
+    "Anula exclusivamente a morte natural por envelhecimento; captura, ambiente, patógenos, mutações letais e outras mortes continuam funcionando.",
   ],
   "Incubação": [
     "🪺",
-    "Ovos adjacentes ao progenitor ficam protegidos contra Ovífagia.",
+    "Ovos adjacentes ao progenitor ficam protegidos contra tentativas de consumo.",
   ],
   Lactação: [
     "🐮",
@@ -438,7 +438,7 @@ export const TRAITS = {
   ],
   Notívago: [
     "🌙",
-    "Em rodadas pares, tem 50% de chance de escapar de uma captura. Visão Noturna do agressor anula essa proteção.",
+    "Em rodadas pares, tem 50% de chance de escapar de uma captura.",
   ],
   "Pele grossa": [
     "🦏",
@@ -450,7 +450,7 @@ export const TRAITS = {
   ],
   Dentes: [
     "🦷",
-    "Especialização vertebrada da mandíbula que neutraliza a redução de captura oferecida por Escamas.",
+    "Especialização vertebrada da mandíbula que melhora a eficiência de captura contra proteções tegumentares.",
   ],
   Presas: [
     "▽",
@@ -544,7 +544,7 @@ export const TRAITS = {
   ],
   Brotamento: [
     "🪸",
-    "Após quatro rodadas completas sem mudar de casa, um adulto metabolicamente apto pode gastar uma casa fértil sob si ou uma semente de Coletor para produzir um único descendente; cada indivíduo brota uma única vez.",
+    "Após quatro rodadas completas sem mudar de casa, um adulto metabolicamente apto pode gastar a casa fértil sob si para produzir um único descendente; cada indivíduo brota uma única vez.",
   ],
   Colônia: [
     "🧫",
@@ -694,7 +694,7 @@ export const TRAITS = {
   ],
   "Corpo Gelatinoso": [
     "🧫",
-    "Reduz em 10% multiplicativos o sucesso de capturas adjacentes; é autoexcludente com Esclerotização.",
+    "Reduz em 10% multiplicativos o sucesso de capturas adjacentes.",
   ],
   Esclerotização: [
     "⛉",
@@ -718,7 +718,7 @@ export const TRAITS = {
   ],
   Osteodermos: [
     "🛡️",
-    "Reduz pela metade o risco de o agressor morrer por Espinhos ou Chifre durante uma tentativa de captura.",
+    "Reduz pela metade o risco de o agressor morrer por defesas perfurantes durante uma tentativa de captura.",
   ],
   Pelos: [
     "🦣",
