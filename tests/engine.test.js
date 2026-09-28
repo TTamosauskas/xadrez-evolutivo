@@ -2445,6 +2445,36 @@ test("Hadean ecological domain triggers as soon as all 16 playable cells are occ
   assertState(s);
 });
 
+test("Hadean ecological-domain tie uses occupied fertile cells", () => {
+  const s = createState(1515, {
+    geologicalStage: "hadean",
+    naturalBarriers: false,
+  });
+  s.board.fill("hostile");
+  s.pieces = [];
+  s.nextId = 1;
+  s.notices = [];
+
+  let index = 0;
+  for (let r = 2; r <= 5; r++)
+    for (let c = 2; c <= 5; c++) {
+      const owner = index++ < 8 ? "blue" : "amber",
+        piece = newPiece(s, owner, r, c, { rank: 4 });
+      s.pieces.push(piece);
+    }
+
+  for (const piece of s.pieces.filter((piece) => piece.owner === "amber").slice(0, 3))
+    s.board[square(piece.r, piece.c)] = "fertile";
+  for (const piece of s.pieces.filter((piece) => piece.owner === "blue").slice(0, 2))
+    s.board[square(piece.r, piece.c)] = "fertile";
+
+  assert.equal(resolveEcologicalDomain(s), true);
+  assert.equal(s.result?.winner, "amber");
+  assert.equal(s.result?.victoryType, "ecological-domain");
+  assert.doesNotMatch(s.result?.reason ?? "", /fértil|fertilidade/i);
+  assertState(s);
+});
+
 test("Hadean ecological domain waits for a scheduled lethal death before scoring population", () => {
   const s = createState(1513, {
     geologicalStage: "hadean",
@@ -2501,8 +2531,36 @@ test("mutual blocking ends immediately by ecological-domain population", () => {
   assertState(next);
 });
 
-test("mutual blocking with equal populations ends in an ecological-domain draw", () => {
+test("ecological-domain population tie is broken by fertile occupation", () => {
   const s = createState(1511, {
+    geologicalStage: "devonian",
+    naturalBarriers: false,
+  });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  const blue = newPiece(s, "blue", 7, 7, {
+      rank: 4,
+      traits: ["Carnívoro", "Voo"],
+    }),
+    amber = newPiece(s, "amber", 0, 0, {
+      rank: 4,
+      traits: ["Carnívoro", "Voo"],
+    });
+  s.pieces.push(blue, amber);
+  s.board[square(blue.r, blue.c)] = "fertile";
+  s.notices = [];
+
+  assert.equal(mutuallyBlocked(s), true);
+  assert.equal(resolveEcologicalDomain(s), true);
+  assert.equal(s.result?.winner, "blue");
+  assert.equal(s.result?.victoryType, "ecological-domain");
+  assert.doesNotMatch(s.result?.reason ?? "", /fértil|fertilidade/i);
+  assertState(s);
+});
+
+test("ecological-domain remains a draw when population and fertile occupation both tie", () => {
+  const s = createState(1514, {
     geologicalStage: "devonian",
     naturalBarriers: false,
   });
@@ -2514,10 +2572,11 @@ test("mutual blocking with equal populations ends in an ecological-domain draw",
     newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Carnívoro", "Voo"] }),
   );
   s.notices = [];
+
   assert.equal(mutuallyBlocked(s), true);
   assert.equal(resolveEcologicalDomain(s), true);
   assert.equal(s.result?.winner, null);
-  assert.match(s.result?.reason ?? "", /empate populacional/);
+  assert.match(s.result?.reason ?? "", /Domínio Ecológico/);
   assertState(s);
 });
 

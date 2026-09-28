@@ -455,21 +455,46 @@ function ecologicalDomainPopulation(state) {
   };
 }
 
+function ecologicalDomainFertileOccupation(state) {
+  return {
+    blue: state.pieces.filter(
+      (piece) =>
+        piece.owner === "blue" &&
+        terrain(state, piece.r, piece.c) === "fertile",
+    ).length,
+    amber: state.pieces.filter(
+      (piece) =>
+        piece.owner === "amber" &&
+        terrain(state, piece.r, piece.c) === "fertile",
+    ).length,
+  };
+}
+
 function finishEcologicalDomain(state, trigger) {
   const population = ecologicalDomainPopulation(state),
-    winner =
+    fertile = ecologicalDomainFertileOccupation(state),
+    populationWinner =
       population.blue > population.amber
         ? "blue"
         : population.amber > population.blue
           ? "amber"
           : null,
+    fertileWinner =
+      fertile.blue > fertile.amber
+        ? "blue"
+        : fertile.amber > fertile.blue
+          ? "amber"
+          : null,
+    winner = populationWinner ?? fertileWinner,
     score = `${population.blue} × ${population.amber}`;
 
   if (winner)
     finishGame(
       state,
       winner,
-      `Domínio Ecológico: ${OWNERS[winner]} venceram por maior população (${score}) após ${trigger}.`,
+      populationWinner
+        ? `Domínio Ecológico: ${OWNERS[winner]} venceram por maior população (${score}) após ${trigger}.`
+        : `Domínio Ecológico: ${OWNERS[winner]} venceram após ${trigger}.`,
       null,
       "ecological-domain",
     );
@@ -477,7 +502,7 @@ function finishEcologicalDomain(state, trigger) {
     finishGame(
       state,
       null,
-      `Domínio Ecológico: empate populacional (${score}) após ${trigger}.`,
+      `Domínio Ecológico: empate após ${trigger}.`,
       null,
       "ecological-domain",
     );

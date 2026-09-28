@@ -228,6 +228,7 @@ test("Toastify presenter limits visible effects and releases its queue on dismis
 
 test("tracked Toastify assets load before the app and mobile styling stays viewport-wide", () => {
   const html = readFileSync(new URL("../index.html", import.meta.url), "utf8"),
+    app = readFileSync(new URL("../src/app.js", import.meta.url), "utf8"),
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
     toastifyJs = readFileSync(
       new URL("../toastify-1.12.0.js", import.meta.url),
@@ -246,6 +247,12 @@ test("tracked Toastify assets load before the app and mobile styling stays viewp
   assert.deepEqual(scripts, ["toastify-1.12.0.js", "src/app.js"]);
   assert.match(toastifyJs, /Toastify js 1\.12\.0/);
   assert.equal(d.getElementById("passive-toasts"), null);
+  assert.equal(d.getElementById("mass-extinction-dialog"), null);
+  assert.doesNotMatch(app, /Transição Evolutiva|Extinção em Massa/);
+  assert.match(
+    app,
+    /replaceCycleState\(createSuccessorState\(controller\.state\)\)/,
+  );
   assert.ok(d.getElementById("mutation-dialog"));
   assert.ok(d.getElementById("mutation-dialog-close"));
   assert.ok(d.getElementById("mutation-dialog-real"));
