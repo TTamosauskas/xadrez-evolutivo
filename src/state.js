@@ -2973,6 +2973,10 @@ export function assertState(state) {
       !integer(p.bornRound) ||
       !integer(p.maturesRound) ||
       !integer(p.nextReproductionRound) ||
+      (p.lethalDeathTurn !== undefined &&
+        !integer(p.lethalDeathTurn, 0)) ||
+      (p.lethalDeathReason !== undefined &&
+        typeof p.lethalDeathReason !== "string") ||
       !integer(p.lifetimeReproductions ?? 0, 0) ||
       !integer(p.lifetimeOffspring ?? 0, 0) ||
       typeof (p.semelparityDeathPending ?? false) !== "boolean" ||
