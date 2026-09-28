@@ -2164,7 +2164,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     blueFounder.click();
     blueFounder = d.querySelector(".piece.blue").parentElement;
     amberFounder = d.querySelector(".piece.amber").parentElement;
-    assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 2);
+    assert.equal(d.querySelectorAll("#board .piece.blue, #board .piece.amber").length, 2);
     assert.ok(blueFounder.classList.contains("vivification-target"));
     assert.ok(!amberFounder.classList.contains("vivification-target"));
 
