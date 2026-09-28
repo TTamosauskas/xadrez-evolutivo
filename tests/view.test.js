@@ -2598,6 +2598,35 @@ test("victory dialog uses the concise extinction model", () => {
   dom.window.close();
 });
 
+test("black victory uses the same concise victory pattern as white victory", () => {
+  const dom = setup(),
+    s = createState(1603),
+    d = dom.window.document;
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces.push(
+    newPiece(s, "amber", 1, 3, { rank: 4, traits: ["Chifre"] }),
+    newPiece(s, "amber", 1, 4, { rank: 4, traits: ["Chifre"] }),
+  );
+  s.phase = "over";
+  s.result = {
+    winner: "amber",
+    reason: "Extinção total.",
+    victoryType: "extinction",
+  };
+
+  render(d, s, { showResult: true });
+
+  assert.equal(d.getElementById("game-over-title").textContent, "Pretas venceram");
+  const body = d.getElementById("game-over-body").textContent;
+  assert.match(body, /Vitória por Extinção das Brancas/);
+  assert.match(body, /Seleção natural/);
+  assert.match(body, /Rei ♚ \(100% da população sobrevivente\)/);
+  assert.match(body, /Características predominantes:/);
+  assert.match(body, /Chifre/);
+  dom.window.close();
+});
+
 test("victory dialog uses total surviving population for ecological-domain selection share", () => {
   const dom = setup(),
     s = createState(1602),
