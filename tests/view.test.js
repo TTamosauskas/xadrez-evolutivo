@@ -2529,6 +2529,65 @@ test("Hadean extinction offers the formal transition to Archean", () => {
   dom.window.close();
 });
 
+test("victory dialog uses the concise extinction model", () => {
+  const dom = setup(),
+    s = createState(1601),
+    d = dom.window.document;
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces.push(
+    newPiece(s, "blue", 6, 3, { rank: 4, traits: ["Chifre"] }),
+    newPiece(s, "blue", 6, 4, { rank: 4, traits: ["Chifre"] }),
+  );
+  s.phase = "over";
+  s.result = {
+    winner: "blue",
+    reason: "Extinção total.",
+    victoryType: "extinction",
+  };
+
+  render(d, s, { showResult: true });
+
+  assert.equal(d.getElementById("game-over-title").textContent, "Brancas venceram");
+  const body = d.getElementById("game-over-body").textContent;
+  assert.match(body, /Vitória por Extinção das Pretas/);
+  assert.match(body, /Seleção natural/);
+  assert.match(body, /Rei ♔ \(100% da população sobrevivente\)/);
+  assert.match(body, /Características predominantes:/);
+  assert.match(body, /Chifre/);
+  assert.doesNotMatch(body, /linhagem sobrevivente/);
+  dom.window.close();
+});
+
+test("victory dialog uses total surviving population for ecological-domain selection share", () => {
+  const dom = setup(),
+    s = createState(1602),
+    d = dom.window.document;
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces.push(
+    newPiece(s, "blue", 6, 3, { rank: 4, traits: ["Chifre"] }),
+    newPiece(s, "blue", 6, 4, { rank: 4, traits: ["Chifre"] }),
+    newPiece(s, "amber", 1, 4, { rank: 4 }),
+  );
+  s.phase = "over";
+  s.result = {
+    winner: "blue",
+    reason: "Domínio Ecológico: Brancas venceram por maior população (2 × 1).",
+    victoryType: "ecological-domain",
+  };
+
+  render(d, s, { showResult: true });
+
+  assert.equal(d.getElementById("game-over-title").textContent, "Brancas venceram");
+  const body = d.getElementById("game-over-body").textContent;
+  assert.match(body, /Vitória por Domínio Ecológico/);
+  assert.match(body, /Rei ♔ \(67% da população sobrevivente\)/);
+  assert.match(body, /Características predominantes:/);
+  assert.match(body, /Chifre/);
+  dom.window.close();
+});
+
 test("game-over dialog can be held closed until the result delay expires", () => {
   const dom = setup(),
     s = createState(403);
