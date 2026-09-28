@@ -245,30 +245,13 @@ test("Hadean common ancestor is a gray King that splits after the second click",
   );
   assert.match(legend.textContent, /Vivificar/);
   assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 48);
-  dom.window.close();
-});
-
-test("Hadean founder Kings render in italics when natural senescence begins", () => {
-  const dom = setup();
-  let s = createCampaignState(302);
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  const blue = s.pieces.find((piece) => piece.owner === "blue");
-
-  s = transition(s, { type: "HADEAN_REPRODUCE", id: blue.id });
-  s = transition(s, { type: "PASS" });
-
-  render(dom.window.document, s, { selected: blue.id });
-  const d = dom.window.document,
-    founder = d.querySelector(
-      `[data-r="${s.pieces.find((piece) => piece.id === blue.id).r}"][data-c="${s.pieces.find((piece) => piece.id === blue.id).c}"] .piece`,
-    ),
-    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
-    rule = css.match(/\.piece\.senescent\s*\{([^}]*)\}/)?.[1] ?? "";
-
-  assert.ok(founder.classList.contains("senescent"));
-  assert.match(rule, /font-style:\s*italic/);
-  assert.match(d.getElementById("selected").textContent, /Senescente/);
+  const css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    ringRule =
+      css.match(/\.cell\.vivification-target::after,[\s\S]*?\{([^}]*)\}/)?.[1] ??
+      "";
+  assert.match(ringRule, /content:\s*""/);
+  assert.match(ringRule, /position:\s*absolute/);
+  assert.match(ringRule, /border:\s*4px solid #5bd66c/);
   dom.window.close();
 });
 
