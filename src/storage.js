@@ -161,6 +161,25 @@ function normalizeCycleInnovationPressure(state) {
   state.inkClouds ??= [];
   state.mineralRemnants ??= [];
   state.chemosynthesisExhausted ??= [];
+  if (state.geologicalStage === "hadean") {
+    state.hadeanTutorial ??= {
+      moved: false,
+      divided: false,
+      captured: false,
+      fertile: false,
+    };
+    state.hadeanTutorial.fertile ??= false;
+    state.hadeanEnvironment ??= {
+      hostileDeathExplained: false,
+      fertileExplained: false,
+      pendingFertility: [],
+    };
+    state.hadeanEnvironment.hostileDeathExplained ??= false;
+    state.hadeanEnvironment.fertileExplained ??= false;
+    state.hadeanEnvironment.pendingFertility ??= [];
+  } else {
+    state.hadeanEnvironment = null;
+  }
   for (const piece of state?.pieces ?? []) {
     piece.lifetimeOffspring ??= 0;
     piece.hematophagyDepletedUntilRound ??= null;
