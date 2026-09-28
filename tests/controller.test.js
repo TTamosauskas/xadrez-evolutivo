@@ -161,6 +161,77 @@ test("automatic Conway waits between visible board updates", () => {
   controller.dispose();
 });
 
+test("lethal deaths remain visible briefly and resolve before the next action", () => {
+  const s = createState(9505, {
+    geologicalStage: "eoarchean",
+    naturalBarriers: false,
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Fotossíntese",
+      "Predação",
+    ],
+  });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.turn = 1;
+  s.current = "amber";
+  s.notices = [];
+
+  const doomed = newPiece(s, "blue", 0, 0, {
+      rank: 4,
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    }),
+    blue = newPiece(s, "blue", 4, 4, {
+      rank: 4,
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+    }),
+    amber = newPiece(s, "amber", 5, 5, {
+      rank: 4,
+      traits: ["Predação"],
+      ancestry: ["Respiração anaeróbia", "Predação"],
+    });
+  doomed.lethalDeathTurn = s.turn;
+  doomed.lethalDeathReason = "ambiente letal";
+  s.pieces.push(doomed, blue, amber);
+
+  const timers = new Map(),
+    renders = [];
+  let nextTimer = 0;
+  const controller = new Controller(s, {
+    lethalDelay: 700,
+    render: (state, busy) =>
+      renders.push({
+        busy,
+        ids: state.pieces.map((piece) => piece.id),
+      }),
+    setTimer: (fn, delay) => {
+      const id = ++nextTimer;
+      timers.set(id, { fn, delay });
+      return id;
+    },
+    clearTimer: (id) => timers.delete(id),
+  });
+
+  controller.refresh();
+  assert.equal(renders.at(-1).busy, "lethal");
+  assert.ok(renders.at(-1).ids.includes(doomed.id));
+  const scheduled = [...timers.values()].find((entry) => entry.delay === 700);
+  assert.ok(scheduled);
+
+  scheduled.fn();
+
+  assert.equal(
+    controller.state.pieces.some((piece) => piece.id === doomed.id),
+    false,
+  );
+  assert.ok(controller.state.pieces.some((piece) => piece.id === blue.id));
+  assert.ok(controller.state.pieces.some((piece) => piece.id === amber.id));
+  controller.dispose();
+});
+
 test("AI waits for a visible human-paced delay before committing its move", () => {
   const { c, workers, timers, timerDelays } = setup();
   c.configure("single");
