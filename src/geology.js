@@ -487,7 +487,7 @@ export const TRAIT_STAGE = {
   "Fertilidade Longeva": "triassic",
   "Longevidade": "jurassic",
   "Resistência": "siderian",
-  "Predação": "hadean",
+  "Predação": "eoarchean",
   "Ingestão": "ectasian",
   "Carnívoro": "stenian",
   "Herbívoro": "ordovician",
