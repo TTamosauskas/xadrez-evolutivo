@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { TRAITS } from "../src/constants.js";
 import { GEOLOGICAL_STAGES, TRAIT_STAGE } from "../src/geology.js";
-import { mutationExplanation } from "../src/mutation-explanation.js";
+import { effectExplanation, mutationExplanation } from "../src/mutation-explanation.js";
 
 const normalize = (text) =>
   String(text)
@@ -79,4 +79,27 @@ test("Hadean energy branches explain only their current behavior", () => {
     mutationExplanation("Fotossíntese").game,
     "No jogo: Define um ramo energético hereditário incompatível com Predação. Ao maturar, torna fértil a própria casa.",
   );
+});
+
+test("tutorial and terrain toasts share the explanatory modal format", () => {
+  assert.deepEqual(effectExplanation("Reprodução"), {
+    title: "Reprodução",
+    realWorld:
+      "Na vida: Uma hipótese para a origem da vida propõe que ribozimas (moléculas de RNA) entraram em ciclos de auto-replicação. O desafio passou a ser encontrar fontes de energia para sustentar esses ciclos.",
+    game:
+      "No jogo: Clique no círculo verde que aparece quando a célula estiver pronta para se reproduzir.",
+  });
+  assert.deepEqual(effectExplanation("Casa Hostil"), {
+    title: "🟥 Casa Hostil",
+    realWorld:
+      "Na vida: Ambientes inóspitos, como lava, toxinas, falta de água e frio ou calor extremos, podem prejudicar a continuidade da vida.",
+    game: "No jogo: Casas hostis oferecem 50% de risco de morte.",
+  });
+  assert.deepEqual(effectExplanation("Casa Fértil"), {
+    title: "🟩 Casa Fértil",
+    realWorld:
+      "Na vida: Ambientes sem toxinas, com água, nutrientes e temperatura adequada são favoráveis para a continuidade da vida.",
+    game:
+      "No jogo: Casas férteis fornecem energia para reprodução e outros efeitos benéficos.",
+  });
 });
