@@ -45,6 +45,24 @@ export function mutationExplanation(trait) {
   };
 }
 
-export function effectExplanation(topic) {
+export function mutationLossExplanation(trait) {
+  if (!TRAITS[trait]) return null;
+  return {
+    trait,
+    title: `Perda de ${trait}`,
+    realWorld:
+      "Na vida: Mutações podem destruir a atividade de um gene causando a perda de características de seus antepassados",
+    game: `No jogo: Organismo não herda ${trait} da sua linhagem.`,
+  };
+}
+
+export function effectExplanation(topicOrEffect) {
+  const effect =
+      topicOrEffect && typeof topicOrEffect === "object"
+        ? topicOrEffect
+        : null,
+    topic = effect?.trait ?? topicOrEffect;
+  if (effect?.outcome === "mutation-loss")
+    return mutationLossExplanation(topic);
   return SPECIAL_EXPLANATIONS[topic] ?? mutationExplanation(topic);
 }
