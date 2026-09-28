@@ -1704,7 +1704,7 @@ function matureHadeanFertility(state) {
           square(candidate.r, candidate.c) === entry.cell &&
           has(candidate, "Quimiossíntese"),
       );
-      if (!piece || state.board[entry.cell] !== "hostile") return false;
+      if (!piece || state.board[entry.cell] === "fertile") return false;
       state.board[entry.cell] = "fertile";
       state.hadeanTutorial.fertile = true;
       matured++;
