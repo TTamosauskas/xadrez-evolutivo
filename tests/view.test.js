@@ -2288,7 +2288,17 @@ test("Hadean extinction offers the formal transition to Archean", () => {
   const dom = setup(),
     s = createCampaignState(404);
   s.origin = null;
-  s.historicalTraits = ["Respiração anaeróbia"];
+  s.historicalTraits = [
+    "Respiração anaeróbia",
+    "Fotossíntese",
+    "Predação",
+  ];
+  s.hadeanTutorial = {
+    moved: true,
+    divided: true,
+    captured: true,
+    dividedAtTurn: 0,
+  };
   s.phase = "over";
   s.result = { winner: "amber", reason: "Extinção total." };
   s.pieces = [

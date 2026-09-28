@@ -108,6 +108,7 @@ test("Vida na Terra carries the last extinct winner branch into the next detaile
       "Quimiossíntese",
       "Fotossíntese",
       "Predação",
+      "Transferência Horizontal",
     ],
     founders: {
       primary: {
@@ -402,6 +403,7 @@ test("detailed Archean succession restores a missing fundamental energy branch",
       "Quimiossíntese",
       "Fotossíntese",
       "Predação",
+      "Transferência Horizontal",
     ],
     naturalBarriers: false,
   });

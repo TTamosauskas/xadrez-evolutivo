@@ -767,6 +767,7 @@ function mutateHadeanPredationNewborn(state, child) {
   delete child.photosynthesisSinceTurn;
   delete child.photosynthesisReadyTurn;
   state.hadeanPredationGranted[child.owner] = true;
+  registerDiscoveries(state, child);
 
   emitPassiveEffect(
     state,

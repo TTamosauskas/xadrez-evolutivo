@@ -99,7 +99,7 @@ export const GEOLOGICAL_STAGES = [
     group: "Hadeano",
     period: "Hadeano",
     chronology: { eon: "Hadeano" },
-    required: ["Respiração anaeróbia"],
+    required: ["Respiração anaeróbia", "Fotossíntese", "Predação"],
     habitat: { fertile: 64, hostile: 0, founderFertile: true, naturalBarriers: [0, 0], pattern: "primordial" },
     events: {},
     founderLayout: [[5, 2], [5, 3], [2, 4], [2, 5]],
@@ -120,8 +120,8 @@ export const GEOLOGICAL_STAGES = [
     group: "Arqueano",
     period: "Paleoarqueana",
     chronology: { eon: "Arqueano", era: "Paleoarqueana" },
-    required: ["Fotossíntese", "Predação"],
-    cycles: [["Fotossíntese", "Predação"]],
+    required: ["Transferência Horizontal"],
+    cycles: [["Transferência Horizontal"]],
     habitat: { fertile: 44, hostile: 12, founderFertile: true, naturalBarriers: [0, 0], pattern: "hydrothermal" },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2, grb: 1 },
     founderLayout: [[5, 2], [4, 2], [2, 5], [3, 5]],
@@ -133,7 +133,6 @@ export const GEOLOGICAL_STAGES = [
     chronology: { eon: "Arqueano", era: "Mesoarqueana" },
     required: ["Reparo Celular"],
     cycles: [["Reparo Celular"]],
-    optionalCycles: { "Transferência Horizontal": 1 },
     habitat: { fertile: 50, hostile: 8, founderFertile: true, naturalBarriers: [0, 0], pattern: "microbial-mats" },
     events: { fertilized: 1, volcano: 3, earthquake: 3, solar: 2, meteor: 1, grb: 1 },
     founderLayout: [[6, 2], [5, 3], [1, 5], [2, 4]],
@@ -466,7 +465,7 @@ export const TRAIT_STAGE = {
   "Testosterona": "devonian",
   "Corticosteroides": "devonian",
   "Forrageamento": "devonian",
-  "Fotossíntese": "paleoarchean",
+  "Fotossíntese": "hadean",
   "Embriófitas": "ordovician",
   "Traqueófitas": "silurian",
   "Espinhos": "devonian",
@@ -488,7 +487,7 @@ export const TRAIT_STAGE = {
   "Fertilidade Longeva": "triassic",
   "Longevidade": "jurassic",
   "Resistência": "siderian",
-  "Predação": "paleoarchean",
+  "Predação": "hadean",
   "Ingestão": "ectasian",
   "Carnívoro": "stenian",
   "Herbívoro": "ordovician",
@@ -593,7 +592,7 @@ export const TRAIT_STAGE = {
   "Plantas Domesticadas": "holocene",
   "Animais Domésticos": "holocene",
   "Neocórtex Desenvolvido": "pleistocene",
-  "Transferência Horizontal": "mesoarchean",
+  "Transferência Horizontal": "paleoarchean",
   "Brotamento": "statherian",
   "Fragmentação": "cryogenian",
   "Colônia": "tonian",
@@ -1052,7 +1051,7 @@ export const TRAIT_DEPENDENCIES = {
   Nanismo: { lineageAny: ["Vertebrado", "Artrópode"] },
   Gigantismo: { lineage: ["Locomoção Articulada"] },
   "Mutação Mutadora": { lineage: ["Reparo Celular"] },
-  "Transferência Horizontal": { lineage: ["Predação"] },
+  "Transferência Horizontal": { lineage: ["Respiração anaeróbia"] },
   Brotamento: { lineage: ["Multicelularismo"] },
   Fragmentação: { lineage: ["Multicelularismo", "Regeneração"] },
   Colônia: { lineage: ["Brotamento"] },
@@ -1439,7 +1438,7 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   "Imunidade Adaptativa": "predation",
   Estômatos: "photosynthesis",
   Endotermia: "predation",
-  "Transferência Horizontal": "predation",
+  "Transferência Horizontal": "shared",
   "Respiração Pulmonar": "predation",
   Brotamento: "shared",
   Fragmentação: "shared",
@@ -2065,14 +2064,6 @@ export function stageComplete(state) {
 export function traitUnlocked(state, trait, piece = null) {
   if (NEGATIVE_TRAITS.has(trait))
     return negativeTraitUnlocked(state, trait, piece);
-  if (
-    piece &&
-    trait === "Quimiossíntese" &&
-    ["Fotossíntese", "Predação", "Mixotrofia"].some((candidate) =>
-      piece.traits?.includes(candidate),
-    )
-  )
-    return false;
   if (
     piece &&
     ENERGY_BRANCH_TRAITS.has(trait) &&

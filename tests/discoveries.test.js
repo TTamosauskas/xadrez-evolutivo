@@ -119,30 +119,16 @@ test("each geological discovery can launch the first cycle with prior winners re
       for (const owner of ["blue", "amber"]) {
         const founders = s.pieces.filter((piece) => piece.owner === owner);
         assert.equal(founders.length, 2);
-        const energyBranchesEstablished =
-          stage.index >=
-          GEOLOGICAL_STAGES.findIndex((entry) => entry.id === "mesoarchean");
-        if (!energyBranchesEstablished) {
-          assert.equal(
-            founders.filter((piece) => piece.traits.includes("Fotossíntese"))
-              .length,
-            0,
-          );
-          assert.ok(
-            founders.every((piece) => piece.traits.includes("Respiração anaeróbia")),
-          );
-        } else {
-          assert.equal(
-            founders.filter((piece) => piece.traits.includes("Fotossíntese"))
-              .length,
-            1,
-          );
-          assert.equal(
-            founders.filter((piece) => !piece.traits.includes("Fotossíntese"))
-              .length,
-            1,
-          );
-        }
+        assert.equal(
+          founders.filter((piece) => piece.traits.includes("Fotossíntese"))
+            .length,
+          1,
+        );
+        assert.equal(
+          founders.filter((piece) => piece.traits.includes("Predação"))
+            .length,
+          1,
+        );
       }
       const priorRequired = GEOLOGICAL_STAGES.slice(0, index).flatMap(
         (prior) => prior.required,
