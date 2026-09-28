@@ -238,7 +238,15 @@ test("Hadean common ancestor is a gray King that splits after the second click",
   assert.match(d.getElementById("selected").textContent, /Último Ancestral Comum Universal/);
   assert.match(d.getElementById("selected").textContent, /Vantagens Evolutivas/);
   assert.match(d.getElementById("selected").textContent, /Respiração anaeróbia/);
-  assert.match(d.getElementById("selected").textContent, /um branco e um preto/);
+  assert.match(
+    d.getElementById("selected").textContent,
+    /Clique em .*para realizar a primeira reprodução/,
+  );
+  assert.ok(
+    d.querySelector(
+      "#selected .selected-ancestral .legend-action-ring.vivify.inline-action-ring",
+    ),
+  );
   assert.equal(
     d.querySelectorAll("#board .piece.origin-piece").length,
     1,
