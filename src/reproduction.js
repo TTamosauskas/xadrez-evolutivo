@@ -843,11 +843,11 @@ function spawnChild(state, profile, r, c) {
       state.turn + photosynthesisDelayTurns(state, child);
   }
   if (lethalHazardAt(state, r, c)) {
-    child.lethalDeathRound = round(state) + 1;
+    child.lethalDeathTurn = state.turn + 1;
     child.lethalDeathReason = "nascimento em ambiente letal";
     log(
       state,
-      `${OWNERS[child.owner]}: ☠️ um descendente nasceu em ${coord(r, c)} e morrerá no início da próxima rodada.`,
+      `${OWNERS[child.owner]}: ☠️ um descendente nasceu em ${coord(r, c)} e morrerá no início do próximo turno.`,
     );
   }
   state.pieces.push(child);
