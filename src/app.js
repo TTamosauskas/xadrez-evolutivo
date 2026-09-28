@@ -47,6 +47,7 @@ import {
   unreadDiscoveries,
 } from "./discoveries.js";
 import { createPassiveEffectToastPresenter } from "./passive-toast.js";
+import { mutationExplanation } from "./mutation-explanation.js";
 import { animateMovementTrace } from "./movement-animation.js";
 import {
   ARENA_BRANCHES,
@@ -70,7 +71,8 @@ let selected = null,
   selectedCell = null,
   confirmAction = null,
   selectedScenario = "earth",
-  arenaFlow = null;
+  arenaFlow = null,
+  mutationDialogResume = false;
 try {
   const savedScenario = localStorage.getItem("xe_scenario");
   if (["earth", "alternative", "arena"].includes(savedScenario))
@@ -84,7 +86,9 @@ const report = (text) => {
 function clearSelection() {
   selected = selectedCell = null;
 }
-const passiveToastPresenter = createPassiveEffectToastPresenter(document);
+const passiveToastPresenter = createPassiveEffectToastPresenter(document, {
+  onSelect: openMutationExplanation,
+});
 const controller = new Controller(
   createCampaignState(Date.now(), selectedScenario),
   {
@@ -436,6 +440,34 @@ $("undo-neocortex").addEventListener("click", () => {
   clearSelection();
   if (controller.undoNeocortex()) report("↻ Cenário desfeito.");
 });
+function openMutationExplanation(effect) {
+  const copy = mutationExplanation(effect?.trait);
+  if (!copy) return;
+
+  const dialog = $("mutation-dialog");
+  $("mutation-dialog-title").textContent = copy.title;
+  $("mutation-dialog-real").textContent = copy.realWorld;
+  $("mutation-dialog-game").textContent = copy.game;
+
+  if (!dialog.open) {
+    mutationDialogResume = !controller.paused;
+    controller.pause(true);
+    dialog.showModal();
+  }
+}
+
+function closeMutationExplanation() {
+  const dialog = $("mutation-dialog");
+  if (dialog.open) dialog.close();
+}
+
+$("mutation-dialog-close").addEventListener("click", closeMutationExplanation);
+$("mutation-dialog").addEventListener("close", () => {
+  const shouldResume = mutationDialogResume;
+  mutationDialogResume = false;
+  if (shouldResume) controller.pause(false);
+});
+
 function acknowledge() {
   const n = controller.state.notices[0];
   if (n) dispatch({ type: "ACK_NOTICE", id: n.id });

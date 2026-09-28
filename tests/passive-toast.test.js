@@ -98,6 +98,42 @@ test("Toastify waits until blocking dialogs close before showing an effect", () 
   dom.window.close();
 });
 
+test("mutation toasts expose an explanation action and dismiss after selection", () => {
+  const dom = new JSDOM(),
+    mock = createToastifyMock(dom.window.document);
+  let selected = null;
+  const presenter = createPassiveEffectToastPresenter(dom.window.document, {
+      toastify: mock.toastify,
+      onSelect: (effect) => {
+        selected = effect;
+      },
+    }),
+    effect = {
+      id: 8,
+      owner: "blue",
+      trait: "Pele grossa",
+      text: "🦏 Pele grossa bloqueou a captura.",
+    };
+
+  presenter.show(effect);
+  const toast = mock.calls[0].toastElement;
+  assert.equal(typeof mock.calls[0].options.onClick, "function");
+  assert.equal(toast.getAttribute("role"), "button");
+  assert.equal(toast.tabIndex, 0);
+  assert.equal(
+    toast.getAttribute("aria-label"),
+    "Abrir explicação de Pele grossa",
+  );
+
+  mock.calls[0].options.onClick();
+  assert.equal(selected, effect);
+  assert.equal(presenter.visibleCount(), 0);
+  assert.equal(dom.window.document.querySelector(".toastify"), null);
+
+  presenter.destroy();
+  dom.window.close();
+});
+
 test("new mutations use the same lineage color as other toasts", () => {
   const dom = new JSDOM(),
     mock = createToastifyMock(dom.window.document),
@@ -177,6 +213,10 @@ test("tracked Toastify assets load before the app and mobile styling stays viewp
   assert.deepEqual(scripts, ["toastify-1.12.0.js", "src/app.js"]);
   assert.match(toastifyJs, /Toastify js 1\.12\.0/);
   assert.equal(d.getElementById("passive-toasts"), null);
+  assert.ok(d.getElementById("mutation-dialog"));
+  assert.ok(d.getElementById("mutation-dialog-close"));
+  assert.ok(d.getElementById("mutation-dialog-real"));
+  assert.equal(d.getElementById("mutation-dialog-game").tagName, "STRONG");
   assert.match(css, /\.toastify\.xe-passive-toast\s*\{/);
   assert.match(css, /max-width:\s*min\(calc\(100vw - 24px\), 680px\)/);
   assert.match(

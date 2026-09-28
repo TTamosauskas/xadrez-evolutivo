@@ -138,7 +138,7 @@ const mutationTopics = {
   Forrageamento: ["Forrageamento", "Animais herbívoros ajustam a busca e o uso do espaço conforme a distribuição de recursos vegetais; no jogo, a prole é orientada para posições próximas de aliados fotossintéticos."],
   Tropismo: ["Tropismo vegetal", "Tropismos são respostas de crescimento orientadas por estímulos ambientais; no jogo, o conceito é abstraído como estabelecimento da prole próximo de zonas férteis."],
   "Artrópode": ["Arthropoda", "Artrópodes possuem apêndices articulados e grande diversidade de estratégias reprodutivas; no jogo, trocam o teto morfológico por maior produção de descendentes."],
-  "Locomoção Articulada": ["Locomoção articulada", "No jogo, representa a especialização locomotora de linhagens vertebradas ou artrópodas, libera a geometria completa da peça e preserva a dependência de pousar em espaço fértil até surgir Locomoção Terrestre."],
+  "Locomoção Articulada": ["Locomoção articulada", "Apêndices e articulações especializadas ampliam controle, alcance e eficiência do movimento em diversas linhagens animais."],
   "Locomoção Terrestre": ["Locomoção terrestre", "A colonização animal de substratos expostos exigiu conjuntos distintos de adaptações em diferentes linhagens; no jogo, a característica abstrai essa transição e libera movimento e captura fora das casas férteis."],
   Rastejante: ["Locomoção rastejante", "Animais rastejantes podem explorar superfícies e passagens estreitas mantendo contato contínuo com o substrato; no jogo, essa capacidade é abstraída como uma travessia de borda que conecta lados opostos do habitat."],
   "Movimento Lateral": ["Locomoção lateral", "A locomoção lateral é marcante em vários crustáceos; no jogo, artrópodes especializados percorrem horizontalmente a linha e podem trocar de posição com o primeiro aliado encontrado."],
@@ -186,7 +186,7 @@ const mutationTopics = {
   "Ovovivíparo": ["Ovoviviparidade", "Na ovoviviparidade, os ovos ficam retidos no corpo do progenitor durante parte ou todo o desenvolvimento embrionário antes da postura ou liberação."],
   "Ooteca": ["Ooteca", "Ootecas são estruturas que envolvem e protegem conjuntos de ovos em alguns grupos de animais."],
   "Voo": ["Voo animal", "Voo ativo permite deslocamento tridimensional e evoluiu independentemente em diferentes linhagens animais."],
-  "Incubação": ["Incubação", "No jogo, Incubação representa o cuidado direto com ovos, aumentando a proteção da prole durante o desenvolvimento."],
+  "Incubação": ["Incubação", "Incubação mantém ovos em condições favoráveis de temperatura, umidade e proteção até a eclosão."],
   "Lactação": ["Lactação", "Lactação é a produção de secreções nutritivas por glândulas mamárias para alimentar a prole dos mamíferos."],
   Ocitocina: ["Ocitocina", "Sistemas relacionados à ocitocina participam de vínculo parental e interações sociais em vertebrados; no jogo, a prole tende a nascer próxima de aliados e irmãos."],
   "Vivíparo": ["Viviparidade", "Viviparidade envolve retenção e desenvolvimento da prole no corpo do progenitor antes do nascimento."],
@@ -219,7 +219,7 @@ const mutationTopics = {
   Imunodeficiência: ["Imunodeficiência", "Imunodeficiências comprometem componentes da resposta imune e aumentam a suscetibilidade a infecções; no jogo, anulam a proteção de Resistência enquanto estão expressas."],
   "Deficiência Motora": ["Deficiência motora", "Alterações neuromusculares podem reduzir a capacidade de deslocamento; no jogo, limitam movimento e captura ao primeiro passo funcional da trajetória."],
   "Deficiência Sensorial": ["Deficiência sensorial", "Perdas sensoriais reduzem a aquisição de informação sobre o ambiente; no jogo, diminuem o alcance de capturas à distância."],
-  "Filho único": ["Fecundidade vitalícia", "No jogo, esta mutação limita o portador a um único descendente durante toda a vida; depois disso, ele permanece vivo, mas não pode mais reproduzir."],
+  "Filho único": ["Fecundidade", "Fecundidade varia entre organismos e pode ser limitada por fisiologia, disponibilidade de recursos e estratégia de vida."],
   Subfertilidade: ["Subfertilidade", "Subfertilidade é a redução da capacidade reprodutiva sem esterilidade completa; no jogo, metade das tentativas pode terminar sem prole."],
   "Má absorção Alimentar": ["Má absorção", "Síndromes de má absorção reduzem o aproveitamento de nutrientes ingeridos; no jogo, a mesma reprodução exige um recurso fértil adicional quando disponível e a recuperação após reprodução por predação leva o dobro do intervalo."],
   Semelparidade: ["Semelparidade", "Semelparidade, em sentido biológico, concentra o investimento reprodutivo antes da morte; o jogo usa uma variante abstrata em que o custo fatal ocorre após três reproduções bem-sucedidas."],
@@ -330,6 +330,66 @@ const mutationTopics = {
   Eletrodescarga: [
     "Enguia-elétrica",
     "Peixes elétricos podem gerar descargas fortes para incapacitar presas; no jogo, a descarga mata à distância e cobra alto custo metabólico.",
+  ],
+  Multicelularismo: [
+    "Multicelularidade",
+    "Multicelularidade reúne muitas células em um organismo integrado, permitindo divisão de trabalho e especialização entre tecidos.",
+  ],
+  Herbívoro: [
+    "Herbivoria",
+    "Herbívoros obtêm energia consumindo plantas, algas ou outros produtores e exercem pressão seletiva sobre suas defesas.",
+  ],
+  "Vetor Patógeno": [
+    "Vetor biológico",
+    "Vetores biológicos, como mosquitos e carrapatos, transportam agentes infecciosos entre hospedeiros e ampliam sua transmissão.",
+  ],
+  Zoorremediação: [
+    "Biorremediação",
+    "Animais podem participar da remediação ambiental ao consumir, concentrar, transformar ou redistribuir contaminantes e matéria orgânica.",
+  ],
+  "Pele Glandular": [
+    "Pele",
+    "Peles glandulares produzem secreções que mantêm umidade, auxiliam na defesa química e podem dificultar a entrada de microrganismos.",
+  ],
+  Escamas: [
+    "Escama",
+    "Escamas formam revestimentos protetores que reduzem abrasão e danos físicos e, em muitos grupos, ajudam a controlar a perda de água.",
+  ],
+  Osteodermos: [
+    "Osteodermo",
+    "Osteodermos são placas ósseas formadas na pele que reforçam a proteção corporal contra impactos e mordidas.",
+  ],
+  Pelos: [
+    "Pelo",
+    "Pelos são estruturas queratinizadas associadas sobretudo a mamíferos e contribuem para isolamento térmico, proteção e percepção sensorial.",
+  ],
+  Penas: [
+    "Pena",
+    "Penas são estruturas queratinizadas das aves que participam do voo, isolamento térmico, comunicação e proteção.",
+  ],
+  Endozoocoria: [
+    "Endozoocoria",
+    "Na endozoocoria, animais ingerem frutos e dispersam sementes viáveis após a passagem pelo trato digestivo.",
+  ],
+  Capsaicina: [
+    "Capsaicina",
+    "Capsaicina é o composto pungente de pimentas do gênero Capsicum e afeta de modo diferente mamíferos e aves, influenciando quem consome os frutos.",
+  ],
+  Epizoocoria: [
+    "Epizoocoria",
+    "Na epizoocoria, sementes ou frutos aderem externamente ao corpo de animais e são transportados para outros locais.",
+  ],
+  Sinzoocoria: [
+    "Sinzoocoria",
+    "Na sinzoocoria, animais carregam e armazenam sementes ou frutos; parte desse material escapa do consumo e germina longe da planta-mãe.",
+  ],
+  Mirmecocoria: [
+    "Mirmecocoria",
+    "Na mirmecocoria, formigas transportam sementes, geralmente atraídas por estruturas nutritivas, favorecendo sua dispersão.",
+  ],
+  Roedor: [
+    "Rodentia",
+    "Roedores possuem incisivos de crescimento contínuo adaptados a roer materiais resistentes, inclusive tecidos vegetais lenhosos.",
   ],
   "Mutação Letal": ["Mutação letal", "Uma mutação letal compromete a sobrevivência do portador; no jogo, a morte ocorre após três rodadas completas."],
   "Mutação Disfuncional": ["Mutação", "Mutações alteram o material genético; seus efeitos podem ser neutros, vantajosos ou prejudiciais conforme o contexto."],
