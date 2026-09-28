@@ -18,23 +18,23 @@ export const ARENA_HABITAT = {
 
 export const EARTH_FOUNDER_GENOMES = Object.freeze({
   eoarchean: {
-    plant: ["Respiração anaeróbia"],
-    animal: ["Respiração anaeróbia"],
-    rank: 4,
-  },
-  paleoarchean: {
-    plant: ["Respiração anaeróbia", "Quimiossíntese"],
-    animal: ["Respiração anaeróbia", "Quimiossíntese"],
-    rank: 4,
-  },
-  mesoarchean: {
     plant: ["Respiração anaeróbia", "Fotossíntese"],
     animal: ["Respiração anaeróbia", "Predação"],
     rank: 4,
   },
+  paleoarchean: {
+    plant: ["Respiração anaeróbia", "Fotossíntese", "Quimiossíntese"],
+    animal: ["Respiração anaeróbia", "Predação", "Quimiossíntese"],
+    rank: 4,
+  },
+  mesoarchean: {
+    plant: ["Respiração anaeróbia", "Fotossíntese", "Quimiossíntese", "Transferência Horizontal"],
+    animal: ["Respiração anaeróbia", "Predação", "Quimiossíntese", "Transferência Horizontal"],
+    rank: 4,
+  },
   neoarchean: {
-    plant: ["Respiração anaeróbia", "Fotossíntese", "Reparo Celular"],
-    animal: ["Respiração anaeróbia", "Predação", "Reparo Celular"],
+    plant: ["Respiração anaeróbia", "Fotossíntese", "Quimiossíntese", "Transferência Horizontal", "Reparo Celular"],
+    animal: ["Respiração anaeróbia", "Predação", "Quimiossíntese", "Transferência Horizontal", "Reparo Celular"],
     rank: 4,
   },
   siderian: {
