@@ -1799,6 +1799,8 @@ export function activateOrigin(state) {
 
   state.hadeanTutorial.dividedAtTurn = state.turn;
   state.pieces.push(blue, amber);
+  registerDiscoveries(state, blue);
+  registerDiscoveries(state, amber);
   state.board[square(center.r, center.c)] = "neutral";
   for (const piece of [blue, amber]) {
     const cell = square(piece.r, piece.c);
@@ -2191,7 +2193,9 @@ function earthBranchFounder(previous, branch, fallback) {
   const photosynthetic = branch === "Fotossíntese",
     predicate = photosynthetic
       ? (piece) => canPhotosynthesize(piece)
-      : (piece) => !canPhotosynthesize(piece),
+      : (piece) =>
+          !canPhotosynthesize(piece) &&
+          (piece.traits ?? []).includes("Predação"),
     winner = previous.result?.winner ?? null,
     winnerSurvivor = winner
       ? strongestSurvivor(previous, winner, predicate).piece
@@ -2229,16 +2233,16 @@ function createEarthSuccessorState(previous, seed) {
       (stage) => stage.id === candidate.id,
     ),
     preview = previewFounderProfiles(stageIndex),
-    history = new Set(previous.historicalTraits ?? []),
-    preservePhotosynthetic = history.has("Fotossíntese"),
-    preserveNonPhotosynthetic =
-      history.has("Predação") || preservePhotosynthetic,
-    primary = preservePhotosynthetic
-      ? earthBranchFounder(previous, "Fotossíntese", preview.primary)
-      : preview.primary,
-    companion = preserveNonPhotosynthetic
-      ? earthBranchFounder(previous, "Predação", preview.companion)
-      : preview.companion,
+    primary = earthBranchFounder(
+      previous,
+      "Fotossíntese",
+      preview.primary,
+    ),
+    companion = earthBranchFounder(
+      previous,
+      "Predação",
+      preview.companion,
+    ),
     founders = { primary, companion },
     state = createState(seed, {
       scenario: "earth",
