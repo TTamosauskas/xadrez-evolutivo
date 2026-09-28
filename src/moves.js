@@ -1508,6 +1508,17 @@ function emptyEggTarget(state, r, c, owner = null) {
   );
 }
 
+function emptyDomesticTarget(state, r, c, owner = null) {
+  return (
+    inside(r, c) &&
+    !ecologicalDomainBlocked(state, owner, r, c) &&
+    !at(state, r, c) &&
+    !eggAt(state, r, c) &&
+    !plantSeedAt(state, r, c) &&
+    !barrierAt(state, r, c)
+  );
+}
+
 export function domesticPlacementTargets(state) {
   const pending = state.domesticPlacement;
   if (state.phase !== "domestic-placement" || !pending) return [];
@@ -1519,7 +1530,7 @@ export function domesticPlacementTargets(state) {
         c = pending.origin.c + dc;
       if (
         distance(pending.origin, { r, c }) <= 2 &&
-        emptyEggTarget(state, r, c, pending.owner)
+        emptyDomesticTarget(state, r, c, pending.owner)
       )
         cells.push({ r, c });
     }
@@ -1821,8 +1832,7 @@ export function rhizomeTargets(state, piece) {
       fragmentAt(state, r, c) ||
       barrierAt(state, r, c) ||
       naturalBarrierAt(state, r, c) ||
-      eventBarrierAt(state, r, c) ||
-      lethalHazardAt(state, r, c)
+      eventBarrierAt(state, r, c)
     )
       continue;
     targets.push({ r, c, middleR, middleC });

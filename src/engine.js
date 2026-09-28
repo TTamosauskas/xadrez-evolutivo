@@ -1843,8 +1843,19 @@ function resolveThanatosis(state) {
   return resolved;
 }
 
+function resolveLethalOccupants(ctx) {
+  let deaths = 0;
+  for (const piece of [...ctx.state.pieces])
+    if (lethalHazardAt(ctx.state, piece.r, piece.c)) {
+      if (ctx.kill(piece.id, "ambiente letal", null, true)) deaths++;
+    }
+  if (deaths) extinction(ctx.state);
+  return deaths;
+}
+
 function settle(ctx) {
   const state = ctx.state;
+  resolveLethalOccupants(ctx);
   resolveThanatosis(state);
   recycleOccupiedOrganicResidue(state);
   if (
@@ -2999,10 +3010,10 @@ function executeMove(ctx, action) {
   for (const [r, c] of target.path)
     if (
       lethalHazardAt(state, r, c) &&
-      (
-        (r === target.r && c === target.c) ||
-        (!has(p, "Voo") && !target.arboreal && !target.phoresy)
-      )
+      (r !== target.r || c !== target.c) &&
+      !has(p, "Voo") &&
+      !target.arboreal &&
+      !target.phoresy
     ) {
       if (state.movementTrace) {
         const stopIndex = state.movementTrace.path.findIndex(
@@ -3917,6 +3928,17 @@ function executeMove(ctx, action) {
   if (!target.stay) {
     p.stationarySinceRound = round(state);
     p.webCreatedStationarySinceRound = null;
+  }
+  if (lethalHazardAt(state, p.r, p.c)) {
+    if (state.movementTrace) {
+      state.movementTrace.stop = { r: p.r, c: p.c };
+      state.movementTrace.outcome = "died-lethal";
+    }
+    ctx.reserved.delete(landingCell);
+    ctx.kill(p.id, "ambiente letal", null, true);
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
   }
   if (target.webTriggeredSourceId) {
     p.webTrapped = {
@@ -5342,6 +5364,7 @@ export function transition(previous, action) {
     const acted = state.pieces.find((piece) => piece.id === action.id);
     if (acted) releaseEukaryoteBuffers(state, acted, "action");
   }
+  resolveLethalOccupants(ctx);
   logBoardChanges(previous, state);
   state.revision++;
   return assertState(state);

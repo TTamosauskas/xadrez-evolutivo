@@ -1002,7 +1002,10 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
           );
         return weightedEvent(state, candidates, weights);
       })();
-  if (!def) throw Error("Evento inválido.");
+  if (!def) {
+    if (id) throw Error("Evento inválido.");
+    return null;
+  }
   if (def.id === "pathogen") {
     const disease = startDisease(state, "eco");
     if (disease) state.previousEvent = "pathogen";
