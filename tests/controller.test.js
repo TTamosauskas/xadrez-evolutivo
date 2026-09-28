@@ -297,7 +297,7 @@ test("computer versus computer mode schedules AI for both colors", () => {
   c.dispose();
 });
 
-test("computer versus computer mode starts the Hadean tutorial and notices automatically", () => {
+test("computer versus computer mode continues after the Hadean photosynthesis toast", () => {
   const timers = new Map(),
     workers = [];
   let nextTimer = 0;
@@ -339,12 +339,8 @@ test("computer versus computer mode starts the Hadean tutorial and notices autom
   assert.equal(c.state.phase, "move");
   assert.equal(c.state.origin, null);
   assert.equal(c.state.pieces.length, 2);
-  assert.equal(c.state.notices.length, 1);
-  assert.equal(c.state.notices[0].title, "Fotossíntese");
-  assert.equal(workers.length, 0);
-  runNextTimer();
   assert.equal(c.state.notices.length, 0);
-  assert.equal(workers.length, 0);
+  assert.equal(workers.length, 1);
   assert.ok(timers.size > 0);
 
   c.cancel();
