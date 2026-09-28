@@ -1784,14 +1784,10 @@ export function activateOrigin(state) {
   }
 
   const center = { r: state.origin.r, c: state.origin.c },
-    blueCell = {
-      r: Math.min(5, center.r + 1),
-      c: center.c,
-    },
-    amberCell = {
-      r: Math.max(2, center.r - 1),
-      c: center.c,
-    },
+    // The playable Hadean habitat is the 4×4 core (rows/columns 2–5).
+    // Opposite corners give both lineages room to radiate before predation appears.
+    blueCell = { r: 5, c: 2 },
+    amberCell = { r: 2, c: 5 },
     source = {
       rank: 4,
       mutations: 1,
@@ -1827,7 +1823,7 @@ export function activateOrigin(state) {
   );
   log(
     state,
-    `${geologicalLabel(state)} · 1º Ciclo: o ancestral com ⚪ Respiração anaeróbia consumiu o nicho primordial e se dividiu em dois Reis com 🟢 Fotossíntese, agora sobre casas neutras.`,
+    `${geologicalLabel(state)} · 1º Ciclo: o ancestral com ⚪ Respiração anaeróbia consumiu o nicho primordial e se dividiu em dois Reis com 🟢 Fotossíntese, posicionados em cantos opostos do habitat seguro.`,
   );
   return true;
 }
