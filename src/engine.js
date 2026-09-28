@@ -811,7 +811,7 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
       ["Casas vermelhas oferecem perigo de morte."],
       "hostile",
     );
-    piece.hostileRiskRound = round(state) + 1;
+    piece.hostileRiskRound = round(state);
     if (hostileHazardKills(state, piece, terrain(state, r, c) === "hostile")) {
       const killed = ctx.kill(piece.id, reason + " em casa hostil");
       if (killed && terrain(state, r, c) === "hostile")
@@ -1833,6 +1833,29 @@ function matureHadeanFertility(state) {
   return matured;
 }
 
+function applyHadeanHostileRisk(state, piece) {
+  if (
+    !piece ||
+    terrain(state, piece.r, piece.c) !== "hostile" ||
+    has(piece, "Quimiossíntese") ||
+    piece.hadeanHostileDeathPending ||
+    piece.hostileRiskRound === round(state)
+  )
+    return false;
+
+  piece.hostileRiskRound = round(state);
+  if (random(state) >= 1 / 2) return false;
+
+  piece.hadeanHostileDeathPending = true;
+  piece.lethalDeathRound = round(state) + 1;
+  piece.lethalDeathReason = "casa hostil hadeana";
+  log(
+    state,
+    `${OWNERS[piece.owner]}: a pressão hostil em ${coord(piece.r, piece.c)} determinou morte para o início da próxima rodada.`,
+  );
+  return true;
+}
+
 function advanceHadeanEnvironment(state) {
   if (
     state.geologicalStage !== "hadean" ||
@@ -1849,6 +1872,8 @@ function advanceHadeanEnvironment(state) {
   matureHadeanFertility(state);
   for (const piece of state.pieces)
     scheduleHadeanChemosynthesis(state, piece);
+  for (const piece of state.pieces)
+    applyHadeanHostileRisk(state, piece);
 
   const target = hadeanHostileTarget(state);
   if (!target) return false;
@@ -1859,16 +1884,7 @@ function advanceHadeanEnvironment(state) {
   if (!piece) return true;
 
   if (scheduleHadeanChemosynthesis(state, piece)) return true;
-
-  if (!piece.hadeanHostileDeathPending && random(state) < 1 / 2) {
-    piece.hadeanHostileDeathPending = true;
-    piece.lethalDeathRound = round(state) + 1;
-    piece.lethalDeathReason = "casa hostil hadeana";
-    log(
-      state,
-      `${OWNERS[piece.owner]}: a pressão hostil em ${coord(piece.r, piece.c)} determinou morte para o início da próxima rodada.`,
-    );
-  }
+  applyHadeanHostileRisk(state, piece);
   return true;
 }
 
@@ -3401,7 +3417,7 @@ function executeMove(ctx, action) {
       (!!organicResidueAt(state, target.r, target.c) &&
         organicResidueHazardousTo(p)))
   )
-    p.hostileRiskRound = round(state) + 1;
+    p.hostileRiskRound = round(state);
   if (!target.stay && has(p, "Mutação Disfuncional"))
     p.lastMoveRound = round(state) + 1;
 
@@ -4380,7 +4396,7 @@ function executeMove(ctx, action) {
       ["Casas vermelhas oferecem perigo de morte."],
       "hostile",
     );
-    p.hostileRiskRound = round(state) + 1;
+    p.hostileRiskRound = round(state);
     if (hostileHazardKills(state, p, landingTerrain === "hostile")) {
       const killed = ctx.kill(p.id, "casa hostil após captura");
       if (killed && terrain(state, p.r, p.c) === "hostile")
