@@ -1794,6 +1794,35 @@ function advanceHadeanEnvironment(state) {
   return true;
 }
 
+function advanceHadeanFounderAging(state) {
+  if (state.geologicalStage !== "hadean") return;
+  for (const piece of state.pieces) {
+    if (
+      !piece.hadeanFounder ||
+      piece.hadeanSenescent ||
+      !Number.isInteger(piece.hadeanFounderCreatedTurn) ||
+      state.turn < piece.hadeanFounderCreatedTurn + 2
+    )
+      continue;
+
+    piece.hadeanSenescent = true;
+    piece.hadeanNaturalDeathRound = round(state) + 1;
+    if (!state.seen.includes("hadean-natural-death")) {
+      state.seen.push("hadean-natural-death");
+      emitPassiveEffect(
+        state,
+        "Morte Natural",
+        "Morte Natural: um organismo entrou em senescência.",
+        {
+          pieceId: piece.id,
+          outcome: "hadean-natural-death-warning",
+          theme: "neutral",
+        },
+      );
+    }
+  }
+}
+
 function advanceTurn(ctx) {
   const state = ctx.state;
   if (resolveNeurodivergentActionEnd(ctx)) return;
@@ -1832,6 +1861,7 @@ function advanceTurn(ctx) {
   recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
+  advanceHadeanFounderAging(state);
   advanceHadeanEnvironment(state);
   state.chemicalHazards = (state.chemicalHazards ?? []).filter(
     (entry) => entry.expiresTurn >= state.turn,

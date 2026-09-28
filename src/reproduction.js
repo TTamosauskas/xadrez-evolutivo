@@ -770,7 +770,7 @@ const HADEAN_CENTRAL_CELLS = Object.freeze([
   Object.freeze({ r: 4, c: 4 }),
 ]);
 
-function hadeanOpeningTarget(state) {
+function hadeanOpeningTarget(state, centralOnly = false) {
   const free = (cell) =>
     !at(state, cell.r, cell.c) &&
     !eggAt(state, cell.r, cell.c) &&
@@ -778,7 +778,13 @@ function hadeanOpeningTarget(state) {
     !fragmentAt(state, cell.r, cell.c) &&
     !barrierAt(state, cell.r, cell.c);
 
-  return pick(state, HADEAN_CENTRAL_CELLS.filter(free));
+  if (centralOnly) return pick(state, HADEAN_CENTRAL_CELLS.filter(free));
+
+  const available = [];
+  for (let r = 2; r <= 5; r++)
+    for (let c = 2; c <= 5; c++)
+      if (free({ r, c })) available.push({ r, c });
+  return pick(state, available);
 }
 
 export function hadeanOpeningReproduce(ctx, parent) {
@@ -792,10 +798,16 @@ export function hadeanOpeningReproduce(ctx, parent) {
   )
     return null;
 
-  const target = hadeanOpeningTarget(state);
+  const firstHadeanChild = !state.pieces.some(
+      (piece) => (piece.generation ?? 0) > 0,
+    ),
+    chemosynthetic = firstHadeanChild || random(state) < 1 / 3,
+    target = hadeanOpeningTarget(state, firstHadeanChild);
   if (!target) return null;
 
-  const traits = ["Respiração anaeróbia", "Quimiossíntese"],
+  const traits = chemosynthetic
+      ? ["Respiração anaeróbia", "Quimiossíntese"]
+      : ["Respiração anaeróbia"],
     child = spawnChild(
       state,
       {
@@ -803,7 +815,7 @@ export function hadeanOpeningReproduce(ctx, parent) {
         rank: parent.rank,
         traits,
         ancestry: [...new Set([...(parent.ancestry ?? parent.traits), ...traits])],
-        mutations: 1,
+        mutations: chemosynthetic ? 1 : 0,
         generation: (parent.generation ?? 0) + 1,
         parentId: parent.id,
         parentIds: [parent.id],
@@ -815,8 +827,7 @@ export function hadeanOpeningReproduce(ctx, parent) {
   parent.hadeanOpeningReproductionReady = false;
   parent.lifetimeReproductions = (parent.lifetimeReproductions ?? 0) + 1;
   parent.lifetimeOffspring = (parent.lifetimeOffspring ?? 0) + 1;
-  parent.nextReproductionRound =
-    round(state) + metabolicReproductionCooldown(parent);
+  parent.nextReproductionRound = round(state);
   state.reproductions[parent.owner] =
     (state.reproductions[parent.owner] ?? 0) + 1;
   state.maxGenerationReached = Math.max(
@@ -824,7 +835,7 @@ export function hadeanOpeningReproduce(ctx, parent) {
     child.generation,
   );
 
-  {
+  if (chemosynthetic) {
     state.hadeanEnvironment ??= {
       hostileDeathExplained: false,
       fertileExplained: false,
@@ -847,7 +858,12 @@ export function hadeanOpeningReproduce(ctx, parent) {
     );
     log(
       state,
-      `Nova Mutação: ${OWNERS[child.owner]} · ♨️ Quimiossíntese surgiu na primeira prole em ${coord(child.r, child.c)}.`,
+      `Nova Mutação: ${OWNERS[child.owner]} · ♨️ Quimiossíntese surgiu na prole em ${coord(child.r, child.c)}.`,
+    );
+  } else {
+    log(
+      state,
+      `${OWNERS[child.owner]}: a prole permaneceu basal em ${coord(child.r, child.c)}.`,
     );
   }
   return child;
@@ -1779,7 +1795,10 @@ export function reproduce(
         : Math.min(populationLimit, competitivePressure.limit),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece, feeder = false) => {
-      let metabolic = metabolicReproductionCooldown(piece);
+      let metabolic =
+        state.geologicalStage === "hadean"
+          ? 0
+          : metabolicReproductionCooldown(piece);
       if (mates.length && has(piece, "Ovulação Induzida")) {
         const beforeOvulation = metabolic;
         metabolic = Math.max(1, metabolic - 1);

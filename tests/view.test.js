@@ -17,7 +17,7 @@ import {
   actionableTraitsForPiece,
   contextualTraitsForBoard,
 } from "../src/actionable-traits.js";
-import { context } from "../src/engine.js";
+import { context, transition } from "../src/engine.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
 import {
@@ -225,6 +225,8 @@ test("Hadean common ancestor is a gray King that splits after the second click",
   assert.doesNotMatch(origin.title ?? "", /Vivificar disponível/);
   assert.doesNotMatch(legend.textContent, /Vivificar/);
   assert.match(d.getElementById("turn").textContent, /Rei ancestral cinza/);
+  assert.equal(d.querySelectorAll(".cell.fertile").length, 3);
+  assert.ok(origin.classList.contains("fertile"));
 
   s.origin.selected = true;
   render(d, s);
@@ -243,6 +245,30 @@ test("Hadean common ancestor is a gray King that splits after the second click",
   );
   assert.match(legend.textContent, /Vivificar/);
   assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 48);
+  dom.window.close();
+});
+
+test("Hadean founder Kings render in italics when natural senescence begins", () => {
+  const dom = setup();
+  let s = createCampaignState(302);
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  s = transition(s, { type: "ORIGIN_CLICK" });
+  const blue = s.pieces.find((piece) => piece.owner === "blue");
+
+  s = transition(s, { type: "HADEAN_REPRODUCE", id: blue.id });
+  s = transition(s, { type: "PASS" });
+
+  render(dom.window.document, s, { selected: blue.id });
+  const d = dom.window.document,
+    founder = d.querySelector(
+      `[data-r="${s.pieces.find((piece) => piece.id === blue.id).r}"][data-c="${s.pieces.find((piece) => piece.id === blue.id).c}"] .piece`,
+    ),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    rule = css.match(/\.piece\.senescent\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.ok(founder.classList.contains("senescent"));
+  assert.match(rule, /font-style:\s*italic/);
+  assert.match(d.getElementById("selected").textContent, /Senescente/);
   dom.window.close();
 });
 
@@ -2104,7 +2130,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 2);
     assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
     assert.match(d.getElementById("round").textContent, /Tutorial 1\/3/);
-    assert.equal(d.querySelectorAll(".cell.fertile").length, 0);
+    assert.equal(d.querySelectorAll(".cell.fertile").length, 2);
     const blueFounder = d.querySelector(".piece.blue").parentElement,
       amberFounder = d.querySelector(".piece.amber").parentElement;
     assert.ok(blueFounder.classList.contains("vivification-target"));
@@ -2112,6 +2138,12 @@ test("application UI starts with the Hadean common ancestor, then plays division
 
     blueFounder.click();
     assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 3);
+    const firstChild = [...d.querySelectorAll(".piece.blue")]
+      .find((piece) => piece.parentElement !== blueFounder);
+    assert.ok(firstChild);
+    const childCell = firstChild.parentElement;
+    assert.ok([3, 4].includes(Number(childCell.dataset.r)));
+    assert.ok([3, 4].includes(Number(childCell.dataset.c)));
     assert.equal(d.querySelectorAll(".cell.hostile").length, 1);
 
     const emptyCell = [...d.querySelectorAll(".cell")].find(

@@ -2,7 +2,7 @@ export function createPassiveEffectToastPresenter(
   doc,
   {
     toastify = globalThis.Toastify,
-    duration = 6000,
+    duration = -1,
     maxVisible = 2,
     onSelect = null,
   } = {},

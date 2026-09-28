@@ -80,7 +80,7 @@ test("Toastify waits until blocking dialogs close before showing an effect", () 
     },
     {
       text: effect.text,
-      duration: 6000,
+      duration: -1,
       close: false,
       gravity: "top",
       position: "center",

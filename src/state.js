@@ -338,8 +338,10 @@ export function naturalAgeProfile(piece) {
       };
 }
 export const senescent = (state, piece) =>
-  multicellular(piece) &&
-  pieceAge(state, piece) >= naturalAgeProfile(piece).senescence;
+  !!piece &&
+  ((state.geologicalStage === "hadean" && piece.hadeanSenescent === true) ||
+    (multicellular(piece) &&
+      pieceAge(state, piece) >= naturalAgeProfile(piece).senescence));
 export const naturalInfertilityAge = (piece) =>
   bilateralLongevity(piece)
     ? NATURAL_INFERTILITY_AGE
@@ -349,6 +351,12 @@ export const naturallyInfertile = (state, piece) =>
   !has(piece, "Fertilidade Longeva") &&
   pieceAge(state, piece) >= naturalInfertilityAge(piece);
 export function naturalDeathChance(state, piece) {
+  if (
+    state.geologicalStage === "hadean" &&
+    piece?.hadeanFounder &&
+    piece.hadeanSenescent
+  )
+    return round(state) >= (piece.hadeanNaturalDeathRound ?? Infinity) ? 1 : 0;
   if (!multicellular(piece) || has(piece, "Imortalidade Biológica")) return 0;
   const age = pieceAge(state, piece),
     profile = naturalAgeProfile(piece);
@@ -525,6 +533,7 @@ const PASSIVE_EXPLANATION_TOPICS = new Set([
   "Reprodução",
   "Casa Hostil",
   "Casa Fértil",
+  "Morte Natural",
 ]);
 
 export function emitPassiveEffect(
@@ -997,6 +1006,18 @@ function seedHabitat(state) {
     pattern = profile.pattern ?? "mosaic";
   if (state.geologicalStage === "hadean") {
     state.board.fill("neutral");
+    if (state.origin) {
+      const originCell = square(state.origin.r, state.origin.c),
+        central = [27, 28, 35, 36],
+        opposite = central.find((cell) => {
+          const r = Math.floor(cell / 8),
+            c = cell % 8;
+          return r !== state.origin.r && c !== state.origin.c;
+        });
+      for (const cell of central)
+        if (cell !== opposite) state.board[cell] = "fertile";
+      state.board[originCell] = "fertile";
+    }
     return;
   }
   state.board.fill("neutral");
@@ -1817,33 +1838,49 @@ export function activateOrigin(state) {
   }
 
   const center = { r: state.origin.r, c: state.origin.c },
-    blueCell = { r: 4, c: 3 },
-    amberCell = { r: 3, c: 4 },
+    centerCell = square(center.r, center.c),
+    fertileChildren = [27, 28, 35, 36]
+      .filter(
+        (cell) =>
+          cell !== centerCell &&
+          state.board[cell] === "fertile",
+      )
+      .map((cell) => ({ r: Math.floor(cell / 8), c: cell % 8 }))
+      .sort((a, b) => b.r - a.r || a.c - b.c),
+    blueCell = fertileChildren[0],
+    amberCell = fertileChildren[1],
     source = {
       rank: 4,
       mutations: 0,
       traits: ["Respiração anaeróbia"],
       ancestry: ["Respiração anaeróbia"],
-    },
-    blue = newPiece(state, "blue", blueCell.r, blueCell.c, source),
+    };
+
+  if (!blueCell || !amberCell)
+    throw Error("Casas férteis iniciais do Hadeano indisponíveis.");
+
+  const blue = newPiece(state, "blue", blueCell.r, blueCell.c, source),
     amber = newPiece(state, "amber", amberCell.r, amberCell.c, source);
 
   state.hadeanTutorial.dividedAtTurn = state.turn;
   for (const piece of [blue, amber]) {
     piece.hadeanOpeningReproductionReady = true;
     piece.nextReproductionRound = round(state);
+    piece.hadeanFounder = true;
+    piece.hadeanFounderCreatedTurn = state.turn;
+    piece.hadeanSenescent = false;
   }
   state.pieces.push(blue, amber);
   registerDiscoveries(state, blue);
   registerDiscoveries(state, amber);
-  state.board[square(center.r, center.c)] = "neutral";
+  state.board[centerCell] = "neutral";
   state.origin = null;
   state.phase = "move";
   state.current = "blue";
   state.hadeanTutorial.divided = true;
   log(
     state,
-    `${geologicalLabel(state)} · 1º Ciclo: o ancestral com ⚪ Respiração anaeróbia se dividiu em dois Reis protocelulares, posicionados em lados opostos do núcleo central e prontos para reproduzir.`,
+    `${geologicalLabel(state)} · 1º Ciclo: o ancestral consumiu a casa fértil primordial e se dividiu em dois Reis protocelulares sobre as duas casas férteis restantes do núcleo.`,
   );
   return true;
 }
