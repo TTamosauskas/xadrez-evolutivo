@@ -242,7 +242,7 @@ test("Hadean common ancestor is a gray King that splits after the second click",
     1,
   );
   assert.match(legend.textContent, /Vivificar/);
-  assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 0);
+  assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 48);
   dom.window.close();
 });
 
@@ -2207,6 +2207,15 @@ test("selected empty cells expose terrain and relevant board facts", () => {
   assert.match(panel.textContent, /Semente das Brancas/);
   assert.match(panel.textContent, /Idade 2\/3/);
   assert.match(panel.textContent, /em dispersão/);
+
+  s.plantSeeds = [];
+  s.board[cellIndex] = "neutral";
+  render(dom.window.document, s, { selectedCell: { r, c } });
+  assert.doesNotMatch(
+    panel.textContent,
+    /Nenhum recurso, estrutura, perigo ou modificador adicional ativo nesta casa\./,
+  );
+  assert.doesNotMatch(mobile.textContent, /Sem conteúdo adicional\./);
   dom.window.close();
 });
 

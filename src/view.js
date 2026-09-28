@@ -583,14 +583,6 @@ function renderSelectedCell(doc, state, selectedCell, make) {
       content.push(row);
     }
   }
-  if (!info.facts.length)
-    content.push(
-      make(
-        "p",
-        "Nenhum recurso, estrutura, perigo ou modificador adicional ativo nesta casa.",
-        "selected-status",
-      ),
-    );
   return { info, content };
 }
 
@@ -756,10 +748,6 @@ export function render(
         details.append(
           make("span", fact.summary, "mobile-actionable-trait"),
         );
-    else
-      details.append(
-        make("span", "Sem conteúdo adicional.", "mobile-selected-more"),
-      );
     mobileSummary.append(heading, details);
     mobileSummary.hidden = false;
   } else if (!state.result && actor) {
