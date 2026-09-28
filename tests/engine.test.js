@@ -356,8 +356,15 @@ test("Hadean starts neutral and the gray ancestor introduces reproduction before
     Array.from({ length: 8 }, (_, r) =>
       Array.from({ length: 8 }, (_, c) => lethalHazardAt(s, r, c)),
     ).flat().filter(Boolean).length,
-    0,
+    48,
   );
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++)
+      assert.equal(
+        lethalHazardAt(s, r, c),
+        !(r >= 2 && r <= 5 && c >= 2 && c <= 5),
+        `${r},${c}`,
+      );
   assertState(s);
 });
 
@@ -407,13 +414,28 @@ test("first Hadean reproduction gives each lineage an independent 50% chemosynth
   );
 
   assert.equal(
-    basal.child.r === 0 ||
-      basal.child.r === 7 ||
-      basal.child.c === 0 ||
-      basal.child.c === 7,
+    basal.child.r >= 2 &&
+      basal.child.r <= 5 &&
+      basal.child.c >= 2 &&
+      basal.child.c <= 5,
     true,
   );
+  assert.equal(
+    basal.child.r === 2 ||
+      basal.child.r === 5 ||
+      basal.child.c === 2 ||
+      basal.child.c === 5,
+    true,
+  );
+  assert.equal(lethalHazardAt(basal.state, basal.child.r, basal.child.c), false);
   assert.equal(basal.child.traits.includes("Quimiossíntese"), false);
+
+  for (let cell = 0; cell < basal.state.board.length; cell++)
+    if (basal.state.board[cell] === "hostile") {
+      const r = Math.floor(cell / 8),
+        c = cell % 8;
+      assert.ok(r >= 2 && r <= 5 && c >= 2 && c <= 5);
+    }
 });
 
 test("Hadean hostile pressure can condemn a basal offspring without a skull and explains the first actual death", () => {
