@@ -334,9 +334,21 @@ test("Hadean starts with one fertile gray ancestor and splits into two photosynt
   assert.equal(s.historicalTraits.includes("Fotossíntese"), true);
   assert.equal(s.historicalTraits.includes("Predação"), false);
   assert.deepEqual(s.seenMutations, ["Respiração anaeróbia"]);
-  assert.equal(s.notices.length, 1);
-  assert.equal(s.notices[0].title, "Fotossíntese");
-  assert.match(s.notices[0].lines.join(" "), /Passe a Vez/);
+  assert.equal(s.notices.length, 0);
+  assert.deepEqual(
+    s.passiveEffects.map(({ trait, outcome, text }) => ({
+      trait,
+      outcome,
+      text,
+    })),
+    [
+      {
+        trait: "Fotossíntese",
+        outcome: "new-mutation",
+        text: "Nova Mutação: 🟢 Fotossíntese.",
+      },
+    ],
+  );
 
   const blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
@@ -364,7 +376,6 @@ test("Hadean lethal boundary remains unreachable while photosynthetic founders w
   let s = createCampaignState(304);
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
 
   const blue = s.pieces.find((piece) => piece.owner === "blue");
   blue.r = 2;
@@ -387,8 +398,7 @@ test("Hadean photosynthesis wait grows by turn and freezes for each maturation",
   let s = createCampaignState(302);
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ORIGIN_CLICK" });
-  assert.equal(s.notices.length, 1);
-  s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
+  assert.equal(s.notices.length, 0);
 
   let blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
@@ -540,7 +550,6 @@ test("third successful Hadean reproduction guarantees Predação without habitat
   let s = createCampaignState(306);
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
   s.pieces = [];
   s.nextId = 1;
   s.board.fill("neutral");
@@ -641,7 +650,6 @@ test("Hadean capture requires an explicit Predação trait", () => {
   let s = createCampaignState(306);
   s = transition(s, { type: "ORIGIN_CLICK" });
   s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ACK_NOTICE", id: s.notices[0].id });
   const blue = s.pieces.find((piece) => piece.owner === "blue");
   s.hadeanCaptureUnlocked = true;
   s.hadeanTutorial.captured = true;
