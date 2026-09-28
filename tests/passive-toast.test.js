@@ -81,7 +81,7 @@ test("Toastify waits until blocking dialogs close before showing an effect", () 
     {
       text: effect.text,
       duration: 6000,
-      close: true,
+      close: false,
       gravity: "top",
       position: "center",
       stopOnFocus: true,
@@ -116,16 +116,19 @@ test("mutation toasts expose an explanation action and dismiss after selection",
     };
 
   presenter.show(effect);
-  const toast = mock.calls[0].toastElement;
-  assert.equal(typeof mock.calls[0].options.onClick, "function");
-  assert.equal(toast.getAttribute("role"), "button");
-  assert.equal(toast.tabIndex, 0);
+  const toast = mock.calls[0].toastElement,
+    more = toast.querySelector(".toast-more");
+  assert.equal(mock.calls[0].options.onClick, undefined);
+  assert.equal(mock.calls[0].options.close, false);
+  assert.equal(toast.getAttribute("role"), "status");
+  assert.ok(more);
+  assert.equal(more.textContent, "SAIBA MAIS");
   assert.equal(
-    toast.getAttribute("aria-label"),
-    "Abrir explicação de Pele grossa",
+    more.getAttribute("aria-label"),
+    "Saiba mais sobre Pele grossa",
   );
 
-  mock.calls[0].options.onClick();
+  more.click();
   assert.equal(selected, effect);
   assert.equal(presenter.visibleCount(), 0);
   assert.equal(dom.window.document.querySelector(".toastify"), null);
@@ -218,6 +221,7 @@ test("tracked Toastify assets load before the app and mobile styling stays viewp
   assert.ok(d.getElementById("mutation-dialog-real"));
   assert.equal(d.getElementById("mutation-dialog-game").tagName, "STRONG");
   assert.match(css, /\.toastify\.xe-passive-toast\s*\{/);
+  assert.match(css, /\.toastify\.xe-passive-toast \.toast-more\s*\{/);
   assert.match(css, /max-width:\s*min\(calc\(100vw - 24px\), 680px\)/);
   assert.match(
     css,
@@ -315,6 +319,7 @@ test("the real Toastify bundle mounts an accessible fixed toast in the document 
   try {
     const presenter = createPassiveEffectToastPresenter(dom.window.document, {
       toastify: Toastify,
+      onSelect: () => {},
     });
     presenter.show({
       id: 7,
@@ -335,14 +340,13 @@ test("the real Toastify bundle mounts an accessible fixed toast in the document 
     assert.equal(toast.dataset.owner, "blue");
     assert.ok(toast.classList.contains("xe-passive-toast--white"));
     assert.equal(toast.style.top, "15px");
-    assert.ok(toast.querySelector('button[aria-label="Fechar notificação"]'));
+    assert.equal(toast.querySelector(".toast-close"), null);
     assert.equal(dom.window.getComputedStyle(toast).position, "fixed");
     assert.equal(dom.window.getComputedStyle(toast).backgroundColor, "rgb(197, 181, 149)");
-    const close = toast.querySelector('button[aria-label="Fechar notificação"]');
-    assert.ok(close);
-    assert.equal(dom.window.getComputedStyle(close).position, "absolute");
-    assert.equal(dom.window.getComputedStyle(close).top, "4px");
-    assert.equal(dom.window.getComputedStyle(close).right, "4px");
+    const more = toast.querySelector('button[aria-label="Saiba mais sobre Visão Binocular"]');
+    assert.ok(more);
+    assert.equal(more.textContent, "SAIBA MAIS");
+    assert.equal(dom.window.getComputedStyle(more).position, "absolute");
     assert.equal(presenter.visibleCount(), 1);
 
     presenter.destroy();

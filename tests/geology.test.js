@@ -175,7 +175,7 @@ test("geological phases follow the expanded didactic sequence and declare mandat
   );
 
   const byId = Object.fromEntries(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
-  assert.deepEqual(byId.eoarchean.cycles, [["Quimiossíntese"]]);
+  assert.deepEqual(byId.eoarchean.cycles, [["Fotossíntese", "Predação"]]);
   assert.deepEqual(byId.paleoarchean.cycles, [["Transferência Horizontal"]]);
   assert.deepEqual(byId.mesoarchean.cycles, [["Reparo Celular"]]);
   assert.deepEqual(byId.neoarchean.cycles, [["Dormência"]]);
@@ -199,51 +199,46 @@ test("geological phases follow the expanded didactic sequence and declare mandat
       stage.id,
     );
 });
-test("Hadean establishes energy branches before Eoarchean chemosynthesis", () => {
+test("Hadean establishes chemosynthesis before Eoarchean energy branches", () => {
   const basal = {
       traits: ["Respiração anaeróbia"],
       ancestry: ["Respiração anaeróbia"],
     },
-    eo = createState(109, {
+    hadean = createState(109, {
       scenario: "earth",
-      geologicalStage: "eoarchean",
+      geologicalStage: "hadean",
       historicalTraits: ["Respiração anaeróbia"],
     });
   assert.equal(TRAIT_STAGE["Respiração anaeróbia"], "hadean");
-  assert.equal(TRAIT_STAGE["Fotossíntese"], "hadean");
-  assert.equal(TRAIT_STAGE["Predação"], "hadean");
-  assert.equal(traitUnlocked(eo, "Quimiossíntese", basal), true);
-  assert.equal(
-    traitUnlocked(
-      eo,
-      "Quimiossíntese",
-      { traits: ["Fotossíntese"], ancestry: ["Respiração anaeróbia", "Fotossíntese"] },
-    ),
-    true,
-  );
-  assert.equal(
-    traitUnlocked(
-      eo,
-      "Quimiossíntese",
-      { traits: ["Predação"], ancestry: ["Respiração anaeróbia", "Predação"] },
-    ),
-    true,
-  );
+  assert.equal(TRAIT_STAGE["Quimiossíntese"], "hadean");
+  assert.equal(TRAIT_STAGE["Fotossíntese"], "eoarchean");
+  assert.equal(TRAIT_STAGE["Predação"], "eoarchean");
+  assert.equal(traitUnlocked(hadean, "Quimiossíntese", basal), true);
+  assert.equal(traitUnlocked(hadean, "Fotossíntese", basal), false);
+  assert.equal(traitUnlocked(hadean, "Predação", basal), false);
 
-  const paleo = createState(110, {
+  const eo = createState(110, {
+    scenario: "earth",
+    geologicalStage: "eoarchean",
+    historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
+  });
+  assert.equal(traitUnlocked(eo, "Fotossíntese", basal), true);
+  assert.equal(traitUnlocked(eo, "Predação", basal), true);
+
+  const paleo = createState(111, {
     scenario: "earth",
     geologicalStage: "paleoarchean",
     historicalTraits: [
       "Respiração anaeróbia",
+      "Quimiossíntese",
       "Fotossíntese",
       "Predação",
-      "Quimiossíntese",
     ],
   });
   assert.equal(traitUnlocked(paleo, "Transferência Horizontal", basal), true);
   assert.equal(traitUnlocked(paleo, "Reparo Celular", basal), false);
 
-  const siderian = createState(111, {
+  const siderian = createState(112, {
     scenario: "earth",
     geologicalStage: "siderian",
     historicalTraits: GEOLOGICAL_STAGES.slice(
@@ -284,7 +279,7 @@ test("Ectasian Ingestão gates predation and Stenian Carnívoro builds on it", (
   });
   assert.equal(traitUnlocked(stenian, "Carnívoro", predator), true);
 });
-test("Archean subdivisions add chemosynthesis, horizontal transfer, repair and dormancy in order", () => {
+test("Hadean and Archean innovations follow the revised energy sequence", () => {
   const basal = {
       traits: ["Respiração anaeróbia"],
       ancestry: ["Respiração anaeróbia"],
@@ -292,28 +287,33 @@ test("Archean subdivisions add chemosynthesis, horizontal transfer, repair and d
     stateAt = (id, historicalTraits) =>
       createState(110, { scenario: "earth", geologicalStage: id, historicalTraits });
 
+  const hadean = stateAt("hadean", ["Respiração anaeróbia"]);
+  assert.equal(traitUnlocked(hadean, "Quimiossíntese", basal), true);
+  assert.equal(traitUnlocked(hadean, "Fotossíntese", basal), false);
+
   const eo = stateAt("eoarchean", [
-    "Respiração anaeróbia", "Fotossíntese", "Predação",
+    "Respiração anaeróbia", "Quimiossíntese",
   ]);
-  assert.equal(traitUnlocked(eo, "Quimiossíntese", basal), true);
+  assert.equal(traitUnlocked(eo, "Fotossíntese", basal), true);
+  assert.equal(traitUnlocked(eo, "Predação", basal), true);
   assert.equal(traitUnlocked(eo, "Transferência Horizontal", basal), false);
 
   const paleo = stateAt("paleoarchean", [
-    "Respiração anaeróbia", "Fotossíntese", "Predação", "Quimiossíntese",
+    "Respiração anaeróbia", "Quimiossíntese", "Fotossíntese", "Predação",
   ]);
   assert.equal(traitUnlocked(paleo, "Transferência Horizontal", basal), true);
   assert.equal(traitUnlocked(paleo, "Reparo Celular", basal), false);
 
   const meso = stateAt("mesoarchean", [
-    "Respiração anaeróbia", "Fotossíntese", "Predação",
-    "Quimiossíntese", "Transferência Horizontal",
+    "Respiração anaeróbia", "Quimiossíntese", "Fotossíntese", "Predação",
+    "Transferência Horizontal",
   ]);
   assert.equal(traitUnlocked(meso, "Reparo Celular", basal), true);
   assert.equal(traitUnlocked(meso, "Dormência", basal), false);
 
   const neo = stateAt("neoarchean", [
-    "Respiração anaeróbia", "Fotossíntese", "Predação",
-    "Quimiossíntese", "Transferência Horizontal", "Reparo Celular",
+    "Respiração anaeróbia", "Quimiossíntese", "Fotossíntese", "Predação",
+    "Transferência Horizontal", "Reparo Celular",
   ]);
   assert.equal(traitUnlocked(neo, "Dormência", basal), true);
 });
@@ -325,13 +325,13 @@ test("Transferência Horizontal is the Paleoarchean mandatory innovation", () =>
     eo = createState(111, {
       scenario: "earth",
       geologicalStage: "eoarchean",
-      historicalTraits: ["Respiração anaeróbia", "Fotossíntese", "Predação"],
+      historicalTraits: ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese", "Predação"],
     }),
     paleo = createState(112, {
       scenario: "earth",
       geologicalStage: "paleoarchean",
       historicalTraits: [
-        "Respiração anaeróbia", "Fotossíntese", "Predação", "Quimiossíntese",
+        "Respiração anaeróbia", "Quimiossíntese", "Fotossíntese", "Predação",
       ],
     });
   assert.equal(traitUnlocked(eo, "Transferência Horizontal", basal), false);
@@ -346,9 +346,11 @@ test("Earth exposes required innovations only in their detailed phase window", (
     eo = createState(112, {
       scenario: "earth",
       geologicalStage: "eoarchean",
-      historicalTraits: ["Respiração anaeróbia"],
+      historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
     });
-  assert.equal(traitUnlocked(eo, "Quimiossíntese", basal), true);
+  assert.equal(traitUnlocked(eo, "Quimiossíntese", basal), false);
+  assert.equal(traitUnlocked(eo, "Fotossíntese", basal), true);
+  assert.equal(traitUnlocked(eo, "Predação", basal), true);
   assert.equal(traitUnlocked(eo, "Transferência Horizontal", basal), false);
 
   const paleo = createState(113, {
@@ -647,8 +649,10 @@ test("registering a new evolutionary discovery does not open a Marco Evolutivo m
 
 test("Archean advances through four detailed phases after each mandatory set appears", () => {
   let state = createPeriodState("eoarchean", 103, null, "earth");
-  state.pieces[0].traits.push("Quimiossíntese");
+  state.pieces[0].traits.push("Fotossíntese");
   registerDiscoveries(state, state.pieces[0]);
+  state.pieces[1].traits.push("Predação");
+  registerDiscoveries(state, state.pieces[1]);
   assert.equal(stageComplete(state), true);
   state.result = { winner: "blue", reason: "teste" };
   state.phase = "over";
@@ -962,11 +966,12 @@ test("evolutionary precedence changes eligibility while missing innovations stay
   const eo = createState(108, {
       scenario: "earth",
       geologicalStage: "eoarchean",
-      historicalTraits: ["Respiração anaeróbia", "Fotossíntese", "Predação"],
+      historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
     }),
     basal = { traits: [], ancestry: ["Respiração anaeróbia"] };
-  assert.equal(innovationWeight(eo, "Quimiossíntese", basal), 4);
-  assert.deepEqual(missingInnovations(eo), ["Quimiossíntese"]);
+  assert.ok(innovationWeight(eo, "Fotossíntese", basal) > 0);
+  assert.ok(innovationWeight(eo, "Predação", basal) > 0);
+  assert.deepEqual(missingInnovations(eo), ["Fotossíntese", "Predação"]);
 
   const paleo = createState(109, {
     scenario: "earth",

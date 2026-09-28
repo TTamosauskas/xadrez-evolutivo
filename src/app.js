@@ -47,7 +47,7 @@ import {
   unreadDiscoveries,
 } from "./discoveries.js";
 import { createPassiveEffectToastPresenter } from "./passive-toast.js";
-import { mutationExplanation } from "./mutation-explanation.js";
+import { effectExplanation } from "./mutation-explanation.js";
 import { animateMovementTrace } from "./movement-animation.js";
 import {
   ARENA_BRANCHES,
@@ -227,6 +227,14 @@ $("board").addEventListener("click", (event) => {
   if (state.phase === "origin") {
     if (state.origin?.r === r && state.origin?.c === c)
       dispatch({ type: "ORIGIN_CLICK" });
+    return;
+  }
+  if (
+    state.phase === "move" &&
+    p?.hadeanOpeningReproductionReady &&
+    p.owner === state.current
+  ) {
+    dispatch({ type: "HADEAN_REPRODUCE", id: p.id });
     return;
   }
   if (state.phase === "manipulate") {
@@ -441,7 +449,7 @@ $("undo-neocortex").addEventListener("click", () => {
   if (controller.undoNeocortex()) report("↻ Cenário desfeito.");
 });
 function openMutationExplanation(effect) {
-  const copy = mutationExplanation(effect?.trait);
+  const copy = effectExplanation(effect?.trait);
   if (!copy) return;
 
   const dialog = $("mutation-dialog");

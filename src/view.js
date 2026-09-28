@@ -82,6 +82,7 @@ const element = (doc, tag, text, cls) => {
 };
 const VIVIFICATION_LABELS = Object.freeze({
   MOVE: "Reprodução",
+  HADEAN_REPRODUCE: "Reprodução",
   BUD: "Brotamento",
   CHEMOSYNTHESIS: "♨️ Quimiossíntese",
   PUPATE: "Metamorfose",
@@ -724,9 +725,7 @@ export function render(
     geological = currentGeologicalStage(state),
     hadeanTutorialDone =
       geological.id === "hadean"
-        ? ["divided", "captured"].filter(
-            (step) => state.hadeanTutorial?.[step],
-          ).length
+        ? stageProgress(state).discovered.length
         : 0,
     singleToneTerrain =
       geological.index >= geologicalStage("devonian").index,
@@ -738,7 +737,7 @@ export function render(
       : state.scenario === "arena"
         ? `Arena · Fase ${state.arenaPhase || state.cycle} · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`
         : geological.id === "hadean"
-          ? `${geological.group} · ${geological.period} · 1º Ciclo · Tutorial ${hadeanTutorialDone}/2 · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"}`
+          ? `${geological.group} · ${geological.period} · 1º Ciclo · Tutorial ${hadeanTutorialDone}/3 · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"}`
           : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
   const mobileSummary = $("mobile-selected-summary");
   mobileSummary.replaceChildren();
@@ -1137,6 +1136,7 @@ export function render(
           nicheBuildTarget ||
           selfVivificationTarget ||
           !!rhizomeAction ||
+          !!p?.hadeanOpeningReproductionReady ||
           (originHere && origin?.selected),
         nurse = nursing.some((child) => child.id === p?.id),
         eggPlacementTarget = eggPlacement.some(
@@ -1882,7 +1882,7 @@ export function render(
       heading,
       make(
         "p",
-        "Ancestral comum das duas linhagens. Já possui metabolismo anaeróbio; toque novamente no Rei cinza para dividi-lo em dois Reis protocelulares, um branco e um preto, ainda sem Fotossíntese ou Predação.",
+        "Ancestral comum das duas linhagens. Já possui metabolismo anaeróbio; toque novamente no Rei cinza para completar a primeira reprodução e originar dois Reis protocelulares, um branco e um preto.",
         "selected-ancestral",
       ),
       make("div", "Vantagens Evolutivas", "selected-group-heading"),
@@ -1971,7 +1971,7 @@ export function render(
           state.scenario === "arena"
             ? `Arena · Fase ${state.arenaPhase || state.cycle} concluída. As linhagens sobreviventes podem receber até duas substituições de Engenharia Genética.`
             : geological.id === "hadean"
-              ? `Tutorial: ${hadeanTutorialDone} de 2 fundamentos concluídos — dividir e capturar.`
+              ? `Tutorial: ${hadeanTutorialDone} de 3 fundamentos concluídos — reproduzir, obter Quimiossíntese e formar a primeira casa fértil.`
               : progress.required.length
                 ? `${geological.period}${geological.cycles?.length ? ` · ${state.cycle}º Ciclo` : ""}: ${progress.discovered.length} de ${progress.required.length} inovação(ões) ativas descobertas.`
                 : `${geological.period}: estágio de transição concluído ao fim deste Ciclo.`,

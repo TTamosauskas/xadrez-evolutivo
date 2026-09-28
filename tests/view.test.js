@@ -242,7 +242,7 @@ test("Hadean common ancestor is a gray King that splits after the second click",
     1,
   );
   assert.match(legend.textContent, /Vivificar/);
-  assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 48);
+  assert.equal(d.querySelectorAll(".cell.lethal-hazard").length, 0);
   dom.window.close();
 });
 
@@ -2069,6 +2069,32 @@ test("application UI starts with the Hadean common ancestor, then plays division
     let originCell = d.querySelector(".origin-piece").parentElement;
     originCell.click();
     assert.match(d.getElementById("selected").textContent, /Ancestral comum/);
+
+    const reproductionToast = d.querySelector(".toastify.xe-passive-toast");
+    assert.ok(reproductionToast);
+    assert.match(reproductionToast.textContent, /Reprodução/);
+    const reproductionMore = reproductionToast.querySelector(".toast-more");
+    assert.ok(reproductionMore);
+    assert.equal(reproductionMore.textContent, "SAIBA MAIS");
+    reproductionMore.click();
+
+    const reproductionDialog = d.querySelector("#mutation-dialog[open]");
+    assert.ok(reproductionDialog);
+    assert.equal(
+      d.getElementById("mutation-dialog-title").textContent,
+      "Reprodução",
+    );
+    assert.match(
+      d.getElementById("mutation-dialog-real").textContent,
+      /^Na vida: Uma hipótese para a origem da vida/,
+    );
+    assert.match(
+      d.getElementById("mutation-dialog-game").textContent,
+      /^No jogo: Clique no círculo verde/,
+    );
+    click("mutation-dialog-close");
+    reproductionDialog.dispatchEvent(new w.Event("close"));
+
     originCell = d.querySelector(".origin-piece").parentElement;
     originCell.click();
 
@@ -2077,23 +2103,16 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.equal(d.querySelectorAll(".piece.amber").length, 1);
     assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 2);
     assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
-    assert.match(d.getElementById("round").textContent, /Tutorial 1\/2/);
+    assert.match(d.getElementById("round").textContent, /Tutorial 1\/3/);
     assert.equal(d.querySelectorAll(".cell.fertile").length, 0);
-    const photosynthesisToast = d.querySelector(".toastify.xe-passive-toast");
-    assert.ok(photosynthesisToast);
-    assert.match(photosynthesisToast.textContent, /Fotossíntese/);
-    photosynthesisToast.click();
+    const blueFounder = d.querySelector(".piece.blue").parentElement,
+      amberFounder = d.querySelector(".piece.amber").parentElement;
+    assert.ok(blueFounder.classList.contains("vivification-target"));
+    assert.ok(amberFounder.classList.contains("vivification-target"));
 
-    const mutationDialog = d.querySelector("#mutation-dialog[open]");
-    assert.ok(mutationDialog);
-    assert.equal(
-      d.getElementById("mutation-dialog-title").textContent,
-      "🟢 Fotossíntese",
-    );
-    assert.match(d.getElementById("mutation-dialog-real").textContent, /^Na vida: /);
-    assert.match(d.getElementById("mutation-dialog-game").textContent, /^No jogo: /);
-    click("mutation-dialog-close");
-    mutationDialog.dispatchEvent(new w.Event("close"));
+    blueFounder.click();
+    assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 3);
+    assert.equal(d.querySelectorAll(".cell.hostile").length, 1);
 
     const emptyCell = [...d.querySelectorAll(".cell")].find(
       (cell) => !cell.classList.contains("occupied"),
@@ -2103,16 +2122,6 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.equal(d.getElementById("selected-title").textContent, "Casa selecionada");
     assert.ok(d.querySelector(".cell.cell-selected-info"));
     assert.match(d.getElementById("selected").textContent, /Casa (Fértil|Hostil|Neutra)/);
-
-    const blue = d.querySelector(".piece.blue");
-    blue.parentElement.click();
-    assert.equal(d.getElementById("selected-title").textContent, "Peça selecionada");
-    const selectedCell = d.querySelector(
-      `[data-r="${blue.parentElement.dataset.r}"][data-c="${blue.parentElement.dataset.c}"]`,
-    );
-    assert.ok(!selectedCell.classList.contains("vivification-target"));
-    assert.equal(d.getElementById("pass").disabled, false);
-    assert.match(d.getElementById("pass").textContent, /Passar vez/);
 
     click("menu-button");
     click("save");
@@ -2302,13 +2311,13 @@ test("Hadean extinction offers the formal transition to Archean", () => {
   s.origin = null;
   s.historicalTraits = [
     "Respiração anaeróbia",
-    "Fotossíntese",
-    "Predação",
+    "Quimiossíntese",
   ];
   s.hadeanTutorial = {
     moved: true,
     divided: true,
     captured: true,
+    fertile: true,
     dividedAtTurn: 0,
   };
   s.phase = "over";

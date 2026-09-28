@@ -29,13 +29,12 @@ export function createPassiveEffectToastPresenter(
     toast = toastify({
       text: effect.text,
       duration,
-      close: true,
+      close: false,
       gravity: "top",
       position: "center",
       stopOnFocus: true,
       escapeMarkup: true,
       ariaLive: "polite",
-      onClick: selectable ? activate : undefined,
       className: `xe-passive-toast xe-passive-toast--${
         effect.owner === "amber" ? "black" : "white"
       }`,
@@ -54,28 +53,22 @@ export function createPassiveEffectToastPresenter(
       toast.toastElement.dataset.effectId = String(effect.id ?? "");
       toast.toastElement.dataset.trait = effect.trait ?? "";
       toast.toastElement.dataset.owner = effect.owner ?? "blue";
+      toast.toastElement.setAttribute("role", "status");
       if (selectable) {
-        toast.toastElement.tabIndex = 0;
-        toast.toastElement.setAttribute("role", "button");
-        toast.toastElement.setAttribute(
+        const more = doc.createElement("button");
+        more.type = "button";
+        more.className = "toast-more";
+        more.textContent = "SAIBA MAIS";
+        more.setAttribute(
           "aria-label",
-          `Abrir explicação de ${effect.trait}`,
+          `Saiba mais sobre ${effect.trait}`,
         );
-        toast.toastElement.addEventListener("keydown", (event) => {
-          if (
-            event.target !== toast.toastElement ||
-            !["Enter", " "].includes(event.key)
-          )
-            return;
-          event.preventDefault();
+        more.addEventListener("click", (event) => {
+          event.stopPropagation();
           activate();
         });
-      } else {
-        toast.toastElement.setAttribute("role", "status");
+        toast.toastElement.append(more);
       }
-      toast.toastElement
-        .querySelector(".toast-close")
-        ?.setAttribute("aria-label", "Fechar notificação");
     }
   }
 

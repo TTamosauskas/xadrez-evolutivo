@@ -111,6 +111,7 @@ export const dormant = (state, p) => {
 export const pupating = (state, p) =>
   Number.isInteger(p?.pupaUntilRound) && round(state) < p.pupaUntilRound;
 export const resting = (state, p) =>
+  p?.hadeanHostileDeathPending ||
   dysfunctionalResting(state, p) ||
   regenerationResting(state, p) ||
   neurodivergenceResting(state, p) ||
@@ -1887,6 +1888,7 @@ export function broodParasitismTargets(state, piece) {
 
 export function chemosynthesisAvailable(state, piece) {
   return !!(
+    state.geologicalStage !== "hadean" &&
     piece &&
     has(piece, "Quimiossíntese") &&
     reproductionReady(state, piece) &&
@@ -1936,7 +1938,8 @@ export function actionsForPiece(
   if (
     !piece ||
     state.result ||
-    !state.pieces.some((candidate) => candidate.id === piece.id)
+    !state.pieces.some((candidate) => candidate.id === piece.id) ||
+    piece.hadeanHostileDeathPending
   )
     return [];
   if (
@@ -1950,6 +1953,16 @@ export function actionsForPiece(
     return [];
 
   const source = ignoreTurn ? pieceEvaluationState(state, piece) : state;
+  if (
+    source.geologicalStage === "hadean" &&
+    piece.hadeanOpeningReproductionReady
+  )
+    return [
+      {
+        type: "HADEAN_REPRODUCE",
+        id: piece.id,
+      },
+    ];
   if (
     ecologicalDomainBlocked(source, piece.owner, piece.r, piece.c) ||
     (source.chain && source.chain !== piece.id)
@@ -2085,6 +2098,7 @@ export function vivificationActionsForPiece(state, piece) {
         action.c === piece.c) ||
       action.type === "BUD" ||
       action.type === "CHEMOSYNTHESIS" ||
+      action.type === "HADEAN_REPRODUCE" ||
       action.type === "PUPATE" ||
       action.type === "PARTHENOGENESIS" ||
       action.type === "REJECT_BROOD_PARASITE" ||
@@ -2101,6 +2115,12 @@ export function pieceActionState(state, piece) {
     return { waiting: false, reason: null, remainingRounds: null };
 
   const currentRound = round(state);
+  if (piece.hadeanHostileDeathPending)
+    return {
+      waiting: true,
+      reason: "Morte por ambiente hostil",
+      remainingRounds: 1,
+    };
   if (ecologicalDomainBlocked(state, piece.owner, piece.r, piece.c))
     return {
       waiting: true,

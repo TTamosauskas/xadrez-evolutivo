@@ -105,7 +105,6 @@ import {
   predationBirthLimit,
   metabolicReproductionCooldown,
   sexualMaturityRounds,
-  hadeanPredationChance,
 } from "../src/reproduction.js";
 import { crowdingPenalty } from "../src/ai.js";
 import { predatoryReproductionAvailable } from "../src/reproduction-traits.js";
@@ -212,7 +211,7 @@ test("first generation-3 habitat update preserves every geological preset", () =
 test("pre-Devonian custom habitats stay outside Conway while preserving their phase presets", () => {
   const hadean = createCampaignState(898);
   assert.equal(aquaticFertilityRegime(hadean), true);
-  assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 1);
+  assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 0);
 
   for (const [index, id] of [
     "eoarchean",
@@ -295,167 +294,187 @@ test("Archean subdivisions use distinct custom habitats instead of cycle rings",
   assert.equal(new Set(patterns).size, 4);
   assert.ok(new Set(signatures).size >= 3);
 });
-test("Hadean starts with one fertile gray ancestor and splits into two photosynthetic Kings on neutral cells", () => {
+test("Hadean starts neutral and the gray ancestor introduces reproduction before splitting", () => {
   let s = createCampaignState(301);
   assert.equal(s.geologicalStage, "hadean");
   assert.equal(s.phase, "origin");
   assert.ok(s.origin);
   assert.equal(s.pieces.length, 0);
-  assert.equal(s.board.filter((cell) => cell === "fertile").length, 1);
-  assert.equal(s.board.filter((cell) => cell === "neutral").length, 63);
-  assert.equal(
-    s.board[square(s.origin.r, s.origin.c)],
-    "fertile",
-  );
+  assert.equal(s.board.filter((cell) => cell === "fertile").length, 0);
+  assert.equal(s.board.filter((cell) => cell === "hostile").length, 0);
+  assert.equal(s.board.filter((cell) => cell === "neutral").length, 64);
+  assert.equal(s.board[square(s.origin.r, s.origin.c)], "neutral");
   assert.deepEqual(s.origin.traits, ["Respiração anaeróbia"]);
   assert.deepEqual(s.hadeanTutorial, {
     moved: false,
     divided: false,
     captured: false,
+    fertile: false,
   });
 
-  const originCell = { ...s.origin };
   s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ORIGIN_CLICK" });
+  assert.equal(s.origin.selected, true);
+  assert.equal(s.passiveEffects.at(-1).trait, "Reprodução");
+  assert.equal(
+    s.passiveEffects.at(-1).outcome,
+    "hadean-reproduction-tutorial",
+  );
 
+  s = transition(s, { type: "ORIGIN_CLICK" });
   assert.equal(s.phase, "move");
   assert.equal(s.origin, null);
   assert.equal(s.pieces.length, 2);
   assert.equal(s.hadeanTutorial.divided, true);
+
+  const blue = s.pieces.find((piece) => piece.owner === "blue"),
+    amber = s.pieces.find((piece) => piece.owner === "amber");
+  assert.deepEqual([blue.r, blue.c], [4, 3]);
+  assert.deepEqual([amber.r, amber.c], [3, 4]);
   assert.ok(
     s.pieces.every(
       (piece) =>
         piece.rank === 4 &&
         piece.traits.includes("Respiração anaeróbia") &&
-        piece.traits.includes("Fotossíntese") &&
-        !piece.traits.includes("Predação"),
+        !piece.traits.includes("Quimiossíntese") &&
+        !piece.traits.includes("Fotossíntese") &&
+        !piece.traits.includes("Predação") &&
+        piece.hadeanOpeningReproductionReady,
     ),
   );
-  assert.equal(s.historicalTraits.includes("Fotossíntese"), true);
-  assert.equal(s.historicalTraits.includes("Predação"), false);
-  assert.deepEqual(s.seenMutations, ["Respiração anaeróbia"]);
-  assert.equal(s.notices.length, 0);
   assert.deepEqual(
-    s.passiveEffects.map(({ trait, outcome, text }) => ({
-      trait,
-      outcome,
-      text,
-    })),
-    [
-      {
-        trait: "Fotossíntese",
-        outcome: "new-mutation",
-        text: "Nova Mutação: 🟢 Fotossíntese.",
-      },
-    ],
+    actionsForPiece(s, blue),
+    [{ type: "HADEAN_REPRODUCE", id: blue.id }],
   );
-
-  const blue = s.pieces.find((piece) => piece.owner === "blue"),
-    amber = s.pieces.find((piece) => piece.owner === "amber");
-  assert.deepEqual([blue.r, blue.c], [5, 2]);
-  assert.deepEqual([amber.r, amber.c], [2, 5]);
-  assert.equal(Math.abs(blue.r - amber.r), 3);
-  assert.equal(Math.abs(blue.c - amber.c), 3);
-  assert.equal(s.board[square(blue.r, blue.c)], "neutral");
-  assert.equal(s.board[square(amber.r, amber.c)], "neutral");
-  assert.equal(s.board[square(originCell.r, originCell.c)], "neutral");
-  assert.ok(Number.isInteger(blue.photosynthesisSinceTurn));
-  assert.ok(Number.isInteger(amber.photosynthesisSinceTurn));
+  assert.deepEqual(
+    actionsForPiece(s, amber, { ignoreTurn: true }),
+    [{ type: "HADEAN_REPRODUCE", id: amber.id }],
+  );
+  assert.equal(s.historicalTraits.includes("Quimiossíntese"), false);
+  assert.equal(s.historicalTraits.includes("Fotossíntese"), false);
+  assert.equal(s.historicalTraits.includes("Predação"), false);
   assert.equal(
     Array.from({ length: 8 }, (_, r) =>
-      Array.from({ length: 8 }, (_, col) =>
-        lethalHazardAt(s, r, col),
-      ),
+      Array.from({ length: 8 }, (_, c) => lethalHazardAt(s, r, c)),
     ).flat().filter(Boolean).length,
-    48,
+    0,
   );
   assertState(s);
 });
 
-test("Hadean lethal boundary remains unreachable while photosynthetic founders wait", () => {
-  let s = createCampaignState(304);
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ORIGIN_CLICK" });
+function openingReproductionSample(predicate) {
+  for (let seed = 1; seed <= 256; seed++) {
+    let state = createCampaignState(seed);
+    state = transition(state, { type: "ORIGIN_CLICK" });
+    state = transition(state, { type: "ORIGIN_CLICK" });
+    const parent = state.pieces.find((piece) => piece.owner === "blue"),
+      before = new Set(state.pieces.map((piece) => piece.id));
+    state = transition(state, {
+      type: "HADEAN_REPRODUCE",
+      id: parent.id,
+    });
+    const child = state.pieces.find(
+      (piece) => piece.owner === "blue" && !before.has(piece.id),
+    );
+    if (child && predicate(state, child, parent)) return { state, child, parent };
+  }
+  throw Error("Amostra Hadeana determinística indisponível.");
+}
 
-  const blue = s.pieces.find((piece) => piece.owner === "blue");
-  blue.r = 2;
-  blue.c = 2;
-  blue.photosynthesisCell = square(2, 2);
-  blue.photosynthesisSinceTurn = s.turn;
-  assert.equal(lethalHazardAt(s, 1, 1), true);
-  assert.equal(lethalHazardAt(s, 1, 2), true);
-  assert.equal(
-    movesFor(s, blue).some(
-      (target) => !target.stay && lethalHazardAt(s, target.r, target.c),
+test("first Hadean reproduction gives each lineage an independent 50% chemosynthesis chance and placement rule", () => {
+  const chemo = openingReproductionSample((state, child) =>
+      child.traits.includes("Quimiossíntese"),
     ),
-    false,
+    basal = openingReproductionSample(
+      (state, child) => !child.traits.includes("Quimiossíntese"),
+    );
+
+  assert.ok([3, 4].includes(chemo.child.r));
+  assert.ok([3, 4].includes(chemo.child.c));
+  assert.ok(
+    !(
+      chemo.child.r === chemo.parent.r &&
+      chemo.child.c === chemo.parent.c
+    ),
   );
-  assert.equal(movesFor(s, blue).length, 0);
-  assertState(s);
+  assert.ok(chemo.state.historicalTraits.includes("Quimiossíntese"));
+  assert.equal(
+    chemo.state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Quimiossíntese" &&
+        effect.outcome === "new-mutation",
+    ),
+    true,
+  );
+
+  assert.equal(
+    basal.child.r === 0 ||
+      basal.child.r === 7 ||
+      basal.child.c === 0 ||
+      basal.child.c === 7,
+    true,
+  );
+  assert.equal(basal.child.traits.includes("Quimiossíntese"), false);
 });
 
-test("Hadean photosynthesis wait grows by turn and freezes for each maturation", () => {
-  let s = createCampaignState(302);
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  assert.equal(s.notices.length, 0);
-
-  let blue = s.pieces.find((piece) => piece.owner === "blue"),
-    amber = s.pieces.find((piece) => piece.owner === "amber");
-  assert.equal(s.hadeanTutorial.dividedAtTurn, 0);
-  assert.equal(photosynthesisDelayTurns(s, blue), 2);
-  assert.equal(blue.photosynthesisReadyTurn - blue.photosynthesisSinceTurn, 2);
-  assert.equal(amber.photosynthesisReadyTurn - amber.photosynthesisSinceTurn, 2);
-  assert.equal(s.board[square(blue.r, blue.c)], "neutral");
-  assert.equal(s.board[square(amber.r, amber.c)], "neutral");
-  assert.equal(movesFor(s, blue).length, 0);
-
-  s = simulate(s, { type: "PASS" });
-  amber = s.pieces.find((piece) => piece.id === amber.id);
-  assert.equal(s.turn, 1);
-  assert.equal(photosynthesisDelayTurns(s, amber), 4);
-  assert.equal(amber.photosynthesisReadyTurn, 2);
-
-  s = simulate(s, { type: "PASS" });
-  blue = s.pieces.find((piece) => piece.id === blue.id);
-  assert.equal(s.turn, 2);
-  assert.equal(s.board[square(blue.r, blue.c)], "fertile");
-
-  while (s.current !== "blue")
-    s = simulate(s, { type: "PASS" });
-  blue = s.pieces.find((piece) => piece.id === blue.id);
-  const beforeIds = new Set(s.pieces.map((piece) => piece.id)),
-    parentCell = square(blue.r, blue.c);
-  s = simulate(s, move(blue, blue.r, blue.c));
-
-  const child = s.pieces.find(
-      (piece) => piece.owner === "blue" && !beforeIds.has(piece.id),
+test("Hadean hostile pressure can condemn a basal offspring without a skull and explains the first actual death", () => {
+  const sample = openingReproductionSample(
+      (state, child) =>
+        !child.traits.includes("Quimiossíntese") &&
+        child.hadeanHostileDeathPending === true,
     ),
-    parent = s.pieces.find((piece) => piece.id === blue.id);
-  assert.ok(child);
-  assert.ok(child.traits.includes("Fotossíntese"));
-  assert.equal(s.board[square(child.r, child.c)], "neutral");
-  assert.ok(Number.isInteger(child.photosynthesisSinceTurn));
-  assert.ok(Number.isInteger(child.photosynthesisReadyTurn));
+    doomedId = sample.child.id;
+
+  assert.equal(sample.state.board[square(sample.child.r, sample.child.c)], "hostile");
+  assert.equal(lethalHazardAt(sample.state, sample.child.r, sample.child.c), false);
+  assert.equal(actionsForPiece(sample.state, sample.child).length, 0);
   assert.equal(
-    child.photosynthesisReadyTurn - child.photosynthesisSinceTurn,
-    6,
-  );
-  assert.equal(
-    parent.photosynthesisReadyTurn - parent.photosynthesisSinceTurn,
-    6,
-  );
-  assert.equal(
-    s.fertilityRecovery.some((entry) => entry.cell === parentCell),
+    sample.state.passiveEffects.some((effect) => effect.trait === "Casa Hostil"),
     false,
   );
-  assert.equal(s.board[parentCell], "neutral");
 
-  const late = clone(s);
-  late.turn = late.hadeanTutorial.dividedAtTurn + 50;
+  sample.state.turn = Math.max(
+    sample.state.turn,
+    sample.child.lethalDeathRound * 2,
+  );
+  const resolved = transition(sample.state, { type: "RESOLVE_LETHAL" });
+  assert.equal(resolved.pieces.some((piece) => piece.id === doomedId), false);
   assert.equal(
-    photosynthesisDelayTurns(late, child),
-    metabolicReproductionCooldown(child) * 2,
+    resolved.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Casa Hostil" &&
+        effect.outcome === "hadean-hostile-death",
+    ),
+    true,
+  );
+  assertState(resolved);
+});
+
+test("Hadean chemosynthesis turns its central birth cell fertile at the end of the next turn", () => {
+  const sample = openingReproductionSample((state, child) =>
+    child.traits.includes("Quimiossíntese"),
+  );
+  let s = sample.state;
+  const cell = square(sample.child.r, sample.child.c);
+
+  assert.notEqual(s.board[cell], "fertile");
+  assert.equal(
+    s.hadeanEnvironment.pendingFertility.some(
+      (entry) => entry.pieceId === sample.child.id && entry.cell === cell,
+    ),
+    true,
+  );
+  assert.equal(s.hadeanTutorial.fertile, false);
+
+  s = transition(s, { type: "PASS" });
+  assert.equal(s.board[cell], "fertile");
+  assert.equal(s.hadeanTutorial.fertile, true);
+  assert.equal(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Casa Fértil" &&
+        effect.outcome === "hadean-first-fertile",
+    ),
+    true,
   );
   assertState(s);
 });
@@ -531,153 +550,15 @@ test("compact non-canonical cycle starts keep Brancas on the lower half", () => 
   }
 });
 
-test("Hadean Predação pressure rises from one third to certainty on the third reproduction", () => {
-  const s = createCampaignState(305);
-  s.hadeanPredationGranted = { blue: false, amber: false };
-
-  s.reproductions.blue = 1;
-  assert.equal(hadeanPredationChance(s, "blue"), 1 / 3);
-  s.reproductions.blue = 2;
-  assert.equal(hadeanPredationChance(s, "blue"), 2 / 3);
-  s.reproductions.blue = 3;
-  assert.equal(hadeanPredationChance(s, "blue"), 1);
-
-  s.hadeanPredationGranted.blue = true;
-  assert.equal(hadeanPredationChance(s, "blue"), 0);
-});
-
-test("third successful Hadean reproduction guarantees Predação without habitat saturation", () => {
-  let s = createCampaignState(306);
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  s.pieces = [];
-  s.nextId = 1;
-  s.board.fill("neutral");
-  s.hadeanPredationGranted = { blue: false, amber: false };
-  s.hadeanCaptureUnlocked = false;
-  s.reproductions.blue = 2;
-
-  const parent = newPiece(s, "blue", 4, 3, {
-      rank: 4,
-      traits: ["Fotossíntese"],
-      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
-    }),
-    rival = newPiece(s, "amber", 2, 4, {
-      rank: 4,
-      traits: ["Fotossíntese"],
-      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
-    });
-  s.pieces.push(parent, rival);
-  s.current = "blue";
-  s.board[square(parent.r, parent.c)] = "fertile";
-  parent.nextReproductionRound = round(s);
-
-  const existingIds = new Set(s.pieces.map((piece) => piece.id));
-  s = simulate(s, move(parent, parent.r, parent.c));
-
-  assert.equal(s.reproductions.blue, 3);
-  assert.equal(s.pieces.length, 3);
-  const newborn = s.pieces.find((piece) => !existingIds.has(piece.id));
-  assert.ok(newborn);
-  assert.equal(newborn.owner, "blue");
-  assert.ok(newborn.traits.includes("Predação"));
-  assert.equal(newborn.traits.includes("Fotossíntese"), false);
-  assert.equal(s.hadeanPredationGranted.blue, true);
-  assert.equal(s.hadeanPredationGranted.amber, false);
-  assert.equal(captureUnlocked(s, newborn), true);
-  assert.ok(s.historicalTraits.includes("Predação"));
-  assertState(s);
-});
-
-test("Hadean Predação pressure is tracked independently for each side", () => {
-  const s = createCampaignState(307);
-  s.hadeanPredationGranted = { blue: true, amber: false };
-  s.reproductions.blue = 1;
-  s.reproductions.amber = 2;
-
-  assert.equal(hadeanPredationChance(s, "blue"), 0);
-  assert.equal(hadeanPredationChance(s, "amber"), 2 / 3);
-
-  s.reproductions.amber = 3;
-  assert.equal(hadeanPredationChance(s, "amber"), 1);
-});
-
-test("Hadean extinction can win before the rival evolves Predação", () => {
-  let s = createState(307, {
-    geologicalStage: "hadean",
-    naturalBarriers: false,
-  });
-  s.board.fill("neutral");
-  s.pieces = [];
-  s.nextId = 1;
-  s.current = "blue";
-  s.hadeanTutorial = {
-    moved: false,
-    divided: true,
-    captured: false,
-    dividedAtTurn: 0,
-  };
-  s.hadeanPredationGranted = { blue: true, amber: false };
-  s.hadeanCaptureUnlocked = false;
-
-  const predator = newPiece(s, "blue", 4, 4, {
-      rank: 4,
-      traits: ["Predação"],
-      ancestry: ["Respiração anaeróbia", "Fotossíntese", "Predação"],
-    }),
-    prey = newPiece(s, "amber", 3, 3, {
-      rank: 4,
-      traits: ["Fotossíntese"],
-      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
-    });
-  s.pieces.push(predator, prey);
-
-  assert.ok(
-    movesFor(s, predator).some(
-      (target) => target.r === prey.r && target.c === prey.c && target.capture,
-    ),
-  );
-  s = simulate(s, move(predator, prey.r, prey.c));
-
-  assert.equal(s.phase, "over");
-  assert.equal(s.result.winner, "blue");
-  assert.match(s.result.reason, /Extinção total/);
-  assert.equal(s.hadeanPredationGranted.amber, false);
-  assertState(s);
-});
-
-test("Hadean capture requires an explicit Predação trait", () => {
-  let s = createCampaignState(306);
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  s = transition(s, { type: "ORIGIN_CLICK" });
-  const blue = s.pieces.find((piece) => piece.owner === "blue");
-  s.hadeanCaptureUnlocked = true;
-  s.hadeanTutorial.captured = true;
-  assert.equal(captureUnlocked(s, blue), false);
-
-  blue.traits = ["Respiração anaeróbia", "Predação"];
-  blue.ancestry = ["Respiração anaeróbia", "Fotossíntese", "Predação"];
-  assert.equal(captureUnlocked(s, blue), true);
-  assertState(s);
-});
-
-test("Hadean ancestral split keeps Brancas below and Pretas above across seeds", () => {
+test("Hadean ancestral split keeps Brancas and Pretas on opposite central sides across seeds", () => {
   for (let seed = 1; seed <= 24; seed++) {
     let s = createCampaignState(seed);
     s = transition(s, { type: "ORIGIN_CLICK" });
     s = transition(s, { type: "ORIGIN_CLICK" });
-    assert.ok(
-      s.pieces
-        .filter((piece) => piece.owner === "blue")
-        .every((piece) => piece.r >= 4),
-      `seed ${seed}: Brancas`,
-    );
-    assert.ok(
-      s.pieces
-        .filter((piece) => piece.owner === "amber")
-        .every((piece) => piece.r <= 3),
-      `seed ${seed}: Pretas`,
-    );
+    const blue = s.pieces.find((piece) => piece.owner === "blue"),
+      amber = s.pieces.find((piece) => piece.owner === "amber");
+    assert.deepEqual([blue.r, blue.c], [4, 3], `seed ${seed}: Brancas`);
+    assert.deepEqual([amber.r, amber.c], [3, 4], `seed ${seed}: Pretas`);
   }
 });
 
@@ -851,20 +732,6 @@ test("capturing Ooteca reserves arrival and cannot overlap the attacker", () => 
   assert.equal(s.pieces.filter((p) => p.r === 4 && p.c === 4).length, 1);
   assert.equal(s.pieces.find((p) => p.r === 4 && p.c === 4).id, 1);
   assertState(s);
-});
-test("notices pause actions; acknowledgment is ordered and idempotent", () => {
-  let s = fixture([
-    { owner: "blue", r: 6, c: 3, traits: ["Herbívoro"] },
-    { owner: "amber", r: 1, c: 4 },
-  ]);
-  s.board[43] = "fertile";
-  s = transition(s, move(s.pieces[0], 5, 3));
-  assert.ok(s.notices.length);
-  assert.equal(transition(s, { type: "PASS" }), s);
-  assert.equal(transition(s, { type: "ACK_NOTICE", id: 9999 }), s);
-  const first = s.notices[0].id;
-  const next = transition(s, { type: "ACK_NOTICE", id: first });
-  assert.equal(transition(next, { type: "ACK_NOTICE", id: first }), next);
 });
 test("sexual partner preserves Multicelularismo and survives save/restore", () => {
   let s = fixture([
@@ -1569,35 +1436,26 @@ test("Semelparidade defers death while viviparous offspring are gestating", () =
   assertState(s);
 });
 
-test("fertile reproduction shows the concise tutorial copy only on its first occurrence", () => {
+test("fertile reproduction shows the concise tutorial toast on its first occurrence", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 0, traits: ["Herbívoro"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[28] = "fertile";
   s = transition(s, move(s.pieces[0], 3, 4));
-  const first = s.notices.find((entry) => entry.title === "Reprodução");
-  assert.deepEqual(first?.lines, [
-    "Casas verdes podem gerar prole com as características dos pais.",
-  ]);
-  assert.ok(s.seen.includes("reproduction"));
-
-  while (s.notices.length)
-    s = transition(s, {
-      type: "ACK_NOTICE",
-      id: s.notices[0].id,
-      revision: s.revision,
-    });
-  notice(
-    s,
-    "Reprodução",
-    ["Casas verdes podem gerar prole com as características dos pais."],
-    "reproduction",
+  const first = s.passiveEffects.find(
+    (effect) =>
+      effect.trait === "Reprodução" &&
+      effect.outcome === "reproduction-tutorial",
   );
+  assert.ok(first);
+  assert.equal(first.text, "Reprodução disponível.");
+  assert.ok(s.seen.includes("reproduction"));
   assert.equal(
     s.notices.some((entry) => entry.title === "Reprodução"),
     false,
   );
+  assertState(s);
 });
 
 test("fertile reproduction uses the piece metabolic recovery profile", () => {
@@ -2809,7 +2667,7 @@ test("post-Hadean phases no longer need an opening mutation to create an energy 
 test("same-branch offspring do not spend the guarantee reserved for the missing Archean branch", () => {
   const s = createState(1195, {
     scenario: "earth",
-    geologicalStage: "paleoarchean",
+    geologicalStage: "eoarchean",
     cycle: 1,
     totalCycles: 2,
     historicalTraits: ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese"],

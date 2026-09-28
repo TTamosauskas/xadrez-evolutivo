@@ -156,10 +156,13 @@ export const captureDisturbanceAt = (state, r, c) =>
   state.captureDisturbances?.find((entry) => entry.cell === square(r, c)) ??
   null;
 export const hadeanPlayableCell = (r, c) =>
-  r >= 2 && r <= 5 && c >= 2 && c <= 5;
-const outerBoardCell = (r, c) => r === 0 || r === 7 || c === 0 || c === 7;
+  r >= 0 && r <= 7 && c >= 0 && c <= 7;
+export const hadeanCentralCell = (r, c) =>
+  r >= 3 && r <= 4 && c >= 3 && c <= 4;
+export const hadeanOuterCell = (r, c) =>
+  r === 0 || r === 7 || c === 0 || c === 7;
+const outerBoardCell = hadeanOuterCell;
 export const lethalHazardAt = (state, r, c) =>
-  (state.geologicalStage === "hadean" && !hadeanPlayableCell(r, c)) ||
   (state.geologicalStage === "eoarchean" &&
     state.cycle === 1 &&
     outerBoardCell(r, c)) ||
@@ -516,13 +519,24 @@ export function log(state, text) {
   state.logs.unshift({ turn: state.turn, text });
   state.logs.length = Math.min(state.logs.length, 160);
 }
+const PASSIVE_EXPLANATION_TOPICS = new Set([
+  "Reprodução",
+  "Casa Hostil",
+  "Casa Fértil",
+]);
+
 export function emitPassiveEffect(
   state,
   trait,
   text,
   { pieceId = null, outcome = null, value = null, theme = null } = {},
 ) {
-  if (!TRAITS[trait] || typeof text !== "string" || !text) return;
+  if (
+    (!TRAITS[trait] && !PASSIVE_EXPLANATION_TOPICS.has(trait)) ||
+    typeof text !== "string" ||
+    !text
+  )
+    return;
   const effect = {
     id: state.nextPassiveEffect++,
     turn: state.turn,
@@ -981,8 +995,6 @@ function seedHabitat(state) {
     pattern = profile.pattern ?? "mosaic";
   if (state.geologicalStage === "hadean") {
     state.board.fill("neutral");
-    if (state.origin)
-      state.board[square(state.origin.r, state.origin.c)] = "fertile";
     return;
   }
   state.board.fill("neutral");
@@ -1261,7 +1273,20 @@ export function createState(seed = Date.now(), options = {}) {
             moved: false,
             divided: false,
             captured: false,
+            fertile: false,
             ...(options.hadeanTutorial ?? {}),
+          }
+        : null,
+    hadeanEnvironment:
+      options.geologicalStage === "hadean"
+        ? {
+            hostileDeathExplained:
+              options.hadeanEnvironment?.hostileDeathExplained === true,
+            fertileExplained:
+              options.hadeanEnvironment?.fertileExplained === true,
+            pendingFertility: [
+              ...(options.hadeanEnvironment?.pendingFertility ?? []),
+            ],
           }
         : null,
     hadeanCaptureUnlocked: options.hadeanCaptureUnlocked ?? false,
@@ -1780,52 +1805,43 @@ export function activateOrigin(state) {
     throw Error("Hadeano indisponível.");
   if (!state.origin.selected) {
     state.origin.selected = true;
+    emitPassiveEffect(
+      state,
+      "Reprodução",
+      "Reprodução disponível.",
+      { outcome: "hadean-reproduction-tutorial", theme: "neutral" },
+    );
     return false;
   }
 
   const center = { r: state.origin.r, c: state.origin.c },
-    // The playable Hadean habitat is the 4×4 core (rows/columns 2–5).
-    // Opposite corners give both lineages room to radiate before predation appears.
-    blueCell = { r: 5, c: 2 },
-    amberCell = { r: 2, c: 5 },
+    blueCell = { r: 4, c: 3 },
+    amberCell = { r: 3, c: 4 },
     source = {
       rank: 4,
-      mutations: 1,
-      traits: ["Fotossíntese"],
-      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+      mutations: 0,
+      traits: ["Respiração anaeróbia"],
+      ancestry: ["Respiração anaeróbia"],
     },
     blue = newPiece(state, "blue", blueCell.r, blueCell.c, source),
     amber = newPiece(state, "amber", amberCell.r, amberCell.c, source);
 
   state.hadeanTutorial.dividedAtTurn = state.turn;
+  for (const piece of [blue, amber]) {
+    piece.hadeanOpeningReproductionReady = true;
+    piece.nextReproductionRound = round(state);
+  }
   state.pieces.push(blue, amber);
   registerDiscoveries(state, blue);
   registerDiscoveries(state, amber);
   state.board[square(center.r, center.c)] = "neutral";
-  for (const piece of [blue, amber]) {
-    const cell = square(piece.r, piece.c);
-    state.board[cell] = "neutral";
-    piece.photosynthesisCell = cell;
-    piece.photosynthesisSinceTurn = state.turn;
-    piece.photosynthesisReadyTurn =
-      state.turn + photosynthesisDelayTurns(state, piece);
-  }
   state.origin = null;
   state.phase = "move";
   state.current = "blue";
   state.hadeanTutorial.divided = true;
-  emitPassiveEffect(
-    state,
-    "Fotossíntese",
-    "Nova Mutação: 🟢 Fotossíntese.",
-    {
-      pieceId: blue.id,
-      outcome: "new-mutation",
-    },
-  );
   log(
     state,
-    `${geologicalLabel(state)} · 1º Ciclo: o ancestral com ⚪ Respiração anaeróbia consumiu o nicho primordial e se dividiu em dois Reis com 🟢 Fotossíntese, posicionados em cantos opostos do habitat seguro.`,
+    `${geologicalLabel(state)} · 1º Ciclo: o ancestral com ⚪ Respiração anaeróbia se dividiu em dois Reis protocelulares, posicionados em lados opostos do núcleo central e prontos para reproduzir.`,
   );
   return true;
 }
@@ -2511,6 +2527,19 @@ export function assertState(state) {
           typeof state.hadeanTutorial.moved === "boolean" &&
           typeof state.hadeanTutorial.divided === "boolean" &&
           typeof state.hadeanTutorial.captured === "boolean" &&
+          (state.hadeanTutorial.fertile === undefined ||
+            typeof state.hadeanTutorial.fertile === "boolean") &&
+          state.hadeanEnvironment &&
+          typeof state.hadeanEnvironment.hostileDeathExplained === "boolean" &&
+          typeof state.hadeanEnvironment.fertileExplained === "boolean" &&
+          Array.isArray(state.hadeanEnvironment.pendingFertility) &&
+          state.hadeanEnvironment.pendingFertility.every(
+            (entry) =>
+              entry &&
+              integer(entry.pieceId, 1) &&
+              integer(entry.cell, 0, 63) &&
+              integer(entry.dueTurn, 0),
+          ) &&
           (state.hadeanCaptureUnlocked === undefined ||
             typeof state.hadeanCaptureUnlocked === "boolean")
         : state.hadeanTutorial === null ||
@@ -3384,7 +3413,8 @@ export function assertState(state) {
       (effect) =>
         !integer(effect.id, 1) ||
         !integer(effect.turn) ||
-        !TRAITS[effect.trait] ||
+        (!TRAITS[effect.trait] &&
+          !PASSIVE_EXPLANATION_TOPICS.has(effect.trait)) ||
         ![null, "string"].includes(
           effect.outcome === null ? null : typeof effect.outcome,
         ) ||
