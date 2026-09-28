@@ -2237,6 +2237,10 @@ test("application UI starts with the Hadean common ancestor, then plays division
     let originCell = d.querySelector(".origin-piece").parentElement;
     originCell.click();
     assert.match(d.getElementById("selected").textContent, /Ancestral comum/);
+    assert.equal(d.querySelector(".toastify.xe-passive-toast"), null);
+
+    originCell = d.querySelector(".origin-piece").parentElement;
+    originCell.click();
 
     const reproductionToast = d.querySelector(".toastify.xe-passive-toast");
     assert.ok(reproductionToast);
@@ -2262,9 +2266,6 @@ test("application UI starts with the Hadean common ancestor, then plays division
     );
     click("mutation-dialog-close");
     reproductionDialog.dispatchEvent(new w.Event("close"));
-
-    originCell = d.querySelector(".origin-piece").parentElement;
-    originCell.click();
 
     assert.equal(d.querySelectorAll(".origin-piece").length, 0);
     assert.equal(d.querySelectorAll(".piece.blue").length, 1);
