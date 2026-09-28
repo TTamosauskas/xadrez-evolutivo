@@ -1876,7 +1876,7 @@ export function activateOrigin(state) {
   emitPassiveEffect(
     state,
     "Reprodução",
-    "Reprodução disponível.",
+    "Primeira Reprodução feita.",
     { outcome: "hadean-reproduction-tutorial", theme: "neutral" },
   );
   log(
