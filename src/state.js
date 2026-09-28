@@ -2527,7 +2527,8 @@ export function assertState(state) {
           typeof state.hadeanTutorial.moved === "boolean" &&
           typeof state.hadeanTutorial.divided === "boolean" &&
           typeof state.hadeanTutorial.captured === "boolean" &&
-          typeof state.hadeanTutorial.fertile === "boolean" &&
+          (state.hadeanTutorial.fertile === undefined ||
+            typeof state.hadeanTutorial.fertile === "boolean") &&
           state.hadeanEnvironment &&
           typeof state.hadeanEnvironment.hostileDeathExplained === "boolean" &&
           typeof state.hadeanEnvironment.fertileExplained === "boolean" &&
