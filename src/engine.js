@@ -2019,6 +2019,10 @@ function settle(ctx) {
   )
     return;
 
+  if (mutuallyBlocked(state)) {
+    resolveEcologicalDomain(state);
+    return;
+  }
   if (resolveEcologicalDomain(state)) return;
 
   if (
@@ -5501,8 +5505,11 @@ export function transition(previous, action) {
     log(state, `${OWNERS[state.current]} passaram a vez.`);
     advanceTurn(ctx);
     settle(ctx);
-  } else if (action.type === "RESOLVE_DOMAIN" && mutuallyBlocked(state)) {
-    resolveEcologicalDomain(state);
+  } else if (action.type === "RESOLVE_BLOCKED" && mutuallyBlocked(state)) {
+    if (!resolveEcologicalDomain(state)) {
+      advanceTurn(ctx);
+      settle(ctx);
+    }
   } else throw Error("Ação incompatível com a fase da partida.");
   if (action.type === "MOVE") {
     const acted = state.pieces.find((piece) => piece.id === action.id);
