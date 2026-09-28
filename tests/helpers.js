@@ -31,7 +31,9 @@ export function fixture(
             ]
           : [trait],
       ),
-      baseTraits = requestedTraits.includes("Fotossíntese")
+      baseTraits = requestedTraits.some((trait) =>
+        ["Fotossíntese", "Quimiossíntese"].includes(trait),
+      )
         ? []
         : [
             "Reparo Celular",
