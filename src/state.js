@@ -338,10 +338,8 @@ export function naturalAgeProfile(piece) {
       };
 }
 export const senescent = (state, piece) =>
-  !!piece &&
-  ((state.geologicalStage === "hadean" && piece.hadeanSenescent === true) ||
-    (multicellular(piece) &&
-      pieceAge(state, piece) >= naturalAgeProfile(piece).senescence));
+  multicellular(piece) &&
+  pieceAge(state, piece) >= naturalAgeProfile(piece).senescence;
 export const naturalInfertilityAge = (piece) =>
   bilateralLongevity(piece)
     ? NATURAL_INFERTILITY_AGE
@@ -351,12 +349,6 @@ export const naturallyInfertile = (state, piece) =>
   !has(piece, "Fertilidade Longeva") &&
   pieceAge(state, piece) >= naturalInfertilityAge(piece);
 export function naturalDeathChance(state, piece) {
-  if (
-    state.geologicalStage === "hadean" &&
-    piece?.hadeanFounder &&
-    piece.hadeanSenescent
-  )
-    return round(state) >= (piece.hadeanNaturalDeathRound ?? Infinity) ? 1 : 0;
   if (!multicellular(piece) || has(piece, "Imortalidade Biológica")) return 0;
   const age = pieceAge(state, piece),
     profile = naturalAgeProfile(piece);
@@ -533,7 +525,6 @@ const PASSIVE_EXPLANATION_TOPICS = new Set([
   "Reprodução",
   "Casa Hostil",
   "Casa Fértil",
-  "Morte Natural",
 ]);
 
 export function emitPassiveEffect(
@@ -1866,9 +1857,6 @@ export function activateOrigin(state) {
   for (const piece of [blue, amber]) {
     piece.hadeanOpeningReproductionReady = true;
     piece.nextReproductionRound = round(state);
-    piece.hadeanFounder = true;
-    piece.hadeanFounderCreatedTurn = state.turn;
-    piece.hadeanSenescent = false;
   }
   state.pieces.push(blue, amber);
   registerDiscoveries(state, blue);
