@@ -1886,18 +1886,8 @@ export function broodParasitismTargets(state, piece) {
   );
 }
 
-export function chemosynthesisAvailable(state, piece) {
-  return !!(
-    state.geologicalStage !== "hadean" &&
-    piece &&
-    has(piece, "Quimiossíntese") &&
-    reproductionReady(state, piece) &&
-    !resting(state, piece) &&
-    !dormant(state, piece) &&
-    terrain(state, piece.r, piece.c) === "hostile" &&
-    !lethalHazardAt(state, piece.r, piece.c) &&
-    !chemosynthesisExhaustedAt(state, piece.r, piece.c)
-  );
+export function chemosynthesisAvailable() {
+  return false;
 }
 
 export function canRejectBroodParasite(state, piece) {
