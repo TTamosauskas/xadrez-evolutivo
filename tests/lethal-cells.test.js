@@ -90,17 +90,8 @@ test("ordinary movement keeps a piece visible on a lethal cell until the next tu
   assertState(next);
 });
 
-test("a capture into a lethal Hadean cell removes the victim but leaves the doomed attacker visible", () => {
-  const state = earlyEarthState("hadean", 9502);
-  state.hadeanTutorial = {
-    moved: true,
-    divided: true,
-    captured: false,
-    dividedAtTurn: 0,
-  };
-  state.hadeanPredationGranted = { blue: true, amber: true };
-  state.hadeanCaptureUnlocked = true;
-
+test("a capture into a lethal Eoarchean cell removes the victim but leaves the doomed attacker visible", () => {
+  const state = earlyEarthState("eoarchean", 9502);
   const attacker = newPiece(state, "blue", 2, 2, {
       rank: 4,
       traits: ["Predação"],
@@ -135,7 +126,6 @@ test("a capture into a lethal Hadean cell removes the victim but leaves the doom
   assert.ok(doomed);
   assert.deepEqual([doomed.r, doomed.c], [1, 1]);
   assert.equal(lethalDeathsDue(landed), false);
-  assert.equal(landed.hadeanTutorial.captured, true);
 
   const nextRound = simulate(landed, { type: "PASS" });
   assert.equal(lethalDeathsDue(nextRound), true);
@@ -146,14 +136,8 @@ test("a capture into a lethal Hadean cell removes the victim but leaves the doom
   assertState(next);
 });
 
-test("Hadean reproduction may place a newborn in a lethal cell and keeps it visible until resolution", () => {
-  const state = earlyEarthState("hadean", 9503);
-  state.hadeanTutorial = {
-    moved: true,
-    divided: true,
-    captured: false,
-    dividedAtTurn: 0,
-  };
+test("Eoarchean reproduction may place a newborn in a lethal cell and keeps it visible until resolution", () => {
+  const state = earlyEarthState("eoarchean", 9503);
   const parent = newPiece(state, "blue", 2, 2, {
       rank: 4,
       traits: ["Fotossíntese"],
