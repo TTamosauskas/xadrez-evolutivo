@@ -77,7 +77,7 @@ test("ordinary movement keeps a piece visible on a lethal cell until the next tu
 
   assert.ok(doomed);
   assert.deepEqual([doomed.r, doomed.c], [0, 0]);
-  assert.equal(doomed.lethalDeathTurn, landed.turn);
+  assert.equal(doomed.lethalDeathRound, round(landed));
   assert.equal(lethalDeathsDue(landed), true);
   assert.ok(landed.logs.some((entry) => /letal/.test(entry.text)));
 
