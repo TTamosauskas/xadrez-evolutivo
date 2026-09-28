@@ -2046,6 +2046,8 @@ test("application UI starts with the Hadean common ancestor, then plays division
       const toast = w.document.createElement("div");
       toast.className = `toastify on ${options.className ?? ""}`;
       toast.textContent = options.text;
+      if (typeof options.onClick === "function")
+        toast.addEventListener("click", options.onClick);
       w.document.body.append(toast);
       this.toastElement = toast;
       return this;
@@ -2077,11 +2079,21 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
     assert.match(d.getElementById("round").textContent, /Tutorial 1\/2/);
     assert.equal(d.querySelectorAll(".cell.fertile").length, 0);
-    const noticeDialog = d.querySelector("#notice-dialog[open]");
-    assert.ok(noticeDialog);
-    assert.match(noticeDialog.textContent, /Fotossíntese/);
-    assert.match(noticeDialog.textContent, /Passe a Vez/);
-    click("notice-ok");
+    const photosynthesisToast = d.querySelector(".toastify.xe-passive-toast");
+    assert.ok(photosynthesisToast);
+    assert.match(photosynthesisToast.textContent, /Fotossíntese/);
+    photosynthesisToast.click();
+
+    const mutationDialog = d.querySelector("#mutation-dialog[open]");
+    assert.ok(mutationDialog);
+    assert.equal(
+      d.getElementById("mutation-dialog-title").textContent,
+      "🟢 Fotossíntese",
+    );
+    assert.match(d.getElementById("mutation-dialog-real").textContent, /^Na vida: /);
+    assert.match(d.getElementById("mutation-dialog-game").textContent, /^No jogo: /);
+    click("mutation-dialog-close");
+    mutationDialog.dispatchEvent(new w.Event("close"));
 
     const emptyCell = [...d.querySelectorAll(".cell")].find(
       (cell) => !cell.classList.contains("occupied"),

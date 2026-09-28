@@ -1,18 +1,82 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TRAITS } from "../src/constants.js";
+import { GEOLOGICAL_STAGES, TRAIT_STAGE } from "../src/geology.js";
 import { mutationExplanation } from "../src/mutation-explanation.js";
 
-test("every mutation has real-world and game explanations", () => {
+const normalize = (text) =>
+  String(text)
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+
+const escapeRegExp = (text) =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+function referenceVariants(trait) {
+  const base = normalize(trait),
+    variants = new Set([base]);
+  if (/[aeiou]$/u.test(base)) variants.add(base + "s");
+  if (/[rlz]$/u.test(base)) variants.add(base + "es");
+  if (base.endsWith("ao")) variants.add(base.slice(0, -2) + "oes");
+  return [...variants];
+}
+
+function mentionsTrait(text, trait) {
+  const normalized = normalize(text);
+  return referenceVariants(trait).some((variant) =>
+    new RegExp(
+      "(^|[^a-z0-9])" + escapeRegExp(variant) + "([^a-z0-9]|$)",
+      "u",
+    ).test(normalized),
+  );
+}
+
+test("every mutation has clearly separated life and game explanations", () => {
   for (const [trait, [icon, gameRule]] of Object.entries(TRAITS)) {
     const copy = mutationExplanation(trait);
-    assert.ok(copy, `missing explanation for ${trait}`);
-    assert.equal(copy.title, `${icon} ${trait}`);
+    assert.ok(copy, "missing explanation for " + trait);
+    assert.equal(copy.title, icon + " " + trait);
+    assert.match(copy.realWorld, /^Na vida: /);
     assert.ok(
-      copy.realWorld.length >= 24,
-      `real-world copy too short for ${trait}`,
+      copy.realWorld.length >= 33,
+      "real-world copy too short for " + trait,
     );
     assert.doesNotMatch(copy.realWorld, /\bno jogo\b/i);
-    assert.equal(copy.game, `No jogo: ${gameRule}`);
+    assert.equal(copy.game, "No jogo: " + gameRule);
   }
+});
+
+test("game explanations do not name mutations from later geological stages", () => {
+  const stageOrder = new Map(
+    GEOLOGICAL_STAGES.map((stage, index) => [stage.id, index]),
+  );
+
+  for (const [trait, [, gameRule]] of Object.entries(TRAITS)) {
+    const traitStage = TRAIT_STAGE[trait],
+      traitIndex = stageOrder.get(traitStage);
+    if (traitIndex === undefined) continue;
+
+    for (const candidate of Object.keys(TRAITS)) {
+      if (candidate === trait) continue;
+      const candidateIndex = stageOrder.get(TRAIT_STAGE[candidate]);
+      if (candidateIndex === undefined || candidateIndex <= traitIndex) continue;
+      assert.equal(
+        mentionsTrait(gameRule, candidate),
+        false,
+        trait + " antecipa a mutação futura " + candidate + ": " + gameRule,
+      );
+    }
+  }
+});
+
+test("Hadean energy branches explain only their current behavior", () => {
+  assert.equal(
+    mutationExplanation("Predação").game,
+    "No jogo: Define um ramo energético hereditário incompatível com Fotossíntese. Capturas alimentares válidas podem gerar reprodução.",
+  );
+  assert.equal(
+    mutationExplanation("Fotossíntese").game,
+    "No jogo: Define um ramo energético hereditário incompatível com Predação. Ao maturar, torna fértil a própria casa.",
+  );
 });
