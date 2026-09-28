@@ -705,6 +705,7 @@ function makeChildProfile(
     const missingEnergyBranch = missingArcheanEnergyBranch(state),
       complementaryBranch = complementaryArcheanEnergyBranch(state, child),
       openingGuarantee =
+        state.geologicalStage !== "hadean" &&
         round(state) >= 1 &&
         state.openingMutationSatisfied?.[parent.owner] === false &&
         (!missingEnergyBranch || !!complementaryBranch),
