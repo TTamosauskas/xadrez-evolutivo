@@ -537,7 +537,7 @@ test("Hadean Predação mutates the newborn that fills the last habitat cell", (
     for (let col = 2; col <= 5; col++) {
       const cell = square(r, col);
       if (cell === empty) continue;
-      const owner = r === 2 && col === 2
+      const owner = r === 3 && col === 3
         ? "blue"
         : (r + col) % 2
           ? "blue"
@@ -548,7 +548,7 @@ test("Hadean Predação mutates the newborn that fills the last habitat cell", (
         ancestry: ["Respiração anaeróbia", "Fotossíntese"],
       });
       s.pieces.push(piece);
-      if (r === 2 && col === 2) parent = piece;
+      if (r === 3 && col === 3) parent = piece;
     }
 
   assert.ok(parent);
