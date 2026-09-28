@@ -45,8 +45,9 @@ test("Como Jogar covers all scenarios, ecological events and Earth required inno
         stage.id + " missing " + trait,
       );
 
-  assert.ok(text.includes("Contramedidas de estagnação"));
+  assert.ok(text.includes("Encerramento por Domínio Ecológico"));
   assert.ok(text.includes("Domínio Ecológico"));
+  assert.ok(text.includes("24 rodadas sem captura"));
   assert.ok(text.includes("Reparo Celular"));
   assert.ok(text.includes("Simetria Bilateral"));
   assert.ok(text.includes("🫁 Respiração Pulmonar"));
