@@ -712,13 +712,13 @@ function markLethalDeath(state, piece, reason = "ambiente letal") {
     "Casa letal",
     [
       "☠️ A criatura caiu em uma casa letal.",
-      "Ela permanecerá visível até o próxima rodada e então morrerá.",
+      "Ela permanecerá visível até a próxima rodada e então morrerá.",
     ],
     "hostile",
   );
   log(
     state,
-    `${OWNERS[piece.owner]}: ☠️ ${coord(piece.r, piece.c)} é letal; a criatura morrerá no início do próxima rodada.`,
+    `${OWNERS[piece.owner]}: ☠️ ${coord(piece.r, piece.c)} é letal; a criatura morrerá no início da próxima rodada.`,
   );
   return true;
 }
