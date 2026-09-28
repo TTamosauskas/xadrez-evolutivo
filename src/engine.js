@@ -749,19 +749,8 @@ function resolveDueLethalDeaths(ctx) {
           hadeanHostile &&
           state.hadeanEnvironment &&
           !state.hadeanEnvironment.hostileDeathExplained
-        ) {
+        )
           state.hadeanEnvironment.hostileDeathExplained = true;
-          emitPassiveEffect(
-            state,
-            "Casa Hostil",
-            "🟥 Casa Hostil causou a primeira morte.",
-            {
-              pieceId,
-              outcome: "hadean-hostile-death",
-              theme: "hostile",
-            },
-          );
-        }
       }
     }
   if (deaths) extinction(state);
@@ -1815,19 +1804,8 @@ function matureHadeanFertility(state) {
         state,
         `♨️ Quimiossíntese transformou ${coord(piece.r, piece.c)} em casa fértil.`,
       );
-      if (!state.hadeanEnvironment.fertileExplained) {
+      if (!state.hadeanEnvironment.fertileExplained)
         state.hadeanEnvironment.fertileExplained = true;
-        emitPassiveEffect(
-          state,
-          "Casa Fértil",
-          "🟩 A primeira Casa Fértil surgiu.",
-          {
-            pieceId: piece.id,
-            outcome: "hadean-first-fertile",
-            theme: "fertile",
-          },
-        );
-      }
       return false;
     });
   return matured;
