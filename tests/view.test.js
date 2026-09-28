@@ -2152,7 +2152,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.equal(d.querySelectorAll(".origin-piece").length, 0);
     assert.equal(d.querySelectorAll(".piece.blue").length, 1);
     assert.equal(d.querySelectorAll(".piece.amber").length, 1);
-    assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 2);
+    assert.equal(d.querySelectorAll("#board .piece.blue, #board .piece.amber").length, 2);
     assert.equal(d.querySelectorAll(".piece.hadean-protocell").length, 0);
     assert.match(d.getElementById("round").textContent, /Tutorial 1\/3/);
     assert.equal(d.querySelectorAll(".cell.fertile").length, 2);
@@ -2169,7 +2169,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     assert.ok(!amberFounder.classList.contains("vivification-target"));
 
     blueFounder.click();
-    assert.equal(d.querySelectorAll(".piece.blue, .piece.amber").length, 3);
+    assert.equal(d.querySelectorAll("#board .piece.blue, #board .piece.amber").length, 3);
     const firstChild = [...d.querySelectorAll(".piece.blue")]
       .find((piece) => piece.parentElement !== blueFounder);
     assert.ok(firstChild);
