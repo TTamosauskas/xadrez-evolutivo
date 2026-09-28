@@ -1123,6 +1123,7 @@ function canonicalFounderLayouts() {
         CANONICAL_FOUNDER_CELLS[a],
         CANONICAL_FOUNDER_CELLS[b],
       ];
+      if (!blue.every((cell) => cell.r >= 4)) continue;
       for (let c = 0; c < CANONICAL_FOUNDER_CELLS.length; c++)
         for (let d = c + 1; d < CANONICAL_FOUNDER_CELLS.length; d++) {
           if ([a, b].includes(c) || [a, b].includes(d)) continue;
@@ -1178,7 +1179,7 @@ export function earthFounderStarts(geologicalStage, cycle = 1, state = null) {
   const normalizedStage = resolveGeologicalStage(geologicalStage).id,
     stage = GEOLOGICAL_STAGES.find((entry) => entry.id === normalizedStage);
   if (!stage?.founderLayout) return null;
-  const mode = state ? pick(state, [0, 1, 2, 3]) : 0,
+  const mode = state ? pick(state, [0, 1]) : 0,
     cells = stage.founderLayout.map((cell) => founderTransform(cell, mode));
   if (normalizedStage === "hadean")
     return [

@@ -908,6 +908,36 @@ test("compact non-canonical cycle starts keep Brancas on the lower half", () => 
   }
 });
 
+test("new games always place Brancas on the lower half of the board", () => {
+  for (const scenario of ["alternative", "arena"])
+    for (let seed = 1; seed <= 16; seed++) {
+      const s = createState(seed, {
+        scenario,
+        geologicalStage: "holocene",
+        naturalBarriers: false,
+      });
+      const blue = s.pieces.filter((piece) => piece.owner === "blue");
+      assert.ok(blue.length > 0, `${scenario} seed ${seed}`);
+      assert.ok(
+        blue.every((piece) => piece.r >= 4),
+        `${scenario} seed ${seed}: Brancas fora da metade inferior`,
+      );
+    }
+
+  for (const stage of GEOLOGICAL_STAGES.filter(
+    (candidate) => candidate.id !== "hadean",
+  ))
+    for (let seed = 1; seed <= 4; seed++) {
+      const s = createPeriodState(stage.id, seed, null, "earth"),
+        blue = s.pieces.filter((piece) => piece.owner === "blue");
+      assert.ok(blue.length > 0, `${stage.id} seed ${seed}`);
+      assert.ok(
+        blue.every((piece) => piece.r >= 4),
+        `${stage.id} seed ${seed}: Brancas fora da metade inferior`,
+      );
+    }
+});
+
 test("Hadean ancestral split keeps Brancas and Pretas on opposite central sides across seeds", () => {
   for (let seed = 1; seed <= 24; seed++) {
     let s = createCampaignState(seed);
@@ -3118,6 +3148,64 @@ test("same-branch offspring do not spend the guarantee reserved for the missing 
   });
   assert.equal(s.openingMutationSatisfied.blue, false);
   assert.equal(s.historicalTraits.includes("Predação"), false);
+  assertState(s);
+});
+
+test("Eoarchean makes Fotossíntese precede Predação independently for both sides", () => {
+  const s = createState(1199, {
+    scenario: "earth",
+    geologicalStage: "eoarchean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: ["Respiração anaeróbia", "Quimiossíntese"],
+    naturalBarriers: false,
+  });
+  s.pieces = [];
+  s.nextId = 1;
+  s.board.fill("fertile");
+  s.turn = 2;
+
+  const blue = newPiece(s, "blue", 5, 2, {
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Quimiossíntese"],
+      ancestry: ["Respiração anaeróbia", "Quimiossíntese"],
+    }),
+    amber = newPiece(s, "amber", 2, 5, {
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Quimiossíntese"],
+      ancestry: ["Respiração anaeróbia", "Quimiossíntese"],
+    });
+  s.pieces.push(blue, amber);
+
+  const firstBranch = (parent) => {
+    const before = s.nextId;
+    assert.equal(
+      reproduce(context(s), parent, null, "teste", {
+        forcedCount: 1,
+        ignoreReadiness: true,
+        immediateDevelopment: true,
+      }),
+      1,
+    );
+    return s.pieces.find((piece) => piece.id >= before);
+  };
+
+  const bluePhoto = firstBranch(blue),
+    amberPhoto = firstBranch(amber);
+  for (const child of [bluePhoto, amberPhoto]) {
+    assert.ok(child);
+    assert.ok(child.traits.includes("Fotossíntese"));
+    assert.equal(child.traits.includes("Predação"), false);
+  }
+
+  const bluePredator = firstBranch(blue),
+    amberPredator = firstBranch(amber);
+  for (const child of [bluePredator, amberPredator]) {
+    assert.ok(child);
+    assert.ok(child.traits.includes("Predação"));
+    assert.equal(child.traits.includes("Fotossíntese"), false);
+  }
+
   assertState(s);
 });
 

@@ -2312,7 +2312,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
     );
     assert.match(
       d.getElementById("mutation-dialog-real").textContent,
-      /^Na vida: Na hipótese do Mundo de RNA/,
+      /^Na vida: A hipótese do Mundo de RNA diz que a evolução começou/,
     );
     const reproductionGameCopy = d.getElementById("mutation-dialog-game");
     assert.match(
@@ -2595,6 +2595,7 @@ test("victory dialog uses the concise extinction model", () => {
   assert.match(body, /Características predominantes:/);
   assert.match(body, /Chifre/);
   assert.doesNotMatch(body, /linhagem sobrevivente/);
+  assert.equal(d.getElementById("game-over-new").textContent, "Próximo Ciclo");
   dom.window.close();
 });
 
