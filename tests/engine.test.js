@@ -339,10 +339,10 @@ test("Hadean starts with one fertile gray ancestor and splits into two photosynt
 
   const blue = s.pieces.find((piece) => piece.owner === "blue"),
     amber = s.pieces.find((piece) => piece.owner === "amber");
-  assert.ok(blue.r > originCell.r);
-  assert.ok(amber.r < originCell.r);
-  assert.equal(blue.c, originCell.c);
-  assert.equal(amber.c, originCell.c);
+  assert.deepEqual([blue.r, blue.c], [5, 2]);
+  assert.deepEqual([amber.r, amber.c], [2, 5]);
+  assert.equal(Math.abs(blue.r - amber.r), 3);
+  assert.equal(Math.abs(blue.c - amber.c), 3);
   assert.equal(s.board[square(blue.r, blue.c)], "neutral");
   assert.equal(s.board[square(amber.r, amber.c)], "neutral");
   assert.equal(s.board[square(originCell.r, originCell.c)], "neutral");
