@@ -782,16 +782,19 @@ function hadeanOpeningTarget(state, owner, chemosynthetic) {
     return pick(state, HADEAN_CENTRAL_CELLS.filter(free));
   }
 
-  const preferredRow = owner === "blue" ? 7 : 0,
-    preferred = Array.from({ length: 8 }, (_, c) => ({
+  const preferredRow = owner === "blue" ? 5 : 2,
+    preferred = Array.from({ length: 4 }, (_, index) => ({
       r: preferredRow,
-      c,
+      c: index + 2,
     })).filter(free),
     outer = [];
   if (preferred.length) return pick(state, preferred);
-  for (let r = 0; r < 8; r++)
-    for (let c = 0; c < 8; c++)
-      if ((r === 0 || r === 7 || c === 0 || c === 7) && free({ r, c }))
+  for (let r = 2; r <= 5; r++)
+    for (let c = 2; c <= 5; c++)
+      if (
+        (r === 2 || r === 5 || c === 2 || c === 5) &&
+        free({ r, c })
+      )
         outer.push({ r, c });
   return pick(state, outer);
 }
