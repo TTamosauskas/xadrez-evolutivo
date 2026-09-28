@@ -1854,10 +1854,8 @@ export function activateOrigin(state) {
     amber = newPiece(state, "amber", amberCell.r, amberCell.c, source);
 
   state.hadeanTutorial.dividedAtTurn = state.turn;
-  for (const piece of [blue, amber]) {
-    piece.hadeanOpeningReproductionReady = true;
+  for (const piece of [blue, amber])
     piece.nextReproductionRound = round(state);
-  }
   state.pieces.push(blue, amber);
   registerDiscoveries(state, blue);
   registerDiscoveries(state, amber);
