@@ -2059,7 +2059,8 @@ export function stageComplete(state) {
     minimumCycle = stage.cycles?.length ?? 1;
   return (
     (state.cycle ?? 1) >= minimumCycle &&
-    missingInnovations(state).length === 0
+    missingInnovations(state).length === 0 &&
+    (stage.id !== "hadean" || state.hadeanTutorial?.fertile === true)
   );
 }
 
