@@ -375,10 +375,17 @@ export function applyNaturalDeaths(ctx) {
   return deaths;
 }
 
-function finishGame(state, winner, reason, extinctionFounder = null) {
+function finishGame(
+  state,
+  winner,
+  reason,
+  extinctionFounder = null,
+  victoryType = null,
+) {
   state.result = extinctionFounder
     ? { winner, reason, extinctionFounder: clone(extinctionFounder) }
     : { winner, reason };
+  if (victoryType) state.result.victoryType = victoryType;
   delete state.lastDeathPiece;
   state.phase = "over";
   clearLocomotionChain(state);
@@ -435,6 +442,7 @@ function extinction(state) {
       winner,
       "Extinção total.",
       extinctionFounder,
+      "extinction",
     );
     return true;
   }
@@ -462,12 +470,16 @@ function finishEcologicalDomain(state, trigger) {
       state,
       winner,
       `Domínio Ecológico: ${OWNERS[winner]} venceram por maior população (${score}) após ${trigger}.`,
+      null,
+      "ecological-domain",
     );
   else
     finishGame(
       state,
       null,
       `Domínio Ecológico: empate populacional (${score}) após ${trigger}.`,
+      null,
+      "ecological-domain",
     );
   return true;
 }
@@ -503,7 +515,21 @@ function passiveProgressPending(state) {
 
 export function resolveEcologicalDomain(state) {
   if (state.result || state.phase !== "move") return false;
-  if (!hadeanPlayableAreaOccupied(state)) return false;
+
+  if (state.geologicalStage === "hadean") {
+    if (!hadeanPlayableAreaOccupied(state)) return false;
+    if (
+      state.pieces.some((piece) =>
+        Number.isInteger(piece.lethalDeathRound),
+      )
+    )
+      return false;
+    return finishEcologicalDomain(
+      state,
+      "ocupação total das 16 casas jogáveis do núcleo 4×4",
+    );
+  }
+
   const passivePending = passiveProgressPending(state);
   if (mutuallyBlocked(state) && !passivePending)
     return finishEcologicalDomain(state, "bloqueio total de ações");
