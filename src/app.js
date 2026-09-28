@@ -34,7 +34,6 @@ import { howToPlayLines } from "./help.js";
 import {
   GEOLOGICAL_STAGES,
   currentGeologicalStage,
-  stageComplete,
   stageProgress,
 } from "./geology.js";
 import {
