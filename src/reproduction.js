@@ -36,7 +36,7 @@ import {
   ecologicalDomainBlocked,
   consumeFertileTerrain,
   photosynthesisDelayTurns,
-  hadeanHabitatSaturated,
+  lethalHazardAt,
   allelopathySourceAt,
 } from "./state.js";
 import {
@@ -723,6 +723,16 @@ function makeRequestedBrood(count) {
   return brood;
 }
 
+export function hadeanPredationChance(state, owner) {
+  if (
+    state?.geologicalStage !== "hadean" ||
+    !["blue", "amber"].includes(owner) ||
+    state.hadeanPredationGranted?.[owner]
+  )
+    return 0;
+  return Math.min(1, Math.max(0, (state.reproductions?.[owner] ?? 0) / 3));
+}
+
 function mutateHadeanPredationNewborn(state, child) {
   if (
     state.geologicalStage !== "hadean" ||
@@ -735,16 +745,6 @@ function mutateHadeanPredationNewborn(state, child) {
     blue: false,
     amber: false,
   };
-  const opponent = child.owner === "blue" ? "amber" : "blue",
-    firstPredator =
-      !state.hadeanPredationGranted.blue &&
-      !state.hadeanPredationGranted.amber &&
-      hadeanHabitatSaturated(state),
-    answeringPredator =
-      !state.hadeanPredationGranted[child.owner] &&
-      state.hadeanPredationGranted[opponent] === true;
-
-  if (!firstPredator && !answeringPredator) return false;
 
   child.genome = forceGenomeTrait(
     child.genome,
@@ -788,10 +788,31 @@ function mutateHadeanPredationNewborn(state, child) {
     state.hadeanCaptureUnlocked = true;
     log(
       state,
-      "Hadeano: Brancas e Pretas já produziram descendentes com 👾 Predação.",
+      "Hadeano: Brancas e Pretas já produziram descendentes com 👾 Predação; a captura foi liberada.",
     );
   }
   return true;
+}
+
+function attemptHadeanPredationAfterReproduction(
+  state,
+  owner,
+  existingPieceIds,
+) {
+  const chance = hadeanPredationChance(state, owner);
+  if (!chance) return false;
+
+  const child = state.pieces
+    .filter(
+      (piece) =>
+        piece.owner === owner &&
+        !existingPieceIds.has(piece.id) &&
+        !has(piece, "Predação"),
+    )
+    .sort((a, b) => a.id - b.id)[0];
+  if (!child) return false;
+  if (chance < 1 && random(state) >= chance) return false;
+  return mutateHadeanPredationNewborn(state, child);
 }
 
 function spawnChild(state, profile, r, c) {
@@ -821,9 +842,16 @@ function spawnChild(state, profile, r, c) {
     child.photosynthesisReadyTurn =
       state.turn + photosynthesisDelayTurns(state, child);
   }
+  if (lethalHazardAt(state, r, c)) {
+    child.lethalDeathRound = round(state) + 1;
+    child.lethalDeathReason = "nascimento em ambiente letal";
+    log(
+      state,
+      `${OWNERS[child.owner]}: ☠️ um descendente nasceu em ${coord(r, c)} e morrerá no início da próxima rodada.`,
+    );
+  }
   state.pieces.push(child);
   registerDiscoveries(state, child);
-  mutateHadeanPredationNewborn(state, child);
   return child;
 }
 
@@ -1636,6 +1664,7 @@ export function reproduce(
   options = {},
 ) {
   const state = ctx.state,
+    existingPieceIds = new Set(state.pieces.map((piece) => piece.id)),
     mates = [...new Map(
       [mate, options.additionalMate]
         .filter(Boolean)
@@ -2125,6 +2154,11 @@ export function reproduce(
           round(state) + COLONY_BUD_COOLDOWN;
     }
     state.reproductions[parent.owner]++;
+    attemptHadeanPredationAfterReproduction(
+      state,
+      parent.owner,
+      existingPieceIds,
+    );
     tryVectorPathogen(state, parent);
     for (const candidate of mates) tryVectorPathogen(state, candidate);
     log(
