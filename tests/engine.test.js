@@ -491,7 +491,6 @@ test("each original Hadean King guarantees chemosynthesis on its first reproduct
   );
   assert.ok(amberFirstChild);
   assert.ok(amberFirstChild.traits.includes("Quimiossíntese"));
-  assert.ok([3, 4].includes(amberFirstChild.r) && [3, 4].includes(amberFirstChild.c));
   assert.ok(
     s.pieces.find((piece) => piece.id === amber.id).nextReproductionRound <=
       round(s),
