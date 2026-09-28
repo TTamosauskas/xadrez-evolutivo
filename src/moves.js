@@ -1503,8 +1503,7 @@ function emptyEggTarget(state, r, c, owner = null) {
     !at(state, r, c) &&
     !eggAt(state, r, c) &&
     !plantSeedAt(state, r, c) &&
-    !barrierAt(state, r, c) &&
-    !lethalHazardAt(state, r, c)
+    !barrierAt(state, r, c)
   );
 }
 
@@ -1821,8 +1820,7 @@ export function rhizomeTargets(state, piece) {
       fragmentAt(state, r, c) ||
       barrierAt(state, r, c) ||
       naturalBarrierAt(state, r, c) ||
-      eventBarrierAt(state, r, c) ||
-      lethalHazardAt(state, r, c)
+      eventBarrierAt(state, r, c)
     )
       continue;
     targets.push({ r, c, middleR, middleC });
