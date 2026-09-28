@@ -3062,7 +3062,7 @@ function executeMove(ctx, action) {
             stopIndex + 1,
           );
         state.movementTrace.stop = { r, c };
-        state.movementTrace.outcome = "died-lethal";
+        state.movementTrace.outcome = "doomed-lethal";
       }
       leaveBacterialTrail(state, p, square(p.r, p.c));
       p.r = r;
