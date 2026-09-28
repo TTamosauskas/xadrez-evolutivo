@@ -845,7 +845,9 @@ export const energyBranch = (piece) =>
     ? "Fotossíntese"
     : piece?.traits?.includes("Predação")
       ? "Predação"
-      : null;
+      : piece?.traits?.includes("Quimiossíntese")
+        ? "Quimiossíntese"
+        : null;
 export const canPhotosynthesize = (piece) =>
   has(piece, "Fotossíntese") || has(piece, "Mixotrofia");
 export const distance = (a, b) =>
