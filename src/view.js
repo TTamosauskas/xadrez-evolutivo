@@ -14,7 +14,6 @@ import {
   naturalDeathChance,
   deterministicDeathNextTurn,
   reproductionReady,
-  ecologicalQuadrant,
   eventBarrierAt,
   organicResidueAt,
   carcassAt,
@@ -504,24 +503,6 @@ function cellSelectionInfo(state, r, c) {
     );
   }
 
-  const domainIndex = ecologicalQuadrant(r, c),
-    domainQuadrant = state.ecologicalDomain?.active
-      ? state.ecologicalDomain.quadrants[domainIndex]
-      : null;
-  if (
-    domainQuadrant?.owner &&
-    (domainQuadrant.progress > 0 || domainQuadrant.consolidated)
-  ) {
-    const progress = domainQuadrant.consolidated ? 3 : domainQuadrant.progress;
-    add(
-      "strategic",
-      "◉",
-      `Domínio das ${OWNERS[domainQuadrant.owner]}`,
-      `Estabilidade ${progress}/3${domainQuadrant.consolidated ? " · quadrante consolidado" : ""}.`,
-      `◉ Domínio ${progress}/3`,
-    );
-  }
-
   return {
     coordinate: coord(r, c),
     terrain: {
@@ -709,8 +690,8 @@ export function render(
             ? `${OWNERS[state.result.winner]} venceram`
             : "Empate"
         : `Vez das ${OWNERS[state.current]}${state.neurofocus ? " · ♾️ Hiperfoco" : ""}${
-            busy === "conway"
-              ? " · habitat evoluindo…"
+            busy === "blocked"
+              ? " · aguardando processos do tabuleiro…"
               : busy
                 ? " · IA pensando…"
                 : ""
@@ -836,13 +817,8 @@ export function render(
   }
 
   const ev = state.event,
-    diseases = state.diseases.filter((d) => d.endRound >= currentRound),
-    domain = state.ecologicalDomain,
-    domainSummary = domain?.active
-      ? `Domínio Ecológico: Brancas ${domain.quadrants.filter((q) => q.consolidated && q.owner === "blue").length}/3 · Pretas ${domain.quadrants.filter((q) => q.consolidated && q.owner === "amber").length}/3`
-      : null;
+    diseases = state.diseases.filter((d) => d.endRound >= currentRound);
   $("event").textContent = [
-    domainSummary,
     ev
       ? `${ev.name} · ${Math.max(0, 10 - (currentRound - ev.startRound))} rodadas restantes`
       : state.pendingEcologicalEvents > 0
@@ -1154,17 +1130,6 @@ export function render(
           superRecommendation.action?.type === "MOVE" &&
           superRecommendation.action.r === r &&
           superRecommendation.action.c === c,
-        domainIndex = ecologicalQuadrant(r, c),
-        domainQuadrant = state.ecologicalDomain?.active
-          ? state.ecologicalDomain.quadrants[domainIndex]
-          : null,
-        domainVisible = !!(
-          domainQuadrant?.owner &&
-          (domainQuadrant.progress > 0 || domainQuadrant.consolidated)
-        ),
-        domainClass = domainVisible
-          ? ` domain-${domainQuadrant.owner}${domainQuadrant.consolidated ? " domain-consolidated" : ""}${r % 4 === 0 ? " domain-edge-top" : ""}${r % 4 === 3 ? " domain-edge-bottom" : ""}${c % 4 === 0 ? " domain-edge-left" : ""}${c % 4 === 3 ? " domain-edge-right" : ""}`
-          : "",
         zoochoryClass = plantSeed?.zoochory
           ? ` plant-seed-zoo-${plantSeed.zoochory}`
           : "",
@@ -1174,12 +1139,11 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${mineralRemnant ? " mineral-remnant" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${selectedCellHere ? " cell-selected-info" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction || rhizomeAction ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}${domainClass}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${mineralRemnant ? " mineral-remnant" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${selectedCellHere ? " cell-selected-info" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction || rhizomeAction ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
       cell.dataset.c = c;
-      cell.dataset.domainQuadrant = domainIndex;
       const terrainLabel = cellInfo.terrain.label,
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza, Respiração anaeróbia${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
@@ -1190,22 +1154,6 @@ export function render(
           : baseAccessibleLabel;
       cell.setAttribute("aria-label", accessibleLabel);
       cell.title = accessibleLabel;
-      if (
-        domainVisible &&
-        r % 4 === 0 &&
-        c % 4 === 0
-      ) {
-        const progress = domainQuadrant.consolidated
-          ? 3
-          : domainQuadrant.progress;
-        cell.append(
-          make(
-            "span",
-            `${"●".repeat(progress)}${"○".repeat(3 - progress)}`,
-            "domain-progress",
-          ),
-        );
-      }
       if (web)
         cell.append(make("span", "🕸️", "decomposition-mark web-mark"));
       if (inkCloud)

@@ -25,6 +25,7 @@ import {
   CANONICAL_FOUNDER_CELLS,
   earthFounderStarts,
   lethalHazardAt,
+  ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS,
 } from "../src/state.js";
 import {
   context,
@@ -32,8 +33,7 @@ import {
   simulate,
   mutuallyBlocked,
   applyNaturalDeaths,
-  advanceEcologicalDomain,
-  resolveEcologicalCollapse,
+  resolveEcologicalDomain,
 } from "../src/engine.js";
 import {
   movesFor,
@@ -53,7 +53,6 @@ import {
   startEvent,
   tickEnvironment,
   checkPopulationClimate,
-  repairConwayStagnation,
   advanceConway,
   fertilityDepletionRate,
   offensiveActionCount,
@@ -893,112 +892,6 @@ test("Hadean ancestral split keeps Brancas and Pretas on opposite central sides 
     assert.deepEqual([blue.r, blue.c], [4, 3], `seed ${seed}: Brancas`);
     assert.deepEqual([amber.r, amber.c], [3, 4], `seed ${seed}: Pretas`);
   }
-});
-
-test("mutual blocking advances Conway turn by turn until one side can act", () => {
-  let s = createState(302, {
-    geologicalStage: "devonian",
-    naturalBarriers: false,
-  });
-  s.board.fill("neutral");
-  s.pieces = [];
-  s.nextId = 1;
-  s.pieces = [
-    newPiece(s, "blue", 4, 4, { rank: 4, traits: ["Fotossíntese"] }),
-    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Fotossíntese"] }),
-  ];
-  for (const cell of [27, 28, 29]) s.board[cell] = "fertile";
-  s.turn = 79;
-  s.current = "blue";
-  s.notices = [];
-
-  assert.equal(legalActions(s).length, 0);
-  s.current = "amber";
-  assert.equal(legalActions(s).length, 0);
-  s.current = "blue";
-
-  s = simulate(s, { type: "PASS" });
-  const afterPassTurn = s.turn;
-  assert.equal(s.result, null);
-
-  let conwaySteps = 0,
-    blueActions = 0,
-    amberActions = 0;
-  while (!blueActions && !amberActions && conwaySteps < 8) {
-    s = simulate(s, { type: "CONWAY_STEP" });
-    conwaySteps++;
-    const current = s.current;
-    s.current = "blue";
-    blueActions = legalActions(s).length;
-    s.current = "amber";
-    amberActions = legalActions(s).length;
-    s.current = current;
-  }
-
-  assert.ok(conwaySteps >= 1);
-  assert.equal(s.turn, afterPassTurn + conwaySteps);
-  assert.ok(
-    s.logs.some((entry) =>
-      entry.text.startsWith("🌀 Conway: ambos os lados estavam sem ação"),
-    ),
-  );
-  assert.ok(blueActions > 0 || amberActions > 0);
-  assert.equal(s.conwayWatchUntil, null);
-  assert.equal(s.pieces.length, 2);
-  assertState(s);
-});
-
-test("stalled Conway repairs the local habitat in stages without a severe event", () => {
-  let s = createState(303, {
-    geologicalStage: "devonian",
-    naturalBarriers: false,
-  });
-  s.board.fill("neutral");
-  s.pieces = [];
-  s.nextId = 1;
-  s.pieces = [
-    newPiece(s, "blue", 7, 7, {
-      rank: 4,
-      traits: ["Carnívoro", "Voo"],
-    }),
-    newPiece(s, "amber", 0, 0, {
-      rank: 4,
-      traits: ["Carnívoro", "Voo"],
-    }),
-  ];
-  s.notices = [];
-
-  assert.equal(legalActions(s).length, 0);
-  s.current = "amber";
-  assert.equal(legalActions(s).length, 0);
-  s.current = "blue";
-
-  s = simulate(s, { type: "CONWAY_STEP" });
-  assert.deepEqual(s.conwayStagnation, { startedTurn: s.turn, level: 0 });
-  assert.equal(s.event, null);
-
-  const targetTurn = s.turn + 10;
-  while (s.turn < targetTurn)
-    s = simulate(s, { type: "CONWAY_STEP" });
-
-  assert.equal(s.turn, targetTurn);
-  assert.equal(s.event, null);
-  assert.equal(s.conwayWatchUntil, null);
-  assert.ok(
-    s.logs.some((entry) =>
-      entry.text.includes("Conway: a estagnação"),
-    ),
-  );
-  assert.ok(
-    s.logs.some(
-      (entry) =>
-        entry.text.includes("abriu um corredor local") ||
-        entry.text.includes("mobilidade ofensiva") ||
-        entry.text.includes("deslocou um organismo") ||
-        entry.text.includes("corredor ofensivo"),
-    ),
-  );
-  assertState(s);
 });
 
 test("invalid actions roll back the complete state, including random generator", () => {
@@ -2481,50 +2374,94 @@ test("natural death is certain at age 48, bypasses Regeneração and leaves no t
   assertState(s);
 });
 
-test("final Conway repair creates an offensive option instead of accepting zero-edit contact", () => {
-  const s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 0 },
-    { owner: "amber", r: 3, c: 4, rank: 0 },
-  ]);
-  assert.equal(offensiveActionCount(s), 0);
-
-  repairConwayStagnation(context(s), 3);
-
-  assert.ok(offensiveActionCount(s) > 0);
-  assert.ok(
-    s.logs.some(
-      (entry) =>
-        entry.text.includes("mobilidade ofensiva") ||
-        entry.text.includes("deslocou um organismo") ||
-        entry.text.includes("corredor ofensivo"),
-    ),
+test("mutual blocking ends immediately by ecological-domain population", () => {
+  const s = createState(1510, {
+    geologicalStage: "devonian",
+    naturalBarriers: false,
+  });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces.push(
+    newPiece(s, "blue", 7, 7, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "blue", 7, 6, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Carnívoro", "Voo"] }),
   );
+  s.current = "blue";
+  s.notices = [];
+  assert.equal(mutuallyBlocked(s), true);
+
+  const beforeBoard = [...s.board],
+    beforeTurn = s.turn,
+    next = simulate(s, { type: "RESOLVE_BLOCKED" });
+
+  assert.equal(next.result?.winner, "blue");
+  assert.match(next.result?.reason ?? "", /Domínio Ecológico/);
+  assert.match(next.result?.reason ?? "", /2 × 1/);
+  assert.deepEqual(next.board, beforeBoard);
+  assert.equal(next.turn, beforeTurn);
+  assertState(next);
+});
+
+test("mutual blocking with equal populations ends in an ecological-domain draw", () => {
+  const s = createState(1511, {
+    geologicalStage: "devonian",
+    naturalBarriers: false,
+  });
+  s.board.fill("neutral");
+  s.pieces = [];
+  s.nextId = 1;
+  s.pieces.push(
+    newPiece(s, "blue", 7, 7, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+  );
+  s.notices = [];
+  assert.equal(mutuallyBlocked(s), true);
+  assert.equal(resolveEcologicalDomain(s), true);
+  assert.equal(s.result?.winner, null);
+  assert.match(s.result?.reason ?? "", /empate populacional/);
   assertState(s);
 });
 
-test("prolonged combat drought triggers an offensive repair even when moves exist", () => {
+test("offensive drought ends by ecological-domain population after the timeout", () => {
   let s = fixture([
-    { owner: "blue", r: 4, c: 4, rank: 0 },
-    { owner: "amber", r: 4, c: 5, rank: 0 },
+    { owner: "blue", r: 6, c: 0, rank: 0 },
+    { owner: "blue", r: 6, c: 2, rank: 0 },
+    { owner: "amber", r: 1, c: 7, rank: 0 },
   ]);
-  s.turn = 47;
+  s.board.fill("neutral");
+  s.turn = ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS * 2 - 1;
   s.current = "blue";
   s.lastSuccessfulCaptureRound = 0;
-  s.offensiveStagnation = { startedRound: 0, level: 0 };
   assert.equal(offensiveActionCount(s), 0);
   assert.ok(legalActions(s).length > 0);
 
   s = simulate(s, { type: "PASS" });
 
-  assert.ok(offensiveActionCount(s) > 0);
-  assert.ok(
-    s.logs.some(
-      (entry) =>
-        entry.text.includes("mobilidade ofensiva") ||
-        entry.text.includes("deslocou um organismo") ||
-        entry.text.includes("corredor ofensivo"),
-    ),
+  assert.equal(s.result?.winner, "blue");
+  assert.match(s.result?.reason ?? "", /Domínio Ecológico/);
+  assert.match(
+    s.result?.reason ?? "",
+    new RegExp(String(ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS)),
   );
+  assertState(s);
+});
+
+test("a recent successful capture postpones ecological-domain offensive timeout", () => {
+  let s = fixture([
+    { owner: "blue", r: 6, c: 0, rank: 0 },
+    { owner: "blue", r: 6, c: 2, rank: 0 },
+    { owner: "amber", r: 1, c: 7, rank: 0 },
+  ]);
+  s.board.fill("neutral");
+  s.turn = ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS * 2 - 1;
+  s.current = "blue";
+  s.lastSuccessfulCaptureRound = ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS - 2;
+  assert.equal(offensiveActionCount(s), 0);
+
+  s = simulate(s, { type: "PASS" });
+
+  assert.equal(s.result, null);
   assertState(s);
 });
 
@@ -5664,188 +5601,3 @@ test("successor cycle gives both sides the same photosynthetic and non-photosynt
 });
 
 
-test("severe events suspend Conway for five turns while blocked turns still advance", () => {
-  let s = createState(505, {
-    geologicalStage: "devonian",
-    naturalBarriers: false,
-  });
-  s.board.fill("neutral");
-  s.pieces = [];
-  s.nextId = 1;
-  s.pieces = [
-    newPiece(s, "blue", 7, 7, { rank: 4, traits: ["Dormência"] }),
-    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Dormência"] }),
-  ];
-  startEvent(context(s), "warming");
-  s.notices = [];
-  const frozen = [...s.board],
-    startTurn = s.turn;
-  for (let i = 0; i < 4; i++) {
-    assert.equal(mutuallyBlocked(s), true);
-    s = simulate(s, { type: "CONWAY_STEP" });
-    assert.deepEqual(s.board, frozen);
-    assert.ok(s.event);
-  }
-  assert.equal(s.turn, startTurn + 4);
-  s = simulate(s, { type: "CONWAY_STEP" });
-  assert.equal(s.turn, startTurn + 5);
-  assert.equal(s.event, null);
-  assert.ok(
-    s.logs.some((entry) =>
-      entry.text.includes("Conway permanece suspenso"),
-    ),
-  );
-  assertState(s);
-});
-
-
-test("Domínio Ecológico começa no turno 200 e não antes", () => {
-  const s = fixture([
-    { owner: "blue", r: 0, c: 0 },
-    { owner: "amber", r: 7, c: 7 },
-  ], 150);
-  s.turn = 199;
-
-  assert.equal(advanceEcologicalDomain(context(s), "blue"), false);
-  assert.equal(s.ecologicalDomain.active, false);
-
-  s.turn = 200;
-  advanceEcologicalDomain(context(s), "blue");
-
-  assert.equal(s.ecologicalDomain.active, true);
-  assert.ok(s.notices.some((notice) => notice.title === "Domínio Ecológico"));
-  assertState(s);
-});
-
-test("Domínio Ecológico exige três turnos próprios e elimina o rival gradualmente", () => {
-  const s = fixture([
-    { owner: "blue", r: 0, c: 0 },
-    { owner: "blue", r: 0, c: 1 },
-    { owner: "blue", r: 1, c: 0 },
-    { owner: "amber", r: 2, c: 2 },
-    { owner: "amber", r: 3, c: 3 },
-    { owner: "amber", r: 6, c: 6 },
-  ], 151);
-  s.turn = 200;
-  s.ecologicalDomain.active = true;
-
-  const quadrant = s.ecologicalDomain.quadrants[0];
-  advanceEcologicalDomain(context(s), "blue");
-  assert.equal(quadrant.progress, 1);
-  assert.equal(quadrant.consolidated, false);
-
-  advanceEcologicalDomain(context(s), "amber");
-  assert.equal(quadrant.progress, 1);
-
-  advanceEcologicalDomain(context(s), "blue");
-  assert.equal(quadrant.progress, 2);
-  advanceEcologicalDomain(context(s), "amber");
-  assert.equal(quadrant.progress, 2);
-
-  const rivalsBefore = s.pieces.filter(
-    (piece) => piece.owner === "amber" && piece.r < 4 && piece.c < 4,
-  ).length;
-  advanceEcologicalDomain(context(s), "blue");
-  assert.equal(quadrant.progress, 3);
-  assert.equal(quadrant.consolidated, true);
-  assert.equal(
-    s.pieces.filter(
-      (piece) => piece.owner === "amber" && piece.r < 4 && piece.c < 4,
-    ).length,
-    rivalsBefore,
-  );
-
-  const trapped = s.pieces.find(
-    (piece) => piece.owner === "amber" && piece.r < 4 && piece.c < 4,
-  );
-  assert.equal(movesFor(s, trapped).length, 0);
-
-  advanceEcologicalDomain(context(s), "blue");
-  assert.equal(
-    s.pieces.filter(
-      (piece) => piece.owner === "amber" && piece.r < 4 && piece.c < 4,
-    ).length,
-    rivalsBefore - 1,
-  );
-  assert.equal(s.result, null);
-  assertState(s);
-});
-
-test("três quadrantes iniciam colapso e eliminam todos os sobreviventes um a um", () => {
-  const s = fixture([
-    { owner: "blue", r: 0, c: 0 },
-    { owner: "blue", r: 1, c: 1 },
-    { owner: "amber", r: 2, c: 2 },
-    { owner: "blue", r: 0, c: 4 },
-    { owner: "blue", r: 1, c: 5 },
-    { owner: "amber", r: 2, c: 6 },
-    { owner: "blue", r: 4, c: 0 },
-    { owner: "blue", r: 5, c: 1 },
-    { owner: "amber", r: 6, c: 2 },
-    { owner: "amber", r: 5, c: 5 },
-    { owner: "amber", r: 6, c: 6 },
-  ], 152);
-  s.turn = 200;
-  s.ecologicalDomain.active = true;
-  for (const index of [0, 1, 2])
-    Object.assign(s.ecologicalDomain.quadrants[index], {
-      owner: "blue",
-      progress: 2,
-      consolidated: false,
-    });
-
-  advanceEcologicalDomain(context(s), "blue");
-
-  assert.equal(s.result, null);
-  assert.equal(s.phase, "collapse");
-  assert.equal(s.ecologicalDomain.victoryOwner, "blue");
-  assert.equal(
-    s.ecologicalDomain.quadrants.filter(
-      (quadrant) => quadrant.consolidated && quadrant.owner === "blue",
-    ).length,
-    3,
-  );
-
-  const initialAmber = s.pieces.filter((piece) => piece.owner === "amber").length;
-  const fourthQuadrantAmber = s.pieces.filter(
-    (piece) => piece.owner === "amber" && piece.r >= 4 && piece.c >= 4,
-  ).length;
-  assert.ok(fourthQuadrantAmber > 0);
-
-  for (let remaining = initialAmber - 1; remaining >= 0; remaining--) {
-    resolveEcologicalCollapse(context(s));
-    assert.equal(
-      s.pieces.filter((piece) => piece.owner === "amber").length,
-      remaining,
-    );
-    if (remaining > 0) {
-      assert.equal(s.result, null);
-      assert.equal(s.phase, "collapse");
-    }
-  }
-
-  assert.equal(s.result?.winner, "blue");
-  assert.match(s.result?.reason ?? "", /Domínio Ecológico/);
-  assert.equal(s.phase, "over");
-  assert.equal(
-    s.pieces.some((piece) => piece.owner === "amber"),
-    false,
-  );
-  assertState(s);
-});
-
-test("maioria simples inicia Domínio Ecológico mesmo com um único organismo", () => {
-  const s = fixture([
-    { owner: "blue", r: 0, c: 0 },
-    { owner: "amber", r: 6, c: 6 },
-  ], 154);
-  s.turn = 200;
-  s.ecologicalDomain.active = true;
-
-  advanceEcologicalDomain(context(s), "blue");
-
-  assert.equal(s.ecologicalDomain.quadrants[0].owner, "blue");
-  assert.equal(s.ecologicalDomain.quadrants[0].progress, 1);
-  assert.equal(s.ecologicalDomain.quadrants[0].consolidated, false);
-  assertState(s);
-});

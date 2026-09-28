@@ -104,7 +104,7 @@ test("controller forwards realized passive effects and suppresses them in auto m
   assert.equal(hidden.length, 0);
 });
 
-test("automatic Conway waits between visible board updates", () => {
+test("mutual blocking resolves ecological domain after a short visible delay", () => {
   const s = createState(302, {
     geologicalStage: "devonian",
     naturalBarriers: false,
@@ -113,10 +113,10 @@ test("automatic Conway waits between visible board updates", () => {
   s.pieces = [];
   s.nextId = 1;
   s.pieces.push(
-    newPiece(s, "blue", 4, 4, { rank: 4, traits: [] }),
-    newPiece(s, "amber", 0, 0, { rank: 4, traits: [] }),
+    newPiece(s, "blue", 7, 7, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "blue", 7, 6, { rank: 4, traits: ["Carnívoro", "Voo"] }),
+    newPiece(s, "amber", 0, 0, { rank: 4, traits: ["Carnívoro", "Voo"] }),
   );
-  for (const cell of [27, 28, 29]) s.board[cell] = "fertile";
   s.turn = 80;
   s.current = "blue";
   s.notices = [];
@@ -126,7 +126,7 @@ test("automatic Conway waits between visible board updates", () => {
     renders = [];
   let nextTimer = 0;
   const controller = new Controller(s, {
-    conwayDelay: 700,
+    domainDelay: 700,
     render: (state, busy) =>
       renders.push({
         revision: state.revision,
@@ -144,20 +144,17 @@ test("automatic Conway waits between visible board updates", () => {
 
   controller.refresh();
   assert.equal(delays[0], 700);
-  assert.equal(renders.at(-1).busy, "conway");
+  assert.equal(renders.at(-1).busy, "blocked");
   const before = [...controller.state.board];
 
   const first = [...timers.values()][0];
   timers.clear();
   first();
 
-  assert.notDeepEqual(controller.state.board, before);
-  assert.ok(controller.state.turn >= 81);
-  assert.ok(renders.some((entry) => entry.revision === controller.state.revision));
-  if (controller.conwayTimer !== null) {
-    assert.equal(delays.at(-1), 700);
-    assert.equal(renders.at(-1).busy, "conway");
-  }
+  assert.deepEqual(controller.state.board, before);
+  assert.equal(controller.state.turn, 80);
+  assert.equal(controller.state.result?.winner, "blue");
+  assert.match(controller.state.result?.reason ?? "", /Domínio Ecológico/);
   controller.dispose();
 });
 
@@ -637,59 +634,6 @@ test("game-over rendering waits one second after the result is committed", () =>
   assert.equal(renders.at(-1).showResult, true);
   controller.dispose();
 });
-
-test("ecological collapse advances automatically one organism at a time", () => {
-  const s = fixture([
-      { owner: "blue", r: 0, c: 0 },
-      { owner: "amber", r: 6, c: 6 },
-      { owner: "amber", r: 7, c: 7 },
-    ], 402),
-    timers = new Map(),
-    delays = new Map();
-  let nextTimer = 0;
-  s.turn = 205;
-  s.phase = "collapse";
-  s.ecologicalDomain.active = true;
-  s.ecologicalDomain.victoryOwner = "blue";
-
-  const controller = new Controller(s, {
-    render: () => {},
-    setTimer: (fn, delay) => {
-      const id = ++nextTimer;
-      timers.set(id, fn);
-      delays.set(id, delay);
-      return id;
-    },
-    clearTimer: (id) => {
-      timers.delete(id);
-      delays.delete(id);
-    },
-  });
-
-  controller.refresh();
-  const first = [...delays.entries()].find(([, delay]) => delay === 250);
-  assert.ok(first);
-  timers.get(first[0])();
-  assert.equal(
-    controller.state.pieces.filter((piece) => piece.owner === "amber").length,
-    1,
-  );
-  assert.equal(controller.state.result, null);
-
-  const second = [...delays.entries()].find(([, delay]) => delay === 250);
-  assert.ok(second);
-  timers.get(second[0])();
-  assert.equal(
-    controller.state.pieces.some((piece) => piece.owner === "amber"),
-    false,
-  );
-  assert.equal(controller.state.result?.winner, "blue");
-
-  const resultTimer = [...delays.entries()].find(([, delay]) => delay === 1000);
-  assert.ok(resultTimer);
-  controller.dispose();
-});
-
 
 test("single-player scheduling preserves a long movement trace in the only immediate render", () => {
   const state = fixture([

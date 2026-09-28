@@ -25,12 +25,8 @@ import {
   naturalAgeProfile,
   pieceAge,
   juvenile,
-  ECOLOGICAL_DOMAIN_START_TURN,
-  ECOLOGICAL_DOMAIN_REQUIRED_TURNS,
-  ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS,
-  ecologicalQuadrant,
+  ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS,
   ecologicalDomainBlocked,
-  createEcologicalDomain,
   organicResidueAt,
   carcassAt,
   captureDisturbanceAt,
@@ -134,7 +130,6 @@ import {
   tickSevereEventTurn,
   tickEnvironment,
   checkPopulationClimate,
-  repairConwayStagnation,
   offensiveActionCount,
 } from "./environment.js";
 function applyChemicalCaptureDefense(state, dead, attacker) {
@@ -444,163 +439,77 @@ function extinction(state) {
   }
   return false;
 }
-function ecologicalDomainController(state, quadrant) {
-  const counts = { blue: 0, amber: 0 };
-  for (const piece of state.pieces)
-    if (ecologicalQuadrant(piece.r, piece.c) === quadrant)
-      counts[piece.owner]++;
-  if (counts.blue > counts.amber) return "blue";
-  if (counts.amber > counts.blue) return "amber";
-  return null;
+function ecologicalDomainPopulation(state) {
+  return {
+    blue: state.pieces.filter((piece) => piece.owner === "blue").length,
+    amber: state.pieces.filter((piece) => piece.owner === "amber").length,
+  };
 }
 
-function excludeEcologicalPiece(state, piece, quadrant) {
-  state.pieces = state.pieces.filter((candidate) => candidate.id !== piece.id);
-  if (state.chain === piece.id) state.chain = null;
-  if (state.neurofocus === piece.id) state.neurofocus = null;
-  if (state.neurodivergenceAction?.id === piece.id)
-    state.neurodivergenceAction = null;
-  state.chainTrait = null;
-  log(
-    state,
-    `${OWNERS[piece.owner]} perderam uma peça no quadrante ${quadrant + 1} por exclusão do Domínio Ecológico.`,
-  );
-}
+function finishEcologicalDomain(state, trigger) {
+  const population = ecologicalDomainPopulation(state),
+    winner =
+      population.blue > population.amber
+        ? "blue"
+        : population.amber > population.blue
+          ? "amber"
+          : null,
+    score = `${population.blue} × ${population.amber}`;
 
-function consolidateEcologicalQuadrant(state, entry, quadrant) {
-  entry.consolidated = true;
-  entry.progress = ECOLOGICAL_DOMAIN_REQUIRED_TURNS;
-  const loser = other(entry.owner);
-  const beforeEggs = state.eggs.length,
-    beforeSeeds = state.plantSeeds.length;
-  state.eggs = state.eggs.filter(
-    (egg) =>
-      !(
-        egg.owner === loser &&
-        ecologicalQuadrant(egg.r, egg.c) === quadrant
-      ),
-  );
-  state.plantSeeds = state.plantSeeds.filter(
-    (seed) =>
-      !(
-        seed.owner === loser &&
-        ecologicalQuadrant(seed.r, seed.c) === quadrant
-      ),
-  );
-  const lostBrood =
-    beforeEggs - state.eggs.length + beforeSeeds - state.plantSeeds.length;
-  log(
-    state,
-    `🏁 ${OWNERS[entry.owner]} consolidaram o quadrante ${quadrant + 1} por Domínio Ecológico.${lostBrood ? ` ${lostBrood} ovo(s) ou semente(s) adversário(s) foram excluídos.` : ""}`,
-  );
-}
-
-export function advanceEcologicalDomain(ctx, actingOwner) {
-  const state = ctx.state;
-  if (state.result || state.turn < ECOLOGICAL_DOMAIN_START_TURN) return false;
-  state.ecologicalDomain ??= createEcologicalDomain();
-  if (!state.ecologicalDomain.active) {
-    state.ecologicalDomain.active = true;
-    notice(
-      state,
-      "Domínio Ecológico",
-      [
-        "A partida entrou na fase de Domínio Ecológico.",
-        "Tenha mais organismos que o rival em um quadrante para iniciar o domínio.",
-        "Mantenha o controle por 3 turnos próprios para consolidar o quadrante. O rival perde acesso a ele e suas criaturas remanescentes desaparecem uma a uma.",
-        "Consolide 3 dos 4 quadrantes para vencer.",
-      ],
-      "ecological-domain-start",
-    );
-    log(state, "🏁 Domínio Ecológico iniciado.");
-  }
-
-  for (let quadrant = 0; quadrant < 4; quadrant++) {
-    const entry = state.ecologicalDomain.quadrants[quadrant];
-    if (entry.consolidated) {
-      if (entry.owner !== actingOwner) continue;
-      const victim = state.pieces.find(
-        (piece) =>
-          piece.owner !== entry.owner &&
-          ecologicalQuadrant(piece.r, piece.c) === quadrant,
-      );
-      if (victim) excludeEcologicalPiece(state, victim, quadrant);
-      continue;
-    }
-
-    const controller = ecologicalDomainController(state, quadrant);
-    if (!controller) {
-      entry.owner = null;
-      entry.progress = 0;
-      continue;
-    }
-    if (entry.owner !== controller) {
-      entry.owner = controller;
-      entry.progress = controller === actingOwner ? 1 : 0;
-    } else if (controller === actingOwner)
-      entry.progress = Math.min(
-        ECOLOGICAL_DOMAIN_REQUIRED_TURNS,
-        entry.progress + 1,
-      );
-
-    if (
-      entry.owner === actingOwner &&
-      entry.progress >= ECOLOGICAL_DOMAIN_REQUIRED_TURNS
-    )
-      consolidateEcologicalQuadrant(state, entry, quadrant);
-  }
-
-  for (const owner of ["blue", "amber"]) {
-    const consolidated = state.ecologicalDomain.quadrants.filter(
-      (quadrant) => quadrant.consolidated && quadrant.owner === owner,
-    ).length;
-    if (consolidated >= ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS) {
-      state.ecologicalDomain.victoryOwner = owner;
-      state.phase = "collapse";
-      state.chain = null;
-  state.chainTrait = null;
-      state.partner = null;
-      state.manipulation = null;
-      state.building = null;
-      state.eggPlacement = null;
-      state.domesticPlacement = null;
-      state.socialDefense = null;
-      const loser = other(owner);
-      state.eggs = state.eggs.filter((egg) => egg.owner !== loser);
-      state.plantSeeds = state.plantSeeds.filter(
-        (seed) => seed.owner !== loser,
-      );
-      log(
-        state,
-        `🏁 ${OWNERS[owner]} consolidaram ${consolidated} dos 4 quadrantes. O colapso final da linhagem adversária começou.`,
-      );
-      return true;
-    }
-  }
-  return extinction(state);
-}
-
-export function resolveEcologicalCollapse(ctx) {
-  const state = ctx.state,
-    winner = state.ecologicalDomain?.victoryOwner;
-  if (state.phase !== "collapse" || !winner || state.result) return false;
-  const loser = other(winner),
-    victim = state.pieces.find((piece) => piece.owner === loser);
-  if (victim) {
-    excludeEcologicalPiece(
-      state,
-      victim,
-      ecologicalQuadrant(victim.r, victim.c),
-    );
-  }
-  if (!state.pieces.some((piece) => piece.owner === loser)) {
+  if (winner)
     finishGame(
       state,
       winner,
-      `Domínio Ecológico: ${OWNERS[winner]} consolidaram 3 dos 4 quadrantes.`,
+      `Domínio Ecológico: ${OWNERS[winner]} venceram por maior população (${score}) após ${trigger}.`,
     );
+  else
+    finishGame(
+      state,
+      null,
+      `Domínio Ecológico: empate populacional (${score}) após ${trigger}.`,
+    );
+  return true;
+}
+
+function passiveProgressPending(state) {
+  const now = round(state);
+  if ((state.hadeanEnvironment?.pendingFertility?.length ?? 0) > 0)
     return true;
-  }
+  if (
+    canWaitForRest(state, "blue") ||
+    canWaitForRest(state, "amber") ||
+    canWaitForBirth(state, "blue") ||
+    canWaitForBirth(state, "amber")
+  )
+    return true;
+  return state.pieces.some(
+    (piece) =>
+      Number.isInteger(piece.chemosynthesisReadyTurn) ||
+      Number.isInteger(piece.photosynthesisReadyTurn) ||
+      Number.isInteger(piece.extremophyteSinceRound) ||
+      (piece.nextReproductionRound ?? now) > now ||
+      juvenile(state, piece),
+  );
+}
+
+export function resolveEcologicalDomain(state) {
+  if (state.result || state.phase !== "move") return false;
+  const passivePending = passiveProgressPending(state);
+  if (mutuallyBlocked(state) && !passivePending)
+    return finishEcologicalDomain(state, "bloqueio total de ações");
+
+  const elapsed =
+    round(state) - (state.lastSuccessfulCaptureRound ?? 0);
+  if (
+    !passivePending &&
+    offensiveActionCount(state) === 0 &&
+    elapsed >= ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS
+  )
+    return finishEcologicalDomain(
+      state,
+      `${ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS} rodadas sem captura e sem opção ofensiva`,
+    );
+
   return false;
 }
 
@@ -1998,11 +1907,10 @@ function advanceTurn(ctx) {
     if (!extinction(state)) applyNaturalDeaths(ctx);
     if (!extinction(state)) matureExtremophytes(state);
     if (!extinction(state)) checkPopulationClimate(ctx);
-    if (!extinction(state)) resolveOffensiveStagnation(ctx);
   }
   maturePhotosynthesis(state, state.current);
   recordExtremophyteAdaptation(state);
-  if (!extinction(state) && advanceEcologicalDomain(ctx, acting)) return;
+  if (!extinction(state) && resolveEcologicalDomain(state)) return;
   if (!extinction(state)) checkPopulation(state);
 }
 function actionCountFor(state, owner) {
@@ -2020,65 +1928,6 @@ export function mutuallyBlocked(state) {
     actionCountFor(state, "blue") === 0 &&
     actionCountFor(state, "amber") === 0
   );
-}
-
-function resolveOffensiveStagnation(ctx) {
-  const state = ctx.state;
-  if (
-    state.result ||
-    state.phase !== "move" ||
-    state.event ||
-    state.pendingEcologicalEvents > 0
-  )
-    return;
-  const now = round(state),
-    lastCapture = state.lastSuccessfulCaptureRound ?? 0;
-  state.offensiveStagnation ??= { startedRound: lastCapture, level: 0 };
-  if (offensiveActionCount(state) > 0) return;
-
-  const elapsed = now - state.offensiveStagnation.startedRound,
-    thresholds = [24, 36, 52];
-  while (
-    state.offensiveStagnation.level < thresholds.length &&
-    elapsed >= thresholds[state.offensiveStagnation.level]
-  ) {
-    repairConwayStagnation(ctx, 3);
-    state.offensiveStagnation.level++;
-    if (offensiveActionCount(state) > 0) break;
-  }
-  if (state.offensiveStagnation.level === thresholds.length)
-    state.offensiveStagnation = { startedRound: now, level: 0 };
-}
-
-function resolveConwayStagnation(ctx) {
-  const state = ctx.state;
-  if (!mutuallyBlocked(state)) {
-    state.conwayWatchUntil = null;
-    state.conwayStagnation = null;
-    return;
-  }
-  if (state.event || state.pendingEcologicalEvents > 0) {
-    state.conwayWatchUntil = null;
-    state.conwayStagnation = null;
-    return;
-  }
-  if (!state.conwayStagnation) {
-    state.conwayStagnation = { startedTurn: state.turn, level: 0 };
-    state.conwayWatchUntil = null;
-    return;
-  }
-  const elapsed = state.turn - state.conwayStagnation.startedTurn,
-    thresholds = [3, 6, 10];
-  while (
-    state.conwayStagnation.level < thresholds.length &&
-    elapsed >= thresholds[state.conwayStagnation.level]
-  ) {
-    const level = state.conwayStagnation.level + 1;
-    repairConwayStagnation(ctx, level);
-    state.conwayStagnation.level = level;
-  }
-  if (state.conwayStagnation.level === thresholds.length)
-    state.conwayStagnation = { startedTurn: state.turn, level: 0 };
 }
 
 function recycleOccupiedOrganicResidue(state) {
@@ -2166,12 +2015,15 @@ function settle(ctx) {
     state.phase === "egg-placement" ||
     state.phase === "domestic-placement" ||
     state.phase === "social-defense" ||
-    state.phase === "serotonin-reposition" ||
-    state.phase === "collapse"
+    state.phase === "serotonin-reposition"
   )
     return;
 
-  if (mutuallyBlocked(state)) return;
+  if (mutuallyBlocked(state)) {
+    resolveEcologicalDomain(state);
+    return;
+  }
+  if (resolveEcologicalDomain(state)) return;
 
   if (
     legalActions(state).length ||
@@ -2690,7 +2542,6 @@ function resolveElectricDischarge(ctx, action) {
   if (killed) {
     markCarcass(state, cell);
     state.lastSuccessfulCaptureRound = round(state);
-    state.offensiveStagnation = null;
   }
   const cooldown = metabolicReproductionCooldown(piece) * 3;
   piece.nextReproductionRound = Math.max(
@@ -2770,7 +2621,6 @@ function resolveFeedingReach(ctx, action) {
   let born = 0;
   if (killed) {
     state.lastSuccessfulCaptureRound = round(state);
-    state.offensiveStagnation = null;
     if (predatoryReproductionAvailable(piece, victim))
       born = reproduce(ctx, piece, null, "predação", {
         resourceKind: "prey",
@@ -2861,7 +2711,6 @@ function resolveExtendedCapture(ctx, action) {
   let born = 0;
   if (killed) {
     state.lastSuccessfulCaptureRound = round(state);
-    state.offensiveStagnation = null;
     if (
       option.trait === "Tromba" &&
       predatoryReproductionAvailable(piece, victim)
@@ -4096,7 +3945,6 @@ function executeMove(ctx, action) {
       infectedTurn: state.turn,
     };
     state.lastSuccessfulCaptureRound = round(state);
-    state.offensiveStagnation = null;
     log(
       state,
       `${OWNERS[p.owner]}: 🌀 Parasitoidismo assumiu o controle temporário da criatura em ${coord(victim.r, victim.c)}.`,
@@ -4130,8 +3978,7 @@ function executeMove(ctx, action) {
     let born = 0;
     if (killed) {
       state.lastSuccessfulCaptureRound = round(state);
-      state.offensiveStagnation = null;
-      born = reproduce(ctx, p, null, "predação", {
+        born = reproduce(ctx, p, null, "predação", {
         resourceKind: "prey",
       });
       if (!born) {
@@ -4208,8 +4055,7 @@ function executeMove(ctx, action) {
     if (killed && victim.owner !== p.owner) {
       capturedEnemy = victim;
       state.lastSuccessfulCaptureRound = round(state);
-      state.offensiveStagnation = null;
-      if (state.geologicalStage === "hadean")
+        if (state.geologicalStage === "hadean")
         markHadeanTutorialStep(state, "captured");
     }
     manipulation = null;
@@ -5567,9 +5413,7 @@ export function transition(previous, action) {
   const ctx = context(state);
   state.movementTrace = null;
   beginNeurodivergentAction(state, action);
-  if (action.type === "DOMAIN_COLLAPSE" && state.phase === "collapse")
-    resolveEcologicalCollapse(ctx);
-  else if (action.type === "ORIGIN_CLICK" && state.phase === "origin")
+  if (action.type === "ORIGIN_CLICK" && state.phase === "origin")
     activateOrigin(state);
   else if (action.type === "MOVE" && state.phase === "move")
     executeMove(ctx, action);
@@ -5661,30 +5505,10 @@ export function transition(previous, action) {
     log(state, `${OWNERS[state.current]} passaram a vez.`);
     advanceTurn(ctx);
     settle(ctx);
-  } else if (action.type === "CONWAY_STEP" && mutuallyBlocked(state)) {
-    if (!conwayUnlocked(state))
-      log(state, "Ambos os lados estavam sem ação; o turno avançou.");
-    else if (severeEventActive(state))
-      log(
-        state,
-        "⛔ Evento severo: Conway permanece suspenso; o turno avança sem alterar o habitat.",
-      );
-    else {
-      log(
-        state,
-        "🌀 Conway: ambos os lados estavam sem ação; o habitat avançou um turno.",
-      );
-      advanceConway(ctx, { blocked: true });
-    }
-    if (!extinction(state)) {
+  } else if (action.type === "RESOLVE_BLOCKED" && mutuallyBlocked(state)) {
+    if (!resolveEcologicalDomain(state)) {
       advanceTurn(ctx);
       settle(ctx);
-      if (
-        !state.result &&
-        conwayUnlocked(state) &&
-        !severeEventActive(state)
-      )
-        resolveConwayStagnation(ctx);
     }
   } else throw Error("Ação incompatível com a fase da partida.");
   if (action.type === "MOVE") {

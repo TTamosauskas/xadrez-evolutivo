@@ -441,7 +441,7 @@ $("undo-neocortex").addEventListener("click", () => {
   if (controller.undoNeocortex()) report("↻ Cenário desfeito.");
 });
 function openMutationExplanation(effect) {
-  const copy = effectExplanation(effect?.trait);
+  const copy = effectExplanation(effect);
   if (!copy) return;
 
   const dialog = $("mutation-dialog");

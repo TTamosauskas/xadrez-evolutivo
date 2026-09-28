@@ -2185,7 +2185,6 @@ export function pieceActionState(state, piece) {
 
 export function legalActions(state) {
   if (state.result) return [];
-  if (state.phase === "collapse") return [{ type: "DOMAIN_COLLAPSE" }];
   if (state.phase === "serotonin-reposition")
     return [
       ...serotoninRepositionTargets(state).map((target) => ({

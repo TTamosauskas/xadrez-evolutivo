@@ -89,6 +89,19 @@ test("Hadean energy branches explain only their current behavior", () => {
   );
 });
 
+test("mutation-loss effects use the dedicated loss explanation", () => {
+  assert.deepEqual(
+    effectExplanation({ trait: "Chifre", outcome: "mutation-loss" }),
+    {
+      trait: "Chifre",
+      title: "Perda de Chifre",
+      realWorld:
+        "Na vida: Mutações podem destruir a atividade de um gene causando a perda de características de seus antepassados",
+      game: "No jogo: Organismo não herda Chifre da sua linhagem.",
+    },
+  );
+});
+
 test("tutorial and terrain toasts share the explanatory modal format", () => {
   assert.deepEqual(effectExplanation("Reprodução"), {
     title: "Reprodução",

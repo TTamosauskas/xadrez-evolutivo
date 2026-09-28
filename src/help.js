@@ -7,11 +7,7 @@ import {
   TRAIT_STAGE,
 } from "./geology.js";
 import { ARENA_FOUNDATIONAL_TRAITS } from "./arena.js";
-import {
-  ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS,
-  ECOLOGICAL_DOMAIN_REQUIRED_TURNS,
-  ECOLOGICAL_DOMAIN_START_TURN,
-} from "./state.js";
+import { ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS } from "./state.js";
 
 const traitLabel = (name) => `${TRAITS[name][0]} ${name}`;
 const section = (title) => `§ ${title}`;
@@ -168,7 +164,7 @@ export function howToPlayLines() {
   return [
     section("Objetivo e estrutura da partida"),
     "Invenit é um jogo evolutivo em tabuleiro 8×8. Brancas e Pretas alternam turnos controlando populações de organismos representadas pelas formas do xadrez. Selecione uma peça para ver as ações legais e escolha uma casa destacada; quando uma linhagem não possui ação legal, a vez pode avançar automaticamente.",
-    `Há duas formas de vencer uma partida: extinguir todos os organismos ativos do adversário ou, a partir do turno global ${ECOLOGICAL_DOMAIN_START_TURN}, conquistar o Domínio Ecológico. No Domínio, o tabuleiro é dividido em quatro quadrantes; mantenha maioria em um quadrante por ${ECOLOGICAL_DOMAIN_REQUIRED_TURNS} turnos próprios para consolidá-lo e consolide ${ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS} dos 4 quadrantes para iniciar o colapso da população rival. Ovos e sementes não evitam extinção e não contam como população ativa.`,
+    `Há duas formas de encerrar uma partida competitiva: extinção total de uma linhagem ou Domínio Ecológico. O Domínio Ecológico é resolvido pela população ativa quando ambos os lados ficam sem ações legais ou quando passam ${ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS} rodadas sem captura bem-sucedida e nenhuma captura está disponível. O lado com mais organismos vence; igualdade populacional produz empate. Ovos e sementes não contam como população ativa.`,
     "Formas de xadrez definem geometria e capacidade reprodutiva. Rei, Peão, Cavalo, Bispo, Torre e Rainha mantêm suas trajetórias oficiais quando a evolução libera movimento ou captura; características biológicas determinam quais dessas ações estão disponíveis.",
 
     section("Hadeano"),
@@ -266,11 +262,9 @@ export function howToPlayLines() {
     "Eventos severos — Era Glacial, Erupção Vulcânica, Meteoro, Explosões de raios gama e Aquecimento Global — tornam cerca de 90% do tabuleiro hostil durante 5 turnos e suspendem Conway. Erupções acrescentam um pequeno núcleo ☠️ de lava e Meteoros uma casa ☠️ de impacto; essas zonas ignoram Carapaça, Dormência e Regeneração e deixam substrato neutro ao fim do evento. Os demais eventos ambientais duram normalmente 10 rodadas. Surto Patogênico coexiste com o estado ambiental quando possível.",
     ...ecologicalEventLines(),
 
-    section("Contramedidas de estagnação"),
-    "Se apenas um lado ficar sem ação legal, ele passa automaticamente. Se ambos ficarem bloqueados, o relógio avança; a partir do Devoniano, o habitat também avança por Conway, salvo durante eventos severos. Uma peça que individualmente não possui nenhuma ação disponível aparece desbotada no tabuleiro. Ao selecioná-la, o cabeçalho recebe ⏳ e o painel informa a causa da espera e o tempo restante quando houver. Senescência é indicada apenas pelo símbolo da peça em itálico e detalhada no painel selecionado. 🤢 aparece centralizado no topo da casa somente quando a morte antes do próximo turno já é determinística; riscos probabilísticos não recebem esse marcador.",
-    "Em bloqueio mútuo prolongado a partir do Devoniano, o jogo escala reparos após 3, 6 e 10 turnos: primeiro tenta remover uma barreira natural, depois neutraliza até três casas hostis de uma linha ou coluna e, por fim, procura criar contato ofensivo alterando terreno, reposicionando um organismo ou abrindo um corredor entre populações.",
-    "Mesmo quando ainda existem movimentos, se o tabuleiro estiver sem qualquer opção de captura e o relógio ofensivo tiver alcançado 24, 36 ou 52 rodadas desde sua referência de estagnação, o jogo tenta um reparo ofensivo. Essas intervenções ficam suspensas enquanto há evento ecológico ativo ou pendente e só operam onde Conway já está liberado.",
-    `Como mecanismo final de encerramento, o Domínio Ecológico entra a partir do turno global ${ECOLOGICAL_DOMAIN_START_TURN}; controlar ${ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS} quadrantes encerra partidas que continuam ecologicamente divididas mesmo sem extinção direta.`,
+    section("Encerramento por Domínio Ecológico"),
+    `Se Brancas e Pretas ficarem simultaneamente sem ações legais, a partida termina por Domínio Ecológico e a maior população ativa vence. Se ainda houver movimentos, mas nenhuma captura possível, o mesmo critério é aplicado após ${ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS} rodadas sem captura bem-sucedida. Empate populacional encerra a partida em empate.`,
+    "Conway permanece uma dinâmica ambiental universal a partir do Devoniano: ele remodela o habitat conforme a progressão geracional e fica suspenso durante eventos severos. Ele deixou de executar reparos artificiais de estagnação, corredores forçados, remoções especiais de barreiras ou reposicionamentos de organismos.",
 
     section("Controles, informação e acompanhamento"),
     "O Menu permite salvar a partida, importar um arquivo, consultar História evolutiva, Descobertas e Log da partida. Saves v26 e os legados ainda suportados são migrados para o schema v27 ao carregar; versões anteriores ao suporte de migração permanecem incompatíveis. História evolutiva mostra o período, o Ciclo e as próximas inovações; Descobertas reúne eras, eventos e mutações já observadas; o Log registra mudanças relevantes em ordem cronológica reversa.",

@@ -178,6 +178,7 @@ export const round = (state) => Math.floor(state.turn / 2);
 export const ECOLOGICAL_DOMAIN_START_TURN = 200;
 export const ECOLOGICAL_DOMAIN_REQUIRED_TURNS = 3;
 export const ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS = 3;
+export const ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS = 24;
 export const ecologicalQuadrant = (r, c) =>
   (r >= 4 ? 2 : 0) + (c >= 4 ? 1 : 0);
 export const createEcologicalDomain = () => ({
@@ -189,14 +190,8 @@ export const createEcologicalDomain = () => ({
     consolidated: false,
   })),
 });
-export function ecologicalDomainBlocked(state, owner, r, c) {
-  if (!owner || !inside(r, c)) return false;
-  const quadrant = state.ecologicalDomain?.quadrants?.[ecologicalQuadrant(r, c)];
-  return !!(
-    quadrant?.consolidated &&
-    quadrant.owner &&
-    quadrant.owner !== owner
-  );
+export function ecologicalDomainBlocked(_state, _owner, _r, _c) {
+  return false;
 }
 // O desfecho e a pressão ecológica consideram apenas organismos já ativos.
 // Ovos e sementes continuam recursos reprodutivos, sem sustentar uma linhagem.
