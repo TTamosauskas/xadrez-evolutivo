@@ -431,6 +431,9 @@ function mutation(
     p.newMutationToast = {
       trait: mutationTrait,
       text: `Nova Mutação: ${icon} ${label}.`,
+      outcome: label.startsWith("Perda de ")
+        ? "mutation-loss"
+        : "new-mutation",
     };
     log(state, `Nova Mutação: ${OWNERS[p.owner]} · ${label}.`);
   } else log(state, `${OWNERS[p.owner]}: ${label}.`);
@@ -814,7 +817,7 @@ function spawnChild(state, profile, r, c) {
       profile.newMutationToast.text,
       {
         pieceId: child.id,
-        outcome: "new-mutation",
+        outcome: profile.newMutationToast.outcome ?? "new-mutation",
       },
     );
   child.maturesRound = has(child, "Multicelularismo")
