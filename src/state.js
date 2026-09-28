@@ -3599,6 +3599,10 @@ export function assertState(state) {
     (state.result &&
       (!["blue", "amber", null].includes(state.result.winner) ||
         typeof state.result.reason !== "string" ||
+        (state.result.victoryType !== undefined &&
+          !["extinction", "ecological-domain"].includes(
+            state.result.victoryType,
+          )) ||
         state.phase !== "over" ||
         (state.result.extinctionFounder &&
           (state.result.extinctionFounder.owner !== state.result.winner ||
