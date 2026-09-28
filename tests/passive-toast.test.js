@@ -257,6 +257,13 @@ test("tracked Toastify assets load before the app and mobile styling stays viewp
   assert.ok(d.getElementById("mutation-dialog-close"));
   assert.ok(d.getElementById("mutation-dialog-real"));
   assert.equal(d.getElementById("mutation-dialog-game").tagName, "STRONG");
+  assert.ok(
+    d
+      .getElementById("mutation-dialog-game")
+      .compareDocumentPosition(d.getElementById("mutation-dialog-real")) &
+      dom.window.Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  assert.equal(d.getElementById("game-over-new").textContent, "Próximo Ciclo");
   assert.match(css, /\.toastify\.xe-passive-toast\s*\{/);
   assert.match(css, /\.toastify\.xe-passive-toast \.toast-more\s*\{/);
   assert.match(css, /max-width:\s*min\(calc\(100vw - 24px\), 680px\)/);
