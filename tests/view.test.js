@@ -2236,7 +2236,20 @@ test("application UI starts with the Hadean common ancestor, then plays division
 
     let originCell = d.querySelector(".origin-piece").parentElement;
     originCell.click();
-    assert.match(d.getElementById("selected").textContent, /Ancestral comum/);
+    const ancestralCopy = d.querySelector("#selected .selected-ancestral");
+    assert.match(
+      ancestralCopy.textContent,
+      /O Último Ancestral Comum Universal já possuía metabolismo anaeróbio/,
+    );
+    assert.match(
+      ancestralCopy.textContent,
+      /para realizar a primeira reprodução/,
+    );
+    assert.ok(
+      ancestralCopy.querySelector(
+        ".legend-action-ring.vivify.inline-action-ring",
+      ),
+    );
     assert.equal(d.querySelector(".toastify.xe-passive-toast"), null);
 
     originCell = d.querySelector(".origin-piece").parentElement;
@@ -2244,7 +2257,7 @@ test("application UI starts with the Hadean common ancestor, then plays division
 
     const reproductionToast = d.querySelector(".toastify.xe-passive-toast");
     assert.ok(reproductionToast);
-    assert.match(reproductionToast.textContent, /Reprodução/);
+    assert.match(reproductionToast.textContent, /Primeira Reprodução feita\./);
     const reproductionMore = reproductionToast.querySelector(".toast-more");
     assert.ok(reproductionMore);
     assert.equal(reproductionMore.textContent, "SAIBA MAIS");
