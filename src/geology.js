@@ -1,6 +1,7 @@
 import {
   EARTH_FOUNDER_GENOMES,
   earthFounderHistory,
+  earthFounderPersistentTraits,
   earthTraitWindowAllows,
   scenarioEventWeights,
   scenarioHabitatProfile,
@@ -123,8 +124,8 @@ export const GEOLOGICAL_STAGES = [
     group: "Arqueano",
     period: "Paleoarqueana",
     chronology: { eon: "Arqueano", era: "Paleoarqueana" },
-    required: ["Transferência Horizontal"],
-    cycles: [["Transferência Horizontal"]],
+    required: ["Transferência Horizontal", "Biofilme"],
+    cycles: [["Transferência Horizontal"], ["Biofilme"]],
     habitat: { fertile: 44, hostile: 12, founderFertile: true, naturalBarriers: [0, 0], pattern: "hydrothermal" },
     events: { volcano: 4, earthquake: 3, solar: 3, meteor: 2, grb: 1 },
     founderLayout: [[5, 2], [4, 2], [2, 5], [3, 5]],
@@ -134,8 +135,8 @@ export const GEOLOGICAL_STAGES = [
     group: "Arqueano",
     period: "Mesoarqueana",
     chronology: { eon: "Arqueano", era: "Mesoarqueana" },
-    required: ["Reparo Celular"],
-    cycles: [["Reparo Celular"]],
+    required: ["Reparo Celular", "Fixação de Nitrogênio"],
+    cycles: [["Reparo Celular"], ["Fixação de Nitrogênio"]],
     habitat: { fertile: 50, hostile: 8, founderFertile: true, naturalBarriers: [0, 0], pattern: "microbial-mats" },
     events: { fertilized: 1, volcano: 3, earthquake: 3, solar: 2, meteor: 1, grb: 1 },
     founderLayout: [[6, 2], [5, 3], [1, 5], [2, 4]],
@@ -200,8 +201,8 @@ export const GEOLOGICAL_STAGES = [
     group: "Proterozoico · Mesoproterozoica",
     period: "Calimiano",
     chronology: { eon: "Proterozoico", era: "Mesoproterozoica", period: "Calimiano" },
-    required: ["Reprodução Sexuada"],
-    cycles: [["Reprodução Sexuada"]],
+    required: ["Diferenciação Celular", "Reprodução Sexuada"],
+    cycles: [["Diferenciação Celular"], ["Reprodução Sexuada"]],
     habitat: { fertile: 54, hostile: 6, founderFertile: true, naturalBarriers: [0, 1], pattern: "inland-seas" },
     events: { fertilized: 4, sea: 2, "abundant-rains": 2, earthquake: 1, volcano: 1 },
     founderLayout: [[6, 2], [4, 1], [1, 5], [3, 6]],
@@ -602,6 +603,9 @@ export const TRAIT_STAGE = {
   "Animais Domésticos": "holocene",
   "Neocórtex Desenvolvido": "pleistocene",
   "Transferência Horizontal": "paleoarchean",
+  Biofilme: "paleoarchean",
+  "Fixação de Nitrogênio": "mesoarchean",
+  "Diferenciação Celular": "calymmian",
   "Brotamento": "statherian",
   "Fragmentação": "cryogenian",
   "Colônia": "tonian",
@@ -646,6 +650,14 @@ export const ACTIVE_TRAIT_FAMILIES = [
   {
     id: "energy",
     traits: ["Quimiossíntese", "Fotossíntese", "Predação"],
+  },
+  {
+    id: "cellular-organization",
+    traits: ["Biofilme", "Multicelularismo"],
+  },
+  {
+    id: "cellular-domain",
+    traits: ["Fixação de Nitrogênio", "Eucarionte"],
   },
   {
     id: "diet",
@@ -774,6 +786,11 @@ export function activeTraitFamily(trait) {
 }
 
 export const TRAIT_DEPENDENCIES = {
+  Biofilme: { lineage: ["Respiração anaeróbia"] },
+  "Fixação de Nitrogênio": { lineage: ["Respiração anaeróbia"] },
+  "Diferenciação Celular": {
+    lineage: ["Multicelularismo", "Eucarionte"],
+  },
   Multicelularismo: {
     lineage: ["Reparo Celular"],
     historical: ["Eucarionte", "Endossimbiose"],
@@ -1447,6 +1464,9 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Estômatos: "photosynthesis",
   Endotermia: "predation",
   "Transferência Horizontal": "shared",
+  Biofilme: "shared",
+  "Fixação de Nitrogênio": "shared",
+  "Diferenciação Celular": "shared",
   Ingestão: "predation",
   Coletor: "predation",
   "Respiração Pulmonar": "predation",
@@ -1840,10 +1860,14 @@ function canonicalPeriodLineages(state) {
       stage.index > geologicalStage("ediacaran").index
         ? ["Simetria Bilateral"]
         : [],
-    plant = [...new Set([...curated.plant, ...inheritedRepair])],
+    persistent = earthFounderPersistentTraits(stage.id),
+    plant = [
+      ...new Set([...curated.plant, ...persistent, ...inheritedRepair]),
+    ],
     animal = [
       ...new Set([
         ...curated.animal,
+        ...persistent,
         ...inheritedRepair,
         ...inheritedBilateral,
       ]),

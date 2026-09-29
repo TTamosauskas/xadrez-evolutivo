@@ -60,6 +60,66 @@ export const canUseBasalFertility = (state, piece) =>
   canUseFertileResource(state, piece) &&
   !has(piece, "Reprodução Sexuada");
 
+export function biofilmNetwork(state, piece) {
+  if (!piece || !has(piece, "Biofilme")) return [];
+  const members = state.pieces.filter(
+      (candidate) =>
+        candidate.owner === piece.owner && has(candidate, "Biofilme"),
+    ),
+    byId = new Map(members.map((candidate) => [candidate.id, candidate])),
+    queue = [piece],
+    seen = new Set([piece.id]),
+    result = [];
+  while (queue.length) {
+    const current = queue.shift();
+    result.push(current);
+    for (const candidate of byId.values()) {
+      if (seen.has(candidate.id) || distance(current, candidate) !== 1)
+        continue;
+      seen.add(candidate.id);
+      queue.push(candidate);
+    }
+  }
+  return result;
+}
+
+export function biofilmResource(state, piece) {
+  if (
+    !piece ||
+    !has(piece, "Biofilme") ||
+    !has(piece, "Respiração anaeróbia") ||
+    terrain(state, piece.r, piece.c) === "fertile"
+  )
+    return null;
+  const network = biofilmNetwork(state, piece),
+    now = round(state);
+  if (
+    network.length < 2 ||
+    network.some((member) => member.biofilmSharedRound === now)
+  )
+    return null;
+  const provider = network.find(
+    (member) =>
+      member.id !== piece.id &&
+      terrain(state, member.r, member.c) === "fertile",
+  );
+  return provider
+    ? {
+        kind: "biofilm",
+        cell: provider.r * 8 + provider.c,
+        providerId: provider.id,
+        memberIds: network.map((member) => member.id),
+      }
+    : null;
+}
+
+export function markBiofilmResourceUsed(state, resource) {
+  if (!resource || resource.kind !== "biofilm") return;
+  const ids = new Set(resource.memberIds ?? []);
+  for (const member of state.pieces)
+    if (ids.has(member.id)) member.biofilmSharedRound = round(state);
+}
+
 export function mutualismPartner(state, piece) {
   if (!piece || !has(piece, "Mutualismo")) return null;
   const branch = energyBranch(piece);
@@ -116,6 +176,7 @@ const HGT_BLOCKED_TRAITS = new Set([
   "Acasalamento Múltiplo",
   "Metamorfose",
   "Eusocialidade",
+  "Diferenciação Celular",
 ]);
 
 export function paedogenesisReady(state, piece) {

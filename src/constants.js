@@ -23,6 +23,14 @@ export const TRAITS = {
     "🩹",
     "Reduz pela metade a ocorrência de novas mutações negativas, normalizando a estabilidade celular e genômica.",
   ],
+  Biofilme: [
+    "🌐",
+    "Organismos aliados com Biofilme conectados podem compartilhar uma Casa Fértil ocupada pela rede para reprodução; um compartilhamento por rede a cada rodada.",
+  ],
+  "Fixação de Nitrogênio": [
+    "☁️",
+    "Gasta a ação para tornar fértil uma Casa Neutra ortogonal adjacente e vazia; recarga em 4 rodadas.",
+  ],
   Eucarionte: [
     "🔘",
     "A compartimentalização celular amortece a primeira ativação funcional de até duas mutações negativas recém-adquiridas durante a vida.",
@@ -54,6 +62,10 @@ export const TRAITS = {
   Multicelularismo: [
     "🫧",
     "Protege contra capturas alimentares de organismos incapazes de consumir formas multicelulares; a proteção vale mesmo contra outros organismos multicelulares. Em linhagens fotossintéticas, libera formas vegetais Cavalo e Bispo.",
+  ],
+  "Diferenciação Celular": [
+    "🧩",
+    "Em ninhadas com pelo menos duas crias, uma delas assume automaticamente outra forma já permitida pela linhagem, sem aumentar a ninhada.",
   ],
   "Simetria Bilateral": [
     "⏸",

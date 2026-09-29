@@ -52,6 +52,7 @@ import {
   DEFAULT_SCENARIO,
   EARTH_FOUNDER_GENOMES,
   earthFounderHistory,
+  earthFounderPersistentTraits,
   validScenario,
 } from "./scenarios.js";
 import {
@@ -659,6 +660,9 @@ export function newPiece(state, owner, r, c, source = {}) {
         source.adaptiveImmuneNotifiedDisease ?? null,
       stomataStartedRound: source.stomataStartedRound ?? bornRound,
       endothermyUsedTurn: source.endothermyUsedTurn ?? null,
+      nitrogenFixationReadyRound:
+        source.nitrogenFixationReadyRound ?? bornRound,
+      biofilmSharedRound: source.biofilmSharedRound ?? null,
       webTrapped: source.webTrapped ?? null,
       webCreatedStationarySinceRound:
         source.webCreatedStationarySinceRound ?? null,
@@ -1533,14 +1537,18 @@ function previewFounderProfiles(stageIndex) {
   if (curated) {
     const inheritedRepair =
         stageIndex > repairStageIndex ? ["Reparo Celular"] : [],
+      persistent = earthFounderPersistentTraits(stage.id),
       inheritedBilateral =
         stageIndex > GEOLOGICAL_STAGES.findIndex((entry) => entry.id === "ediacaran")
           ? ["Simetria Bilateral"]
           : [],
-      curatedPlant = [...new Set([...curated.plant, ...inheritedRepair])],
+      curatedPlant = [
+        ...new Set([...curated.plant, ...persistent, ...inheritedRepair]),
+      ],
       curatedAnimal = [
         ...new Set([
           ...curated.animal,
+          ...persistent,
           ...inheritedRepair,
           ...inheritedBilateral,
         ]),
@@ -3160,6 +3168,12 @@ export function assertState(state) {
           !/^[0-3],[0-3]$/.test(p.rumination.block) ||
           !integer(p.rumination.startedTurn, 0))) ||
       !integer(p.eukaryoteBufferUses ?? 0, 0, 2) ||
+      !integer(p.nitrogenFixationReadyRound ?? 0, 0) ||
+      !(
+        p.biofilmSharedRound === undefined ||
+        p.biofilmSharedRound === null ||
+        integer(p.biofilmSharedRound, 0)
+      ) ||
       !Array.isArray(p.eukaryoteBufferedTraits ?? []) ||
       (p.eukaryoteBufferedTraits ?? []).some(
         (trait) => !NEGATIVE_TRAITS.has(trait)
