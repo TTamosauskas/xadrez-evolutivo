@@ -86,6 +86,47 @@ test("catalog covers every geological stage event and named mutation", () => {
     assert.ok(DISCOVERY_CONTENT.mutations[`rank:${rank}`]);
 });
 
+test("event discovery copy separates real-world context from game rules", () => {
+  for (const event of EVENTS) {
+    const entry = DISCOVERY_CONTENT.events[event.id];
+    assert.match(entry.realWorld, /^Na vida: .+/, event.id);
+    assert.equal(entry.game, `No jogo: ${event.description}`, event.id);
+    assert.equal(
+      entry.text,
+      `${entry.realWorld}\n\n${entry.game}`,
+      event.id,
+    );
+  }
+});
+
+test("event discoveries use direct Wikipedia articles and local landscape media", () => {
+  const images = new Set();
+  for (const event of EVENTS) {
+    const entry = DISCOVERY_CONTENT.events[event.id];
+    assert.match(
+      entry.wikipedia,
+      /^https:\/\/pt\.wikipedia\.org\/wiki\//,
+      event.id,
+    );
+    assert.doesNotMatch(entry.wikipedia, /w\/index\.php\?search=/, event.id);
+    assert.match(
+      entry.image,
+      /^assets\/discoveries\/events\/media-[a-f0-9]{12}\.(?:jpg|png|webp)$/,
+      event.id,
+    );
+    assert.ok(entry.imageWidth >= 800, event.id);
+    assert.ok(entry.imageHeight >= 420, event.id);
+    assert.ok(entry.imageWidth > entry.imageHeight, event.id);
+    assert.match(
+      entry.imageSource ?? "",
+      /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/,
+      event.id,
+    );
+    images.add(entry.image);
+  }
+  assert.equal(images.size, EVENTS.length);
+});
+
 test("mutation discovery text exactly matches the toast explanatory modal", () => {
   for (const trait of Object.keys(TRAITS)) {
     const entry = DISCOVERY_CONTENT.mutations[trait],
