@@ -43,8 +43,19 @@ test("discovery cards expose separate icons and labels when available", () => {
   for (const stage of GEOLOGICAL_STAGES) {
     const entry = DISCOVERY_CONTENT.geology[stage.id];
     assert.equal(entry.label, stage.period, stage.id);
-    assert.equal(entry.icon, undefined, stage.id);
+    assert.equal(typeof entry.icon, "string", stage.id);
+    assert.ok(entry.icon.length > 0, stage.id);
   }
+});
+
+test("geology discoveries always follow campaign chronology", () => {
+  const state = createState(200);
+  state.discoveries.geology = GEOLOGICAL_STAGES.map((stage) => stage.id).reverse();
+
+  assert.deepEqual(
+    discoveredContent(state, "geology").map((entry) => entry.id),
+    GEOLOGICAL_STAGES.map((stage) => stage.id),
+  );
 });
 
 test("new campaigns start with an unread Hadean discovery", () => {

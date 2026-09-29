@@ -1295,6 +1295,7 @@ select {
   aspect-ratio: 1;
   gap: 8px;
   padding: 10px 8px;
+  overflow: hidden;
   text-align: center;
   line-height: 1.2;
 }
@@ -1304,10 +1305,18 @@ select {
   line-height: 1;
 }
 .discovery-item-label {
-  display: block;
+  display: -webkit-box;
+  width: 100%;
   max-width: 100%;
+  min-height: 2.4em;
+  max-height: 2.4em;
+  overflow: hidden;
   overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   font-size: clamp(12px, 2.7vw, 15px);
+  line-height: 1.2;
 }
 .discovery-item .unread-badge {
   position: absolute;
