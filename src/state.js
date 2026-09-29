@@ -24,6 +24,8 @@ import {
   normalizePhotosyntheticRank,
   PLANT_DERIVED_TRAITS,
   PLANT_INCOMPATIBLE_TRAITS,
+  TRAIT_BRANCH_SCOPE,
+  TRAIT_STAGE,
   recordHistoricalTraits,
   stageComplete,
   traitCombinationValid,
@@ -1470,6 +1472,33 @@ export function createCampaignState(
   });
 }
 
+function earthFounderTraitCompatible(trait, branch) {
+  const scope = TRAIT_BRANCH_SCOPE[trait] ?? null;
+  if (branch === "Fotossíntese")
+    return (
+      scope !== "predation" &&
+      trait !== "Predação" &&
+      !PLANT_INCOMPATIBLE_TRAITS.has(trait)
+    );
+  return (
+    scope !== "photosynthesis" &&
+    trait !== "Fotossíntese" &&
+    !PLANT_DERIVED_TRAITS.has(trait)
+  );
+}
+
+function earthFounderLegacyTraits(stageIndex, branch) {
+  return [
+    ...new Set(
+      GEOLOGICAL_STAGES.slice(0, stageIndex).flatMap((stage) =>
+        Object.entries(TRAIT_STAGE)
+          .filter(([, traitStage]) => traitStage === stage.id)
+          .map(([trait]) => trait),
+      ),
+    ),
+  ].filter((trait) => earthFounderTraitCompatible(trait, branch));
+}
+
 function earthFounderRecessives(historicalTraits, activeTraits, plant) {
   const active = new Set(activeTraits);
   return [...new Set(historicalTraits)]
@@ -1518,8 +1547,22 @@ function previewFounderProfiles(stageIndex) {
       ],
       plantTraits = normalizeActiveTraits(curatedPlant, "Fotossíntese"),
       animalTraits = normalizeActiveTraits(curatedAnimal, "Predação"),
-      plantAncestry = earthFounderHistory(stage.id, "plant"),
-      animalAncestry = earthFounderHistory(stage.id, "animal"),
+      plantAncestry = [
+        ...new Set([
+          ...earthFounderLegacyTraits(stageIndex, "Fotossíntese"),
+          ...earthFounderHistory(stage.id, "plant"),
+          ...plantTraits,
+        ]),
+      ].filter((trait) =>
+        earthFounderTraitCompatible(trait, "Fotossíntese"),
+      ),
+      animalAncestry = [
+        ...new Set([
+          ...earthFounderLegacyTraits(stageIndex, "Predação"),
+          ...earthFounderHistory(stage.id, "animal"),
+          ...animalTraits,
+        ]),
+      ].filter((trait) => earthFounderTraitCompatible(trait, "Predação")),
       historicalTraits = [
         ...new Set([
           ...GEOLOGICAL_STAGES.slice(0, stageIndex).flatMap(
