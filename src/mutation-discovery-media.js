@@ -208,13 +208,13 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "height": 742
   },
   "Longevidade": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/Esperan%C3%A7a_de_vida",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
+    "wikipedia": "https://pt.wikipedia.org/wiki/Senesc%C3%AAncia",
+    "image": "assets/discoveries/mutations/media-904ab3082377.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Dog_for_Senior_Dog_Food_Diet_Wikipedia_Page.jpg",
+    "author": "Leo_65",
+    "license": "CC0",
     "width": 900,
-    "height": 675
+    "height": 600
   },
   "Fertilidade Longeva": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Fertilidade",
@@ -415,13 +415,13 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "height": 675
   },
   "Interceptação preditiva": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/Intercepta%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-724814fe2817.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Brent_Grimes-Hamburg_Sea_Devils.jpg",
-    "author": "Torsten Bolten, AFpix.de",
-    "license": "CC BY-SA 3.0",
+    "wikipedia": "https://pt.wikipedia.org/wiki/Preda%C3%A7%C3%A3o",
+    "image": "assets/discoveries/mutations/media-09d84e343b4d.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Stud_327_with_Blesbuck.jpg",
+    "author": "Save China's Tiger",
+    "license": "CC BY-SA 2.5",
     "width": 900,
-    "height": 599
+    "height": 602
   },
   "Canibalismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Canibalismo",
@@ -649,13 +649,13 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "height": 467
   },
   "Serpenteamento": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o_retil%C3%ADnea",
-    "image": "assets/discoveries/mutations/media-8fa797dbf347.gif",
-    "source": "https://commons.wikimedia.org/wiki/File:Bitis_arietans_locomotion.gif",
-    "author": "Chris Vynbos",
-    "license": "CC BY-SA 4.0",
+    "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
+    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
+    "author": "Hein waschefort",
+    "license": "CC BY-SA 3.0",
     "width": 900,
-    "height": 506
+    "height": 467
   },
   "Trilhas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Formiga",
@@ -973,13 +973,13 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "height": 507
   },
   "Ovíparos Amniotas": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/Ovo",
-    "image": "assets/discoveries/mutations/media-1c23de324fb3.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Anatomy_of_an_amiotic_egg.svg",
-    "author": "Horst Frank (“original” file); SVG version by -xfi-; counterclockwise rotation by 90°: Domsau2",
-    "license": "CC BY-SA 3.0",
+    "wikipedia": "https://pt.wikipedia.org/wiki/Amniota",
+    "image": "assets/discoveries/mutations/media-24a787382cbc.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Amniota.jpg",
+    "author": "User:Andrew Y. Huang User:Minette Layne Michael Allen Smith User:Haplochromis",
+    "license": "CC BY-SA 4.0",
     "width": 900,
-    "height": 726
+    "height": 751
   },
   "Ovovivíparo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ovoviviparidade",
@@ -1153,13 +1153,13 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "height": 598
   },
   "Caça Cooperativa": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/Ca%C3%A7a",
-    "image": "assets/discoveries/mutations/media-d700ae1d7541.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_Hunters_in_the_Snow_(Winter)_-_Google_Art_Project.jpg",
-    "author": "Pieter Bruegel, o Velho",
+    "wikipedia": "https://pt.wikipedia.org/wiki/Comportamento_social",
+    "image": "assets/discoveries/mutations/media-d39a3f9403da.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:StateLibQld_1_105248_Group_of_friends_gathered_around_a_radio_in_Brisbane,_ca._1942.jpg",
+    "author": "Contributor(s): Courier-mail (Brisbane, Qld.)",
     "license": "Public domain",
     "width": 900,
-    "height": 641
+    "height": 680
   },
   "Mutualismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Mutualismo",

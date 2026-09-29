@@ -4,7 +4,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-ae7ce974dc04.jpg
 
-- Usada em: Respiração anaeróbia, Mixotrofia, Extremófitas, Fixação de Nitrogênio, Dormência, Resistência, Longevidade, Cópula Agressiva, Pedogênese, Metamorfose, Granívoro, Simetria Bilateral, Jatopropulsão, Artrópode, Escavador, Esclerotização, Escalador, Ooteca, Antropização, Anemia Falciforme, Assimetria Flutuante, Ataxia, Deficiência Motora, Deficiência Sensorial, Filho único, Semelparidade, Nanismo, Gigantismo, Tinta, Quimiossíntese, Tromba, Ruminante, Pescoço Verticalizado, Multicelularismo, Zoorremediação, Pelos, Penas
+- Usada em: Respiração anaeróbia, Mixotrofia, Extremófitas, Fixação de Nitrogênio, Dormência, Resistência, Cópula Agressiva, Pedogênese, Metamorfose, Granívoro, Simetria Bilateral, Jatopropulsão, Artrópode, Escavador, Esclerotização, Escalador, Ooteca, Antropização, Anemia Falciforme, Assimetria Flutuante, Ataxia, Deficiência Motora, Deficiência Sensorial, Filho único, Semelparidade, Nanismo, Gigantismo, Tinta, Quimiossíntese, Tromba, Ruminante, Pescoço Verticalizado, Multicelularismo, Zoorremediação, Pelos, Penas
 - Fonte: https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg
 - Autor/crédito: Krzysztof A. Zacharski
 - Licença: CC BY 4.0
@@ -53,7 +53,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-09d84e343b4d.jpg
 
-- Usada em: Predação, Ovífagia
+- Usada em: Predação, Interceptação preditiva, Ovífagia
 - Fonte: https://commons.wikimedia.org/wiki/File:Stud_327_with_Blesbuck.jpg
 - Autor/crédito: Save China's Tiger
 - Licença: CC BY-SA 2.5
@@ -92,6 +92,13 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Fonte: https://commons.wikimedia.org/wiki/File:Sea_star_regenerating_legs.jpg
 - Autor/crédito: Brocken Inaglory. Original uploader was Brocken Inaglory
 - Licença: CC BY-SA 3.0
+
+## media-904ab3082377.jpg
+
+- Usada em: Longevidade
+- Fonte: https://commons.wikimedia.org/wiki/File:Dog_for_Senior_Dog_Food_Diet_Wikipedia_Page.jpg
+- Autor/crédito: Leo_65
+- Licença: CC0
 
 ## media-10a57b0e771c.jpg
 
@@ -177,13 +184,6 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Luca Galuzzi (Lucag)
 - Licença: CC BY-SA 2.5
 
-## media-724814fe2817.jpg
-
-- Usada em: Interceptação preditiva
-- Fonte: https://commons.wikimedia.org/wiki/File:Brent_Grimes-Hamburg_Sea_Devils.jpg
-- Autor/crédito: Torsten Bolten, AFpix.de
-- Licença: CC BY-SA 3.0
-
 ## media-479c289d360b.jpg
 
 - Usada em: Canibalismo, Canibalismo Filial, Matrifagia
@@ -200,7 +200,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-1dceb314ab04.jpg
 
-- Usada em: Locomoção Primitiva, Rastejante, Escansão, Bioadesão, Arborícola, Forésia, Tigmotaxia, Deslizamento, Pulo, Bipedalismo
+- Usada em: Locomoção Primitiva, Rastejante, Escansão, Bioadesão, Arborícola, Forésia, Serpenteamento, Tigmotaxia, Deslizamento, Pulo, Bipedalismo
 - Fonte: https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg
 - Autor/crédito: Hein waschefort
 - Licença: CC BY-SA 3.0
@@ -274,13 +274,6 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Fonte: https://commons.wikimedia.org/wiki/File:Muybridge_race_horse_animated.gif
 - Autor/crédito: Eadweard Muybridge
 - Licença: Public domain
-
-## media-8fa797dbf347.gif
-
-- Usada em: Serpenteamento
-- Fonte: https://commons.wikimedia.org/wiki/File:Bitis_arietans_locomotion.gif
-- Autor/crédito: Chris Vynbos
-- Licença: CC BY-SA 4.0
 
 ## media-9937a2e3c04a.jpg
 
@@ -422,12 +415,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Henry Vandyke Carter
 - Licença: Public domain
 
-## media-1c23de324fb3.png
+## media-24a787382cbc.jpg
 
 - Usada em: Ovíparos Amniotas
-- Fonte: https://commons.wikimedia.org/wiki/File:Anatomy_of_an_amiotic_egg.svg
-- Autor/crédito: Horst Frank (“original” file); SVG version by -xfi-; counterclockwise rotation by 90°: Domsau2
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Amniota.jpg
+- Autor/crédito: User:Andrew Y. Huang User:Minette Layne Michael Allen Smith User:Haplochromis
+- Licença: CC BY-SA 4.0
 
 ## media-70d5571209f5.jpg
 
@@ -501,16 +494,9 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-d39a3f9403da.jpg
 
-- Usada em: Sociabilidade
+- Usada em: Sociabilidade, Caça Cooperativa
 - Fonte: https://commons.wikimedia.org/wiki/File:StateLibQld_1_105248_Group_of_friends_gathered_around_a_radio_in_Brisbane,_ca._1942.jpg
 - Autor/crédito: Contributor(s): Courier-mail (Brisbane, Qld.)
-- Licença: Public domain
-
-## media-d700ae1d7541.jpg
-
-- Usada em: Caça Cooperativa
-- Fonte: https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_Hunters_in_the_Snow_(Winter)_-_Google_Art_Project.jpg
-- Autor/crédito: Pieter Bruegel, o Velho
 - Licença: Public domain
 
 ## media-d3b86004d280.jpg
