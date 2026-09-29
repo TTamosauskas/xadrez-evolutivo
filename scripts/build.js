@@ -5,6 +5,7 @@ for (const path of [
   "index.html",
   "app.css",
   "src",
+  "assets",
   "toastify-1.12.0.js",
   "toastify-1.12.0.css",
 ])
