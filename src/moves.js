@@ -41,6 +41,7 @@ import {
   canUseBasalFertility,
   canUseFertileResource,
   buddingResource,
+  biofilmResource,
   connectedAlliesWithin,
   paedogenesisReady,
   parentalCareProtects,
@@ -1236,10 +1237,15 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     basalFertility = canUseBasalFertility(state, p),
     canReproduce =
       reproductionReady(state, p) || paedogenesisReady(state, p);
+  const sharedBiofilmResource = biofilmResource(state, p);
   if (
     canReproduce &&
-    basalFertility &&
-    (terrain(state, p.r, p.c) === "fertile" || (collector && p.seeds > 0)) &&
+    (
+      (basalFertility &&
+        (terrain(state, p.r, p.c) === "fertile" ||
+          (collector && p.seeds > 0))) ||
+      sharedBiofilmResource
+    ) &&
     (!collector || (!has(p, "Esterilidade") && p.seedUsedTurn !== state.turn))
   )
     targets.push({ r: p.r, c: p.c, path: [], stay: true, capture: false });
@@ -1367,6 +1373,10 @@ export function sexualReproductionResource(state, parent, mate) {
       provider.seedUsedTurn !== state.turn
     )
       return { kind: "seed", providerId: provider.id };
+  for (const provider of providers) {
+    const shared = biofilmResource(state, provider);
+    if (shared) return { ...shared, providerId: provider.id };
+  }
   return null;
 }
 
@@ -1625,6 +1635,42 @@ export function canParasitize(state, p) {
     canParasitizeSelf(state, p) ||
     parasitismTargets(state, p).length > 0
   );
+}
+
+export const NITROGEN_FIXATION_COOLDOWN_ROUNDS = 4;
+
+export function nitrogenFixationTargets(state, piece) {
+  if (
+    state.phase !== "move" ||
+    state.chain ||
+    !piece ||
+    piece.owner !== state.current ||
+    !has(piece, "Fixação de Nitrogênio") ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    fertilityPaused(state) ||
+    ecologicalDomainBlocked(state, piece.owner, piece.r, piece.c) ||
+    round(state) < (piece.nitrogenFixationReadyRound ?? 0)
+  )
+    return [];
+  const targets = [];
+  for (const [dr, dc] of ORTH) {
+    const r = piece.r + dr,
+      c = piece.c + dc;
+    if (
+      inside(r, c) &&
+      terrain(state, r, c) === "neutral" &&
+      !at(state, r, c) &&
+      !eggAt(state, r, c) &&
+      !plantSeedAt(state, r, c) &&
+      !fragmentAt(state, r, c) &&
+      !barrierAt(state, r, c) &&
+      !lethalHazardAt(state, r, c) &&
+      !ecologicalDomainBlocked(state, piece.owner, r, c)
+    )
+      targets.push({ r, c });
+  }
+  return targets;
 }
 
 const metabolicActionReady = (state, piece) =>
@@ -1990,6 +2036,12 @@ export function actionsForPiece(
     ...(chemosynthesisAvailable(source, piece)
       ? [{ type: "CHEMOSYNTHESIS", id: piece.id }]
       : []),
+    ...nitrogenFixationTargets(source, piece).map((target) => ({
+      type: "FIX_NITROGEN",
+      id: piece.id,
+      r: target.r,
+      c: target.c,
+    })),
     ...(parthenogenesisAvailable(source, piece)
       ? [{ type: "PARTHENOGENESIS", id: piece.id }]
       : []),
@@ -2080,6 +2132,7 @@ export function vivificationActionsForPiece(state, piece) {
         action.c === piece.c) ||
       action.type === "BUD" ||
       action.type === "CHEMOSYNTHESIS" ||
+      action.type === "FIX_NITROGEN" ||
       action.type === "PUPATE" ||
       action.type === "PARTHENOGENESIS" ||
       action.type === "REJECT_BROOD_PARASITE" ||

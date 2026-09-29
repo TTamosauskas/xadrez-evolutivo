@@ -74,6 +74,8 @@ import {
   broodParasitismTargets,
   canRejectBroodParasite,
   chemosynthesisAvailable,
+  nitrogenFixationTargets,
+  NITROGEN_FIXATION_COOLDOWN_ROUNDS,
 } from "./moves.js";
 import {
   reproduce,
@@ -113,6 +115,8 @@ import {
   canPupate,
   canUseBasalFertility,
   canUseFertileResource,
+  biofilmResource,
+  markBiofilmResourceUsed,
   monogamySurvivalBonus,
   paedogenesisReady,
   parentalCareProtects,
@@ -1380,6 +1384,7 @@ function actionActorId(state, action) {
     [
       "MOVE",
       "CHEMOSYNTHESIS",
+      "FIX_NITROGEN",
       "NURSE",
       "NICHE_BUILD",
       "BUD",
@@ -4424,6 +4429,7 @@ function executeMove(ctx, action) {
       has(p, "Coletor") &&
       target.stay &&
       p.seeds > 0,
+    sharedBiofilmResource = biofilmResource(state, p),
     fertileResource =
       !scavenging &&
       !coprophagy &&
@@ -4433,8 +4439,11 @@ function executeMove(ctx, action) {
       ((!capture &&
         terrain(state, p.r, p.c) === "fertile" &&
         (state.geologicalStage !== "hadean" || target.stay)) ||
-        collectorStay),
-    fertile = fertileResource && canUseBasalFertility(state, p),
+        collectorStay ||
+        (!!target.stay && !!sharedBiofilmResource)),
+    fertile =
+      fertileResource &&
+      (canUseBasalFertility(state, p) || !!sharedBiofilmResource),
     sexualResourceHere =
       !scavenging &&
       !coprophagy &&
@@ -4442,8 +4451,11 @@ function executeMove(ctx, action) {
       !capture &&
       !fruitConsumption &&
       !synzooCollection &&
-      canUseFertileResource(state, p) &&
-      (terrain(state, p.r, p.c) === "fertile" || collectorStay),
+      (
+        (canUseFertileResource(state, p) &&
+          (terrain(state, p.r, p.c) === "fertile" || collectorStay)) ||
+        !!sharedBiofilmResource
+      ),
     predation =
       pieceCapture &&
       victim.owner !== p.owner &&
@@ -4483,11 +4495,33 @@ function executeMove(ctx, action) {
     return;
   }
   if (collectorStay) p.seedUsedTurn = state.turn;
-  const consumedFertile =
-    fertile &&
-    !collectorStay &&
-    terrain(state, p.r, p.c) === "fertile";
-  if (consumedFertile) consumeReproductionResource(state, p, cell);
+  const consumedOwnFertile =
+      fertile &&
+      !collectorStay &&
+      terrain(state, p.r, p.c) === "fertile",
+    consumedBiofilm =
+      fertile &&
+      !consumedOwnFertile &&
+      !collectorStay &&
+      !!target.stay &&
+      !!sharedBiofilmResource,
+    consumedFertile = consumedOwnFertile || consumedBiofilm;
+  if (consumedOwnFertile)
+    consumeReproductionResource(state, p, cell);
+  else if (consumedBiofilm) {
+    consumeReproductionResource(state, p, sharedBiofilmResource.cell);
+    markBiofilmResourceUsed(state, sharedBiofilmResource);
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🌐 Biofilme compartilhou fertilidade da rede para reprodução.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Biofilme",
+      "🌐 Biofilme compartilhou uma Casa Fértil pela matriz comunitária.",
+      { pieceId: p.id, outcome: "shared-fertile-resource" },
+    );
+  }
   let born = 0;
   const paedogenic = paedogenesisReady(state, p);
   if (fruitConsumption && plantSeed) {
@@ -4929,6 +4963,19 @@ function consumeSexualResource(state, parent, mate) {
   if (!provider) return null;
   if (resource.kind === "fertile") {
     if (!consumeReproductionResource(state, provider, resource.cell)) return null;
+  } else if (resource.kind === "biofilm") {
+    if (!consumeReproductionResource(state, provider, resource.cell)) return null;
+    markBiofilmResourceUsed(state, resource);
+    log(
+      state,
+      `${OWNERS[parent.owner]}: 🌐 Biofilme compartilhou fertilidade da rede para reprodução sexuada.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Biofilme",
+      "🌐 Biofilme compartilhou uma Casa Fértil pela matriz comunitária.",
+      { pieceId: parent.id, outcome: "shared-fertile-resource" },
+    );
   } else {
     if (
       !has(provider, "Coletor") ||
@@ -4954,6 +5001,40 @@ function finishSpecialReproduction(ctx, parent, born, resource) {
     return;
   state.phase = "move";
   finishMovement(ctx, parent, null, false, false, build);
+}
+
+function resolveNitrogenFixation(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    target = nitrogenFixationTargets(state, piece).find(
+      (candidate) =>
+        candidate.r === action.r && candidate.c === action.c,
+    );
+  if (!piece || !target)
+    throw Error("Fixação de Nitrogênio indisponível.");
+  const cell = square(target.r, target.c);
+  setUnderlyingTerrain(state, cell, "fertile");
+  piece.nitrogenFixationReadyRound =
+    round(state) + NITROGEN_FIXATION_COOLDOWN_ROUNDS;
+  log(
+    state,
+    `${OWNERS[piece.owner]}: ☁️ Fixação de Nitrogênio tornou ${coord(target.r, target.c)} fértil.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Fixação de Nitrogênio",
+    "☁️ Fixação de Nitrogênio enriqueceu o ambiente e criou uma Casa Fértil.",
+    {
+      pieceId: piece.id,
+      outcome: "fixed-nitrogen",
+      value: NITROGEN_FIXATION_COOLDOWN_ROUNDS,
+    },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
 }
 
 function resolveParthenogenesis(ctx, action) {
@@ -5485,6 +5566,8 @@ export function transition(previous, action) {
     resolveDirectPartner(ctx, action);
   else if (action.type === "CHEMOSYNTHESIS" && state.phase === "move")
     resolveChemosynthesis(ctx, action);
+  else if (action.type === "FIX_NITROGEN" && state.phase === "move")
+    resolveNitrogenFixation(ctx, action);
   else if (action.type === "PARTHENOGENESIS" && state.phase === "move")
     resolveParthenogenesis(ctx, action);
   else if (action.type === "AGGRESSIVE_MATE" && state.phase === "move")

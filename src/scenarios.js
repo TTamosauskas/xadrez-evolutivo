@@ -175,21 +175,48 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
   },
 });
 
+const EARTH_SHARED_FOUNDER_MILESTONES = Object.freeze([
+  { trait: "Biofilme", debut: "paleoarchean", activeFrom: "mesoarchean", activeThrough: "orosirian" },
+  { trait: "Fixação de Nitrogênio", debut: "mesoarchean", activeFrom: "neoarchean", activeThrough: "rhyacian" },
+  { trait: "Diferenciação Celular", debut: "calymmian", activeFrom: "ectasian", activeThrough: null },
+]);
+
+const earthFounderStageIds = Object.freeze(Object.keys(EARTH_FOUNDER_GENOMES));
+const founderStageIndex = (stageId) => earthFounderStageIds.indexOf(stageId);
+
+export function earthFounderPersistentTraits(stageId) {
+  const stageIndex = founderStageIndex(stageId);
+  if (stageIndex < 0) return [];
+  return EARTH_SHARED_FOUNDER_MILESTONES
+    .filter((entry) => {
+      const from = founderStageIndex(entry.activeFrom),
+        through = entry.activeThrough
+          ? founderStageIndex(entry.activeThrough)
+          : Number.POSITIVE_INFINITY;
+      return stageIndex >= from && stageIndex <= through;
+    })
+    .map((entry) => entry.trait);
+}
+
 export function earthFounderHistory(stageId, branch) {
   if (!["plant", "animal"].includes(branch)) return [];
   const entries = Object.entries(EARTH_FOUNDER_GENOMES),
     stageIndex = entries.findIndex(([id]) => id === stageId);
   if (stageIndex < 0) return [];
-  const legacyKey = branch === "plant" ? "plantLegacy" : "animalLegacy";
+  const legacyKey = branch === "plant" ? "plantLegacy" : "animalLegacy",
+    completedShared = EARTH_SHARED_FOUNDER_MILESTONES
+      .filter((entry) => founderStageIndex(entry.debut) < stageIndex)
+      .map((entry) => entry.trait);
   return [
-    ...new Set(
-      entries
+    ...new Set([
+      ...entries
         .slice(0, stageIndex + 1)
         .flatMap(([, profile]) => [
           ...(profile[branch] ?? []),
           ...(profile[legacyKey] ?? []),
         ]),
-    ),
+      ...completedShared,
+    ]),
   ];
 }
 

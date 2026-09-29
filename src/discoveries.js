@@ -94,6 +94,9 @@ const mutationTopics = {
   "Predação": ["Predação", "Predação é uma interação ecológica em que um organismo captura e consome outro, influenciando populações e adaptações de defesa."],
   Ingestão: ["Ingestão", "A ingestão permite internalizar e digerir alimento; no jogo, representa a capacidade de um organismo multicelular consumir presas multicelulares."],
   "Reparo Celular": ["Reparo de DNA", "Mecanismos celulares de reparo detectam e corrigem danos no material genético, reduzindo a persistência de alterações prejudiciais."],
+  Biofilme: ["Biofilme", "Biofilmes são comunidades microbianas envoltas por matriz extracelular, capazes de compartilhar recursos e gerar propriedades coletivas."],
+  "Fixação de Nitrogênio": ["Fixação biológica de nitrogênio", "A nitrogenase converte N₂ em nitrogênio biologicamente disponível; evidências isotópicas indicam esse metabolismo há pelo menos 3,2 bilhões de anos."],
+  "Diferenciação Celular": ["Diferenciação celular", "A diferenciação cria tipos celulares especializados; fósseis de cerca de 1,56 bilhão de anos registram multicelulares eucarióticos com desenvolvimento regular e diferenciação limitada."],
   "Dormência": ["Dormência", "Dormência reduz temporariamente a atividade e permite atravessar condições ambientais desfavoráveis."],
   "Resistência": ["Resistência a doenças", "Resistência biológica pode diminuir a chance de infecção ou limitar os efeitos de um agente patogênico."],
   "Regeneração": ["Regeneração (biologia)", "Regeneração é a capacidade de recompor estruturas ou tecidos danificados, em graus muito diferentes entre organismos."],
@@ -333,7 +336,7 @@ const mutationTopics = {
   ],
   Multicelularismo: [
     "Multicelularidade",
-    "Multicelularidade reúne muitas células em um organismo integrado, permitindo divisão de trabalho e especialização entre tecidos.",
+    "Multicelularidade integra muitas células em um único organismo, permitindo corpos maiores e coordenação entre células.",
   ],
   Herbívoro: [
     "Herbivoria",

@@ -34,6 +34,7 @@ export const AI_ACTION_TYPES = Object.freeze([
   "PARTNER",
   "AGGRESSIVE_MATE",
   "CHEMOSYNTHESIS",
+  "FIX_NITROGEN",
   "PARTHENOGENESIS",
   "NURSE",
   "LAY_OVOVIVIPAROUS",
@@ -206,6 +207,8 @@ function barrierPriority(state, action) {
 
 export function actionPriority(state, a) {
   if (a.type === "CHEMOSYNTHESIS") return 13;
+  if (a.type === "FIX_NITROGEN")
+    return 8 + placementPriority(state, a);
   if (a.type === "EXTENDED_CAPTURE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
     return (a.trait === "Tromba" ? 16 : 13) + strategicPieceValue(state, target) * 0.16;

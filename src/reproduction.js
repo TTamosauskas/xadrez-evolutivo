@@ -713,6 +713,32 @@ function complementaryArcheanEnergyBranch(state, child) {
   return traitUnlocked(state, missing, child) ? missing : null;
 }
 
+function differentiatedRank(state, child) {
+  if (!child || has(child, "Nanismo")) return null;
+  if (child.rank === 4) return 0;
+  const next = nextDerivedRank(child);
+  if (next === null) return null;
+  if (canPhotosynthesize(child)) return next;
+  return rankMutationUnlocked(state) ? next : null;
+}
+
+function applyCellDifferentiation(state, brood) {
+  if (brood.length < 2) return;
+  const source = brood.find((child) => has(child, "Diferenciação Celular"));
+  if (!source) return;
+  const target =
+      brood.find((child, index) => index > 0 && child !== source) ??
+      brood[1],
+    nextRank = differentiatedRank(state, target);
+  if (nextRank === null || nextRank === target.rank) return;
+  const previousRank = target.rank;
+  target.rank = nextRank;
+  normalizeBodyPlanRank(target);
+  normalizePhotosyntheticRank(target);
+  if (target.rank === previousRank) return;
+  target.cellDifferentiatedFromRank = previousRank;
+}
+
 function makeChildProfile(
   state,
   parent,
@@ -833,6 +859,25 @@ function makeRequestedBrood(count) {
 
 function spawnChild(state, profile, r, c) {
   const child = newPiece(state, profile.owner, r, c, profile);
+  if (
+    Number.isInteger(profile.cellDifferentiatedFromRank) &&
+    profile.cellDifferentiatedFromRank !== child.rank
+  ) {
+    log(
+      state,
+      `${OWNERS[child.owner]}: 🧩 Diferenciação Celular especializou uma cria como ${PIECES[child.rank]}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Diferenciação Celular",
+      "🧩 Diferenciação Celular gerou uma cria com função especializada.",
+      {
+        pieceId: child.id,
+        outcome: "specialized-offspring",
+        value: child.rank,
+      },
+    );
+  }
   if (profile.newMutationToast)
     emitPassiveEffect(
       state,
@@ -2006,6 +2051,7 @@ export function reproduce(
       }
       if (foundingSexuality && sexualMutants.length)
         pairSexualFounders(brood, sexualMutants);
+      applyCellDifferentiation(state, brood);
       if (brood.length)
         state.maxGenerationReached = Math.max(
           state.maxGenerationReached,

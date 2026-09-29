@@ -11,6 +11,7 @@ import {
   movesFor,
   partnersFor,
   legalActions,
+  nitrogenFixationTargets,
 } from "../src/moves.js";
 import {
   reproduce,
@@ -20,6 +21,124 @@ import {
   attemptHorizontalTransfer,
   canBud,
 } from "../src/reproduction-traits.js";
+
+test("Biofilme shares one occupied fertile resource across a connected network per round", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Fotossíntese", "Biofilme"],
+    },
+    {
+      owner: "blue",
+      r: 4,
+      c: 5,
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Fotossíntese", "Biofilme"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const actorId = s.pieces[0].id,
+    providerId = s.pieces[1].id;
+  s.board[4 * 8 + 5] = "fertile";
+
+  assert.ok(
+    movesFor(s, s.pieces[0]).some(
+      (target) => target.stay && target.r === 4 && target.c === 4,
+    ),
+  );
+  s = transition(s, { type: "MOVE", id: actorId, r: 4, c: 4 });
+  const actor = s.pieces.find((piece) => piece.id === actorId),
+    provider = s.pieces.find((piece) => piece.id === providerId);
+  assert.equal(s.board[4 * 8 + 5], "neutral");
+  assert.ok(Number.isInteger(actor.biofilmSharedRound));
+  assert.equal(actor.biofilmSharedRound, provider.biofilmSharedRound);
+  assert.ok(s.passiveEffects.some((effect) => effect.trait === "Biofilme"));
+  assertState(s);
+});
+
+test("Fixação de Nitrogênio fertilizes one adjacent neutral cell and enforces four rounds of recharge", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: ["Fixação de Nitrogênio"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const actorId = s.pieces[0].id;
+  assert.ok(
+    nitrogenFixationTargets(s, s.pieces[0]).some(
+      (target) => target.r === 3 && target.c === 4,
+    ),
+  );
+
+  s = transition(s, {
+    type: "FIX_NITROGEN",
+    id: actorId,
+    r: 3,
+    c: 4,
+  });
+  assert.equal(s.board[3 * 8 + 4], "fertile");
+  const actor = s.pieces.find((piece) => piece.id === actorId);
+  assert.equal(actor.nitrogenFixationReadyRound, 4);
+  s.current = "blue";
+  s.turn = 6;
+  assert.equal(nitrogenFixationTargets(s, actor).length, 0);
+  s.turn = 8;
+  assert.ok(nitrogenFixationTargets(s, actor).length > 0);
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) => effect.trait === "Fixação de Nitrogênio",
+    ),
+  );
+  assertState(s);
+});
+
+test("Diferenciação Celular specializes one child without increasing brood size", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: [
+          "Respiração anaeróbia",
+          "Fotossíntese",
+          "Eucarionte",
+          "Multicelularismo",
+          "Diferenciação Celular",
+        ],
+      },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0];
+
+  assert.equal(
+    reproduce(context(s), parent, null, "teste", {
+      forcedCount: 2,
+      immediateDevelopment: true,
+      ignoreReadiness: true,
+    }),
+    2,
+  );
+  const children = s.pieces.filter((piece) => piece.parentId === parent.id);
+  assert.equal(children.length, 2);
+  assert.deepEqual(
+    [...new Set(children.map((child) => child.rank))].sort((a, b) => a - b),
+    [0, 4],
+  );
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) => effect.trait === "Diferenciação Celular",
+    ),
+  );
+  assertState(s);
+});
+
 
 test("Brotamento repeats on a four-round cadence and Colônia shares identity and cooldown", () => {
   let s = fixture([
