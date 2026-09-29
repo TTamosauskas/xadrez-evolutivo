@@ -1,6 +1,8 @@
 import { EVENTS, PIECES, TRAITS } from "./constants.js";
 import { MUTATION_DISCOVERY_MEDIA } from "./mutation-discovery-media.js";
 import { EVENT_DISCOVERY_MEDIA } from "./event-discovery-media.js";
+import { GEOLOGY_DISCOVERY_MEDIA } from "./geology-discovery-media.js";
+import { GEOLOGICAL_STAGES } from "./geology.js";
 
 export const DISCOVERY_CATEGORIES = [
   ["geology", "Eras"],
@@ -29,39 +31,163 @@ const image = {
   mutations: "assets/discoveries/mutations.svg",
 };
 
-const geologyRows = [
-  ["hadean", "Hadeano", "A Terra mais antiga, marcada por intenso calor interno, impactos e diferenciação planetária; no jogo, funciona como prólogo da vida.", "Hadeano"],
-  ["eoarchean", "Eoarqueana", "Primeira subdivisão do Arqueano, com crosta e oceanos muito antigos e ambientes hidrotermais dominantes.", "Eoarqueano"],
-  ["paleoarchean", "Paleoarqueana", "Intervalo arqueano em que ecossistemas microbianos antigos se diversificaram e a fotossíntese passou a ter importância crescente.", "Paleoarqueano"],
-  ["mesoarchean", "Mesoarqueana", "Fase arqueana de expansão de plataformas continentais e ecossistemas microbianos mais estáveis.", "Mesoarqueano"],
-  ["neoarchean", "Neoarqueana", "Final do Arqueano, antecedendo a grande oxigenação e grandes mudanças biogeoquímicas do Proterozoico.", "Neoarqueano"],
-  ["siderian", "Sideriano", "Início do Paleoproterozoico, associado a grandes mudanças no ciclo do ferro e à oxigenação crescente dos oceanos e atmosfera.", "Sideriano"],
-  ["rhyacian", "Riaciano", "Intervalo paleoproterozoico que inclui grandes glaciações e a consolidação de ambientes mais oxigenados.", "Riaciano"],
-  ["orosirian", "Orosiriano", "Período paleoproterozoico com intensa evolução crustal e grandes eventos de impacto registrados.", "Orosiriano"],
-  ["statherian", "Estateriano", "Final do Paleoproterozoico, com estabilização de continentes e expansão de ambientes rasos.", "Estateriano"],
-  ["calymmian", "Calimiano", "Início do Mesoproterozoico, marcado pela reorganização de grandes massas continentais e mares epicontinentais.", "Calimiano"],
-  ["ectasian", "Ectasiano", "Período mesoproterozoico de longa estabilidade relativa e diversificação de eucariotos.", "Ectasiano"],
-  ["stenian", "Esteniano", "Final do Mesoproterozoico, ligado à formação de supercontinentes e a ecossistemas eucarióticos mais diversos.", "Esteniano"],
-  ["tonian", "Toniano", "Início do Neoproterozoico, com reorganização continental e diversificação de eucariotos multicelulares.", "Toniano"],
-  ["cryogenian", "Criogeniano", "Período conhecido por glaciações extremas, frequentemente associado ao conceito de Terra Bola de Neve.", "Criogeniano"],
-  ["ediacaran", "Ediacarano", "Período que preserva comunidades multicelulares complexas anteriores à grande diversificação animal do Cambriano.", "Ediacarano"],
-  ["cambrian", "Cambriano", "Associado a uma rápida diversificação de formas animais no registro fóssil, conhecida como Explosão Cambriana.", "Explosão Cambriana"],
-  ["ordovician", "Ordoviciano", "Período de grande diversificação marinha que terminou com uma importante extinção em massa.", "Ordoviciano"],
-  ["silurian", "Siluriano", "Período de recuperação marinha e ampliação da ocupação terrestre por plantas vasculares e artrópodes.", "Siluriano"],
-  ["devonian", "Devoniano", "Marcado pela diversificação dos peixes, expansão de florestas e maior ocupação terrestre por vertebrados.", "Devoniano"],
-  ["carboniferous", "Carbonífero", "Período de extensas florestas pantanosas, formação de carvão e diversificação de insetos e tetrápodes.", "Carbonífero"],
-  ["permian", "Permiano", "Período de grandes continentes e crescente aridez, encerrado pela maior extinção em massa do Fanerozoico.", "Permiano"],
-  ["triassic", "Triássico", "Período de recuperação após a crise permiana e diversificação de novos répteis e primeiros dinossauros.", "Triássico"],
-  ["jurassic", "Jurássico", "Período de ampla diversificação dos dinossauros, répteis marinhos e aparecimento de aves primitivas.", "Jurássico"],
-  ["cretaceous", "Cretáceo", "Período de expansão das plantas com flores, alta diversidade mesozoica e grande extinção em seu final.", "Cretáceo"],
-  ["paleocene", "Paleoceno", "Primeira época do Paleógeno, marcada pela recuperação e radiação de mamíferos após a extinção do Cretáceo.", "Paleoceno"],
-  ["eocene", "Eoceno", "Época inicialmente muito quente, com diversificação de mamíferos modernos e ecossistemas florestais extensos.", "Eoceno"],
-  ["oligocene", "Oligoceno", "Época de resfriamento global, expansão de ambientes mais abertos e reorganização de faunas mamalianas.", "Oligoceno"],
-  ["miocene", "Mioceno", "Época de expansão de gramíneas, savanas e grande diversificação de mamíferos e primatas.", "Mioceno"],
-  ["pliocene", "Plioceno", "Época de resfriamento progressivo e importantes etapas da evolução dos hominíneos.", "Plioceno"],
-  ["pleistocene", "Pleistoceno", "Época marcada por repetidos ciclos glaciais e pela expansão de Homo e grandes mamíferos.", "Pleistoceno"],
-  ["holocene", "Holoceno", "Época atual, com clima interglacial e impacto crescente das sociedades humanas sobre os ecossistemas.", "Holoceno"],
-];
+export const GEOLOGY_DISCOVERY_TOPICS = {
+  hadean: [
+    "Hadeano",
+    "O Hadeano corresponde à fase mais antiga da história da Terra, quando o planeta ainda consolidava crosta, oceanos e atmosfera sob intenso calor interno e frequentes impactos. É o cenário em que se formaram as condições físicas que antecederam os primeiros sistemas vivos conhecidos.",
+    "Hadean Earth early ocean volcanic landscape artist impression",
+  ],
+  eoarchean: [
+    "Eoarqueano",
+    "O Eoarqueano registra algumas das rochas mais antigas preservadas e um planeta dominado por oceanos, vulcanismo e intensa atividade hidrotermal. Esses ambientes são importantes para hipóteses sobre os primeiros metabolismos e habitats microbianos.",
+    "Eoarchean early Earth ocean volcanic hydrothermal landscape",
+  ],
+  paleoarchean: [
+    "Paleoarqueano",
+    "Durante o Paleoarqueano, crostas continentais antigas se tornaram mais estáveis e evidências de vida microbiana passam a aparecer com maior clareza. Estromatólitos e outros registros apontam para comunidades capazes de modificar gradualmente seus ambientes.",
+    "Paleoarchean stromatolite microbial mat landscape",
+  ],
+  mesoarchean: [
+    "Mesoarqueano",
+    "O Mesoarqueano foi marcado pelo crescimento de massas continentais antigas e pela consolidação de ecossistemas microbianos em mares rasos. Ciclos biogeoquímicos de carbono e nitrogênio ganharam importância crescente na interação entre vida e ambiente.",
+    "Mesoarchean stromatolite microbial mat shallow sea",
+  ],
+  neoarchean: [
+    "Neoarqueano",
+    "No Neoarqueano, a fotossíntese oxigênica já exercia influência crescente sobre oceanos e atmosfera, preparando o caminho para a Grande Oxidação do Proterozoico. O planeta ainda mantinha vastos ambientes anóxicos ao lado de zonas localmente oxigenadas.",
+    "Neoarchean stromatolite oxygen oasis early Earth",
+  ],
+  siderian: [
+    "Sideriano",
+    "O Sideriano abriu o Paleoproterozoico durante uma grande reorganização química dos oceanos e da atmosfera. A elevação do oxigênio favoreceu a deposição de formações ferríferas bandadas e alterou profundamente os ambientes disponíveis à vida.",
+    "banded iron formation landscape Siderian",
+  ],
+  rhyacian: [
+    "Riaciano",
+    "O Riaciano inclui parte das grandes glaciações paleoproterozoicas e um mundo em transição para condições mais oxigenadas. A combinação de mudanças climáticas e químicas criou novas pressões e oportunidades para a evolução celular.",
+    "Paleoproterozoic glaciation Huronian landscape",
+  ],
+  orosirian: [
+    "Orosiriano",
+    "O Orosiriano registrou intensa atividade tectônica e alguns dos maiores eventos de impacto conhecidos da história terrestre. Ao mesmo tempo, continentes continuaram a crescer e oceanos mais oxigenados ampliaram a variedade de ambientes habitáveis.",
+    "Paleoproterozoic impact crater ancient landscape",
+  ],
+  statherian: [
+    "Estateriano",
+    "No Estateriano, grandes blocos continentais se estabilizaram e extensas plataformas marinhas rasas se tornaram ambientes persistentes. A maior estabilidade física favoreceu ecossistemas microbianos duradouros e diversificação ecológica gradual.",
+    "Paleoproterozoic continental shelf stromatolite landscape",
+  ],
+  calymmian: [
+    "Calimiano",
+    "O Calimiano marcou o início do Mesoproterozoico, com expansão de coberturas sedimentares sobre continentes antigos e grandes mares interiores. Esses ambientes preservam sinais de ecossistemas microbianos e eucarióticos em diversificação.",
+    "Mesoproterozoic inland sea stromatolite landscape",
+  ],
+  ectasian: [
+    "Ectasiano",
+    "O Ectasiano foi um intervalo de relativa estabilidade tectônica e climática, durante o qual eucariotos se tornaram mais diversos. Fósseis e biomarcadores sugerem comunidades celulares cada vez mais complexas nos oceanos.",
+    "Mesoproterozoic eukaryote fossil stromatolite sea landscape",
+  ],
+  stenian: [
+    "Esteniano",
+    "O Esteniano encerrou o Mesoproterozoico e acompanhou a montagem de grandes massas continentais, incluindo Rodínia. Ecossistemas eucarióticos continuaram a se diversificar enquanto costas e mares eram reorganizados.",
+    "Rodinia supercontinent coast Stenian reconstruction",
+  ],
+  tonian: [
+    "Toniano",
+    "O Toniano iniciou o Neoproterozoico durante a fragmentação progressiva de Rodínia. Mudanças na configuração continental e nos oceanos coincidiram com expansão de eucariotos multicelulares e ecossistemas mais complexos.",
+    "Tonian Rodinia breakup rift sea reconstruction",
+  ],
+  cryogenian: [
+    "Criogeniano",
+    "O Criogeniano ficou marcado por glaciações extremas que podem ter coberto grande parte do planeta com gelo, no cenário conhecido como Terra Bola de Neve. A vida persistiu em refúgios aquáticos e voltou a se expandir quando o clima se tornou mais ameno.",
+    "Snowball Earth Cryogenian landscape illustration",
+  ],
+  ediacaran: [
+    "Ediacarano",
+    "O Ediacarano preserva algumas das primeiras comunidades macroscópicas complexas conhecidas, incluindo organismos de planos corporais muito diferentes dos atuais. Também registra importantes passos rumo à mobilidade, biomineralização e ecossistemas animais.",
+    "Ediacaran biota seafloor reconstruction landscape",
+  ],
+  cambrian: [
+    "Cambriano",
+    "O Cambriano testemunhou rápida diversificação de animais com novos planos corporais, modos de locomoção, sentidos e estruturas defensivas. A chamada Explosão Cambriana transformou redes ecológicas marinhas e intensificou relações entre predadores e presas.",
+    "Cambrian explosion marine life reconstruction landscape",
+  ],
+  ordovician: [
+    "Ordoviciano",
+    "O Ordoviciano foi marcado por grande diversificação da vida marinha e pelo início mais claro da colonização vegetal dos continentes. O período terminou com uma glaciação e uma das maiores extinções em massa do Fanerozoico.",
+    "Ordovician marine life reconstruction landscape",
+  ],
+  silurian: [
+    "Siluriano",
+    "No Siluriano, ecossistemas marinhos se recuperaram e plantas vasculares e artrópodes ampliaram sua presença em terra firme. Peixes com mandíbulas também se diversificaram, inaugurando novas estratégias de alimentação e locomoção.",
+    "Silurian land plants arthropods reconstruction landscape",
+  ],
+  devonian: [
+    "Devoniano",
+    "O Devoniano é conhecido pela grande diversificação dos peixes, pela expansão das primeiras florestas e pela evolução de vertebrados capazes de explorar ambientes terrestres. Essas mudanças alteraram solos, rios, atmosfera e cadeias alimentares.",
+    "Devonian forest fish tetrapod reconstruction landscape",
+  ],
+  carboniferous: [
+    "Carbonífero",
+    "O Carbonífero reuniu extensas florestas pantanosas que originaram muitos depósitos de carvão atuais. Altos níveis de oxigênio, grandes artrópodes e a diversificação de tetrápodes e amniotas caracterizaram seus ecossistemas.",
+    "Carboniferous coal swamp forest reconstruction landscape",
+  ],
+  permian: [
+    "Permiano",
+    "No Permiano, a formação do supercontinente Pangeia ampliou interiores secos e sazonais, favorecendo organismos adaptados à aridez. O período terminou com a maior extinção em massa conhecida do Fanerozoico.",
+    "Permian Pangea arid landscape synapsid reconstruction",
+  ],
+  triassic: [
+    "Triássico",
+    "O Triássico foi uma fase de recuperação após a extinção permiana, com expansão de novos grupos de répteis e surgimento dos primeiros dinossauros e mamíferos. Climas quentes e sazonais dominaram grande parte de Pangeia.",
+    "Triassic landscape early dinosaurs mammals reconstruction",
+  ],
+  jurassic: [
+    "Jurássico",
+    "Durante o Jurássico, dinossauros dominaram muitos ambientes terrestres, répteis marinhos prosperaram nos oceanos e as primeiras aves surgiram a partir de dinossauros emplumados. Florestas extensas sustentavam ecossistemas muito produtivos.",
+    "Jurassic dinosaur forest landscape reconstruction",
+  ],
+  cretaceous: [
+    "Cretáceo",
+    "O Cretáceo viu a expansão das plantas com flores, a diversificação de insetos sociais e grande variedade de dinossauros, aves e mamíferos. O período terminou com o impacto associado à extinção em massa do limite Cretáceo–Paleógeno.",
+    "Cretaceous flowering plants dinosaurs landscape reconstruction",
+  ],
+  paleocene: [
+    "Paleoceno",
+    "O Paleoceno foi a primeira época após a extinção dos dinossauros não avianos e marcou rápida recuperação dos ecossistemas. Mamíferos e aves ocuparam nichos vagos e iniciaram grandes radiações evolutivas.",
+    "Paleocene mammals forest reconstruction landscape",
+  ],
+  eocene: [
+    "Eoceno",
+    "O Eoceno começou sob clima global muito quente e extensas florestas, enquanto muitos grupos modernos de mamíferos se diversificavam. Baleias primitivas, morcegos, primatas e numerosos ungulados aparecem com destaque em seu registro fóssil.",
+    "Eocene rainforest mammals reconstruction landscape",
+  ],
+  oligocene: [
+    "Oligoceno",
+    "No Oligoceno, o planeta passou por resfriamento significativo, expansão do gelo antártico e aumento de ambientes abertos. Faunas de mamíferos se reorganizaram à medida que florestas recuaram em muitas regiões.",
+    "Oligocene grassland mammals reconstruction landscape",
+  ],
+  miocene: [
+    "Mioceno",
+    "O Mioceno foi marcado pela expansão de gramíneas e savanas e por grande diversificação de mamíferos, aves e primatas. Mudanças climáticas e tectônicas criaram ambientes mais abertos e favoreceram novas formas de locomoção e alimentação.",
+    "Miocene savanna mammals primates reconstruction landscape",
+  ],
+  pliocene: [
+    "Plioceno",
+    "Durante o Plioceno, o clima global continuou a esfriar e ecossistemas de savana e mosaico se expandiram. Diversos hominíneos mostram adaptações ao bipedalismo e ao uso mais sofisticado das mãos e do ambiente.",
+    "Pliocene hominin savanna reconstruction landscape",
+  ],
+  pleistocene: [
+    "Pleistoceno",
+    "O Pleistoceno alternou repetidos ciclos glaciais e interglaciais e abrigou grandes mamíferos em muitos continentes. Espécies do gênero Homo se expandiram geograficamente e desenvolveram comportamentos cada vez mais complexos.",
+    "Pleistocene megafauna humans ice age landscape reconstruction",
+  ],
+  holocene: [
+    "Holoceno",
+    "O Holoceno corresponde ao atual intervalo interglacial e inclui a expansão da agricultura, domesticação e urbanização humanas. A transformação de habitats pela nossa espécie passou a atuar como uma força ecológica de escala planetária.",
+    "Holocene agriculture domestication landscape",
+  ],
+};
 
 export const EVENT_DISCOVERY_TOPICS = {
   volcano: [
@@ -484,11 +610,69 @@ export const MUTATION_DISCOVERY_TOPICS = {
   "Mutação Disfuncional": ["Mutação", "Mutações alteram o material genético; seus efeitos podem ser neutros, vantajosos ou prejudiciais conforme o contexto."],
 };
 
+const eventById = Object.fromEntries(EVENTS.map((event) => [event.id, event]));
+
+const ptList = (items) => {
+  if (items.length <= 1) return items[0] ?? "";
+  if (items.length === 2) return `${items[0]} e ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")} e ${items.at(-1)}`;
+};
+
+function geologyGameText(stage) {
+  if (stage.id === "hadean")
+    return "No jogo: é o prólogo da campanha Vida na Terra. O tabuleiro começa com um núcleo fértil 4×4 cercado por duas camadas letais, e a progressão estabelece Respiração anaeróbia e Quimiossíntese como marcos fundadores antes da transição para o Arqueano.";
+
+  const cycles = stage.cycles?.length ?? 1,
+    innovations = ptList(stage.required ?? []),
+    terrain = [],
+    barriers = stage.habitat?.naturalBarriers ?? [0, 0];
+
+  if (Number.isFinite(stage.habitat?.fertile))
+    terrain.push(`${stage.habitat.fertile} casas férteis`);
+  if (Number.isFinite(stage.habitat?.hostile))
+    terrain.push(`${stage.habitat.hostile} casas hostis`);
+  if ((barriers[1] ?? 0) > 0)
+    terrain.push(
+      barriers[0] === barriers[1]
+        ? `${barriers[0]} barreira(s) natural(is)`
+        : `entre ${barriers[0]} e ${barriers[1]} barreiras naturais`,
+    );
+
+  const topEvents = Object.entries(stage.events ?? {})
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 3)
+    .map(([id]) => eventById[id]?.name ?? id);
+
+  return `No jogo: esta etapa tem ${cycles} ${cycles === 1 ? "ciclo" : "ciclos"} e introduz como marcos obrigatórios ${innovations}. O tabuleiro começa com ${ptList(terrain)}${topEvents.length ? `; entre os eventos mais característicos estão ${ptList(topEvents)}` : ""}.`;
+}
+
 const geology = Object.fromEntries(
-  geologyRows.map(([id, title, text, topic], order) => [
-    id,
-    { id, category: "geology", title, text, wikipedia: wiki(topic), image: image.geology, order },
-  ]),
+  GEOLOGICAL_STAGES.map((stage, order) => {
+    const [topic, sourceText] =
+        GEOLOGY_DISCOVERY_TOPICS[stage.id] ?? [stage.period, stage.period],
+      realWorld = `Na vida: ${lifeOnly(sourceText)}`,
+      game = geologyGameText(stage),
+      media = GEOLOGY_DISCOVERY_MEDIA[stage.id] ?? {};
+    return [
+      stage.id,
+      {
+        id: stage.id,
+        category: "geology",
+        title: stage.period,
+        realWorld,
+        game,
+        text: `${realWorld}\n\n${game}`,
+        wikipedia: media.wikipedia ?? wikiArticle(topic),
+        image: media.image ?? image.geology,
+        imageSource: media.source ?? null,
+        imageLicense: media.license ?? null,
+        imageAuthor: media.author ?? null,
+        imageWidth: media.width ?? null,
+        imageHeight: media.height ?? null,
+        order,
+      },
+    ];
+  }),
 );
 
 const events = Object.fromEntries(
