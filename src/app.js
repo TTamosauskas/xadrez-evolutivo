@@ -5,7 +5,6 @@ import {
   createSuccessorState,
   createArenaState,
   createArenaSuccessorState,
-  createPassiveToastTestState,
   arenaSurvivorSelections,
 } from "./state.js";
 import { Controller } from "./controller.js";
@@ -1024,10 +1023,12 @@ function renderDiscoveryBadges() {
 
 function renderDiscoveryList() {
   const list = $("discovery-list"),
-    detail = $("discovery-detail");
+    detail = $("discovery-detail"),
+    dialog = $("discoveries-dialog");
   detail.hidden = true;
   list.hidden = false;
   list.replaceChildren();
+  dialog.scrollTop = 0;
   for (const button of document.querySelectorAll("[data-discovery-tab]")) {
     const active = button.dataset.discoveryTab === activeDiscoveryCategory;
     button.classList.toggle("active", active);
@@ -1049,8 +1050,16 @@ function renderDiscoveryList() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "discovery-item";
+    if (entry.icon) {
+      const icon = document.createElement("span");
+      icon.className = "discovery-item-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = entry.icon;
+      button.append(icon);
+    }
     const title = document.createElement("span");
-    title.textContent = entry.title;
+    title.className = "discovery-item-label";
+    title.textContent = entry.label ?? entry.title;
     button.append(title);
     if (isDiscoveryUnread(controller.state, activeDiscoveryCategory, entry.id)) {
       button.classList.add("unread");
@@ -1096,6 +1105,7 @@ function openDiscovery(category, id) {
   const play = $("discovery-play");
   play.hidden = category !== "geology";
   play.dataset.stage = category === "geology" ? id : "";
+  $("discoveries-dialog").scrollTop = 0;
 }
 
 function openDiscoveries() {
@@ -1226,33 +1236,6 @@ for (const id of ["mode", "difficulty"])
       report("Preferência aplicada nesta sessão.");
     }
   });
-$("toast-test-phase").addEventListener("click", () =>
-  info(
-    "🧪 Fase teste de toasts",
-    [
-      "Esta fase substitui temporariamente a partida atual e força o modo 2 jogadores. As seis ações abaixo foram preparadas para gerar toasts determinísticos, sem depender de sorte.",
-      "§ Sequência garantida",
-      "1. Brancas: em A1, selecione a peça com 🐇 Ovulação Induzida e clique no parceiro em B1.",
-      "2. Pretas: em A8, selecione a peça com ▽ Presas e capture A7, que possui 🦏 Pele grossa.",
-      "3. Brancas: em C5, selecione a peça com 👁️ Visão Noturna e capture D5, que possui 🌙 Notívago.",
-      "4. Pretas: em H4, selecione a peça com 🐚 Carapaça e capture H3, que possui 🫎 Chifre.",
-      "5. Brancas: em A6, selecione a Torre com 👀 Visão Binocular e capture E6, que possui 😶‍🌫️ Camuflagem.",
-      "6. Pretas: em C3, selecione a peça atacante e tente capturar D3. A cria possui uma carga garantida de proteção biparental 🐧 de Monogamia.",
-      "Cada ação deve produzir um toast no topo do próprio tabuleiro. Se uma reprodução abrir um aviso de mutação, feche o aviso: o toast ficará na fila e aparecerá em seguida.",
-    ],
-    () => {
-      const next = createPassiveToastTestState(
-        Date.now(),
-        controller.state.discoveries,
-      );
-      replaceCycleState(next);
-      controller.configure("multi", controller.difficulty);
-      $("mode").value = "multi";
-      report("🧪 Fase teste de toasts iniciada. Siga a sequência mostrada no Menu.");
-    },
-    "Iniciar fase teste",
-  ),
-);
 $("new").addEventListener("click", () =>
   info(
     "Começar de novo?",
