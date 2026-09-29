@@ -1410,6 +1410,31 @@ test("full-board earthquakes terminate with unique occupied squares", () => {
   assert.equal(s.pieces.length, 64);
   assertState(s);
 });
+
+test("earthquakes never leave survivors on lethal cells", () => {
+  let lethalCasualties = 0;
+  for (let seed = 1; seed <= 12; seed++) {
+    const s = fixture(
+      [
+        { owner: "blue", r: 1, c: 1 },
+        { owner: "amber", r: 1, c: 6 },
+      ],
+      seed,
+    );
+    s.geologicalStage = "eoarchean";
+    s.cycle = 1;
+
+    startEvent(context(s), "earthquake");
+
+    lethalCasualties += 2 - s.pieces.length;
+    assert.ok(
+      s.pieces.every((piece) => !lethalHazardAt(s, piece.r, piece.c)),
+      `seed ${seed} left a survivor on lethal terrain`,
+    );
+    assertState(s);
+  }
+  assert.ok(lethalCasualties > 0);
+});
 test("disease transmits one hop per round, resistance blocks it, survivors stay immune", () => {
   const s = fixture([
     { owner: "blue", r: 3, c: 1 },
