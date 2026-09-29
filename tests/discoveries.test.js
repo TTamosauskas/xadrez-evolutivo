@@ -12,6 +12,7 @@ import {
   recordDiscovery,
   unreadDiscoveries,
 } from "../src/discoveries.js";
+import { mutationExplanation } from "../src/mutation-explanation.js";
 import {
   assertState,
   createCampaignState,
@@ -83,6 +84,28 @@ test("catalog covers every geological stage event and named mutation", () => {
     assert.ok(DISCOVERY_CONTENT.mutations[trait], trait);
   for (let rank = 0; rank <= 5; rank++)
     assert.ok(DISCOVERY_CONTENT.mutations[`rank:${rank}`]);
+});
+
+test("mutation discovery text exactly matches the toast explanatory modal", () => {
+  for (const trait of Object.keys(TRAITS)) {
+    const entry = DISCOVERY_CONTENT.mutations[trait],
+      copy = mutationExplanation(trait);
+    assert.equal(entry.realWorld, copy.realWorld, trait);
+    assert.equal(entry.game, copy.game, trait);
+    assert.equal(entry.text, `${copy.realWorld}\n\n${copy.game}`, trait);
+  }
+});
+
+test("mutation Wikipedia links are direct article links", () => {
+  for (const trait of Object.keys(TRAITS)) {
+    const href = DISCOVERY_CONTENT.mutations[trait].wikipedia;
+    assert.match(href, /^https:\/\/pt\.wikipedia\.org\/wiki\//, trait);
+    assert.doesNotMatch(href, /w\/index\.php\?search=/, trait);
+  }
+  assert.equal(
+    DISCOVERY_CONTENT.mutations.Recuo.wikipedia,
+    "https://pt.wikipedia.org/wiki/Predador_de_emboscada",
+  );
 });
 
 test("mutation labels map only to encyclopedia-worthy discoveries", () => {

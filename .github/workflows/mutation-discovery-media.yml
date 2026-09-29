@@ -1,0 +1,37 @@
+name: Refresh mutation discovery media
+
+on:
+  push:
+    branches:
+      - feature/discoveries-mutation-content
+    paths:
+      - scripts/build-mutation-discovery-media.mjs
+      - src/discoveries.js
+      - .github/workflows/mutation-discovery-media.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/discoveries-mutation-content
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/build-mutation-discovery-media.mjs
+      - name: Commit researched Wikipedia/Wikimedia media
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/mutation-discovery-media.js assets/discoveries/mutations
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Add researched mutation discovery media"
+          git push
