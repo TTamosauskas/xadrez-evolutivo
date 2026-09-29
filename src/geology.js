@@ -1,5 +1,6 @@
 import {
   EARTH_FOUNDER_GENOMES,
+  earthFounderHistory,
   earthTraitWindowAllows,
   scenarioEventWeights,
   scenarioHabitatProfile,
@@ -1841,11 +1842,11 @@ function canonicalPeriodLineages(state) {
   return [
     {
       traits: normalizeActiveTraits(plant, "Fotossíntese"),
-      ancestry: plant,
+      ancestry: earthFounderHistory(stage.id, "plant"),
     },
     {
       traits: normalizeActiveTraits(animal, "Predação"),
-      ancestry: animal,
+      ancestry: earthFounderHistory(stage.id, "animal"),
     },
   ];
 }

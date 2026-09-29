@@ -4,6 +4,7 @@ import { TRAITS, EVENTS, has, STATE_VERSION } from "../src/constants.js";
 import {
   GEOLOGICAL_STAGES,
   TRAIT_STAGE,
+  TRAIT_DEPENDENCIES,
   ACTIVE_TRAIT_FAMILIES,
   applyTraitLoss,
   applyTraitMutation,
@@ -49,6 +50,11 @@ import {
 import { movesFor } from "../src/moves.js";
 import { context } from "../src/engine.js";
 import { tickEnvironment } from "../src/environment.js";
+import {
+  EARTH_FOUNDER_GENOMES,
+  earthFounderHistory,
+} from "../src/scenarios.js";
+import { genomeSignature } from "../src/genetics.js";
 
 test("geological timeline assigns every positive mutation to one stage", () => {
   const positive = Object.keys(TRAITS).filter((trait) => !NEGATIVE_TRAITS.has(trait));
@@ -59,6 +65,93 @@ test("geological timeline assigns every positive mutation to one stage", () => {
   const required = GEOLOGICAL_STAGES.flatMap((stage) => stage.required);
   assert.equal(required.length, new Set(required).size);
   for (const trait of required) assert.equal(TRAIT_STAGE[trait] !== undefined, true);
+});
+
+test("Earth canonical founders keep the complete intended phenotype and lineage legacy for both branches", () => {
+  const stageIndex = new Map(
+      GEOLOGICAL_STAGES.map((stage, index) => [stage.id, index]),
+    ),
+    repairIndex = stageIndex.get("mesoarchean"),
+    bilateralIndex = stageIndex.get("ediacaran");
+
+  for (const [id, preset] of Object.entries(EARTH_FOUNDER_GENOMES)) {
+    const index = stageIndex.get(id),
+      state = createPeriodState(id, 4000 + index, null, "earth"),
+      blue = state.pieces.filter((piece) => piece.owner === "blue"),
+      branchPieces = { plant: blue[0], animal: blue[1] };
+
+    assert.equal(state.cycle, 1, id);
+    assert.equal(blue.length, 2, id);
+
+    for (const branch of ["plant", "animal"]) {
+      const piece = branchPieces[branch],
+        preferred = branch === "plant" ? "Fotossíntese" : "Predação",
+        inherited = [
+          ...(preset[branch] ?? []),
+          ...(index > repairIndex ? ["Reparo Celular"] : []),
+          ...(branch === "animal" && index > bilateralIndex
+            ? ["Simetria Bilateral"]
+            : []),
+        ],
+        expectedActive = normalizeActiveTraits(
+          ["Respiração anaeróbia", ...inherited],
+          preferred,
+        ),
+        history = earthFounderHistory(id, branch);
+
+      assert.deepEqual(
+        [...piece.traits].sort(),
+        [...expectedActive].sort(),
+        `${id} · ${branch} · fenótipo`,
+      );
+      for (const trait of history) {
+        assert.ok(
+          piece.ancestry.includes(trait),
+          `${id} · ${branch} · legado ausente: ${trait}`,
+        );
+        assert.ok(
+          stageIndex.get(TRAIT_STAGE[trait]) < index,
+          `${id} · ${branch} · ${trait} ainda não deveria existir no início do período`,
+        );
+      }
+
+      for (const trait of piece.traits) {
+        const dependencies = TRAIT_DEPENDENCIES[trait];
+        for (const dependency of dependencies?.lineage ?? [])
+          assert.ok(
+            piece.ancestry.includes(dependency),
+            `${id} · ${branch} · ${trait} requer legado ${dependency}`,
+          );
+        if (dependencies?.lineageAny?.length)
+          assert.ok(
+            dependencies.lineageAny.some((dependency) =>
+              piece.ancestry.includes(dependency),
+            ),
+            `${id} · ${branch} · ${trait} requer um legado alternativo`,
+          );
+        for (const dependency of dependencies?.active ?? [])
+          assert.ok(
+            piece.traits.includes(dependency),
+            `${id} · ${branch} · ${trait} requer manifestação de ${dependency}`,
+          );
+      }
+    }
+
+    const priorRequired = GEOLOGICAL_STAGES.slice(0, index).flatMap(
+        (stage) => stage.required,
+      ),
+      combinedHistory = new Set([
+        ...earthFounderHistory(id, "plant"),
+        ...earthFounderHistory(id, "animal"),
+      ]);
+    for (const trait of priorRequired)
+      assert.ok(
+        combinedHistory.has(trait),
+        `${id} · inovação obrigatória anterior ausente do legado canônico: ${trait}`,
+      );
+
+    assertState(state);
+  }
 });
 
 test("every negative mutation has an explicit valid debut phase", () => {
@@ -700,6 +793,109 @@ test("Mesoarchean no longer repeats horizontal transfer after the Paleoarchean",
   assert.deepEqual(missingInnovations(state), []);
   assert.equal(stageComplete(state), true);
 });
+test("every first Earth cycle after a period transition resets to that period's canonical founders", () => {
+  const fingerprint = (state) =>
+    state.pieces
+      .filter((piece) => piece.owner === "blue")
+      .map((piece) => ({
+        rank: piece.rank,
+        traits: [...piece.traits].sort(),
+        ancestry: [...piece.ancestry].sort(),
+        genome: genomeSignature(piece.genome),
+      }));
+
+  for (let index = 0; index < GEOLOGICAL_STAGES.length - 1; index++) {
+    const stage = GEOLOGICAL_STAGES[index],
+      candidate = GEOLOGICAL_STAGES[index + 1],
+      previous = createPeriodState(
+        stage.id,
+        5000 + index * 3,
+        null,
+        "earth",
+      );
+
+    previous.cycle = stage.cycles?.length ?? 1;
+    previous.totalCycles = Math.max(previous.totalCycles, previous.cycle);
+    previous.historicalTraits = [
+      ...new Set([
+        ...previous.historicalTraits,
+        ...periodInnovations(previous),
+      ]),
+    ];
+    if (stage.id === "hadean") previous.hadeanTutorial.fertile = true;
+    assert.equal(stageComplete(previous), true, stage.id);
+
+    // Deliberately distort surviving forms: an Earth period transition must ignore them.
+    for (const piece of previous.pieces) {
+      piece.rank = piece.rank === 5 ? 0 : 5;
+      piece.generation += 20;
+    }
+    previous.result = { winner: "blue", reason: "teste" };
+    previous.phase = "over";
+
+    const next = createSuccessorState(previous, 5001 + index * 3),
+      canonical = createPeriodState(
+        candidate.id,
+        5002 + index * 3,
+        null,
+        "earth",
+      );
+
+    assert.equal(next.geologicalStage, candidate.id, stage.id);
+    assert.equal(next.cycle, 1, candidate.id);
+    assert.deepEqual(
+      fingerprint(next),
+      fingerprint(canonical),
+      `${stage.id} → ${candidate.id}`,
+    );
+    assert.deepEqual(
+      [...next.historicalTraits].sort(),
+      [...canonical.historicalTraits].sort(),
+      `${candidate.id} · história canônica`,
+    );
+  }
+});
+
+test("Alternative Scenarios keeps previous-game founders even on the first cycle of a new period", () => {
+  const previous = createPeriodState(
+    "neoarchean",
+    5900,
+    null,
+    "alternative",
+  );
+  previous.pieces = [];
+  previous.nextId = 1;
+  for (const [owner, row] of [["blue", 6], ["amber", 1]]) {
+    previous.pieces.push(
+      newPiece(previous, owner, row, 2, {
+        rank: 4,
+        traits: ["Fotossíntese", "Resistência"],
+      }),
+      newPiece(previous, owner, row, 5, {
+        rank: 4,
+        traits: ["Predação", "Resistência"],
+      }),
+    );
+  }
+  previous.historicalTraits = [
+    ...new Set([
+      ...previous.historicalTraits,
+      ...periodInnovations(previous),
+    ]),
+  ];
+  previous.result = { winner: "blue", reason: "teste" };
+  previous.phase = "over";
+  assert.equal(stageComplete(previous), true);
+
+  const next = createSuccessorState(previous, 5901);
+  assert.equal(next.scenario, "alternative");
+  assert.equal(next.geologicalStage, "siderian");
+  assert.equal(next.cycle, 1);
+  assert.ok(
+    next.pieces.every((piece) => piece.traits.includes("Resistência")),
+  );
+});
+
 test("Earth successors preserve strongest living forms while fresh detailed phases use canonical founders", () => {
   const state = createPeriodState("ediacaran", 198, null, "earth"),
     bestPhoto = strongestSurvivor(

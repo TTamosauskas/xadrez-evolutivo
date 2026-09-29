@@ -120,11 +120,13 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
   triassic: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Extremófitas"],
     animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Incubação", "Carnívoro", "Presas"],
+    animalLegacy: ["Mandíbula", "Dentes"],
     rank: 3,
   },
   jurassic: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Extremófitas"],
     animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Vivíparo", "Incubação", "Notívago", "Lactação"],
+    animalLegacy: ["Pelos"],
     rank: 3,
   },
   cretaceous: {
@@ -135,11 +137,13 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
   paleocene: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Perfume Floral"],
     animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Incubação", "Eusocialidade", "Voo"],
+    animalLegacy: ["Ovífagia"],
     rank: 5,
   },
   eocene: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Perfume Floral"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Ruminante", "Garras", "Roedor", "Monogamia"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Herbívoro", "Pelos", "Ruminante", "Garras", "Roedor", "Monogamia"],
+    animalLegacy: ["Cuidado Parental"],
     rank: 5,
   },
   oligocene: {
@@ -153,7 +157,7 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
     rank: 5,
   },
   pliocene: {
-    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Capsaicina"],
+    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Endozoocoria", "Capsaicina"],
     animal: ["Predação", "Escavador", "Construtor de Nicho", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Chifre"],
     rank: 5,
   },
@@ -168,6 +172,24 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
     rank: 5,
   },
 });
+
+export function earthFounderHistory(stageId, branch) {
+  if (!["plant", "animal"].includes(branch)) return [];
+  const entries = Object.entries(EARTH_FOUNDER_GENOMES),
+    stageIndex = entries.findIndex(([id]) => id === stageId);
+  if (stageIndex < 0) return [];
+  const legacyKey = branch === "plant" ? "plantLegacy" : "animalLegacy";
+  return [
+    ...new Set(
+      entries
+        .slice(0, stageIndex + 1)
+        .flatMap(([, profile]) => [
+          ...(profile[branch] ?? []),
+          ...(profile[legacyKey] ?? []),
+        ]),
+    ),
+  ];
+}
 
 const CONTEXT_AFFINITIES = {
   "Percepção Espacial": ["Locomoção Articulada"],

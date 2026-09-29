@@ -49,6 +49,7 @@ import {
 import {
   DEFAULT_SCENARIO,
   EARTH_FOUNDER_GENOMES,
+  earthFounderHistory,
   validScenario,
 } from "./scenarios.js";
 import {
@@ -1515,34 +1516,38 @@ function previewFounderProfiles(stageIndex) {
           ...inheritedBilateral,
         ]),
       ],
+      plantTraits = normalizeActiveTraits(curatedPlant, "Fotossíntese"),
+      animalTraits = normalizeActiveTraits(curatedAnimal, "Predação"),
+      plantAncestry = earthFounderHistory(stage.id, "plant"),
+      animalAncestry = earthFounderHistory(stage.id, "animal"),
       historicalTraits = [
         ...new Set([
           ...GEOLOGICAL_STAGES.slice(0, stageIndex).flatMap(
             (entry) => entry.required,
           ),
-          ...curatedPlant,
-          ...curatedAnimal,
+          ...plantAncestry,
+          ...animalAncestry,
         ]),
       ];
     return {
       historicalTraits,
       primary: {
         rank: prePrimitiveLocomotion ? 4 : 0,
-        traits: normalizeActiveTraits(curatedPlant, "Fotossíntese"),
-        ancestry: [...new Set(curatedPlant)],
+        traits: plantTraits,
+        ancestry: plantAncestry,
         recessiveTraits: earthFounderRecessives(
-          historicalTraits,
-          curatedPlant,
+          plantAncestry,
+          plantTraits,
           true,
         ),
       },
       companion: {
         rank: prePrimitiveLocomotion ? 4 : (curated.rank ?? 0),
-        traits: normalizeActiveTraits(curatedAnimal, "Predação"),
-        ancestry: [...new Set(curatedAnimal)],
+        traits: animalTraits,
+        ancestry: animalAncestry,
         recessiveTraits: earthFounderRecessives(
-          historicalTraits,
-          curatedAnimal,
+          animalAncestry,
+          animalTraits,
           false,
         ),
       },
@@ -2292,16 +2297,12 @@ function createEarthSuccessorState(previous, seed) {
       (stage) => stage.id === candidate.id,
     ),
     preview = previewFounderProfiles(stageIndex),
-    primary = earthBranchFounder(
-      previous,
-      "Fotossíntese",
-      preview.primary,
-    ),
-    companion = earthBranchFounder(
-      previous,
-      "Predação",
-      preview.companion,
-    ),
+    primary = advanced
+      ? preview.primary
+      : earthBranchFounder(previous, "Fotossíntese", preview.primary),
+    companion = advanced
+      ? preview.companion
+      : earthBranchFounder(previous, "Predação", preview.companion),
     founders = { primary, companion },
     state = createState(seed, {
       scenario: "earth",
@@ -2330,7 +2331,7 @@ function createEarthSuccessorState(previous, seed) {
   log(
     state,
     advanced
-      ? `Vida na Terra: inicia-se ${geologicalLabel(state)}; os fundadores preservam as linhagens vivas já estabelecidas e o preset canônico completa ramos ainda não originados.`
+      ? `Vida na Terra: inicia-se ${geologicalLabel(state)}; o 1º Ciclo usa obrigatoriamente os fundadores canônicos deste período.`
       : `Vida na Terra: ${candidate.period} continua no ${cycle}º Ciclo; as linhagens sobreviventes mais poderosas retornam como fundadoras.`,
   );
   return state;
