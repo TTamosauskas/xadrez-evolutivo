@@ -4,7 +4,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-ae7ce974dc04.jpg
 
-- Usada em: Respiração anaeróbia, Mixotrofia, Extremófitas, Fixação de Nitrogênio, Dormência, Resistência, Longevidade, Imortalidade Biológica, Cópula Agressiva, Pedogênese, Metamorfose, Simetria Bilateral, Artrópode, Esclerotização, Exibição deimática, Escalador, Ooteca, Antropização, Anemia Falciforme, Assimetria Flutuante, Ataxia, Deficiência Motora, Deficiência Sensorial, Filho único, Semelparidade, Regressão Evolutiva, Nanismo, Gigantismo, Tinta, Quimiossíntese, Tromba, Ruminante, Pescoço Verticalizado, Multicelularismo, Zoorremediação, Pelos, Penas
+- Usada em: Respiração anaeróbia, Mixotrofia, Extremófitas, Fixação de Nitrogênio, Dormência, Resistência, Longevidade, Cópula Agressiva, Pedogênese, Metamorfose, Granívoro, Simetria Bilateral, Jatopropulsão, Artrópode, Escavador, Esclerotização, Escalador, Ooteca, Antropização, Anemia Falciforme, Assimetria Flutuante, Ataxia, Deficiência Motora, Deficiência Sensorial, Filho único, Semelparidade, Nanismo, Gigantismo, Tinta, Quimiossíntese, Tromba, Ruminante, Pescoço Verticalizado, Multicelularismo, Zoorremediação, Pelos, Penas
 - Fonte: https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg
 - Autor/crédito: Krzysztof A. Zacharski
 - Licença: CC BY 4.0
@@ -18,7 +18,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-5222ab300eba.png
 
-- Usada em: Fotossíntese, Embriófitas, Perfume Floral, Traqueófitas, Trepadeira, Espinhos, Angiospermas, Estômatos, Endozoocoria, Epizoocoria, Sinzoocoria
+- Usada em: Fotossíntese, Embriófitas, Traqueófitas, Trepadeira, Espinhos, Angiospermas, Estômatos, Endozoocoria, Epizoocoria, Sinzoocoria
 - Fonte: https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg
 - Autor/crédito: A.Spielhoff
 - Licença: CC0
@@ -29,6 +29,13 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Fonte: https://commons.wikimedia.org/wiki/File:Hyaloperonospora-parasitica-hyphae-haustoria.jpg
 - Autor/crédito: Emmanuel Boutet
 - Licença: CC BY-SA 2.5
+
+## media-ef93b0607132.png
+
+- Usada em: Perfume Floral
+- Fonte: https://commons.wikimedia.org/wiki/File:Pollination_Diagram.svg
+- Autor/crédito: YJaredY
+- Licença: CC BY-SA 4.0
 
 ## media-35fa85d3434a.jpg
 
@@ -46,7 +53,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-09d84e343b4d.jpg
 
-- Usada em: Predação, Granívoro
+- Usada em: Predação, Ovífagia
 - Fonte: https://commons.wikimedia.org/wiki/File:Stud_327_with_Blesbuck.jpg
 - Autor/crédito: Save China's Tiger
 - Licença: CC BY-SA 2.5
@@ -74,7 +81,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-2bfd9748c936.png
 
-- Usada em: Diferenciação Celular, Mutação Mutadora, Eucarionte, Endossimbiose, Imunidade Adaptativa
+- Usada em: Diferenciação Celular, Eucarionte, Endossimbiose, Imunidade Adaptativa
 - Fonte: https://commons.wikimedia.org/wiki/File:Chromosome-DNA-gene.png
 - Autor/crédito: Thomas Splettstoesser (www.scistyle.com)
 - Licença: CC BY-SA 4.0
@@ -86,19 +93,19 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Brocken Inaglory. Original uploader was Brocken Inaglory
 - Licença: CC BY-SA 3.0
 
-## media-7bbeecf5eb94.jpg
-
-- Usada em: Fertilidade Longeva
-- Fonte: https://commons.wikimedia.org/wiki/File:Testudo_horsfieldii_locking_into_the_camera.jpg
-- Autor/crédito: consulte a fonte
-- Licença: CC BY-SA 3.0
-
 ## media-10a57b0e771c.jpg
 
-- Usada em: Reprodução Sexuada, Brotamento, Fragmentação, Acasalamento Preferencial, Marsupial, Acasalamento Múltiplo, Movimento Lateral, Ofuscamento por movimento, Movimento proteano, Ovíparo, Incubação, Lactação, Ovífagia, Manada
+- Usada em: Fertilidade Longeva, Reprodução Sexuada, Brotamento, Fragmentação, Acasalamento Preferencial, Marsupial, Acasalamento Múltiplo, Movimento Lateral, Ofuscamento por movimento, Movimento proteano, Ovíparo, Incubação, Lactação
 - Fonte: https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg
 - Autor/crédito: Alex Popovkin, Bahia, Brazil
 - Licença: CC BY 2.0
+
+## media-7bbeecf5eb94.jpg
+
+- Usada em: Imortalidade Biológica
+- Fonte: https://commons.wikimedia.org/wiki/File:Testudo_horsfieldii_locking_into_the_camera.jpg
+- Autor/crédito: consulte a fonte
+- Licença: CC BY-SA 3.0
 
 ## media-63ddae488137.jpg
 
@@ -123,7 +130,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-23a83fbcb15f.jpg
 
-- Usada em: Colônia, Superorganismo, Mutualismo
+- Usada em: Colônia, Hierarquia, Superorganismo, Mutualismo
 - Fonte: https://commons.wikimedia.org/wiki/File:Wolf_Pack.jpg
 - Autor/crédito: Harlequeen from Cambridge, United Kingdom
 - Licença: CC BY 2.0
@@ -179,17 +186,10 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-479c289d360b.jpg
 
-- Usada em: Canibalismo
+- Usada em: Canibalismo, Canibalismo Filial, Matrifagia
 - Fonte: https://commons.wikimedia.org/wiki/File:Praying_Mantis_Sexual_Cannibalism_European-37.jpg
 - Autor/crédito: Oliver Koemmerling
 - Licença: CC BY-SA 3.0
-
-## media-ecdd1f5a4f6b.png
-
-- Usada em: Canibalismo Filial, Mutação Disfuncional
-- Fonte: https://commons.wikimedia.org/wiki/File:CollapsedtreeLabels-simplified.svg
-- Autor/crédito: User:TimVickers, SVG conversion by User:User_A1
-- Licença: Public domain
 
 ## media-9ac167b04091.jpg
 
@@ -198,26 +198,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Oliver Koemmerling
 - Licença: CC BY-SA 3.0
 
-## media-25f25a18f195.jpg
-
-- Usada em: Matrifagia
-- Fonte: https://commons.wikimedia.org/wiki/File:Paratemnoides_nidificator.jpg
-- Autor/crédito: José Roberto Peruca
-- Licença: CC BY 2.0
-
 ## media-1dceb314ab04.jpg
 
-- Usada em: Locomoção Primitiva, Rastejante, Escansão, Bioadesão, Forésia, Tigmotaxia, Deslizamento, Pulo, Bipedalismo
+- Usada em: Locomoção Primitiva, Rastejante, Escansão, Bioadesão, Arborícola, Forésia, Tigmotaxia, Deslizamento, Pulo, Bipedalismo
 - Fonte: https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg
 - Autor/crédito: Hein waschefort
 - Licença: CC BY-SA 3.0
-
-## media-a5b9bfe3b240.jpg
-
-- Usada em: Jatopropulsão
-- Fonte: https://commons.wikimedia.org/wiki/File:F100_F-15_engine.JPG
-- Autor/crédito: Shelley Gill
-- Licença: Public domain
 
 ## media-dc9ee0fd96db.png
 
@@ -289,13 +275,6 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Eadweard Muybridge
 - Licença: Public domain
 
-## media-9b19545fd8cd.jpg
-
-- Usada em: Arborícola
-- Fonte: https://commons.wikimedia.org/wiki/File:Mangrove_Tree_Crab,_NPSPhoto,_David_Grimes_(8720316307).jpg
-- Autor/crédito: Everglades NPS from Homestead, Florida, United States
-- Licença: Public domain
-
 ## media-8fa797dbf347.gif
 
 - Usada em: Serpenteamento
@@ -303,12 +282,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Chris Vynbos
 - Licença: CC BY-SA 4.0
 
-## media-843088e0a427.jpg
+## media-9937a2e3c04a.jpg
 
 - Usada em: Trilhas
-- Fonte: https://commons.wikimedia.org/wiki/File:Contrail_and_tsunami_warning_sign.jpg
-- Autor/crédito: Brocken Inaglory
-- Licença: CC BY-SA 4.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Meat_eater_ant_feeding_on_honey02.jpg
+- Autor/crédito: fir0002 flagstaffotos [at] gmail.com Canon 20D + Sigma 150mm f/2.8
+- Licença: GFDL 1.2
 
 ## media-c08095b1a8c2.jpg
 
@@ -317,19 +296,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Grozeva S, Kuznetsova V, Simov N, Langourov M, Dalakchieva S
 - Licença: CC BY 3.0
 
-## media-7a7d93d9ae70.png
+## media-83d4f5c8e53b.png
 
-- Usada em: Percepção Espacial
-- Fonte: https://commons.wikimedia.org/wiki/File:Anatomy_of_the_Human_Ear_pt.svg
-- Autor/crédito: File:Anatomy_of_the_Human_Ear.svg: w:en:Mike.lifeguard *derivative work: Ruryk (talk)
-- Licença: CC BY 2.5
-
-## media-2c3b7773a530.png
-
-- Usada em: Escavador
-- Fonte: https://pt.wikipedia.org/wiki/Ficheiro:Animal_Crossing_logo.png
-- Autor/crédito: Nintendo
-- Licença: Conteúdo restrito
+- Usada em: Percepção Espacial, Visão Binocular, Notívago, Neocórtex Desenvolvido
+- Fonte: https://commons.wikimedia.org/wiki/File:Animal_echolocation.svg
+- Autor/crédito: Petteri Aimonen
+- Licença: Public domain
 
 ## media-90b3b768be9b.jpg
 
@@ -359,12 +331,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Invertzoo
 - Licença: CC BY 3.0
 
-## media-6c5bbbee767a.png
+## media-ac016564fe39.jpg
 
 - Usada em: Extremotolerância
-- Fonte: https://commons.wikimedia.org/wiki/File:Genetic_engineering_logo.png
-- Autor/crédito: Ciencias Españolas KoS
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Aerial_image_of_Grand_Prismatic_Spring_(view_from_the_south).jpg
+- Autor/crédito: Carsten Steger
+- Licença: CC BY-SA 4.0
 
 ## media-3f15d32b2e3c.jpg
 
@@ -373,19 +345,26 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: U.S. Navy photo by Mass Communication Specialist Seaman Apprentice Matthew A. Ebarb
 - Licença: Public domain
 
-## media-4ab22b380578.jpg
+## media-e0d037e1d2ed.jpg
 
 - Usada em: Corpo Gelatinoso
-- Fonte: https://commons.wikimedia.org/wiki/File:GelatinousSeasnail.jpg
-- Autor/crédito: Kitty Mecklenburg
-- Licença: Public domain
+- Fonte: https://commons.wikimedia.org/wiki/File:Jelly_cc11.jpg
+- Autor/crédito: Dan90266
+- Licença: CC BY-SA 2.0
 
-## media-3afd6838bdee.jpg
+## media-3a295d7d992b.png
 
 - Usada em: Toxicidade
-- Fonte: https://commons.wikimedia.org/wiki/File:Siamese_cat.jpg
-- Autor/crédito: Meekahoo
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Skull_and_Crossbones.svg
+- Autor/crédito: DesconhecidoUnknown author
+- Licença: Public domain
+
+## media-47ba6f85ad37.jpg
+
+- Usada em: Exibição deimática
+- Fonte: https://commons.wikimedia.org/wiki/File:Phyllomedusa_oreades.jpg
+- Autor/crédito: Danielvelhobio
+- Licença: CC BY-SA 4.0
 
 ## media-13dcd036c106.jpg
 
@@ -400,13 +379,6 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Fonte: https://commons.wikimedia.org/wiki/File:Rana_perezi_small.jpg
 - Autor/crédito: Júlio Reis (User:Tintazul)
 - Licença: CC BY-SA 2.5
-
-## media-83d4f5c8e53b.png
-
-- Usada em: Visão Binocular, Notívago, Neocórtex Desenvolvido
-- Fonte: https://commons.wikimedia.org/wiki/File:Animal_echolocation.svg
-- Autor/crédito: Petteri Aimonen
-- Licença: Public domain
 
 ## media-be545afa9126.png
 
@@ -534,19 +506,19 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Contributor(s): Courier-mail (Brisbane, Qld.)
 - Licença: Public domain
 
-## media-6bf30a23dbc9.png
-
-- Usada em: Hierarquia
-- Fonte: https://commons.wikimedia.org/wiki/File:Social_Network_Diagram_(segment).svg
-- Autor/crédito: Original: DarwinPeacock SVG-Conversation: Maklaan
-- Licença: CC BY 3.0
-
 ## media-d700ae1d7541.jpg
 
 - Usada em: Caça Cooperativa
 - Fonte: https://commons.wikimedia.org/wiki/File:Pieter_Bruegel_the_Elder_-_Hunters_in_the_Snow_(Winter)_-_Google_Art_Project.jpg
 - Autor/crédito: Pieter Bruegel, o Velho
 - Licença: Public domain
+
+## media-d3b86004d280.jpg
+
+- Usada em: Manada
+- Fonte: https://commons.wikimedia.org/wiki/File:Elephants_Etosha_Namibia(1).jpg
+- Autor/crédito: Thomas Schoch
+- Licença: CC BY-SA 3.0
 
 ## media-217fc6c2b198.png
 
@@ -578,7 +550,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-f01c008b0196.jpg
 
-- Usada em: Esterilidade
+- Usada em: Esterilidade, Subfertilidade
 - Fonte: https://commons.wikimedia.org/wiki/File:Tr_icsi_05.jpg
 - Autor/crédito: Clinica e centro de pesquisa em reprodução humana Roger Abdelmassih
 - Licença: Attribution
@@ -597,19 +569,19 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Los Alamos National Laboratory
 - Licença: Attribution
 
-## media-f6d19b5a0863.gif
-
-- Usada em: Subfertilidade
-- Fonte: https://commons.wikimedia.org/wiki/File:Testicular_microlithiasis_131206091733625.gif
-- Autor/crédito: Nevit Dilmen (talk)
-- Licença: CC BY-SA 3.0
-
 ## media-47b6114e2a5e.jpg
 
 - Usada em: Má absorção Alimentar
 - Fonte: https://commons.wikimedia.org/wiki/File:Whipple2.jpg
 - Autor/crédito: Este ficheiro foi inicialmente carregado por Countincr em Wikipédia em inglês
 - Licença: CC BY-SA 2.5
+
+## media-ecdd1f5a4f6b.png
+
+- Usada em: Regressão Evolutiva, Mutação Mutadora, Mutação Disfuncional
+- Fonte: https://commons.wikimedia.org/wiki/File:CollapsedtreeLabels-simplified.svg
+- Autor/crédito: User:TimVickers, SVG conversion by User:User_A1
+- Licença: Public domain
 
 ## media-1cfdd649b2c9.jpg
 
@@ -653,12 +625,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Zaereth
 - Licença: CC BY-SA 3.0
 
-## media-f7dd30b68151.jpg
+## media-e0f622c5f54c.jpg
 
 - Usada em: Rabo Chicote
-- Fonte: https://commons.wikimedia.org/wiki/File:Puente_Romano_de_Cangas_de_On%C3%ADs.tif
-- Autor/crédito: Javier Montes
-- Licença: CC BY-SA 4.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Doedicurus_BW.jpg
+- Autor/crédito: Nobu Tamura (http://spinops.blogspot.com)
+- Licença: CC BY 3.0
 
 ## media-c55446655bce.jpg
 
@@ -737,12 +709,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: AshLin (discussão · contribuições)
 - Licença: CC BY-SA 2.5 in
 
-## media-690c39fc9e76.jpg
+## media-3e431f2397e0.jpg
 
 - Usada em: Osteodermos
-- Fonte: https://commons.wikimedia.org/wiki/File:Ankylosaur_head_-_cast_-_Custer_County_Montana_-_Museum_of_the_Rockies_-_2013-07-08.jpg
-- Autor/crédito: Tim Evanson
-- Licença: CC BY-SA 2.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Gila_fg01.jpg
+- Autor/crédito: Fritz Geller-Grimm
+- Licença: CC BY-SA 2.5
 
 ## media-8161ab1b04df.png
 
