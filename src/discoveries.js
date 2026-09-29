@@ -1,4 +1,5 @@
 import { EVENTS, PIECES, TRAITS } from "./constants.js";
+import { MUTATION_DISCOVERY_MEDIA } from "./mutation-discovery-media.js";
 
 export const DISCOVERY_CATEGORIES = [
   ["geology", "Eras"],
@@ -7,7 +8,19 @@ export const DISCOVERY_CATEGORIES = [
 ];
 
 const wiki = (query) =>
-  `https://pt.wikipedia.org/w/index.php?search=${encodeURIComponent(query)}`;
+    `https://pt.wikipedia.org/w/index.php?search=${encodeURIComponent(query)}`,
+  wikiArticle = (title) =>
+    `https://pt.wikipedia.org/wiki/${encodeURIComponent(
+      String(title).trim().replaceAll(" ", "_"),
+    )}`,
+  GAME_CLAUSE = /\s*(?:[.;]\s*)?no jogo,?\s.*$/iu;
+
+function lifeOnly(text) {
+  let value = String(text ?? "").replace(GAME_CLAUSE, "").trim();
+  value = value.replace(/[;,:–—-]+\s*$/u, "").trim();
+  if (value && !/[.!?]$/u.test(value)) value += ".";
+  return value;
+}
 
 const image = {
   geology: "assets/discoveries/geology.svg",
@@ -70,7 +83,7 @@ const eventRows = [
   ["alluvial-river", "Rio Aluvial", "Rios transportam e depositam sedimentos e nutrientes, criando planícies aluviais férteis e habitats em constante renovação.", "Planície aluvial"],
 ];
 
-const mutationTopics = {
+export const MUTATION_DISCOVERY_TOPICS = {
   "Respiração anaeróbia": [
     "Respiração anaeróbia",
     "Metabolismos anaeróbios obtêm energia sem usar oxigênio e são compatíveis com condições da Terra primitiva anteriores à oxigenação atmosférica.",
@@ -413,22 +426,40 @@ const events = Object.fromEntries(
 );
 
 const mutations = Object.fromEntries(
-  Object.entries(TRAITS).map(([name, [icon]], order) => {
-    const [topic, text] = mutationTopics[name] ?? [name, TRAITS[name][1]];
+  Object.entries(TRAITS).map(([name, [icon, gameRule]], order) => {
+    const [topic, sourceText] =
+        MUTATION_DISCOVERY_TOPICS[name] ?? [name, gameRule],
+      lifeText = lifeOnly(sourceText),
+      realWorld = `Na vida: ${lifeText}`,
+      game = `No jogo: ${gameRule}`,
+      media = MUTATION_DISCOVERY_MEDIA[name] ?? {};
     return [
       name,
       {
         id: name,
         category: "mutations",
         title: `${icon} ${name}`,
-        text,
-        wikipedia: wiki(topic),
-        image: image.mutations,
+        realWorld,
+        game,
+        text: `${realWorld}\n\n${game}`,
+        wikipedia: media.wikipedia ?? wikiArticle(topic),
+        image: media.image ?? image.mutations,
+        imageSource: media.source ?? null,
+        imageLicense: media.license ?? null,
+        imageAuthor: media.author ?? null,
         order,
       },
     ];
   }),
 );
+const rankArticles = [
+  "Peão (xadrez)",
+  "Cavalo (xadrez)",
+  "Bispo (xadrez)",
+  "Torre (xadrez)",
+  "Rei (xadrez)",
+  "Dama (xadrez)",
+];
 for (let rank = 0; rank < PIECES.length; rank++) {
   const title = PIECES[rank];
   mutations[`rank:${rank}`] = {
@@ -436,7 +467,7 @@ for (let rank = 0; rank < PIECES.length; rank++) {
     category: "mutations",
     title: `Forma de peça: ${title}`,
     text: `No jogo, ${title} representa uma nova forma locomotora dentro da metáfora enxadrística. A mudança altera o padrão de movimento herdado pela linhagem.`,
-    wikipedia: wiki(`${title} xadrez`),
+    wikipedia: wikiArticle(rankArticles[rank]),
     image: image.mutations,
     order: Object.keys(TRAITS).length + rank,
   };
