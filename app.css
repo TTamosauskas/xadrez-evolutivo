@@ -1303,6 +1303,15 @@ select {
   border-radius: 10px;
   background: #182112;
 }
+.discovery-detail-text {
+  margin: 14px 0;
+}
+.discovery-detail-text p {
+  margin: 0 0 12px;
+}
+.discovery-detail-text p:last-child {
+  margin-bottom: 0;
+}
 .discovery-back {
   padding: 7px 10px;
 }
