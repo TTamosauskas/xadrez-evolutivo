@@ -411,7 +411,7 @@ test("geological phases follow the expanded didactic sequence and declare mandat
   );
 
   const byId = Object.fromEntries(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
-  assert.deepEqual(byId.eoarchean.cycles, [["Fotossíntese", "Predação"]]);
+  assert.deepEqual(byId.eoarchean.cycles, [["Fotossíntese", "Predação"], []]);
   assert.deepEqual(byId.paleoarchean.cycles, [["Transferência Horizontal"]]);
   assert.deepEqual(byId.mesoarchean.cycles, [["Reparo Celular"]]);
   assert.deepEqual(byId.neoarchean.cycles, [["Dormência"]]);
@@ -422,11 +422,17 @@ test("geological phases follow the expanded didactic sequence and declare mandat
   ]);
   assert.deepEqual(byId.cambrian.cycles, [
     ["Locomoção Articulada", "Percepção Espacial"],
-    ["Carapaça", "Camuflagem"],
-    ["Toxicidade"],
+    ["Carapaça"],
   ]);
-  assert.deepEqual(byId.silurian.cycles, [["Locomoção Terrestre"], ["Coletor"]]);
-  assert.deepEqual(byId.devonian.cycles, [["Respiração Pulmonar"], ["Onívoro"]]);
+  assert.deepEqual(byId.ordovician.cycles, [["Embriófitas"], ["Tropismo"]]);
+  assert.deepEqual(byId.silurian.cycles, [
+    ["Traqueófitas", "Estômatos"],
+    ["Locomoção Terrestre", "Mandíbula"],
+  ]);
+  assert.deepEqual(byId.devonian.cycles, [
+    ["Madeira"],
+    ["Respiração Pulmonar", "Dentes"],
+  ]);
   assert.deepEqual(byId.pliocene.cycles, [["Polegar Opositor"], ["Córtex Pré-Frontal"]]);
   for (const stage of GEOLOGICAL_STAGES.filter((entry) => entry.cycles?.length))
     assert.deepEqual(
@@ -753,7 +759,12 @@ test("Locomoção Terrestre universally removes the fertile landing gate", () =>
     ).flatMap((stage) => stage.required),
     s = createState(1205, {
       geologicalStage: "silurian",
-      historicalTraits: historyBeforeSilurian,
+      cycle: 2,
+      historicalTraits: [
+        ...historyBeforeSilurian,
+        "Traqueófitas",
+        "Estômatos",
+      ],
       naturalBarriers: false,
     });
   s.board.fill("neutral");
@@ -1610,7 +1621,8 @@ test("new combat specializations unlock in the intended periods and lineages", (
 
   const jurassic = createState(185, {
     geologicalStage: "jurassic",
-    historicalTraits: historyBefore("jurassic"),
+    cycle: 2,
+    historicalTraits: [...historyBefore("jurassic"), "Penas"],
   });
   const nocturnal = {
     traits: ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Notívago"],

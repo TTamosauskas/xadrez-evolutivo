@@ -523,8 +523,12 @@ test("canonical founders receive nearby fertile access outside aquatic stages", 
 });
 
 test("Vida na Terra restricts first appearances to their historical period and rewards direct sequences", () => {
-  const jurassic = createPeriodState("jurassic", 2, null, "earth"),
-    nocturnal = jurassic.pieces.find(
+  const jurassic = createPeriodState("jurassic", 2, null, "earth");
+  jurassic.cycle = 2;
+  jurassic.historicalTraits = [
+    ...new Set([...jurassic.historicalTraits, "Penas"]),
+  ];
+  const nocturnal = jurassic.pieces.find(
       (piece) =>
         piece.owner === "blue" &&
         piece.traits.includes("Notívago"),

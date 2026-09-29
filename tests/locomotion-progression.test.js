@@ -173,6 +173,9 @@ test("aquatic phases through the Ordovician keep aquatic rules but use distinct 
   assert.ok(stages.every((stage) => stage.habitat.fertile > stage.habitat.hostile));
   assert.deepEqual(
     GEOLOGICAL_STAGES.find((stage) => stage.id === "silurian")?.cycles,
-    [["Locomoção Terrestre"], ["Coletor"]],
+    [
+      ["Traqueófitas", "Estômatos"],
+      ["Locomoção Terrestre", "Mandíbula"],
+    ],
   );
 });
