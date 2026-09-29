@@ -99,6 +99,18 @@ test("event discovery copy separates real-world context from game rules", () => 
   }
 });
 
+test("event game copy avoids internal implementation jargon", () => {
+  for (const event of EVENTS) {
+    assert.doesNotMatch(event.description, /Conway/i, event.id);
+    assert.doesNotMatch(event.description, /^Evento severo:/i, event.id);
+    assert.doesNotMatch(
+      DISCOVERY_CONTENT.events[event.id].game,
+      /Conway/i,
+      event.id,
+    );
+  }
+});
+
 test("event discoveries use direct Wikipedia articles and local landscape media", () => {
   const images = new Set();
   for (const event of EVENTS) {
