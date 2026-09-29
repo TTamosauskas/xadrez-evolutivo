@@ -16,11 +16,16 @@ const fileOverrides = Object.freeze({
   eoarchean: "Vaalbara Continent.jpg",
   rhyacian: "Snowball Huronian.jpg",
   stenian: "Rodinia vor etwa 900 Millionen Jahren.jpg",
-  ediacaran: "Auroralumina attenboroughii reconstruction and phylogeny.jpg",
+  cryogenian: "A Frozen Earth.png",
+  ediacaran: "Diorama of the Ediacaran biota at the Field Museum in Chicago.jpg",
   cambrian: "Salterella life restoration.png",
   carboniferous: "Carb forest.jpg",
+  permian: "Diorama of a Permian forest floor - Dimetrodon 1 (43884793680).jpg",
   triassic: "Triassic landscape.jpg",
-  holocene: "Fertile agricultural landscape (5) (31546303014).jpg",
+  cretaceous: "Tanis fossil site.jpg",
+  eocene: "Hancock Mammal Quarry mural.jpg",
+  miocene: "Miocene Plains Mammals by Knight.jpg",
+  holocene: "Agricultural Fields near Perdizes, Minas Gerais, Brazil.JPG",
 });
 
 const wikipediaOverrides = Object.freeze({
