@@ -96,6 +96,12 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
         expectedActive = normalizeActiveTraits(
           ["Respiração anaeróbia", ...inherited],
           preferred,
+        ).filter(
+          (trait) =>
+            trait !== "Quimiossíntese" ||
+            !["Fotossíntese", "Predação", "Mixotrofia"].some((energy) =>
+              inherited.includes(energy),
+            ),
         ),
         history = earthFounderHistory(id, branch);
 

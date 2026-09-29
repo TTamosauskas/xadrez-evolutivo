@@ -2311,12 +2311,14 @@ function createEarthSuccessorState(previous, seed) {
       totalCycles,
       generationOffset:
         previous.generationOffset + previous.maxGenerationReached + 1,
-      historicalTraits: [
-        ...new Set([
-          ...previous.historicalTraits,
-          ...preview.historicalTraits,
-        ]),
-      ],
+      historicalTraits: advanced
+        ? preview.historicalTraits
+        : [
+            ...new Set([
+              ...previous.historicalTraits,
+              ...preview.historicalTraits,
+            ]),
+          ],
       fossilRecord: [
         ...(previous.fossilRecord ?? []),
         ...fossilEntries(previous),
