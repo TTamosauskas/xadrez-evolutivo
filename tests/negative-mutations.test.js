@@ -48,11 +48,18 @@ function rangedState(extra = [], enemyDistance = 4) {
   return s;
 }
 
-test("negative mutation periods and somatic eligibility follow their rules", () => {
-  const s = rangedState();
-  s.geologicalStage = "ediacaran";
-  const p = s.pieces[0];
+test("negative mutation periods, Eoarchean runway and somatic eligibility follow their rules", () => {
+  const s = rangedState(),
+    p = s.pieces[0];
 
+  s.geologicalStage = "eoarchean";
+  s.cycle = 2;
+  assert.equal(negativeTraitUnlocked(s, "Esterilidade", p), false);
+  s.cycle = 3;
+  assert.equal(negativeTraitUnlocked(s, "Esterilidade", p), true);
+
+  s.geologicalStage = "ediacaran";
+  s.cycle = 2;
   assert.equal(negativeTraitUnlocked(s, "Deficiência Motora", p), true);
   assert.equal(negativeTraitUnlocked(s, "Deficiência Sensorial", p), false);
   s.geologicalStage = "cambrian";

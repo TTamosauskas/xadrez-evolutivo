@@ -69,6 +69,100 @@ test("geological timeline assigns every positive mutation to one stage", () => {
   for (const trait of required) assert.equal(TRAIT_STAGE[trait] !== undefined, true);
 });
 
+test("mandatory innovation sequence follows the revised evolutionary milestones", () => {
+  const expected = {
+    hadean: ["Respiração anaeróbia", "Quimiossíntese"],
+    eoarchean: ["Fotossíntese", "Predação"],
+    paleoarchean: ["Transferência Horizontal"],
+    mesoarchean: ["Reparo Celular"],
+    neoarchean: ["Dormência"],
+    siderian: ["Respiração aeróbia", "Resistência"],
+    rhyacian: ["Eucarionte", "Endossimbiose"],
+    orosirian: ["Multicelularismo"],
+    statherian: ["Regeneração", "Brotamento"],
+    calymmian: ["Reprodução Sexuada"],
+    ectasian: ["Ingestão"],
+    stenian: ["Carnívoro"],
+    tonian: ["Colônia", "Séssil"],
+    cryogenian: ["Fragmentação"],
+    ediacaran: ["Simetria Bilateral", "Locomoção Primitiva", "Escavador", "Construtor de Nicho", "Biomineralização"],
+    cambrian: ["Locomoção Articulada", "Percepção Espacial", "Carapaça"],
+    ordovician: ["Embriófitas", "Tropismo"],
+    silurian: ["Traqueófitas", "Estômatos", "Locomoção Terrestre", "Mandíbula"],
+    devonian: ["Madeira", "Respiração Pulmonar", "Dentes"],
+    carboniferous: ["Gimnospermas", "Ovíparos Amniotas", "Voo"],
+    permian: ["Presas", "Incubação"],
+    triassic: ["Endotermia", "Pelos", "Lactação"],
+    jurassic: ["Penas", "Visão Noturna"],
+    cretaceous: ["Angiospermas", "Endozoocoria", "Eusocialidade"],
+    paleocene: ["Roedor"],
+    eocene: ["Ecolocalização", "Predação em Massa"],
+    oligocene: ["Ruminante"],
+    miocene: ["Tromba", "Chifre", "Bipedalismo"],
+    pliocene: ["Polegar Opositor", "Córtex Pré-Frontal"],
+    pleistocene: ["Neocórtex Desenvolvido"],
+    holocene: ["Plantas Domesticadas", "Animais Domésticos", "Antropização"],
+  };
+  assert.deepEqual(
+    Object.fromEntries(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage.required])),
+    expected,
+  );
+  assert.equal(
+    GEOLOGICAL_STAGES.find((stage) => stage.id === "eoarchean").cycles.length,
+    2,
+  );
+});
+
+test("positive and negative debut stages never precede their prerequisites", () => {
+  const stageIndex = new Map(
+    GEOLOGICAL_STAGES.map((stage, index) => [stage.id, index]),
+  );
+  for (const [trait, dependencies] of Object.entries(TRAIT_DEPENDENCIES)) {
+    const traitIndex = stageIndex.get(TRAIT_STAGE[trait]);
+    for (const dependency of [
+      ...(dependencies.lineage ?? []),
+      ...(dependencies.active ?? []),
+      ...(dependencies.historical ?? []),
+    ]) {
+      const dependencyIndex = stageIndex.get(TRAIT_STAGE[dependency]);
+      if (traitIndex === undefined || dependencyIndex === undefined) continue;
+      assert.ok(
+        traitIndex >= dependencyIndex,
+        `${trait} estreia antes de ${dependency}`,
+      );
+    }
+    if (dependencies.lineageAny?.length) {
+      const alternatives = dependencies.lineageAny
+        .map((dependency) => stageIndex.get(TRAIT_STAGE[dependency]))
+        .filter((index) => index !== undefined);
+      if (traitIndex !== undefined && alternatives.length)
+        assert.ok(
+          alternatives.some((index) => index <= traitIndex),
+          `${trait} estreia antes de qualquer alternativa de linhagem`,
+        );
+    }
+  }
+  for (const [trait, rule] of Object.entries(NEGATIVE_TRAIT_RULES)) {
+    const traitIndex = stageIndex.get(rule.stage);
+    for (const dependency of rule.lineage ?? [])
+      assert.ok(
+        traitIndex >= stageIndex.get(TRAIT_STAGE[dependency]),
+        `${trait} estreia antes de ${dependency}`,
+      );
+    if (rule.lineageAny?.length)
+      assert.ok(
+        rule.lineageAny.some(
+          (dependency) =>
+            stageIndex.get(TRAIT_STAGE[dependency]) <= traitIndex,
+        ),
+        `${trait} estreia antes de qualquer alternativa de linhagem`,
+      );
+  }
+  assert.equal(TRAIT_STAGE.Biomineralização, "ediacaran");
+  assert.equal(TRAIT_STAGE.Ruminante, "oligocene");
+  assert.equal(TRAIT_STAGE.Bipedalismo, "miocene");
+});
+
 test("Earth canonical founders keep the complete intended phenotype and lineage legacy for both branches", () => {
   const stageIndex = new Map(
       GEOLOGICAL_STAGES.map((stage, index) => [stage.id, index]),
@@ -194,7 +288,7 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
   }
 });
 
-test("every negative mutation has an explicit valid debut phase", () => {
+test("every negative mutation has an explicit valid debut phase and waits until after Eoarchean cycle 2", () => {
   const validStages = new Set(GEOLOGICAL_STAGES.map((stage) => stage.id));
   for (const [trait, rule] of Object.entries(NEGATIVE_TRAIT_RULES)) {
     assert.ok(rule.stage, trait);
@@ -203,17 +297,26 @@ test("every negative mutation has an explicit valid debut phase", () => {
   for (const trait of ["Esterilidade", "Mutação Letal", "Mutação Disfuncional"])
     assert.equal(NEGATIVE_TRAIT_RULES[trait].stage, "eoarchean");
   assert.equal(NEGATIVE_TRAIT_RULES["Mutação Mutadora"].stage, "mesoarchean");
+  assert.equal(
+    NEGATIVE_TRAIT_RULES["Insuficiência Respiratória"].stage,
+    "orosirian",
+  );
   assert.equal(NEGATIVE_TRAIT_RULES.Subfertilidade.stage, "calymmian");
   assert.equal(NEGATIVE_TRAIT_RULES["Anemia Falciforme"].stage, "pleistocene");
 
   const state = createState(1001, {
       scenario: "earth",
       geologicalStage: "eoarchean",
-      totalCycles: 1,
+      cycle: 1,
     }),
     piece = state.pieces[0];
   assert.equal(traitUnlocked(state, "Esterilidade", piece), false);
-  state.totalCycles = 2;
+  state.cycle = 2;
+  assert.equal(traitUnlocked(state, "Esterilidade", piece), false);
+  state.cycle = 3;
+  assert.equal(traitUnlocked(state, "Esterilidade", piece), true);
+  state.geologicalStage = "paleoarchean";
+  state.cycle = 1;
   assert.equal(traitUnlocked(state, "Esterilidade", piece), true);
 });
 test("new positive discoveries become progressively rarer and stop after six per cycle", () => {
@@ -786,11 +889,18 @@ test("Archean advances through four detailed phases after each mandatory set app
   registerDiscoveries(state, state.pieces[0]);
   state.pieces[1].traits.push("Predação");
   registerDiscoveries(state, state.pieces[1]);
-  assert.equal(stageComplete(state), true);
+  assert.equal(stageComplete(state), false);
   state.result = { winner: "blue", reason: "teste" };
   state.phase = "over";
 
   state = createSuccessorState(state, 104);
+  assert.equal(state.geologicalStage, "eoarchean");
+  assert.equal(state.cycle, 2);
+  assert.equal(stageComplete(state), true);
+  state.result = { winner: "blue", reason: "teste" };
+  state.phase = "over";
+
+  state = createSuccessorState(state, 1041);
   assert.equal(state.geologicalStage, "paleoarchean");
   state.pieces[0].traits.push("Transferência Horizontal");
   registerDiscoveries(state, state.pieces[0]);
@@ -1161,9 +1271,15 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
   assert.equal(traitUnlocked(s, "Vivíparo", p), true);
 
   s.geologicalStage = "holocene";
+  s.cycle = 3;
   s.historicalTraits = [
     ...new Set([
-      ...GEOLOGICAL_STAGES.slice(0, 14).flatMap((stage) => stage.required),
+      ...GEOLOGICAL_STAGES.slice(
+        0,
+        GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "holocene"),
+      ).flatMap((stage) => stage.required),
+      "Plantas Domesticadas",
+      "Animais Domésticos",
     ]),
   ];
   p.ancestry.push("Polegar Opositor");
@@ -1237,10 +1353,22 @@ test("Hadean energy branches persist while Paleoarchean adds horizontal transfer
   );
   assert.equal(traitUnlocked(state, "Transferência Horizontal", piece), true);
 });
-test("deleterious mutations unlock only from the second campaign cycle", () => {
-  const s = createState(115);
+test("deleterious mutations unlock only after the second Eoarchean cycle", () => {
+  const s = createState(115, {
+    scenario: "earth",
+    geologicalStage: "eoarchean",
+    cycle: 1,
+  });
   assert.equal(deleteriousMutationUnlocked(s), false);
-  s.totalCycles = 2;
+  s.cycle = 2;
+  assert.equal(deleteriousMutationUnlocked(s), false);
+  s.cycle = 3;
+  assert.equal(deleteriousMutationUnlocked(s), true);
+  s.geologicalStage = "paleoarchean";
+  s.cycle = 1;
+  assert.equal(deleteriousMutationUnlocked(s), true);
+  s.scenario = "arena";
+  s.geologicalStage = "hadean";
   assert.equal(deleteriousMutationUnlocked(s), true);
 });
 
@@ -1634,52 +1762,76 @@ test("Vetor Patógeno is a Cretaceous specialization of Parasitismo", () => {
   assert.equal(active.includes("Parasitismo"), false);
 });
 
-test("plant innovations unlock in their geological periods without becoming mandatory stage gates", () => {
+test("major plant innovations are mandatory milestones while specializations remain optional", () => {
   const s = createState(118, {
       geologicalStage: "ordovician",
+      cycle: 1,
       historicalTraits: [
-        ...GEOLOGICAL_STAGES.slice(0, 4).flatMap((stage) => stage.required),
+        ...GEOLOGICAL_STAGES.slice(
+          0,
+          GEOLOGICAL_STAGES.findIndex((stage) => stage.id === "ordovician"),
+        ).flatMap((stage) => stage.required),
         "Fotossíntese",
       ],
     }),
-    plant = { traits: ["Fotossíntese", "Multicelularismo"] };
+    plant = {
+      traits: ["Fotossíntese", "Multicelularismo"],
+      ancestry: ["Fotossíntese", "Multicelularismo"],
+    };
 
   assert.equal(traitUnlocked(s, "Embriófitas", plant), true);
   assert.equal(traitUnlocked(s, "Traqueófitas", plant), false);
-
   plant.traits.push("Embriófitas");
+  plant.ancestry.push("Embriófitas");
   s.historicalTraits.push("Embriófitas");
-  s.geologicalStage = "silurian";
-  assert.equal(traitUnlocked(s, "Traqueófitas", plant), true);
+  s.cycle = 2;
+  assert.equal(traitUnlocked(s, "Tropismo", plant), true);
 
+  s.geologicalStage = "silurian";
+  s.cycle = 1;
+  s.historicalTraits.push("Tropismo");
+  assert.equal(traitUnlocked(s, "Traqueófitas", plant), true);
   plant.traits.push("Traqueófitas");
+  plant.ancestry.push("Traqueófitas");
   s.historicalTraits.push("Traqueófitas");
+  assert.equal(traitUnlocked(s, "Estômatos", plant), true);
+
   s.geologicalStage = "devonian";
+  s.cycle = 1;
+  s.historicalTraits.push("Estômatos");
+  assert.equal(traitUnlocked(s, "Madeira", plant), true);
   assert.equal(traitUnlocked(s, "Espinhos", plant), true);
   assert.equal(traitUnlocked(s, "Gimnospermas", plant), false);
-  assert.equal(traitUnlocked(s, "Trepadeira", plant), false);
 
   s.geologicalStage = "carboniferous";
+  s.cycle = 1;
+  plant.traits.push("Madeira");
+  plant.ancestry.push("Madeira");
+  s.historicalTraits.push("Madeira");
   assert.equal(traitUnlocked(s, "Gimnospermas", plant), true);
   assert.equal(traitUnlocked(s, "Trepadeira", plant), true);
-  assert.equal(
-    traitUnlocked(s, "Trepadeira", {
-      traits: ["Fotossíntese", "Embriófitas"],
-    }),
-    false,
-  );
-  plant.traits.push("Gimnospermas");
-  s.historicalTraits.push("Gimnospermas");
 
+  plant.traits.push("Gimnospermas");
+  plant.ancestry.push("Gimnospermas");
+  s.historicalTraits.push("Gimnospermas");
   s.geologicalStage = "cretaceous";
+  s.cycle = 1;
   assert.equal(traitUnlocked(s, "Angiospermas", plant), true);
 
-  for (const stage of GEOLOGICAL_STAGES)
-    assert.ok(
-      !stage.required.some((trait) =>
-        ["Embriófitas", "Traqueófitas", "Espinhos", "Gimnospermas", "Trepadeira", "Angiospermas"].includes(trait),
-      ),
-    );
+  const required = new Set(GEOLOGICAL_STAGES.flatMap((stage) => stage.required));
+  for (const trait of [
+    "Embriófitas",
+    "Tropismo",
+    "Traqueófitas",
+    "Estômatos",
+    "Madeira",
+    "Gimnospermas",
+    "Angiospermas",
+    "Endozoocoria",
+  ])
+    assert.ok(required.has(trait), trait);
+  for (const trait of ["Espinhos", "Trepadeira", "Haustório", "Perfume Floral"])
+    assert.equal(required.has(trait), false, trait);
 });
 
 test("plant innovations require the photosynthetic lineage and exclude animal specializations", () => {
@@ -1831,24 +1983,43 @@ test("Neurodivergência is an optional Pliocene specialization of spatial and pr
   };
   assert.equal(traitUnlocked(state, "Neurodivergência", missingSpatial), false);
 });
-test("Paleogene epochs split optional innovations without mandatory gates", () => {
+test("Paleogene epochs now have mandatory milestones plus optional specializations", () => {
   const expected = {
-    paleocene: ["Ruminante", "Garras", "Monogamia", "Roedor"],
-    eocene: ["Predação em Massa", "Ovulação Induzida", "Ecolocalização", "Caça Cooperativa", "Epizoocoria"],
-    oligocene: ["Eletrodescarga", "Interceptação preditiva", "Superorganismo", "Sinzoocoria", "Mirmecocoria"],
+    paleocene: {
+      required: ["Roedor"],
+      innovations: ["Roedor", "Garras", "Monogamia"],
+    },
+    eocene: {
+      required: ["Ecolocalização", "Predação em Massa"],
+      innovations: [
+        "Ecolocalização",
+        "Predação em Massa",
+        "Ovulação Induzida",
+        "Caça Cooperativa",
+        "Epizoocoria",
+      ],
+    },
+    oligocene: {
+      required: ["Ruminante"],
+      innovations: [
+        "Ruminante",
+        "Eletrodescarga",
+        "Interceptação preditiva",
+        "Superorganismo",
+        "Sinzoocoria",
+        "Mirmecocoria",
+      ],
+    },
   };
-  for (const [id, traits] of Object.entries(expected)) {
-    const prior = GEOLOGICAL_STAGES.slice(
-        0,
-        GEOLOGICAL_STAGES.findIndex((stage) => stage.id === id),
-      ).flatMap((stage) => stage.required),
-      state = createState(109, {
-        scenario: "earth",
-        geologicalStage: id,
-        historicalTraits: prior,
-      });
-    assert.deepEqual(periodInnovations(state), traits);
-    assert.deepEqual(periodCompletionInnovations(state), []);
+  for (const [id, entry] of Object.entries(expected)) {
+    const state = createPeriodState(id, 109, null, "earth");
+    assert.deepEqual(periodInnovations(state), entry.innovations);
+    assert.deepEqual(periodCompletionInnovations(state), entry.required);
+    assert.equal(stageComplete(state), false);
+    state.historicalTraits = [
+      ...new Set([...state.historicalTraits, ...entry.required]),
+    ];
+    state.cycle = currentGeologicalStage(state).cycles?.length ?? 1;
     assert.equal(stageComplete(state), true);
     assert.deepEqual(eventWeights(state), {
       ...currentGeologicalStage(state).events,
@@ -1856,6 +2027,7 @@ test("Paleogene epochs split optional innovations without mandatory gates", () =
     });
   }
 });
+
 test("new social, mimicry and domestication mutations unlock in the intended periods", () => {
   const historyThrough = (id) => {
       const index = GEOLOGICAL_STAGES.findIndex((stage) => stage.id === id);
@@ -1884,15 +2056,19 @@ test("new social, mimicry and domestication mutations unlock in the intended per
   assert.equal(traitUnlocked(s, "Sociabilidade", animal), true);
 
   s.geologicalStage = "quaternary";
-  s.historicalTraits = historyThrough("neogene");
-  assert.equal(traitUnlocked(s, "Plantas Domesticadas", plant), false);
-  assert.equal(traitUnlocked(s, "Animais Domésticos", animal), false);
-  s.historicalTraits.push("Neocórtex Desenvolvido");
+  s.cycle = 1;
+  s.historicalTraits = historyThrough("pleistocene");
   assert.equal(traitUnlocked(s, "Plantas Domesticadas", plant), true);
-  assert.equal(traitUnlocked(s, "Animais Domésticos", animal), true);
+  assert.equal(traitUnlocked(s, "Animais Domésticos", animal), false);
   assert.equal(traitUnlocked(s, "Plantas Domesticadas", animal), false);
+
+  s.historicalTraits.push("Plantas Domesticadas");
+  s.cycle = 2;
+  assert.equal(traitUnlocked(s, "Animais Domésticos", animal), true);
   assert.equal(traitUnlocked(s, "Animais Domésticos", plant), false);
 
+  s.historicalTraits.push("Animais Domésticos");
+  s.cycle = 3;
   const anthropic = {
     traits: ["Multicelularismo"],
     ancestry: ["Neocórtex Desenvolvido"],

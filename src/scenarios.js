@@ -98,18 +98,18 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
     rank: 1,
   },
   silurian: {
-    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Reprodução Sexuada"],
+    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Tropismo", "Reprodução Sexuada"],
     animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Percepção Espacial", "Ovíparo", "Herbívoro"],
     rank: 1,
   },
   devonian: {
-    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Herbívoro", "Coletor"],
+    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Estômatos"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Mandíbula", "Ovíparo", "Herbívoro", "Coletor"],
     rank: 2,
   },
   carboniferous: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Madeira"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Onívoro", "Visão Binocular", "Ovíparo"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Mandíbula", "Dentes", "Onívoro", "Visão Binocular", "Ovíparo"],
     rank: 2,
   },
   permian: {
@@ -125,40 +125,42 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
   },
   jurassic: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Extremófitas"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Vivíparo", "Incubação", "Notívago", "Lactação"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Vivíparo", "Incubação", "Notívago", "Endotermia", "Lactação"],
     animalLegacy: ["Pelos"],
     rank: 3,
   },
   cretaceous: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Extremófitas"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Vivíparo", "Incubação", "Notívago", "Visão Noturna", "Sociabilidade"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Vivíparo", "Incubação", "Notívago", "Visão Noturna", "Penas", "Sociabilidade"],
     rank: 5,
   },
   paleocene: {
-    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Perfume Floral"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Incubação", "Eusocialidade", "Voo"],
+    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Endozoocoria", "Perfume Floral"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparos Amniotas", "Incubação", "Vivíparo", "Lactação", "Pelos", "Onívoro", "Eusocialidade"],
     animalLegacy: ["Ovífagia"],
     rank: 5,
   },
   eocene: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Perfume Floral"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Herbívoro", "Pelos", "Ruminante", "Garras", "Roedor", "Monogamia"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Carnívoro", "Pelos", "Garras", "Roedor", "Monogamia"],
     animalLegacy: ["Cuidado Parental"],
     rank: 5,
   },
   oligocene: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Epizoocoria"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Ecolocalização", "Caça Cooperativa"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Herbívoro", "Pelos", "Ecolocalização"],
+    animalLegacy: ["Predação em Massa", "Roedor", "Cuidado Parental"],
     rank: 5,
   },
   miocene: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Mirmecocoria"],
-    animal: ["Predação", "Escavador", "Construtor de Nicho", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Interceptação preditiva"],
+    animal: ["Predação", "Escavador", "Construtor de Nicho", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Herbívoro", "Pelos", "Ruminante", "Interceptação preditiva"],
     rank: 5,
   },
   pliocene: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas", "Angiospermas", "Endozoocoria", "Capsaicina"],
-    animal: ["Predação", "Escavador", "Construtor de Nicho", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Chifre"],
+    animal: ["Predação", "Escavador", "Construtor de Nicho", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Bipedalismo", "Respiração Pulmonar", "Percepção Espacial", "Vivíparo", "Lactação", "Onívoro", "Chifre"],
+    animalLegacy: ["Tromba"],
     rank: 5,
   },
   pleistocene: {
