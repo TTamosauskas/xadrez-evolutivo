@@ -11,6 +11,40 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
   userAgent =
     "XadrezEvolutivo/1.0 (https://github.com/TTamosauskas/xadrez-evolutivo)";
 
+const fallbackQueries = Object.freeze({
+  hadean: "early Earth",
+  eoarchean: "early Earth ocean",
+  paleoarchean: "stromatolite",
+  mesoarchean: "stromatolite",
+  neoarchean: "stromatolite",
+  siderian: "banded iron formation",
+  rhyacian: "glaciation",
+  orosirian: "Vredefort crater",
+  statherian: "stromatolite",
+  calymmian: "stromatolite",
+  ectasian: "stromatolite",
+  stenian: "Rodinia",
+  tonian: "Rodinia",
+  cryogenian: "Snowball Earth",
+  ediacaran: "Ediacaran biota",
+  cambrian: "Cambrian life reconstruction",
+  ordovician: "Ordovician life reconstruction",
+  silurian: "Silurian life reconstruction",
+  devonian: "Devonian life reconstruction",
+  carboniferous: "Carboniferous forest reconstruction",
+  permian: "Permian life reconstruction",
+  triassic: "Triassic life reconstruction",
+  jurassic: "Jurassic dinosaurs reconstruction",
+  cretaceous: "Cretaceous dinosaurs reconstruction",
+  paleocene: "Paleocene mammals reconstruction",
+  eocene: "Eocene mammals reconstruction",
+  oligocene: "Oligocene mammals reconstruction",
+  miocene: "Miocene mammals reconstruction",
+  pliocene: "Pliocene hominin reconstruction",
+  pleistocene: "Pleistocene megafauna reconstruction",
+  holocene: "agriculture landscape",
+});
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const esc = (value) =>
@@ -188,9 +222,10 @@ function metadata(info) {
   };
 }
 
-async function chooseImage(searchQuery, articleTitle, page) {
+async function chooseImage(id, searchQuery, articleTitle, page) {
   const queries = [
     searchQuery,
+    fallbackQueries[id],
     articleTitle,
     String(searchQuery ?? "").replace(/\b(?:landscape|reconstruction|artist impression)\b/gi, "").trim(),
     "prehistoric Earth landscape",
@@ -228,7 +263,7 @@ async function buildOne([id, [articleTitle, , searchQuery]]) {
       `https://pt.wikipedia.org/wiki/${encodeURIComponent(
         String(articleTitle).replaceAll(" ", "_"),
       )}`,
-    info = await chooseImage(searchQuery ?? articleTitle, articleTitle, page);
+    info = await chooseImage(id, searchQuery ?? articleTitle, articleTitle, page);
 
   return [
     id,
