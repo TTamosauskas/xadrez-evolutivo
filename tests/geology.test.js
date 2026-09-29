@@ -33,6 +33,8 @@ import {
   traitUnlocked,
   traitLossAllowed,
   PLANT_DERIVED_TRAITS,
+  PLANT_INCOMPATIBLE_TRAITS,
+  TRAIT_BRANCH_SCOPE,
   MULTICELLULAR_DEPENDENT_TRAITS,
 } from "../src/geology.js";
 import {
@@ -103,7 +105,25 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
               inherited.includes(energy),
             ),
         ),
-        history = earthFounderHistory(id, branch);
+        history = earthFounderHistory(id, branch),
+        branchName = branch === "plant" ? "Fotossíntese" : "Predação",
+        appropriate = (trait) => {
+          const scope = TRAIT_BRANCH_SCOPE[trait] ?? null;
+          return branch === "plant"
+            ? scope !== "predation" &&
+                trait !== "Predação" &&
+                !PLANT_INCOMPATIBLE_TRAITS.has(trait)
+            : scope !== "photosynthesis" &&
+                trait !== "Fotossíntese" &&
+                !PLANT_DERIVED_TRAITS.has(trait);
+        },
+        allPriorTraits = Object.entries(TRAIT_STAGE)
+          .filter(
+            ([, debut]) =>
+              stageIndex.get(debut) < index,
+          )
+          .map(([trait]) => trait)
+          .filter(appropriate);
 
       assert.deepEqual(
         [...piece.traits].sort(),
@@ -113,13 +133,18 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
       for (const trait of history) {
         assert.ok(
           piece.ancestry.includes(trait),
-          `${id} · ${branch} · legado ausente: ${trait}`,
+          `${id} · ${branch} · legado curado ausente: ${trait}`,
         );
         assert.ok(
           stageIndex.get(TRAIT_STAGE[trait]) < index,
           `${id} · ${branch} · ${trait} ainda não deveria existir no início do período`,
         );
       }
+      for (const trait of allPriorTraits)
+        assert.ok(
+          piece.ancestry.includes(trait) || piece.traits.includes(trait),
+          `${id} · ${branchName} · mutação histórica adequada ausente: ${trait}`,
+        );
 
       for (const trait of piece.traits) {
         const dependencies = TRAIT_DEPENDENCIES[trait];
@@ -150,6 +175,15 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
         ...earthFounderHistory(id, "plant"),
         ...earthFounderHistory(id, "animal"),
       ]);
+    const allPriorPositive = Object.entries(TRAIT_STAGE)
+      .filter(([, debut]) => stageIndex.get(debut) < index)
+      .map(([trait]) => trait);
+    for (const trait of allPriorPositive)
+      assert.ok(
+        state.historicalTraits.includes(trait),
+        `${id} · história global ausente: ${trait}`,
+      );
+
     for (const trait of priorRequired)
       assert.ok(
         combinedHistory.has(trait),
