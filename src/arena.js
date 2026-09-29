@@ -459,9 +459,9 @@ function archetypePool(branchId) {
       genome: arenaPresetGenome(branchId, preset.id),
       legacy: arenaPresetLegacy(branchId, preset.id),
     }))
-    .filter(({ genome, legacy }) =>
-      arenaSetupGenomeValid(genome, branchId, legacy),
-    )
+    // AI/random setup keeps the historical invariant that each returned
+    // genome is independently legal without preset-only metadata.
+    .filter(({ genome }) => arenaSetupGenomeValid(genome, branchId))
     .map(({ genome }) => genome);
 }
 

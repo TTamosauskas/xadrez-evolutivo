@@ -14,6 +14,7 @@ import {
   ARENA_TRAIT_LIMITS,
   arenaGenomeValid,
   arenaInterventionCount,
+  arenaProfile,
   arenaSelectableTraits,
   arenaSetupGenomeValid,
   arenaPresetGenome,
