@@ -5,9 +5,9 @@ import { GEOLOGY_DISCOVERY_MEDIA } from "./geology-discovery-media.js";
 import { GEOLOGICAL_STAGES } from "./geology.js";
 
 export const DISCOVERY_CATEGORIES = [
-  ["geology", "Eras"],
-  ["events", "Eventos"],
-  ["mutations", "Mutações"],
+  ["geology", "Geologia"],
+  ["events", "Ecologia"],
+  ["mutations", "Biologia"],
 ];
 
 const wiki = (query) =>
@@ -659,6 +659,7 @@ const geology = Object.fromEntries(
         id: stage.id,
         category: "geology",
         title: stage.period,
+        label: stage.period,
         realWorld,
         game,
         text: `${realWorld}\n\n${game}`,
@@ -688,6 +689,8 @@ const events = Object.fromEntries(
         id: event.id,
         category: "events",
         title: `${event.icon} ${event.name}`,
+        label: event.name,
+        icon: event.icon,
         realWorld,
         game,
         text: `${realWorld}\n\n${game}`,
@@ -718,6 +721,8 @@ const mutations = Object.fromEntries(
         id: name,
         category: "mutations",
         title: `${icon} ${name}`,
+        label: name,
+        icon,
         realWorld,
         game,
         text: `${realWorld}\n\n${game}`,
@@ -745,6 +750,7 @@ for (let rank = 0; rank < PIECES.length; rank++) {
     id: `rank:${rank}`,
     category: "mutations",
     title: `Forma de peça: ${title}`,
+    label: `Forma de peça: ${title}`,
     text: `No jogo, ${title} representa uma nova forma locomotora dentro da metáfora enxadrística. A mudança altera o padrão de movimento herdado pela linhagem.`,
     wikipedia: wikiArticle(rankArticles[rank]),
     image: image.mutations,

@@ -1270,23 +1270,56 @@ select {
   background: #526542;
   border-color: #9cad83;
 }
+.discovery-content {
+  min-height: 120px;
+}
 .discovery-list {
   display: grid;
-  gap: 9px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
   min-height: 120px;
   margin-bottom: 20px;
 }
+.discovery-list[hidden],
+.discovery-detail[hidden] {
+  display: none;
+}
 .discovery-item {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   width: 100%;
-  text-align: left;
+  min-width: 0;
+  aspect-ratio: 1;
+  gap: 8px;
+  padding: 10px 8px;
+  text-align: center;
+  line-height: 1.2;
+}
+.discovery-item-icon {
+  display: block;
+  font-size: clamp(26px, 5vw, 38px);
+  line-height: 1;
+}
+.discovery-item-label {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: clamp(12px, 2.7vw, 15px);
+}
+.discovery-item .unread-badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  margin-left: 0;
 }
 .discovery-item.unread {
   border-color: #dfbf72;
 }
 .discovery-empty {
+  grid-column: 1 / -1;
   color: var(--muted);
 }
 .discovery-detail h3 {

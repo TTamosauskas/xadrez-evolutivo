@@ -21,6 +21,32 @@ import {
   createSuccessorState,
 } from "../src/state.js";
 
+test("discovery categories use scientific domain labels", () => {
+  assert.deepEqual(DISCOVERY_CATEGORIES, [
+    ["geology", "Geologia"],
+    ["events", "Ecologia"],
+    ["mutations", "Biologia"],
+  ]);
+});
+
+test("discovery cards expose separate icons and labels when available", () => {
+  for (const event of EVENTS) {
+    const entry = DISCOVERY_CONTENT.events[event.id];
+    assert.equal(entry.icon, event.icon, event.id);
+    assert.equal(entry.label, event.name, event.id);
+  }
+  for (const [name, [icon]] of Object.entries(TRAITS)) {
+    const entry = DISCOVERY_CONTENT.mutations[name];
+    assert.equal(entry.icon, icon, name);
+    assert.equal(entry.label, name, name);
+  }
+  for (const stage of GEOLOGICAL_STAGES) {
+    const entry = DISCOVERY_CONTENT.geology[stage.id];
+    assert.equal(entry.label, stage.period, stage.id);
+    assert.equal(entry.icon, undefined, stage.id);
+  }
+});
+
 test("new campaigns start with an unread Hadean discovery", () => {
   const state = createCampaignState(201);
   assert.deepEqual(state.discoveries.geology, ["hadean"]);
