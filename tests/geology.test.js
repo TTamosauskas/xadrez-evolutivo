@@ -432,8 +432,14 @@ test("geological phases follow the expanded didactic sequence and declare mandat
 
   const byId = Object.fromEntries(GEOLOGICAL_STAGES.map((stage) => [stage.id, stage]));
   assert.deepEqual(byId.eoarchean.cycles, [["Fotossíntese", "Predação"], []]);
-  assert.deepEqual(byId.paleoarchean.cycles, [["Transferência Horizontal"]]);
-  assert.deepEqual(byId.mesoarchean.cycles, [["Reparo Celular"]]);
+  assert.deepEqual(byId.paleoarchean.cycles, [
+    ["Transferência Horizontal"],
+    ["Biofilme"],
+  ]);
+  assert.deepEqual(byId.mesoarchean.cycles, [
+    ["Reparo Celular"],
+    ["Fixação de Nitrogênio"],
+  ]);
   assert.deepEqual(byId.neoarchean.cycles, [["Dormência"]]);
   assert.deepEqual(byId.ediacaran.cycles, [
     ["Simetria Bilateral", "Locomoção Primitiva"],
@@ -1384,7 +1390,10 @@ test("evolutionary precedence changes eligibility while missing innovations stay
     ],
   });
   assert.equal(traitUnlocked(paleo, "Transferência Horizontal", basal), true);
-  assert.deepEqual(missingInnovations(paleo), ["Transferência Horizontal"]);
+  assert.deepEqual(missingInnovations(paleo), [
+    "Transferência Horizontal",
+    "Biofilme",
+  ]);
 });
 test("Hadean energy branches persist while Paleoarchean adds horizontal transfer", () => {
   const state = createPeriodState("paleoarchean", 114, null, "earth");

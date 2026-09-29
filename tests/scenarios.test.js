@@ -103,14 +103,15 @@ test("Vida na Terra carries the last extinct winner branch into the next detaile
   const state = createState(706, {
     scenario: "earth",
     geologicalStage: "paleoarchean",
-    cycle: 1,
-    totalCycles: 2,
+    cycle: 2,
+    totalCycles: 3,
     historicalTraits: [
       "Respiração anaeróbia",
       "Quimiossíntese",
       "Fotossíntese",
       "Predação",
       "Transferência Horizontal",
+      "Biofilme",
     ],
     founders: {
       primary: {
@@ -398,14 +399,15 @@ test("detailed Archean succession restores a missing fundamental energy branch",
   const prior = createState(709, {
     scenario: "earth",
     geologicalStage: "paleoarchean",
-    cycle: 1,
-    totalCycles: 2,
+    cycle: 2,
+    totalCycles: 3,
     historicalTraits: [
       "Respiração anaeróbia",
       "Quimiossíntese",
       "Fotossíntese",
       "Predação",
       "Transferência Horizontal",
+      "Biofilme",
     ],
     naturalBarriers: false,
   });

@@ -3431,11 +3431,14 @@ function sexualInnovationState(seed) {
     s = createState(seed, {
       scenario: "earth",
       geologicalStage: "calymmian",
-      cycle: 1,
-      totalCycles: 9,
-      historicalTraits: GEOLOGICAL_STAGES.slice(0, calymmianIndex).flatMap(
-        (stage) => stage.required,
-      ),
+      cycle: 2,
+      totalCycles: 10,
+      historicalTraits: [
+        ...GEOLOGICAL_STAGES.slice(0, calymmianIndex).flatMap(
+          (stage) => stage.required,
+        ),
+        "Diferenciação Celular",
+      ],
       naturalBarriers: false,
     });
   s.pieces = [];
