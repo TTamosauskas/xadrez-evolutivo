@@ -129,49 +129,6 @@ test("geological discoveries use direct Wikipedia articles and local landscape m
   assert.equal(images.size, GEOLOGICAL_STAGES.length);
 });
 
-test("geology discovery copy separates real-world context from game rules", () => {
-  for (const stage of GEOLOGICAL_STAGES) {
-    const entry = DISCOVERY_CONTENT.geology[stage.id];
-    assert.match(entry.realWorld, /^Na vida: .+/, stage.id);
-    assert.match(entry.game, /^No jogo: .+/, stage.id);
-    assert.equal(
-      entry.text,
-      `${entry.realWorld}\n\n${entry.game}`,
-      stage.id,
-    );
-    for (const trait of stage.required)
-      assert.match(entry.game, new RegExp(trait), `${stage.id}: ${trait}`);
-  }
-});
-
-test("geology discoveries use direct Wikipedia articles and local landscape media", () => {
-  const images = new Set();
-  for (const stage of GEOLOGICAL_STAGES) {
-    const entry = DISCOVERY_CONTENT.geology[stage.id];
-    assert.match(
-      entry.wikipedia,
-      /^https:\/\/pt\.wikipedia\.org\/wiki\//,
-      stage.id,
-    );
-    assert.doesNotMatch(entry.wikipedia, /w\/index\.php\?search=/, stage.id);
-    assert.match(
-      entry.image,
-      /^assets\/discoveries\/geology\/media-[a-f0-9]{12}\.(?:jpg|png|webp)$/,
-      stage.id,
-    );
-    assert.ok(entry.imageWidth >= 800, stage.id);
-    assert.ok(entry.imageHeight >= 420, stage.id);
-    assert.ok(entry.imageWidth > entry.imageHeight, stage.id);
-    assert.match(
-      entry.imageSource ?? "",
-      /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/,
-      stage.id,
-    );
-    images.add(entry.image);
-  }
-  assert.equal(images.size, GEOLOGICAL_STAGES.length);
-});
-
 test("event discovery copy separates real-world context from game rules", () => {
   for (const event of EVENTS) {
     const entry = DISCOVERY_CONTENT.events[event.id];
