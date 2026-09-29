@@ -323,7 +323,7 @@ test("AI prioritizes a photosynthetic prey on fertile terrain", () => {
   assert.equal(action.c, 2);
 });
 
-test("new life-history traits unlock in their intended optional periods", () => {
+test("life-history traits unlock in their intended periods and mandatory cycles", () => {
   const index = (id) => GEOLOGICAL_STAGES.findIndex((stage) => stage.id === id),
     historyBefore = (id) =>
       GEOLOGICAL_STAGES.slice(0, index(id)).flatMap((stage) => stage.required),
@@ -357,7 +357,8 @@ test("new life-history traits unlock in their intended optional periods", () => 
   assert.equal(traitUnlocked(s, "Ovíparo", p), true);
 
   s.geologicalStage = "devonian";
-  s.historicalTraits = historyBefore("devonian");
+  s.cycle = 2;
+  s.historicalTraits = [...historyBefore("devonian"), "Madeira"];
   p.traits = ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada"];
   assert.equal(traitUnlocked(s, "Respiração Cutânea", p), true);
 
@@ -366,7 +367,8 @@ test("new life-history traits unlock in their intended optional periods", () => 
   assert.equal(traitUnlocked(s, "Respiração Pulmonar", p), true);
 
   s.geologicalStage = "carboniferous";
-  s.historicalTraits = historyBefore("carboniferous");
+  s.cycle = 2;
+  s.historicalTraits = [...historyBefore("carboniferous"), "Gimnospermas"];
   p.traits = ["Multicelularismo", "Predação", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Ovíparo"];
   assert.equal(traitUnlocked(s, "Ovíparos Amniotas", p), true);
 
@@ -403,7 +405,6 @@ test("new life-history traits unlock in their intended optional periods", () => 
         [
           "Precocidade Sexual",
           "Canibalismo",
-          "Lactação",
           "Respiração Cutânea",
           "Sacos Aéreos",
           "Ovovivíparo",
@@ -411,4 +412,9 @@ test("new life-history traits unlock in their intended optional periods", () => 
         ].includes(trait),
       ),
     );
+  assert.ok(
+    GEOLOGICAL_STAGES.find((stage) => stage.id === "triassic").required.includes(
+      "Lactação",
+    ),
+  );
 });

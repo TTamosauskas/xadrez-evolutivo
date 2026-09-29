@@ -799,7 +799,8 @@ test("Locomoção Terrestre universally removes the fertile landing gate", () =>
   s.pieces.push(animal, prey);
 
   assert.equal(traitUnlocked(s, "Locomoção Terrestre", animal), true);
-  assert.equal(traitUnlocked(s, "Coletor", animal), false);
+  // Coletor continua sendo uma especialização opcional do Siluriano.
+  assert.equal(traitUnlocked(s, "Coletor", animal), true);
 
   let targets = movesFor(s, animal);
   assert.ok(targets.some((target) => target.r === 4 && target.c === 3));
