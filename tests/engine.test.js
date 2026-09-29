@@ -2758,7 +2758,7 @@ test("solar event notice follows the compact ecological modal model", () => {
     title: "🌄 Tempestade Solar",
     lines: [
       "Evento ecológico",
-      "Todo nascimento sofre mutação durante 10 rodadas.",
+      "Durante 10 rodadas, todo novo organismo nasce com uma mutação.",
     ],
   });
   assertState(s);
