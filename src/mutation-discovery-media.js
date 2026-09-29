@@ -722,12 +722,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Escavador": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Fossorial",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
+    "image": "assets/discoveries/mutations/media-934054fc8eb9.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Pocket_gopher_in_burrow_bw.png",
+    "author": "Tracy I. Storer",
+    "license": "Public domain",
     "width": 900,
-    "height": 675
+    "height": 448
   },
   "Necrófago": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Necr%C3%B3fago",

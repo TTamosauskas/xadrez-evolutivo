@@ -4,7 +4,7 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-ae7ce974dc04.jpg
 
-- Usada em: Respiração anaeróbia, Mixotrofia, Extremófitas, Fixação de Nitrogênio, Dormência, Resistência, Cópula Agressiva, Pedogênese, Metamorfose, Granívoro, Simetria Bilateral, Jatopropulsão, Artrópode, Escavador, Esclerotização, Escalador, Ooteca, Antropização, Anemia Falciforme, Assimetria Flutuante, Ataxia, Deficiência Motora, Deficiência Sensorial, Filho único, Semelparidade, Nanismo, Gigantismo, Tinta, Quimiossíntese, Tromba, Ruminante, Pescoço Verticalizado, Multicelularismo, Zoorremediação, Pelos, Penas
+- Usada em: Respiração anaeróbia, Mixotrofia, Extremófitas, Fixação de Nitrogênio, Dormência, Resistência, Cópula Agressiva, Pedogênese, Metamorfose, Granívoro, Simetria Bilateral, Jatopropulsão, Artrópode, Esclerotização, Escalador, Ooteca, Antropização, Anemia Falciforme, Assimetria Flutuante, Ataxia, Deficiência Motora, Deficiência Sensorial, Filho único, Semelparidade, Nanismo, Gigantismo, Tinta, Quimiossíntese, Tromba, Ruminante, Pescoço Verticalizado, Multicelularismo, Zoorremediação, Pelos, Penas
 - Fonte: https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg
 - Autor/crédito: Krzysztof A. Zacharski
 - Licença: CC BY 4.0
@@ -294,6 +294,13 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Usada em: Percepção Espacial, Visão Binocular, Notívago, Neocórtex Desenvolvido
 - Fonte: https://commons.wikimedia.org/wiki/File:Animal_echolocation.svg
 - Autor/crédito: Petteri Aimonen
+- Licença: Public domain
+
+## media-934054fc8eb9.png
+
+- Usada em: Escavador
+- Fonte: https://commons.wikimedia.org/wiki/File:Pocket_gopher_in_burrow_bw.png
+- Autor/crédito: Tracy I. Storer
 - Licença: Public domain
 
 ## media-90b3b768be9b.jpg
