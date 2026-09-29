@@ -16,6 +16,7 @@ import {
   activePopulation,
   fertilityPaused,
   stomataOpen,
+  lethalHazardAt,
 } from "./state.js";
 import {
   eventWeights,
@@ -971,9 +972,14 @@ function earthquake(ctx) {
     p.r = Math.floor(i / 8);
     p.c = i % 8;
   }
-  for (const p of [...state.pieces])
+  for (const p of [...state.pieces]) {
+    if (lethalHazardAt(state, p.r, p.c)) {
+      ctx.kill(p.id, "Terremoto em ambiente letal", null, true);
+      continue;
+    }
     if (state.board[square(p.r, p.c)] === "hostile")
       ctx.kill(p.id, "Terremoto");
+  }
   return original.size;
 }
 function endEvent(state) {
