@@ -4,21 +4,21 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## hadean
 
-- Arquivo local: assets/discoveries/geology/media-4807f21f5cd2.jpg
-- Título Wikimedia: File:STS-135 final flyaround of ISS 1.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:STS-135_final_flyaround_of_ISS_1.jpg
-- Autor/crédito: NASA
-- Licença: Public domain
-- Resolução usada: 1400×932
+- Arquivo local: assets/discoveries/geology/media-1e194b60751e.png
+- Título Wikimedia: File:Hadean.png
+- Fonte: https://commons.wikimedia.org/wiki/File:Hadean.png
+- Autor/crédito: Tim Bertelink
+- Licença: CC BY-SA 4.0
+- Resolução usada: 1400×752
 
 ## eoarchean
 
-- Arquivo local: assets/discoveries/geology/media-89092d039748.jpg
-- Título Wikimedia: File:Ocean to ocean on horseback; being the story of a tour in the saddle from the Atlantic to the Pacific; with especial reference to the early history and development of cities and towns along the route; (14767801211).jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Ocean_to_ocean_on_horseback;_being_the_story_of_a_tour_in_the_saddle_from_the_Atlantic_to_the_Pacific;_with_especial_reference_to_the_early_history_and_development_of_cities_and_towns_along_the_route;_(14767801211).jpg
-- Autor/crédito: Glazier, Willard W., 1841-1905
-- Licença: No restrictions
-- Resolução usada: 1400×855
+- Arquivo local: assets/discoveries/geology/media-038a40d3dfa8.jpg
+- Título Wikimedia: File:Vaalbara Continent.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Vaalbara_Continent.jpg
+- Autor/crédito: Oleg Kuznetsov - 3depix - http://3depix.com/ 3D Epix Inc.
+- Licença: CC BY-SA 4.0
+- Resolução usada: 1400×788
 
 ## paleoarchean
 
@@ -58,12 +58,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## rhyacian
 
-- Arquivo local: assets/discoveries/geology/media-efbfe4743b87.jpg
-- Título Wikimedia: File:The life of the Pleistocene or glacial period BHL41598546.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:The_life_of_the_Pleistocene_or_glacial_period_BHL41598546.jpg
-- Autor/crédito: Baker, Frank Collins
-- Licença: Public domain
-- Resolução usada: 1400×730
+- Arquivo local: assets/discoveries/geology/media-03238aff94f9.jpg
+- Título Wikimedia: File:Snowball Huronian.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Snowball_Huronian.jpg
+- Autor/crédito: Oleg Kuznetsov - 3depix - http://3depix.com/
+- Licença: CC BY-SA 4.0
+- Resolução usada: 1400×788
 
 ## orosirian
 
@@ -103,21 +103,21 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## stenian
 
+- Arquivo local: assets/discoveries/geology/media-4936689196d2.jpg
+- Título Wikimedia: File:Rodinia vor etwa 900 Millionen Jahren.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Rodinia_vor_etwa_900_Millionen_Jahren.jpg
+- Autor/crédito: Christian Vérard
+- Licença: CC BY 4.0
+- Resolução usada: 1400×704
+
+## tonian
+
 - Arquivo local: assets/discoveries/geology/media-bfa8f4cb490e.png
 - Título Wikimedia: File:Pannotia - 2.png
 - Fonte: https://commons.wikimedia.org/wiki/File:Pannotia_-_2.png
 - Autor/crédito: Kelvin Ma
 - Licença: CC BY-SA 3.0
 - Resolução usada: 1400×788
-
-## tonian
-
-- Arquivo local: assets/discoveries/geology/media-957a1cfd9247.jpg
-- Título Wikimedia: File:GH Devin Floyd geology from Rodinia to present (20010878963).jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:GH_Devin_Floyd_geology_from_Rodinia_to_present_(20010878963).jpg
-- Autor/crédito: Virginia State Parks
-- Licença: CC BY 2.0
-- Resolução usada: 1400×887
 
 ## cryogenian
 
@@ -130,21 +130,21 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## ediacaran
 
-- Arquivo local: assets/discoveries/geology/media-4bdc1d6a19fa.jpg
-- Título Wikimedia: File:Shaanxilithes ningqiangensis, late Ediacaran, Shaanxi province (China).jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Shaanxilithes_ningqiangensis,_late_Ediacaran,_Shaanxi_province_(China).jpg
-- Autor/crédito: Cardioceras
-- Licença: CC BY-SA 3.0
-- Resolução usada: 1400×996
+- Arquivo local: assets/discoveries/geology/media-e67722bb64ef.jpg
+- Título Wikimedia: File:Auroralumina attenboroughii reconstruction and phylogeny.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Auroralumina_attenboroughii_reconstruction_and_phylogeny.jpg
+- Autor/crédito: F. S. Dunn, C. G. Kenchington, L. A. Parry, J. W. Clark, R. S. Kendall &amp; P. R. Wilby
+- Licença: CC BY-SA 4.0
+- Resolução usada: 1400×780
 
 ## cambrian
 
-- Arquivo local: assets/discoveries/geology/media-43cb81c3d3cf.jpg
-- Título Wikimedia: File:Olenoides serratus 3d.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Olenoides_serratus_3d.jpg
-- Autor/crédito: Oleg Kuznetsov - 3depix - https://3depix.com/ 3D Epix Inc.
-- Licença: CC BY-SA 4.0
-- Resolução usada: 1400×788
+- Arquivo local: assets/discoveries/geology/media-cff5443b576a.png
+- Título Wikimedia: File:Salterella life restoration.png
+- Fonte: https://commons.wikimedia.org/wiki/File:Salterella_life_restoration.png
+- Autor/crédito: Amy P. I. Hagen
+- Licença: CC BY 4.0
+- Resolução usada: 1400×972
 
 ## ordovician
 
@@ -175,12 +175,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## carboniferous
 
-- Arquivo local: assets/discoveries/geology/media-4d7faf5f0caf.jpg
-- Título Wikimedia: File:Stigmaria fossil root (Newark, Ohio, USA) 2.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Stigmaria_fossil_root_(Newark,_Ohio,_USA)_2.jpg
-- Autor/crédito: James St. John
-- Licença: CC BY 2.0
-- Resolução usada: 1400×942
+- Arquivo local: assets/discoveries/geology/media-cc3e59b8f93c.jpg
+- Título Wikimedia: File:Carb forest.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Carb_forest.jpg
+- Autor/crédito: Joseph Herrmann III at English Wikipedia
+- Licença: Public domain
+- Resolução usada: 1400×1050
 
 ## permian
 
@@ -193,12 +193,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## triassic
 
-- Arquivo local: assets/discoveries/geology/media-f6452ad57633.jpg
-- Título Wikimedia: File:Bobasatrania canadensis.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Bobasatrania_canadensis.jpg
-- Autor/crédito: DiBgd
+- Arquivo local: assets/discoveries/geology/media-48912f636d99.jpg
+- Título Wikimedia: File:Triassic landscape.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Triassic_landscape.jpg
+- Autor/crédito: Ghedoghedo
 - Licença: CC BY-SA 4.0
-- Resolução usada: 1400×982
+- Resolução usada: 1400×776
 
 ## jurassic
 
@@ -274,10 +274,10 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## holocene
 
-- Arquivo local: assets/discoveries/geology/media-566cf83b05a3.jpg
-- Título Wikimedia: File:Villebois site.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Villebois_site.jpg
-- Autor/crédito: JLPC &amp; Selbymay
-- Licença: CC BY-SA 3.0
-- Resolução usada: 1400×937
+- Arquivo local: assets/discoveries/geology/media-543a687c997a.jpg
+- Título Wikimedia: File:Fertile agricultural landscape (5) (31546303014).jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Fertile_agricultural_landscape_(5)_(31546303014).jpg
+- Autor/crédito: Hans Birger Nilsen
+- Licença: CC BY-SA 2.0
+- Resolução usada: 1400×980
 

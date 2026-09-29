@@ -2,23 +2,23 @@
 export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   "hadean": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Hadeano",
-    "image": "assets/discoveries/geology/media-4807f21f5cd2.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:STS-135_final_flyaround_of_ISS_1.jpg",
-    "author": "NASA",
-    "license": "Public domain",
+    "image": "assets/discoveries/geology/media-1e194b60751e.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Hadean.png",
+    "author": "Tim Bertelink",
+    "license": "CC BY-SA 4.0",
     "width": 1400,
-    "height": 932,
-    "title": "File:STS-135 final flyaround of ISS 1.jpg"
+    "height": 752,
+    "title": "File:Hadean.png"
   },
   "eoarchean": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Eoarqueano",
-    "image": "assets/discoveries/geology/media-89092d039748.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Ocean_to_ocean_on_horseback;_being_the_story_of_a_tour_in_the_saddle_from_the_Atlantic_to_the_Pacific;_with_especial_reference_to_the_early_history_and_development_of_cities_and_towns_along_the_route;_(14767801211).jpg",
-    "author": "Glazier, Willard W., 1841-1905",
-    "license": "No restrictions",
+    "image": "assets/discoveries/geology/media-038a40d3dfa8.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Vaalbara_Continent.jpg",
+    "author": "Oleg Kuznetsov - 3depix - http://3depix.com/ 3D Epix Inc.",
+    "license": "CC BY-SA 4.0",
     "width": 1400,
-    "height": 855,
-    "title": "File:Ocean to ocean on horseback; being the story of a tour in the saddle from the Atlantic to the Pacific; with especial reference to the early history and development of cities and towns along the route; (14767801211).jpg"
+    "height": 788,
+    "title": "File:Vaalbara Continent.jpg"
   },
   "paleoarchean": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Paleoarqueano",
@@ -61,14 +61,14 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
     "title": "File:Black-band ironstone (aka).jpg"
   },
   "rhyacian": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/Escala_de_tempo_geol%C3%B3gico",
-    "image": "assets/discoveries/geology/media-efbfe4743b87.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:The_life_of_the_Pleistocene_or_glacial_period_BHL41598546.jpg",
-    "author": "Baker, Frank Collins",
-    "license": "Public domain",
+    "wikipedia": "https://en.wikipedia.org/wiki/Rhyacian",
+    "image": "assets/discoveries/geology/media-03238aff94f9.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Snowball_Huronian.jpg",
+    "author": "Oleg Kuznetsov - 3depix - http://3depix.com/",
+    "license": "CC BY-SA 4.0",
     "width": 1400,
-    "height": 730,
-    "title": "File:The life of the Pleistocene or glacial period BHL41598546.jpg"
+    "height": 788,
+    "title": "File:Snowball Huronian.jpg"
   },
   "orosirian": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Oros%C3%ADrico",
@@ -91,7 +91,7 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
     "title": "File:Stromatolite Jhamarkotra.jpg"
   },
   "calymmian": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/Escala_de_tempo_geol%C3%B3gico",
+    "wikipedia": "https://en.wikipedia.org/wiki/Calymmian",
     "image": "assets/discoveries/geology/media-4aabe2f445c7.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Stromatolite_Jhamarkotra_2.jpg",
     "author": "Shyamal L.",
@@ -111,7 +111,17 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
     "title": "File:Stromatolite Jhamarkotra 3.jpg"
   },
   "stenian": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/Escala_de_tempo_geol%C3%B3gico",
+    "wikipedia": "https://en.wikipedia.org/wiki/Stenian",
+    "image": "assets/discoveries/geology/media-4936689196d2.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Rodinia_vor_etwa_900_Millionen_Jahren.jpg",
+    "author": "Christian Vérard",
+    "license": "CC BY 4.0",
+    "width": 1400,
+    "height": 704,
+    "title": "File:Rodinia vor etwa 900 Millionen Jahren.jpg"
+  },
+  "tonian": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/T%C3%B4nico_(geologia)",
     "image": "assets/discoveries/geology/media-bfa8f4cb490e.png",
     "source": "https://commons.wikimedia.org/wiki/File:Pannotia_-_2.png",
     "author": "Kelvin Ma",
@@ -119,16 +129,6 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
     "width": 1400,
     "height": 788,
     "title": "File:Pannotia - 2.png"
-  },
-  "tonian": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/T%C3%B4nico_(geologia)",
-    "image": "assets/discoveries/geology/media-957a1cfd9247.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:GH_Devin_Floyd_geology_from_Rodinia_to_present_(20010878963).jpg",
-    "author": "Virginia State Parks",
-    "license": "CC BY 2.0",
-    "width": 1400,
-    "height": 887,
-    "title": "File:GH Devin Floyd geology from Rodinia to present (20010878963).jpg"
   },
   "cryogenian": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Criog%C3%AAnico_(geologia)",
@@ -142,23 +142,23 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "ediacaran": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ediacarano",
-    "image": "assets/discoveries/geology/media-4bdc1d6a19fa.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Shaanxilithes_ningqiangensis,_late_Ediacaran,_Shaanxi_province_(China).jpg",
-    "author": "Cardioceras",
-    "license": "CC BY-SA 3.0",
+    "image": "assets/discoveries/geology/media-e67722bb64ef.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Auroralumina_attenboroughii_reconstruction_and_phylogeny.jpg",
+    "author": "F. S. Dunn, C. G. Kenchington, L. A. Parry, J. W. Clark, R. S. Kendall &amp; P. R. Wilby",
+    "license": "CC BY-SA 4.0",
     "width": 1400,
-    "height": 996,
-    "title": "File:Shaanxilithes ningqiangensis, late Ediacaran, Shaanxi province (China).jpg"
+    "height": 780,
+    "title": "File:Auroralumina attenboroughii reconstruction and phylogeny.jpg"
   },
   "cambrian": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Cambriano",
-    "image": "assets/discoveries/geology/media-43cb81c3d3cf.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Olenoides_serratus_3d.jpg",
-    "author": "Oleg Kuznetsov - 3depix - https://3depix.com/ 3D Epix Inc.",
-    "license": "CC BY-SA 4.0",
+    "image": "assets/discoveries/geology/media-cff5443b576a.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Salterella_life_restoration.png",
+    "author": "Amy P. I. Hagen",
+    "license": "CC BY 4.0",
     "width": 1400,
-    "height": 788,
-    "title": "File:Olenoides serratus 3d.jpg"
+    "height": 972,
+    "title": "File:Salterella life restoration.png"
   },
   "ordovician": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ordoviciano",
@@ -192,13 +192,13 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "carboniferous": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Carbon%C3%ADfero",
-    "image": "assets/discoveries/geology/media-4d7faf5f0caf.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Stigmaria_fossil_root_(Newark,_Ohio,_USA)_2.jpg",
-    "author": "James St. John",
-    "license": "CC BY 2.0",
+    "image": "assets/discoveries/geology/media-cc3e59b8f93c.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Carb_forest.jpg",
+    "author": "Joseph Herrmann III at English Wikipedia",
+    "license": "Public domain",
     "width": 1400,
-    "height": 942,
-    "title": "File:Stigmaria fossil root (Newark, Ohio, USA) 2.jpg"
+    "height": 1050,
+    "title": "File:Carb forest.jpg"
   },
   "permian": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Permiano",
@@ -212,13 +212,13 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "triassic": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Tri%C3%A1ssico",
-    "image": "assets/discoveries/geology/media-f6452ad57633.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bobasatrania_canadensis.jpg",
-    "author": "DiBgd",
+    "image": "assets/discoveries/geology/media-48912f636d99.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Triassic_landscape.jpg",
+    "author": "Ghedoghedo",
     "license": "CC BY-SA 4.0",
     "width": 1400,
-    "height": 982,
-    "title": "File:Bobasatrania canadensis.jpg"
+    "height": 776,
+    "title": "File:Triassic landscape.jpg"
   },
   "jurassic": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Jur%C3%A1ssico",
@@ -302,12 +302,12 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "holocene": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Holoceno",
-    "image": "assets/discoveries/geology/media-566cf83b05a3.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Villebois_site.jpg",
-    "author": "JLPC &amp; Selbymay",
-    "license": "CC BY-SA 3.0",
+    "image": "assets/discoveries/geology/media-543a687c997a.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Fertile_agricultural_landscape_(5)_(31546303014).jpg",
+    "author": "Hans Birger Nilsen",
+    "license": "CC BY-SA 2.0",
     "width": 1400,
-    "height": 937,
-    "title": "File:Villebois site.jpg"
+    "height": 980,
+    "title": "File:Fertile agricultural landscape (5) (31546303014).jpg"
   }
 });
