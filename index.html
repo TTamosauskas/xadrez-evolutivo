@@ -108,7 +108,6 @@
         ><button id="evolution-history">História evolutiva</button
         ><button id="discoveries">Descobertas <span id="discoveries-badge" class="unread-badge" hidden></span></button
         ><button id="game-log">Log da partida</button
-        ><button id="toast-test-phase">🧪 Teste de toasts</button
         ><button id="new">Nova partida</button>
       </div>
       <input
@@ -143,21 +142,23 @@
     <dialog id="discoveries-dialog" aria-labelledby="discoveries-title">
       <h2 id="discoveries-title">Descobertas</h2>
       <div class="discovery-tabs" role="tablist" aria-label="Categorias de descobertas">
-        <button type="button" role="tab" data-discovery-tab="geology">Eras <span id="discoveries-geology-badge" class="unread-badge" hidden></span></button>
-        <button type="button" role="tab" data-discovery-tab="events">Eventos <span id="discoveries-events-badge" class="unread-badge" hidden></span></button>
-        <button type="button" role="tab" data-discovery-tab="mutations">Mutações <span id="discoveries-mutations-badge" class="unread-badge" hidden></span></button>
+        <button type="button" role="tab" data-discovery-tab="geology">Geologia <span id="discoveries-geology-badge" class="unread-badge" hidden></span></button>
+        <button type="button" role="tab" data-discovery-tab="events">Ecologia <span id="discoveries-events-badge" class="unread-badge" hidden></span></button>
+        <button type="button" role="tab" data-discovery-tab="mutations">Biologia <span id="discoveries-mutations-badge" class="unread-badge" hidden></span></button>
       </div>
-      <div id="discovery-list" class="discovery-list"></div>
-      <article id="discovery-detail" class="discovery-detail" hidden>
-        <button id="discovery-back" type="button" class="discovery-back">← Voltar</button>
-        <h3 id="discovery-detail-title"></h3>
-        <img id="discovery-detail-image" alt="" />
-        <div id="discovery-detail-text" class="discovery-detail-text"></div>
-        <div class="discovery-actions">
-          <a id="discovery-wikipedia" class="wikipedia-link" target="_blank" rel="noopener noreferrer">Wikipedia</a>
-          <button id="discovery-play" type="button" class="primary" hidden>Jogar</button>
-        </div>
-      </article>
+      <div id="discovery-content" class="discovery-content">
+        <div id="discovery-list" class="discovery-list"></div>
+        <article id="discovery-detail" class="discovery-detail" hidden>
+          <button id="discovery-back" type="button" class="discovery-back">← Voltar</button>
+          <h3 id="discovery-detail-title"></h3>
+          <img id="discovery-detail-image" alt="" />
+          <div id="discovery-detail-text" class="discovery-detail-text"></div>
+          <div class="discovery-actions">
+            <a id="discovery-wikipedia" class="wikipedia-link" target="_blank" rel="noopener noreferrer">Wikipedia</a>
+            <button id="discovery-play" type="button" class="primary" hidden>Jogar</button>
+          </div>
+        </article>
+      </div>
       <button id="discoveries-close" class="primary">Voltar ao menu</button>
     </dialog>
     <dialog
