@@ -55,6 +55,10 @@ const articleOverrides = Object.freeze({
   "Caça Cooperativa": "Comportamento social",
 });
 
+const traitFallbacks = Object.freeze({
+  Escavador: "Pocket gopher in burrow bw.png",
+});
+
 const fallbacks = Object.freeze({
   microbial: "Mixed-culture biofilm.jpg",
   genetics: "Chromosome-DNA-gene.png",
@@ -216,7 +220,7 @@ async function buildOne([trait, [topic]]) {
   let info = await imageInfo(page?.pageimage);
   if (!landscape(info))
     info = await imageInfo(
-      fallbacks[groupFor(trait, topic)],
+      traitFallbacks[trait] ?? fallbacks[groupFor(trait, topic)],
       "commons.wikimedia.org",
     );
   if (!info) throw new Error(`Sem imagem para ${trait}`);
