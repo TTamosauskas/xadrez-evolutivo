@@ -121,21 +121,21 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## cryogenian
 
-- Arquivo local: assets/discoveries/geology/media-4381ecde9b24.jpg
-- Título Wikimedia: File:AntarcticaDomeCSnow.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:AntarcticaDomeCSnow.jpg
-- Autor/crédito: Stephen Hudson
-- Licença: CC BY 2.5
-- Resolução usada: 1400×1028
+- Arquivo local: assets/discoveries/geology/media-915bd5496837.png
+- Título Wikimedia: File:A Frozen Earth.png
+- Fonte: https://commons.wikimedia.org/wiki/File:A_Frozen_Earth.png
+- Autor/crédito: Kevin M. Gill
+- Licença: CC BY 2.0
+- Resolução usada: 1400×788
 
 ## ediacaran
 
-- Arquivo local: assets/discoveries/geology/media-e67722bb64ef.jpg
-- Título Wikimedia: File:Auroralumina attenboroughii reconstruction and phylogeny.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Auroralumina_attenboroughii_reconstruction_and_phylogeny.jpg
-- Autor/crédito: F. S. Dunn, C. G. Kenchington, L. A. Parry, J. W. Clark, R. S. Kendall &amp; P. R. Wilby
+- Arquivo local: assets/discoveries/geology/media-e21631ffc321.jpg
+- Título Wikimedia: File:Diorama of the Ediacaran biota at the Field Museum in Chicago.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Diorama_of_the_Ediacaran_biota_at_the_Field_Museum_in_Chicago.jpg
+- Autor/crédito: Fossiladder13
 - Licença: CC BY-SA 4.0
-- Resolução usada: 1400×780
+- Resolução usada: 1400×1050
 
 ## cambrian
 
@@ -184,9 +184,9 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## permian
 
-- Arquivo local: assets/discoveries/geology/media-4835a37e268b.jpg
-- Título Wikimedia: File:Diorama of a Permian seafloor - oldhaminid brachiopods 2 (44791336745).jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Diorama_of_a_Permian_seafloor_-_oldhaminid_brachiopods_2_(44791336745).jpg
+- Arquivo local: assets/discoveries/geology/media-b1fe4eb0ca31.jpg
+- Título Wikimedia: File:Diorama of a Permian forest floor - Dimetrodon 1 (43884793680).jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Diorama_of_a_Permian_forest_floor_-_Dimetrodon_1_(43884793680).jpg
 - Autor/crédito: James St. John
 - Licença: CC BY 2.0
 - Resolução usada: 1400×931
@@ -211,12 +211,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## cretaceous
 
-- Arquivo local: assets/discoveries/geology/media-b40c86ad6406.jpg
-- Título Wikimedia: File:Suchomimus tenerensis (2).jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Suchomimus_tenerensis_(2).jpg
-- Autor/crédito: James St. John
-- Licença: CC BY 2.0
-- Resolução usada: 1400×861
+- Arquivo local: assets/discoveries/geology/media-bd75910d7dd5.jpg
+- Título Wikimedia: File:Tanis fossil site.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Tanis_fossil_site.jpg
+- Autor/crédito: YellowPanda2001
+- Licença: CC0
+- Resolução usada: 1400×860
 
 ## paleocene
 
@@ -229,12 +229,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## eocene
 
-- Arquivo local: assets/discoveries/geology/media-eb7ae50894b4.jpg
-- Título Wikimedia: File:Chriacus skeleton.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Chriacus_skeleton.jpg
-- Autor/crédito: Jaime A. Headden, OTRS n° 2014021210017377 (uploaded by User:Maisrimer)
-- Licença: CC BY-SA 4.0
-- Resolução usada: 1400×799
+- Arquivo local: assets/discoveries/geology/media-b55d085dbb0b.jpg
+- Título Wikimedia: File:Hancock Mammal Quarry mural.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Hancock_Mammal_Quarry_mural.jpg
+- Autor/crédito: Roger Witter
+- Licença: Public domain
+- Resolução usada: 1400×844
 
 ## oligocene
 
@@ -247,12 +247,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## miocene
 
-- Arquivo local: assets/discoveries/geology/media-792636b37d45.jpg
-- Título Wikimedia: File:Cainotherium 1.JPG
-- Fonte: https://commons.wikimedia.org/wiki/File:Cainotherium_1.JPG
-- Autor/crédito: Ghedoghedo
-- Licença: CC BY-SA 3.0
-- Resolução usada: 1400×903
+- Arquivo local: assets/discoveries/geology/media-c38cd70d677f.jpg
+- Título Wikimedia: File:Miocene Plains Mammals by Knight.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Miocene_Plains_Mammals_by_Knight.jpg
+- Autor/crédito: Charles R. Knight
+- Licença: Public domain
+- Resolução usada: 1400×491
 
 ## pliocene
 
@@ -274,10 +274,10 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## holocene
 
-- Arquivo local: assets/discoveries/geology/media-543a687c997a.jpg
-- Título Wikimedia: File:Fertile agricultural landscape (5) (31546303014).jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Fertile_agricultural_landscape_(5)_(31546303014).jpg
-- Autor/crédito: Hans Birger Nilsen
-- Licença: CC BY-SA 2.0
-- Resolução usada: 1400×980
+- Arquivo local: assets/discoveries/geology/media-c8278d075c97.jpg
+- Título Wikimedia: File:Agricultural Fields near Perdizes, Minas Gerais, Brazil.JPG
+- Fonte: https://commons.wikimedia.org/wiki/File:Agricultural_Fields_near_Perdizes,_Minas_Gerais,_Brazil.JPG
+- Autor/crédito: ISS Expedition 26 crew
+- Licença: Public domain
+- Resolução usada: 1400×931
 

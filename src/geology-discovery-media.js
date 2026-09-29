@@ -132,23 +132,23 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "cryogenian": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Criog%C3%AAnico_(geologia)",
-    "image": "assets/discoveries/geology/media-4381ecde9b24.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:AntarcticaDomeCSnow.jpg",
-    "author": "Stephen Hudson",
-    "license": "CC BY 2.5",
+    "image": "assets/discoveries/geology/media-915bd5496837.png",
+    "source": "https://commons.wikimedia.org/wiki/File:A_Frozen_Earth.png",
+    "author": "Kevin M. Gill",
+    "license": "CC BY 2.0",
     "width": 1400,
-    "height": 1028,
-    "title": "File:AntarcticaDomeCSnow.jpg"
+    "height": 788,
+    "title": "File:A Frozen Earth.png"
   },
   "ediacaran": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ediacarano",
-    "image": "assets/discoveries/geology/media-e67722bb64ef.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Auroralumina_attenboroughii_reconstruction_and_phylogeny.jpg",
-    "author": "F. S. Dunn, C. G. Kenchington, L. A. Parry, J. W. Clark, R. S. Kendall &amp; P. R. Wilby",
+    "image": "assets/discoveries/geology/media-e21631ffc321.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Diorama_of_the_Ediacaran_biota_at_the_Field_Museum_in_Chicago.jpg",
+    "author": "Fossiladder13",
     "license": "CC BY-SA 4.0",
     "width": 1400,
-    "height": 780,
-    "title": "File:Auroralumina attenboroughii reconstruction and phylogeny.jpg"
+    "height": 1050,
+    "title": "File:Diorama of the Ediacaran biota at the Field Museum in Chicago.jpg"
   },
   "cambrian": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Cambriano",
@@ -202,13 +202,13 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "permian": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Permiano",
-    "image": "assets/discoveries/geology/media-4835a37e268b.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Diorama_of_a_Permian_seafloor_-_oldhaminid_brachiopods_2_(44791336745).jpg",
+    "image": "assets/discoveries/geology/media-b1fe4eb0ca31.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Diorama_of_a_Permian_forest_floor_-_Dimetrodon_1_(43884793680).jpg",
     "author": "James St. John",
     "license": "CC BY 2.0",
     "width": 1400,
     "height": 931,
-    "title": "File:Diorama of a Permian seafloor - oldhaminid brachiopods 2 (44791336745).jpg"
+    "title": "File:Diorama of a Permian forest floor - Dimetrodon 1 (43884793680).jpg"
   },
   "triassic": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Tri%C3%A1ssico",
@@ -232,13 +232,13 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "cretaceous": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Cret%C3%A1ceo",
-    "image": "assets/discoveries/geology/media-b40c86ad6406.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Suchomimus_tenerensis_(2).jpg",
-    "author": "James St. John",
-    "license": "CC BY 2.0",
+    "image": "assets/discoveries/geology/media-bd75910d7dd5.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Tanis_fossil_site.jpg",
+    "author": "YellowPanda2001",
+    "license": "CC0",
     "width": 1400,
-    "height": 861,
-    "title": "File:Suchomimus tenerensis (2).jpg"
+    "height": 860,
+    "title": "File:Tanis fossil site.jpg"
   },
   "paleocene": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Paleoceno",
@@ -252,13 +252,13 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "eocene": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Eoceno",
-    "image": "assets/discoveries/geology/media-eb7ae50894b4.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Chriacus_skeleton.jpg",
-    "author": "Jaime A. Headden, OTRS n° 2014021210017377 (uploaded by User:Maisrimer)",
-    "license": "CC BY-SA 4.0",
+    "image": "assets/discoveries/geology/media-b55d085dbb0b.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Hancock_Mammal_Quarry_mural.jpg",
+    "author": "Roger Witter",
+    "license": "Public domain",
     "width": 1400,
-    "height": 799,
-    "title": "File:Chriacus skeleton.jpg"
+    "height": 844,
+    "title": "File:Hancock Mammal Quarry mural.jpg"
   },
   "oligocene": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Oligoceno",
@@ -272,13 +272,13 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "miocene": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Mioceno",
-    "image": "assets/discoveries/geology/media-792636b37d45.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cainotherium_1.JPG",
-    "author": "Ghedoghedo",
-    "license": "CC BY-SA 3.0",
+    "image": "assets/discoveries/geology/media-c38cd70d677f.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Miocene_Plains_Mammals_by_Knight.jpg",
+    "author": "Charles R. Knight",
+    "license": "Public domain",
     "width": 1400,
-    "height": 903,
-    "title": "File:Cainotherium 1.JPG"
+    "height": 491,
+    "title": "File:Miocene Plains Mammals by Knight.jpg"
   },
   "pliocene": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Plioceno",
@@ -302,12 +302,12 @@ export const GEOLOGY_DISCOVERY_MEDIA = Object.freeze({
   },
   "holocene": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Holoceno",
-    "image": "assets/discoveries/geology/media-543a687c997a.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Fertile_agricultural_landscape_(5)_(31546303014).jpg",
-    "author": "Hans Birger Nilsen",
-    "license": "CC BY-SA 2.0",
+    "image": "assets/discoveries/geology/media-c8278d075c97.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Agricultural_Fields_near_Perdizes,_Minas_Gerais,_Brazil.JPG",
+    "author": "ISS Expedition 26 crew",
+    "license": "Public domain",
     "width": 1400,
-    "height": 980,
-    "title": "File:Fertile agricultural landscape (5) (31546303014).jpg"
+    "height": 931,
+    "title": "File:Agricultural Fields near Perdizes, Minas Gerais, Brazil.JPG"
   }
 });
