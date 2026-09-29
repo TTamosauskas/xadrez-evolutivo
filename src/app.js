@@ -1078,7 +1078,20 @@ function openDiscovery(category, id) {
   $("discovery-detail-title").textContent = entry.title;
   $("discovery-detail-image").src = entry.image;
   $("discovery-detail-image").alt = `Ilustração de ${entry.title}`;
-  $("discovery-detail-text").textContent = entry.text;
+  const copy = $("discovery-detail-text");
+  copy.replaceChildren();
+  const paragraphs =
+    entry.realWorld && entry.game
+      ? [entry.realWorld, entry.game]
+      : String(entry.text ?? "")
+          .split(/\n\s*\n/u)
+          .map((text) => text.trim())
+          .filter(Boolean);
+  for (const text of paragraphs) {
+    const paragraph = document.createElement("p");
+    paragraph.textContent = text;
+    copy.append(paragraph);
+  }
   $("discovery-wikipedia").href = entry.wikipedia;
   const play = $("discovery-play");
   play.hidden = category !== "geology";
