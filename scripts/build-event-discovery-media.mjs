@@ -26,6 +26,8 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const esc = (value) =>
   String(value ?? "")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<[^>]*>/g, "")
     .replace(/\s+/g, " ")
     .trim();
