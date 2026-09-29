@@ -47,6 +47,12 @@ const articleOverrides = Object.freeze({
   "Mutação Mutadora": "Mutação",
   "Rabo Chicote": "Doedicurus clavicaudatus",
   Osteodermos: "Osteoderma",
+  Longevidade: "Senescência",
+  "Interceptação preditiva": "Predação",
+  Serpenteamento: "Locomoção",
+  "Ovíparos Amniotas": "Amniota",
+  "Ovulação Induzida": "Ovulação",
+  "Caça Cooperativa": "Comportamento social",
 });
 
 const fallbacks = Object.freeze({
