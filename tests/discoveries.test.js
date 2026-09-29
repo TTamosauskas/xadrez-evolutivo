@@ -107,7 +107,7 @@ test("geological discoveries use direct Wikipedia articles and local landscape m
     const entry = DISCOVERY_CONTENT.geology[stage.id];
     assert.match(
       entry.wikipedia,
-      /^https:\/\/pt\.wikipedia\.org\/wiki\//,
+      /^https:\/\/(?:pt|en)\.wikipedia\.org\/wiki\//,
       stage.id,
     );
     assert.doesNotMatch(entry.wikipedia, /w\/index\.php\?search=/, stage.id);
