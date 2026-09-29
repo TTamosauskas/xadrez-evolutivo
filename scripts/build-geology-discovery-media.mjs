@@ -98,9 +98,9 @@ const landscape = (info) => {
     mime = info?.mime ?? "";
   return (
     !!info?.thumburl &&
-    width >= 1000 &&
-    height >= 500 &&
-    width / Math.max(1, height) >= 1.3 &&
+    width >= 800 &&
+    height >= 420 &&
+    width / Math.max(1, height) >= 1.25 &&
     ["image/jpeg", "image/png", "image/webp"].includes(mime)
   );
 };
@@ -188,19 +188,34 @@ function metadata(info) {
   };
 }
 
-async function chooseImage(searchQuery, page) {
-  const candidates = await searchCommons(searchQuery);
-  let info = candidates.find(
-    (candidate) => !usedUrls.has(candidate.thumburl ?? candidate.url),
-  );
+async function chooseImage(searchQuery, articleTitle, page) {
+  const queries = [
+    searchQuery,
+    articleTitle,
+    String(searchQuery ?? "").replace(/\b(?:landscape|reconstruction|artist impression)\b/gi, "").trim(),
+    "prehistoric Earth landscape",
+  ].filter(Boolean);
+
+  let info = null;
+  for (const query of [...new Set(queries)]) {
+    const candidates = await searchCommons(query);
+    info = candidates.find(
+      (candidate) => !usedUrls.has(candidate.thumburl ?? candidate.url),
+    );
+    if (info) break;
+  }
 
   if (!info) {
     const pageImage = await imageInfo(page?.pageimage);
-    if (landscape(pageImage)) info = pageImage;
+    if (
+      landscape(pageImage) &&
+      !usedUrls.has(pageImage.thumburl ?? pageImage.url)
+    )
+      info = pageImage;
   }
 
   if (!info)
-    throw new Error(`Sem imagem em paisagem para ${searchQuery}`);
+    throw new Error(`Sem imagem em paisagem para ${articleTitle}`);
 
   usedUrls.add(info.thumburl ?? info.url);
   return info;
@@ -213,7 +228,7 @@ async function buildOne([id, [articleTitle, , searchQuery]]) {
       `https://pt.wikipedia.org/wiki/${encodeURIComponent(
         String(articleTitle).replaceAll(" ", "_"),
       )}`,
-    info = await chooseImage(searchQuery ?? articleTitle, page);
+    info = await chooseImage(searchQuery ?? articleTitle, articleTitle, page);
 
   return [
     id,
