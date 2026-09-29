@@ -163,6 +163,8 @@ function metadata(info) {
       esc(ext.LicenseShortName?.value) ||
       esc(ext.UsageTerms?.value) ||
       null,
+    width: Number(info?.thumbwidth ?? 0),
+    height: Number(info?.thumbheight ?? 0),
   };
 }
 
@@ -181,6 +183,8 @@ async function buildOne([trait, [topic]]) {
       "commons.wikimedia.org",
     );
   if (!info) throw new Error(`Sem imagem para ${trait}`);
+  if (!landscape(info))
+    throw new Error(`Imagem de fallback não é paisagem para ${trait}`);
   return [
     trait,
     {
