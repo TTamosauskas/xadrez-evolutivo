@@ -55,6 +55,7 @@ import { tickEnvironment } from "../src/environment.js";
 import {
   EARTH_FOUNDER_GENOMES,
   earthFounderHistory,
+  earthFounderPersistentTraits,
 } from "../src/scenarios.js";
 import { genomeSignature } from "../src/genetics.js";
 
@@ -73,14 +74,14 @@ test("mandatory innovation sequence follows the revised evolutionary milestones"
   const expected = {
     hadean: ["Respiração anaeróbia", "Quimiossíntese"],
     eoarchean: ["Fotossíntese", "Predação"],
-    paleoarchean: ["Transferência Horizontal"],
-    mesoarchean: ["Reparo Celular"],
+    paleoarchean: ["Transferência Horizontal", "Biofilme"],
+    mesoarchean: ["Reparo Celular", "Fixação de Nitrogênio"],
     neoarchean: ["Dormência"],
     siderian: ["Respiração aeróbia", "Resistência"],
     rhyacian: ["Eucarionte", "Endossimbiose"],
     orosirian: ["Multicelularismo"],
     statherian: ["Regeneração", "Brotamento"],
-    calymmian: ["Reprodução Sexuada"],
+    calymmian: ["Diferenciação Celular", "Reprodução Sexuada"],
     ectasian: ["Ingestão"],
     stenian: ["Carnívoro"],
     tonian: ["Colônia", "Séssil"],
@@ -110,6 +111,24 @@ test("mandatory innovation sequence follows the revised evolutionary milestones"
   assert.equal(
     GEOLOGICAL_STAGES.find((stage) => stage.id === "eoarchean").cycles.length,
     2,
+  );
+});
+
+test("early cellular innovations are shared and supersede into genetic legacy", () => {
+  assert.equal(TRAIT_BRANCH_SCOPE.Biofilme, "shared");
+  assert.equal(TRAIT_BRANCH_SCOPE["Fixação de Nitrogênio"], "shared");
+  assert.equal(TRAIT_BRANCH_SCOPE["Diferenciação Celular"], "shared");
+  assert.deepEqual(
+    normalizeActiveTraits(["Biofilme", "Multicelularismo"]),
+    ["Multicelularismo"],
+  );
+  assert.deepEqual(
+    normalizeActiveTraits(["Fixação de Nitrogênio", "Eucarionte"]),
+    ["Eucarionte"],
+  );
+  assert.deepEqual(
+    TRAIT_DEPENDENCIES["Diferenciação Celular"].lineage,
+    ["Multicelularismo", "Eucarionte"],
   );
 });
 
@@ -184,6 +203,7 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
         preferred = branch === "plant" ? "Fotossíntese" : "Predação",
         inherited = [
           ...(preset[branch] ?? []),
+          ...earthFounderPersistentTraits(id),
           ...(index > repairIndex ? ["Reparo Celular"] : []),
           ...(branch === "animal" && index > bilateralIndex
             ? ["Simetria Bilateral"]
@@ -916,6 +936,15 @@ test("Archean advances through four detailed phases after each mandatory set app
   assert.equal(state.geologicalStage, "paleoarchean");
   state.pieces[0].traits.push("Transferência Horizontal");
   registerDiscoveries(state, state.pieces[0]);
+  assert.equal(stageComplete(state), false);
+  state.result = { winner: "blue", reason: "teste" };
+  state.phase = "over";
+
+  state = createSuccessorState(state, 1042);
+  assert.equal(state.geologicalStage, "paleoarchean");
+  assert.equal(state.cycle, 2);
+  state.pieces[0].traits.push("Biofilme");
+  registerDiscoveries(state, state.pieces[0]);
   assert.equal(stageComplete(state), true);
   state.result = { winner: "blue", reason: "teste" };
   state.phase = "over";
@@ -923,6 +952,15 @@ test("Archean advances through four detailed phases after each mandatory set app
   state = createSuccessorState(state, 105);
   assert.equal(state.geologicalStage, "mesoarchean");
   state.pieces[0].traits.push("Reparo Celular");
+  registerDiscoveries(state, state.pieces[0]);
+  assert.equal(stageComplete(state), false);
+  state.result = { winner: "blue", reason: "teste" };
+  state.phase = "over";
+
+  state = createSuccessorState(state, 1051);
+  assert.equal(state.geologicalStage, "mesoarchean");
+  assert.equal(state.cycle, 2);
+  state.pieces[0].traits.push("Fixação de Nitrogênio");
   registerDiscoveries(state, state.pieces[0]);
   assert.equal(stageComplete(state), true);
   state.result = { winner: "blue", reason: "teste" };
@@ -944,11 +982,12 @@ test("Mesoarchean no longer repeats horizontal transfer after the Paleoarchean",
   const state = createState(1002, {
     scenario: "earth",
     geologicalStage: "mesoarchean",
-    cycle: 1,
-    totalCycles: 3,
+    cycle: 2,
+    totalCycles: 5,
     historicalTraits: [
       "Respiração anaeróbia", "Fotossíntese", "Predação",
-      "Quimiossíntese", "Transferência Horizontal", "Reparo Celular",
+      "Quimiossíntese", "Transferência Horizontal", "Biofilme",
+      "Reparo Celular", "Fixação de Nitrogênio",
     ],
   });
   assert.equal(periodInnovations(state).includes("Transferência Horizontal"), false);

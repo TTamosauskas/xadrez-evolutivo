@@ -34,6 +34,7 @@ import {
   parentalCareProtects,
   predatoryReproductionAvailable,
   mutualismPartner,
+  biofilmResource,
 } from "./reproduction-traits.js";
 import { dopaminePressureReductionAvailable } from "./reproduction.js";
 
@@ -127,6 +128,8 @@ function addStationaryActionableTraits(state, piece, actionable) {
 
   if (buddingCanProgress(state, piece))
     actionable.add("Brotamento");
+  if (biofilmResource(state, piece))
+    actionable.add("Biofilme");
 }
 
 export function actionableTraitsForPiece(state, piece) {
@@ -153,6 +156,8 @@ export function actionableTraitsForPiece(state, piece) {
     if (action.type === "REJECT_BROOD_PARASITE") actionable.add("Incubação");
     if (action.type === "RHIZOME") actionable.add("Rizoma");
     if (action.type === "CHEMOSYNTHESIS") actionable.add("Quimiossíntese");
+    if (action.type === "FIX_NITROGEN")
+      actionable.add("Fixação de Nitrogênio");
     if (
       ["FEEDING_REACH", "EXTENDED_CAPTURE"].includes(action.type) &&
       action.trait
@@ -630,6 +635,11 @@ export function actionableTraitsForPiece(state, piece) {
           action.type,
         ),
       ));
+  if (
+    reproductiveOpportunity &&
+    has(piece, "Diferenciação Celular")
+  )
+    actionable.add("Diferenciação Celular");
   if (reproductiveOpportunity)
     for (const trait of [
       "Testosterona",

@@ -150,6 +150,7 @@ const VIVIFICATION_LABELS = Object.freeze({
   MOVE: "Reproduzir",
   BUD: "Brotar",
   CHEMOSYNTHESIS: "♨️ Quimiossíntese",
+  FIX_NITROGEN: "☁️ Fixação de Nitrogênio",
   PUPATE: "Metamorfosear",
   PARASITIZE: "Fertilizar por Parasitismo",
   PARTHENOGENESIS: "Partenogênese",
@@ -171,6 +172,7 @@ const boardActionLabel = (action) => {
     return `${TRAITS[action.trait]?.[0] ?? "🧬"} ${action.trait}`;
   if (action.type === "RHIZOME") return "🫚 Rizoma";
   if (action.type === "CHEMOSYNTHESIS") return "♨️ Quimiossíntese";
+  if (action.type === "FIX_NITROGEN") return "☁️ Fixação de Nitrogênio";
   return action.type;
 };
 
@@ -361,7 +363,7 @@ $("board").addEventListener("click", (event) => {
   if (actor?.owner === state.current) {
     const targetActions = actionsForPiece(state, actor).filter(
       (action) =>
-        ((action.type === "MOVE" || action.type === "RHIZOME") &&
+        (["MOVE", "RHIZOME", "FIX_NITROGEN"].includes(action.type) &&
           action.r === r &&
           action.c === c) ||
         (p &&

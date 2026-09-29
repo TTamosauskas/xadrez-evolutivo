@@ -1,5 +1,8 @@
 export const TRAIT_SUMMARIES = Object.freeze({
   "Reparo Celular": "Reduz pela metade a chance de novas mutações negativas.",
+  Biofilme: "Rede adjacente compartilha 1 Casa Fértil para reprodução por rodada.",
+  "Fixação de Nitrogênio": "Gasta a ação para fertilizar casa neutra ortogonal; recarga em 4 rodadas.",
+  "Diferenciação Celular": "Ninhadas com 2+ crias especializam 1 descendente em outra forma permitida.",
   Multicelularismo: "Ativa ciclo de vida, maturidade e senescência; protege contra captura até o agressor obter Ingestão.",
   "Simetria Bilateral": "Dobra a longevidade natural dos animais multicelulares.",
   "Locomoção Primitiva": "Move 1 casa para um espaço fértil.",
