@@ -172,9 +172,12 @@ test("menu exposes match log and evolutionary history for consultation", () => {
     "Computador × computador",
   );
   assert.equal(d.getElementById("arena-mode"), null);
-  assert.equal(
-    d.getElementById("toast-test-phase")?.textContent,
-    "🧪 Teste de toasts",
+  assert.equal(d.getElementById("toast-test-phase"), null);
+  assert.deepEqual(
+    [...d.querySelectorAll("[data-discovery-tab]")].map((tab) =>
+      tab.childNodes[0].textContent.trim(),
+    ),
+    ["Geologia", "Ecologia", "Biologia"],
   );
   assert.equal(
     d.querySelector('#scenario option[value="earth"]').textContent,
@@ -188,6 +191,24 @@ test("menu exposes match log and evolutionary history for consultation", () => {
     d.querySelector('#scenario option[value="arena"]').textContent,
     "Arena",
   );
+  dom.window.close();
+});
+
+test("discoveries use a three-column square-card grid and replace the list with detail", () => {
+  const dom = setup(),
+    d = dom.window.document,
+    app = readFileSync(new URL("../src/app.js", import.meta.url), "utf8"),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+
+  assert.equal(d.getElementById("discovery-list").parentElement.id, "discovery-content");
+  assert.equal(d.getElementById("discovery-detail").parentElement.id, "discovery-content");
+  assert.match(css, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(css, /aspect-ratio:\s*1/);
+  assert.match(css, /\.discovery-item-icon/);
+  assert.match(app, /icon\.className = "discovery-item-icon"/);
+  assert.match(app, /title\.textContent = entry\.label \?\? entry\.title/);
+  assert.match(app, /\$\("discovery-list"\)\.hidden = true/);
+  assert.match(app, /\$\("discoveries-dialog"\)\.scrollTop = 0/);
   dom.window.close();
 });
 
