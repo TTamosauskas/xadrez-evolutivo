@@ -1228,7 +1228,7 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
 }
 export function startSevereEvent(ctx) {
   const event = severeEventForStage(ctx.state);
-  if (!event) throw Error("Nenhum evento severo disponível neste período.");
+  if (!event) throw Error("Nenhum evento de impacto extremo disponível neste período.");
   startEvent(ctx, event.id);
   return event;
 }
@@ -1243,7 +1243,7 @@ export function checkPopulationClimate(ctx) {
   startSevereEvent(ctx);
   log(
     state,
-    `🌡️ Pressão populacional: ${population} organismos ativos desencadearam um evento severo.`,
+    `🌡️ Pressão populacional: ${population} organismos ativos desencadearam um evento de impacto extremo.`,
   );
   return true;
 }
