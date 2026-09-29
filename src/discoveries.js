@@ -31,6 +31,40 @@ const image = {
   mutations: "assets/discoveries/mutations.svg",
 };
 
+export const GEOLOGY_DISCOVERY_ICONS = Object.freeze({
+  hadean: "🌋",
+  eoarchean: "🌊",
+  paleoarchean: "🦠",
+  mesoarchean: "🧫",
+  neoarchean: "☀️",
+  siderian: "🪨",
+  rhyacian: "❄️",
+  orosirian: "☄️",
+  statherian: "🏞️",
+  calymmian: "🌊",
+  ectasian: "🧬",
+  stenian: "🌍",
+  tonian: "🌐",
+  cryogenian: "🧊",
+  ediacaran: "🪸",
+  cambrian: "🦐",
+  ordovician: "🐚",
+  silurian: "🌱",
+  devonian: "🐟",
+  carboniferous: "🌿",
+  permian: "🦎",
+  triassic: "🦖",
+  jurassic: "🦕",
+  cretaceous: "🌸",
+  paleocene: "🐾",
+  eocene: "🐒",
+  oligocene: "🐘",
+  miocene: "🦧",
+  pliocene: "🚶",
+  pleistocene: "🦣",
+  holocene: "🌾",
+});
+
 export const GEOLOGY_DISCOVERY_TOPICS = {
   hadean: [
     "Hadeano",
@@ -660,6 +694,7 @@ const geology = Object.fromEntries(
         category: "geology",
         title: stage.period,
         label: stage.period,
+        icon: GEOLOGY_DISCOVERY_ICONS[stage.id] ?? "🪨",
         realWorld,
         game,
         text: `${realWorld}\n\n${game}`,
@@ -817,12 +852,18 @@ export function unreadDiscoveries(state, category = null) {
 
 export function discoveredContent(state, category, revealAll = false) {
   const ids = revealAll
-    ? Object.keys(DISCOVERY_CONTENT[category] ?? {})
-    : state.discoveries?.[category] ?? [];
-  return ids
-    .map((id) => DISCOVERY_CONTENT[category]?.[id])
-    .filter(Boolean)
-    .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title, "pt-BR"));
+      ? Object.keys(DISCOVERY_CONTENT[category] ?? {})
+      : state.discoveries?.[category] ?? [],
+    entries = ids
+      .map((id) => DISCOVERY_CONTENT[category]?.[id])
+      .filter(Boolean);
+
+  if (category === "geology")
+    return entries.sort((a, b) => a.order - b.order);
+
+  return entries.sort(
+    (a, b) => a.order - b.order || a.title.localeCompare(b.title, "pt-BR"),
+  );
 }
 
 export function mutationDiscoveryId(label) {
