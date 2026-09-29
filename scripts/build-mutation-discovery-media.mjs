@@ -40,6 +40,8 @@ const groups = [
   ["genetics", /muta[cç]|reparo|transfer[eê]ncia|eucarion|endossimb|diferencia|imun|cromoss|gen[eé]tic|recess|domin/i],
 ];
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const esc = (value) =>
   String(value ?? "")
     .replace(/<[^>]*>/g, "")
@@ -55,11 +57,20 @@ async function api(host, params) {
   const url = new URL(`https://${host}/w/api.php`);
   for (const [key, value] of Object.entries(params))
     url.searchParams.set(key, value);
-  const response = await fetch(url, {
-    headers: { "User-Agent": userAgent },
-  });
-  if (!response.ok) throw new Error(`${response.status} ${url}`);
-  return response.json();
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const response = await fetch(url, {
+      headers: { "User-Agent": userAgent },
+    });
+    if (response.ok) return response.json();
+    if (response.status !== 429 && response.status < 500)
+      throw new Error(`${response.status} ${url}`);
+    const retryAfter = Number(response.headers.get("retry-after")),
+      delay = Number.isFinite(retryAfter)
+        ? retryAfter * 1000
+        : Math.min(12000, 800 * 2 ** attempt);
+    await sleep(delay);
+  }
+  throw new Error(`Limite persistente ao consultar ${url}`);
 }
 
 async function resolveArticle(title) {
@@ -187,10 +198,10 @@ for (const entry of await fs.readdir(outDir))
 
 const sourceEntries = Object.entries(MUTATION_DISCOVERY_TOPICS),
   results = [];
-for (let index = 0; index < sourceEntries.length; index += 8)
-  results.push(
-    ...(await Promise.all(sourceEntries.slice(index, index + 8).map(buildOne))),
-  );
+for (const entry of sourceEntries) {
+  results.push(await buildOne(entry));
+  await sleep(250);
+}
 
 const media = Object.fromEntries(results);
 await fs.writeFile(
