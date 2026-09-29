@@ -11,6 +11,24 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
   userAgent =
     "XadrezEvolutivo/1.0 (https://github.com/TTamosauskas/xadrez-evolutivo)";
 
+const fileOverrides = Object.freeze({
+  hadean: "Hadean.png",
+  eoarchean: "Vaalbara Continent.jpg",
+  rhyacian: "Snowball Huronian.jpg",
+  stenian: "Rodinia vor etwa 900 Millionen Jahren.jpg",
+  ediacaran: "Auroralumina attenboroughii reconstruction and phylogeny.jpg",
+  cambrian: "Salterella life restoration.png",
+  carboniferous: "Carb forest.jpg",
+  triassic: "Triassic landscape.jpg",
+  holocene: "Fertile agricultural landscape (5) (31546303014).jpg",
+});
+
+const wikipediaOverrides = Object.freeze({
+  rhyacian: "https://en.wikipedia.org/wiki/Rhyacian",
+  calymmian: "https://en.wikipedia.org/wiki/Calymmian",
+  stenian: "https://en.wikipedia.org/wiki/Stenian",
+});
+
 const fallbackQueries = Object.freeze({
   hadean: "early Earth",
   eoarchean: "early Earth ocean",
@@ -223,6 +241,14 @@ function metadata(info) {
 }
 
 async function chooseImage(id, searchQuery, articleTitle, page) {
+  if (fileOverrides[id]) {
+    const override = await imageInfo(fileOverrides[id], "commons.wikimedia.org");
+    if (landscape(override)) {
+      usedUrls.add(override.thumburl ?? override.url);
+      return override;
+    }
+  }
+
   const queries = [
     searchQuery,
     fallbackQueries[id],
@@ -259,6 +285,7 @@ async function chooseImage(id, searchQuery, articleTitle, page) {
 async function buildOne([id, [articleTitle, , searchQuery]]) {
   const page = await resolveArticle(articleTitle),
     wikipedia =
+      wikipediaOverrides[id] ??
       page?.fullurl ??
       `https://pt.wikipedia.org/wiki/${encodeURIComponent(
         String(articleTitle).replaceAll(" ", "_"),
