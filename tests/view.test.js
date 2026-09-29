@@ -204,6 +204,8 @@ test("discoveries use a three-column square-card grid and replace the list with 
   assert.equal(d.getElementById("discovery-detail").parentElement.id, "discovery-content");
   assert.match(css, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(css, /aspect-ratio:\s*1/);
+  assert.match(css, /-webkit-line-clamp:\s*2/);
+  assert.match(css, /max-height:\s*2\.4em/);
   assert.match(css, /\.discovery-item-icon/);
   assert.match(app, /icon\.className = "discovery-item-icon"/);
   assert.match(app, /title\.textContent = entry\.label \?\? entry\.title/);
