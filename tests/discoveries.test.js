@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EVENTS, TRAITS } from "../src/constants.js";
-import { GEOLOGICAL_STAGES } from "../src/geology.js";
+import { GEOLOGICAL_STAGES, TRAIT_STAGE } from "../src/geology.js";
 import {
   DISCOVERY_CATEGORIES,
   DISCOVERY_CONTENT,
@@ -55,6 +55,42 @@ test("geology discoveries always follow campaign chronology", () => {
   assert.deepEqual(
     discoveredContent(state, "geology").map((entry) => entry.id),
     GEOLOGICAL_STAGES.map((stage) => stage.id),
+  );
+});
+
+test("Biologia follows the game's evolutionary chronology", () => {
+  const state = createState(199);
+  state.discoveries.mutations = Object.keys(DISCOVERY_CONTENT.mutations).reverse();
+
+  const ids = discoveredContent(state, "mutations").map((entry) => entry.id);
+  assert.deepEqual(ids.slice(0, 4), [
+    "Respiração anaeróbia",
+    "Fotossíntese",
+    "Predação",
+    "Quimiossíntese",
+  ]);
+
+  const afterLead = ids.slice(4).filter((id) => TRAITS[id]);
+  const stageIndex = new Map(
+    GEOLOGICAL_STAGES.map((stage, index) => [stage.id, index]),
+  );
+  let prior = -1;
+  for (const id of afterLead) {
+    const index = stageIndex.get(TRAIT_STAGE[id]);
+    if (index === undefined) continue;
+    assert.ok(index >= prior, id);
+    prior = index;
+  }
+});
+
+test("Ecologia is listed alphabetically by visible name", () => {
+  const state = createState(198);
+  state.discoveries.events = EVENTS.map((event) => event.id).reverse();
+
+  const names = discoveredContent(state, "events").map((entry) => entry.label);
+  assert.deepEqual(
+    names,
+    [...names].sort((a, b) => a.localeCompare(b, "pt-BR")),
   );
 });
 

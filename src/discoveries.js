@@ -2,13 +2,47 @@ import { EVENTS, PIECES, TRAITS } from "./constants.js";
 import { MUTATION_DISCOVERY_MEDIA } from "./mutation-discovery-media.js";
 import { EVENT_DISCOVERY_MEDIA } from "./event-discovery-media.js";
 import { GEOLOGY_DISCOVERY_MEDIA } from "./geology-discovery-media.js";
-import { GEOLOGICAL_STAGES } from "./geology.js";
+import { GEOLOGICAL_STAGES, TRAIT_STAGE } from "./geology.js";
 
 export const DISCOVERY_CATEGORIES = [
   ["geology", "Geologia"],
   ["events", "Ecologia"],
   ["mutations", "Biologia"],
 ];
+
+const BIOLOGY_DISCOVERY_LEAD = Object.freeze([
+  "Respiração anaeróbia",
+  "Fotossíntese",
+  "Predação",
+]);
+
+const geologicalStageOrder = new Map(
+  GEOLOGICAL_STAGES.map((stage, index) => [stage.id, index]),
+);
+
+function compareBiologyDiscoveries(a, b) {
+  const leadA = BIOLOGY_DISCOVERY_LEAD.indexOf(a.id),
+    leadB = BIOLOGY_DISCOVERY_LEAD.indexOf(b.id);
+
+  if (leadA >= 0 || leadB >= 0) {
+    if (leadA >= 0 && leadB >= 0) return leadA - leadB;
+    return leadA >= 0 ? -1 : 1;
+  }
+
+  const stageA = geologicalStageOrder.get(TRAIT_STAGE[a.id]) ?? Number.MAX_SAFE_INTEGER,
+    stageB = geologicalStageOrder.get(TRAIT_STAGE[b.id]) ?? Number.MAX_SAFE_INTEGER;
+  if (stageA !== stageB) return stageA - stageB;
+
+  const required = GEOLOGICAL_STAGES[stageA]?.required ?? [],
+    requiredA = required.indexOf(a.id),
+    requiredB = required.indexOf(b.id);
+  if (requiredA >= 0 || requiredB >= 0) {
+    if (requiredA >= 0 && requiredB >= 0) return requiredA - requiredB;
+    return requiredA >= 0 ? -1 : 1;
+  }
+
+  return a.order - b.order || a.title.localeCompare(b.title, "pt-BR");
+}
 
 const wiki = (query) =>
     `https://pt.wikipedia.org/w/index.php?search=${encodeURIComponent(query)}`,
@@ -860,6 +894,14 @@ export function discoveredContent(state, category, revealAll = false) {
 
   if (category === "geology")
     return entries.sort((a, b) => a.order - b.order);
+
+  if (category === "events")
+    return entries.sort((a, b) =>
+      (a.label ?? a.title).localeCompare(b.label ?? b.title, "pt-BR"),
+    );
+
+  if (category === "mutations")
+    return entries.sort(compareBiologyDiscoveries);
 
   return entries.sort(
     (a, b) => a.order - b.order || a.title.localeCompare(b.title, "pt-BR"),
