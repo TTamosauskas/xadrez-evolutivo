@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { EVENTS, TRAITS } from "../src/constants.js";
-import { GEOLOGICAL_STAGES } from "../src/geology.js";
+import { GEOLOGICAL_STAGES, TRAIT_STAGE } from "../src/geology.js";
 import {
   DISCOVERY_CATEGORIES,
   DISCOVERY_CONTENT,
@@ -74,7 +74,6 @@ test("Biologia follows the game's evolutionary chronology", () => {
   const stageIndex = new Map(
     GEOLOGICAL_STAGES.map((stage, index) => [stage.id, index]),
   );
-  const { TRAIT_STAGE } = await import("../src/geology.js");
   let prior = -1;
   for (const id of afterLead) {
     const index = stageIndex.get(TRAIT_STAGE[id]);
