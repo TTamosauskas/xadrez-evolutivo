@@ -1,5 +1,6 @@
 import { EVENTS, PIECES, TRAITS } from "./constants.js";
 import { MUTATION_DISCOVERY_MEDIA } from "./mutation-discovery-media.js";
+import { EVENT_DISCOVERY_MEDIA } from "./event-discovery-media.js";
 
 export const DISCOVERY_CATEGORIES = [
   ["geology", "Eras"],
@@ -62,26 +63,98 @@ const geologyRows = [
   ["holocene", "Holoceno", "Época atual, com clima interglacial e impacto crescente das sociedades humanas sobre os ecossistemas.", "Holoceno"],
 ];
 
-const eventRows = [
-  ["volcano", "Erupção Vulcânica", "Erupções vulcânicas transportam magma, cinzas e gases para a superfície e podem remodelar rapidamente habitats.", "Erupção vulcânica"],
-  ["ice", "Era Glacial", "Períodos glaciais ampliam mantos de gelo e alteram nível do mar, clima, distribuição de habitats e rotas de dispersão.", "Era glacial"],
-  ["pathogen", "Surto Patogênico", "No jogo, vírus se propagam por contato, bactérias deixam rastros ambientais e fungos formam focos territoriais; surtos alteram sobrevivência e seleção nas populações.", "Patógeno"],
-  ["solar", "Tempestade Solar", "Tempestades solares resultam de atividade intensa do Sol e podem aumentar a chegada de partículas energéticas ao entorno da Terra.", "Tempestade solar"],
-  ["drought", "Seca Severa", "Secas são períodos prolongados de disponibilidade hídrica abaixo do normal e exercem forte pressão sobre ecossistemas.", "Seca"],
-  ["sea", "Elevação do Mar", "Mudanças no nível do mar inundam ou expõem áreas costeiras e reorganizam ambientes rasos e conexões entre populações.", "Nível do mar"],
-  ["meteor", "Meteoro", "Impactos de grandes corpos extraterrestres podem produzir efeitos locais e globais, incluindo incêndios, poeira e mudanças climáticas.", "Evento de impacto"],
-  ["grb", "Explosões de raios gama (GRBs)", "Explosões de raios gama são pulsos extremamente energéticos. Um GRB suficientemente próximo poderia ionizar a atmosfera, reduzir a camada de ozônio e aumentar intensamente a radiação ultravioleta que alcança a superfície.", "Explosão de raios gama"],
-  ["warming", "Aquecimento Global", "Aquecimento global é a elevação persistente da temperatura média do sistema climático, capaz de reorganizar habitats, disponibilidade hídrica e distribuição das espécies.", "Aquecimento global"],
-  ["desert", "Desertificação", "Desertificação é a degradação de terras secas por combinações de fatores climáticos e uso do solo.", "Desertificação"],
-  ["blockade", "Bloqueio Geográfico", "Barreiras geográficas reduzem o fluxo gênico e podem separar populações, favorecendo divergência evolutiva.", "Especiação alopátrica"],
-  ["abundance", "Superabundância de Recursos", "Pulsos de recursos podem elevar produtividade e população, alterando competição, reprodução e relações tróficas.", "Produtividade primária"],
-  ["fertilized", "Ambiente Fertilizado", "Aumento de nutrientes pode elevar a produtividade de um ambiente, embora excessos também possam desequilibrar ecossistemas.", "Nutriente"],
-  ["earthquake", "Terremoto", "Terremotos são vibrações produzidas pela liberação súbita de energia na crosta e podem modificar habitats em segundos.", "Sismo"],
-  ["abundant-rains", "Chuvas Abundantes", "Chuvas intensas alteram disponibilidade de água, erosão, rios, solos e a distribuição temporária de recursos.", "Chuva"],
-  ["eutrophication", "Eutrofização", "A eutrofização ocorre quando o excesso de nutrientes favorece crescimento biológico intenso e pode reduzir o oxigênio disponível, criando zonas ambientalmente hostis.", "Eutrofização"],
-  ["insularization", "Insularização", "O isolamento em ilhas ou fragmentos de habitat restringe dispersão e cria trajetórias evolutivas parcialmente independentes.", "Biogeografia de ilhas"],
-  ["alluvial-river", "Rio Aluvial", "Rios transportam e depositam sedimentos e nutrientes, criando planícies aluviais férteis e habitats em constante renovação.", "Planície aluvial"],
-];
+export const EVENT_DISCOVERY_TOPICS = {
+  volcano: [
+    "Erupção vulcânica",
+    "Erupções vulcânicas liberam lava, cinzas e gases e podem transformar habitats em minutos. Além da destruição imediata, também criam novos substratos e alteram solos, águas e clima local.",
+    "volcanic eruption lava landscape",
+  ],
+  ice: [
+    "Era do gelo",
+    "Períodos glaciais expandem geleiras e mantos de gelo, reduzem o nível do mar e deslocam faixas climáticas e habitats. Essas mudanças reorganizam rotas de dispersão e impõem forte seleção sobre tolerância ao frio e disponibilidade de alimento.",
+    "glacier ice age landscape",
+  ],
+  pathogen: [
+    "Patógeno",
+    "Surtos patogênicos surgem quando agentes infecciosos se espalham por populações suscetíveis. Vírus, bactérias e fungos usam rotas de transmissão diferentes e podem alterar sobrevivência, reprodução e composição genética das populações.",
+    "pathogen virus bacteria microscopy",
+  ],
+  solar: [
+    "Tempestade solar",
+    "Tempestades solares são episódios de atividade intensa do Sol associados a erupções e ejeções de partículas energéticas. Em escala planetária, aumentos de radiação e partículas podem afetar a alta atmosfera e elevar a exposição de organismos a danos moleculares.",
+    "solar flare sun space",
+  ],
+  drought: [
+    "Seca",
+    "Secas prolongadas reduzem a disponibilidade de água e a produtividade dos ecossistemas. Plantas, animais e microrganismos enfrentam menor oferta de recursos, maior competição e mudanças na distribuição de habitats adequados.",
+    "drought cracked earth landscape",
+  ],
+  sea: [
+    "Nível do mar",
+    "Variações do nível do mar inundam áreas costeiras ou expõem plataformas rasas. Ao redesenhar costas e conexões entre habitats, podem fragmentar populações, abrir novas rotas de dispersão e alterar ecossistemas litorâneos.",
+    "coastal flooding sea level landscape",
+  ],
+  meteor: [
+    "Evento de impacto",
+    "Impactos de grandes asteroides ou cometas liberam enorme quantidade de energia e podem produzir crateras, incêndios, tsunamis e poeira atmosférica. Eventos extremos desse tipo podem causar perturbações ecológicas em escala regional ou global.",
+    "meteor impact crater landscape",
+  ],
+  grb: [
+    "Explosão de raios gama",
+    "Explosões de raios gama são fenômenos astrofísicos extremamente energéticos. Um evento suficientemente próximo poderia ionizar a atmosfera, degradar a camada de ozônio e aumentar a radiação ultravioleta que atinge a superfície.",
+    "gamma ray burst artist impression",
+  ],
+  warming: [
+    "Aquecimento global",
+    "O aquecimento global altera temperaturas médias, regimes de chuva, frequência de extremos e distribuição de habitats. Espécies respondem por migração, mudança fenológica, adaptação ou declínio quando a velocidade ambiental supera sua capacidade de resposta.",
+    "global warming heat drought landscape",
+  ],
+  desert: [
+    "Desertificação",
+    "Desertificação é a degradação de terras secas causada por combinações de clima, perda de vegetação, erosão e uso do solo. O processo reduz produtividade e disponibilidade de água, simplificando habitats e ampliando a pressão sobre organismos residentes.",
+    "desertification dryland landscape",
+  ],
+  blockade: [
+    "Especiação alopátrica",
+    "Barreiras geográficas como montanhas, rios, geleiras ou fragmentação de habitat reduzem o fluxo gênico entre populações. Com isolamento persistente, mutação, deriva e seleção podem levar a trajetórias evolutivas divergentes.",
+    "geographic barrier mountain river landscape",
+  ],
+  abundance: [
+    "Produtividade primária",
+    "Pulsos de recursos aumentam temporariamente alimento ou produtividade e podem elevar crescimento populacional e reprodução. A abundância também altera competição, predação e intensidade das relações entre níveis tróficos.",
+    "ecosystem resource abundance bloom landscape",
+  ],
+  fertilized: [
+    "Nutriente",
+    "A entrada de nutrientes como nitrogênio e fósforo pode elevar a produtividade biológica quando esses elementos limitam o crescimento. Em excesso, porém, a fertilização também pode desequilibrar comunidades e favorecer poucas espécies.",
+    "fertile soil nutrient agriculture landscape",
+  ],
+  earthquake: [
+    "Sismo",
+    "Terremotos resultam da liberação súbita de energia acumulada na crosta terrestre. Tremores, rupturas do solo, deslizamentos e mudanças locais de relevo podem deslocar organismos e transformar habitats em poucos segundos.",
+    "earthquake ground rupture landscape",
+  ],
+  "abundant-rains": [
+    "Chuva",
+    "Períodos de chuva intensa aumentam água disponível, vazão de rios, erosão e transporte de nutrientes. O mesmo pulso hídrico pode expandir áreas produtivas, remover barreiras e reorganizar rapidamente ambientes terrestres e aquáticos.",
+    "heavy rainfall storm landscape",
+  ],
+  eutrophication: [
+    "Eutrofização",
+    "Eutrofização ocorre quando o excesso de nutrientes estimula crescimento intenso de algas e microrganismos. A decomposição dessa biomassa pode consumir oxigênio e criar zonas hipóxicas ou anóxicas prejudiciais a muitos organismos aquáticos.",
+    "eutrophication algal bloom lake",
+  ],
+  insularization: [
+    "Biogeografia de ilhas",
+    "O isolamento em ilhas ou fragmentos de habitat limita dispersão e fluxo gênico. Populações separadas passam a responder de forma mais independente a seleção, deriva, colonização e extinção local.",
+    "archipelago islands landscape",
+  ],
+  "alluvial-river": [
+    "Planície aluvial",
+    "Rios aluviais transportam sedimentos e nutrientes e os depositam em margens e planícies de inundação. Esse processo cria mosaicos férteis e ambientes que mudam continuamente conforme o canal migra e as cheias redistribuem materiais.",
+    "alluvial river floodplain landscape",
+  ],
+};
 
 export const MUTATION_DISCOVERY_TOPICS = {
   "Respiração anaeróbia": [
@@ -419,10 +492,32 @@ const geology = Object.fromEntries(
 );
 
 const events = Object.fromEntries(
-  eventRows.map(([id, title, text, topic], order) => [
-    id,
-    { id, category: "events", title, text, wikipedia: wiki(topic), image: image.events, order },
-  ]),
+  EVENTS.map((event, order) => {
+    const [topic, sourceText] =
+        EVENT_DISCOVERY_TOPICS[event.id] ?? [event.name, event.description],
+      realWorld = `Na vida: ${lifeOnly(sourceText)}`,
+      game = `No jogo: ${event.description}`,
+      media = EVENT_DISCOVERY_MEDIA[event.id] ?? {};
+    return [
+      event.id,
+      {
+        id: event.id,
+        category: "events",
+        title: `${event.icon} ${event.name}`,
+        realWorld,
+        game,
+        text: `${realWorld}\n\n${game}`,
+        wikipedia: media.wikipedia ?? wikiArticle(topic),
+        image: media.image ?? image.events,
+        imageSource: media.source ?? null,
+        imageLicense: media.license ?? null,
+        imageAuthor: media.author ?? null,
+        imageWidth: media.width ?? null,
+        imageHeight: media.height ?? null,
+        order,
+      },
+    ];
+  }),
 );
 
 const mutations = Object.fromEntries(
