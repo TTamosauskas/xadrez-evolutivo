@@ -11,6 +11,17 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."),
   userAgent =
     "XadrezEvolutivo/1.0 (https://github.com/TTamosauskas/xadrez-evolutivo)";
 
+const fileOverrides = Object.freeze({
+  sea: "Coastal Flooding from Tropical Storm Beta.jpg",
+  warming: "Finding refuge from the scorching summer sun (55497189804).jpg",
+  desert: "Desertification in Brazil.jpg",
+  blockade: "Valley surrounded by mountains.jpg",
+  abundance: "Large phytoplankton bloom in the Atlantic Ocean (Copernicus 2024-05-15).jpg",
+  fertilized: "Fertile agricultural landscape (5) (31546303014).jpg",
+  earthquake: "Rupturing of ground - February 22 earthquake Christchurch.jpg",
+  insularization: "Morze Archipelagowe aerial 1.jpg",
+});
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const esc = (value) =>
@@ -189,7 +200,9 @@ async function buildOne([id, [articleTitle, , searchQuery]]) {
         String(articleTitle).replaceAll(" ", "_"),
       )}`;
 
-  let info = await imageInfo(page?.pageimage);
+  let info = fileOverrides[id]
+    ? await imageInfo(fileOverrides[id], "commons.wikimedia.org")
+    : await imageInfo(page?.pageimage);
   if (!landscape(info))
     info = await searchCommons(searchQuery ?? articleTitle);
   if (!landscape(info))
