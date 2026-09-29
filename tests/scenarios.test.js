@@ -17,6 +17,7 @@ import {
   arenaSelectableTraits,
   arenaSetupGenomeValid,
   arenaPresetGenome,
+  arenaPresetLegacy,
   completeArenaGenome,
   completeArenaBranchGenome,
   arenaTraitCost,
@@ -615,13 +616,16 @@ test("Arena presets cover every post-Hadean period and stay within branch limits
       assert.ok(presetPeriods.has(period), `${branch.id}: ${period}`);
 
     for (const preset of ARENA_PRESETS[branch.id]) {
-      const genome = arenaPresetGenome(branch.id, preset.id);
+      const genome = arenaPresetGenome(branch.id, preset.id),
+        legacy = arenaPresetLegacy(branch.id, preset.id);
       assert.equal(
-        arenaSetupGenomeValid(genome, branch.id),
+        arenaSetupGenomeValid(genome, branch.id, legacy),
         true,
-        `${branch.id}: ${preset.label} (${arenaTraitCost(genome)}/${branch.limit})`,
+        `${branch.id}: ${preset.label} (${arenaTraitCost(genome, legacy)}/${branch.limit})`,
       );
-      assert.ok(arenaTraitCost(genome) <= ARENA_TRAIT_LIMITS[branch.id]);
+      assert.ok(
+        arenaTraitCost(genome, legacy) <= ARENA_TRAIT_LIMITS[branch.id],
+      );
     }
   }
 });
@@ -652,9 +656,27 @@ test("Arena setup caps Animal at 14 and Plant at 10 completed mutations", () => 
     pepper = arenaPresetGenome("plant", "pepper");
   assert.equal(ARENA_TRAIT_LIMITS.animal, 14);
   assert.equal(ARENA_TRAIT_LIMITS.plant, 10);
-  for (const genome of [tyrannosaurus, homo, kangaroo])
-    assert.equal(arenaSetupGenomeValid(genome, "animal"), true);
-  assert.equal(arenaSetupGenomeValid(pepper, "plant"), true);
+  for (const [id, genome] of [
+    ["tyrannosaurus", tyrannosaurus],
+    ["homo-sapiens", homo],
+    ["kangaroo", kangaroo],
+  ])
+    assert.equal(
+      arenaSetupGenomeValid(
+        genome,
+        "animal",
+        arenaPresetLegacy("animal", id),
+      ),
+      true,
+    );
+  assert.equal(
+    arenaSetupGenomeValid(
+      pepper,
+      "plant",
+      arenaPresetLegacy("plant", "pepper"),
+    ),
+    true,
+  );
 
   const overloadedAnimal = completeArenaBranchGenome(
     [...kangaroo, "Presas", "Visão Binocular", "Camuflagem"],
@@ -663,6 +685,83 @@ test("Arena setup caps Animal at 14 and Plant at 10 completed mutations", () => 
   assert.ok(arenaTraitCost(overloadedAnimal) > ARENA_TRAIT_LIMITS.animal);
   assert.equal(arenaSetupGenomeValid(overloadedAnimal, "animal"), false);
   assert.equal(arenaGenomeValid(overloadedAnimal, "animal"), true);
+});
+
+test("Arena curated presets separate active phenotype from free lineage legacy", () => {
+  const cases = [
+    {
+      branch: "animal",
+      id: "basilosaurus",
+      active: ["Vivíparo", "Lactação"],
+      legacy: ["Ovíparo", "Ovíparos Amniotas", "Incubação", "Pelos"],
+    },
+    {
+      branch: "animal",
+      id: "mammoth",
+      active: ["Vivíparo", "Lactação", "Pelos", "Cuidado Parental"],
+      legacy: ["Ovíparo", "Ovíparos Amniotas", "Incubação"],
+    },
+    {
+      branch: "animal",
+      id: "homo-sapiens",
+      active: [
+        "Vivíparo",
+        "Lactação",
+        "Pelos",
+        "Onívoro",
+        "Reprodução Sexuada",
+        "Neocórtex Desenvolvido",
+      ],
+      legacy: [
+        "Ovíparo",
+        "Ovíparos Amniotas",
+        "Incubação",
+        "Locomoção Articulada",
+        "Locomoção Terrestre",
+        "Córtex Pré-Frontal",
+        "Polegar Opositor",
+        "Construtor de Nicho",
+        "Escavador",
+      ],
+    },
+  ];
+
+  for (const entry of cases) {
+    const genome = arenaPresetGenome(entry.branch, entry.id),
+      legacy = arenaPresetLegacy(entry.branch, entry.id),
+      profile = arenaProfile(genome, 4, legacy);
+    assert.ok(
+      arenaTraitCost(genome, legacy) <= ARENA_TRAIT_LIMITS[entry.branch],
+      entry.id,
+    );
+    for (const trait of entry.active)
+      assert.ok(profile.traits.includes(trait), `${entry.id}: ${trait}`);
+    for (const trait of entry.legacy) {
+      assert.ok(profile.ancestry.includes(trait), `${entry.id}: legado ${trait}`);
+      assert.equal(
+        profile.traits.includes(trait),
+        false,
+        `${entry.id}: legado manifesto ${trait}`,
+      );
+    }
+  }
+
+  const dunkleosteus = ARENA_PRESETS.animal.find(
+      (preset) => preset.id === "dunkleosteus",
+    ),
+    archaeopteris = ARENA_PRESETS.plant.find(
+      (preset) => preset.id === "archaeopteris",
+    ),
+    lepidodendron = ARENA_PRESETS.plant.find(
+      (preset) => preset.id === "lepidodendron",
+    ),
+    dickinsonia = ARENA_PRESETS.animal.find(
+      (preset) => preset.id === "dickinsonia",
+    );
+  assert.equal(dunkleosteus.traits.includes("Dentes"), false);
+  assert.equal(archaeopteris.traits.includes("Espinhos"), false);
+  assert.equal(lepidodendron.traits.includes("Trepadeira"), false);
+  assert.match(dickinsonia.note, /heterotrófica/i);
 });
 
 test("Arena randomizer always returns one Animal and one Plant branch", () => {
@@ -747,6 +846,41 @@ test("Arena starts with four engineered founders and ignores geological chronolo
   );
   assert.ok(predator);
   assert.equal(traitUnlocked(state, "Visão Binocular", predator), true);
+});
+
+test("Arena preset legacy reaches founder ancestry without becoming phenotype or setup cost", () => {
+  const mammothGenome = arenaPresetGenome("animal", "mammoth"),
+    mammothLegacy = arenaPresetLegacy("animal", "mammoth"),
+    plantGenome = arenaPresetGenome("plant", "pepper"),
+    plantLegacy = arenaPresetLegacy("plant", "pepper"),
+    state = createArenaState(
+      {
+        blue: [mammothGenome, plantGenome],
+        amber: [mammothGenome, plantGenome],
+      },
+      605,
+      null,
+      {
+        blue: [4, 4],
+        amber: [4, 4],
+      },
+      {
+        blue: [mammothLegacy, plantLegacy],
+        amber: [mammothLegacy, plantLegacy],
+      },
+    ),
+    mammoth = state.pieces.find(
+      (piece) => piece.owner === "blue" && piece.traits.includes("Predação"),
+    );
+
+  assert.ok(mammoth.traits.includes("Vivíparo"));
+  assert.ok(mammoth.traits.includes("Lactação"));
+  assert.equal(mammoth.traits.includes("Ovíparos Amniotas"), false);
+  assert.ok(mammoth.ancestry.includes("Ovíparos Amniotas"));
+  assert.ok(mammoth.ancestry.includes("Incubação"));
+  assert.ok(
+    arenaTraitCost(mammothGenome, mammothLegacy) <= ARENA_TRAIT_LIMITS.animal,
+  );
 });
 
 test("Arena founders express every selected initial mutation", () => {

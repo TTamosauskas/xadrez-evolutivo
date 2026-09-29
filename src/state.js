@@ -2179,6 +2179,7 @@ function arenaProfiles(
   survivorEntries = null,
   seed = Date.now(),
   ownerRanks = null,
+  ownerLegacies = null,
 ) {
   return Object.fromEntries(
     ["blue", "amber"].map((owner, ownerIndex) => {
@@ -2186,8 +2187,17 @@ function arenaProfiles(
         sources = survivorEntries?.[owner] ?? [],
         profileFor = (index) => {
           const source = sources[index]?.source ?? null,
-            rank = ownerRanks?.[owner]?.[index] ?? source?.rank ?? 4;
-          return arenaProfile(genomes[index], rank);
+            rank = ownerRanks?.[owner]?.[index] ?? source?.rank ?? 4,
+            inheritedLegacy = source
+              ? (source.ancestry ?? []).filter(
+                  (trait) =>
+                    trait !== "Respiração anaeróbia" &&
+                    !genomes[index].includes(trait),
+                )
+              : [],
+            legacy =
+              ownerLegacies?.[owner]?.[index] ?? inheritedLegacy;
+          return arenaProfile(genomes[index], rank, legacy);
         };
       return [
         owner,
@@ -2205,6 +2215,7 @@ export function createArenaState(
   seed = Date.now(),
   discoveries = null,
   ownerRanks = null,
+  ownerLegacies = null,
 ) {
   if (ownerRanks)
     for (const owner of ["blue", "amber"])
@@ -2215,17 +2226,25 @@ export function createArenaState(
             ownerGenomes?.[owner]?.[index],
             ownerRanks?.[owner]?.[index],
             branch.id,
+            ownerLegacies?.[owner]?.[index] ?? [],
           )
         )
           throw Error(
             `Forma inválida para ${branch.label} de ${owner} na Arena.`,
           );
       }
-  const profiles = arenaProfiles(ownerGenomes, null, seed, ownerRanks),
+  const profiles = arenaProfiles(
+      ownerGenomes,
+      null,
+      seed,
+      ownerRanks,
+      ownerLegacies,
+    ),
     historicalTraits = [
       ...new Set([
         "Respiração anaeróbia",
         ...Object.values(ownerGenomes).flat(2),
+        ...Object.values(ownerLegacies ?? {}).flat(2),
       ]),
     ];
   return createState(seed, {

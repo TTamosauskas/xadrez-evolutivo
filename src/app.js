@@ -60,6 +60,7 @@ import {
   arenaRankRestrictionReason,
   arenaPreferredRank,
   arenaPresetGenome,
+  arenaPresetLegacy,
   completeArenaBranchGenome,
   engineerArenaAISide,
   randomArenaSetupSide,
@@ -501,6 +502,7 @@ function emptyArenaBranches() {
 }
 
 const emptyArenaRanks = () => ARENA_BRANCHES.map(() => 4);
+const emptyArenaLegacies = () => ARENA_BRANCHES.map(() => []);
 
 function arenaValidCurrent() {
   if (!arenaFlow) return false;
@@ -510,6 +512,7 @@ function arenaValidCurrent() {
         genome,
         arenaFlow.ranks[index],
         ARENA_BRANCHES[index].id,
+        arenaFlow.legacies?.[index] ?? [],
       ),
     );
   return arenaInterventionCount(
@@ -526,12 +529,15 @@ function arenaStatusText() {
       `${branch.label}: ${PIECES[arenaFlow.ranks[index]] ?? "?"}`,
   ).join(" · ");
   if (arenaFlow.kind === "setup") {
-    const costs = arenaFlow.current.map(arenaTraitCost),
+    const costs = arenaFlow.current.map((genome, index) =>
+        arenaTraitCost(genome, arenaFlow.legacies?.[index] ?? []),
+      ),
       valid = arenaFlow.current.every((genome, index) =>
         arenaSetupSelectionValid(
           genome,
           arenaFlow.ranks[index],
           ARENA_BRANCHES[index].id,
+          arenaFlow.legacies?.[index] ?? [],
         ),
       ),
       costText = ARENA_BRANCHES.map(
@@ -627,9 +633,11 @@ function renderArenaDesigner() {
         const option = document.createElement("option"),
           period = arenaPeriodName.get(preset.stage) ?? preset.stage,
           genome = arenaPresetGenome(branch.id, preset.id),
-          cost = arenaTraitCost(genome);
+          legacy = arenaPresetLegacy(branch.id, preset.id),
+          cost = arenaTraitCost(genome, legacy);
         option.value = preset.id;
         option.textContent = `${period} · ${preset.label} (${cost}/${branch.limit})`;
+        if (preset.note) option.title = preset.note;
         option.disabled = cost > branch.limit;
         select.append(option);
       }
@@ -637,6 +645,10 @@ function renderArenaDesigner() {
         if (!select.value) return;
         const genome = arenaPresetGenome(branch.id, select.value);
         arenaFlow.current[index] = genome;
+        arenaFlow.legacies[index] = arenaPresetLegacy(
+          branch.id,
+          select.value,
+        );
         arenaFlow.ranks[index] = arenaPreferredRank(
           genome,
           branch.id,
@@ -688,6 +700,7 @@ function renderArenaDesigner() {
           ? `${TRAITS[trait][0]} ${trait} · raiz fixa`
           : `${TRAITS[trait][0]} ${trait}`;
       input.addEventListener("change", () => {
+        arenaFlow.legacies[index] = [];
         const genome = new Set(arenaFlow.current[index]);
         if (input.checked) genome.add(trait);
         else genome.delete(trait);
@@ -700,7 +713,10 @@ function renderArenaDesigner() {
       label.append(input, copy);
       container.append(label);
     }
-    const count = arenaTraitCost(arenaFlow.current[index]);
+    const count = arenaTraitCost(
+      arenaFlow.current[index],
+      arenaFlow.legacies?.[index] ?? [],
+    );
     $(index === 0 ? "arena-primary-count" : "arena-companion-count").textContent =
       arenaFlow.kind === "setup"
         ? `· ${count}/${branch.limit} mutações`
@@ -721,6 +737,9 @@ function finishArenaFlow() {
   const owner = flow.owners[flow.ownerIndex];
   flow.results[owner] = {
     genomes: flow.current.map((genome) => [...genome]),
+    legacies: (flow.legacies ?? emptyArenaLegacies()).map((legacy) => [
+      ...legacy,
+    ]),
     ranks: [...flow.ranks],
   };
   flow.ownerIndex++;
@@ -738,6 +757,7 @@ function finishArenaFlow() {
       flow.kind === "engineering"
         ? [...flow.rankBaselines[nextOwner]]
         : emptyArenaRanks();
+    flow.legacies = emptyArenaLegacies();
     renderArenaDesigner();
     return;
   }
@@ -789,6 +809,10 @@ function finishArenaFlow() {
           Date.now(),
           null,
           { blue: blue.ranks, amber: amber.ranks },
+          {
+            blue: blue.legacies ?? emptyArenaLegacies(),
+            amber: amber.legacies ?? emptyArenaLegacies(),
+          },
         )
       : createArenaSuccessorState(previous, {
           blue: blue.genomes,
@@ -814,6 +838,10 @@ function openArenaSetup() {
         Date.now(),
         null,
         { blue: blue.ranks, amber: amber.ranks },
+        {
+          blue: blue.legacies ?? emptyArenaLegacies(),
+          amber: amber.legacies ?? emptyArenaLegacies(),
+        },
       ),
     );
     controller.pause(false);
@@ -824,6 +852,7 @@ function openArenaSetup() {
     owners: controller.mode === "multi" ? ["blue", "amber"] : ["blue"],
     ownerIndex: 0,
     current: emptyArenaBranches(),
+    legacies: emptyArenaLegacies(),
     ranks: emptyArenaRanks(),
     baseline: null,
     baselines: null,
@@ -883,6 +912,7 @@ function openArenaEngineering() {
     baselines,
     rankBaselines,
     current: baselines[owners[0]].map((genome) => [...genome]),
+    legacies: emptyArenaLegacies(),
     ranks: [...rankBaselines[owners[0]]],
     results: {},
     previous,
@@ -896,6 +926,7 @@ $("arena-randomize").addEventListener("click", () => {
   if (arenaFlow.kind === "setup") {
     const setup = randomArenaSetupSide(Date.now());
     arenaFlow.current = setup.genomes;
+    arenaFlow.legacies = setup.legacies ?? emptyArenaLegacies();
     arenaFlow.ranks = setup.ranks;
   } else {
     arenaFlow.current = engineerArenaAISide(
