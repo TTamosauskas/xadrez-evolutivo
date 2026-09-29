@@ -501,7 +501,7 @@ function advancePrimordialConway(ctx) {
       );
     })
     .map((piece) => piece.id);
-  for (const id of doomed) ctx.kill(id, "mudança do habitat por Conway");
+  for (const id of doomed) ctx.kill(id, "mudança orgânica do habitat");
 }
 
 function habitatRange(value) {
@@ -661,7 +661,7 @@ function advancePatternedHabitat(ctx) {
       );
     })
     .map((piece) => piece.id);
-  for (const id of doomed) ctx.kill(id, "mudança do habitat por Conway");
+  for (const id of doomed) ctx.kill(id, "mudança orgânica do habitat");
 }
 
 function advanceBlockedConway(ctx) {
@@ -759,7 +759,7 @@ function advanceBlockedConway(ctx) {
       );
     })
     .map((piece) => piece.id);
-  for (const id of doomed) ctx.kill(id, "mudança do habitat por Conway");
+  for (const id of doomed) ctx.kill(id, "mudança orgânica do habitat");
 }
 
 export function advanceConway(ctx, options = {}) {
