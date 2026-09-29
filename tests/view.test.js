@@ -130,7 +130,7 @@ test("ecological event modal uses icon title, italic subtitle and integrated dur
   assert.equal(content.querySelector("em")?.textContent, "Evento ecológico");
   assert.match(
     content.textContent,
-    /Todo nascimento sofre mutação durante 10 rodadas\./,
+    /Durante 10 rodadas, todo novo organismo nasce com uma mutação\./,
   );
   assert.doesNotMatch(content.textContent, /Duração:/);
   dom.window.close();
