@@ -44,11 +44,11 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## sea
 
-- Arquivo local: assets/discoveries/events/media-9ee7f84ade51.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Israel_Sea_Level_BW_1.JPG
-- Autor/crédito: Berthold Werner
-- Licença: Public domain
-- Resolução usada: 1200×803
+- Arquivo local: assets/discoveries/events/media-5c3ebb38d958.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Coastal_Flooding_from_Tropical_Storm_Beta.jpg
+- Autor/crédito: Robloxsupersuperhappyface
+- Licença: CC BY-SA 4.0
+- Resolução usada: 1200×670
 
 ## meteor
 
@@ -68,51 +68,51 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## warming
 
-- Arquivo local: assets/discoveries/events/media-a196b69f3631.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:LawrenceScarpa_Cherokee_8268.jpg
-- Autor/crédito: Calderoliver
-- Licença: CC BY-SA 3.0
-- Resolução usada: 1200×921
+- Arquivo local: assets/discoveries/events/media-6caa99545f2c.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Finding_refuge_from_the_scorching_summer_sun_(55497189804).jpg
+- Autor/crédito: Alisdare Hickson
+- Licença: CC BY-SA 4.0
+- Resolução usada: 1200×675
 
 ## desert
 
-- Arquivo local: assets/discoveries/events/media-1928718bc3d6.png
-- Fonte: https://commons.wikimedia.org/wiki/File:Desertification_map.png
-- Autor/crédito: USDA employee
-- Licença: Public domain
-- Resolução usada: 1200×776
+- Arquivo local: assets/discoveries/events/media-64fa31f49b3a.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Desertification_in_Brazil.jpg
+- Autor/crédito: Sérgio Valle Duarte .mw-parser-output .messagebox{margin:4px 0;width:auto;border-collapse:collapse;border:2px solid var(--border-color-progressive,#6485d1);background-color:var(--background-color-neutral-subtle,#fbfcff);color:var(--color-base,#202122);box-sizing:border-box;border-inline-start-width:8px}.mw-parser-output .messagebox.mbox-small{font-size:88%;line-height:1.25em}.mw-parser-output .mbox-warning,.mw-parser-output .mbox-speedy{border:2px solid var(--border-color-error,#b22222);background:var(--background-color-error-subtle,#ffdbdb);border-inline-start-width:8px}.mw-parser-output .mbox-serious,.mw-parser-output .mbox-delete,.mw-parser-output .mbox-stop{border:2px solid var(--border-color-error,#b22222);border-inline-start-width:8px}.mw-parser-output .mbox-issue,.mw-parser-output .mbox-content{border:2px solid #f28500;background:var(--background-color-warning-subtle,#ffe);border-inline-start-width:8px}.mw-parser-output .mbox-query,.mw-parser-output .mbox-style{border:2px solid #f4c430;background:var(--background-color-warning-subtle,#ffe);border-inline-start-width:8px}.mw-parser-output .mbox-shit{border:2px solid #960;border-inline-start-width:8px}.mw-parser-output .mbox-license{border:2px solid #88a;border-inline-start-width:initial}.mw-parser-output .mbox-legal{border:2px solid var(--border-color-notice,#666);background:var(--background-color-base,#fff);border-inline-start-width:8px}.mw-parser-output .mbox-honor{border:2px solid #ca3;background:var(--background-color-warning-subtle,#fcf4db);border-inline-start-width:8px}.mw-parser-output .mbox-growth{border:2px solid #8d4;background:var(--background-color-success-subtle,#d5fdf4);border-inline-start-width:8px}.mw-parser-output .mbox-move{border:2px solid #93c;border-inline-start-width:8px}.mw-parser-output .mbox-protection,.mw-parser-output .mbox-message{border:2px solid var(--border-color-base,#aaa);border-inline-start-width:8px}.mw-parser-output .messagebox .mbox-text{border:none;padding:0.25em 0.9em;width:100%}.mw-parser-output .messagebox .mbox-image{border:none;padding-top:2px;padding-bottom:2px;padding-inline-start:0.9em;padding-inline-end:0;text-align:center}.mw-parser-output .messagebox .mbox-imageright{border:none;padding-top:2px;padding-bottom:2px;padding-inline-start:0;padding-inline-end:0.9em;text-align:center}.mw-parser-output .messagebox .mbox-empty-cell{border:none;padding:0;width:1px}.mw-parser-output .messagebox .mbox-invalid-type{text-align:center}@media(min-width:720px){.mw-parser-output .messagebox{margin:4px 10%}.mw-parser-output .messagebox.mbox-small{clear:right;float:right;margin:4px 0 4px 1em;width:238px}}body.skin--responsive .mw-parser-output table.messagebox img{max-width:none!important}Wikidata has entry Sergio Valle Duarte (Q16269994) with data related to this item.
+- Licença: CC BY 3.0
+- Resolução usada: 1200×747
 
 ## blockade
 
-- Arquivo local: assets/discoveries/events/media-706e998fb5c7.png
-- Fonte: https://commons.wikimedia.org/wiki/File:Speciation_experiment.png
-- Autor/crédito: No machine-readable author provided. BenB4~commonswiki assumed (based on copyright claims).
-- Licença: Public domain
-- Resolução usada: 1200×440
+- Arquivo local: assets/discoveries/events/media-1fedc132cff3.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Valley_surrounded_by_mountains.jpg
+- Autor/crédito: Madhumanti Mandal
+- Licença: CC BY-SA 4.0
+- Resolução usada: 1200×730
 
 ## abundance
 
-- Arquivo local: assets/discoveries/events/media-1e5278037826.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:WomanFactory1940s.jpg
-- Autor/crédito: Howard R. Hollem
-- Licença: Public domain
-- Resolução usada: 1200×930
+- Arquivo local: assets/discoveries/events/media-9b0168212481.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Large_phytoplankton_bloom_in_the_Atlantic_Ocean_(Copernicus_2024-05-15).jpg
+- Autor/crédito: European Union, Copernicus Sentinel-2 imagery
+- Licença: Attribution
+- Resolução usada: 1200×849
 
 ## fertilized
 
-- Arquivo local: assets/discoveries/events/media-426633b63882.png
-- Fonte: https://commons.wikimedia.org/wiki/File:Periodic_table_of_the_chemical_elements_(1-118)Dietary_minerals.PNG
-- Autor/crédito: Tosaka
-- Licença: Public domain
-- Resolução usada: 1200×640
+- Arquivo local: assets/discoveries/events/media-eec886d7fa3e.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Fertile_agricultural_landscape_(5)_(31546303014).jpg
+- Autor/crédito: Hans Birger Nilsen
+- Licença: CC BY-SA 2.0
+- Resolução usada: 1200×840
 
 ## earthquake
 
-- Arquivo local: assets/discoveries/events/media-10ca9cfe4425.png
-- Fonte: https://commons.wikimedia.org/wiki/File:Quake_epicenters_1963-98.png
-- Autor/crédito: NASA, DTAM project team
-- Licença: Public domain
-- Resolução usada: 1200×750
+- Arquivo local: assets/discoveries/events/media-0fe8600316c7.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Rupturing_of_ground_-_February_22_earthquake_Christchurch.jpg
+- Autor/crédito: Martin Luff
+- Licença: CC BY-SA 2.0
+- Resolução usada: 1200×900
 
 ## abundant-rains
 
@@ -132,11 +132,11 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## insularization
 
-- Arquivo local: assets/discoveries/events/media-7cc198c1da03.jpg
-- Fonte: https://commons.wikimedia.org/wiki/File:Don_Puay_river_bank_landscape_at_sunset.jpg
-- Autor/crédito: Basile Morin
+- Arquivo local: assets/discoveries/events/media-4b62995487ed.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Morze_Archipelagowe_aerial_1.jpg
+- Autor/crédito: Andrzej Otrębski
 - Licença: CC BY-SA 4.0
-- Resolução usada: 1200×675
+- Resolução usada: 1200×735
 
 ## alluvial-river
 
