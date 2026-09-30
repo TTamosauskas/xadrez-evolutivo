@@ -97,6 +97,13 @@ const fileOverrides = Object.freeze({
   Multicelularismo: "Sponge at Steenbras Reef Outpost P8220387.jpg",
   Epizoocoria:
     "Epizoochory - black Labrador with hooked Geum fruits in his fur.jpg",
+  Endozoocoria:
+    "\"arara-canindé\" - Ara ararauna - se alimentando de frutos e sementes de jatobá - Hymenaea courbaril 19.jpg",
+  "Assimetria Flutuante": "Procrustes superimposition.png",
+  Peçonha: "Snake fang types.jpg",
+  Contorcionismo:
+    "Giant Pacific octopus spotting at Yaquina Head tidepools (49777974808).jpg",
+  "Animais Domésticos": "Cattle and dog.jpg",
 });
 
 const semanticQueries = Object.freeze({
