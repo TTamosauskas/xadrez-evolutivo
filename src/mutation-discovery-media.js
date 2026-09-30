@@ -2,48 +2,48 @@
 export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   "Respiração anaeróbia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Anaerobiose",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-59475495a2a5.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Gram_escherichia_coli_und_micrococcus_luteus.jpg",
+    "author": "Philipp Rüdinger",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 899
   },
   "Respiração aeróbia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Aerobiose",
-    "image": "assets/discoveries/mutations/media-2add55d53ce0.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Anaerobic.png",
-    "author": "Pixie",
+    "image": "assets/discoveries/mutations/media-9e7da1e60d93.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mycobacterium_tuberculosis_8438_lores.jpg",
+    "author": "Photo Credit: Janice Carr Content Providers(s): CDC/ Dr. Ray Butler; Janice Carr",
     "license": "Public domain",
-    "width": 900,
-    "height": 539
+    "width": 1200,
+    "height": 814
   },
   "Fotossíntese": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Fotoss%C3%ADntese",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
-    "author": "A.Spielhoff",
-    "license": "CC0",
-    "width": 900,
-    "height": 325
+    "image": "assets/discoveries/mutations/media-252ebee60457.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:CLOSEUP_OF_AN_OREGON_OXALIS_LEAF,_WATER_AND_SUNLIGHT_PHOTOSYNTHESIS,_THE_ALCHEMY_OF_THE_GREEN_LEAF,_IN_THE_QUEETS..._-_NARA_-_555032.tif",
+    "author": "Unknown authorUnknown author or not provided",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 816
   },
   "Mixotrofia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Mixotrofismo",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-fbbc8560a7b7.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Flytrap.jpg",
+    "author": null,
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Embriófitas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Embryophyta",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
-    "author": "A.Spielhoff",
-    "license": "CC0",
-    "width": 900,
-    "height": 325
+    "image": "assets/discoveries/mutations/media-b2fc7cd75824.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Psilophyton_forbesii_(fossil_land_plants)_(Lower_Devonian;_Quebec,_Canada)_1_(41358791794).jpg",
+    "author": "James St. John",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 798
   },
   "Haustório": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Haust%C3%B3rio",
@@ -51,26 +51,26 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Hyaloperonospora-parasitica-hyphae-haustoria.jpg",
     "author": "Emmanuel Boutet",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 493
+    "width": 1200,
+    "height": 657
   },
   "Perfume Floral": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Poliniza%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-ef93b0607132.png",
+    "image": "assets/discoveries/mutations/media-d1ed3f8b8b4b.png",
     "source": "https://commons.wikimedia.org/wiki/File:Pollination_Diagram.svg",
     "author": "YJaredY",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 439
+    "width": 1200,
+    "height": 586
   },
   "Traqueófitas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Planta_vascular",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
-    "author": "A.Spielhoff",
-    "license": "CC0",
-    "width": 900,
-    "height": 325
+    "image": "assets/discoveries/mutations/media-641c7b07724b.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Tree_frog_Fern_Forest.jpg",
+    "author": "Cary Bass",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Madeira": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Madeira",
@@ -78,53 +78,53 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:VeluweTreeTrunk.jpg",
     "author": null,
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 608
+    "width": 1200,
+    "height": 811
   },
   "Trepadeira": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Crescimento_escandente",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
-    "author": "A.Spielhoff",
-    "license": "CC0",
-    "width": 900,
-    "height": 325
+    "image": "assets/discoveries/mutations/media-28539b1f0ea9.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Maschikuliturm.jpg",
+    "author": "Taken by Carport",
+    "license": "CC BY 3.0",
+    "width": 1200,
+    "height": 864
   },
   "Espinhos": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Espinho",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
-    "author": "A.Spielhoff",
-    "license": "CC0",
-    "width": 900,
-    "height": 325
+    "image": "assets/discoveries/mutations/media-8eaa6f6a45ce.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Ocotillothron02262006.JPG",
+    "author": "No machine-readable author provided. Miskatonic assumed (based on copyright claims).",
+    "license": "CC BY 2.5",
+    "width": 1200,
+    "height": 800
   },
   "Extremófitas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Extrem%C3%B3fita",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
+    "image": "assets/discoveries/mutations/media-d330caaea26d.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
     "author": "Krzysztof A. Zacharski",
     "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Gimnospermas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Gymnospermae",
-    "image": "assets/discoveries/mutations/media-b4ec7479eb1a.jpg",
+    "image": "assets/discoveries/mutations/media-807adb5f1fee.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Gymnospermae.jpg",
     "author": "DesconhecidoUnknown , Leipzig ; Berlin ; Wien : F.A. Brockhaus",
     "license": "Public domain",
-    "width": 900,
-    "height": 683
+    "width": 1200,
+    "height": 910
   },
   "Angiospermas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Angiosperma",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
-    "author": "A.Spielhoff",
-    "license": "CC0",
-    "width": 900,
-    "height": 325
+    "image": "assets/discoveries/mutations/media-4636bd0c6c70.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:The_classification_of_flowering_plants_(1904)_(20646833502).jpg",
+    "author": "Internet Archive Book Images",
+    "license": "No restrictions",
+    "width": 1200,
+    "height": 798
   },
   "Predação": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Preda%C3%A7%C3%A3o",
@@ -132,17 +132,17 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Stud_327_with_Blesbuck.jpg",
     "author": "Save China's Tiger",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 602
+    "width": 1200,
+    "height": 803
   },
   "Ingestão": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ingest%C3%A3o",
-    "image": "assets/discoveries/mutations/media-74db27bfcb13.jpg",
+    "image": "assets/discoveries/mutations/media-747fc959b0a5.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Death_in_the_Afternoon_(7404995190).jpg",
     "author": "Šarūnas Burdulis from USA",
     "license": "CC BY-SA 2.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Reparo Celular": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Reparo_de_ADN",
@@ -150,116 +150,116 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Brokechromo.jpg",
     "author": null,
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 643
+    "width": 1200,
+    "height": 858
   },
   "Biofilme": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Biofilme",
-    "image": "assets/discoveries/mutations/media-90b3da6ebf67.jpg",
+    "image": "assets/discoveries/mutations/media-e72670721686.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Staphylococcus_aureus_biofilm_01.jpg",
     "author": null,
     "license": "Public domain",
-    "width": 900,
-    "height": 604
+    "width": 1200,
+    "height": 806
   },
   "Fixação de Nitrogênio": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Fixa%C3%A7%C3%A3o_de_nitrog%C3%AAnio",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-79e74dec93d1.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Root-nodule01.jpg",
+    "author": "Louisa Howard - Dartmouth Electron Microscope Facility",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 886
   },
   "Diferenciação Celular": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Diferencia%C3%A7%C3%A3o_celular",
-    "image": "assets/discoveries/mutations/media-2bfd9748c936.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Chromosome-DNA-gene.png",
-    "author": "Thomas Splettstoesser (www.scistyle.com)",
-    "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 678
+    "image": "assets/discoveries/mutations/media-18c1432fd8c1.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Modelling-the-Spatio-Temporal-Cell-Dynamics-Reveals-Novel-Insights-on-Cell-Differentiation-and-pone.0037115.s006.ogv",
+    "author": "Pin C, Watson A, Carding S",
+    "license": "CC BY 2.5",
+    "width": 1200,
+    "height": 675
   },
   "Dormência": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Dorm%C3%AAncia",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-193f95d74816.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Aestivation.png",
+    "author": "Griensteidl",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 957
   },
   "Resistência": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Imunidade",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-98cb6421c35a.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Red_White_Blood_cells.jpg",
+    "author": "Electron Microscopy Facility at The National Cancer Institute at Frederick (NCI-Frederick)",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 782
   },
   "Regeneração": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Regenera%C3%A7%C3%A3o_(biologia)",
-    "image": "assets/discoveries/mutations/media-6858b44bfdb8.jpg",
+    "image": "assets/discoveries/mutations/media-1fa1e793b019.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Sea_star_regenerating_legs.jpg",
     "author": "Brocken Inaglory. Original uploader was Brocken Inaglory",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 742
+    "width": 1200,
+    "height": 989
   },
   "Longevidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Senesc%C3%AAncia",
-    "image": "assets/discoveries/mutations/media-904ab3082377.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Dog_for_Senior_Dog_Food_Diet_Wikipedia_Page.jpg",
-    "author": "Leo_65",
-    "license": "CC0",
-    "width": 900,
-    "height": 600
+    "image": "assets/discoveries/mutations/media-8027380c9ad1.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Gal%C3%A1pagos_tortoise_-_Chelonoidis_nigra_on_the_Santa_Cruz_Island_-_Galapagos.jpeg",
+    "author": "David Adam Kess",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 675
   },
   "Fertilidade Longeva": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Fertilidade",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
+    "image": "assets/discoveries/mutations/media-e40e786f8a7e.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
     "author": "Alex Popovkin, Bahia, Brazil",
     "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "width": 1200,
+    "height": 676
   },
   "Imortalidade Biológica": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Senesc%C3%AAncia_neglig%C3%ADvel",
-    "image": "assets/discoveries/mutations/media-7bbeecf5eb94.jpg",
+    "image": "assets/discoveries/mutations/media-5406d9998bb4.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Testudo_horsfieldii_locking_into_the_camera.jpg",
     "author": null,
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Reprodução Sexuada": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Reprodu%C3%A7%C3%A3o_sexuada",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-72674912cad8.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Copulating_flies.jpg",
+    "author": "Tomascastelazo",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 787
   },
   "Partenogênese": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Partenog%C3%A9nese",
-    "image": "assets/discoveries/mutations/media-63ddae488137.jpg",
+    "image": "assets/discoveries/mutations/media-269202561134.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Varanus_komodoensis5.jpg",
     "author": "Taken by myself (Raul654)",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Cópula Agressiva": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Conflito_sexual",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-66fdb339a706.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Traumatic_insemination_1_edit1.jpg",
+    "author": "Rickard Ignell, Swedish University of Agricultural Sciences",
+    "license": "CC BY-SA 1.0",
+    "width": 1200,
+    "height": 977
   },
   "Precocidade Sexual": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Maturidade_sexual",
@@ -267,89 +267,89 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Maturidade_sexual.gif",
     "author": "Colégio Giordano Bruno",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 722
+    "width": 1200,
+    "height": 962
   },
   "Transferência Horizontal": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Transfer%C3%AAncia_horizontal_de_genes",
-    "image": "assets/discoveries/mutations/media-9e255f649652.png",
+    "image": "assets/discoveries/mutations/media-71028490a2a8.png",
     "source": "https://commons.wikimedia.org/wiki/File:PhylogeneticTree_horizontal_transfers.png",
     "author": "Origionally NASA",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 501
+    "width": 1200,
+    "height": 669
   },
   "Brotamento": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Gemula%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-8a3f49dbab22.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Hydra_biology.jpg",
+    "author": "Przemysław Malkowski",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 895
   },
   "Fragmentação": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Fragmenta%C3%A7%C3%A3o_(reprodu%C3%A7%C3%A3o)",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-bd37007e8a63.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Fragmentation_s%C3%A9rie_a.png",
+    "author": "Gbdivers",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 897
   },
   "Colônia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Col%C3%B3nia_(biologia)",
-    "image": "assets/discoveries/mutations/media-23a83fbcb15f.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Wolf_Pack.jpg",
-    "author": "Harlequeen from Cambridge, United Kingdom",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 598
+    "image": "assets/discoveries/mutations/media-a9889c3ac0cc.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Ripsloom_e._Ophrydium_versatile.jpg",
+    "author": "Therese-Liise Aasma",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Séssil": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Sessilidade_(zoologia)",
-    "image": "assets/discoveries/mutations/media-54222d9dc5ab.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Hydras_(8).JPG",
-    "author": "Stephen Friedt",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 843
+    "image": "assets/discoveries/mutations/media-ce6c15f7f5fc.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Leucadendron_sessile_flower.jpg",
+    "author": "Andrew massyn",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 900
   },
   "Onívoro Oportunista": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Omn%C3%ADvoro",
-    "image": "assets/discoveries/mutations/media-6cedde9828ea.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Lions_hunting_Africa.jpg",
-    "author": "Corinata",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "image": "assets/discoveries/mutations/media-b5a425182b7a.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Skulls,_antlers,_and_horns_;_Wildlife_trees_;_Wildlife_biologists_(IA_skullsantlershor00vann).pdf",
+    "author": "VanNiel, John, author Dean, William I., author United States. Bureau of Land Management",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 932
   },
   "Acasalamento Preferencial": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Sele%C3%A7%C3%A3o_sexual",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-ebfa045a3927.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Peacock_mating_dance_01.ogv",
+    "author": "MatthiasKabel",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 675
   },
   "Promiscuidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Sistema_de_acasalamento",
-    "image": "assets/discoveries/mutations/media-b9818ee2634f.jpg",
+    "image": "assets/discoveries/mutations/media-81bf3fa861fe.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Alpine_accentor_saganta.jpg",
     "author": "Paco Gómez from Castellón, Spain",
     "license": "CC BY-SA 2.0",
-    "width": 900,
-    "height": 630
+    "width": 1200,
+    "height": 841
   },
   "Pedogênese": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pedog%C3%AAnese",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-8527fecb1099.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Soil_pyramids_Kotl%C3%A1%C5%99ka_2.JPG",
+    "author": "Petr Dlouhý",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Cuidado Parental": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Cuidado_parental",
@@ -357,62 +357,62 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Ameerega_trivittata_with_tadpoles.jpg",
     "author": "Geoff Gallice from Gainesville, FL, USA",
     "license": "CC BY 2.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Marsupial": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Marsupiais",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-17dbf9b84da1.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Kangaroo%26Joey.JPG",
+    "author": "Tom Lind",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 900
   },
   "Monogamia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Monogamia",
-    "image": "assets/discoveries/mutations/media-b23cb83963db.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Old_marriage_at_Plac_Kaszubski.jpg",
-    "author": "Starscream",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 686
+    "image": "assets/discoveries/mutations/media-612ff4b1b71f.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Monogamia_-_Arara-azul-de-lear.jpg",
+    "author": "Cesar Luiz Leite",
+    "license": "CC BY-SA 4.0",
+    "width": 1200,
+    "height": 676
   },
   "Acasalamento Múltiplo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Poliandria",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
+    "image": "assets/discoveries/mutations/media-f0d17a00f448.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pandavas_with_Draupadi_OR_ayudhapurushas_facing_Madhu_Kaitabha.jpg",
+    "author": "Bob King",
     "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "width": 1200,
+    "height": 567
   },
   "Metamorfose": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Metamorfose",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-c14e769e6de8.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Butterfly-Newly_emerged.JPG",
+    "author": "Aruna at Malayalam Wikipedia",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Carnívoro": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Carn%C3%ADvoro",
-    "image": "assets/discoveries/mutations/media-ca551825dd00.jpg",
+    "image": "assets/discoveries/mutations/media-8beac00206d6.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Male_Lion_and_Cub_Chitwa_South_Africa_Luca_Galuzzi_2004.JPG",
     "author": "Luca Galuzzi (Lucag)",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Granívoro": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Semente",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-0db818aedd5f.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Red_Crossbill,_Kodiak_Island,_Alaska.jpg",
+    "author": "Dave Menke",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 787
   },
   "Interceptação preditiva": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Preda%C3%A7%C3%A3o",
@@ -420,143 +420,143 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Stud_327_with_Blesbuck.jpg",
     "author": "Save China's Tiger",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 602
+    "width": 1200,
+    "height": 803
   },
   "Canibalismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Canibalismo",
-    "image": "assets/discoveries/mutations/media-479c289d360b.jpg",
+    "image": "assets/discoveries/mutations/media-918d56ed28e3.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Praying_Mantis_Sexual_Cannibalism_European-37.jpg",
     "author": "Oliver Koemmerling",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Canibalismo Filial": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Canibalismo",
-    "image": "assets/discoveries/mutations/media-479c289d360b.jpg",
+    "image": "assets/discoveries/mutations/media-918d56ed28e3.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Praying_Mantis_Sexual_Cannibalism_European-37.jpg",
     "author": "Oliver Koemmerling",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Canibalismo Sexual": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Canibalismo_sexual",
-    "image": "assets/discoveries/mutations/media-9ac167b04091.jpg",
+    "image": "assets/discoveries/mutations/media-f8f9546594b3.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Praying_Mantis_Sexual_Cannibalism_European-26.jpg",
     "author": "Oliver Koemmerling",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Matrifagia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Canibalismo",
-    "image": "assets/discoveries/mutations/media-479c289d360b.jpg",
+    "image": "assets/discoveries/mutations/media-918d56ed28e3.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Praying_Mantis_Sexual_Cannibalism_European-37.jpg",
     "author": "Oliver Koemmerling",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Parasitismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Parasitismo",
-    "image": "assets/discoveries/mutations/media-6cedde9828ea.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Lions_hunting_Africa.jpg",
-    "author": "Corinata",
+    "image": "assets/discoveries/mutations/media-ca1ae673ac32.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:S%C3%BCl%C3%BCk.JPG",
+    "author": "Maderibeyza",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 900
   },
   "Simetria Bilateral": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Bilateria",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-1326e8ab58e7.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Butterfly_Luc_Viatour.JPG",
+    "author": "Luc Viatour",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 901
   },
   "Locomoção Primitiva": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "image": "assets/discoveries/mutations/media-78050d174cc7.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Animal_locomotion._Plate_775_-_DPLA_-_fd28005a7b80f41a708d70067f5bb811.jpg",
+    "author": "Muybridge, Eadweard, 1830-1904",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 961
   },
   "Jatopropulsão": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Propuls%C3%A3o",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-5ca68c77c279.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:PIA21263_-_Possible_Signs_of_Ancient_Drying_in_Martian_Rock.jpg",
+    "author": "NASA/JPL-Caltech/MSSS",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 610
   },
   "Serotonina": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Serotonina",
-    "image": "assets/discoveries/mutations/media-dc9ee0fd96db.png",
+    "image": "assets/discoveries/mutations/media-0675d9750884.png",
     "source": "https://commons.wikimedia.org/wiki/File:Serotonin-2D-skeletal.svg",
     "author": "CYL",
     "license": "Public domain",
-    "width": 900,
-    "height": 651
+    "width": 1200,
+    "height": 869
   },
   "Dopamina": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Dopamina",
-    "image": "assets/discoveries/mutations/media-4342996c5c1a.png",
+    "image": "assets/discoveries/mutations/media-b1d743d3a71c.png",
     "source": "https://commons.wikimedia.org/wiki/File:Dopamine_3D_ball.png",
     "author": "Jynto (talk)",
     "license": "CC0",
-    "width": 900,
-    "height": 624
+    "width": 1200,
+    "height": 832
   },
   "Vertebrado": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Vertebrados",
-    "image": "assets/discoveries/mutations/media-636d6d594d39.png",
+    "image": "assets/discoveries/mutations/media-627b9d283bd5.png",
     "source": "https://commons.wikimedia.org/wiki/File:Vertebrata_002.png",
     "author": "User:Follix User:Jamez42 User:Albert kok User:Tiithunt",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 621
+    "width": 1200,
+    "height": 828
   },
   "Adrenalina": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Adrenalina",
-    "image": "assets/discoveries/mutations/media-4858278c7de6.png",
+    "image": "assets/discoveries/mutations/media-c6bd3548da7e.png",
     "source": "https://commons.wikimedia.org/wiki/File:Epinephrine_structure_with_descriptor.svg",
     "author": "Acdx",
     "license": "Public domain",
-    "width": 900,
-    "height": 608
+    "width": 1200,
+    "height": 811
   },
   "Testosterona": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Testosterona",
-    "image": "assets/discoveries/mutations/media-801f77ca0ba8.png",
+    "image": "assets/discoveries/mutations/media-b591cfaf3860.png",
     "source": "https://commons.wikimedia.org/wiki/File:Testosteron.svg",
     "author": "NEUROtiker",
     "license": "Public domain",
-    "width": 900,
-    "height": 599
+    "width": 1200,
+    "height": 799
   },
   "Corticosteroides": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Corticosteroide",
-    "image": "assets/discoveries/mutations/media-3545a7e46888.png",
+    "image": "assets/discoveries/mutations/media-afc3e09dacda.png",
     "source": "https://commons.wikimedia.org/wiki/File:Cortisol-3D-balls.png",
     "author": "Ben Mills",
     "license": "Public domain",
-    "width": 900,
-    "height": 536
+    "width": 1200,
+    "height": 715
   },
   "Forrageamento": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Forrageamento",
-    "image": "assets/discoveries/mutations/media-32e1c84f9ecb.jpg",
+    "image": "assets/discoveries/mutations/media-9e8a05f6d7c3.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Grizzly_Bear_foraging.jpg",
     "author": "Amanda Lea",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 682
+    "width": 1200,
+    "height": 910
   },
   "Tropismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Tropismo",
@@ -564,26 +564,26 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Phycomyces3.JPG",
     "author": "TheAlphaWolf",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 674
+    "width": 1200,
+    "height": 899
   },
   "Artrópode": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Artr%C3%B3pode",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-b0e93632c28d.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Abludomelita_obtusata.jpg",
+    "author": "Hans Hillewaert",
+    "license": "CC BY-SA 4.0",
+    "width": 1200,
+    "height": 900
   },
   "Locomoção Articulada": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Membro",
-    "image": "assets/discoveries/mutations/media-1833b50a7612.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Human_body_features-pt.svg",
-    "author": "Vsion (discussão · contribuições), SVG by Sjef (discussão · contribuições), text by ThiagoRuiz (discussão · contribuições), Jmarchn (discussão · contribuições)",
-    "license": "Public domain",
-    "width": 900,
-    "height": 757
+    "image": "assets/discoveries/mutations/media-4edc0279c0d6.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pollicipespolymerus.jpg",
+    "author": "jkirkhart35",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 800
   },
   "Locomoção Terrestre": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o_terrestre",
@@ -591,152 +591,152 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Muybridge_race_horse_animated.gif",
     "author": "Eadweard Muybridge",
     "license": "Public domain",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Rastejante": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "image": "assets/discoveries/mutations/media-c8371ade8bdf.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Jack_Ryder_graph.png",
+    "author": "Raven4x4x at en.wikipedia",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 613
   },
   "Movimento Lateral": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-bbfed8490e77.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Os_Senhores_do_Movimento_04.jpg",
+    "author": "Felipe Salloun",
+    "license": "CC BY-SA 4.0",
+    "width": 1200,
+    "height": 675
   },
   "Escansão": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "image": "assets/discoveries/mutations/media-fbe71d2b97f5.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Animal_locomotion._Plate_749_(Boston_Public_Library).jpg",
+    "author": "Eadweard Muybridge Flickr uploader BPL",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 950
   },
   "Bioadesão": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Bioades%C3%A3o",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
+    "image": "assets/discoveries/mutations/media-c8f279bd5216.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Micro_and_nano_view_of_gecko%27s_toe.jpg",
+    "author": null,
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "width": 1200,
+    "height": 812
   },
   "Arborícola": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "image": "assets/discoveries/mutations/media-81d4df1f4b95.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Monkey_Ladder_Vine_canopy.jpg",
+    "author": "Gh5046 at English Wikipedia",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 800
   },
   "Forésia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/For%C3%A9sia",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
+    "image": "assets/discoveries/mutations/media-7e3b78127f3e.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Amalia_Fleming_hospital_Athens.jpg",
+    "author": "Badseed",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "width": 1200,
+    "height": 876
   },
   "Serpenteamento": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "image": "assets/discoveries/mutations/media-ddc8d26fd9b7.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:The_American_Museum_journal_(c1900-(1918))_(18159752415).jpg",
+    "author": "Internet Archive Book Images",
+    "license": "No restrictions",
+    "width": 1200,
+    "height": 754
   },
   "Trilhas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Formiga",
-    "image": "assets/discoveries/mutations/media-9937a2e3c04a.jpg",
+    "image": "assets/discoveries/mutations/media-1aa9bf7a1ada.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Meat_eater_ant_feeding_on_honey02.jpg",
     "author": "fir0002 flagstaffotos [at] gmail.com Canon 20D + Sigma 150mm f/2.8",
     "license": "GFDL 1.2",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Tigmotaxia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Taxia",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
+    "image": "assets/discoveries/mutations/media-eb7cac8e7865.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
     "author": "Hein waschefort",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "width": 1200,
+    "height": 622
   },
   "Recuo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Predador_de_emboscada",
-    "image": "assets/discoveries/mutations/media-c08095b1a8c2.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Larva_of_the_giant_waterbug_(Lethocerus_patruelis)_attacking_fish_(Pseudorasbora_parva)_-_ZooKeys-319-119-s001.ogv",
-    "author": "Grozeva S, Kuznetsova V, Simov N, Langourov M, Dalakchieva S",
-    "license": "CC BY 3.0",
-    "width": 640,
-    "height": 480
+    "image": "assets/discoveries/mutations/media-e0564e49eeab.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Halong_Bay_in_Vietnam.jpg",
+    "author": "Thomas Hirsch / User:Ravn",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Deslizamento": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
+    "image": "assets/discoveries/mutations/media-54a1a63d45a4.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Flying_squirrel_in_a_tree.jpg",
+    "author": "Angie spuc at English Wikipedia",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "width": 1200,
+    "height": 734
   },
   "Pulo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Salto",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "image": "assets/discoveries/mutations/media-944af5173ba5.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Kangaroo_jumping_(rbm-QP301M8-1887-752a~01).jpg",
+    "author": "Muybridge, Eadweard, 1830-1904",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 896
   },
   "Bipedalismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Bipedismo",
-    "image": "assets/discoveries/mutations/media-1dceb314ab04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 467
+    "image": "assets/discoveries/mutations/media-e452232d6bbf.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Flickr_-_law_keven_-_Do_the_Funky_Gibbon.....jpg",
+    "author": "Keven Law from Los Angeles, USA",
+    "license": "CC BY-SA 2.0",
+    "width": 1200,
+    "height": 800
   },
   "Percepção Espacial": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Aparelho_vestibular",
-    "image": "assets/discoveries/mutations/media-83d4f5c8e53b.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Animal_echolocation.svg",
-    "author": "Petteri Aimonen",
-    "license": "Public domain",
-    "width": 900,
-    "height": 693
+    "image": "assets/discoveries/mutations/media-03dd7cde7269.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:The_anatomy_of_the_domestic_animals_(1914)_(18168978246).jpg",
+    "author": "Internet Archive Book Images",
+    "license": "No restrictions",
+    "width": 1200,
+    "height": 667
   },
   "Escavador": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Fossorial",
-    "image": "assets/discoveries/mutations/media-934054fc8eb9.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pocket_gopher_in_burrow_bw.png",
-    "author": "Tracy I. Storer",
-    "license": "Public domain",
-    "width": 900,
-    "height": 448
+    "image": "assets/discoveries/mutations/media-2eaf9633a135.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Fossile_racine_ou_TraceFoudre_Helfaut.jpg",
+    "author": "Lamiot",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 705
   },
   "Necrófago": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Necr%C3%B3fago",
-    "image": "assets/discoveries/mutations/media-90b3b768be9b.jpg",
+    "image": "assets/discoveries/mutations/media-6795231e6063.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Coyoteelk.jpg",
     "author": "Jim Peaco",
     "license": "Public domain",
-    "width": 900,
-    "height": 596
+    "width": 1200,
+    "height": 795
   },
   "Coprofagia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Coprofagia",
@@ -744,296 +744,296 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Dungbeetle.jpg",
     "author": null,
     "license": "CC BY-SA 2.0",
-    "width": 900,
-    "height": 681
+    "width": 1200,
+    "height": 908
   },
   "Construtor de Nicho": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Constru%C3%A7%C3%A3o_de_nicho",
-    "image": "assets/discoveries/mutations/media-7233242c191e.jpg",
+    "image": "assets/discoveries/mutations/media-274b34705098.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Jo%C3%A3o_de_Barro_-_Furnarius_rufus.jpg",
     "author": "Thiago Oliveira Castro Vieira",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Carapaça": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Carapa%C3%A7a",
-    "image": "assets/discoveries/mutations/media-aad347a903e7.jpg",
+    "image": "assets/discoveries/mutations/media-420b223324cb.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Crab_from_Long_Island.jpg",
     "author": "Invertzoo",
     "license": "CC BY 3.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Extremotolerância": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Extrem%C3%B3filo",
-    "image": "assets/discoveries/mutations/media-ac016564fe39.jpg",
+    "image": "assets/discoveries/mutations/media-04fef8697fee.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Aerial_image_of_Grand_Prismatic_Spring_(view_from_the_south).jpg",
     "author": "Carsten Steger",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 638
+    "width": 1200,
+    "height": 850
   },
   "Contorcionismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Flexibilidade",
-    "image": "assets/discoveries/mutations/media-3f15d32b2e3c.jpg",
+    "image": "assets/discoveries/mutations/media-26ce205508df.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:US_Navy_070422-N-5215E-002_Midshipman_3rd_Class_Nicholas_Lowe_shows_Julian_Than_how_to_stretch_before_running_in_the_Special_Olympics_at_the_Naval_Academy.jpg",
     "author": "U.S. Navy photo by Mass Communication Specialist Seaman Apprentice Matthew A. Ebarb",
     "license": "Public domain",
-    "width": 900,
-    "height": 577
+    "width": 1200,
+    "height": 769
   },
   "Corpo Gelatinoso": {
     "wikipedia": "https://pt.wikipedia.org/wiki/%C3%81gua-viva_(animal)",
-    "image": "assets/discoveries/mutations/media-e0d037e1d2ed.jpg",
+    "image": "assets/discoveries/mutations/media-c2dd2615a74a.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Jelly_cc11.jpg",
     "author": "Dan90266",
     "license": "CC BY-SA 2.0",
-    "width": 900,
-    "height": 599
+    "width": 1200,
+    "height": 798
   },
   "Esclerotização": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Esclerotiza%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-25a95f14996a.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Boi.crab4.jpg",
+    "author": "Luis Miguel Bugallo Sánchez (Lmbuga Commons)(Lmbuga Galipedia) Publicada por/Publish by: Luis Miguel Bugallo Sánchez",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Toxicidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Toxicidade",
-    "image": "assets/discoveries/mutations/media-3a295d7d992b.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Skull_and_Crossbones.svg",
-    "author": "DesconhecidoUnknown author",
-    "license": "Public domain",
-    "width": 900,
-    "height": 865
+    "image": "assets/discoveries/mutations/media-d0da5e2b00d5.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Symptoms_of_oxygen_toxicity_-_Ar.png",
+    "author": "Mikael Häggström. When using this image in external works, it may be cited as follows: Häggström, Mikael. \"Medical gallery of Mikael Häggström 2014\". Wikiversity Journal of Medicine 1 (2). DOI:10.15347/wjm/2014.008. ISSN 20018762.",
+    "license": "CC0",
+    "width": 1200,
+    "height": 907
   },
   "Exibição deimática": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Apossematismo",
-    "image": "assets/discoveries/mutations/media-47ba6f85ad37.jpg",
+    "image": "assets/discoveries/mutations/media-75f0a8d334a3.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Phyllomedusa_oreades.jpg",
     "author": "Danielvelhobio",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 598
+    "width": 1200,
+    "height": 798
   },
   "Tanatose": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Tanatose",
-    "image": "assets/discoveries/mutations/media-13dcd036c106.jpg",
+    "image": "assets/discoveries/mutations/media-11d441a01cd6.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Possum_playing_dead.jpg",
     "author": "PARAKANYAA",
     "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Ofuscamento por movimento": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Adapta%C3%A7%C3%A3o_antipredat%C3%B3ria",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-11474ebac90f.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Tropa_de_choque_(PMERJ,_2013).jpg",
+    "author": "Fernando Frazão/ABr",
+    "license": "CC BY 3.0 br",
+    "width": 1200,
+    "height": 798
   },
   "Camuflagem": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Camuflagem",
-    "image": "assets/discoveries/mutations/media-52c19245d5aa.jpg",
+    "image": "assets/discoveries/mutations/media-8c7b803f8dd5.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Rana_perezi_small.jpg",
     "author": "Júlio Reis (User:Tintazul)",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Visão Binocular": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Vis%C3%A3o_binocular",
-    "image": "assets/discoveries/mutations/media-83d4f5c8e53b.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Animal_echolocation.svg",
-    "author": "Petteri Aimonen",
-    "license": "Public domain",
-    "width": 900,
-    "height": 693
+    "image": "assets/discoveries/mutations/media-0ce6db8aff12.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Strigiformes-_Owl_-_%D8%AC%D8%BA%D8%AF%D8%8C_%D9%BE%D8%B1%D9%86%D8%AF%D9%87_%D8%B4%DA%A9%D8%A7%D8%B1%DB%8C_02.jpg",
+    "author": "Mostafameraji",
+    "license": "CC BY-SA 4.0",
+    "width": 1200,
+    "height": 900
   },
   "Ecolocalização": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ecolocaliza%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-be545afa9126.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Animal_echolocation.svg",
-    "author": "Petteri Aimonen",
-    "license": "Public domain",
-    "width": 900,
-    "height": 693
+    "image": "assets/discoveries/mutations/media-92c8eb9a9fc9.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:BatAuditoryCortex.JPG",
+    "author": "Rsg37",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Velocidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Acinonyx_jubatus",
-    "image": "assets/discoveries/mutations/media-175058e49655.jpg",
+    "image": "assets/discoveries/mutations/media-c1f5c210be7e.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Male_cheetah_facing_left_in_South_Africa.jpg",
     "author": "AfricanConservation",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Movimento proteano": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Adapta%C3%A7%C3%A3o_antipredat%C3%B3ria",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
+    "image": "assets/discoveries/mutations/media-e40e786f8a7e.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
     "author": "Alex Popovkin, Bahia, Brazil",
     "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "width": 1200,
+    "height": 676
   },
   "Notívago": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Not%C3%ADvago",
-    "image": "assets/discoveries/mutations/media-83d4f5c8e53b.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Animal_echolocation.svg",
-    "author": "Petteri Aimonen",
-    "license": "Public domain",
-    "width": 900,
-    "height": 693
+    "image": "assets/discoveries/mutations/media-25c9b2860b0b.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Animal_snapshots_and_how_made_(1905)_(14755300985).jpg",
+    "author": "Internet Archive Book Images",
+    "license": "No restrictions",
+    "width": 1200,
+    "height": 785
   },
   "Pele grossa": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pele",
-    "image": "assets/discoveries/mutations/media-1ab4712b61b2.jpg",
+    "image": "assets/discoveries/mutations/media-fe658ef7341f.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Elephant_skin_(3689577529).jpg",
     "author": "Greg Willis from Denver, CO, usa",
     "license": "CC BY-SA 2.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Presas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Canino_(dente)",
-    "image": "assets/discoveries/mutations/media-a60e66004919.jpg",
+    "image": "assets/discoveries/mutations/media-12299a1db3c8.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Azawakh_K9.jpg",
     "author": null,
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 678
+    "width": 1200,
+    "height": 904
   },
   "Veneno": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Veneno",
-    "image": "assets/discoveries/mutations/media-6cedde9828ea.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Lions_hunting_Africa.jpg",
-    "author": "Corinata",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "image": "assets/discoveries/mutations/media-69bcd4038b94.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Poison_dart_frog_229.JPG",
+    "author": "Offworlder",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 798
   },
   "Coletor": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Forrageamento",
-    "image": "assets/discoveries/mutations/media-32e1c84f9ecb.jpg",
+    "image": "assets/discoveries/mutations/media-9e8a05f6d7c3.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Grizzly_Bear_foraging.jpg",
     "author": "Amanda Lea",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 682
+    "width": 1200,
+    "height": 910
   },
   "Escalador": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-ca0cd7a51b02.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:American_animal_life_(1916)_(14763621695).jpg",
+    "author": "Internet Archive Book Images",
+    "license": "No restrictions",
+    "width": 1200,
+    "height": 819
   },
   "Onívoro": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Omn%C3%ADvoro",
-    "image": "assets/discoveries/mutations/media-6cedde9828ea.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Lions_hunting_Africa.jpg",
-    "author": "Corinata",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "image": "assets/discoveries/mutations/media-18a531806462.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Grizzly_Bear_Yellowstone.jpg",
+    "author": "Terry Tollefsbol, NATIONAL CONSERVATION TRAINING CENTER-PUBLICATIONS AND TRAINING MATERIALS",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 857
   },
   "Respiração Cutânea": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Respira%C3%A7%C3%A3o_cut%C3%A2nea",
-    "image": "assets/discoveries/mutations/media-88759a2cb8b4.jpg",
+    "image": "assets/discoveries/mutations/media-bc636e436fea.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Northern_Slimy_Salamander_(Plethodon_glutinosus).jpg",
     "author": "Greg Schechter",
     "license": "CC BY 2.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Respiração Pulmonar": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pulm%C3%A3o",
-    "image": "assets/discoveries/mutations/media-b0076e89ee9f.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Lungs_open.jpg",
-    "author": "Henry Vandyke Carter",
-    "license": "Public domain",
-    "width": 900,
-    "height": 751
+    "image": "assets/discoveries/mutations/media-1eb8c3ce2f16.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Cancer_de_pulmon.jpg",
+    "author": "Modificado de OpenStax College",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 800
   },
   "Ovíparo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Oviparidade",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-d9ad37955370.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sericoceros_mexicanus_(female_laying_eggs).jpg",
+    "author": "Hans Hillewaert",
+    "license": "CC BY-SA 4.0",
+    "width": 1200,
+    "height": 900
   },
   "Ovíparos Amniotas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Amniota",
-    "image": "assets/discoveries/mutations/media-24a787382cbc.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Amniota.jpg",
-    "author": "User:Andrew Y. Huang User:Minette Layne Michael Allen Smith User:Haplochromis",
-    "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 751
+    "image": "assets/discoveries/mutations/media-e40e786f8a7e.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
+    "author": "Alex Popovkin, Bahia, Brazil",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 676
   },
   "Ovovivíparo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ovoviviparidade",
-    "image": "assets/discoveries/mutations/media-70d5571209f5.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:ViperaAspis_1469AE.jpg",
-    "author": "Werner Seiler (User:Centine)",
-    "license": "Public domain",
-    "width": 900,
-    "height": 814
+    "image": "assets/discoveries/mutations/media-514e6a8b58e2.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Guppy-male.jpg",
+    "author": null,
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 845
   },
   "Ooteca": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ooteca",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-30a4c7d2f014.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Praying_Mantis_(Mantis_religiosa_religiosa)_Ootheca_02.jpg",
+    "author": "Ryan Hodnett",
+    "license": "CC BY-SA 4.0",
+    "width": 1200,
+    "height": 900
   },
   "Voo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Asa",
-    "image": "assets/discoveries/mutations/media-7c61e6806793.jpg",
+    "image": "assets/discoveries/mutations/media-1bed10fd7ba4.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Black-headed_Gulls,_London.jpg",
     "author": "Gerry Lynch",
     "license": "CC BY 2.5",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Incubação": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Incuba%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-d913022810d0.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Ladder-tailed_nightjar_(Hydropsalis_climacocerca)_incubating_eggs.JPG",
+    "author": "Charles J. Sharp",
+    "license": "CC BY-SA 4.0",
+    "width": 1200,
+    "height": 800
   },
   "Lactação": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Lactog%C3%AAnese",
-    "image": "assets/discoveries/mutations/media-10a57b0e771c.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 507
+    "image": "assets/discoveries/mutations/media-686449517259.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Manatee_with_calf.PD.jpg",
+    "author": "Galen Rathbun",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 787
   },
   "Ocitocina": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ocitocina",
-    "image": "assets/discoveries/mutations/media-5e5589c177e4.png",
+    "image": "assets/discoveries/mutations/media-ef7bd2484440.png",
     "source": "https://commons.wikimedia.org/wiki/File:Oxytocin_with_labels.png",
     "author": "Edgar181",
     "license": "Public domain",
-    "width": 900,
-    "height": 563
+    "width": 1200,
+    "height": 750
   },
   "Vivíparo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Viviparidade",
@@ -1041,17 +1041,17 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Aphid-giving-birth.jpg",
     "author": "MedievalRich",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 558
+    "width": 1200,
+    "height": 744
   },
   "Sacos Aéreos": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Sacos_a%C3%A9reos",
-    "image": "assets/discoveries/mutations/media-c8f53522617a.png",
+    "image": "assets/discoveries/mutations/media-0f4f0d445eb7.png",
     "source": "https://commons.wikimedia.org/wiki/File:Sistema_respirat%C3%B3rio_das_aves.svg",
     "author": "User:Carl Henderson",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 713
+    "width": 1200,
+    "height": 951
   },
   "Ovulação Induzida": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ovocita%C3%A7%C3%A3o",
@@ -1059,8 +1059,8 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Ovulacao-b.jpg",
     "author": "Gaboka86",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 457
+    "width": 1200,
+    "height": 609
   },
   "Visão Noturna": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Vis%C3%A3o_noturna",
@@ -1068,17 +1068,17 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Nightvision.jpg",
     "author": "United States Army Forces",
     "license": "Public domain",
-    "width": 900,
-    "height": 589
+    "width": 1200,
+    "height": 785
   },
   "Eusocialidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Eussocialidade",
-    "image": "assets/discoveries/mutations/media-e1419d27d03f.jpg",
+    "image": "assets/discoveries/mutations/media-813cf5fa44f4.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Ant_Colony(nest).jpg",
     "author": "DEEPAN RAJA .M",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Ovífagia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Preda%C3%A7%C3%A3o",
@@ -1086,152 +1086,152 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Stud_327_with_Blesbuck.jpg",
     "author": "Save China's Tiger",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 602
+    "width": 1200,
+    "height": 803
   },
   "Chifre": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Corno",
-    "image": "assets/discoveries/mutations/media-7709e7ff5c57.jpg",
+    "image": "assets/discoveries/mutations/media-15f367c9e96f.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Water_buffalo_horn_(Bubalus_bubalis).jpg",
     "author": "Museum of Veterinary Anatomy FMVZ USP / Wagner Souza e Silva",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 655
+    "width": 1200,
+    "height": 873
   },
   "Antropização": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Antropia",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-5153050f508a.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Landscape_in_Sa_Pa_(Vietnam).jpg",
+    "author": null,
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Plantas Domesticadas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Domestica%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-4945c816570d.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Feature2originmap600.png",
-    "author": null,
+    "image": "assets/discoveries/mutations/media-e771d8e6f2e4.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Egyptian_Domesticated_Animals.jpg",
+    "author": "Unknown authorUnknown author",
     "license": "Public domain",
-    "width": 900,
-    "height": 639
+    "width": 1200,
+    "height": 675
   },
   "Animais Domésticos": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Domestica%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-4945c816570d.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Feature2originmap600.png",
-    "author": null,
-    "license": "Public domain",
-    "width": 900,
-    "height": 639
+    "image": "assets/discoveries/mutations/media-6d785f27d7ce.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Estimaci%C3%B3ns_mundiais_de_animais_dom%C3%A9sticos.jpg",
+    "author": "User:Sobreira",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 831
   },
   "Sociabilidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Comportamento_social",
-    "image": "assets/discoveries/mutations/media-d39a3f9403da.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:StateLibQld_1_105248_Group_of_friends_gathered_around_a_radio_in_Brisbane,_ca._1942.jpg",
-    "author": "Contributor(s): Courier-mail (Brisbane, Qld.)",
-    "license": "Public domain",
-    "width": 900,
-    "height": 680
+    "image": "assets/discoveries/mutations/media-dea0f436ca03.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Supplicating_Pilgrim_at_Masjid_Al_Haram._Mecca,_Saudi_Arabia.jpg",
+    "author": "Ali Mansuri",
+    "license": "CC BY-SA 2.5",
+    "width": 1200,
+    "height": 900
   },
   "Hierarquia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Hierarquia_de_domin%C3%A2ncia",
-    "image": "assets/discoveries/mutations/media-23a83fbcb15f.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Wolf_Pack.jpg",
-    "author": "Harlequeen from Cambridge, United Kingdom",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 598
+    "image": "assets/discoveries/mutations/media-d8e35928a2c5.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Maslow_hierarchy_of_needs_es.jpg",
+    "author": "J. Finkelstein",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 782
   },
   "Superorganismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Superorganismo",
-    "image": "assets/discoveries/mutations/media-23a83fbcb15f.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Wolf_Pack.jpg",
-    "author": "Harlequeen from Cambridge, United Kingdom",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 598
+    "image": "assets/discoveries/mutations/media-1bc656387904.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Flickr_-_brewbooks_-_Observing_an_Ant_Colony_(Superorganism).jpg",
+    "author": "brewbooks from near Seattle, USA",
+    "license": "CC BY-SA 2.0",
+    "width": 1200,
+    "height": 900
   },
   "Caça Cooperativa": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Comportamento_social",
-    "image": "assets/discoveries/mutations/media-d39a3f9403da.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:StateLibQld_1_105248_Group_of_friends_gathered_around_a_radio_in_Brisbane,_ca._1942.jpg",
-    "author": "Contributor(s): Courier-mail (Brisbane, Qld.)",
-    "license": "Public domain",
-    "width": 900,
-    "height": 680
+    "image": "assets/discoveries/mutations/media-6270391697ee.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Equestrian_Portrait_of_Cornelis_(1639%E2%80%931680)_and_Michiel_Pompe_van_Meerdervoort_(1638%E2%80%931653)_with_Their_Tutor_and_Coachman_(%22Starting_for_the_Hunt%22)_MET_DP146442.jpg",
+    "author": "Aelbert Cuyp",
+    "license": "CC0",
+    "width": 1200,
+    "height": 835
   },
   "Mutualismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Mutualismo",
-    "image": "assets/discoveries/mutations/media-23a83fbcb15f.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Wolf_Pack.jpg",
-    "author": "Harlequeen from Cambridge, United Kingdom",
-    "license": "CC BY 2.0",
-    "width": 900,
-    "height": 598
+    "image": "assets/discoveries/mutations/media-be000282f649.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Common_clownfish.jpg",
+    "author": "Janderk",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 900
   },
   "Manada": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Manada",
-    "image": "assets/discoveries/mutations/media-d3b86004d280.jpg",
+    "image": "assets/discoveries/mutations/media-ddb891e8fe78.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Elephants_Etosha_Namibia(1).jpg",
     "author": "Thomas Schoch",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Mimetismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Mimetismo",
-    "image": "assets/discoveries/mutations/media-6cedde9828ea.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Lions_hunting_Africa.jpg",
-    "author": "Corinata",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "image": "assets/discoveries/mutations/media-90040deb0843.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:TS001_Pachliopta_hector.jpg",
+    "author": null,
+    "license": "CC BY-SA 2.5",
+    "width": 1200,
+    "height": 900
   },
   "Mimetismo Agressivo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Mimetismo_agressivo",
-    "image": "assets/discoveries/mutations/media-217fc6c2b198.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Humpback_anglerfish.png",
-    "author": null,
-    "license": "Public domain",
-    "width": 900,
-    "height": 843
+    "image": "assets/discoveries/mutations/media-31b075abafc3.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Leucochloridium_5555M.JPG",
+    "author": "Gilles San Martin",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 795
   },
   "Polegar Opositor": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Primatas",
-    "image": "assets/discoveries/mutations/media-6b1c6d6e2421.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Range_of_Non-human_Primates.png",
-    "author": "Phoenix_B_1of3 (talk) (Uploads). Original uploader was Phoenix B 1of3 at en.wikipedia",
-    "license": "CC0",
-    "width": 900,
-    "height": 471
+    "image": "assets/discoveries/mutations/media-1776546307db.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mamma_and_baby_in_a_pensive_mood_(11113468816).jpg",
+    "author": "shankar s. from Dubai, united arab emirates",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 797
   },
   "Córtex Pré-Frontal": {
     "wikipedia": "https://pt.wikipedia.org/wiki/C%C3%B3rtex_pr%C3%A9-frontal",
-    "image": "assets/discoveries/mutations/media-a5dde8f25617.png",
+    "image": "assets/discoveries/mutations/media-d91f274733d3.png",
     "source": "https://commons.wikimedia.org/wiki/File:Gray726-Brodman-prefrontal.svg",
     "author": "Henry Vandyke Carter",
     "license": "Public domain",
-    "width": 900,
-    "height": 520
+    "width": 1200,
+    "height": 693
   },
   "Neurodivergência": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Neurodiversidade",
-    "image": "assets/discoveries/mutations/media-c18961782f61.png",
+    "image": "assets/discoveries/mutations/media-55efcd7dbe56.png",
     "source": "https://commons.wikimedia.org/wiki/File:Neurodiversity_Symbol.svg",
     "author": "MissLunaRose12",
     "license": "CC0",
-    "width": 900,
-    "height": 448
+    "width": 1200,
+    "height": 597
   },
   "Neocórtex Desenvolvido": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Neoc%C3%B3rtex",
-    "image": "assets/discoveries/mutations/media-83d4f5c8e53b.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Animal_echolocation.svg",
-    "author": "Petteri Aimonen",
+    "image": "assets/discoveries/mutations/media-e7ae75e972b2.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Vereenvoudigde_weergave_verschillende_vormen_langetermijngeheugen.png",
+    "author": "Albert Kok at Dutch Wikipedia",
     "license": "Public domain",
-    "width": 900,
-    "height": 693
+    "width": 1200,
+    "height": 900
   },
   "Esterilidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Infertilidade",
@@ -1239,80 +1239,80 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Tr_icsi_05.jpg",
     "author": "Clinica e centro de pesquisa em reprodução humana Roger Abdelmassih",
     "license": "Attribution",
-    "width": 900,
-    "height": 630
+    "width": 1200,
+    "height": 840
   },
   "Insuficiência Respiratória": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Insufici%C3%AAncia_respirat%C3%B3ria",
-    "image": "assets/discoveries/mutations/media-67d8366d1d43.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Hb_saturation_curve.png",
-    "author": null,
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 762
+    "image": "assets/discoveries/mutations/media-7c77382a7644.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:PSM_V11_D334_Oxygenation_of_blood.jpg",
+    "author": "Unknown authorUnknown author",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 993
   },
   "Anemia Falciforme": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Anemia_falciforme",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-470833213feb.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sickle_Cell_Anemia_(5610746554).jpg",
+    "author": "Ed Uthman from Houston, TX, USA",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 800
   },
   "Assimetria Flutuante": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Homeostase_do_desenvolvimento",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
+    "image": "assets/discoveries/mutations/media-d330caaea26d.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
     "author": "Krzysztof A. Zacharski",
     "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Ataxia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ataxia",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
+    "image": "assets/discoveries/mutations/media-7638f1326069.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Strumigenys_ataxia_casent0104945_label_1.jpg",
+    "author": "April Nobile",
     "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 752
   },
   "Imunodeficiência": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Imunodefici%C3%AAncia",
-    "image": "assets/discoveries/mutations/media-a73730adfcd1.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Human_Immunodeficency_Virus_-_stylized_rendering.jpg",
-    "author": "Los Alamos National Laboratory",
-    "license": "Attribution",
-    "width": 900,
-    "height": 878
+    "image": "assets/discoveries/mutations/media-be36eb11e6c2.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:HIV-budding-Color.jpg",
+    "author": "Photo Credit: C. Goldsmith Content Providers: CDC/ C. Goldsmith, P. Feorino, E. L. Palmer, W. R. McManus",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 797
   },
   "Deficiência Motora": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Defici%C3%AAncia_f%C3%ADsica",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-c0972c3e9f99.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Wheelchair_lift_in_a_1992_Flxible_Metro_bus_lowered_to_sidewalk.jpg",
+    "author": "Steve Morgan",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 803
   },
   "Deficiência Sensorial": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Defici%C3%AAncia_auditiva",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-79fe02a41236.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:CDH_-_Comiss%C3%A3o_de_Direitos_Humanos_e_Legisla%C3%A7%C3%A3o_Participativa_(15643029170).jpg",
+    "author": "Senado Federal",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 799
   },
   "Filho único": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Fertilidade",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-dc12716b8e9b.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Total_Fertility_Rate_for_Select_Countries,_2010.png",
+    "author": "Rcragun",
+    "license": "CC BY 3.0",
+    "width": 1200,
+    "height": 689
   },
   "Subfertilidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Infertilidade",
@@ -1320,8 +1320,8 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Tr_icsi_05.jpg",
     "author": "Clinica e centro de pesquisa em reprodução humana Roger Abdelmassih",
     "license": "Attribution",
-    "width": 900,
-    "height": 630
+    "width": 1200,
+    "height": 840
   },
   "Má absorção Alimentar": {
     "wikipedia": "https://pt.wikipedia.org/wiki/M%C3%A1-absor%C3%A7%C3%A3o_intestinal",
@@ -1329,89 +1329,89 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Whipple2.jpg",
     "author": "Este ficheiro foi inicialmente carregado por Countincr em Wikipédia em inglês",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 605
+    "width": 1200,
+    "height": 806
   },
   "Semelparidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Iteroparidade_e_semelparidade",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-5fbeae100f8d.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Oncorhynchus_nerka_2.jpg",
+    "author": "David Menke",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 799
   },
   "Regressão Evolutiva": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Estrutura_vestigial",
-    "image": "assets/discoveries/mutations/media-ecdd1f5a4f6b.png",
+    "image": "assets/discoveries/mutations/media-f34ea8dc1d46.png",
     "source": "https://commons.wikimedia.org/wiki/File:CollapsedtreeLabels-simplified.svg",
     "author": "User:TimVickers, SVG conversion by User:User_A1",
     "license": "Public domain",
-    "width": 900,
-    "height": 594
+    "width": 1200,
+    "height": 792
   },
   "Nanismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Nanismo",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-329a2710d409.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Portrait_of_John_Harris_born_1815_height_3_feet_8_and_a_half_inches_;_Margaret_his_wife,_born_1831,_height_5_feet_5_inches,_weight_195_lb_(4670268).jpg",
+    "author": "Unknown authorUnknown author",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 909
   },
   "Gigantismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Gigantismo",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-9d9dc1538763.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Wild_Komodo_dragon_-_Komodo_island_(17118478512)_(2).jpg",
+    "author": "Jorge Láscar from Australia",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 797
   },
   "Mutação Mutadora": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Muta%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-ecdd1f5a4f6b.png",
+    "image": "assets/discoveries/mutations/media-f34ea8dc1d46.png",
     "source": "https://commons.wikimedia.org/wiki/File:CollapsedtreeLabels-simplified.svg",
     "author": "User:TimVickers, SVG conversion by User:User_A1",
     "license": "Public domain",
-    "width": 900,
-    "height": 594
+    "width": 1200,
+    "height": 792
   },
   "Hematofagia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Hematofagia",
-    "image": "assets/discoveries/mutations/media-1cfdd649b2c9.jpg",
+    "image": "assets/discoveries/mutations/media-5aca16c03d17.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Anopheles_stephensi.jpeg",
     "author": "Jim Gathany",
     "license": "Public domain",
-    "width": 900,
-    "height": 596
+    "width": 1200,
+    "height": 795
   },
   "Autotomia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Autotomia",
-    "image": "assets/discoveries/mutations/media-cf82186b49aa.jpg",
+    "image": "assets/discoveries/mutations/media-9bd27fddb20c.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Harpa_seashell_with_the_snail.jpg",
     "author": "Pet (assumed based on copyright claims)",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 510
+    "width": 1200,
+    "height": 680
   },
   "Tinta": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Cefal%C3%B3podes",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-7ab17a5d68dc.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Fried_rice_with_squid_ink,_Ishigaki,_Japan.JPG",
+    "author": "User: (WT-shared) Shoestring at wts wikivoyage",
+    "license": "CC BY-SA 4.0",
+    "width": 1200,
+    "height": 900
   },
   "Alelopatia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Alelopatia",
-    "image": "assets/discoveries/mutations/media-0b0c2c6ba162.jpg",
+    "image": "assets/discoveries/mutations/media-1cc6e4fb0a79.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Allelopathy_by_Western_Sunflower_(Helianthus_occidentalis)_-_Flickr_-_wackybadger.jpg",
     "author": "Joshua Mayer from Madison, WI, USA",
     "license": "CC BY-SA 2.0",
-    "width": 900,
-    "height": 622
+    "width": 1200,
+    "height": 830
   },
   "Parasitismo de Ninhada": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Parasita_de_ninhada",
@@ -1419,80 +1419,80 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:(Molothrus_bonariensis)_e_(_Zonotrichia_Capensis_).jpg",
     "author": "Dario Sanches from São Paulo, Brazil",
     "license": "CC BY-SA 2.0",
-    "width": 900,
-    "height": 554
+    "width": 1200,
+    "height": 738
   },
   "Quimiossíntese": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Quimiolitotrofia",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-ebb6bb5d7d24.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:%D0%92%D0%B8%D0%BD%D0%BE%D0%B3%D1%80%D0%B0%D0%B4%D1%81%D1%8C%D0%BA2.jpg",
+    "author": "Aniskov",
+    "license": "CC BY-SA 4.0",
+    "width": 1200,
+    "height": 831
   },
   "Eucarionte": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Eucariog%C3%A9nese",
-    "image": "assets/discoveries/mutations/media-2bfd9748c936.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Chromosome-DNA-gene.png",
-    "author": "Thomas Splettstoesser (www.scistyle.com)",
-    "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 678
+    "image": "assets/discoveries/mutations/media-43dccd3786c3.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Membrane_contact_sites_in_eukaryotic_cell_(crayon_diagram).jpg",
+    "author": "Hiutam",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 970
   },
   "Endossimbiose": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Endossimbiose",
-    "image": "assets/discoveries/mutations/media-2bfd9748c936.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Chromosome-DNA-gene.png",
-    "author": "Thomas Splettstoesser (www.scistyle.com)",
-    "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 678
+    "image": "assets/discoveries/mutations/media-eb0cf8726566.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Serial_Endosymbiosis_Theory.png",
+    "author": "Maulucioni, según trabajo previo de Franciscosp2",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 666
   },
   "Biomineralização": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Biomineraliza%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-409f50e9f378.jpg",
+    "image": "assets/discoveries/mutations/media-50d1511cdfd3.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Shells_Vacation.jpg",
     "author": "Manfred Heyde",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 695
+    "width": 1200,
+    "height": 926
   },
   "Imunidade Adaptativa": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Sistema_imune_adaptativo",
-    "image": "assets/discoveries/mutations/media-2bfd9748c936.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Chromosome-DNA-gene.png",
-    "author": "Thomas Splettstoesser (www.scistyle.com)",
-    "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 678
+    "image": "assets/discoveries/mutations/media-d8b127bcded1.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Ngram_acquired_immunity_vs._adaptive_immunity.png",
+    "author": "John R Rodgers",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 427
   },
   "Estômatos": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Est%C3%B4mato",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
-    "author": "A.Spielhoff",
-    "license": "CC0",
-    "width": 900,
-    "height": 325
+    "image": "assets/discoveries/mutations/media-c0ed45596c59.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Leaf_epithelium,_stomata.jpg",
+    "author": "Emilio Ermini",
+    "license": "CC BY 4.0",
+    "width": 1200,
+    "height": 874
   },
   "Endotermia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Endotermia",
-    "image": "assets/discoveries/mutations/media-58ae32c77e70.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:German_Shepherd_thermal_image.jpg",
-    "author": "Zaereth",
+    "image": "assets/discoveries/mutations/media-31eae8a1f1eb.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Wiki_ostrich.jpg",
+    "author": "Arno / Coen",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 769
+    "width": 1200,
+    "height": 713
   },
   "Tromba": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Elefante",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-ebaa795dab47.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Elephant_Kruger_2003.jpg",
+    "author": "Rob Hooft",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 800
   },
   "Rabo Chicote": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Doedicurus_clavicaudatus",
@@ -1500,17 +1500,17 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Doedicurus_BW.jpg",
     "author": "Nobu Tamura (http://spinops.blogspot.com)",
     "license": "CC BY 3.0",
-    "width": 900,
-    "height": 402
+    "width": 1200,
+    "height": 536
   },
   "Parasitoidismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Parasitoide",
-    "image": "assets/discoveries/mutations/media-c55446655bce.jpg",
+    "image": "assets/discoveries/mutations/media-71349077ce81.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:CSIRO_ScienceImage_2357_Spotted_alfalfa_aphid_being_attacked_by_parasitic_wasp.jpg",
     "author": "division, CSIRO",
     "license": "CC BY 3.0",
-    "width": 900,
-    "height": 619
+    "width": 1200,
+    "height": 826
   },
   "Mandíbula": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Mand%C3%ADbula",
@@ -1518,44 +1518,44 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Gray176.png",
     "author": "Henry Vandyke Carter",
     "license": "Public domain",
-    "width": 900,
-    "height": 603
+    "width": 1200,
+    "height": 804
   },
   "Dentes": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Dente",
-    "image": "assets/discoveries/mutations/media-d8b3bb1c0af4.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Cross_sections_of_teeth_intl.svg",
-    "author": "Jmarchn",
+    "image": "assets/discoveries/mutations/media-965d8b7038c4.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Teeth_by_David_Shankbone.jpg",
+    "author": "David Shankbone",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 853
+    "width": 1200,
+    "height": 619
   },
   "Rizoma": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Rizoma",
-    "image": "assets/discoveries/mutations/media-7efa82c9331d.jpg",
+    "image": "assets/discoveries/mutations/media-354cc83ca95f.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Phragmites_australis_rhizome_kz.jpg",
     "author": "Kenraiz",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 527
+    "width": 1200,
+    "height": 702
   },
   "Ruminante": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Rumina%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-c4e7f2f88bd0.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Dudley_Farm_Cracker_cows.jpg",
+    "author": "anoldent from Asheville, NC, USA",
+    "license": "CC BY-SA 2.0",
+    "width": 1200,
+    "height": 744
   },
   "Predação em Massa": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Animal_filtrador",
-    "image": "assets/discoveries/mutations/media-6cedde9828ea.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Lions_hunting_Africa.jpg",
-    "author": "Corinata",
-    "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "image": "assets/discoveries/mutations/media-624060c397b6.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Iziko_Blue_Whale_from_behind.JPG",
+    "author": "Nkansah Rexford",
+    "license": "CC BY 3.0",
+    "width": 1200,
+    "height": 675
   },
   "Teia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Teia_de_aranha",
@@ -1563,17 +1563,17 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Spinnennetz_im_Gegenlicht.jpg",
     "author": "User:....",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 800
   },
   "Peçonha": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pe%C3%A7onha",
-    "image": "assets/discoveries/mutations/media-6cedde9828ea.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Lions_hunting_Africa.jpg",
-    "author": "Corinata",
+    "image": "assets/discoveries/mutations/media-91bc7150e0ca.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Leptophis_ahaetulla_(2).jpg",
+    "author": "Renato Gaiga",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 600
+    "width": 1200,
+    "height": 797
   },
   "Projétil Biológico": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Besouro-bombardeiro",
@@ -1581,89 +1581,89 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Brachinus_spPCCA20060328-2821B.jpg",
     "author": "Patrick Coin (Patrick Coin)",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 643
+    "width": 1200,
+    "height": 858
   },
   "Pescoço Verticalizado": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Girafa",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-02992b7b6d3f.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Giraffe_Weevil,_Andasibe,_Madagascar.jpg",
+    "author": "Frank Vassen",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 900
   },
   "Garras": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Garra",
-    "image": "assets/discoveries/mutations/media-b621c1c87287.jpg",
+    "image": "assets/discoveries/mutations/media-53dbf6c18cd8.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Cat_claw_closeup.jpg",
     "author": "Holly Cheng",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 674
+    "width": 1200,
+    "height": 899
   },
   "Eletrodescarga": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Poraqu%C3%AA",
-    "image": "assets/discoveries/mutations/media-9410bb2d14f7.jpg",
+    "image": "assets/discoveries/mutations/media-2d0507a91ff9.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Electrophorus_electricus_-_Aquarium_tropical_du_Palais_de_la_Porte_Dor%C3%A9e.jpg",
     "author": "KoS",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 597
+    "width": 1200,
+    "height": 796
   },
   "Multicelularismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Organismo_multicelular",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
+    "image": "assets/discoveries/mutations/media-d330caaea26d.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
     "author": "Krzysztof A. Zacharski",
     "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Herbívoro": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Herb%C3%ADvoro",
-    "image": "assets/discoveries/mutations/media-f97b057bd485.jpg",
+    "image": "assets/discoveries/mutations/media-a05e4cf993e2.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:White-tailed_deer_(Odocoileus_virginianus)_grazing_-_20050809.jpg",
     "author": "Raul654.",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Vetor Patógeno": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Vetor_biol%C3%B3gico",
-    "image": "assets/discoveries/mutations/media-b9a9d7d1b86b.jpg",
+    "image": "assets/discoveries/mutations/media-b7509214a634.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:CDC-Gathany-Aedes-albopictus-1.jpg",
     "author": "James Gathany, CDC",
     "license": "Public domain",
-    "width": 900,
-    "height": 596
+    "width": 1200,
+    "height": 795
   },
   "Zoorremediação": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Biorremedia%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-b9fb267dddea.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Bioremediation_at_INL.jpg",
+    "author": "ENERGY.GOV",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 543
   },
   "Pele Glandular": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pele",
-    "image": "assets/discoveries/mutations/media-1ab4712b61b2.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Elephant_skin_(3689577529).jpg",
-    "author": "Greg Willis from Denver, CO, usa",
-    "license": "CC BY-SA 2.0",
-    "width": 900,
-    "height": 600
+    "image": "assets/discoveries/mutations/media-36d0932ee056.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pele_Voyagercolor_mosaic.jpg",
+    "author": "NASA/JPL/USGS",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 841
   },
   "Escamas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Escama",
-    "image": "assets/discoveries/mutations/media-819161386381.jpg",
+    "image": "assets/discoveries/mutations/media-f1765127bf6f.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:AB_Keeled_Scales.jpg",
     "author": "AshLin (discussão · contribuições)",
     "license": "CC BY-SA 2.5 in",
-    "width": 900,
-    "height": 722
+    "width": 1200,
+    "height": 963
   },
   "Osteodermos": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Osteoderma",
@@ -1671,97 +1671,97 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "source": "https://commons.wikimedia.org/wiki/File:Gila_fg01.jpg",
     "author": "Fritz Geller-Grimm",
     "license": "CC BY-SA 2.5",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Pelos": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pelo",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-a7523b957a58.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Pseudalopex_culpaeus.jpg",
+    "author": "Exlibris (Whaldener Endo)",
+    "license": "CC BY 2.5",
+    "width": 1200,
+    "height": 900
   },
   "Penas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pena",
-    "image": "assets/discoveries/mutations/media-ae7ce974dc04.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
-    "width": 900,
-    "height": 675
+    "image": "assets/discoveries/mutations/media-43b70ee9400e.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Black_feathers_of_bird_close_up.jpg",
+    "author": "U.S. Fish and Wildlife Service",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 789
   },
   "Endozoocoria": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Dispers%C3%A3o_biol%C3%B3gica",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
-    "author": "A.Spielhoff",
-    "license": "CC0",
-    "width": 900,
-    "height": 325
+    "image": "assets/discoveries/mutations/media-024b5b13e9b7.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Schiedea_obovata_(4999665482).jpg",
+    "author": "David Eickhoff from Pearl City, Hawaii, USA",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 900
   },
   "Capsaicina": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Capsaicina",
-    "image": "assets/discoveries/mutations/media-8161ab1b04df.png",
+    "image": "assets/discoveries/mutations/media-65531fc37555.png",
     "source": "https://commons.wikimedia.org/wiki/File:Capsaicin-3D-vdW.png",
     "author": null,
     "license": "Public domain",
-    "width": 900,
-    "height": 378
+    "width": 1200,
+    "height": 504
   },
   "Epizoocoria": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Zoocoria",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
-    "author": "A.Spielhoff",
-    "license": "CC0",
-    "width": 900,
-    "height": 325
+    "image": "assets/discoveries/mutations/media-a0763110de3b.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Epizoochoria_NRM.jpg",
+    "author": "Aelwyn",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
   },
   "Sinzoocoria": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Zoocoria",
-    "image": "assets/discoveries/mutations/media-5222ab300eba.png",
+    "image": "assets/discoveries/mutations/media-6a6befcb961a.png",
     "source": "https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg",
     "author": "A.Spielhoff",
     "license": "CC0",
-    "width": 900,
-    "height": 325
+    "width": 1200,
+    "height": 434
   },
   "Mirmecocoria": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Dispers%C3%A3o_de_sementes",
-    "image": "assets/discoveries/mutations/media-1c6460793912.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Epilobium_hirsutum_-_Seed_head_-_Triptych.jpg",
-    "author": "Colin",
+    "image": "assets/discoveries/mutations/media-d5fab0284420.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Afzelia_africana1.jpg",
+    "author": null,
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 309
+    "width": 1200,
+    "height": 833
   },
   "Roedor": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Roedores",
-    "image": "assets/discoveries/mutations/media-c50b20f0b6bd.jpg",
+    "image": "assets/discoveries/mutations/media-fe69f0d775cc.jpg",
     "source": "https://commons.wikimedia.org/wiki/File:Rodent_collage.jpg",
     "author": "Bobisbob",
     "license": "CC BY-SA 3.0",
-    "width": 900,
-    "height": 675
+    "width": 1200,
+    "height": 900
   },
   "Mutação Letal": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Alelo_letal",
-    "image": "assets/discoveries/mutations/media-9c26ad49e256.png",
-    "source": "https://commons.wikimedia.org/wiki/File:Lethal_alleles_punnett_square_es.svg",
-    "author": "Jcfidy",
+    "image": "assets/discoveries/mutations/media-5a4eb1e268e9.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Chromosome-DNA-gene.png",
+    "author": "Thomas Splettstoesser (www.scistyle.com)",
     "license": "CC BY-SA 4.0",
-    "width": 900,
-    "height": 846
+    "width": 1200,
+    "height": 905
   },
   "Mutação Disfuncional": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Muta%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-ecdd1f5a4f6b.png",
+    "image": "assets/discoveries/mutations/media-f34ea8dc1d46.png",
     "source": "https://commons.wikimedia.org/wiki/File:CollapsedtreeLabels-simplified.svg",
     "author": "User:TimVickers, SVG conversion by User:User_A1",
     "license": "Public domain",
-    "width": 900,
-    "height": 594
+    "width": 1200,
+    "height": 792
   }
 });
