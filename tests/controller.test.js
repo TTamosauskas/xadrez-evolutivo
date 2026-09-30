@@ -684,3 +684,84 @@ test("single-player scheduling preserves a long movement trace in the only immed
   );
   controller.dispose();
 });
+
+
+test("computer versus computer mode automatically advances after the result is shown", () => {
+  const state = createState(9701),
+    timers = new Map(),
+    delays = new Map(),
+    advances = [];
+  let nextTimer = 0;
+  state.result = { winner: "blue", reason: "Extinção total." };
+  state.phase = "over";
+
+  const controller = new Controller(state, {
+    resultDelay: 1000,
+    autoAdvanceDelay: 1400,
+    onAutoAdvanceResult: (finished) => advances.push(finished.revision),
+    setTimer: (fn, delay) => {
+      const id = ++nextTimer;
+      timers.set(id, fn);
+      delays.set(id, delay);
+      return id;
+    },
+    clearTimer: (id) => {
+      timers.delete(id);
+      delays.delete(id);
+    },
+  });
+  controller.mode = "auto";
+  controller.refresh();
+
+  const resultId = [...delays.entries()].find(([, delay]) => delay === 1000)?.[0];
+  assert.ok(resultId);
+  timers.get(resultId)();
+  timers.delete(resultId);
+  delays.delete(resultId);
+  assert.equal(controller.resultReady, true);
+  assert.equal(advances.length, 0);
+
+  const advanceId = [...delays.entries()].find(([, delay]) => delay === 1400)?.[0];
+  assert.ok(advanceId);
+  timers.get(advanceId)();
+  assert.deepEqual(advances, [state.revision]);
+  controller.dispose();
+});
+
+test("automatic result advancement is cancelled when leaving computer versus computer mode", () => {
+  const state = createState(9702),
+    timers = new Map(),
+    delays = new Map(),
+    advances = [];
+  let nextTimer = 0;
+  state.result = { winner: "blue", reason: "Extinção total." };
+  state.phase = "over";
+
+  const controller = new Controller(state, {
+    resultDelay: 0,
+    autoAdvanceDelay: 1400,
+    onAutoAdvanceResult: () => advances.push(true),
+    setTimer: (fn, delay) => {
+      const id = ++nextTimer;
+      timers.set(id, fn);
+      delays.set(id, delay);
+      return id;
+    },
+    clearTimer: (id) => {
+      timers.delete(id);
+      delays.delete(id);
+    },
+  });
+  controller.mode = "auto";
+  controller.refresh();
+  const resultId = [...delays.entries()].find(([, delay]) => delay === 0)?.[0];
+  timers.get(resultId)();
+  controller.configure("multi");
+
+  assert.equal(
+    [...delays.values()].some((delay) => delay === 1400),
+    false,
+  );
+  assert.deepEqual(advances, []);
+  controller.dispose();
+});

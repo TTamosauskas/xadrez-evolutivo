@@ -109,6 +109,7 @@ const controller = new Controller(
         controller.mode === "auto" || !controller.canUndoNeocortex();
       renderDiscoveryBadges();
     },
+    onAutoAdvanceResult: () => advanceFinishedCycle({ automatic: true }),
   },
 );
 try {
@@ -969,18 +970,29 @@ $("game-over-retry").addEventListener("click", () => {
       : `Reiniciado o ${next.cycle}º Ciclo de ${currentGeologicalStage(next).period}.`,
   );
 });
-$("game-over-new").addEventListener("click", () => {
+function advanceFinishedCycle({ automatic = false } = {}) {
+  if (!controller.state.result) return false;
   if ($("game-over-dialog").open) $("game-over-dialog").close();
   if ($("notice-dialog").open) $("notice-dialog").close();
   clearSelection();
 
   if (controller.state.scenario === "arena") {
     openArenaEngineering();
-    return;
+    return true;
   }
 
+  const previous = controller.state;
   replaceCycleState(createSuccessorState(controller.state));
-});
+  const next = controller.state;
+  if (automatic)
+    report(
+      next.geologicalStage === previous.geologicalStage
+        ? `Computador × computador avançou automaticamente para o ${next.cycle}º Ciclo de ${currentGeologicalStage(next).period}.`
+        : `Computador × computador avançou automaticamente para ${currentGeologicalStage(next).period}.`,
+    );
+  return true;
+}
+$("game-over-new").addEventListener("click", () => advanceFinishedCycle());
 $("game-over-dialog").addEventListener("cancel", (event) => {
   event.preventDefault();
   $("game-over-dialog").close();
