@@ -104,6 +104,10 @@ const fileOverrides = Object.freeze({
   Contorcionismo:
     "Giant Pacific octopus spotting at Yaquina Head tidepools (49777974808).jpg",
   "Animais Domésticos": "Cattle and dog.jpg",
+  Feromônios: "Cecropia Moth (Hyalophora cecropia).jpg",
+  Bioluminescência: "Fireflies (35082682316).jpg",
+  "Bioluminescência Predatória":
+    "Melanocetus murrayi (Murrays abyssal anglerfish).jpg",
 });
 
 const semanticQueries = Object.freeze({
