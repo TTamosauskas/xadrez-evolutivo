@@ -27,6 +27,8 @@ export class Controller {
       lethalDelay = 700,
       collapseDelay = 250,
       resultDelay = 1000,
+      autoAdvanceDelay = 1400,
+      onAutoAdvanceResult = null,
     } = {},
   ) {
     this.state = assertState(state);
@@ -42,6 +44,8 @@ export class Controller {
     this.lethalDelay = lethalDelay;
     this.collapseDelay = collapseDelay;
     this.resultDelay = resultDelay;
+    this.autoAdvanceDelay = autoAdvanceDelay;
+    this.onAutoAdvanceResult = onAutoAdvanceResult;
     this.mode = "multi";
     this.difficulty = "medium";
     this.paused = false;
@@ -50,6 +54,7 @@ export class Controller {
     this.domainTimer = null;
     this.lethalTimer = null;
     this.resultTimer = null;
+    this.resultAdvanceTimer = null;
     this.resultReady = false;
     this.neocortexPending = null;
     this.neocortexWindow = null;
@@ -76,7 +81,38 @@ export class Controller {
       this.clearTimer(this.resultTimer);
       this.resultTimer = null;
     }
+    if (this.resultAdvanceTimer !== null) {
+      this.clearTimer(this.resultAdvanceTimer);
+      this.resultAdvanceTimer = null;
+    }
   }
+
+  scheduleResultAutoAdvance() {
+    if (
+      this.resultAdvanceTimer !== null ||
+      !this.resultReady ||
+      !this.state.result ||
+      this.mode !== "auto" ||
+      this.paused ||
+      typeof this.onAutoAdvanceResult !== "function"
+    )
+      return;
+    const token = this.generation,
+      revision = this.state.revision;
+    this.resultAdvanceTimer = this.setTimer(() => {
+      this.resultAdvanceTimer = null;
+      if (
+        this.paused ||
+        this.mode !== "auto" ||
+        this.generation !== token ||
+        !this.state.result ||
+        this.state.revision !== revision
+      )
+        return;
+      this.onAutoAdvanceResult(this.state);
+    }, this.autoAdvanceDelay);
+  }
+
   refresh() {
     const movementTrace = this.pendingMovementTrace;
     this.pendingMovementTrace = null;
@@ -88,6 +124,7 @@ export class Controller {
           if (!this.state.result || this.state.revision !== revision) return;
           this.resultReady = true;
           this.render(this.state, false, true);
+          this.scheduleResultAutoAdvance();
         }, this.resultDelay);
       }
       const busy =
@@ -97,6 +134,7 @@ export class Controller {
             ? "blocked"
             : !!this.job;
       this.render(this.state, busy, this.resultReady, movementTrace);
+      this.scheduleResultAutoAdvance();
       return;
     }
     this.resultReady = false;
