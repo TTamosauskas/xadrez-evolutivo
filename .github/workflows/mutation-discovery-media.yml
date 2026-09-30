@@ -3,7 +3,7 @@ name: Refresh mutation discovery media
 on:
   push:
     branches:
-      - feature/discoveries-mutation-content
+      - fix/curate-biology-discovery-media
     paths:
       - scripts/build-mutation-discovery-media.mjs
       - src/discoveries.js
@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: feature/discoveries-mutation-content
+          ref: fix/curate-biology-discovery-media
       - uses: actions/setup-node@v4
         with:
           node-version: 24
