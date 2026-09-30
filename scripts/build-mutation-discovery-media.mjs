@@ -59,6 +59,31 @@ const traitFallbacks = Object.freeze({
   Escavador: "Pocket gopher in burrow bw.png",
 });
 
+const fileOverrides = Object.freeze({
+  "Caça Cooperativa": "Wild Dogs Mudumalai.jpg",
+  Sociabilidade: "GeladaTroopSimienMountains.jpg",
+  "Plantas Domesticadas": "Corn field.jpg",
+  Tinta: "Giant Pacific Octopus (Octopus dofleini) (7007259144).jpg",
+  Quimiossíntese:
+    "Campagne Phare 2002 - Vers géants (Riftia Pachyptila) dans leur habitat (Ifremer 00569-68101).jpg",
+  Mirmecocoria: "Mimercoria.jpg",
+  Traqueófitas: "Fern fronds unfolding (14349206833).jpg",
+  Trepadeira: "Climbing vine on aged brick wall close-up 02.jpg",
+  "Onívoro Oportunista": "Raccoon (Procyon lotor) eating I.png",
+  "Acasalamento Múltiplo": "Jacana Birds.jpg",
+  Forésia: "All aboard.jpg",
+  Rastejante: "Rat Snake Slithering.jpg",
+  "Ofuscamento por movimento": "Zebra herd (31966157887).jpg",
+  Extremófitas: "Desert plant.jpg",
+  Nanismo:
+    "Maxilla of dwarf elephant, Geological Museum Apeiranthos, 176934.jpg",
+  Sinzoocoria: "Squirrel holding nut.jpg",
+  "Deficiência Sensorial": "Sensorial nervous system (receptor, motor, efector).svg",
+  "Neocórtex Desenvolvido": "Cerebral cortex, side view.svg",
+  Pedogênese: "Gall larvae Dasineura salicifoliae.jpg",
+  "Pescoço Verticalizado": "Feeding (32718898744).jpg",
+});
+
 const semanticQueries = Object.freeze({
   "Respiração anaeróbia": "anaerobic bacteria microscopy",
   "Respiração aeróbia": "aerobic respiration mitochondria",
@@ -423,7 +448,15 @@ async function buildOne([trait, [topic]]) {
       )}`;
 
   let info = null;
-  if (preferSearchTraits.has(trait))
+  if (fileOverrides[trait]) {
+    const override = await imageInfo(
+      fileOverrides[trait],
+      "commons.wikimedia.org",
+    );
+    if (candidateAllowed(trait, override)) info = override;
+  }
+
+  if (!info && preferSearchTraits.has(trait))
     info = await searchedImage(trait, topic);
 
   if (!info) {
