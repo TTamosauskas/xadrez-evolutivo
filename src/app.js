@@ -981,9 +981,9 @@ function advanceFinishedCycle({ automatic = false } = {}) {
     return true;
   }
 
-  const previous = controller.state,
-    next = createSuccessorState(previous);
-  replaceCycleState(next);
+  const previous = controller.state;
+  replaceCycleState(createSuccessorState(controller.state));
+  const next = controller.state;
   if (automatic)
     report(
       next.geologicalStage === previous.geologicalStage
