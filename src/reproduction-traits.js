@@ -295,7 +295,7 @@ export function canPupate(state, piece) {
   );
 }
 
-function bioluminescenceLineClear(state, a, b) {
+export function bioluminescenceLineClear(state, a, b) {
   let x0 = a.c,
     y0 = a.r;
   const x1 = b.c,
