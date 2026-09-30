@@ -1642,6 +1642,12 @@ export const NITROGEN_FIXATION_COOLDOWN_ROUNDS = 4;
 export const PHEROMONE_COOLDOWN_ROUNDS = 3;
 export const BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS = 4;
 
+function signalingAligned(a, b) {
+  const dr = Math.abs(a.r - b.r),
+    dc = Math.abs(a.c - b.c);
+  return dr === 0 || dc === 0 || dr === dc;
+}
+
 function signalingStep(state, mover, toward) {
   const options = [];
   for (let dr = -1; dr <= 1; dr++)
@@ -1742,6 +1748,7 @@ export function bioluminescentLureTargets(state, piece) {
         !dormant(state, candidate) &&
         !inkCloudAt(state, candidate.r, candidate.c) &&
         distance(piece, candidate) === 2 &&
+        signalingAligned(piece, candidate) &&
         bioluminescenceLineClear(state, piece, candidate),
     )
     .map((candidate) => {
