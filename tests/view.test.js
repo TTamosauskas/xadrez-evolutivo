@@ -64,12 +64,12 @@ test("rendering a pathogen notice settles and never mutates game state", async (
   observer.disconnect();
   dom.window.close();
 });
-test("pathogen agents render centered overlays with distinct symbols", () => {
+test("infection markers stay attached to pieces while environmental pathogens remain cell overlays", () => {
   const dom = setup(),
     s = createState(23, { geologicalStage: "quaternary" }),
     virusHost = s.pieces[0],
-    mixedHost = s.pieces[1];
-  startDisease(s, "eco", virusHost, null, "virus");
+    mixedHost = s.pieces[1],
+    virusDisease = startDisease(s, "eco", virusHost, null, "virus");
   s.cyclePathogenProfile = null;
   startDisease(s, "eco", mixedHost, null, "fungus");
   s.cyclePathogenProfile = null;
@@ -93,26 +93,66 @@ test("pathogen agents render centered overlays with distinct symbols", () => {
     movesRemaining: 2,
   });
 
-  render(dom.window.document, s);
+  render(dom.window.document, s, { selected: virusHost.id });
 
-  const virusCell = dom.window.document.querySelector(
+  const d = dom.window.document,
+    virusCell = d.querySelector(
       `[data-r="${virusHost.r}"][data-c="${virusHost.c}"]`,
     ),
-    mixedCell = dom.window.document.querySelector(
+    mixedCell = d.querySelector(
       `[data-r="${mixedHost.r}"][data-c="${mixedHost.c}"]`,
     ),
-    sporeCell = dom.window.document.querySelector(
-      '[data-r="6"][data-c="6"]',
-    );
-  assert.equal(virusCell.querySelector(".pathogen-virus")?.textContent, "☀︎");
-  assert.equal(mixedCell.querySelector(".pathogen-bacteria")?.textContent, "🦠");
-  assert.equal(mixedCell.querySelector(".pathogen-fungus")?.textContent, "🍄");
+    sporeCell = d.querySelector('[data-r="6"][data-c="6"]'),
+    selected = d.getElementById("selected").textContent;
+
+  assert.equal(
+    virusCell.querySelector(".piece-pathogen-infection.pathogen-virus")
+      ?.textContent,
+    "☀︎",
+  );
+  assert.equal(virusCell.querySelector(".pathogen-overlay"), null);
+  assert.equal(
+    mixedCell.querySelector(".piece-pathogen-infection.pathogen-bacteria")
+      ?.textContent,
+    "🦠",
+  );
+  assert.equal(
+    mixedCell.querySelector(".pathogen-overlay .pathogen-fungus")
+      ?.textContent,
+    "🍄",
+  );
+  assert.equal(
+    mixedCell.querySelector(".pathogen-overlay .pathogen-bacteria"),
+    null,
+  );
   assert.equal(
     sporeCell.querySelector(".pathogen-spore-mark")?.textContent,
     "◌",
   );
   assert.match(sporeCell.getAttribute("aria-label"), /esporo fúngico/);
-  assert.ok(virusCell.querySelector(".pathogen-overlay"));
+  assert.match(virusCell.title, /infectado por Vírus Patógenos/i);
+  assert.doesNotMatch(virusCell.textContent, /🤢/);
+  assert.match(selected, /Vírus Patógenos · infectado/i);
+  assert.match(selected, /desfecho em \d+ rodada\(s\)/);
+  assert.match(selected, new RegExp(`mortalidade-base ${virusDisease.mortality}%`));
+
+  s.current = virusHost.owner;
+  s.turn = Math.max(2, s.turn);
+  virusHost.venom = {
+    remaining: 1,
+    infectedTurn: s.turn - 1,
+    source: "Peçonha",
+  };
+  render(d, s, { selected: virusHost.id });
+  const rerenderedVirusCell = d.querySelector(
+    `[data-r="${virusHost.r}"][data-c="${virusHost.c}"]`,
+  );
+  assert.ok(rerenderedVirusCell.querySelector(".piece-pathogen-infection"));
+  assert.equal(
+    rerenderedVirusCell.querySelector(".terminal-death-mark")?.textContent,
+    "🤢",
+  );
+
   dom.window.close();
 });
 

@@ -1209,25 +1209,36 @@ export function tickDiseases(ctx) {
   );
 }
 
-export function pathogenAgentAt(state, r, c) {
+export function infectionDiseaseForPiece(state, piece) {
+  if (!piece?.infection) return null;
+  return (
+    state.diseases.find(
+      (disease) => disease.id === piece.infection.disease,
+    ) ?? null
+  );
+}
+
+export function environmentalPathogenAgentsAt(state, r, c) {
   if (!inside(r, c)) return [];
   const cell = square(r, c),
     now = round(state),
     agents = new Set();
-  const piece = state.pieces.find(
-    (candidate) => candidate.r === r && candidate.c === c,
-  );
-  if (piece?.infection) {
-    const disease = state.diseases.find(
-      (candidate) => candidate.id === piece.infection.disease,
-    );
-    if (disease) agents.add(disease.agent);
-  }
   for (const disease of state.diseases)
     if (
       activeDisease(disease, now) &&
       disease.contaminated?.includes(cell)
     )
       agents.add(disease.agent);
+  return [...agents];
+}
+
+export function pathogenAgentAt(state, r, c) {
+  if (!inside(r, c)) return [];
+  const agents = new Set(environmentalPathogenAgentsAt(state, r, c)),
+    piece = state.pieces.find(
+      (candidate) => candidate.r === r && candidate.c === c,
+    ),
+    infection = infectionDiseaseForPiece(state, piece);
+  if (infection) agents.add(infection.agent);
   return [...agents];
 }
