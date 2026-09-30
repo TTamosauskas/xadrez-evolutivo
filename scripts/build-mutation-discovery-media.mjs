@@ -59,6 +59,124 @@ const traitFallbacks = Object.freeze({
   Escavador: "Pocket gopher in burrow bw.png",
 });
 
+const semanticQueries = Object.freeze({
+  "Respiração anaeróbia": "anaerobic bacteria microscopy",
+  "Respiração aeróbia": "aerobic respiration mitochondria",
+  Fotossíntese: "leaf sunlight photosynthesis",
+  Mixotrofia: "Euglena mixotroph microscopy",
+  Embriófitas: "land plants moss fern",
+  Traqueófitas: "vascular plants fern",
+  Trepadeira: "climbing vine plant",
+  Espinhos: "plant thorns spines",
+  Extremófitas: "extremophile plants desert alpine",
+  Angiospermas: "flowering plants field",
+  "Fixação de Nitrogênio": "root nodules nitrogen fixing bacteria",
+  Dormência: "animal dormancy hibernation",
+  Resistência: "immune response white blood cells",
+  Longevidade: "long lived animal tortoise",
+  "Cópula Agressiva": "sexual conflict bed bug traumatic insemination",
+  Brotamento: "hydra budding",
+  Fragmentação: "planarian fragmentation reproduction",
+  Colônia: "colonial organism coral colony",
+  "Onívoro Oportunista": "raccoon omnivore feeding",
+  "Acasalamento Preferencial": "animal mate choice courtship peacock",
+  Pedogênese: "paedogenesis gall midge larva",
+  Marsupial: "kangaroo joey pouch",
+  Monogamia: "animal monogamy pair bond birds",
+  "Acasalamento Múltiplo": "animal polyandry mating birds",
+  Metamorfose: "butterfly metamorphosis stages",
+  Granívoro: "seed eating bird granivore",
+  Parasitismo: "parasite host animal",
+  "Simetria Bilateral": "bilateral symmetry animals",
+  Jatopropulsão: "squid jet propulsion",
+  Artrópode: "arthropod diversity insects crustaceans",
+  Rastejante: "snake crawling locomotion",
+  "Movimento Lateral": "sidewinder snake locomotion",
+  Escansão: "animal climbing locomotion",
+  Bioadesão: "gecko foot adhesion",
+  Arborícola: "arboreal monkey climbing tree",
+  Forésia: "phoresy mites insect",
+  Serpenteamento: "snake lateral undulation",
+  Tigmotaxia: "cockroach thigmotaxis wall",
+  Deslizamento: "flying squirrel gliding",
+  Pulo: "kangaroo jumping",
+  Bipedalismo: "primate bipedal locomotion",
+  "Percepção Espacial": "vestibular system animal anatomy",
+  Esclerotização: "arthropod sclerotization exoskeleton",
+  "Ofuscamento por movimento": "motion dazzle zebra herd",
+  "Visão Binocular": "owl binocular vision",
+  Ecolocalização: "bat echolocation",
+  "Movimento proteano": "protean escape behavior animal",
+  Notívago: "nocturnal animal owl",
+  Veneno: "poison dart frog",
+  Escalador: "animal climbing cliff",
+  Onívoro: "brown bear omnivore feeding",
+  Ovíparo: "animal laying eggs",
+  Ooteca: "praying mantis ootheca",
+  Incubação: "bird incubating eggs",
+  Lactação: "mammal nursing calf",
+  Antropização: "human land use agriculture urbanization landscape",
+  "Plantas Domesticadas": "domesticated crops wheat maize",
+  "Animais Domésticos": "domesticated animals cattle dog",
+  Sociabilidade: "social animals group primates",
+  Superorganismo: "ant colony superorganism",
+  "Caça Cooperativa": "cooperative hunting wolves prey",
+  Mutualismo: "mutualism cleaner fish shrimp",
+  Mimetismo: "animal mimicry butterfly",
+  "Polegar Opositor": "opposable thumb primate hand",
+  "Neocórtex Desenvolvido": "mammal neocortex brain anatomy",
+  "Anemia Falciforme": "sickle cell blood smear",
+  "Assimetria Flutuante": "fluctuating asymmetry butterfly wings",
+  Ataxia: "ataxia gait diagram",
+  "Deficiência Motora": "motor impairment nervous system diagram",
+  "Deficiência Sensorial": "sensory impairment nervous system diagram",
+  "Filho único": "singleton offspring mammal",
+  Semelparidade: "salmon spawning semelparity",
+  Nanismo: "island dwarfism animal",
+  Gigantismo: "island gigantism animal",
+  Tinta: "octopus ink defense",
+  Quimiossíntese: "hydrothermal vent chemosynthesis bacteria",
+  Estômatos: "leaf stomata microscope",
+  Tromba: "elephant trunk",
+  Ruminante: "cow ruminating",
+  "Predação em Massa": "filter feeding whale krill",
+  Peçonha: "venomous snake fangs",
+  "Pescoço Verticalizado": "giraffe neck feeding",
+  Multicelularismo: "multicellular organism sponge microscopy",
+  Zoorremediação: "oyster reef bioremediation water filtration",
+  "Pele Glandular": "frog glandular skin",
+  Pelos: "mammal fur close up",
+  Penas: "bird feathers close up",
+  Endozoocoria: "bird eating fruit seed dispersal",
+  Epizoocoria: "burr seeds animal fur dispersal",
+  Sinzoocoria: "squirrel carrying seed",
+  Mirmecocoria: "ant seed dispersal myrmecochory",
+  "Locomoção Articulada": "arthropod jointed legs",
+});
+
+const preferSearchTraits = new Set(Object.keys(semanticQueries));
+const animalSocialTraits = new Set([
+  "Sociabilidade",
+  "Monogamia",
+  "Superorganismo",
+  "Caça Cooperativa",
+  "Mutualismo",
+  "Hierarquia",
+  "Manada",
+  "Colônia",
+]);
+
+const rejectedGenericFiles = new Set([
+  "Mixed-culture biofilm.jpg",
+  "Pflanzenzelle-Chloroplast.svg",
+  "Bird's nest with eggs, Atlantic forest, northern littoral of Bahia, Brazil (13924331985).jpg",
+  "Lions hunting Africa.jpg",
+  "Cheetah chase.jpg",
+  "Wolf Pack.jpg",
+  "Animal echolocation.svg",
+  "StateLibQld 1 105248 Group of friends gathered around a radio in Brisbane, ca. 1942.jpg",
+]);
+
 const fallbacks = Object.freeze({
   microbial: "Mixed-culture biofilm.jpg",
   genetics: "Chromosome-DNA-gene.png",
@@ -152,7 +270,7 @@ async function imageInfo(fileName, host = "pt.wikipedia.org") {
       formatversion: "2",
       prop: "imageinfo",
       iiprop: "url|extmetadata",
-      iiurlwidth: "900",
+      iiurlwidth: "1200",
       titles: title,
     }),
     page = data.query?.pages?.[0],
@@ -162,12 +280,98 @@ async function imageInfo(fileName, host = "pt.wikipedia.org") {
   return info ? { ...info, title: page.title } : null;
 }
 
-const landscape = (info) =>
-  !!(
+const landscape = (info) => {
+  const width = Number(info?.thumbwidth ?? 0),
+    height = Number(info?.thumbheight ?? 0);
+  return !!(
     info?.thumburl &&
-    Number(info.thumbwidth) >= 600 &&
-    Number(info.thumbwidth) > Number(info.thumbheight)
+    width >= 900 &&
+    height >= 420 &&
+    width / Math.max(1, height) >= 1.2
   );
+};
+
+const fileNameOf = (info) =>
+  String(info?.title ?? "")
+    .replace(/^File:/i, "")
+    .replaceAll("_", " ");
+
+function candidateAllowed(trait, info) {
+  if (!landscape(info)) return false;
+  const name = fileNameOf(info);
+  if (rejectedGenericFiles.has(name)) return false;
+  if (
+    animalSocialTraits.has(trait) &&
+    /\b(?:marriage|wedding|friends|radio|people|family|woman|women|man|men|girl|boy|human)\b/i.test(
+      name,
+    )
+  )
+    return false;
+  return true;
+}
+
+const usedMediaUrls = new Set();
+
+async function searchCommons(query) {
+  const data = await api("commons.wikimedia.org", {
+      action: "query",
+      format: "json",
+      formatversion: "2",
+      generator: "search",
+      gsrnamespace: "6",
+      gsrlimit: "24",
+      gsrsearch: query,
+      prop: "imageinfo",
+      iiprop: "url|extmetadata",
+      iiurlwidth: "1200",
+    }),
+    pages = data.query?.pages ?? [];
+  return pages
+    .map((page) => {
+      const info = page.imageinfo?.[0];
+      return info ? { ...info, title: page.title } : null;
+    })
+    .filter(Boolean);
+}
+
+function candidateScore(trait, info, index) {
+  const name = fileNameOf(info),
+    raster = /\.(?:jpe?g|png|webp|tiff?)$/i.test(name) ? 8 : 0,
+    photo = /\.(?:jpe?g|webp|tiff?)$/i.test(name) ? 5 : 0,
+    diagramPenalty = /\b(?:diagram|map|chart|scheme|schema|icon|logo|symbol)\b/i.test(
+      name,
+    )
+      ? -4
+      : 0,
+    photoBonus = animalSocialTraits.has(trait) ? photo : 0,
+    unused = usedMediaUrls.has(info.thumburl ?? info.url) ? -10 : 3;
+  return 100 - index + raster + photoBonus + diagramPenalty + unused;
+}
+
+async function searchedImage(trait, topic) {
+  const queries = [
+    semanticQueries[trait],
+    [trait, topic].filter(Boolean).join(" "),
+    topic,
+    trait,
+  ].filter(Boolean);
+
+  const candidates = [];
+  for (const query of [...new Set(queries)]) {
+    const results = await searchCommons(query);
+    results.forEach((info, index) => {
+      if (candidateAllowed(trait, info))
+        candidates.push({
+          info,
+          score: candidateScore(trait, info, index),
+        });
+    });
+    if (candidates.length >= 6) break;
+  }
+
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates[0]?.info ?? null;
+}
 
 function extension(response, url) {
   const type = response.headers.get("content-type") ?? "";
@@ -217,15 +421,39 @@ async function buildOne([trait, [topic]]) {
       `https://pt.wikipedia.org/wiki/${encodeURIComponent(
         String(title).replaceAll(" ", "_"),
       )}`;
-  let info = await imageInfo(page?.pageimage);
-  if (!landscape(info))
-    info = await imageInfo(
-      traitFallbacks[trait] ?? fallbacks[groupFor(trait, topic)],
+
+  let info = null;
+  if (preferSearchTraits.has(trait))
+    info = await searchedImage(trait, topic);
+
+  if (!info) {
+    const pageImage = await imageInfo(page?.pageimage);
+    if (candidateAllowed(trait, pageImage)) info = pageImage;
+  }
+
+  if (!info) info = await searchedImage(trait, topic);
+
+  if (!info && traitFallbacks[trait]) {
+    const fallback = await imageInfo(
+      traitFallbacks[trait],
       "commons.wikimedia.org",
     );
-  if (!info) throw new Error(`Sem imagem para ${trait}`);
+    if (candidateAllowed(trait, fallback)) info = fallback;
+  }
+
+  if (!info) {
+    const fallback = await imageInfo(
+      fallbacks[groupFor(trait, topic)],
+      "commons.wikimedia.org",
+    );
+    if (landscape(fallback)) info = fallback;
+  }
+
+  if (!info) throw new Error(`Sem imagem em paisagem para ${trait}`);
   if (!landscape(info))
-    throw new Error(`Imagem de fallback não é paisagem para ${trait}`);
+    throw new Error(`Imagem selecionada não é paisagem para ${trait}`);
+
+  usedMediaUrls.add(info.thumburl ?? info.url);
   return [
     trait,
     {
@@ -245,7 +473,7 @@ const sourceEntries = Object.entries(MUTATION_DISCOVERY_TOPICS),
   results = [];
 for (const entry of sourceEntries) {
   results.push(await buildOne(entry));
-  await sleep(250);
+  await sleep(120);
 }
 
 const media = Object.fromEntries(results);
