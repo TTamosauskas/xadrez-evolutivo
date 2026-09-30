@@ -800,6 +800,8 @@ const mutations = Object.fromEntries(
         imageSource: media.source ?? null,
         imageLicense: media.license ?? null,
         imageAuthor: media.author ?? null,
+        imageWidth: media.width ?? null,
+        imageHeight: media.height ?? null,
         order,
       },
     ];
