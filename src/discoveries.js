@@ -483,6 +483,18 @@ export const MUTATION_DISCOVERY_TOPICS = {
   "Antropização": ["Antropização", "Antropização é a transformação de ambientes por atividades humanas, incluindo construção, manejo e alteração deliberada de habitats."],
   "Plantas Domesticadas": ["Domesticação de plantas", "A domesticação vegetal selecionou características úteis à produção, propagação e manejo humano ao longo de muitas gerações."],
   "Animais Domésticos": ["Domesticação de animais", "A domesticação animal envolve mudanças hereditárias e comportamentais associadas à convivência e seleção por populações humanas."],
+  Feromônios: [
+    "Feromônio",
+    "Feromônios são sinais químicos liberados por um organismo e detectados por indivíduos da mesma espécie, podendo orientar localização, reprodução, agregação e outros comportamentos.",
+  ],
+  Bioluminescência: [
+    "Bioluminescência",
+    "Bioluminescência é a produção de luz por reações químicas em organismos vivos. Em diversos animais, sinais luminosos podem transmitir informação entre indivíduos; nos vagalumes, padrões de flashes participam do reconhecimento e da comunicação reprodutiva.",
+  ],
+  "Bioluminescência Predatória": [
+    "Bioluminescência",
+    "Alguns predadores utilizam órgãos bioluminescentes como sinais ou iscas que atraem presas para perto da região de captura, como ocorre em peixes-pescadores de águas profundas.",
+  ],
   "Sociabilidade": ["Sociabilidade", "A vida em grupos pode favorecer cooperação, defesa coletiva e respostas coordenadas a predadores."],
   Hierarquia: ["Hierarquia social", "Hierarquias de dominância podem organizar acesso a recursos, interação e prioridade dentro de grupos; no jogo, essa organização aparece como recomendação de qual membro sacrificar na defesa coletiva."],
   Superorganismo: ["Superorganismo", "Colônias eusociais podem produzir decisões coletivas a partir de interações distribuídas entre indivíduos; no jogo, isso é abstraído como uma recomendação compartilhada de membro e movimento."],

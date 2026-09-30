@@ -35,6 +35,7 @@ import {
   predatoryReproductionAvailable,
   mutualismPartner,
   biofilmResource,
+  bioluminescentPartner,
 } from "./reproduction-traits.js";
 import { dopaminePressureReductionAvailable } from "./reproduction.js";
 
@@ -158,6 +159,9 @@ export function actionableTraitsForPiece(state, piece) {
     if (action.type === "CHEMOSYNTHESIS") actionable.add("Quimiossíntese");
     if (action.type === "FIX_NITROGEN")
       actionable.add("Fixação de Nitrogênio");
+    if (action.type === "PHEROMONE_SIGNAL") actionable.add("Feromônios");
+    if (action.type === "BIOLUMINESCENT_LURE")
+      actionable.add("Bioluminescência Predatória");
     if (
       ["FEEDING_REACH", "EXTENDED_CAPTURE"].includes(action.type) &&
       action.trait
@@ -699,9 +703,13 @@ function sociableGroup(state, victim) {
     seen = new Set([victim.id]),
     queue = [victim];
   while (queue.length) {
-    const current = queue.shift();
+    const current = queue.shift(),
+      luminous = bioluminescentPartner(state, current);
     for (const piece of eligible)
-      if (!seen.has(piece.id) && distance(current, piece) === 1) {
+      if (
+        !seen.has(piece.id) &&
+        (distance(current, piece) === 1 || luminous?.id === piece.id)
+      ) {
         seen.add(piece.id);
         queue.push(piece);
       }
@@ -719,6 +727,18 @@ function addActiveStateTraits(state, piece, traits) {
 
   if (has(piece, "Mutualismo") && mutualismPartner(state, piece))
     traits.add("Mutualismo");
+
+  const luminousPartner = bioluminescentPartner(state, piece);
+  if (
+    luminousPartner &&
+    (has(piece, "Sociabilidade") ||
+      (has(piece, "Monogamia") && piece.pairedWithId === luminousPartner.id))
+  )
+    traits.add(
+      (piece.traits ?? []).includes("Bioluminescência Predatória")
+        ? "Bioluminescência Predatória"
+        : "Bioluminescência",
+    );
 
   if (
     state.phase === "serotonin-reposition" &&

@@ -104,6 +104,10 @@ const fileOverrides = Object.freeze({
   Contorcionismo:
     "Giant Pacific octopus spotting at Yaquina Head tidepools (49777974808).jpg",
   "Animais Domésticos": "Cattle and dog.jpg",
+  Feromônios: "Cecropia Moth (Hyalophora cecropia).jpg",
+  Bioluminescência: "Fireflies (35082682316).jpg",
+  "Bioluminescência Predatória":
+    "Melanocetus murrayi (Murrays abyssal anglerfish).jpg",
 });
 
 const semanticQueries = Object.freeze({
@@ -199,6 +203,9 @@ const semanticQueries = Object.freeze({
   Sinzoocoria: "squirrel carrying seed",
   Mirmecocoria: "ant seed dispersal myrmecochory",
   "Locomoção Articulada": "arthropod jointed legs",
+  Feromônios: "moth pheromone communication antenna courtship",
+  Bioluminescência: "fireflies bioluminescence night",
+  "Bioluminescência Predatória": "anglerfish bioluminescent lure",
 });
 
 const preferSearchTraits = new Set(Object.keys(semanticQueries));
@@ -211,6 +218,9 @@ const animalSocialTraits = new Set([
   "Hierarquia",
   "Manada",
   "Colônia",
+  "Feromônios",
+  "Bioluminescência",
+  "Bioluminescência Predatória",
 ]);
 
 const rejectedGenericFiles = new Set([
@@ -240,8 +250,8 @@ const groups = [
   ["plant", /foto|planta|est[oô]m|embri[oó]fit|traque[oó]fit|madeira|gimnos|angios|rizoma|espinh|tropismo|zoocoria|capsaicina|haust[oó]rio|floral/i],
   ["reproduction", /reprodu|ov[ií]|ovo|incuba|lacta|viv[ií]par|marsup|ninhada|filial|parental|acasal|monog|promis|fertil|parteno|brotamento|fragmenta/i],
   ["locomotion", /locomo|voo|pulo|biped|rastej|desliz|recuo|veloc|arbor|escans|for[eé]sia|serpente|trilha|tigmot|bioades/i],
-  ["sensory", /vis[aã]o|ecolocal|percep|seroton|dopamin|adrenalin|c[oó]rtex|neoc[oó]rtex|neuro|not[ií]v|espacial/i],
-  ["social", /social|manada|hierarquia|eusocial|superorganismo|ca[cç]a cooper|mutualismo|col[oô]nia/i],
+  ["sensory", /vis[aã]o|ecolocal|percep|seroton|dopamin|adrenalin|c[oó]rtex|neoc[oó]rtex|neuro|not[ií]v|espacial|biolumin/i],
+  ["social", /social|manada|hierarquia|eusocial|superorganismo|ca[cç]a cooper|mutualismo|col[oô]nia|ferom[oô]n/i],
   ["predation", /preda|carn[ií]vor|herb[ií]vor|on[ií]vor|canibal|mand[ií]bula|dente|garra|presa|veneno|pe[cç]onha|hematof|parasiti|teia|proj[eé]til|camuf|mimet|tanatose/i],
   ["genetics", /muta[cç]|reparo|transfer[eê]ncia|eucarion|endossimb|diferencia|imun|cromoss|gen[eé]tic|recess|domin/i],
 ];

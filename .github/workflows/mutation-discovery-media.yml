@@ -3,7 +3,7 @@ name: Refresh mutation discovery media
 on:
   push:
     branches:
-      - fix/curate-biology-discovery-media
+      - feature/pheromones-bioluminescence
     paths:
       - scripts/build-mutation-discovery-media.mjs
       - src/discoveries.js
@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: fix/curate-biology-discovery-media
+          ref: feature/pheromones-bioluminescence
       - uses: actions/setup-node@v4
         with:
           node-version: 24

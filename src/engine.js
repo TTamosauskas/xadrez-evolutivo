@@ -75,7 +75,11 @@ import {
   canRejectBroodParasite,
   chemosynthesisAvailable,
   nitrogenFixationTargets,
+  pheromoneTargets,
+  bioluminescentLureTargets,
   NITROGEN_FIXATION_COOLDOWN_ROUNDS,
+  PHEROMONE_COOLDOWN_ROUNDS,
+  BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS,
 } from "./moves.js";
 import {
   reproduce,
@@ -118,6 +122,7 @@ import {
   biofilmResource,
   markBiofilmResourceUsed,
   monogamySurvivalBonus,
+  bioluminescentPartner,
   paedogenesisReady,
   parentalCareProtects,
   predatoryReproductionAvailable,
@@ -1385,6 +1390,8 @@ function actionActorId(state, action) {
       "MOVE",
       "CHEMOSYNTHESIS",
       "FIX_NITROGEN",
+      "PHEROMONE_SIGNAL",
+      "BIOLUMINESCENT_LURE",
       "NURSE",
       "NICHE_BUILD",
       "BUD",
@@ -2339,9 +2346,13 @@ function sociableGroup(state, victim) {
     seen = new Set([victim.id]),
     queue = [victim];
   while (queue.length) {
-    const current = queue.shift();
+    const current = queue.shift(),
+      luminous = bioluminescentPartner(state, current);
     for (const piece of eligible)
-      if (!seen.has(piece.id) && distance(current, piece) === 1) {
+      if (
+        !seen.has(piece.id) &&
+        (distance(current, piece) === 1 || luminous?.id === piece.id)
+      ) {
         seen.add(piece.id);
         queue.push(piece);
       }
@@ -5037,6 +5048,81 @@ function resolveNitrogenFixation(ctx, action) {
   settle(ctx);
 }
 
+function resolvePheromoneSignal(ctx, action) {
+  const state = ctx.state,
+    emitter = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    ),
+    option = pheromoneTargets(state, emitter).find(
+      (candidate) => candidate.targetId === action.targetId,
+    ),
+    target = state.pieces.find(
+      (piece) => piece.id === option?.targetId && piece.owner === emitter?.owner,
+    );
+  if (!emitter || !option || !target)
+    throw Error("Sinal de Feromônios indisponível.");
+
+  target.r = option.r;
+  target.c = option.c;
+  target.lastMoveRound = round(state);
+  target.stationarySinceRound = round(state);
+  emitter.pheromoneReadyRound = round(state) + PHEROMONE_COOLDOWN_ROUNDS;
+  log(
+    state,
+    `${OWNERS[emitter.owner]}: 👃 Feromônios orientaram um aliado até ${coord(target.r, target.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Feromônios",
+    "👃 Feromônios: um aliado respondeu ao sinal químico.",
+    {
+      pieceId: emitter.id,
+      outcome: "pheromone-guidance",
+      value: PHEROMONE_COOLDOWN_ROUNDS,
+    },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveBioluminescentLure(ctx, action) {
+  const state = ctx.state,
+    emitter = state.pieces.find(
+      (piece) => piece.id === action.id && piece.owner === state.current,
+    ),
+    option = bioluminescentLureTargets(state, emitter).find(
+      (candidate) => candidate.targetId === action.targetId,
+    ),
+    target = state.pieces.find(
+      (piece) => piece.id === option?.targetId && piece.owner !== emitter?.owner,
+    );
+  if (!emitter || !option || !target)
+    throw Error("Isca de Bioluminescência Predatória indisponível.");
+
+  target.r = option.r;
+  target.c = option.c;
+  target.lastMoveRound = round(state);
+  target.stationarySinceRound = round(state);
+  emitter.bioluminescentLureReadyRound =
+    round(state) + BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS;
+  log(
+    state,
+    `${OWNERS[emitter.owner]}: 🎣 Bioluminescência Predatória atraiu uma presa até ${coord(target.r, target.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Bioluminescência Predatória",
+    "🎣 Bioluminescência Predatória: a isca luminosa atraiu a presa uma casa.",
+    {
+      pieceId: emitter.id,
+      outcome: "lured-prey",
+      value: BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS,
+    },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveParthenogenesis(ctx, action) {
   const state = ctx.state,
     parent = state.pieces.find(
@@ -5568,6 +5654,10 @@ export function transition(previous, action) {
     resolveChemosynthesis(ctx, action);
   else if (action.type === "FIX_NITROGEN" && state.phase === "move")
     resolveNitrogenFixation(ctx, action);
+  else if (action.type === "PHEROMONE_SIGNAL" && state.phase === "move")
+    resolvePheromoneSignal(ctx, action);
+  else if (action.type === "BIOLUMINESCENT_LURE" && state.phase === "move")
+    resolveBioluminescentLure(ctx, action);
   else if (action.type === "PARTHENOGENESIS" && state.phase === "move")
     resolveParthenogenesis(ctx, action);
   else if (action.type === "AGGRESSIVE_MATE" && state.phase === "move")

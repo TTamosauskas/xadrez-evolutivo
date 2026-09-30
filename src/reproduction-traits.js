@@ -39,6 +39,7 @@ export const FRAGMENT_LIFETIME = 3;
 export const HGT_CHANCE = 0.1;
 export const MONOGAMY_SURVIVAL_BONUS = 0.1;
 export const PROMISCUITY_RADIUS = 3;
+export const BIOLUMINESCENCE_RANGE = 3;
 export const METAMORPHOSIS_ROUNDS = 1;
 export const MARSUPIAL_CARRY_ROUNDS = 1;
 
@@ -294,6 +295,83 @@ export function canPupate(state, piece) {
   );
 }
 
+export function bioluminescenceLineClear(state, a, b) {
+  let x0 = a.c,
+    y0 = a.r;
+  const x1 = b.c,
+    y1 = b.r,
+    dx = Math.abs(x1 - x0),
+    sx = x0 < x1 ? 1 : -1,
+    dy = -Math.abs(y1 - y0),
+    sy = y0 < y1 ? 1 : -1;
+  let error = dx + dy;
+
+  while (x0 !== x1 || y0 !== y1) {
+    const doubled = 2 * error;
+    if (doubled >= dy) {
+      error += dy;
+      x0 += sx;
+    }
+    if (doubled <= dx) {
+      error += dx;
+      y0 += sy;
+    }
+    if (x0 === x1 && y0 === y1) break;
+    if (barrierAt(state, y0, x0)) return false;
+  }
+  return true;
+}
+
+export function bioluminescentLinks(state, owner = null) {
+  const members = (state?.pieces ?? [])
+      .filter(
+        (piece) =>
+          (!owner || piece.owner === owner) &&
+          has(piece, "Bioluminescência"),
+      )
+      .sort((a, b) => a.id - b.id),
+    candidates = [];
+
+  for (let i = 0; i < members.length; i++)
+    for (let j = i + 1; j < members.length; j++) {
+      const a = members[i],
+        b = members[j],
+        d = distance(a, b);
+      if (
+        a.owner === b.owner &&
+        d > 0 &&
+        d <= BIOLUMINESCENCE_RANGE &&
+        bioluminescenceLineClear(state, a, b)
+      )
+        candidates.push({ a, b, d });
+    }
+
+  candidates.sort(
+    (x, y) =>
+      x.d - y.d ||
+      x.a.id - y.a.id ||
+      x.b.id - y.b.id,
+  );
+  const linked = new Set(),
+    pairs = [];
+  for (const candidate of candidates) {
+    if (linked.has(candidate.a.id) || linked.has(candidate.b.id)) continue;
+    linked.add(candidate.a.id);
+    linked.add(candidate.b.id);
+    pairs.push([candidate.a, candidate.b]);
+  }
+  return pairs;
+}
+
+export function bioluminescentPartner(state, piece) {
+  if (!piece || !has(piece, "Bioluminescência")) return null;
+  for (const [a, b] of bioluminescentLinks(state, piece.owner)) {
+    if (a.id === piece.id) return b;
+    if (b.id === piece.id) return a;
+  }
+  return null;
+}
+
 export function connectedAlliesWithin(state, piece, maxDepth = PROMISCUITY_RADIUS) {
   if (!piece) return [];
   const allies = state.pieces.filter(
@@ -347,8 +425,10 @@ export function monogamyPartner(state, piece) {
 }
 
 export function monogamySurvivalBonus(state, piece) {
-  const partner = monogamyPartner(state, piece);
-  return partner && distance(partner, piece) === 1
+  const partner = monogamyPartner(state, piece),
+    luminousPartner = bioluminescentPartner(state, piece);
+  return partner &&
+    (distance(partner, piece) === 1 || luminousPartner?.id === partner.id)
     ? MONOGAMY_SURVIVAL_BONUS
     : 0;
 }

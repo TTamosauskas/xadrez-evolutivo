@@ -342,6 +342,18 @@ export const TRAITS = {
     "🐖",
     "Permite posicionar descendentes não fotossintéticos em casas vazias a até duas casas de distância.",
   ],
+  Feromônios: [
+    "👃",
+    "Pode gastar a ação para sinalizar um aliado com Feromônios a até três casas; o aliado avança uma casa em direção ao emissor quando existe destino seguro. Recarga de três rodadas.",
+  ],
+  Bioluminescência: [
+    "🌟",
+    "Forma automaticamente um enlace luminoso com um aliado bioluminescente a até três casas e sem barreira visual. O enlace conecta Sociabilidade e outros efeitos sociais compatíveis à distância.",
+  ],
+  "Bioluminescência Predatória": [
+    "🎣",
+    "Especialização de Bioluminescência: mantém o enlace luminoso e pode gastar a ação para atrair uma presa móvel não fotossintética situada a exatamente duas casas, deslocando-a uma casa em sua direção. Recarga de quatro rodadas.",
+  ],
   Sociabilidade: [
     "🦗︎",
     "Grupos conectados de quatro ou mais indivíduos podem sacrificar qualquer membro para absorver um ataque.",
@@ -822,6 +834,7 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   Angiospermas: ["Embriófitas", "Traqueófitas"],
   Eusocialidade: ["Sociabilidade"],
   "Acasalamento Múltiplo": ["Promiscuidade"],
+  "Bioluminescência Predatória": ["Bioluminescência"],
   "Neocórtex Desenvolvido": ["Córtex Pré-Frontal"],
   Veneno: ["Toxicidade"],
   Peçonha: ["Veneno", "Toxicidade"],

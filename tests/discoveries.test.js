@@ -308,6 +308,26 @@ test("curated Biology media stays landscape and semantically representative", ()
   assert.equal(images.size, Object.keys(curatedSources).length);
 });
 
+test("signaling discoveries use curated representative media", () => {
+  const expected = {
+    Feromônios: "Cecropia_Moth_(Hyalophora_cecropia).jpg",
+    Bioluminescência: "Fireflies_(35082682316).jpg",
+    "Bioluminescência Predatória": "Melanocetus_murrayi_(Murrays_abyssal_anglerfish).jpg",
+  };
+  for (const [trait, sourceFragment] of Object.entries(expected)) {
+    const entry = DISCOVERY_CONTENT.mutations[trait];
+    assert.ok(entry.imageWidth >= 900, trait);
+    assert.ok(entry.imageHeight >= 420, trait);
+    assert.ok(entry.imageWidth / entry.imageHeight >= 1.2, trait);
+    assert.match(
+      entry.imageSource ?? "",
+      /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/,
+      trait,
+    );
+    assert.ok(entry.imageSource.includes(sourceFragment), trait);
+  }
+});
+
 test("Biology media rejects the known out-of-context source matches", () => {
   const rejected = [
     "StateLibQld_1_105248_Group_of_friends",

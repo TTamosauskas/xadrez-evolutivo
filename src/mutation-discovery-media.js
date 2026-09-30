@@ -1125,6 +1125,33 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "width": 1200,
     "height": 831
   },
+  "Feromônios": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/Ferom%C3%B4nio",
+    "image": "assets/discoveries/mutations/media-5bf2cd41a80e.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Cecropia_Moth_(Hyalophora_cecropia).jpg",
+    "author": "Marvin Smith",
+    "license": "CC BY-SA 2.0",
+    "width": 1200,
+    "height": 907
+  },
+  "Bioluminescência": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/Bioluminesc%C3%AAncia",
+    "image": "assets/discoveries/mutations/media-1eb798c7fb77.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Fireflies_(35082682316).jpg",
+    "author": "Bernd Thaller from Graz, Austria",
+    "license": "CC BY 2.0",
+    "width": 1200,
+    "height": 675
+  },
+  "Bioluminescência Predatória": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/Bioluminesc%C3%AAncia",
+    "image": "assets/discoveries/mutations/media-18be329592dc.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Melanocetus_murrayi_(Murrays_abyssal_anglerfish).jpg",
+    "author": "R. Mintern",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 718
+  },
   "Sociabilidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Comportamento_social",
     "image": "assets/discoveries/mutations/media-d9c7944bb331.jpg",

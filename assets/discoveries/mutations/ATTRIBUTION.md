@@ -835,6 +835,27 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: User:Sobreira
 - Licença: CC BY-SA 3.0
 
+## media-5bf2cd41a80e.jpg
+
+- Usada em: Feromônios
+- Fonte: https://commons.wikimedia.org/wiki/File:Cecropia_Moth_(Hyalophora_cecropia).jpg
+- Autor/crédito: Marvin Smith
+- Licença: CC BY-SA 2.0
+
+## media-1eb798c7fb77.jpg
+
+- Usada em: Bioluminescência
+- Fonte: https://commons.wikimedia.org/wiki/File:Fireflies_(35082682316).jpg
+- Autor/crédito: Bernd Thaller from Graz, Austria
+- Licença: CC BY 2.0
+
+## media-18be329592dc.jpg
+
+- Usada em: Bioluminescência Predatória
+- Fonte: https://commons.wikimedia.org/wiki/File:Melanocetus_murrayi_(Murrays_abyssal_anglerfish).jpg
+- Autor/crédito: R. Mintern
+- Licença: Public domain
+
 ## media-d9c7944bb331.jpg
 
 - Usada em: Sociabilidade

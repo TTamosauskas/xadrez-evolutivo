@@ -2985,6 +2985,8 @@ export function assertState(state) {
           !integer(p.rumination.startedTurn, 0))) ||
       !integer(p.eukaryoteBufferUses ?? 0, 0, 2) ||
       !integer(p.nitrogenFixationReadyRound ?? 0, 0) ||
+      !integer(p.pheromoneReadyRound ?? 0, 0) ||
+      !integer(p.bioluminescentLureReadyRound ?? 0, 0) ||
       !(
         p.biofilmSharedRound === undefined ||
         p.biofilmSharedRound === null ||

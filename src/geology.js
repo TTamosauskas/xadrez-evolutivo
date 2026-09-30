@@ -638,6 +638,9 @@ export const TRAIT_STAGE = {
   "Exibição deimática": "cambrian",
   "Tanatose": "cambrian",
   "Ofuscamento por movimento": "jurassic",
+  Feromônios: "carboniferous",
+  Bioluminescência: "cretaceous",
+  "Bioluminescência Predatória": "eocene",
 };
 
 export const ENERGY_BRANCH_TRAITS = new Set(["Fotossíntese", "Predação"]);
@@ -705,6 +708,10 @@ export const ACTIVE_TRAIT_FAMILIES = [
   {
     id: "social-organization",
     traits: ["Sociabilidade", "Eusocialidade"],
+  },
+  {
+    id: "bioluminescence",
+    traits: ["Bioluminescência", "Bioluminescência Predatória"],
   },
   {
     id: "cognition",
@@ -1021,6 +1028,19 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Vivíparo", "Reprodução Sexuada"],
   },
   "Visão Noturna": { lineage: ["Notívago"] },
+  Feromônios: {
+    lineage: ["Reprodução Sexuada", "Locomoção Terrestre"],
+    active: ["Predação"],
+  },
+  Bioluminescência: {
+    lineage: ["Reprodução Sexuada", "Visão Noturna"],
+    active: ["Predação"],
+  },
+  "Bioluminescência Predatória": {
+    lineage: ["Bioluminescência", "Percepção Espacial"],
+    lineageAny: ["Carnívoro", "Onívoro"],
+    active: ["Predação"],
+  },
   Ecolocalização: { lineage: ["Lactação", "Percepção Espacial"] },
   Ovífagia: { lineage: ["Ovíparo"] },
   Onívoro: { lineageAny: ["Carnívoro", "Herbívoro"] },
@@ -1279,6 +1299,9 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Superorganismo",
   "Caça Cooperativa",
   "Mutualismo",
+  "Feromônios",
+  "Bioluminescência",
+  "Bioluminescência Predatória",
   "Assimetria Flutuante",
   "Ataxia",
   "Anemia Falciforme",
@@ -1431,6 +1454,9 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Exibição deimática",
   "Tanatose",
   "Ofuscamento por movimento",
+  "Feromônios",
+  "Bioluminescência",
+  "Bioluminescência Predatória",
   "Onívoro Oportunista",
   "Acasalamento Preferencial",
   "Promiscuidade",
@@ -1547,6 +1573,9 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Hierarquia: "predation",
   Superorganismo: "predation",
   "Caça Cooperativa": "predation",
+  Feromônios: "predation",
+  Bioluminescência: "predation",
+  "Bioluminescência Predatória": "predation",
   Mutualismo: "shared",
   Tropismo: "photosynthesis",
   "Assimetria Flutuante": "predation",
@@ -2014,6 +2043,9 @@ const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
   "Longevidade",
   "Fertilidade Longeva",
   "Imortalidade Biológica",
+  "Feromônios",
+  "Bioluminescência",
+  "Bioluminescência Predatória",
 ]);
 
 export function periodCompletionInnovations(state) {

@@ -35,6 +35,8 @@ export const AI_ACTION_TYPES = Object.freeze([
   "AGGRESSIVE_MATE",
   "CHEMOSYNTHESIS",
   "FIX_NITROGEN",
+  "PHEROMONE_SIGNAL",
+  "BIOLUMINESCENT_LURE",
   "PARTHENOGENESIS",
   "NURSE",
   "LAY_OVOVIVIPAROUS",
@@ -209,6 +211,14 @@ export function actionPriority(state, a) {
   if (a.type === "CHEMOSYNTHESIS") return 13;
   if (a.type === "FIX_NITROGEN")
     return 8 + placementPriority(state, a);
+  if (a.type === "PHEROMONE_SIGNAL") {
+    const target = state.pieces.find((piece) => piece.id === a.targetId);
+    return 5 + strategicPieceValue(state, target) * 0.04;
+  }
+  if (a.type === "BIOLUMINESCENT_LURE") {
+    const target = state.pieces.find((piece) => piece.id === a.targetId);
+    return 10 + strategicPieceValue(state, target) * 0.12;
+  }
   if (a.type === "EXTENDED_CAPTURE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
     return (a.trait === "Tromba" ? 16 : 13) + strategicPieceValue(state, target) * 0.16;
