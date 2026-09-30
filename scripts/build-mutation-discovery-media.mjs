@@ -82,6 +82,21 @@ const fileOverrides = Object.freeze({
   "Neocórtex Desenvolvido": "Cerebral cortex, side view.svg",
   Pedogênese: "Gall larvae Dasineura salicifoliae.jpg",
   "Pescoço Verticalizado": "Feeding (32718898744).jpg",
+  Jatopropulsão: "Swimming giant squid.jpg",
+  "Movimento Lateral":
+    "Sidewinder (70161f25-d02c-4469-8249-51ff332bb51b).jpg",
+  Tigmotaxia: "Cockroach on the wall - 3.jpg",
+  "Movimento proteano":
+    "Arabian Gazelle in Dubai Desert Conservation Reserve Picture 05.jpg",
+  Ataxia: "Ataxia Classification.png",
+  "Deficiência Motora":
+    "Illustration of the motor neuron tract descending from primary motor cortex, via spinal cord, to skeletal muscle.jpg",
+  "Pele Glandular": "CSIRO ScienceImage 1288 Image of Frog Skin.jpg",
+  "Polegar Opositor": "Hand with opposable thumb 1.jpg",
+  "Locomoção Articulada": "Crab morning walk at Arabian Sea.jpg",
+  Multicelularismo: "Sponge at Steenbras Reef Outpost P8220387.jpg",
+  Epizoocoria:
+    "Epizoochory - black Labrador with hooked Geum fruits in his fur.jpg",
 });
 
 const semanticQueries = Object.freeze({
