@@ -835,6 +835,27 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: User:Sobreira
 - Licença: CC BY-SA 3.0
 
+## media-2af4fc272f2a.jpg
+
+- Usada em: Feromônios
+- Fonte: https://commons.wikimedia.org/wiki/File:Ferolite_-_Pheromone_and_light_trap_for_Tuta_absoluta.jpg
+- Autor/crédito: Shakiralzaidi
+- Licença: CC BY-SA 3.0
+
+## media-b96509535b88.jpg
+
+- Usada em: Bioluminescência
+- Fonte: https://commons.wikimedia.org/wiki/File:Dinoflagellate_bioluminescence_2.jpg
+- Autor/crédito: Mike
+- Licença: CC BY-SA 2.0
+
+## media-2589dde0d04d.jpg
+
+- Usada em: Bioluminescência Predatória
+- Fonte: https://commons.wikimedia.org/wiki/File:Sea_sparkles_(11538049406).jpg
+- Autor/crédito: Sander van der Wel from Netherlands
+- Licença: CC BY-SA 2.0
+
 ## media-d9c7944bb331.jpg
 
 - Usada em: Sociabilidade

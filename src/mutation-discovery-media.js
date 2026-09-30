@@ -1125,6 +1125,33 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "width": 1200,
     "height": 831
   },
+  "Feromônios": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/Ferom%C3%B4nio",
+    "image": "assets/discoveries/mutations/media-2af4fc272f2a.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Ferolite_-_Pheromone_and_light_trap_for_Tuta_absoluta.jpg",
+    "author": "Shakiralzaidi",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 926
+  },
+  "Bioluminescência": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/Bioluminesc%C3%AAncia",
+    "image": "assets/discoveries/mutations/media-b96509535b88.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Dinoflagellate_bioluminescence_2.jpg",
+    "author": "Mike",
+    "license": "CC BY-SA 2.0",
+    "width": 1200,
+    "height": 435
+  },
+  "Bioluminescência Predatória": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/Bioluminesc%C3%AAncia",
+    "image": "assets/discoveries/mutations/media-2589dde0d04d.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sea_sparkles_(11538049406).jpg",
+    "author": "Sander van der Wel from Netherlands",
+    "license": "CC BY-SA 2.0",
+    "width": 1200,
+    "height": 800
+  },
   "Sociabilidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Comportamento_social",
     "image": "assets/discoveries/mutations/media-d9c7944bb331.jpg",
