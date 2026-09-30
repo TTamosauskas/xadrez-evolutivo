@@ -479,12 +479,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Locomoção Primitiva": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-6373dadf1d35.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Animal_locomotion._Plate_760_-_DPLA_-_2ed132af352daafc93f66d7b1764c1be.jpg",
+    "image": "assets/discoveries/mutations/media-78050d174cc7.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Animal_locomotion._Plate_775_-_DPLA_-_fd28005a7b80f41a708d70067f5bb811.jpg",
     "author": "Muybridge, Eadweard, 1830-1904",
     "license": "Public domain",
     "width": 1200,
-    "height": 956
+    "height": 961
   },
   "Jatopropulsão": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Propuls%C3%A3o",

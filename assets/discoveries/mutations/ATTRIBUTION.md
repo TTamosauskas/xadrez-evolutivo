@@ -352,10 +352,10 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Luc Viatour
 - Licença: CC BY-SA 3.0
 
-## media-6373dadf1d35.jpg
+## media-78050d174cc7.jpg
 
 - Usada em: Locomoção Primitiva
-- Fonte: https://commons.wikimedia.org/wiki/File:Animal_locomotion._Plate_760_-_DPLA_-_2ed132af352daafc93f66d7b1764c1be.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Animal_locomotion._Plate_775_-_DPLA_-_fd28005a7b80f41a708d70067f5bb811.jpg
 - Autor/crédito: Muybridge, Eadweard, 1830-1904
 - Licença: Public domain
 
