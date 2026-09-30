@@ -273,10 +273,17 @@ test("Bioluminescência Predatória exige linha visual e não atrai fotossintét
         c: 4,
         traits: ["Fotossíntese", "Locomoção Primitiva"],
       },
+      {
+        owner: "amber",
+        r: 2,
+        c: 5,
+        traits: ["Predação", "Locomoção Primitiva"],
+      },
     ], 6207),
     emitter = state.pieces[0],
     animal = state.pieces[1],
-    plant = state.pieces[2];
+    plant = state.pieces[2],
+    offAxisAnimal = state.pieces[3];
   state.current = "blue";
   state.naturalBarriers = [square(4, 5)];
 
@@ -285,4 +292,8 @@ test("Bioluminescência Predatória exige linha visual e não atrai fotossintét
   );
   assert.equal(actions.some((action) => action.targetId === animal.id), false);
   assert.equal(actions.some((action) => action.targetId === plant.id), false);
+  assert.equal(
+    actions.some((action) => action.targetId === offAxisAnimal.id),
+    false,
+  );
 });
