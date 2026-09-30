@@ -1909,6 +1909,60 @@ test("pieces with no available action fade on board without a duplicate wait bad
   dom.window.close();
 });
 
+test("board only counts metabolic recovery while selected details keep cellular counters", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        traits: [
+          "Respiração aeróbia",
+          "Eucarionte",
+          "Endossimbiose",
+          "Feromônios",
+          "Bioluminescência Predatória",
+        ],
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Respiração anaeróbia"] },
+    ]),
+    piece = s.pieces[0],
+    currentRound = round(s);
+
+  piece.eukaryoteBufferUses = 1;
+  piece.nextReproductionRound = currentRound + 2;
+  piece.endosymbiosisDebtUntilRound = currentRound + 2;
+  piece.pheromoneReadyRound = currentRound + 3;
+  piece.bioluminescentLureReadyRound = currentRound + 4;
+  piece.parasitoidism = { remaining: 3 };
+  piece.venom = { remaining: 2, infectedTurn: s.turn, source: "Peçonha" };
+
+  render(dom.window.document, s, { selected: piece.id });
+  const d = dom.window.document,
+    cell = d.querySelector(`[data-r="${piece.r}"][data-c="${piece.c}"]`),
+    boardStatus = cell.querySelector(".piece-status")?.textContent ?? "",
+    selected = d.getElementById("selected").textContent;
+
+  assert.match(boardStatus, /⏳2/);
+  assert.match(boardStatus, /👃⏳/);
+  assert.match(boardStatus, /🎣⏳/);
+  assert.match(boardStatus, /🔋⏳/);
+  assert.match(boardStatus, /🌀/);
+  assert.match(boardStatus, /🦂/);
+  assert.doesNotMatch(boardStatus, /🔘1/);
+  assert.doesNotMatch(boardStatus, /👃⏳3/);
+  assert.doesNotMatch(boardStatus, /🎣⏳4/);
+  assert.doesNotMatch(boardStatus, /🌀3/);
+  assert.doesNotMatch(boardStatus, /🦂2/);
+
+  assert.match(selected, /🔘 Eucarionte · 1 amortecimento restante\./);
+  assert.match(
+    selected,
+    /⏳ 2 t recuperação metabólica por Endossimbiose\./,
+  );
+  dom.window.close();
+});
+
 test("selected-piece lifecycle countdowns use compact wait copy", () => {
   const dom = setup(),
     s = fixture([

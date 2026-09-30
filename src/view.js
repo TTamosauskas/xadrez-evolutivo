@@ -1361,28 +1361,19 @@ export function render(
         )
           statusBadges.push("🩸⏳");
         if (p.broodParasite) statusBadges.push("🪹⏳");
-        if (p.parasitoidism)
-          statusBadges.push(`🌀${p.parasitoidism.remaining}`);
+        if (p.parasitoidism) statusBadges.push("🌀");
         if (p.rumination) statusBadges.push("🐄⏳");
         if (luminousLinkedIds.has(p.id)) statusBadges.push("🌟↔");
         if (
           Number.isInteger(p.pheromoneReadyRound) &&
           p.pheromoneReadyRound > currentRound
         )
-          statusBadges.push(`👃⏳${p.pheromoneReadyRound - currentRound}`);
+          statusBadges.push("👃⏳");
         if (
           Number.isInteger(p.bioluminescentLureReadyRound) &&
           p.bioluminescentLureReadyRound > currentRound
         )
-          statusBadges.push(
-            `🎣⏳${p.bioluminescentLureReadyRound - currentRound}`,
-          );
-        const eukaryoteRemaining = Math.max(
-          0,
-          2 - (p.eukaryoteBufferUses ?? 0),
-        );
-        if (has(p, "Eucarionte") && eukaryoteRemaining > 0)
-          statusBadges.push(`🔘${eukaryoteRemaining}`);
+          statusBadges.push("🎣⏳");
         if (
           Number.isInteger(p.endosymbiosisDebtUntilRound) &&
           p.endosymbiosisDebtUntilRound > currentRound
@@ -1401,11 +1392,13 @@ export function render(
         )
           statusBadges.push("🌫️⏳");
         if (p.venom)
-          statusBadges.push(
-            p.venom.source === "Peçonha"
-              ? `🦂${p.venom.remaining}`
-              : `☠${p.venom.remaining ?? ""}`,
-          );
+          statusBadges.push(p.venom.source === "Peçonha" ? "🦂" : "☠");
+        const metabolicRecoveryRemaining = Math.max(
+          0,
+          (p.nextReproductionRound ?? 0) - currentRound,
+        );
+        if (metabolicRecoveryRemaining > 0)
+          statusBadges.push(`⏳${metabolicRecoveryRemaining}`);
         if (p.seeds) statusBadges.push(`${p.seeds}🌰`);
         if (
           state.plantSeeds.some(
@@ -1718,12 +1711,34 @@ export function render(
     for (const trait of actor.somaticMutations ?? [])
       if (TRAITS[trait]) disadvantages.push(traitRow(trait, true));
 
-    const statusDetails = [];
+    const statusDetails = [],
+      eukaryoteRemaining = Math.max(
+        0,
+        2 - (actor.eukaryoteBufferUses ?? 0),
+      ),
+      endosymbiosisDebtRemaining =
+        Number.isInteger(actor.endosymbiosisDebtUntilRound) &&
+        actor.endosymbiosisDebtUntilRound > currentRound
+          ? actor.endosymbiosisDebtUntilRound - currentRound
+          : 0,
+      selectedWaitStatus =
+        actorActionState.reason === "Recuperação metabólica" &&
+        endosymbiosisDebtRemaining > 0
+          ? `⏳ ${actorActionState.remainingRounds} t recuperação metabólica por Endossimbiose.`
+          : compactWaitStatus(actorActionState);
     if (actorActionState.waiting)
       statusDetails.push(
         make(
           "p",
-          compactWaitStatus(actorActionState),
+          selectedWaitStatus,
+          "selected-status",
+        ),
+      );
+    if (has(actor, "Eucarionte"))
+      statusDetails.push(
+        make(
+          "p",
+          `🔘 Eucarionte · ${eukaryoteRemaining} amortecimento${eukaryoteRemaining === 1 ? "" : "s"} restante${eukaryoteRemaining === 1 ? "" : "s"}.`,
           "selected-status",
         ),
       );
@@ -1753,7 +1768,9 @@ export function render(
       statusDetails.push(
         make(
           "p",
-          `⏳ ${actor.nextReproductionRound - currentRound} t recuperação metabólica.`,
+          endosymbiosisDebtRemaining > 0
+            ? `⏳ ${actor.nextReproductionRound - currentRound} t recuperação metabólica por Endossimbiose.`
+            : `⏳ ${actor.nextReproductionRound - currentRound} t recuperação metabólica.`,
           "selected-status",
         ),
       );
