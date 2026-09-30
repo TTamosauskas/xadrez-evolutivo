@@ -583,11 +583,11 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Carsten Steger
 - Licença: CC BY-SA 4.0
 
-## media-26ce205508df.jpg
+## media-66f51c5b5f51.jpg
 
 - Usada em: Contorcionismo
-- Fonte: https://commons.wikimedia.org/wiki/File:US_Navy_070422-N-5215E-002_Midshipman_3rd_Class_Nicholas_Lowe_shows_Julian_Than_how_to_stretch_before_running_in_the_Special_Olympics_at_the_Naval_Academy.jpg
-- Autor/crédito: U.S. Navy photo by Mass Communication Specialist Seaman Apprentice Matthew A. Ebarb
+- Fonte: https://commons.wikimedia.org/wiki/File:Giant_Pacific_octopus_spotting_at_Yaquina_Head_tidepools_(49777974808).jpg
+- Autor/crédito: BLM Oregon &amp; Washington
 - Licença: Public domain
 
 ## media-c2dd2615a74a.jpg
@@ -940,11 +940,11 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Ed Uthman from Houston, TX, USA
 - Licença: CC BY 2.0
 
-## media-d330caaea26d.jpg
+## media-196711259cae.png
 
 - Usada em: Assimetria Flutuante
-- Fonte: https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg
-- Autor/crédito: Krzysztof A. Zacharski
+- Fonte: https://commons.wikimedia.org/wiki/File:Procrustes_superimposition.png
+- Autor/crédito: Christian Peter Klingenberg
 - Licença: CC BY 4.0
 
 ## media-a8ff1126acc7.png
@@ -1164,12 +1164,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: User:....
 - Licença: CC BY-SA 3.0
 
-## media-c51486b5e92b.png
+## media-012d94e13720.jpg
 
 - Usada em: Peçonha
-- Fonte: https://commons.wikimedia.org/wiki/File:De_Havilland_Venom_3-view_line_drawing.png
-- Autor/crédito: Emoscopes
-- Licença: CC BY 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Snake_fang_types.jpg
+- Autor/crédito: Bloopityboop
+- Licença: CC BY-SA 4.0
 
 ## media-2725bc419416.jpg
 
@@ -1262,12 +1262,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: U.S. Fish and Wildlife Service
 - Licença: Public domain
 
-## media-024b5b13e9b7.jpg
+## media-9e8d56ec670b.jpg
 
 - Usada em: Endozoocoria
-- Fonte: https://commons.wikimedia.org/wiki/File:Schiedea_obovata_(4999665482).jpg
-- Autor/crédito: David Eickhoff from Pearl City, Hawaii, USA
-- Licença: CC BY 2.0
+- Fonte: https://commons.wikimedia.org/wiki/File:%22arara-canind%C3%A9%22_-_Ara_ararauna_-_se_alimentando_de_frutos_e_sementes_de_jatob%C3%A1_-_Hymenaea_courbaril_19.jpg
+- Autor/crédito: DiogoKanouté
+- Licença: CC BY-SA 4.0
 
 ## media-65531fc37555.png
 

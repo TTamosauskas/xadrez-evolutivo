@@ -776,12 +776,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Contorcionismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Flexibilidade",
-    "image": "assets/discoveries/mutations/media-26ce205508df.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:US_Navy_070422-N-5215E-002_Midshipman_3rd_Class_Nicholas_Lowe_shows_Julian_Than_how_to_stretch_before_running_in_the_Special_Olympics_at_the_Naval_Academy.jpg",
-    "author": "U.S. Navy photo by Mass Communication Specialist Seaman Apprentice Matthew A. Ebarb",
+    "image": "assets/discoveries/mutations/media-66f51c5b5f51.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Giant_Pacific_octopus_spotting_at_Yaquina_Head_tidepools_(49777974808).jpg",
+    "author": "BLM Oregon &amp; Washington",
     "license": "Public domain",
     "width": 1200,
-    "height": 769
+    "height": 675
   },
   "Corpo Gelatinoso": {
     "wikipedia": "https://pt.wikipedia.org/wiki/%C3%81gua-viva_(animal)",
@@ -1262,12 +1262,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Assimetria Flutuante": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Homeostase_do_desenvolvimento",
-    "image": "assets/discoveries/mutations/media-d330caaea26d.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
+    "image": "assets/discoveries/mutations/media-196711259cae.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Procrustes_superimposition.png",
+    "author": "Christian Peter Klingenberg",
     "license": "CC BY 4.0",
     "width": 1200,
-    "height": 900
+    "height": 937
   },
   "Ataxia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ataxia",
@@ -1568,10 +1568,10 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Peçonha": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pe%C3%A7onha",
-    "image": "assets/discoveries/mutations/media-c51486b5e92b.png",
-    "source": "https://commons.wikimedia.org/wiki/File:De_Havilland_Venom_3-view_line_drawing.png",
-    "author": "Emoscopes",
-    "license": "CC BY 3.0",
+    "image": "assets/discoveries/mutations/media-012d94e13720.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Snake_fang_types.jpg",
+    "author": "Bloopityboop",
+    "license": "CC BY-SA 4.0",
     "width": 1200,
     "height": 900
   },
@@ -1694,10 +1694,10 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Endozoocoria": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Dispers%C3%A3o_biol%C3%B3gica",
-    "image": "assets/discoveries/mutations/media-024b5b13e9b7.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Schiedea_obovata_(4999665482).jpg",
-    "author": "David Eickhoff from Pearl City, Hawaii, USA",
-    "license": "CC BY 2.0",
+    "image": "assets/discoveries/mutations/media-9e8d56ec670b.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:%22arara-canind%C3%A9%22_-_Ara_ararauna_-_se_alimentando_de_frutos_e_sementes_de_jatob%C3%A1_-_Hymenaea_courbaril_19.jpg",
+    "author": "DiogoKanouté",
+    "license": "CC BY-SA 4.0",
     "width": 1200,
     "height": 900
   },
