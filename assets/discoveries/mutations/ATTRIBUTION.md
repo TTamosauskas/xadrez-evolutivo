@@ -51,12 +51,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: YJaredY
 - Licença: CC BY-SA 4.0
 
-## media-641c7b07724b.jpg
+## media-21a70319407a.jpg
 
 - Usada em: Traqueófitas
-- Fonte: https://commons.wikimedia.org/wiki/File:Tree_frog_Fern_Forest.jpg
-- Autor/crédito: Cary Bass
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Fern_fronds_unfolding_(14349206833).jpg
+- Autor/crédito: U.S. Fish and Wildlife Service Southeast Region
+- Licença: Public domain
 
 ## media-35fa85d3434a.jpg
 
@@ -65,12 +65,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: consulte a fonte
 - Licença: CC BY-SA 3.0
 
-## media-28539b1f0ea9.jpg
+## media-f01265f17293.jpg
 
 - Usada em: Trepadeira
-- Fonte: https://commons.wikimedia.org/wiki/File:Maschikuliturm.jpg
-- Autor/crédito: Taken by Carport
-- Licença: CC BY 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Climbing_vine_on_aged_brick_wall_close-up_02.jpg
+- Autor/crédito: A S M Jobaer
+- Licença: CC BY-SA 4.0
 
 ## media-8eaa6f6a45ce.jpg
 
@@ -79,12 +79,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: No machine-readable author provided. Miskatonic assumed (based on copyright claims).
 - Licença: CC BY 2.5
 
-## media-d330caaea26d.jpg
+## media-a029b368ee14.jpg
 
-- Usada em: Extremófitas, Assimetria Flutuante, Multicelularismo
-- Fonte: https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg
-- Autor/crédito: Krzysztof A. Zacharski
-- Licença: CC BY 4.0
+- Usada em: Extremófitas
+- Fonte: https://commons.wikimedia.org/wiki/File:Desert_plant.jpg
+- Autor/crédito: Meteb Ali
+- Licença: CC BY-SA 4.0
 
 ## media-807adb5f1fee.jpg
 
@@ -247,11 +247,11 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Andrew massyn
 - Licença: Public domain
 
-## media-b5a425182b7a.jpg
+## media-cfa43759aca1.png
 
 - Usada em: Onívoro Oportunista
-- Fonte: https://commons.wikimedia.org/wiki/File:Skulls,_antlers,_and_horns_;_Wildlife_trees_;_Wildlife_biologists_(IA_skullsantlershor00vann).pdf
-- Autor/crédito: VanNiel, John, author Dean, William I., author United States. Bureau of Land Management
+- Fonte: https://commons.wikimedia.org/wiki/File:Raccoon_(Procyon_lotor)_eating_I.png
+- Autor/crédito: consulte a fonte
 - Licença: Public domain
 
 ## media-ebfa045a3927.jpg
@@ -268,12 +268,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Paco Gómez from Castellón, Spain
 - Licença: CC BY-SA 2.0
 
-## media-8527fecb1099.jpg
+## media-6f0cdb215527.jpg
 
 - Usada em: Pedogênese
-- Fonte: https://commons.wikimedia.org/wiki/File:Soil_pyramids_Kotl%C3%A1%C5%99ka_2.JPG
-- Autor/crédito: Petr Dlouhý
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Gall_larvae_Dasineura_salicifoliae.jpg
+- Autor/crédito: Beatriz Moisset
+- Licença: CC BY-SA 4.0
 
 ## media-f2c27b062c50.jpg
 
@@ -296,12 +296,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Cesar Luiz Leite
 - Licença: CC BY-SA 4.0
 
-## media-f0d17a00f448.jpg
+## media-505208de215a.jpg
 
 - Usada em: Acasalamento Múltiplo
-- Fonte: https://commons.wikimedia.org/wiki/File:Pandavas_with_Draupadi_OR_ayudhapurushas_facing_Madhu_Kaitabha.jpg
-- Autor/crédito: Bob King
-- Licença: CC BY 2.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Jacana_Birds.jpg
+- Autor/crédito: Sajjad photography
+- Licença: CC BY-SA 4.0
 
 ## media-c14e769e6de8.jpg
 
@@ -352,10 +352,10 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Luc Viatour
 - Licença: CC BY-SA 3.0
 
-## media-78050d174cc7.jpg
+## media-6373dadf1d35.jpg
 
 - Usada em: Locomoção Primitiva
-- Fonte: https://commons.wikimedia.org/wiki/File:Animal_locomotion._Plate_775_-_DPLA_-_fd28005a7b80f41a708d70067f5bb811.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Animal_locomotion._Plate_760_-_DPLA_-_2ed132af352daafc93f66d7b1764c1be.jpg
 - Autor/crédito: Muybridge, Eadweard, 1830-1904
 - Licença: Public domain
 
@@ -443,12 +443,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Eadweard Muybridge
 - Licença: Public domain
 
-## media-c8371ade8bdf.png
+## media-727003ce2cb4.jpg
 
 - Usada em: Rastejante
-- Fonte: https://commons.wikimedia.org/wiki/File:Jack_Ryder_graph.png
-- Autor/crédito: Raven4x4x at en.wikipedia
-- Licença: Public domain
+- Fonte: https://commons.wikimedia.org/wiki/File:Rat_Snake_Slithering.jpg
+- Autor/crédito: Kiranparamesh
+- Licença: CC BY-SA 4.0
 
 ## media-bbfed8490e77.jpg
 
@@ -478,12 +478,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Gh5046 at English Wikipedia
 - Licença: Public domain
 
-## media-7e3b78127f3e.jpg
+## media-175e72c2b521.jpg
 
 - Usada em: Forésia
-- Fonte: https://commons.wikimedia.org/wiki/File:Amalia_Fleming_hospital_Athens.jpg
-- Autor/crédito: Badseed
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:All_aboard.jpg
+- Autor/crédito: Syuan-Jyun Sun
+- Licença: CC BY-SA 4.0
 
 ## media-ddc8d26fd9b7.jpg
 
@@ -625,12 +625,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: PARAKANYAA
 - Licença: CC BY 4.0
 
-## media-11474ebac90f.jpg
+## media-6ab42ef58a9c.jpg
 
 - Usada em: Ofuscamento por movimento
-- Fonte: https://commons.wikimedia.org/wiki/File:Tropa_de_choque_(PMERJ,_2013).jpg
-- Autor/crédito: Fernando Frazão/ABr
-- Licença: CC BY 3.0 br
+- Fonte: https://commons.wikimedia.org/wiki/File:Zebra_herd_(31966157887).jpg
+- Autor/crédito: Kandukuru Nagarjun from Bangalore, India
+- Licença: CC BY 2.0
 
 ## media-8c7b803f8dd5.jpg
 
@@ -814,11 +814,11 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: consulte a fonte
 - Licença: CC BY-SA 3.0
 
-## media-e771d8e6f2e4.jpg
+## media-cd38bf87bbfc.jpg
 
 - Usada em: Plantas Domesticadas
-- Fonte: https://commons.wikimedia.org/wiki/File:Egyptian_Domesticated_Animals.jpg
-- Autor/crédito: Unknown authorUnknown author
+- Fonte: https://commons.wikimedia.org/wiki/File:Corn_field.jpg
+- Autor/crédito: Hyena
 - Licença: Public domain
 
 ## media-6d785f27d7ce.jpg
@@ -828,12 +828,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: User:Sobreira
 - Licença: CC BY-SA 3.0
 
-## media-dea0f436ca03.jpg
+## media-d9c7944bb331.jpg
 
 - Usada em: Sociabilidade
-- Fonte: https://commons.wikimedia.org/wiki/File:Supplicating_Pilgrim_at_Masjid_Al_Haram._Mecca,_Saudi_Arabia.jpg
-- Autor/crédito: Ali Mansuri
-- Licença: CC BY-SA 2.5
+- Fonte: https://commons.wikimedia.org/wiki/File:GeladaTroopSimienMountains.jpg
+- Autor/crédito: Evan Williams
+- Licença: CC BY-SA 4.0
 
 ## media-d8e35928a2c5.jpg
 
@@ -849,12 +849,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: brewbooks from near Seattle, USA
 - Licença: CC BY-SA 2.0
 
-## media-6270391697ee.jpg
+## media-430674502208.jpg
 
 - Usada em: Caça Cooperativa
-- Fonte: https://commons.wikimedia.org/wiki/File:Equestrian_Portrait_of_Cornelis_(1639%E2%80%931680)_and_Michiel_Pompe_van_Meerdervoort_(1638%E2%80%931653)_with_Their_Tutor_and_Coachman_(%22Starting_for_the_Hunt%22)_MET_DP146442.jpg
-- Autor/crédito: Aelbert Cuyp
-- Licença: CC0
+- Fonte: https://commons.wikimedia.org/wiki/File:Wild_Dogs_Mudumalai.jpg
+- Autor/crédito: Siddharth Biniwale
+- Licença: CC BY-SA 4.0
 
 ## media-be000282f649.jpg
 
@@ -905,12 +905,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: MissLunaRose12
 - Licença: CC0
 
-## media-e7ae75e972b2.png
+## media-a05155303a38.png
 
 - Usada em: Neocórtex Desenvolvido
-- Fonte: https://commons.wikimedia.org/wiki/File:Vereenvoudigde_weergave_verschillende_vormen_langetermijngeheugen.png
-- Autor/crédito: Albert Kok at Dutch Wikipedia
-- Licença: Public domain
+- Fonte: https://commons.wikimedia.org/wiki/File:Cerebral_cortex,_side_view.svg
+- Autor/crédito: Lorenzo Bandieri
+- Licença: CC BY-SA 3.0
 
 ## media-f01c008b0196.jpg
 
@@ -933,10 +933,17 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Ed Uthman from Houston, TX, USA
 - Licença: CC BY 2.0
 
-## media-7638f1326069.jpg
+## media-d330caaea26d.jpg
+
+- Usada em: Assimetria Flutuante, Multicelularismo
+- Fonte: https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg
+- Autor/crédito: Krzysztof A. Zacharski
+- Licença: CC BY 4.0
+
+## media-f43dbee15ff0.jpg
 
 - Usada em: Ataxia
-- Fonte: https://commons.wikimedia.org/wiki/File:Strumigenys_ataxia_casent0104945_label_1.jpg
+- Fonte: https://commons.wikimedia.org/wiki/File:Strumigenys_ataxia_casent0104945_profile_1.jpg
 - Autor/crédito: April Nobile
 - Licença: CC BY 4.0
 
@@ -954,12 +961,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Steve Morgan
 - Licença: CC BY-SA 3.0
 
-## media-79fe02a41236.jpg
+## media-4ae496ebd971.png
 
 - Usada em: Deficiência Sensorial
-- Fonte: https://commons.wikimedia.org/wiki/File:CDH_-_Comiss%C3%A3o_de_Direitos_Humanos_e_Legisla%C3%A7%C3%A3o_Participativa_(15643029170).jpg
-- Autor/crédito: Senado Federal
-- Licença: CC BY 2.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Sensorial_nervous_system_(receptor,_motor,_efector).svg
+- Autor/crédito: Erkide12
+- Licença: CC BY-SA 4.0
 
 ## media-dc12716b8e9b.png
 
@@ -989,12 +996,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: User:TimVickers, SVG conversion by User:User_A1
 - Licença: Public domain
 
-## media-329a2710d409.jpg
+## media-67f9de44c9ba.jpg
 
 - Usada em: Nanismo
-- Fonte: https://commons.wikimedia.org/wiki/File:Portrait_of_John_Harris_born_1815_height_3_feet_8_and_a_half_inches_;_Margaret_his_wife,_born_1831,_height_5_feet_5_inches,_weight_195_lb_(4670268).jpg
-- Autor/crédito: Unknown authorUnknown author
-- Licença: Public domain
+- Fonte: https://commons.wikimedia.org/wiki/File:Maxilla_of_dwarf_elephant,_Geological_Museum_Apeiranthos,_176934.jpg
+- Autor/crédito: Zde
+- Licença: CC BY-SA 4.0
 
 ## media-9d9dc1538763.jpg
 
@@ -1017,12 +1024,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Pet (assumed based on copyright claims)
 - Licença: CC BY-SA 4.0
 
-## media-7ab17a5d68dc.jpg
+## media-71268081559e.jpg
 
 - Usada em: Tinta
-- Fonte: https://commons.wikimedia.org/wiki/File:Fried_rice_with_squid_ink,_Ishigaki,_Japan.JPG
-- Autor/crédito: User: (WT-shared) Shoestring at wts wikivoyage
-- Licença: CC BY-SA 4.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Giant_Pacific_Octopus_(Octopus_dofleini)_(7007259144).jpg
+- Autor/crédito: Cliff from Arlington, Virginia, USA
+- Licença: CC BY 2.0
 
 ## media-1cc6e4fb0a79.jpg
 
@@ -1038,12 +1045,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Dario Sanches from São Paulo, Brazil
 - Licença: CC BY-SA 2.0
 
-## media-ebb6bb5d7d24.jpg
+## media-e1a6030b73ee.jpg
 
 - Usada em: Quimiossíntese
-- Fonte: https://commons.wikimedia.org/wiki/File:%D0%92%D0%B8%D0%BD%D0%BE%D0%B3%D1%80%D0%B0%D0%B4%D1%81%D1%8C%D0%BA2.jpg
-- Autor/crédito: Aniskov
-- Licença: CC BY-SA 4.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Campagne_Phare_2002_-_Vers_g%C3%A9ants_(Riftia_Pachyptila)_dans_leur_habitat_(Ifremer_00569-68101).jpg
+- Autor/crédito: null
+- Licença: CC BY 4.0
 
 ## media-43dccd3786c3.jpg
 
@@ -1164,11 +1171,11 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Patrick Coin (Patrick Coin)
 - Licença: CC BY-SA 2.5
 
-## media-02992b7b6d3f.jpg
+## media-738084827614.jpg
 
 - Usada em: Pescoço Verticalizado
-- Fonte: https://commons.wikimedia.org/wiki/File:Giraffe_Weevil,_Andasibe,_Madagascar.jpg
-- Autor/crédito: Frank Vassen
+- Fonte: https://commons.wikimedia.org/wiki/File:Feeding_(32718898744).jpg
+- Autor/crédito: Gordon Cheung
 - Licença: CC BY 2.0
 
 ## media-53dbf6c18cd8.jpg
@@ -1262,19 +1269,19 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Aelwyn
 - Licença: CC BY-SA 3.0
 
-## media-6a6befcb961a.png
+## media-b219a92db0c6.jpg
 
 - Usada em: Sinzoocoria
-- Fonte: https://commons.wikimedia.org/wiki/File:Pflanzenzelle-Chloroplast.svg
-- Autor/crédito: A.Spielhoff
+- Fonte: https://commons.wikimedia.org/wiki/File:Squirrel_holding_nut.jpg
+- Autor/crédito: Alastair Newton
 - Licença: CC0
 
-## media-d5fab0284420.jpg
+## media-a67576195f9e.jpg
 
 - Usada em: Mirmecocoria
-- Fonte: https://commons.wikimedia.org/wiki/File:Afzelia_africana1.jpg
-- Autor/crédito: consulte a fonte
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Mimercoria.jpg
+- Autor/crédito: Francisco Dutra
+- Licença: CC BY-SA 4.0
 
 ## media-fe69f0d775cc.jpg
 
