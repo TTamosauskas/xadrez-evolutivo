@@ -4,6 +4,7 @@ import { access, readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { EVENT_DISCOVERY_MEDIA } from "../src/event-discovery-media.js";
 import { GEOLOGY_DISCOVERY_MEDIA } from "../src/geology-discovery-media.js";
+import { MUTATION_DISCOVERY_MEDIA } from "../src/mutation-discovery-media.js";
 
 function runBuild() {
   return new Promise((resolve, reject) => {
@@ -30,7 +31,9 @@ test("production build includes discovery artwork and local media", async () => 
     access("dist/assets/discoveries/geology.svg"),
     access("dist/assets/discoveries/events.svg"),
     access("dist/assets/discoveries/mutations.svg"),
-    access("dist/assets/discoveries/mutations/media-5222ab300eba.png"),
+    ...Object.values(MUTATION_DISCOVERY_MEDIA).map((item) =>
+      access(`dist/${item.image}`),
+    ),
     ...Object.values(EVENT_DISCOVERY_MEDIA).map((item) =>
       access(`dist/${item.image}`),
     ),
