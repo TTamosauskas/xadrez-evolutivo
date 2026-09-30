@@ -1658,7 +1658,8 @@ function signalingStep(state, mover, toward) {
         plantSeedAt(state, r, c) ||
         fragmentAt(state, r, c) ||
         barrierAt(state, r, c) ||
-        lethalHazardAt(state, r, c)
+        lethalHazardAt(state, r, c) ||
+        terrain(state, r, c) === "hostile"
       )
         continue;
       options.push({ r, c });
