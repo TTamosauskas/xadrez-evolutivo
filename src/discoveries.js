@@ -12,6 +12,7 @@ export const DISCOVERY_CATEGORIES = [
 
 const BIOLOGY_DISCOVERY_LEAD = Object.freeze([
   "Respiração anaeróbia",
+  "Quimiossíntese",
   "Fotossíntese",
   "Predação",
 ]);
