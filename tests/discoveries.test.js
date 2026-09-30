@@ -65,9 +65,9 @@ test("Biologia follows the game's evolutionary chronology", () => {
   const ids = discoveredContent(state, "mutations").map((entry) => entry.id);
   assert.deepEqual(ids.slice(0, 4), [
     "Respiração anaeróbia",
+    "Quimiossíntese",
     "Fotossíntese",
     "Predação",
-    "Quimiossíntese",
   ]);
 
   const afterLead = ids.slice(4).filter((id) => TRAITS[id]);
