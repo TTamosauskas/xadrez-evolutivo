@@ -43,6 +43,7 @@ import {
   buddingResource,
   biofilmResource,
   connectedAlliesWithin,
+  bioluminescenceLineClear,
   paedogenesisReady,
   parentalCareProtects,
   predatoryReproductionAvailable,
@@ -1638,6 +1639,116 @@ export function canParasitize(state, p) {
 }
 
 export const NITROGEN_FIXATION_COOLDOWN_ROUNDS = 4;
+export const PHEROMONE_COOLDOWN_ROUNDS = 3;
+export const BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS = 4;
+
+function signalingStep(state, mover, toward) {
+  const options = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = mover.r + dr,
+        c = mover.c + dc;
+      if (
+        !inside(r, c) ||
+        distance({ r, c }, toward) >= distance(mover, toward) ||
+        ecologicalDomainBlocked(state, mover.owner, r, c) ||
+        at(state, r, c) ||
+        eggAt(state, r, c) ||
+        plantSeedAt(state, r, c) ||
+        fragmentAt(state, r, c) ||
+        barrierAt(state, r, c) ||
+        lethalHazardAt(state, r, c)
+      )
+        continue;
+      options.push({ r, c });
+    }
+  return options.sort(
+    (a, b) =>
+      distance(a, toward) - distance(b, toward) ||
+      a.r - b.r ||
+      a.c - b.c,
+  )[0] ?? null;
+}
+
+export function pheromoneTargets(state, piece) {
+  if (
+    state.phase !== "move" ||
+    state.chain ||
+    !piece ||
+    piece.owner !== state.current ||
+    !has(piece, "Feromônios") ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    ecologicalDomainBlocked(state, piece.owner, piece.r, piece.c) ||
+    round(state) < (piece.pheromoneReadyRound ?? 0)
+  )
+    return [];
+
+  return state.pieces
+    .filter(
+      (candidate) =>
+        candidate.id !== piece.id &&
+        candidate.owner === piece.owner &&
+        has(candidate, "Feromônios") &&
+        has(candidate, "Locomoção Primitiva") &&
+        !has(candidate, "Séssil") &&
+        !resting(state, candidate) &&
+        !dormant(state, candidate) &&
+        !ecologicalDomainBlocked(
+          state,
+          candidate.owner,
+          candidate.r,
+          candidate.c,
+        ) &&
+        distance(piece, candidate) > 1 &&
+        distance(piece, candidate) <= 3,
+    )
+    .map((candidate) => {
+      const step = signalingStep(state, candidate, piece);
+      return step
+        ? { targetId: candidate.id, r: step.r, c: step.c }
+        : null;
+    })
+    .filter(Boolean);
+}
+
+export function bioluminescentLureTargets(state, piece) {
+  if (
+    state.phase !== "move" ||
+    state.chain ||
+    !piece ||
+    piece.owner !== state.current ||
+    !has(piece, "Bioluminescência Predatória") ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    ecologicalDomainBlocked(state, piece.owner, piece.r, piece.c) ||
+    inkCloudAt(state, piece.r, piece.c) ||
+    round(state) < (piece.bioluminescentLureReadyRound ?? 0)
+  )
+    return [];
+
+  return state.pieces
+    .filter(
+      (candidate) =>
+        candidate.owner !== piece.owner &&
+        !canPhotosynthesize(candidate) &&
+        has(candidate, "Locomoção Primitiva") &&
+        !has(candidate, "Séssil") &&
+        !resting(state, candidate) &&
+        !dormant(state, candidate) &&
+        !inkCloudAt(state, candidate.r, candidate.c) &&
+        distance(piece, candidate) === 2 &&
+        bioluminescenceLineClear(state, piece, candidate),
+    )
+    .map((candidate) => {
+      const step = signalingStep(state, candidate, piece);
+      return step
+        ? { targetId: candidate.id, r: step.r, c: step.c }
+        : null;
+    })
+    .filter(Boolean);
+}
 
 export function nitrogenFixationTargets(state, piece) {
   if (
@@ -2041,6 +2152,16 @@ export function actionsForPiece(
       id: piece.id,
       r: target.r,
       c: target.c,
+    })),
+    ...pheromoneTargets(source, piece).map((target) => ({
+      type: "PHEROMONE_SIGNAL",
+      id: piece.id,
+      targetId: target.targetId,
+    })),
+    ...bioluminescentLureTargets(source, piece).map((target) => ({
+      type: "BIOLUMINESCENT_LURE",
+      id: piece.id,
+      targetId: target.targetId,
     })),
     ...(parthenogenesisAvailable(source, piece)
       ? [{ type: "PARTHENOGENESIS", id: piece.id }]
