@@ -247,6 +247,7 @@ main {
 .movement-trace-destination-hidden .piece-energy-core,
 .movement-trace-destination-hidden .trait-frame,
 .movement-trace-destination-hidden .piece-status,
+.movement-trace-destination-hidden .piece-pathogen-infection,
 .movement-trace-destination-hidden .pathogen-overlay {
   visibility: hidden !important;
 }
@@ -840,6 +841,23 @@ main {
   font-size: clamp(14px, 2.2vw, 22px);
   line-height: 1;
   filter: drop-shadow(0 2px 2px #000c);
+  pointer-events: none;
+}
+
+.piece-pathogen-infection {
+  position: absolute;
+  left: 5%;
+  bottom: 5%;
+  z-index: 16;
+  min-width: 1.35em;
+  padding: 1px 3px;
+  border-radius: 999px;
+  background: #171b17d9;
+  font-size: clamp(12px, 2vw, 20px);
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+  filter: drop-shadow(0 2px 2px #000b);
   pointer-events: none;
 }
 
