@@ -172,6 +172,9 @@ const boardActionLabel = (action) => {
   if (action.type === "RHIZOME") return "🫚 Rizoma";
   if (action.type === "CHEMOSYNTHESIS") return "♨️ Quimiossíntese";
   if (action.type === "FIX_NITROGEN") return "☁️ Fixação de Nitrogênio";
+  if (action.type === "PHEROMONE_SIGNAL") return "👃 Feromônios";
+  if (action.type === "BIOLUMINESCENT_LURE")
+    return "🎣 Bioluminescência Predatória";
   return action.type;
 };
 
@@ -374,6 +377,8 @@ $("board").addEventListener("click", (event) => {
             "ELECTRODISCHARGE",
             "FEEDING_REACH",
             "EXTENDED_CAPTURE",
+            "PHEROMONE_SIGNAL",
+            "BIOLUMINESCENT_LURE",
           ].includes(action.type) &&
           action.targetId === p.id),
     );
