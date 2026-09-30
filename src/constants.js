@@ -348,7 +348,7 @@ export const TRAITS = {
   ],
   Bioluminescência: [
     "🌟",
-    "Forma automaticamente um enlace luminoso com um aliado bioluminescente a até três casas e sem barreira visual. O enlace pode conectar Sociabilidade e manter a proteção de Monogamia à distância.",
+    "Forma automaticamente um enlace luminoso com um aliado bioluminescente a até três casas e sem barreira visual. O enlace conecta Sociabilidade e outros efeitos sociais compatíveis à distância.",
   ],
   "Bioluminescência Predatória": [
     "🎣",
