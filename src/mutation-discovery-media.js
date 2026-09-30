@@ -1127,30 +1127,30 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Feromônios": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ferom%C3%B4nio",
-    "image": "assets/discoveries/mutations/media-2af4fc272f2a.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Ferolite_-_Pheromone_and_light_trap_for_Tuta_absoluta.jpg",
-    "author": "Shakiralzaidi",
-    "license": "CC BY-SA 3.0",
+    "image": "assets/discoveries/mutations/media-5bf2cd41a80e.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Cecropia_Moth_(Hyalophora_cecropia).jpg",
+    "author": "Marvin Smith",
+    "license": "CC BY-SA 2.0",
     "width": 1200,
-    "height": 926
+    "height": 907
   },
   "Bioluminescência": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Bioluminesc%C3%AAncia",
-    "image": "assets/discoveries/mutations/media-b96509535b88.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Dinoflagellate_bioluminescence_2.jpg",
-    "author": "Mike",
-    "license": "CC BY-SA 2.0",
+    "image": "assets/discoveries/mutations/media-1eb798c7fb77.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Fireflies_(35082682316).jpg",
+    "author": "Bernd Thaller from Graz, Austria",
+    "license": "CC BY 2.0",
     "width": 1200,
-    "height": 435
+    "height": 675
   },
   "Bioluminescência Predatória": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Bioluminesc%C3%AAncia",
-    "image": "assets/discoveries/mutations/media-2589dde0d04d.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Sea_sparkles_(11538049406).jpg",
-    "author": "Sander van der Wel from Netherlands",
-    "license": "CC BY-SA 2.0",
+    "image": "assets/discoveries/mutations/media-18be329592dc.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Melanocetus_murrayi_(Murrays_abyssal_anglerfish).jpg",
+    "author": "R. Mintern",
+    "license": "Public domain",
     "width": 1200,
-    "height": 800
+    "height": 718
   },
   "Sociabilidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Comportamento_social",

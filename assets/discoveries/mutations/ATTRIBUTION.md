@@ -835,26 +835,26 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: User:Sobreira
 - Licença: CC BY-SA 3.0
 
-## media-2af4fc272f2a.jpg
+## media-5bf2cd41a80e.jpg
 
 - Usada em: Feromônios
-- Fonte: https://commons.wikimedia.org/wiki/File:Ferolite_-_Pheromone_and_light_trap_for_Tuta_absoluta.jpg
-- Autor/crédito: Shakiralzaidi
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Cecropia_Moth_(Hyalophora_cecropia).jpg
+- Autor/crédito: Marvin Smith
+- Licença: CC BY-SA 2.0
 
-## media-b96509535b88.jpg
+## media-1eb798c7fb77.jpg
 
 - Usada em: Bioluminescência
-- Fonte: https://commons.wikimedia.org/wiki/File:Dinoflagellate_bioluminescence_2.jpg
-- Autor/crédito: Mike
-- Licença: CC BY-SA 2.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Fireflies_(35082682316).jpg
+- Autor/crédito: Bernd Thaller from Graz, Austria
+- Licença: CC BY 2.0
 
-## media-2589dde0d04d.jpg
+## media-18be329592dc.jpg
 
 - Usada em: Bioluminescência Predatória
-- Fonte: https://commons.wikimedia.org/wiki/File:Sea_sparkles_(11538049406).jpg
-- Autor/crédito: Sander van der Wel from Netherlands
-- Licença: CC BY-SA 2.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Melanocetus_murrayi_(Murrays_abyssal_anglerfish).jpg
+- Autor/crédito: R. Mintern
+- Licença: Public domain
 
 ## media-d9c7944bb331.jpg
 
