@@ -115,7 +115,7 @@ test("Bioluminescência forma um único enlace por peça, limitado por alcance e
   const state = fixture([
       { owner: "blue", r: 4, c: 2, traits: ["Bioluminescência"] },
       { owner: "blue", r: 4, c: 5, traits: ["Bioluminescência"] },
-      { owner: "blue", r: 7, c: 7, traits: ["Bioluminescência"] },
+      { owner: "blue", r: 0, c: 7, traits: ["Bioluminescência"] },
       { owner: "amber", r: 0, c: 0 },
     ], 6203);
 
