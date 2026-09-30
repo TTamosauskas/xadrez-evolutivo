@@ -163,16 +163,16 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Brocken Inaglory. Original uploader was Brocken Inaglory
 - Licença: CC BY-SA 3.0
 
-## media-8027380c9ad1.jpg
+## media-c55eaf610be4.jpg
 
 - Usada em: Longevidade
-- Fonte: https://commons.wikimedia.org/wiki/File:Gal%C3%A1pagos_tortoise_-_Chelonoidis_nigra_on_the_Santa_Cruz_Island_-_Galapagos.jpeg
-- Autor/crédito: David Adam Kess
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Tortoise_-_Senior_citizen_in_Nehru_Zoological_Park,_Hyderabad.jpg
+- Autor/crédito: Surendhar Gopal
+- Licença: CC BY-SA 4.0
 
 ## media-e40e786f8a7e.jpg
 
-- Usada em: Fertilidade Longeva, Movimento proteano, Ovíparos Amniotas
+- Usada em: Fertilidade Longeva, Ovíparos Amniotas
 - Fonte: https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg
 - Autor/crédito: Alex Popovkin, Bahia, Brazil
 - Licença: CC BY 2.0
@@ -359,11 +359,11 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Muybridge, Eadweard, 1830-1904
 - Licença: Public domain
 
-## media-5ca68c77c279.jpg
+## media-2c76481861ba.jpg
 
 - Usada em: Jatopropulsão
-- Fonte: https://commons.wikimedia.org/wiki/File:PIA21263_-_Possible_Signs_of_Ancient_Drying_in_Martian_Rock.jpg
-- Autor/crédito: NASA/JPL-Caltech/MSSS
+- Fonte: https://commons.wikimedia.org/wiki/File:Swimming_giant_squid.jpg
+- Autor/crédito: Arne Grønningsæter (?)
 - Licença: Public domain
 
 ## media-0675d9750884.png
@@ -429,12 +429,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Hans Hillewaert
 - Licença: CC BY-SA 4.0
 
-## media-4edc0279c0d6.jpg
+## media-638f2202ec21.jpg
 
 - Usada em: Locomoção Articulada
-- Fonte: https://commons.wikimedia.org/wiki/File:Pollicipespolymerus.jpg
-- Autor/crédito: jkirkhart35
-- Licença: CC BY 2.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Crab_morning_walk_at_Arabian_Sea.jpg
+- Autor/crédito: Neeresh Kumar
+- Licença: CC BY-SA 3.0
 
 ## media-97e90a3ee41f.gif
 
@@ -450,12 +450,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Kiranparamesh
 - Licença: CC BY-SA 4.0
 
-## media-bbfed8490e77.jpg
+## media-c626630e1271.jpg
 
 - Usada em: Movimento Lateral
-- Fonte: https://commons.wikimedia.org/wiki/File:Os_Senhores_do_Movimento_04.jpg
-- Autor/crédito: Felipe Salloun
-- Licença: CC BY-SA 4.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Sidewinder_(70161f25-d02c-4469-8249-51ff332bb51b).jpg
+- Autor/crédito: Andrew Cattoir (Lake Mead National Recreation Area)
+- Licença: Public domain
 
 ## media-fbe71d2b97f5.jpg
 
@@ -499,12 +499,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: fir0002 flagstaffotos [at] gmail.com Canon 20D + Sigma 150mm f/2.8
 - Licença: GFDL 1.2
 
-## media-eb7cac8e7865.jpg
+## media-7a194d3f6c6f.jpg
 
 - Usada em: Tigmotaxia
-- Fonte: https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg
-- Autor/crédito: Hein waschefort
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Cockroach_on_the_wall_-_3.jpg
+- Autor/crédito: Kyu3
+- Licença: CC BY-SA 4.0
 
 ## media-e0564e49eeab.jpg
 
@@ -659,6 +659,13 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Fonte: https://commons.wikimedia.org/wiki/File:Male_cheetah_facing_left_in_South_Africa.jpg
 - Autor/crédito: AfricanConservation
 - Licença: CC BY-SA 4.0
+
+## media-67f1e5434ef5.jpg
+
+- Usada em: Movimento proteano
+- Fonte: https://commons.wikimedia.org/wiki/File:Arabian_Gazelle_in_Dubai_Desert_Conservation_Reserve_Picture_05.jpg
+- Autor/crédito: Sobiarahim
+- Licença: CC BY 4.0
 
 ## media-25c9b2860b0b.jpg
 
@@ -884,12 +891,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Gilles San Martin
 - Licença: CC BY-SA 3.0
 
-## media-1776546307db.jpg
+## media-cc715ef85961.jpg
 
 - Usada em: Polegar Opositor
-- Fonte: https://commons.wikimedia.org/wiki/File:Mamma_and_baby_in_a_pensive_mood_(11113468816).jpg
-- Autor/crédito: shankar s. from Dubai, united arab emirates
-- Licença: CC BY 2.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Hand_with_opposable_thumb_1.jpg
+- Autor/crédito: Sciencia58
+- Licença: CC BY-SA 4.0
 
 ## media-d91f274733d3.png
 
@@ -935,17 +942,17 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 
 ## media-d330caaea26d.jpg
 
-- Usada em: Assimetria Flutuante, Multicelularismo
+- Usada em: Assimetria Flutuante
 - Fonte: https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg
 - Autor/crédito: Krzysztof A. Zacharski
 - Licença: CC BY 4.0
 
-## media-f43dbee15ff0.jpg
+## media-a8ff1126acc7.png
 
 - Usada em: Ataxia
-- Fonte: https://commons.wikimedia.org/wiki/File:Strumigenys_ataxia_casent0104945_profile_1.jpg
-- Autor/crédito: April Nobile
-- Licença: CC BY 4.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Ataxia_Classification.png
+- Autor/crédito: Drpsdeb
+- Licença: CC BY-SA 4.0
 
 ## media-be36eb11e6c2.jpg
 
@@ -954,12 +961,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Photo Credit: C. Goldsmith Content Providers: CDC/ C. Goldsmith, P. Feorino, E. L. Palmer, W. R. McManus
 - Licença: Public domain
 
-## media-c0972c3e9f99.jpg
+## media-362d3330d84e.jpg
 
 - Usada em: Deficiência Motora
-- Fonte: https://commons.wikimedia.org/wiki/File:Wheelchair_lift_in_a_1992_Flxible_Metro_bus_lowered_to_sidewalk.jpg
-- Autor/crédito: Steve Morgan
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Illustration_of_the_motor_neuron_tract_descending_from_primary_motor_cortex,_via_spinal_cord,_to_skeletal_muscle.jpg
+- Autor/crédito: PaulWicks
+- Licença: CC BY-SA 4.0
 
 ## media-4ae496ebd971.png
 
@@ -1157,12 +1164,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: User:....
 - Licença: CC BY-SA 3.0
 
-## media-91bc7150e0ca.jpg
+## media-c51486b5e92b.png
 
 - Usada em: Peçonha
-- Fonte: https://commons.wikimedia.org/wiki/File:Leptophis_ahaetulla_(2).jpg
-- Autor/crédito: Renato Gaiga
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:De_Havilland_Venom_3-view_line_drawing.png
+- Autor/crédito: Emoscopes
+- Licença: CC BY 3.0
 
 ## media-2725bc419416.jpg
 
@@ -1192,6 +1199,13 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: KoS
 - Licença: CC BY-SA 3.0
 
+## media-10d9b28df97c.jpg
+
+- Usada em: Multicelularismo
+- Fonte: https://commons.wikimedia.org/wiki/File:Sponge_at_Steenbras_Reef_Outpost_P8220387.jpg
+- Autor/crédito: Pbsouthwood
+- Licença: CC BY-SA 4.0
+
 ## media-a05e4cf993e2.jpg
 
 - Usada em: Herbívoro
@@ -1213,12 +1227,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: ENERGY.GOV
 - Licença: Public domain
 
-## media-36d0932ee056.jpg
+## media-116f0bbf5f1f.jpg
 
 - Usada em: Pele Glandular
-- Fonte: https://commons.wikimedia.org/wiki/File:Pele_Voyagercolor_mosaic.jpg
-- Autor/crédito: NASA/JPL/USGS
-- Licença: Public domain
+- Fonte: https://commons.wikimedia.org/wiki/File:CSIRO_ScienceImage_1288_Image_of_Frog_Skin.jpg
+- Autor/crédito: Livestock Industries, CSIRO
+- Licença: CC BY 3.0
 
 ## media-f1765127bf6f.jpg
 
@@ -1262,12 +1276,12 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: consulte a fonte
 - Licença: Public domain
 
-## media-a0763110de3b.jpg
+## media-eead26375787.jpg
 
 - Usada em: Epizoocoria
-- Fonte: https://commons.wikimedia.org/wiki/File:Epizoochoria_NRM.jpg
-- Autor/crédito: Aelwyn
-- Licença: CC BY-SA 3.0
+- Fonte: https://commons.wikimedia.org/wiki/File:Epizoochory_-_black_Labrador_with_hooked_Geum_fruits_in_his_fur.jpg
+- Autor/crédito: Flobbadob
+- Licença: CC BY-SA 4.0
 
 ## media-b219a92db0c6.jpg
 

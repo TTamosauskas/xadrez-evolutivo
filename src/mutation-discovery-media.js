@@ -209,12 +209,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Longevidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Senesc%C3%AAncia",
-    "image": "assets/discoveries/mutations/media-8027380c9ad1.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Gal%C3%A1pagos_tortoise_-_Chelonoidis_nigra_on_the_Santa_Cruz_Island_-_Galapagos.jpeg",
-    "author": "David Adam Kess",
-    "license": "CC BY-SA 3.0",
+    "image": "assets/discoveries/mutations/media-c55eaf610be4.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Tortoise_-_Senior_citizen_in_Nehru_Zoological_Park,_Hyderabad.jpg",
+    "author": "Surendhar Gopal",
+    "license": "CC BY-SA 4.0",
     "width": 1200,
-    "height": 675
+    "height": 900
   },
   "Fertilidade Longeva": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Fertilidade",
@@ -488,12 +488,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Jatopropulsão": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Propuls%C3%A3o",
-    "image": "assets/discoveries/mutations/media-5ca68c77c279.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:PIA21263_-_Possible_Signs_of_Ancient_Drying_in_Martian_Rock.jpg",
-    "author": "NASA/JPL-Caltech/MSSS",
+    "image": "assets/discoveries/mutations/media-2c76481861ba.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Swimming_giant_squid.jpg",
+    "author": "Arne Grønningsæter (?)",
     "license": "Public domain",
     "width": 1200,
-    "height": 610
+    "height": 835
   },
   "Serotonina": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Serotonina",
@@ -578,12 +578,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Locomoção Articulada": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Membro",
-    "image": "assets/discoveries/mutations/media-4edc0279c0d6.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Pollicipespolymerus.jpg",
-    "author": "jkirkhart35",
-    "license": "CC BY 2.0",
+    "image": "assets/discoveries/mutations/media-638f2202ec21.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Crab_morning_walk_at_Arabian_Sea.jpg",
+    "author": "Neeresh Kumar",
+    "license": "CC BY-SA 3.0",
     "width": 1200,
-    "height": 800
+    "height": 900
   },
   "Locomoção Terrestre": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o_terrestre",
@@ -605,12 +605,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Movimento Lateral": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
-    "image": "assets/discoveries/mutations/media-bbfed8490e77.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Os_Senhores_do_Movimento_04.jpg",
-    "author": "Felipe Salloun",
-    "license": "CC BY-SA 4.0",
+    "image": "assets/discoveries/mutations/media-c626630e1271.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sidewinder_(70161f25-d02c-4469-8249-51ff332bb51b).jpg",
+    "author": "Andrew Cattoir (Lake Mead National Recreation Area)",
+    "license": "Public domain",
     "width": 1200,
-    "height": 675
+    "height": 803
   },
   "Escansão": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Locomo%C3%A7%C3%A3o",
@@ -668,12 +668,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Tigmotaxia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Taxia",
-    "image": "assets/discoveries/mutations/media-eb7cac8e7865.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Cheetah_chase.jpg",
-    "author": "Hein waschefort",
-    "license": "CC BY-SA 3.0",
+    "image": "assets/discoveries/mutations/media-7a194d3f6c6f.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Cockroach_on_the_wall_-_3.jpg",
+    "author": "Kyu3",
+    "license": "CC BY-SA 4.0",
     "width": 1200,
-    "height": 622
+    "height": 651
   },
   "Recuo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Predador_de_emboscada",
@@ -875,12 +875,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Movimento proteano": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Adapta%C3%A7%C3%A3o_antipredat%C3%B3ria",
-    "image": "assets/discoveries/mutations/media-e40e786f8a7e.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Bird%27s_nest_with_eggs,_Atlantic_forest,_northern_littoral_of_Bahia,_Brazil_(13924331985).jpg",
-    "author": "Alex Popovkin, Bahia, Brazil",
-    "license": "CC BY 2.0",
+    "image": "assets/discoveries/mutations/media-67f1e5434ef5.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Arabian_Gazelle_in_Dubai_Desert_Conservation_Reserve_Picture_05.jpg",
+    "author": "Sobiarahim",
+    "license": "CC BY 4.0",
     "width": 1200,
-    "height": 676
+    "height": 675
   },
   "Notívago": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Not%C3%ADvago",
@@ -1199,12 +1199,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Polegar Opositor": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Primatas",
-    "image": "assets/discoveries/mutations/media-1776546307db.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mamma_and_baby_in_a_pensive_mood_(11113468816).jpg",
-    "author": "shankar s. from Dubai, united arab emirates",
-    "license": "CC BY 2.0",
+    "image": "assets/discoveries/mutations/media-cc715ef85961.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Hand_with_opposable_thumb_1.jpg",
+    "author": "Sciencia58",
+    "license": "CC BY-SA 4.0",
     "width": 1200,
-    "height": 797
+    "height": 544
   },
   "Córtex Pré-Frontal": {
     "wikipedia": "https://pt.wikipedia.org/wiki/C%C3%B3rtex_pr%C3%A9-frontal",
@@ -1271,12 +1271,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Ataxia": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Ataxia",
-    "image": "assets/discoveries/mutations/media-f43dbee15ff0.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Strumigenys_ataxia_casent0104945_profile_1.jpg",
-    "author": "April Nobile",
-    "license": "CC BY 4.0",
+    "image": "assets/discoveries/mutations/media-a8ff1126acc7.png",
+    "source": "https://commons.wikimedia.org/wiki/File:Ataxia_Classification.png",
+    "author": "Drpsdeb",
+    "license": "CC BY-SA 4.0",
     "width": 1200,
-    "height": 792
+    "height": 628
   },
   "Imunodeficiência": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Imunodefici%C3%AAncia",
@@ -1289,12 +1289,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Deficiência Motora": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Defici%C3%AAncia_f%C3%ADsica",
-    "image": "assets/discoveries/mutations/media-c0972c3e9f99.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Wheelchair_lift_in_a_1992_Flxible_Metro_bus_lowered_to_sidewalk.jpg",
-    "author": "Steve Morgan",
-    "license": "CC BY-SA 3.0",
+    "image": "assets/discoveries/mutations/media-362d3330d84e.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Illustration_of_the_motor_neuron_tract_descending_from_primary_motor_cortex,_via_spinal_cord,_to_skeletal_muscle.jpg",
+    "author": "PaulWicks",
+    "license": "CC BY-SA 4.0",
     "width": 1200,
-    "height": 803
+    "height": 675
   },
   "Deficiência Sensorial": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Defici%C3%AAncia_auditiva",
@@ -1568,12 +1568,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Peçonha": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pe%C3%A7onha",
-    "image": "assets/discoveries/mutations/media-91bc7150e0ca.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Leptophis_ahaetulla_(2).jpg",
-    "author": "Renato Gaiga",
-    "license": "CC BY-SA 3.0",
+    "image": "assets/discoveries/mutations/media-c51486b5e92b.png",
+    "source": "https://commons.wikimedia.org/wiki/File:De_Havilland_Venom_3-view_line_drawing.png",
+    "author": "Emoscopes",
+    "license": "CC BY 3.0",
     "width": 1200,
-    "height": 797
+    "height": 900
   },
   "Projétil Biológico": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Besouro-bombardeiro",
@@ -1613,10 +1613,10 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Multicelularismo": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Organismo_multicelular",
-    "image": "assets/discoveries/mutations/media-d330caaea26d.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Mixed-culture_biofilm.jpg",
-    "author": "Krzysztof A. Zacharski",
-    "license": "CC BY 4.0",
+    "image": "assets/discoveries/mutations/media-10d9b28df97c.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Sponge_at_Steenbras_Reef_Outpost_P8220387.jpg",
+    "author": "Pbsouthwood",
+    "license": "CC BY-SA 4.0",
     "width": 1200,
     "height": 900
   },
@@ -1649,12 +1649,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Pele Glandular": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Pele",
-    "image": "assets/discoveries/mutations/media-36d0932ee056.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Pele_Voyagercolor_mosaic.jpg",
-    "author": "NASA/JPL/USGS",
-    "license": "Public domain",
+    "image": "assets/discoveries/mutations/media-116f0bbf5f1f.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:CSIRO_ScienceImage_1288_Image_of_Frog_Skin.jpg",
+    "author": "Livestock Industries, CSIRO",
+    "license": "CC BY 3.0",
     "width": 1200,
-    "height": 841
+    "height": 826
   },
   "Escamas": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Escama",
@@ -1712,12 +1712,12 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
   },
   "Epizoocoria": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Zoocoria",
-    "image": "assets/discoveries/mutations/media-a0763110de3b.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Epizoochoria_NRM.jpg",
-    "author": "Aelwyn",
-    "license": "CC BY-SA 3.0",
+    "image": "assets/discoveries/mutations/media-eead26375787.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Epizoochory_-_black_Labrador_with_hooked_Geum_fruits_in_his_fur.jpg",
+    "author": "Flobbadob",
+    "license": "CC BY-SA 4.0",
     "width": 1200,
-    "height": 900
+    "height": 842
   },
   "Sinzoocoria": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Zoocoria",
