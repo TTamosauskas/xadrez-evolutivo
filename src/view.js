@@ -36,7 +36,11 @@ import {
   ENERGY_BRANCH_TRAITS,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
-import { pathogenAgentAt } from "./disease.js";
+import {
+  environmentalPathogenAgentsAt,
+  infectionDiseaseForPiece,
+  pathogenAgentAt,
+} from "./disease.js";
 import { traitSummary } from "./trait-presentation.js";
 import {
   actionableTraitsForPiece,
@@ -337,7 +341,9 @@ function cellSelectionInfo(state, r, c) {
     allelopathy = allelopathySourceAt(state, r, c),
     captureDisturbance = captureDisturbanceAt(state, r, c),
     lethalHazard = lethalHazardAt(state, r, c),
-    pathogenAgents = pathogenAgentAt(state, r, c),
+    piece = at(state, r, c),
+    infectionDisease = infectionDiseaseForPiece(state, piece),
+    pathogenAgents = environmentalPathogenAgentsAt(state, r, c),
     thanatosis =
       (state.thanatosis ?? []).find((entry) => entry.cell === cell) ?? null,
     builtBarrier = state.barriers?.includes(cell),
@@ -497,16 +503,29 @@ function cellSelectionInfo(state, r, c) {
       `◌ Esporo · ${spore.movesRemaining}`,
       `esporo fúngico, ${spore.movesRemaining} etapa(s) de dispersão restante(s)`,
     );
+  if (infectionDisease && piece?.infection) {
+    const definition =
+        PATHOGEN_AGENTS[infectionDisease.agent] ?? PATHOGEN_AGENTS.virus,
+      remaining = Math.max(0, piece.infection.due - currentRound);
+    add(
+      "condition",
+      definition.icon,
+      `${definition.name} · infecção`,
+      `Organismo infectado · desfecho em ${remaining} rodada(s) · mortalidade-base ${infectionDisease.mortality}%.`,
+      `${definition.icon} Infectado · ${remaining} t`,
+      `infectado por ${definition.name}, desfecho em ${remaining} rodada(s), mortalidade-base ${infectionDisease.mortality}%`,
+    );
+  }
   for (const agent of pathogenAgents) {
     const definition = PATHOGEN_AGENTS[agent] ?? PATHOGEN_AGENTS.virus;
     add(
       "condition",
       definition.icon,
-      definition.name,
+      `${definition.name} · ambiente`,
       agent === "fungus"
         ? "Exposição territorial ativa nesta casa."
-        : "Exposição patogênica ativa nesta casa.",
-      `${definition.icon} ${definition.name}`,
+        : "Exposição patogênica ambiental ativa nesta casa.",
+      `${definition.icon} Exposição ambiental`,
     );
   }
 
@@ -872,7 +891,8 @@ export function render(
           : [],
         actionState = p ? pieceActionState(state, p) : null,
         terminalDeath = p ? deterministicDeathNextTurn(state, p) : null,
-        pathogenAgents = pathogenAgentAt(state, r, c),
+        infectionDisease = infectionDiseaseForPiece(state, p),
+        pathogenAgents = environmentalPathogenAgentsAt(state, r, c),
         egg = eggAt(state, r, c),
         plantSeed = plantSeedAt(state, r, c),
         pathogenSpore = pathogenSporeAt(state, r, c),
@@ -1424,6 +1444,19 @@ export function render(
             status.append(make("span", badge, "status-badge"));
           cell.append(status);
         }
+        if (infectionDisease && p.infection) {
+          const definition =
+              PATHOGEN_AGENTS[infectionDisease.agent] ?? PATHOGEN_AGENTS.virus,
+            remaining = Math.max(0, p.infection.due - currentRound),
+            infectionMark = make(
+              "span",
+              definition.icon,
+              `piece-pathogen-infection pathogen-${infectionDisease.agent}`,
+            );
+          infectionMark.title = `Infectado por ${definition.name} · desfecho em ${remaining} rodada(s).`;
+          infectionMark.setAttribute("aria-hidden", "true");
+          cell.append(infectionMark);
+        }
         if (terminalDeath) {
           const deathMark = make("span", "🤢", "terminal-death-mark");
           deathMark.title = `Morte determinada no próximo turno: ${terminalDeath}.`;
@@ -1519,6 +1552,12 @@ export function render(
         : null,
       state.pieces.some((piece) => intoxicationResting(state, piece))
         ? { marker: "😵‍💫", label: "Intoxicação · sem ação" }
+        : null,
+      boardElement.querySelector(".piece-pathogen-infection")
+        ? {
+            marker: "☣️",
+            label: "Infecção · ícone do agente junto à peça",
+          }
         : null,
       state.pieces.some((piece) => piece.parasitoidism)
         ? { marker: "🌀", label: "Parasitoidismo · controle temporário e morte programada" }
@@ -1774,25 +1813,33 @@ export function render(
           "selected-status",
         ),
       );
-    const actorPathogens = pathogenAgentAt(state, actor.r, actor.c);
-    for (const agent of actorPathogens) {
-      const definition = PATHOGEN_AGENTS[agent] ?? PATHOGEN_AGENTS.virus,
-        infectionDisease = actor.infection
-          ? state.diseases.find(
-              (disease) =>
-                disease.id === actor.infection.disease &&
-                disease.agent === agent,
-            )
-          : null,
-        status = infectionDisease
-          ? ` · desfecho em ${Math.max(0, actor.infection.due - round(state))} rodada(s)`
-          : agent === "fungus"
-            ? " · exposição territorial; uma nova chance de mortalidade é resolvida nesta rodada"
-            : " · exposição ambiental";
+    const actorInfection = infectionDiseaseForPiece(state, actor);
+    if (actorInfection && actor.infection) {
+      const definition =
+          PATHOGEN_AGENTS[actorInfection.agent] ?? PATHOGEN_AGENTS.virus,
+        remaining = Math.max(0, actor.infection.due - currentRound);
       statusDetails.push(
         make(
           "p",
-          `${definition.icon} ${definition.name}${status}.`,
+          `${definition.icon} ${definition.name} · infectado · desfecho em ${remaining} rodada(s) · mortalidade-base ${actorInfection.mortality}%.`,
+          "selected-status",
+        ),
+      );
+    }
+    for (const agent of environmentalPathogenAgentsAt(
+      state,
+      actor.r,
+      actor.c,
+    )) {
+      const definition = PATHOGEN_AGENTS[agent] ?? PATHOGEN_AGENTS.virus,
+        status =
+          agent === "fungus"
+            ? "exposição territorial; uma nova chance de mortalidade é resolvida nesta rodada"
+            : "exposição ambiental ativa nesta casa";
+      statusDetails.push(
+        make(
+          "p",
+          `${definition.icon} ${definition.name} · ${status}.`,
           "selected-status",
         ),
       );
