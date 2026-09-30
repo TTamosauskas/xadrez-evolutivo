@@ -265,6 +265,66 @@ test("mutation discovery text exactly matches the toast explanatory modal", () =
   }
 });
 
+test("curated Biology media stays landscape and semantically representative", () => {
+  const curatedSources = {
+    "Caça Cooperativa": "Wild_Dogs_Mudumalai.jpg",
+    Sociabilidade: "GeladaTroopSimienMountains.jpg",
+    Monogamia: "Monogamia_-_Arara-azul-de-lear.jpg",
+    Quimiossíntese: "Campagne_Phare_2002_-_Vers_g%C3%A9ants_",
+    Jatopropulsão: "Swimming_giant_squid.jpg",
+    Forésia: "All_aboard.jpg",
+    "Movimento Lateral": "Sidewinder_",
+    Tigmotaxia: "Cockroach_on_the_wall_-_3.jpg",
+    "Pele Glandular": "CSIRO_ScienceImage_1288_Image_of_Frog_Skin.jpg",
+    "Polegar Opositor": "Hand_with_opposable_thumb_1.jpg",
+    "Locomoção Articulada": "Crab_morning_walk_at_Arabian_Sea.jpg",
+    "Neocórtex Desenvolvido": "Cerebral_cortex,_side_view.svg",
+    Peçonha: "Snake_fang_types.jpg",
+    "Assimetria Flutuante": "Procrustes_superimposition.png",
+    Endozoocoria: "Ara_ararauna_-_se_alimentando_de_frutos_e_sementes",
+    Epizoocoria: "Epizoochory_-_black_Labrador_with_hooked_Geum_fruits",
+    Mirmecocoria: "Mimercoria.jpg",
+  };
+
+  const images = new Set();
+  for (const [trait, sourceFragment] of Object.entries(curatedSources)) {
+    const entry = DISCOVERY_CONTENT.mutations[trait];
+    assert.match(
+      entry.image,
+      /^assets\/discoveries\/mutations\/media-[a-f0-9]{12}\.(?:jpg|png|webp|gif)$/,
+      trait,
+    );
+    assert.ok(entry.imageWidth >= 900, trait);
+    assert.ok(entry.imageHeight >= 420, trait);
+    assert.ok(entry.imageWidth / entry.imageHeight >= 1.2, trait);
+    assert.match(
+      entry.imageSource ?? "",
+      /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/,
+      trait,
+    );
+    assert.ok(entry.imageSource.includes(sourceFragment), trait);
+    images.add(entry.image);
+  }
+  assert.equal(images.size, Object.keys(curatedSources).length);
+});
+
+test("Biology media rejects the known out-of-context source matches", () => {
+  const rejected = [
+    "StateLibQld_1_105248_Group_of_friends",
+    "Pele_Voyagercolor",
+    "De_Havilland_Venom",
+    "PIA21263",
+    "Amalia_Fleming",
+    "Os_Senhores_do_Movimento",
+    "Strumigenys_ataxia",
+  ];
+  for (const trait of Object.keys(TRAITS)) {
+    const source = DISCOVERY_CONTENT.mutations[trait].imageSource ?? "";
+    for (const fragment of rejected)
+      assert.equal(source.includes(fragment), false, `${trait}: ${fragment}`);
+  }
+});
+
 test("mutation Wikipedia links are direct article links", () => {
   for (const trait of Object.keys(TRAITS)) {
     const href = DISCOVERY_CONTENT.mutations[trait].wikipedia;
