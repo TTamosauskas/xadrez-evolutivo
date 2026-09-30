@@ -39,7 +39,6 @@ import { hiddenRecessiveTraits } from "./genetics.js";
 import {
   environmentalPathogenAgentsAt,
   infectionDiseaseForPiece,
-  pathogenAgentAt,
 } from "./disease.js";
 import { traitSummary } from "./trait-presentation.js";
 import {
