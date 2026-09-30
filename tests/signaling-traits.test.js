@@ -204,7 +204,7 @@ test("Bioluminescência conecta dois núcleos de Sociabilidade para defesa colet
 
   state = simulate(state, capture);
   assert.equal(state.phase, "social-defense");
-  assert.equal(state.socialDefense?.eligibleIds?.length, 4);
+  assert.equal(state.socialDefense?.memberIds?.length, 4);
 });
 
 test("Bioluminescência Predatória preserva a capacidade luminosa e atrai uma presa móvel", () => {
