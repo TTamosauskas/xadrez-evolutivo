@@ -1666,7 +1666,9 @@ function signalingStep(state, mover, toward) {
     }
   return options.sort(
     (a, b) =>
-      distance(a, toward) - distance(b, toward) ||
+      (a.r - toward.r) ** 2 +
+        (a.c - toward.c) ** 2 -
+        ((b.r - toward.r) ** 2 + (b.c - toward.c) ** 2) ||
       a.r - b.r ||
       a.c - b.c,
   )[0] ?? null;
