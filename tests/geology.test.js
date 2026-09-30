@@ -2058,6 +2058,7 @@ test("Paleogene epochs now have mandatory milestones plus optional specializatio
         "Ovulação Induzida",
         "Caça Cooperativa",
         "Epizoocoria",
+        "Bioluminescência Predatória",
       ],
     },
     oligocene: {
