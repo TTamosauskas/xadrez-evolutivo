@@ -4104,7 +4104,7 @@ test("special cycle pathogen profiles suppress incompatible vector outbreaks", (
   assertState(s);
 });
 
-test("infected trophic reproduction leaves feces carrying the fecal outbreak", () => {
+test("infected predatory capture stores vivification without immediate trophic reproduction", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -4133,9 +4133,13 @@ test("infected trophic reproduction leaves feces carrying the fecal outbreak", (
   ]);
 
   s = simulate(s, move(source, 4, 4));
-  const residue = s.deathSites.find((site) => site.cell === 36);
-  assert.equal(residue?.kind, "fecal");
-  assert.deepEqual(residue?.pathogenDiseaseIds, [disease.id]);
+  const predator = s.pieces.find((piece) => piece.id === source.id);
+  assert.equal(predator.predationEnergy, true);
+  assert.equal(
+    s.pieces.some((piece) => piece.parentId === source.id),
+    false,
+  );
+  assert.equal(s.carcasses.some((site) => site.cell === 36), true);
   assertState(s);
 });
 
@@ -5273,7 +5277,7 @@ test("fertile food is universal through Ediacaran and restricted from Cambrian o
   );
 });
 
-test("Predação converts a pre-Locomotion contact capture into primordial reproduction", () => {
+test("Predação converts a pre-Locomotion contact capture into stored vivification", () => {
   let s = createState(4271, {
     geologicalStage: "archean",
     historicalTraits: ["Respiração anaeróbia", "Predação"],
@@ -5300,9 +5304,22 @@ test("Predação converts a pre-Locomotion contact capture into primordial repro
   s.pieces.push(predator, victim, survivor);
 
   s = simulate(s, move(predator, victim.r, victim.c));
+  const stored = s.pieces.find((piece) => piece.id === predator.id);
   assert.ok(!s.pieces.some((piece) => piece.id === victim.id));
-  assert.ok(s.pieces.some((piece) => piece.parentId === predator.id));
-  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
+  assert.equal(
+    s.pieces.some((piece) => piece.parentId === predator.id),
+    false,
+  );
+  assert.equal(stored.predationEnergy, true);
+  assert.ok(
+    movesFor(s, stored).some(
+      (target) =>
+        target.r === stored.r &&
+        target.c === stored.c &&
+        target.stay &&
+        !target.capture,
+    ),
+  );
   assertState(s);
 });
 
@@ -5417,7 +5434,7 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
   assert.ok(targets.some((target) => target.r === 3 && target.c === 4));
 });
 
-test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
+test("Carnívoro stores vivification from a traditional pre-Locomotion capture", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Carnívoro"] },
     { owner: "amber", r: 4, c: 4 },
@@ -5436,7 +5453,11 @@ test("Carnívoro reproduces from a traditional pre-Locomotion capture", () => {
   s = simulate(s, move(predator, 4, 4));
   const survivor = s.pieces.find((piece) => piece.id === predator.id);
   assert.deepEqual([survivor.r, survivor.c], [4, 4]);
-  assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
+  assert.equal(
+    s.pieces.filter((piece) => piece.owner === "blue").length,
+    1,
+  );
+  assert.equal(survivor.predationEnergy, true);
   assertState(s);
 });
 
