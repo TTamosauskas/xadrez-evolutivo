@@ -1657,7 +1657,7 @@ test("Semelparidade kills the progenitor after its first successful reproduction
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Semelparidade", "Regeneração"],
+        traits: ["Semelparidade"],
       },
       { owner: "amber", r: 0, c: 0 },
     ]),
@@ -1676,7 +1676,6 @@ test("Semelparidade kills the progenitor after its first successful reproduction
   assert.equal(parent.lifetimeReproductions, 1);
   assert.equal(s.pieces.some((piece) => piece.id === parentId), false);
   assert.ok(s.pieces.some((piece) => piece.id >= before));
-  assert.notEqual(parent.regenerationUsed, true);
   assertState(s);
 });
 
@@ -2432,13 +2431,13 @@ test("natural infertility does not cancel a viviparous pregnancy already in prog
   assertState(s);
 });
 
-test("natural death is certain at age 48, bypasses Regeneração and leaves no trophic residue", () => {
+test("natural death is certain at age 48 and leaves no trophic residue", () => {
   const s = fixture([
       {
         owner: "blue",
         r: 4,
         c: 4,
-        traits: ["Multicelularismo", "Regeneração"],
+        traits: ["Multicelularismo"],
       },
       { owner: "amber", r: 0, c: 0, traits: ["Fotossíntese"] },
     ]),
@@ -2449,7 +2448,6 @@ test("natural death is certain at age 48, bypasses Regeneração and leaves no t
 
   assert.equal(applyNaturalDeaths(context(s)), 1);
   assert.ok(!s.pieces.some((piece) => piece.id === elder.id));
-  assert.equal(elder.regenerationUsed, undefined);
   assert.equal(s.deathSites.length, 0);
   assert.equal(s.captureDisturbances.length, 0);
   assert.ok(s.logs.some((entry) => entry.text.includes("morte natural aos 48")));
@@ -3390,7 +3388,6 @@ test("cycle innovation pressure blocks a seventh new positive mutation without b
       "Dormência",
       "Multicelularismo",
       "Resistência",
-      "Regeneração",
     ],
     capped = makeState(cappedTraits),
     cappedBefore = capped.s.nextId;
@@ -3476,7 +3473,6 @@ function sexualInnovationState(seed) {
       "Reparo Celular",
       "Multicelularismo",
       "Resistência",
-      "Regeneração",
       "Respiração aeróbia",
     ],
     parent = newPiece(s, "blue", 4, 4, {
@@ -4801,30 +4797,6 @@ test("Eusocialidade gains up to two offspring from adjacent sterile kin", () => 
   assert.equal(reproduce(context(s), parent), 6);
   assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 9);
   assertState(s);
-});
-
-test("Regeneração prevents one non-capture death but never a capture", () => {
-  let s = fixture([
-      { owner: "blue", r: 4, c: 4, traits: ["Regeneração"] },
-      { owner: "amber", r: 0, c: 0 },
-    ]),
-    ctx = context(s),
-    p = s.pieces[0];
-  assert.equal(ctx.kill(p.id, "casa hostil"), false);
-  assert.ok(s.pieces.some((x) => x.id === p.id));
-  assert.equal(p.regenerationUsed, true);
-  assert.equal(s.passiveEffects.at(-1)?.trait, "Regeneração");
-  assert.equal(s.passiveEffects.at(-1)?.outcome, "prevented-death");
-  assert.equal(movesFor(s, p).length, 0);
-  assert.equal(ctx.kill(p.id, "casa hostil"), true);
-  assert.ok(!s.pieces.some((x) => x.id === p.id));
-
-  s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Voo"] },
-    { owner: "amber", r: 4, c: 4, traits: ["Regeneração"] },
-  ]);
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  assert.ok(!s.pieces.some((x) => x.owner === "amber"));
 });
 
 test("Dormência immobilizes on hostile terrain but the piece remains capturable", () => {
