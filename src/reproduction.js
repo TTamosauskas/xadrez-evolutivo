@@ -26,6 +26,7 @@ import {
   round,
   fertilityPaused,
   activePopulation,
+  replacementPressure,
   log,
   emitPassiveEffect,
   registerDiscoveries,
@@ -1897,6 +1898,15 @@ export function reproduce(
       pressureLatched,
     ),
     noCapturePressure = noCaptureReproductionPressure(state),
+    replacement = replacementPressure(state),
+    ownerPopulation = state.pieces.filter(
+      (piece) => piece.owner === parent.owner,
+    ).length,
+    rivalPopulation = population - ownerPopulation,
+    replacementSuppressPredation =
+      replacement.level >= 2 && ownerPopulation >= rivalPopulation,
+    replacementLimit =
+      replacement.level >= 3 && state.turn >= 160 ? 0 : Infinity,
     outputFor = (candidate) => {
       const base = reproductiveOutput(candidate);
       return has(candidate, "Artrópode") ? Math.min(6, base * 2) : base;
@@ -1922,12 +1932,14 @@ export function reproduce(
             state.geologicalStage,
           ),
     pressureLimit =
-      reason === "predação" && competitivePressure.suppressPredation
+      reason === "predação" &&
+      (competitivePressure.suppressPredation || replacementSuppressPredation)
         ? 0
         : Math.min(
             populationLimit,
             competitivePressure.limit,
             noCapturePressure.limit,
+            replacementLimit,
           ),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece, feeder = false) => {
@@ -2055,7 +2067,8 @@ export function reproduce(
           state.geologicalStage,
         ) +
         competitivePressure.cooldown +
-        noCapturePressure.cooldown;
+        noCapturePressure.cooldown +
+        replacement.level;
       if (
         feeder &&
         pressure > 0 &&
