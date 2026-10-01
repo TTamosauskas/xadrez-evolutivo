@@ -20,6 +20,7 @@ const NEW_ICONS = Object.freeze({
   "Coração Compartimentado": "🫀",
   Endorfinas: "😌",
   "Ciclo de Sono": "😴",
+  Hibernação: "🧸",
   "Sistema Adipocinético": "⛽",
   Intestino: "🪢",
   "Estômago Ácido": "🧪",

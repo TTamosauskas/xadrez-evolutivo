@@ -3044,6 +3044,12 @@ export function assertState(state) {
         p.fatigueRestTurn === null ||
         integer(p.fatigueRestTurn, 0)
       ) ||
+      !(
+        p.hibernationUntilTurn === undefined ||
+        p.hibernationUntilTurn === null ||
+        integer(p.hibernationUntilTurn, 0)
+      ) ||
+      typeof (p.hibernationRearmPending ?? false) !== "boolean" ||
       typeof (p.restorativeSleepCharge ?? false) !== "boolean" ||
       !(
         p.sleepingThroughTurn === undefined ||

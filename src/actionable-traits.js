@@ -204,6 +204,13 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Ciclo de Sono");
 
   if (
+    has(piece, "Hibernação") &&
+    Number.isInteger(piece.hibernationUntilTurn) &&
+    state.turn < piece.hibernationUntilTurn
+  )
+    actionable.add("Hibernação");
+
+  if (
     has(piece, "Sistema Adipocinético") &&
     (piece.exertionStreak ?? 0) > 0 &&
     targets.some(

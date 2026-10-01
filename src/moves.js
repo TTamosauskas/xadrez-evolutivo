@@ -118,6 +118,10 @@ export const dormant = (state, p) => {
     !decompositionImmune(state, p)
   );
 };
+export const hibernating = (state, p) =>
+  !!p &&
+  Number.isInteger(p.hibernationUntilTurn) &&
+  state.turn < p.hibernationUntilTurn;
 export const pupating = (state, p) =>
   Number.isInteger(p?.pupaUntilRound) && round(state) < p.pupaUntilRound;
 export const resting = (state, p) =>
@@ -126,6 +130,7 @@ export const resting = (state, p) =>
   regenerationResting(state, p) ||
   neurodivergenceResting(state, p) ||
   intoxicationResting(state, p) ||
+  hibernating(state, p) ||
   pupating(state, p);
 
 export function serotoninRepositionTargets(state) {
@@ -362,6 +367,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         victim.owner !== p.owner &&
         distance(p, victim) === 1 &&
         contactCaptureUnlocked(p);
+    if (victim?.owner !== p.owner && hibernating(state, victim)) return;
     const fruitConsume =
         !!plantSeed &&
         !plantSeed.sprouting &&
@@ -1818,7 +1824,12 @@ function knightEnemyTargets(state, piece) {
       c = piece.c + dc;
     if (!inside(r, c)) continue;
     const target = at(state, r, c);
-    if (target && target.owner !== piece.owner) targets.push(target);
+    if (
+      target &&
+      target.owner !== piece.owner &&
+      !hibernating(state, target)
+    )
+      targets.push(target);
   }
   return targets;
 }
@@ -1897,6 +1908,7 @@ export function feedingReachTargets(state, piece) {
         if (
           !victim ||
           victim.owner === piece.owner ||
+          hibernating(state, victim) ||
           parentalCareProtects(state, victim)
         )
           continue;
@@ -1957,6 +1969,7 @@ export function extendedCaptureTargets(state, piece) {
     if (
       !victim ||
       victim.owner === piece.owner ||
+      hibernating(state, victim) ||
       parentalCareProtects(state, victim) ||
       inkCloudAt(state, victim.r, victim.c)
     )
@@ -2118,6 +2131,7 @@ export function actionsForPiece(
     state.result ||
     !state.pieces.some((candidate) => candidate.id === piece.id) ||
     piece.hadeanHostileDeathPending ||
+    hibernating(state, piece) ||
     (Number.isInteger(piece.lethalDeathRound) &&
       /hostil/i.test(piece.lethalDeathReason ?? ""))
   )
@@ -2330,6 +2344,12 @@ export function pieceActionState(state, piece) {
       reason: "Metamorfose",
       remainingRounds: Math.max(1, piece.pupaUntilRound - currentRound),
     };
+  if (hibernating(state, piece))
+    return {
+      waiting: true,
+      reason: "Hibernação",
+      remainingRounds: Math.max(1, piece.hibernationUntilTurn - state.turn),
+    };
   if (fatigueResting(state, piece))
     return {
       waiting: true,
@@ -2469,7 +2489,10 @@ export function canWaitForRest(state, owner) {
     (p) =>
       p.owner === owner &&
       !ecologicalDomainBlocked(state, p.owner, p.r, p.c) &&
-      (resting(state, p) || fatigueResting(state, p) || dormant(state, p)),
+      (resting(state, p) ||
+        fatigueResting(state, p) ||
+        dormant(state, p) ||
+        hibernating(state, p)),
   );
 }
 export function canWaitForBirth(state, owner) {
