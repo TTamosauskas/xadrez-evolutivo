@@ -1986,7 +1986,7 @@ test("board only counts metabolic recovery while selected details keep cellular 
   assert.match(boardStatus, /⏳2/);
   assert.match(boardStatus, /👃⏳/);
   assert.match(boardStatus, /🎣⏳/);
-  assert.match(boardStatus, /🔋⏳/);
+  assert.doesNotMatch(boardStatus, /🔋⏳/);
   assert.match(boardStatus, /🌀/);
   assert.match(boardStatus, /🦂/);
   assert.doesNotMatch(boardStatus, /🔘1/);
@@ -2036,7 +2036,7 @@ test("selected-piece lifecycle countdowns use compact wait copy", () => {
   dom.window.close();
 });
 
-test("renders eggs and carried brood count", () => {
+test("renders eggs and carried brood without numeric counter on the piece", () => {
   const dom = setup(),
     s = createState(22),
     parent = s.pieces[0];
@@ -2065,10 +2065,10 @@ test("renders eggs and carried brood count", () => {
   assert.match(d.querySelector(".egg-mark").parentElement.title, /ovo aquático/);
   assert.match(d.querySelector(".egg-mark").parentElement.title, /busca terreno fértil/);
   assert.match(d.querySelector(".egg-mark").parentElement.title, /2 descendente/);
-  assert.match(
+  assert.equal(
     d.querySelector(`[data-r="${parent.r}"][data-c="${parent.c}"] .piece-status`)
       .textContent,
-    /\+3/,
+    "🔴",
   );
   assert.match(d.getElementById("selected").textContent, /🔴 \+3/);
   dom.window.close();
