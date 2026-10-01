@@ -152,6 +152,7 @@ const VIVIFICATION_LABELS = Object.freeze({
   CHEMOSYNTHESIS: "♨️ Quimiossíntese",
   FIX_NITROGEN: "☁️ Fixação de Nitrogênio",
   PUPATE: "Metamorfosear",
+  DETOXIFY: "⚗️ Detoxificar",
   PARASITIZE: "Fertilizar por Parasitismo",
   PARTHENOGENESIS: "Partenogênese",
   REJECT_BROOD_PARASITE: "🪺 Rejeitar ovo parasita",
@@ -208,6 +209,14 @@ function chooseActions(
 }
 
 function chooseVivification(actions) {
+  if (actions.some((action) => action.type === "DETOXIFY")) {
+    chooseActions(actions, {
+      title: "Ação biológica",
+      copy: "Escolha a ação a realizar com esta criatura.",
+      label: vivificationLabel,
+    });
+    return;
+  }
   chooseActions(actions, {
     title: "Vivificar",
     copy: "Mais de uma ação pode ser realizada nesta casa. Escolha como vivificar.",
