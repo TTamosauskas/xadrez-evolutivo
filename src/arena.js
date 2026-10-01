@@ -555,10 +555,17 @@ function counterScore(genome, opponentGenomes) {
   return score;
 }
 
-function adaptSetupGenome(genome, branchId, opponentGenomes) {
+function adaptSetupGenome(
+  genome,
+  branchId,
+  opponentGenomes,
+  requiredBodyPlan = null,
+) {
   let result = completeArenaBranchGenome(genome, branchId);
   const wanted = counterTargets(opponentGenomes)
-    .filter(({ trait }) => arenaSelectableTraits(branchId).includes(trait))
+    .filter(({ trait }) =>
+      arenaSelectableTraits(branchId, requiredBodyPlan).includes(trait),
+    )
     .sort((a, b) => b.weight - a.weight)
     .map(({ trait }) => trait);
   for (const trait of wanted) {
@@ -590,7 +597,12 @@ export function arenaAISide(
           (genome) => arenaBodyPlan(genome) === requiredBodyPlan,
         );
       const candidates = pool.map((genome, index) => {
-          const adapted = adaptSetupGenome(genome, branch.id, opponentGenomes);
+          const adapted = adaptSetupGenome(
+            genome,
+            branch.id,
+            opponentGenomes,
+            branch.id === "animal" ? requiredBodyPlan : null,
+          );
           return {
             genome: adapted,
             index,
@@ -604,7 +616,13 @@ export function arenaAISide(
             b.score - a.score ||
             b.breadth - a.breadth ||
             a.index - b.index,
-        )[0]?.genome ?? completeArenaBranchGenome([], branch.id);
+        )[0]?.genome ??
+        completeArenaBranchGenome(
+          branch.id === "animal" && requiredBodyPlan
+            ? [requiredBodyPlan]
+            : [],
+          branch.id,
+        );
     });
   }
   return ARENA_BRANCHES.map((branch, index) => {
