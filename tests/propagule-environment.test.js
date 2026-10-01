@@ -99,8 +99,8 @@ test("propágulos sobreviventes não repetem o teste hostil na mesma rodada", ()
   assert.ok(remaining);
   assert.equal(remaining.hostileRiskRound, 0);
 
-  const rngAfterFirst = state.rng;
+  state.rng = 1;
   tickReproduction(context(state));
   assert.equal(state.eggs.length, 1);
-  assert.equal(state.rng, rngAfterFirst);
+  assert.equal(state.rng, 1);
 });
