@@ -1021,7 +1021,11 @@ function endEvent(state) {
   state.previousEvent = state.event.id;
   state.event = null;
 }
-export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen = true } = {}) {
+export function startEvent(
+  ctx,
+  id = null,
+  { allowSevere = true, allowPathogen = true, source = "eco" } = {},
+) {
   const state = ctx.state;
   const def = id
     ? EVENTS.find((e) => e.id === id)
@@ -1050,6 +1054,7 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
   if (state.event) endEvent(state);
   const event = {
     ...def,
+    source,
     startRound: round(state),
     startTurn: state.turn,
     hazards: [],
@@ -1256,10 +1261,10 @@ export function startEvent(ctx, id = null, { allowSevere = true, allowPathogen =
       `🟫 Relevo alterado: +${event.barrierChanges.created} / -${event.barrierChanges.removed} barreira(s) natural(is).`,
     );
 }
-export function startSevereEvent(ctx) {
+export function startSevereEvent(ctx, source = "eco") {
   const event = severeEventForStage(ctx.state);
   if (!event) throw Error("Nenhum evento de impacto extremo disponível neste período.");
-  startEvent(ctx, event.id);
+  startEvent(ctx, event.id, { source });
   return event;
 }
 
@@ -1270,7 +1275,7 @@ export function checkPopulationClimate(ctx) {
   if (population < 40 || state.severePopulationLatched || severeEventActive(state))
     return false;
   state.severePopulationLatched = true;
-  startSevereEvent(ctx);
+  startSevereEvent(ctx, "population");
   log(
     state,
     `🌡️ Pressão populacional: ${population} organismos ativos desencadearam um evento de impacto extremo.`,
