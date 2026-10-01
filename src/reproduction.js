@@ -1998,7 +1998,9 @@ export function reproduce(
           activePopulation(state),
           pressureLatched,
           state.geologicalStage,
-        ) + competitivePressure.cooldown;
+        ) +
+        competitivePressure.cooldown +
+        noCapturePressure.cooldown;
       if (
         feeder &&
         pressure > 0 &&
