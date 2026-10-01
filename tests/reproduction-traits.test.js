@@ -222,7 +222,6 @@ test("Fragmentação releases starfish-like propagules after capture", () => {
         "Fotossíntese",
         "Reparo Celular",
         "Multicelularismo",
-        "Regeneração",
         "Fragmentação",
       ],
     },
