@@ -411,6 +411,10 @@ export const TRAITS = {
     "🐝",
     "Ao selecionar um membro, sinaliza os outros portadores aliados e destaca o membro e o movimento com melhor avaliação pela IA.",
   ],
+  "Recrutamento em Massa": [
+    "📣",
+    "Artrópodes eusociais convertem densidade em pressão ofensiva: se outro portador aliado estiver adjacente à presa, podem capturá-la a até duas casas em linha reta ou diagonal, sem atravessar obstáculos.",
+  ],
   "Caça Cooperativa": [
     "🐬",
     "Se pelo menos dois caçadores adjacentes com esta característica cercarem a presa, Espinhos e outras defesas retaliatórias são neutralizados.",
@@ -658,6 +662,10 @@ export const TRAITS = {
   Metamorfose: [
     "🦋",
     "Uma cria artrópode pode gastar a ação para empupar por uma rodada e emergir uma forma acima, até o limite de Bispo.",
+  ],
+  Hipermetamorfose: [
+    "🐞",
+    "Ao concluir Metamorfose, o adulto recebe uma ação dispersiva única: Cavalo pode usar geometria de Bispo e Bispo pode usar geometria de Cavalo; a carga é consumida somente ao usar essa geometria complementar.",
   ],
   Ooteca: [
     "🪩",
