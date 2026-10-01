@@ -26,6 +26,7 @@ import {
   pieceAge,
   juvenile,
   ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS,
+  ECOLOGICAL_DOMAIN_LOW_PRESSURE_ROUNDS,
   ecologicalDomainBlocked,
   organicResidueAt,
   carcassAt,
@@ -240,22 +241,6 @@ export function context(state) {
           "Hibernação",
           "🧸 O hibernáculo manteve a criatura fora do alcance da captura.",
           { pieceId: dead.id, outcome: "capture-blocked-by-hibernation" },
-        );
-        return false;
-      }
-      if (!force && !attacker && has(dead, "Regeneração") && !dead.regenerationUsed) {
-        dead.regenerationUsed = true;
-        dead.regenerationRestThroughRound = round(state) + 1;
-        if (["Veneno", "Peçonha"].includes(reason)) delete dead.venom;
-        log(
-          state,
-          `${OWNERS[dead.owner]}: ♻️ Regeneração evitou a morte por ${reason}.`,
-        );
-        emitPassiveEffect(
-          state,
-          "Regeneração",
-          "♻️ Regeneração evitou a morte.",
-          { pieceId: dead.id, outcome: "prevented-death" },
         );
         return false;
       }
@@ -611,10 +596,21 @@ export function resolveEcologicalDomain(state) {
     return finishEcologicalDomain(state, "bloqueio total de ações");
 
   const elapsed =
-    round(state) - (state.lastSuccessfulCaptureRound ?? 0);
+      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+    offensiveOptions = offensiveActionCount(state);
   if (
     !passivePending &&
-    offensiveActionCount(state) === 0 &&
+    state.turn >= 120 &&
+    offensiveOptions <= 1 &&
+    elapsed >= ECOLOGICAL_DOMAIN_LOW_PRESSURE_ROUNDS
+  )
+    return finishEcologicalDomain(
+      state,
+      `${ECOLOGICAL_DOMAIN_LOW_PRESSURE_ROUNDS} rodadas sem captura e com pressão ofensiva residual`,
+    );
+  if (
+    !passivePending &&
+    offensiveOptions === 0 &&
     elapsed >= ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS
   )
     return finishEcologicalDomain(
@@ -5019,15 +5015,10 @@ function executeMove(ctx, action) {
     });
     if (born) consumeOrganicResidue(state, cell);
   } else if (cannibalism) {
-    born = reproduce(ctx, p, null, "canibalismo", {
-      forcedCount: 1,
-      resourceKind: "prey",
-    });
-    if (born)
-      log(
-        state,
-        `${OWNERS[p.owner]}: 🐻‍❄️ Canibalismo converteu a morte de um aliado em um descendente.`,
-      );
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🐻‍❄️ Canibalismo consumiu um aliado sem gerar descendentes.`,
+    );
   } else if (fertile || predation) {
     const hadeanFirstFertileChild =
         state.geologicalStage === "hadean" &&
@@ -5078,9 +5069,10 @@ function executeMove(ctx, action) {
   }
   if (capturedPieceKilled && state.geologicalStage !== "hadean") {
     const captureCell = square(p.r, p.c),
-      trophicReproduction = (predation || cannibalism) && born > 0,
+      trophicReproduction = predation && born > 0,
+      cannibalConsumption = cannibalism,
       fecalReproduction =
-        trophicReproduction &&
+        (trophicReproduction || cannibalConsumption) &&
         multicellularLineage(p);
     if (fecalReproduction)
       markOrganicResidue(
@@ -5088,7 +5080,7 @@ function executeMove(ctx, action) {
         captureCell,
         fecalPathogenDiseaseIdsForHost(state, p),
       );
-    else if (!trophicReproduction) {
+    else if (!trophicReproduction && !cannibalConsumption) {
       markCarcass(state, captureCell);
       markCaptureDisturbance(state, captureCell, p.id);
     }
