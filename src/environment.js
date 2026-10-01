@@ -14,6 +14,7 @@ import {
   notice,
   emitPassiveEffect,
   activePopulation,
+  replacementPressure,
   fertilityPaused,
   stomataOpen,
   lethalHazardAt,
@@ -529,15 +530,21 @@ function habitatPressureLevel(state) {
       now - (state.lastSuccessfulCaptureRound ?? 0),
     ),
     population = activePopulation(state),
-    offensive = offensiveActionCount(state);
-  if (now >= 70 && offensive <= 2) return 3;
+    offensive = offensiveActionCount(state),
+    replacement = replacementPressure(state);
   if (
+    replacement.level >= 3 ||
+    (now >= 70 && offensive <= 2)
+  )
+    return 3;
+  if (
+    replacement.level >= 2 ||
     stalledRounds >= 18 ||
     population >= 32 ||
     (now >= 18 && offensive === 0)
   )
     return 2;
-  if (stalledRounds >= 12) return 1;
+  if (replacement.level >= 1 || stalledRounds >= 12) return 1;
   return 0;
 }
 
