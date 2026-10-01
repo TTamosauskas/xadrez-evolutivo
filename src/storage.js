@@ -3,7 +3,7 @@ import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -13,6 +13,7 @@ const LEGACY_TRAIT_NAMES = Object.freeze({
 const RETIRED_TRAITS = new Set([
   "Locomoção Avançada",
   "Carnivoria Botânica",
+  "Regeneração",
 ]);
 
 function removeRetiredTraits(value) {
@@ -141,6 +142,10 @@ function normalizePathogenEvolution(state) {
 function normalizeCycleInnovationPressure(state) {
   removeRetiredTraits(state);
   normalizeStoredGenomes(state);
+  for (const piece of state.pieces ?? []) {
+    delete piece.regenerationUsed;
+    delete piece.regenerationRestThroughRound;
+  }
   state.chainTrait ??= null;
   if (
     state.chainTrait !== "Bipedalismo" ||
