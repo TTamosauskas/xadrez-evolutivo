@@ -2044,16 +2044,19 @@ function maturePostHadeanChemosynthesis(state) {
       !Number.isInteger(cell) ||
       square(piece.r, piece.c) !== cell ||
       !has(piece, "Quimiossíntese") ||
-      terrain(state, piece.r, piece.c) !== "hostile"
+      terrain(state, piece.r, piece.c) !== "hostile" ||
+      lethalHazardAt(state, piece.r, piece.c)
     )
       continue;
     state.chemicalHazards = (state.chemicalHazards ?? []).filter(
       (entry) => entry.cell !== cell,
     );
-    if (Array.isArray(state.event?.hazards))
+    if (Array.isArray(state.event?.hazards) && state.event.hazards.includes(cell)) {
+      state.event.snapshots[cell] = "fertile";
       state.event.hazards = state.event.hazards.filter(
         (hazardCell) => hazardCell !== cell,
       );
+    }
     state.board[cell] = "fertile";
     piece.chemosynthesisFertileCell = cell;
     matured++;
