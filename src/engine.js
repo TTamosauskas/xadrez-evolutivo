@@ -1297,6 +1297,7 @@ function recordPhotosynthesis(state, owner) {
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
       delete p.photosynthesisReadyTurn;
+      delete p.xerophytePhotosynthesisBonusTurns;
       continue;
     }
     if (p.photosynthesisCell !== cell) {
@@ -1305,8 +1306,9 @@ function recordPhotosynthesis(state, owner) {
         has(p, "Xerofitismo") && p.xerophyteWaterReserve
           ? 4
           : 0;
-      p.photosynthesisSinceTurn = state.turn - xerophyteBonusTurns;
+      p.photosynthesisSinceTurn = state.turn;
       if (xerophyteBonusTurns) {
+        p.xerophytePhotosynthesisBonusTurns = xerophyteBonusTurns;
         delete p.xerophyteWaterReserve;
         emitPassiveEffect(
           state,
@@ -1318,7 +1320,7 @@ function recordPhotosynthesis(state, owner) {
             value: 2,
           },
         );
-      }
+      } else delete p.xerophytePhotosynthesisBonusTurns;
       if (state.geologicalStage === "hadean")
         p.photosynthesisReadyTurn =
           state.turn + photosynthesisDelayTurns(state, p);
@@ -1352,7 +1354,9 @@ function maturePhotosynthesis(state, owner) {
         ? Number.isInteger(p.photosynthesisReadyTurn) &&
           state.turn >= p.photosynthesisReadyTurn
         : Number.isInteger(p.photosynthesisSinceTurn) &&
-          state.turn - p.photosynthesisSinceTurn >= delay;
+          state.turn - p.photosynthesisSinceTurn +
+            (p.xerophytePhotosynthesisBonusTurns ?? 0) >=
+            delay;
     if (
       p.photosynthesisCell === cell &&
       ready
@@ -1409,6 +1413,7 @@ function maturePhotosynthesis(state, owner) {
       delete p.photosynthesisCell;
       delete p.photosynthesisSinceTurn;
       delete p.photosynthesisReadyTurn;
+      delete p.xerophytePhotosynthesisBonusTurns;
       log(
         state,
         barrierAt(state, p.r, p.c) && has(p, "Trepadeira")
