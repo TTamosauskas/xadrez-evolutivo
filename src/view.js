@@ -1560,8 +1560,12 @@ export function render(
       state.pieces.some((piece) => intoxicationResting(state, piece))
         ? { marker: "😵‍💫", label: "Intoxicação · sem ação" }
         : null,
-      state.pieces.some((piece) => fatigueResting(state, piece))
-        ? { marker: "🥵", label: "Fadiga · locomoção bloqueada por 1 turno" }
+      state.pieces.some(
+        (piece) =>
+          Number.isInteger(piece.fatigueRestTurn) &&
+          piece.fatigueRestTurn >= state.turn,
+      )
+        ? { marker: "🥵", label: "Fadiga · próximo turno próprio sem locomoção" }
         : null,
       boardElement.querySelector(".piece-pathogen-infection")
         ? {
