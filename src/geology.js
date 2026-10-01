@@ -1109,7 +1109,12 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Eusocialidade", "Artrópode"],
   },
   "Recrutamento em Massa": {
-    lineage: ["Artrópode", "Eusocialidade", "Percepção Espacial"],
+    lineage: [
+      "Artrópode",
+      "Locomoção Terrestre",
+      "Eusocialidade",
+      "Percepção Espacial",
+    ],
   },
   "Caça Cooperativa": {
     lineage: ["Sociabilidade", "Percepção Espacial"],
