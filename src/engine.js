@@ -582,15 +582,25 @@ export function resolveEcologicalDomain(state) {
     );
   }
 
-  const activeOwners = Object.fromEntries(
-    ["blue", "amber"].map((owner) => [
-      owner,
-      state.pieces.some(
-        (piece) => piece.owner === owner && !hibernating(state, piece),
-      ),
-    ]),
+  const sideHibernation = Object.fromEntries(
+    ["blue", "amber"].map((owner) => {
+      const pieces = state.pieces.filter((piece) => piece.owner === owner);
+      return [
+        owner,
+        {
+          surviving: pieces.length > 0,
+          onlyHibernating:
+            pieces.length > 0 &&
+            pieces.every((piece) => hibernating(state, piece)),
+          active: pieces.some((piece) => !hibernating(state, piece)),
+        },
+      ];
+    }),
   );
-  if (activeOwners.blue !== activeOwners.amber)
+  if (
+    (sideHibernation.blue.onlyHibernating && sideHibernation.amber.active) ||
+    (sideHibernation.amber.onlyHibernating && sideHibernation.blue.active)
+  )
     return finishEcologicalDomain(
       state,
       "as únicas sobreviventes adversárias estão em Hibernação",
