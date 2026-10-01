@@ -172,12 +172,22 @@ test("Ciclo de Sono transforma automaticamente um descanso seguro em esforço re
 test("Ciclo de Sono não ativa quando a peça fatigada está sob captura imediata", () => {
   let state = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ciclo de Sono"] },
-    { owner: "amber", r: 4, c: 0, rank: 5 },
+    { owner: "amber", r: 4, c: 5, rank: 4 },
   ]);
   const id = state.pieces[0].id,
-    sleeper = state.pieces[0];
+    sleeper = state.pieces[0],
+    attacker = state.pieces[1];
   sleeper.exertionStreak = 3;
   sleeper.fatigueRestTurn = 0;
+
+  assert.ok(
+    movesFor(state, attacker, { ignoreChain: true }).some(
+      (target) =>
+        target.capture &&
+        target.r === sleeper.r &&
+        target.c === sleeper.c,
+    ),
+  );
 
   state = pass(state);
   const piece = state.pieces.find((candidate) => candidate.id === id);
