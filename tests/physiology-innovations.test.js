@@ -221,39 +221,6 @@ test("Coração Compartimentado absorve ocasionalmente o custo metabólico da En
   );
 });
 
-test("Endorfinas transformam a rodada de recuperação em um único deslocamento simples", () => {
-  let state = fixture([
-    {
-      owner: "blue",
-      r: 4,
-      c: 4,
-      rank: 3,
-      traits: ["Regeneração", "Endorfinas"],
-    },
-    { owner: "amber", r: 0, c: 0, rank: 4 },
-  ]);
-  const id = state.pieces[0].id;
-  state.pieces[0].regenerationRestThroughRound = 1;
-
-  const actions = legalActions(state).filter((action) => action.id === id);
-  assert.ok(actions.length > 0);
-  assert.ok(actions.every((action) => action.type === "MOVE"));
-
-  const chosen = actions[0];
-  state = transition(state, chosen);
-  const moved = state.pieces.find((piece) => piece.id === id);
-  assert.deepEqual([moved.r, moved.c], [chosen.r, chosen.c]);
-  assert.equal(moved.regenerationRestThroughRound, undefined);
-  assert.equal(state.current, "amber");
-  assert.ok(
-    state.passiveEffects.some(
-      (effect) =>
-        effect.trait === "Endorfinas" &&
-        effect.outcome === "endorphin-recovery-move",
-    ),
-  );
-});
-
 test("Biotransformação Hepática remove Veneno ou Peçonha como ação e aplica recarga", () => {
   let state = fixture([
     {

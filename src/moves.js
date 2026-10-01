@@ -6,6 +6,7 @@ import {
   energyBranch,
   canPhotosynthesize,
   largeFunctionalForm,
+  FATIGUE_LIMITS,
 } from "./constants.js";
 import {
   at,
@@ -79,15 +80,13 @@ export const dysfunctionalResting = (state, p) =>
 export const regenerationResting = (state, p) =>
   Number.isInteger(p.regenerationRestThroughRound) &&
   round(state) <= p.regenerationRestThroughRound;
-export const endorphinRecoveryActive = (state, p) =>
-  !!p &&
-  has(p, "Endorfinas") &&
-  has(p, "Locomoção Primitiva") &&
-  regenerationResting(state, p) &&
-  !dysfunctionalResting(state, p) &&
-  !neurodivergenceResting(state, p) &&
-  !intoxicationResting(state, p) &&
-  !pupating(state, p);
+export const fatigueLimit = (piece) =>
+  FATIGUE_LIMITS[piece?.rank] ?? 4;
+export const fatigueResting = (state, piece) =>
+  !!piece &&
+  has(piece, "Predação") &&
+  Number.isInteger(piece.fatigueRestTurn) &&
+  piece.fatigueRestTurn === state.turn;
 export const neurodivergenceResting = (state, p) =>
   Number.isInteger(p?.neurodivergenceRestThroughRound) &&
   round(state) <= p.neurodivergenceRestThroughRound;
@@ -269,52 +268,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     !state.pieces.some((x) => x.id === p.id) ||
     (state.neurofocus && state.neurofocus !== p.id) ||
     ecologicalDomainBlocked(state, p.owner, p.r, p.c) ||
-    (resting(state, p) && !endorphinRecoveryActive(state, p)) ||
+    resting(state, p) ||
     dormant(state, p)
   )
     return [];
   if (!ignoreChain && state.chain && state.chain !== p.id) return [];
-  if (endorphinRecoveryActive(state, p)) {
-    const terrestrialRestriction =
-        has(p, "Locomoção Primitiva") &&
-        !has(p, "Locomoção Terrestre"),
-      targets = [];
-    for (let dr = -1; dr <= 1; dr++)
-      for (let dc = -1; dc <= 1; dc++) {
-        if (!dr && !dc) continue;
-        const r = p.r + dr,
-          c = p.c + dc;
-        if (
-          !inside(r, c) ||
-          ecologicalDomainBlocked(state, p.owner, r, c) ||
-          at(state, r, c) ||
-          eggAt(state, r, c) ||
-          plantSeedAt(state, r, c) ||
-          fragmentAt(state, r, c) ||
-          barrierAt(state, r, c) ||
-          lethalHazardAt(state, r, c) ||
-          (terrestrialRestriction && terrain(state, r, c) !== "fertile")
-        )
-          continue;
-        targets.push({
-          r,
-          c,
-          path: [[r, c]],
-          capture: false,
-          cannibal: false,
-          filialCannibal: false,
-          matriphagy: false,
-          eggCapture: null,
-          seedCapture: null,
-          fruitConsume: null,
-          synzooCollect: null,
-          stay: false,
-          endorphinRecovery: true,
-          noContinuation: true,
-        });
-      }
-    return targets;
-  }
   if (p.webTrapped) {
     const active = (state.webs ?? []).some(
       (entry) =>
@@ -1402,7 +1360,9 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
     return [...unique.values()];
   }
-  return targets;
+  return fatigueResting(state, p)
+    ? targets.filter((target) => target.stay)
+    : targets;
 }
 export function sexualReproductionResource(state, parent, mate) {
   const providers = [parent, mate].filter(Boolean);
@@ -2370,6 +2330,12 @@ export function pieceActionState(state, piece) {
       reason: "Metamorfose",
       remainingRounds: Math.max(1, piece.pupaUntilRound - currentRound),
     };
+  if (fatigueResting(state, piece))
+    return {
+      waiting: true,
+      reason: "Fadiga",
+      remainingRounds: 1,
+    };
   if (regenerationResting(state, piece))
     return {
       waiting: true,
@@ -2503,7 +2469,7 @@ export function canWaitForRest(state, owner) {
     (p) =>
       p.owner === owner &&
       !ecologicalDomainBlocked(state, p.owner, p.r, p.c) &&
-      (resting(state, p) || dormant(state, p)),
+      (resting(state, p) || fatigueResting(state, p) || dormant(state, p)),
   );
 }
 export function canWaitForBirth(state, owner) {

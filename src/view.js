@@ -71,6 +71,7 @@ import {
   pieceActionState,
   neurodivergenceResting,
   intoxicationResting,
+  fatigueResting,
 } from "./moves.js";
 import { corticalMoveSuggestions } from "./positioning.js";
 import {
@@ -101,6 +102,7 @@ const WAIT_STATUS_LABELS = Object.freeze({
   "Recuperação por Regeneração": "regeneração",
   "Sobrecarga por Neurodivergência": "sobrecarga",
   "Intoxicação por Toxicidade": "intoxicação",
+  Fadiga: "fadiga locomotora",
   "Descanso por Mutação Disfuncional": "mutação disfuncional",
   "Dormência em terreno hostil": "dormência em terreno hostil",
   "Maturidade sexual": "maturidade sexual",
@@ -1373,6 +1375,11 @@ export function render(
         if (p.id === state.neurofocus) statusBadges.push("♾️×2");
         if (neurodivergenceResting(state, p)) statusBadges.push("♾️⏳");
         if (intoxicationResting(state, p)) statusBadges.push("😵‍💫");
+        if (
+          Number.isInteger(p.fatigueRestTurn) &&
+          p.fatigueRestTurn >= state.turn
+        )
+          statusBadges.push("🥵");
         if (p.webTrapped) statusBadges.push("🕸️⏳");
         if (p.autotomyRecovery) statusBadges.push("✂️↻");
         if (
@@ -1552,6 +1559,13 @@ export function render(
         : null,
       state.pieces.some((piece) => intoxicationResting(state, piece))
         ? { marker: "😵‍💫", label: "Intoxicação · sem ação" }
+        : null,
+      state.pieces.some(
+        (piece) =>
+          Number.isInteger(piece.fatigueRestTurn) &&
+          piece.fatigueRestTurn >= state.turn,
+      )
+        ? { marker: "🥵", label: "Fadiga · próximo turno próprio sem locomoção" }
         : null,
       boardElement.querySelector(".piece-pathogen-infection")
         ? {

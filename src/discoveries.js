@@ -417,7 +417,7 @@ export const MUTATION_DISCOVERY_TOPICS = {
   Jatopropulsão: ["Propulsão a jato", "Cefalópodes usam a expulsão direcionada de água para produzir aceleração e redirecionar o deslocamento; no jogo, isso aparece como um impulso longo com uma única curva."],
   Serotonina: ["Serotonina", "A sinalização serotoninérgica é antiga e participa da modulação de estados comportamentais em muitos animais; no jogo, representa flexibilidade para reposicionar-se depois que uma estratégia ofensiva é frustrada."],
   Dopamina: ["Dopamina", "A sinalização dopaminérgica participa de motivação, recompensa e aprendizagem associativa; no jogo, uma alimentação reprodutiva bem-sucedida ajuda a superar parte da pressão ecológica ou competitiva."],
-  Endorfinas: ["Endorfina", "Peptídeos opioides endógenos modulam dor e respostas ao estresse; no jogo, essa analgesia é abstraída como um deslocamento simples durante a recuperação após Regeneração."],
+  Endorfinas: ["Endorfina", "Peptídeos opioides endógenos modulam dor e respostas ao estresse; no jogo, essa tolerância é abstraída como um último esforço além do limite normal antes da Fadiga locomotora."],
   Vertebrado: ["Vertebrata", "Vertebrados possuem um eixo corporal interno especializado e, no jogo, abrem a progressão completa das formas derivadas de xadrez."],
   Intestino: ["Intestino", "A regionalização intestinal e o aumento da superfície absortiva ampliam a assimilação de nutrientes; no jogo, cada segunda alimentação bem-sucedida reduz parte do custo metabólico da reprodução."],
   "Estômago Ácido": ["Estômago", "A acidez gástrica participa da digestão e funciona como barreira contra muitos microrganismos ingeridos; no jogo, reduz a transmissão por presa ou material fecal contaminado."],

@@ -24,6 +24,8 @@ import {
   nicheConstructionTargets,
   adjacentAlliesCount,
   neurodivergenceResting,
+  fatigueLimit,
+  fatigueResting,
   dormant,
   pieceActionState,
 } from "./moves.js";
@@ -186,7 +188,12 @@ export function actionableTraitsForPiece(state, piece) {
     hasDetritusAt = (r, c) =>
       !!organicResidueAt(state, r, c) || !!carcassAt(state, r, c);
 
-  if (targets.some((target) => target.endorphinRecovery))
+  if (
+    has(piece, "Endorfinas") &&
+    !fatigueResting(state, piece) &&
+    (piece.exertionStreak ?? 0) >= fatigueLimit(piece) &&
+    targets.some((target) => !target.stay)
+  )
     actionable.add("Endorfinas");
 
   if (
