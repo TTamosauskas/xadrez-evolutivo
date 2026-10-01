@@ -531,7 +531,12 @@ function habitatPressureLevel(state) {
     population = activePopulation(state),
     offensive = offensiveActionCount(state);
   if (now >= 70 && offensive <= 2) return 3;
-  if (stalledRounds >= 18 || population >= 32 || offensive === 0) return 2;
+  if (
+    stalledRounds >= 18 ||
+    population >= 32 ||
+    (now >= 18 && offensive === 0)
+  )
+    return 2;
   if (stalledRounds >= 12) return 1;
   return 0;
 }
