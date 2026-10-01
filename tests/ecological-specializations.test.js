@@ -119,7 +119,8 @@ test("Autotomia restaura a forma quando a energia de uma captura é vivificada",
   assert.deepEqual(defender.autotomyRecovery, { originalRank: 5 });
   assert.equal(defender.predationEnergy, true);
 
-  state = simulate(state, { type: "PASS" });
+  state.current = "amber";
+  state.phase = "move";
   defender = state.pieces.find((piece) => piece.id === defenderId);
   state = simulate(state, move(defender, defender.r, defender.c));
 
