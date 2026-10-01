@@ -124,3 +124,103 @@ test("fuga reativa com Adrenalina adiciona esforço ao predador que escapou", ()
   assert.equal(victim.lastReactiveExertionTurn, 0);
   assertState(state);
 });
+
+
+test("Ciclo de Sono transforma automaticamente um descanso seguro em esforço reparado", () => {
+  let state = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ciclo de Sono"] },
+    { owner: "amber", r: 0, c: 0, rank: 0 },
+  ]);
+  const id = state.pieces[0].id,
+    sleeper = state.pieces[0];
+  sleeper.exertionStreak = 3;
+  sleeper.fatigueRestTurn = 0;
+
+  state = pass(state);
+  let piece = state.pieces.find((candidate) => candidate.id === id);
+  assert.equal(state.turn, 1);
+  assert.equal(piece.sleepingThroughTurn, 1);
+  assert.equal(piece.restorativeSleepCharge, true);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Ciclo de Sono" &&
+        effect.outcome === "restorative-sleep",
+    ),
+  );
+
+  state = pass(state);
+  piece = state.pieces.find((candidate) => candidate.id === id);
+  assert.equal(state.turn, 2);
+  assert.equal(piece.sleepingThroughTurn, undefined);
+  assert.equal(piece.restorativeSleepCharge, true);
+
+  state = transition(state, { type: "MOVE", id, r: 4, c: 5 });
+  piece = state.pieces.find((candidate) => candidate.id === id);
+  assert.equal(piece.restorativeSleepCharge, undefined);
+  assert.equal(piece.exertionStreak, 0);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Ciclo de Sono" &&
+        effect.outcome === "restorative-sleep-absorbed-exertion",
+    ),
+  );
+  assertState(state);
+});
+
+test("Ciclo de Sono não ativa quando a peça fatigada está sob captura imediata", () => {
+  let state = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Ciclo de Sono"] },
+    { owner: "amber", r: 4, c: 0, rank: 5 },
+  ]);
+  const id = state.pieces[0].id,
+    sleeper = state.pieces[0];
+  sleeper.exertionStreak = 3;
+  sleeper.fatigueRestTurn = 0;
+
+  state = pass(state);
+  const piece = state.pieces.find((candidate) => candidate.id === id);
+  assert.equal(state.turn, 1);
+  assert.equal(piece.sleepingThroughTurn, undefined);
+  assert.equal(piece.restorativeSleepCharge, undefined);
+  assert.equal(piece.exertionStreak, 0);
+  assertState(state);
+});
+
+test("Sistema Adipocinético reduz um esforço ao terminar em casa fértil e cancela a Fadiga recém-programada", () => {
+  let state = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 0,
+      rank: 2,
+      traits: ["Artrópode", "Sistema Adipocinético"],
+    },
+    { owner: "amber", r: 0, c: 7, rank: 0 },
+  ]);
+  const piece = state.pieces[0],
+    id = piece.id;
+  assert.ok(piece.traits.includes("Artrópode"));
+  assert.ok(piece.traits.includes("Sistema Adipocinético"));
+
+  state.turn = 4;
+  state.current = "blue";
+  state.board[3 * 8 + 1] = "fertile";
+  piece.exertionStreak = 3;
+  piece.lastOwnExertionTurn = 2;
+
+  state = transition(state, { type: "MOVE", id, r: 3, c: 1 });
+  const recovered = state.pieces.find((candidate) => candidate.id === id);
+  assert.equal(recovered.exertionStreak, 3);
+  assert.equal(recovered.fatigueRestTurn, undefined);
+  assert.equal(recovered.adipokineticRecoveryTurn, 4);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Sistema Adipocinético" &&
+        effect.outcome === "reduced-fatigue-on-fertile-landing",
+    ),
+  );
+  assertState(state);
+});
