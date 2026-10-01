@@ -2185,7 +2185,7 @@ test("pre-locomotion predation places offspring toward the nearest rival", () =>
   assert.equal(Math.abs(child.c - rival.c), 1);
 });
 
-test("basal predation creates a forward-expanding descendant before primitive locomotion", () => {
+test("basal predation stores vivification before primitive locomotion", () => {
   let s = createState(914, {
     geologicalStage: "archean",
     historicalTraits: ["Respiração anaeróbia", "Predação"],
@@ -2206,15 +2206,17 @@ test("basal predation creates a forward-expanding descendant before primitive lo
   s = simulate(s, move(predator, 3, 2));
 
   const blue = s.pieces.filter((piece) => piece.owner === "blue"),
-    child = blue.find((piece) => piece.id !== predator.id);
-  assert.equal(blue.length, 2);
-  assert.ok(child);
-  assert.equal(
-    Math.max(
-      Math.abs(child.r - survivor.r),
-      Math.abs(child.c - survivor.c),
+    stored = s.pieces.find((piece) => piece.id === predator.id);
+  assert.equal(blue.length, 1);
+  assert.equal(stored.predationEnergy, true);
+  assert.ok(
+    movesFor(s, stored).some(
+      (target) =>
+        target.r === stored.r &&
+        target.c === stored.c &&
+        target.stay &&
+        !target.capture,
     ),
-    2,
   );
   assertState(s);
 });
@@ -2261,7 +2263,7 @@ test("basal predation keeps one replacement birth above the population threshold
   assert.equal(s.pieces.length, before + 1);
 });
 
-test("predation creates at most one descendant and none once population pressure starts", () => {
+test("predation never births on capture and stores at most one vivification charge", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -2275,10 +2277,12 @@ test("predation creates at most one descendant and none once population pressure
   ]);
   const lowBlue = s.pieces.filter((piece) => piece.owner === "blue").length;
   s = simulate(s, move(s.pieces[0], 4, 4));
+  const lowPredator = s.pieces.find((piece) => piece.owner === "blue");
   assert.equal(
     s.pieces.filter((piece) => piece.owner === "blue").length,
-    lowBlue + 1,
+    lowBlue,
   );
+  assert.equal(lowPredator.predationEnergy, true);
 
   s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
@@ -2301,10 +2305,12 @@ test("predation creates at most one descendant and none once population pressure
   }
   const highBlue = s.pieces.filter((piece) => piece.owner === "blue").length;
   s = simulate(s, move(s.pieces[0], 4, 4));
+  const highPredator = s.pieces.find((piece) => piece.id === 1);
   assert.equal(
     s.pieces.filter((piece) => piece.owner === "blue").length,
     highBlue,
   );
+  assert.equal(highPredator.predationEnergy, true);
   assertState(s);
 });
 
@@ -2810,7 +2816,7 @@ test("round cadence drives habitat while generations continue queuing ecological
   );
   assertState(s);
 });
-test("Predação keeps converting valid captures into reproduction after Multicelularismo", () => {
+test("Predação stores one vivification charge and reproduces only on a later action", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
     { owner: "amber", r: 4, c: 4 },
@@ -2818,7 +2824,28 @@ test("Predação keeps converting valid captures into reproduction after Multice
   ]);
   const parentId = s.pieces[0].id;
   s = simulate(s, move(s.pieces[0], 4, 4));
+  let parent = s.pieces.find((piece) => piece.id === parentId);
+  assert.equal(
+    s.pieces.some((piece) => piece.parentId === parentId),
+    false,
+  );
+  assert.equal(parent.predationEnergy, true);
+  assert.ok(
+    movesFor(s, parent).some(
+      (target) =>
+        target.r === parent.r &&
+        target.c === parent.c &&
+        target.stay &&
+        !target.capture,
+    ),
+  );
+
+  s = simulate(s, { type: "PASS" });
+  parent = s.pieces.find((piece) => piece.id === parentId);
+  s = simulate(s, move(parent, parent.r, parent.c));
+  parent = s.pieces.find((piece) => piece.id === parentId);
   assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
+  assert.equal(parent.predationEnergy, false);
   assert.equal(
     predatoryReproductionAvailable(
       {
@@ -2832,7 +2859,7 @@ test("Predação keeps converting valid captures into reproduction after Multice
   assertState(s);
 });
 
-test("diet specializes trophic efficiency and green-resource access", () => {
+test("diet specializes stored predation energy and green-resource access", () => {
   const captureCooldown = (traits, preyTraits) => {
     let s = fixture([
       { owner: "blue", r: 4, c: 3, rank: 3, traits },
@@ -2841,8 +2868,18 @@ test("diet specializes trophic efficiency and green-resource access", () => {
     ]);
     const parentId = s.pieces[0].id;
     s = simulate(s, move(s.pieces[0], 4, 4));
-    const parent = s.pieces.find((piece) => piece.id === parentId);
+    let parent = s.pieces.find((piece) => piece.id === parentId);
+    assert.equal(parent.predationEnergy, true);
+    assert.equal(
+      s.pieces.some((piece) => piece.parentId === parentId),
+      false,
+    );
+    s = simulate(s, { type: "PASS" });
+    parent = s.pieces.find((piece) => piece.id === parentId);
+    s = simulate(s, move(parent, parent.r, parent.c));
+    parent = s.pieces.find((piece) => piece.id === parentId);
     assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
+    assert.equal(parent.predationEnergy, false);
     return parent.nextReproductionRound;
   };
 
@@ -2878,7 +2915,7 @@ test("diet specializes trophic efficiency and green-resource access", () => {
   }
 });
 
-test("Onívoro uses fertile cells and gains predatory reproduction from either prey branch", () => {
+test("Onívoro uses fertile cells and stores vivification from either prey branch", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Onívoro"] },
     { owner: "amber", r: 0, c: 0 },
@@ -2895,10 +2932,16 @@ test("Onívoro uses fertile cells and gains predatory reproduction from either p
     ]);
     const parentId = s.pieces[0].id;
     s = simulate(s, move(s.pieces[0], 4, 4));
-    assert.ok(s.pieces.some((p) => p.parentId === parentId));
+    const parent = s.pieces.find((p) => p.id === parentId);
+    assert.equal(parent.predationEnergy, true);
+    assert.equal(
+      s.pieces.some((p) => p.parentId === parentId),
+      false,
+    );
   }
   assertState(s);
 });
+
 test("Necrófago consumes carcass without changing its underlying terrain", () => {
   for (const terrainType of ["hostile", "fertile"]) {
     let s = fixture([
