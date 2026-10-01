@@ -23,6 +23,7 @@ import {
   habitatProfile,
   currentGeologicalStage,
   aquaticFertilityRegime,
+  cellularTerrainUnlocked,
   conwayUnlocked,
   pathogenUnlocked,
 } from "./geology.js";
@@ -30,6 +31,10 @@ import { movesFor } from "./moves.js";
 import { recordDiscovery } from "./discoveries.js";
 import { startDisease } from "./disease.js";
 import { immediateEventRepeatAllowed } from "./scenarios.js";
+import {
+  CELLULAR_RULES,
+  advanceCellularTerrain,
+} from "./cellular-terrain.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
 export const SEVERE_EVENT_IDS = new Set(["ice", "volcano", "meteor", "grb", "warming"]);
 const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.95);
@@ -474,6 +479,264 @@ function habitatRange(value) {
   if (Array.isArray(value)) return [value[0] ?? 0, value[1] ?? value[0] ?? 0];
   const target = value ?? 0;
   return [target, target];
+}
+
+function cellularProtectedCells(state) {
+  return new Set([
+    ...state.barriers,
+    ...state.naturalBarriers,
+    ...state.deathSites.map((site) => site.cell),
+    ...state.fertileTraces.map((trace) => trace.cell),
+    ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
+    ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
+  ]);
+}
+
+function hostilePressurePreference(state) {
+  const occupied = state.pieces.map((piece) => ({
+      cell: square(piece.r, piece.c),
+      owner: piece.owner,
+      r: piece.r,
+      c: piece.c,
+    })),
+    scores = [];
+  for (const cell of allCells()) {
+    const r = Math.floor(cell / 8),
+      c = cell % 8;
+    if (barrierAt(state, r, c) || at(state, r, c)) continue;
+    let score = 0;
+    for (const piece of occupied) {
+      const d = Math.max(Math.abs(piece.r - r), Math.abs(piece.c - c));
+      if (d <= 1) score += 5;
+      else if (d === 2) score += 2;
+      if (
+        (piece.owner === "blue" && r > piece.r) ||
+        (piece.owner === "amber" && r < piece.r)
+      )
+        score += 1;
+    }
+    if (r === 0 || r === 7 || c === 0 || c === 7) score += 1;
+    scores.push({ cell, score });
+  }
+  scores.sort((a, b) => b.score - a.score || a.cell - b.cell);
+  return scores.filter((entry) => entry.score > 0).slice(0, 20).map((entry) => entry.cell);
+}
+
+function habitatPressureLevel(state) {
+  const now = round(state),
+    stalledRounds = Math.max(
+      0,
+      now - (state.lastSuccessfulCaptureRound ?? 0),
+    ),
+    population = activePopulation(state),
+    offensive = offensiveActionCount(state);
+  if (now >= 70 && offensive <= 2) return 3;
+  if (stalledRounds >= 18 || population >= 32 || offensive === 0) return 2;
+  if (stalledRounds >= 12) return 1;
+  return 0;
+}
+
+function habitatIntervalRounds(level) {
+  if (level >= 3) return 2;
+  if (level >= 2) return 3;
+  if (level >= 1) return 4;
+  return 5;
+}
+
+function applyCellularTerrainConsequences(ctx, before) {
+  const state = ctx.state,
+    newlyHostile = new Set(
+      allCells().filter(
+        (cell) => before[cell] !== "hostile" && state.board[cell] === "hostile",
+      ),
+    );
+  if (!newlyHostile.size) return;
+
+  const doomed = state.pieces
+    .filter((piece) => {
+      const cell = square(piece.r, piece.c);
+      return (
+        newlyHostile.has(cell) &&
+        !has(piece, "Voo") &&
+        !state.event?.hazards?.includes(cell)
+      );
+    })
+    .map((piece) => piece.id);
+  for (const id of doomed) ctx.kill(id, "mudança orgânica do habitat");
+
+  state.eggs = state.eggs.filter((egg) => {
+    const cell = square(egg.r, egg.c);
+    return !newlyHostile.has(cell) || random(state) >= 0.5;
+  });
+  state.plantSeeds = state.plantSeeds.filter((seed) => {
+    if (!Number.isInteger(seed.r) || !Number.isInteger(seed.c)) return true;
+    const cell = square(seed.r, seed.c);
+    return !newlyHostile.has(cell) || random(state) >= 0.5;
+  });
+}
+
+function evolveCellularTerrain(
+  ctx,
+  {
+    type,
+    rule,
+    profile = habitatProfile(ctx.state),
+    changeLimit = 2,
+    preferredCells = [],
+    avoidedCells = [],
+    targetCount = null,
+    protectedCells = cellularProtectedCells(ctx.state),
+  },
+) {
+  const state = ctx.state,
+    before = [...state.board],
+    [min, max] = habitatRange(profile[type]);
+  advanceCellularTerrain(state, {
+    type,
+    rule,
+    min,
+    max,
+    changeLimit,
+    preferredCells,
+    avoidedCells,
+    targetCount,
+    protectedCells,
+  });
+  applyCellularTerrainConsequences(ctx, before);
+}
+
+function advanceBasalCellularHabitat(ctx, pressure = 0) {
+  const state = ctx.state,
+    stage = currentGeologicalStage(state),
+    profile = habitatProfile(state),
+    eoarchean = currentGeologicalStage({ geologicalStage: "eoarchean" }).index,
+    siderian = currentGeologicalStage({ geologicalStage: "siderian" }).index,
+    ordovician = currentGeologicalStage({ geologicalStage: "ordovician" }).index,
+    silurian = currentGeologicalStage({ geologicalStage: "silurian" }).index,
+    devonian = currentGeologicalStage({ geologicalStage: "devonian" }).index;
+
+  if (stage.index < eoarchean) return;
+
+  if (stage.index < siderian) {
+    evolveCellularTerrain(ctx, {
+      type: "hostile",
+      rule: CELLULAR_RULES.CLASSIC,
+      profile,
+      changeLimit: 2 + Math.min(pressure, 1),
+    });
+    return;
+  }
+
+  if (stage.index <= ordovician) {
+    evolveCellularTerrain(ctx, {
+      type: "hostile",
+      rule: CELLULAR_RULES.TWO_BY_TWO,
+      profile,
+      changeLimit: 2 + Math.min(pressure, 1),
+    });
+    return;
+  }
+
+  if (stage.index === silurian) {
+    evolveCellularTerrain(ctx, {
+      type: "hostile",
+      rule: CELLULAR_RULES.TWO_BY_TWO,
+      profile,
+      changeLimit: 1 + Math.min(pressure, 1),
+    });
+    return;
+  }
+
+  if (stage.index >= devonian) {
+    const corridor =
+        pressure > 0
+          ? nearestPopulationCorridor(state, { requireEdit: false })?.path ?? []
+          : [],
+      preferredFertile = corridor.slice(1, -1);
+    evolveCellularTerrain(ctx, {
+      type: "fertile",
+      rule: CELLULAR_RULES.MAZECTRIC,
+      profile,
+      changeLimit: 2 + pressure,
+      preferredCells: preferredFertile,
+    });
+
+    if (pressure >= 2) {
+      evolveCellularTerrain(ctx, {
+        type: "hostile",
+        rule: CELLULAR_RULES.SEEDS,
+        profile,
+        changeLimit: 1 + pressure,
+        preferredCells: hostilePressurePreference(state),
+        avoidedCells: preferredFertile,
+      });
+    } else {
+      const before = [...state.board];
+      flowHostileTerrainWithinProfile(state, profile);
+      applyCellularTerrainConsequences(ctx, before);
+    }
+  }
+}
+
+function applyEventCellularStep(ctx, event) {
+  if (!event?.cellular) return false;
+  const state = ctx.state,
+    overlay = new Set(event.hazards ?? []);
+
+  for (const [cell, base] of Object.entries(event.snapshots ?? {}))
+    state.board[Number(cell)] = base;
+
+  const config = event.cellular,
+    profile = habitatProfile(state),
+    preferredCells = config.preferredCells ?? [];
+  evolveCellularTerrain(ctx, {
+    type: config.type,
+    rule: CELLULAR_RULES[config.rule],
+    profile,
+    changeLimit: config.changeLimit ?? 2,
+    preferredCells,
+    avoidedCells: config.avoidedCells ?? [],
+    targetCount: config.targetCount ?? null,
+  });
+
+  for (const cell of overlay) {
+    event.snapshots[cell] = state.board[cell];
+    state.board[cell] = "hostile";
+  }
+  event.cellular.ticks = (event.cellular.ticks ?? 0) + 1;
+  return true;
+}
+
+function tickEventCellular(ctx, now) {
+  const event = ctx.state.event,
+    cellular = event?.cellular;
+  if (
+    !cellular ||
+    (cellular.maxTicks !== undefined && (cellular.ticks ?? 0) >= cellular.maxTicks)
+  )
+    return;
+  cellular.nextRound ??= event.startRound + (cellular.intervalRounds ?? 3);
+  while (
+    now >= cellular.nextRound &&
+    (cellular.maxTicks === undefined || (cellular.ticks ?? 0) < cellular.maxTicks)
+  ) {
+    applyEventCellularStep(ctx, event);
+    cellular.nextRound += cellular.intervalRounds ?? 3;
+  }
+}
+
+function applyPopulationTerrainPressure(ctx, level) {
+  const state = ctx.state,
+    profile = habitatProfile(state),
+    corridor = nearestPopulationCorridor(state, { requireEdit: false })?.path ?? [];
+  evolveCellularTerrain(ctx, {
+    type: "hostile",
+    rule: level >= 2 ? CELLULAR_RULES.SEEDS : CELLULAR_RULES.TWO_BY_TWO,
+    profile,
+    changeLimit: level >= 2 ? 4 : 2,
+    preferredCells: hostilePressurePreference(state),
+    avoidedCells: corridor.slice(1, -1),
+  });
 }
 
 function terrainNeighborCount(board, cell, type) {
@@ -1149,6 +1412,13 @@ export function startEvent(
     case "drought":
       event.cap = Math.max(1, Math.ceil(fertile(state).length / 2));
       trim(state, event.cap);
+      event.cellular = {
+        type: "fertile",
+        rule: "CORROSION",
+        intervalRounds: 3,
+        changeLimit: 2,
+        ticks: 0,
+      };
       break;
     case "sea":
       markHazard(
@@ -1180,6 +1450,14 @@ export function startEvent(
       break;
     case "warming":
       markHazard(state, event, severeCells(state));
+      event.cellular = {
+        type: "hostile",
+        rule: "SEEDS",
+        intervalRounds: 1,
+        changeLimit: 2,
+        maxTicks: 2,
+        ticks: 0,
+      };
       recordBarrierChange(
         event,
         [],
@@ -1189,6 +1467,13 @@ export function startEvent(
     case "desert":
       event.initial = Math.max(1, fertile(state).length);
       trim(state, event.initial);
+      event.cellular = {
+        type: "fertile",
+        rule: "CORROSION",
+        intervalRounds: 2,
+        changeLimit: 3,
+        ticks: 0,
+      };
       break;
     case "blockade": {
       const anti = random(state) < 0.5;
@@ -1203,6 +1488,13 @@ export function startEvent(
     }
     case "abundance":
       addFertile(state, Math.max(1, fertile(state).length));
+      event.cellular = {
+        type: "fertile",
+        rule: "MAZECTRIC",
+        intervalRounds: 3,
+        changeLimit: 3,
+        ticks: 0,
+      };
       break;
     case "fertilized":
       addFertile(state, 1);
@@ -1221,6 +1513,14 @@ export function startEvent(
       if (!fertilityPaused(state))
         for (const i of wet)
           if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
+      event.cellular = {
+        type: "fertile",
+        rule: "MAZECTRIC",
+        intervalRounds: 3,
+        changeLimit: 3,
+        preferredCells: wet,
+        ticks: 0,
+      };
       break;
     }
     case "eutrophication": {
@@ -1285,6 +1585,14 @@ export function startEvent(
       if (!fertilityPaused(state))
         for (const i of river)
           if (!state.naturalBarriers.includes(i)) state.board[i] = "fertile";
+      event.cellular = {
+        type: "fertile",
+        rule: "MAZECTRIC",
+        intervalRounds: 3,
+        changeLimit: 3,
+        preferredCells: river,
+        ticks: 0,
+      };
       break;
     }
   }
@@ -1309,28 +1617,68 @@ export function startSevereEvent(ctx, source = "eco") {
 export function checkPopulationClimate(ctx) {
   const state = ctx.state,
     population = activePopulation(state),
+    now = round(state),
     stalledRounds = Math.max(
       0,
-      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+      now - (state.lastSuccessfulCaptureRound ?? 0),
     ),
-    populationTrigger = population >= 36,
-    stagnationTrigger = population >= 28 && stalledRounds >= 18;
-  if (population <= 24) state.severePopulationLatched = false;
-  if (
-    (!populationTrigger && !stagnationTrigger) ||
-    state.severePopulationLatched ||
-    severeEventActive(state)
-  )
+    level =
+      population >= 36 || (population >= 28 && stalledRounds >= 18)
+        ? 2
+        : population >= 32
+          ? 1
+          : 0;
+
+  if (population <= 24) {
+    state.severePopulationLatched = false;
+    state.populationTerrainPressure = null;
     return false;
-  state.severePopulationLatched = true;
-  startSevereEvent(ctx, stagnationTrigger ? "stagnation" : "population");
-  log(
-    state,
-    stagnationTrigger
-      ? `🌡️ Estagnação ecológica: ${stalledRounds} rodadas sem captura com ${population} organismos ativos desencadearam um evento de impacto extremo.`
-      : `🌡️ Pressão populacional: ${population} organismos ativos desencadearam um evento de impacto extremo.`,
-  );
-  return true;
+  }
+  if (!level || severeEventActive(state)) return false;
+
+  if (
+    !state.populationTerrainPressure ||
+    state.populationTerrainPressure.level !== level
+  )
+    state.populationTerrainPressure = {
+      level,
+      startedRound: now,
+      lastAppliedRound: Math.max(0, now - 3),
+    };
+
+  let acted = false;
+  if (now - state.populationTerrainPressure.lastAppliedRound >= 3) {
+    applyPopulationTerrainPressure(ctx, level);
+    state.populationTerrainPressure.lastAppliedRound = now;
+    log(
+      state,
+      level >= 2
+        ? `🌡️ Pressão populacional intensa remodelou a hostilidade ao redor das maiores aglomerações.`
+        : `🌡️ Pressão populacional local deslocou a hostilidade para regiões congestionadas.`,
+    );
+    acted = true;
+  }
+
+  const severeTrigger =
+    population >= 40 ||
+    (level >= 2 &&
+      now - state.populationTerrainPressure.startedRound >= 6);
+  if (
+    severeTrigger &&
+    !state.severePopulationLatched &&
+    !severeEventActive(state)
+  ) {
+    state.severePopulationLatched = true;
+    startSevereEvent(ctx, stalledRounds >= 18 ? "stagnation" : "population");
+    log(
+      state,
+      stalledRounds >= 18
+        ? `🌡️ Estagnação ecológica persistente: ${stalledRounds} rodadas sem captura com ${population} organismos ativos superaram a resposta celular e desencadearam um evento de impacto extremo.`
+        : `🌡️ Pressão populacional extrema: ${population} organismos ativos superaram a resposta celular e desencadearam um evento de impacto extremo.`,
+    );
+    return true;
+  }
+  return acted;
 }
 
 function conwayPath(state, start, goal) {
@@ -1542,14 +1890,17 @@ export function tickEnvironment(ctx) {
   tickCaptureDisturbances(state);
   depletePausedFertility(state);
 
+  state.nextHabitatRound ??= 5;
   while (
-    conwayUnlocked(state) &&
+    cellularTerrainUnlocked(state) &&
     !severeEventActive(state) &&
-    state.maxGenerationReached >= state.nextHabitatGeneration
+    now >= state.nextHabitatRound
   ) {
-    advanceConway(ctx);
-    state.nextHabitatGeneration += 2;
+    const pressure = habitatPressureLevel(state);
+    advanceBasalCellularHabitat(ctx, pressure);
+    state.nextHabitatRound += habitatIntervalRounds(pressure);
   }
+
   while (state.maxGenerationReached >= state.nextEventGeneration) {
     state.pendingEcologicalEvents++;
     state.nextEventGeneration += 6;
@@ -1569,6 +1920,7 @@ export function tickEnvironment(ctx) {
     else if (event.id === "desert")
       trim(state, Math.max(1, Math.ceil((event.initial * (10 - age)) / 10)));
     else if (event.id === "fertilized") addFertile(state, 1);
+    tickEventCellular(ctx, now);
     for (const i of event.hazards) state.board[i] = "hostile";
   } else if (state.pendingEcologicalEvents > 0) {
     state.pendingEcologicalEvents--;
