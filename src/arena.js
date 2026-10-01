@@ -154,6 +154,7 @@ function arenaTraitAllowedForBodyPlan(trait, bodyPlan) {
     dependencies = TRAIT_DEPENDENCIES[trait] ?? {};
   if (trait === opposite) return false;
   if ((dependencies.lineage ?? []).includes(opposite)) return false;
+  if ((dependencies.active ?? []).includes(opposite)) return false;
   if (
     dependencies.lineageAny?.length &&
     dependencies.lineageAny.includes(opposite) &&
