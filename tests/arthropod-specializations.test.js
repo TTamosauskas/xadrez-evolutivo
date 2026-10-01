@@ -23,7 +23,6 @@ function arthropodTraits(extra = []) {
     "Ingestão",
     "Simetria Bilateral",
     "Artrópode",
-    "Locomoção Articulada",
     "Locomoção Terrestre",
     "Percepção Espacial",
     ...extra,
@@ -103,7 +102,6 @@ test("Recrutamento em Massa cria captura curta alinhada com apoio junto à presa
   const traits = arthropodTraits([
       "Ovíparo",
       "Incubação",
-      "Sociabilidade",
       "Eusocialidade",
       "Recrutamento em Massa",
     ]),
@@ -150,7 +148,6 @@ test("Recrutamento em Massa não atravessa organismo intermediário", () => {
   const traits = arthropodTraits([
     "Ovíparo",
     "Incubação",
-    "Sociabilidade",
     "Eusocialidade",
     "Recrutamento em Massa",
   ]);
