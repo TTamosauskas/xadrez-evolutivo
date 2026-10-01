@@ -604,20 +604,38 @@ function endothermyRescues(state, piece, normalHostile) {
     piece.endothermyUsedTurn === state.turn
   )
     return false;
-  const now = round(state);
-  piece.nextReproductionRound =
-    (piece.nextReproductionRound ?? now) <= now
-      ? now + 1
-      : piece.nextReproductionRound + 1;
+  const now = round(state),
+    heartSupport =
+      has(piece, "Coração Compartimentado") &&
+      now >= (piece.heartSupportReadyRound ?? 0);
+  if (heartSupport) {
+    piece.heartSupportReadyRound = now + 4;
+    emitPassiveEffect(
+      state,
+      "Coração Compartimentado",
+      "🫀 Coração Compartimentado sustentou a resposta endotérmica sem custo metabólico adicional.",
+      {
+        pieceId: piece.id,
+        outcome: "supported-endothermy",
+        value: 1,
+      },
+    );
+  } else
+    piece.nextReproductionRound =
+      (piece.nextReproductionRound ?? now) <= now
+        ? now + 1
+        : piece.nextReproductionRound + 1;
   piece.endothermyUsedTurn = state.turn;
   emitPassiveEffect(
     state,
     "Endotermia",
-    "🔥 Endotermia converteu o estresse ambiental em custo metabólico · recuperação +1.",
+    heartSupport
+      ? "🔥 Endotermia evitou a morte ambiental com suporte cardiovascular."
+      : "🔥 Endotermia converteu o estresse ambiental em custo metabólico · recuperação +1.",
     {
       pieceId: piece.id,
       outcome: "endothermy-rescued-hostile-risk",
-      value: 1,
+      value: heartSupport ? 0 : 1,
     },
   );
   log(
@@ -1282,7 +1300,24 @@ function recordPhotosynthesis(state, owner) {
     }
     if (p.photosynthesisCell !== cell) {
       p.photosynthesisCell = cell;
-      p.photosynthesisSinceTurn = state.turn;
+      const xerophyteBonusTurns =
+        has(p, "Xerofitismo") && p.xerophyteWaterReserve
+          ? 4
+          : 0;
+      p.photosynthesisSinceTurn = state.turn - xerophyteBonusTurns;
+      if (xerophyteBonusTurns) {
+        delete p.xerophyteWaterReserve;
+        emitPassiveEffect(
+          state,
+          "Xerofitismo",
+          "🌵 Reserva hídrica acelerou a Fotossíntese em até duas rodadas.",
+          {
+            pieceId: p.id,
+            outcome: "water-reserve-accelerated-photosynthesis",
+            value: 2,
+          },
+        );
+      }
       if (state.geologicalStage === "hadean")
         p.photosynthesisReadyTurn =
           state.turn + photosynthesisDelayTurns(state, p);
