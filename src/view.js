@@ -1380,6 +1380,7 @@ export function render(
           p.fatigueRestTurn >= state.turn
         )
           statusBadges.push("🥵");
+        if (p.sleepingThroughTurn === state.turn) statusBadges.push("😴");
         if (p.webTrapped) statusBadges.push("🕸️⏳");
         if (p.autotomyRecovery) statusBadges.push("✂️↻");
         if (
@@ -1566,6 +1567,13 @@ export function render(
           piece.fatigueRestTurn >= state.turn,
       )
         ? { marker: "🥵", label: "Fadiga · próximo turno próprio sem locomoção" }
+        : null,
+      state.pieces.some(
+        (piece) =>
+          piece.sleepingThroughTurn === state.turn ||
+          piece.restorativeSleepCharge,
+      )
+        ? { marker: "😴", label: "Sono reparador · próximo esforço não conta para Fadiga" }
         : null,
       boardElement.querySelector(".piece-pathogen-infection")
         ? {
