@@ -1346,9 +1346,13 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     canReproduce =
       reproductionReady(state, p) || paedogenesisReady(state, p);
   const sharedBiofilmResource = biofilmResource(state, p);
+  const storedPredationEnergy =
+    !!p.predationEnergy &&
+    (has(p, "Predação") || has(p, "Mixotrofia"));
   if (
     canReproduce &&
     (
+      storedPredationEnergy ||
       (basalFertility &&
         (terrain(state, p.r, p.c) === "fertile" ||
           (collector && p.seeds > 0))) ||
@@ -1465,6 +1469,15 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
 }
 export function sexualReproductionResource(state, parent, mate) {
   const providers = [parent, mate].filter(Boolean);
+  for (const provider of providers)
+    if (
+      provider.predationEnergy &&
+      (has(provider, "Predação") || has(provider, "Mixotrofia"))
+    )
+      return {
+        kind: "predation-energy",
+        providerId: provider.id,
+      };
   for (const provider of providers)
     if (
       canUseFertileResource(state, provider) &&
