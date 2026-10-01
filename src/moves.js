@@ -609,12 +609,19 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     )
       return;
     if (p.rank === 1) {
-      const start = targets.length;
+      const existing = new Set(
+          targets.map((target) => `${target.r},${target.c}`),
+        ),
+        start = targets.length;
       ray(DIAG, false);
-      for (let index = start; index < targets.length; index++) {
-        targets[index].hypermetamorphosis = true;
-        targets[index].noContinuation = true;
+      const additions = targets
+        .splice(start)
+        .filter((target) => !existing.has(`${target.r},${target.c}`));
+      for (const target of additions) {
+        target.hypermetamorphosis = true;
+        target.noContinuation = true;
       }
+      targets.push(...additions);
       return;
     }
     if (p.rank !== 2) return;
