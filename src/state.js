@@ -3017,6 +3017,17 @@ export function assertState(state) {
         integer(p.adaptiveImmuneNotifiedDisease, 1)
       ) ||
       !integer(p.stomataStartedRound ?? p.bornRound, 0) ||
+      !integer(p.xerophyteWaterReserve ?? 0, 0, 1) ||
+      !integer(p.renalWaterReserve ?? 0, 0, 1) ||
+      !integer(p.intestinalAbsorptionCount ?? 0, 0, 1) ||
+      typeof (p.intestinalAbsorptionPending ?? false) !== "boolean" ||
+      !(
+        p.xerophytePhotosynthesisBonusTurns === undefined ||
+        p.xerophytePhotosynthesisBonusTurns === null ||
+        p.xerophytePhotosynthesisBonusTurns === 4
+      ) ||
+      !integer(p.heartSupportReadyRound ?? 0, 0) ||
+      !integer(p.hepaticDetoxReadyRound ?? 0, 0) ||
       !(
         p.endothermyUsedTurn === null ||
         p.endothermyUsedTurn === undefined ||
@@ -3122,7 +3133,12 @@ export function assertState(state) {
       !integer(egg.hatchRound, egg.laidRound + 1) ||
       !integer(egg.expireRound, egg.hatchRound) ||
       !["basal", "amniote", "ovoviviparous"].includes(egg.mode) ||
-      (egg.mode === "basal" && egg.expireRound !== egg.laidRound + 6) ||
+      (egg.mode === "basal" &&
+        egg.expireRound !== egg.laidRound + 6 + (egg.estrogenRetained ? 1 : 0)) ||
+      (egg.estrogenRetained !== undefined &&
+        typeof egg.estrogenRetained !== "boolean") ||
+      (egg.maternalEstrogen !== undefined &&
+        typeof egg.maternalEstrogen !== "boolean") ||
       (egg.mode !== "basal" && egg.expireRound !== egg.hatchRound) ||
       (egg.parentId !== undefined && egg.parentId !== null && !integer(egg.parentId, 1)) ||
       egg.dispersal !== "local" ||
@@ -3245,9 +3261,20 @@ export function assertState(state) {
     for (const pregnancy of p.pregnancies)
       if (
         !integer(pregnancy.dueRound) ||
-        ![undefined, "viviparous", "ovoviviparous"].includes(pregnancy.kind) ||
+        ![
+          undefined,
+          "viviparous",
+          "ovoviviparous",
+          "retained-viviparous",
+        ].includes(pregnancy.kind) ||
         (pregnancy.readyLogged !== undefined &&
           typeof pregnancy.readyLogged !== "boolean") ||
+        (pregnancy.maternalEstrogen !== undefined &&
+          typeof pregnancy.maternalEstrogen !== "boolean") ||
+        (pregnancy.retainedOnce !== undefined &&
+          typeof pregnancy.retainedOnce !== "boolean") ||
+        (pregnancy.kind === "retained-viviparous" &&
+          pregnancy.retainedOnce !== true) ||
         pregnancy.dispersal !== "local" ||
         !Array.isArray(pregnancy.brood) ||
         !pregnancy.brood.length ||
