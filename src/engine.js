@@ -150,8 +150,13 @@ import {
   offensiveActionCount,
 } from "./environment.js";
 
-function grantPredationVivification(state, attacker, victim) {
-  if (!predatoryReproductionAvailable(attacker, victim)) return false;
+function grantPredationVivification(
+  state,
+  attacker,
+  victim,
+  { force = false } = {},
+) {
+  if (!force && !predatoryReproductionAvailable(attacker, victim)) return false;
   const fresh = !attacker.predationEnergy;
   attacker.predationEnergy = true;
   if (trophicSpecializationMatches(attacker, victim))
@@ -4500,7 +4505,7 @@ function executeMove(ctx, action) {
     );
     if (killed) {
       state.lastSuccessfulCaptureRound = round(state);
-      grantPredationVivification(state, p, victim);
+      grantPredationVivification(state, p, victim, { force: true });
       markCarcass(state, victimCell);
       markCaptureDisturbance(state, victimCell);
       log(
