@@ -19,6 +19,8 @@ const NEW_ICONS = Object.freeze({
   Xerofitismo: "💦",
   "Coração Compartimentado": "🫀",
   Endorfinas: "😌",
+  "Ciclo de Sono": "😴",
+  "Sistema Adipocinético": "⛽",
   Intestino: "🪢",
   "Estômago Ácido": "🧪",
   "Rim Concentrador": "🫘",

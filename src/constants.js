@@ -96,6 +96,10 @@ export const TRAITS = {
     "😌",
     "Aumenta em um esforço o limite de Fadiga da criatura: ao atingir o limite normal, ainda suporta mais um lance de movimento, captura ou fuga antes do descanso locomotor obrigatório.",
   ],
+  "Ciclo de Sono": [
+    "😴",
+    "Ao concluir um turno de Fadiga em segurança, entra automaticamente em sono reparador. O primeiro esforço locomotor após despertar não aumenta a Fadiga.",
+  ],
   Vertebrado: [
     "🐟",
     "Plano corporal bilateral mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e a evolução completa de Peão até Cavalo, Bispo, Torre e Rainha; Rei continua disponível.",
@@ -115,6 +119,10 @@ export const TRAITS = {
   "Artrópode": [
     "🦞",
     "Plano corporal bilateral mutuamente exclusivo com Vertebrado. Habilita Locomoção Articulada, limita formas derivadas a Cavalo e Bispo e dobra a produção-base de descendentes, até 6.",
+  ],
+  "Sistema Adipocinético": [
+    "⛽",
+    "Ao terminar um esforço locomotor em uma casa fértil, repõe parte das reservas mobilizadas e reduz em 1 o esforço acumulado de Fadiga, uma vez por turno.",
   ],
   "Locomoção Articulada": [
     "🦵",

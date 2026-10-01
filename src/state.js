@@ -3044,6 +3044,17 @@ export function assertState(state) {
         p.fatigueRestTurn === null ||
         integer(p.fatigueRestTurn, 0)
       ) ||
+      typeof (p.restorativeSleepCharge ?? false) !== "boolean" ||
+      !(
+        p.sleepingThroughTurn === undefined ||
+        p.sleepingThroughTurn === null ||
+        integer(p.sleepingThroughTurn, 0)
+      ) ||
+      !(
+        p.adipokineticRecoveryTurn === undefined ||
+        p.adipokineticRecoveryTurn === null ||
+        integer(p.adipokineticRecoveryTurn, 0)
+      ) ||
       !(
         p.endothermyUsedTurn === null ||
         p.endothermyUsedTurn === undefined ||

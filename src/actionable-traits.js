@@ -197,6 +197,24 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Endorfinas");
 
   if (
+    has(piece, "Ciclo de Sono") &&
+    (piece.restorativeSleepCharge ||
+      piece.sleepingThroughTurn === state.turn)
+  )
+    actionable.add("Ciclo de Sono");
+
+  if (
+    has(piece, "Sistema Adipocinético") &&
+    (piece.exertionStreak ?? 0) > 0 &&
+    targets.some(
+      (target) =>
+        !target.stay &&
+        terrain(state, target.r, target.c) === "fertile",
+    )
+  )
+    actionable.add("Sistema Adipocinético");
+
+  if (
     has(piece, "Parasitoidismo") &&
     !piece.parasitoidism &&
     !state.pieces.some(
