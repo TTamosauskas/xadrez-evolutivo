@@ -41,6 +41,7 @@ import {
   hadeanCentralCell,
   hadeanOuterCell,
   hadeanPlayableCell,
+  recordDemographicDelta,
 } from "./state.js";
 import {
   movesFor,
@@ -6217,6 +6218,7 @@ export function transition(previous, action) {
     const acted = state.pieces.find((piece) => piece.id === action.id);
     if (acted) releaseEukaryoteBuffers(state, acted, "action");
   }
+  recordDemographicDelta(state, previous);
   logBoardChanges(previous, state);
   state.revision++;
   return assertState(state);
