@@ -1986,7 +1986,7 @@ test("board only counts metabolic recovery while selected details keep cellular 
   assert.match(boardStatus, /⏳2/);
   assert.match(boardStatus, /👃⏳/);
   assert.match(boardStatus, /🎣⏳/);
-  assert.match(boardStatus, /🔋⏳/);
+  assert.doesNotMatch(boardStatus, /🔋⏳/);
   assert.match(boardStatus, /🌀/);
   assert.match(boardStatus, /🦂/);
   assert.doesNotMatch(boardStatus, /🔘1/);
@@ -2036,7 +2036,7 @@ test("selected-piece lifecycle countdowns use compact wait copy", () => {
   dom.window.close();
 });
 
-test("renders eggs and carried brood count", () => {
+test("renders eggs and carried brood without numeric counter on the piece", () => {
   const dom = setup(),
     s = createState(22),
     parent = s.pieces[0];
@@ -2065,10 +2065,10 @@ test("renders eggs and carried brood count", () => {
   assert.match(d.querySelector(".egg-mark").parentElement.title, /ovo aquático/);
   assert.match(d.querySelector(".egg-mark").parentElement.title, /busca terreno fértil/);
   assert.match(d.querySelector(".egg-mark").parentElement.title, /2 descendente/);
-  assert.match(
+  assert.equal(
     d.querySelector(`[data-r="${parent.r}"][data-c="${parent.c}"] .piece-status`)
       .textContent,
-    /\+3/,
+    "🔴",
   );
   assert.match(d.getElementById("selected").textContent, /🔴 \+3/);
   dom.window.close();
@@ -2785,5 +2785,48 @@ test("game-over dialog can be held closed until the result delay expires", () =>
 
   render(dom.window.document, s, { showResult: true });
   assert.equal(dom.window.document.getElementById("game-over-dialog").open, true);
+  dom.window.close();
+});
+
+
+test("piece badges use numeric counters only for metabolic recovery", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 4 },
+      { owner: "amber", r: 0, c: 0, rank: 0 },
+    ]),
+    piece = s.pieces[0],
+    d = dom.window.document;
+
+  s.turn = 4;
+  s.current = "blue";
+  piece.nextReproductionRound = round(s) + 3;
+  piece.hibernationUntilTurn = s.turn + 7;
+  piece.adaptiveImmuneMemory = ["virus:contact", "bacteria:trail"];
+  piece.seeds = 4;
+  piece.pregnancies = [
+    { kind: "viviparous", dueRound: round(s) + 1, brood: [{}, {}] },
+  ];
+  s.neurofocus = piece.id;
+
+  render(d, s, { selected: piece.id });
+
+  const cell = d.querySelector(
+      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+    ),
+    badges = [...cell.querySelectorAll(".status-badge")].map(
+      (node) => node.textContent,
+    );
+
+  assert.ok(badges.includes("⏳3"));
+  assert.ok(badges.includes("🧸"));
+  assert.ok(badges.includes("🎯"));
+  assert.ok(badges.includes("🌰"));
+  assert.ok(badges.includes("🔴"));
+  assert.ok(badges.includes("♾️"));
+  assert.equal(
+    badges.filter((badge) => /\d/.test(badge)).join(" "),
+    "⏳3",
+  );
   dom.window.close();
 });
