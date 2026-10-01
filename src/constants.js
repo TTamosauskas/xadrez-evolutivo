@@ -56,7 +56,7 @@ export const TRAITS = {
     "Alterna automaticamente entre dois turnos abertos, com Fotossíntese ampliada, e dois fechados, que conservam fertilidade e bloqueiam exposição ambiental ou por esporos.",
   ],
   Xerofitismo: [
-    "🌵",
+    "🌞",
     "Durante Seca Severa ou Desertificação, a perda de fertilidade da casa ocupada gera uma Reserva Hídrica. A próxima Fotossíntese consome a reserva e acelera sua conclusão em até duas rodadas.",
   ],
   Endotermia: [
