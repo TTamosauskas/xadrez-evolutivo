@@ -922,6 +922,7 @@ function placeBrood(
   origin,
   dispersal,
   direction = null,
+  unplaced = null,
 ) {
   const ordinary = brood.filter((profile) => !has(profile, "Trepadeira")),
     aquaticAnimals = ordinary.filter(
@@ -933,7 +934,8 @@ function placeBrood(
       (profile) => !aquaticAnimals.includes(profile),
     ),
     climbers = brood.filter((profile) => has(profile, "Trepadeira")),
-    placementEffects = new Set();
+    placementEffects = new Set(),
+    placedProfiles = new Set();
   let born = 0;
 
   const hasDirectedPlacement = (profile) =>
@@ -962,6 +964,7 @@ function placeBrood(
           : chooseCells(ctx.state, cells, origin, count, dispersal);
       for (let i = 0; i < targets.length; i++) {
         spawnChild(ctx.state, profiles[i], targets[i].r, targets[i].c);
+        placedProfiles.add(profiles[i]);
         born++;
       }
       return;
@@ -992,6 +995,7 @@ function placeBrood(
       for (const trait of preference.appliedTraits)
         placementEffects.add(trait);
       spawnChild(ctx.state, profile, target.r, target.c);
+      placedProfiles.add(profile);
       born++;
     }
   };
@@ -1018,6 +1022,8 @@ function placeBrood(
       value: born,
     });
 
+  if (Array.isArray(unplaced))
+    unplaced.push(...brood.filter((profile) => !placedProfiles.has(profile)));
   return born;
 }
 function adjacentEggCells(ctx, parent) {
@@ -1110,6 +1116,7 @@ function layBasalEgg(ctx, parent, brood, dispersal) {
     mode: "basal",
     lifecycle: "mobile-basal",
     parentId: parent.id,
+    maternalEstrogen: has(parent, "Estrogênio"),
     brood,
     dispersal,
   });
@@ -1123,6 +1130,7 @@ function startAmnioticPlacement(ctx, parent, brood, dispersal) {
     parentId: parent.id,
     owner: parent.owner,
     origin: { r: parent.r, c: parent.c },
+    maternalEstrogen: has(parent, "Estrogênio"),
     brood,
     dispersal,
     continuation: null,
@@ -1147,6 +1155,7 @@ export function placePendingAmnioticEgg(state, r, c) {
       mode: "amniote",
       lifecycle: "fixed",
       parentId: pending.parentId,
+      maternalEstrogen: !!pending.maternalEstrogen,
       brood: pending.brood,
       dispersal: pending.dispersal,
     };
@@ -1173,6 +1182,7 @@ export function placeOvoviviparousEgg(state, parent, r, c) {
       mode: "ovoviviparous",
       lifecycle: "fixed",
       parentId: parent.id,
+      maternalEstrogen: !!pregnancy.maternalEstrogen,
       brood: pregnancy.brood,
       dispersal: pregnancy.dispersal,
     };
@@ -1890,6 +1900,22 @@ export function reproduce(
         TROPHIC_REPRODUCTION_RESOURCES.has(resourceKind)
       )
         metabolic *= 2;
+      if (piece.renalWaterReserve) {
+        const beforeRenal = metabolic;
+        metabolic = Math.max(1, metabolic - 1);
+        delete piece.renalWaterReserve;
+        if (metabolic < beforeRenal)
+          emitPassiveEffect(
+            state,
+            "Rim Concentrador",
+            "🫘 Reserva hídrica renal reduziu a recuperação metabólica em 1 rodada.",
+            {
+              pieceId: piece.id,
+              outcome: "renal-water-reserve",
+              value: 1,
+            },
+          );
+      }
       if (feeder && piece.intestinalAbsorptionPending) {
         const beforeIntestine = metabolic;
         metabolic = Math.max(1, metabolic - 1);
@@ -2184,6 +2210,7 @@ export function reproduce(
       kind: "ovoviviparous",
       dueRound: round(state) + 3,
       readyLogged: false,
+      maternalEstrogen: has(parent, "Estrogênio"),
       brood,
       dispersal,
     });
@@ -2196,6 +2223,7 @@ export function reproduce(
     parent.pregnancies.push({
       kind: "viviparous",
       dueRound: round(state) + 3,
+      maternalEstrogen: has(parent, "Estrogênio"),
       brood,
       dispersal,
     });
@@ -2803,6 +2831,21 @@ export function tickReproduction(ctx) {
       continue;
     }
     if (now >= egg.expireRound) {
+      if (egg.maternalEstrogen && !egg.estrogenRetained) {
+        egg.estrogenRetained = true;
+        egg.expireRound = now + 1;
+        emitPassiveEffect(
+          state,
+          "Estrogênio",
+          "🪷 Estrogênio manteve o desenvolvimento do ovo por mais uma rodada.",
+          {
+            pieceId: egg.parentId,
+            outcome: "estrogen-retained-egg",
+            value: 1,
+          },
+        );
+        continue;
+      }
       state.eggs = state.eggs.filter((item) => item.id !== egg.id);
       log(
         state,
@@ -2841,12 +2884,51 @@ export function tickReproduction(ctx) {
           );
           continue;
         }
-        const born = placeBrood(
-          ctx,
-          pregnancy.brood,
-          parent,
-          pregnancy.dispersal,
-        );
+        const unplaced = [],
+          born = placeBrood(
+            ctx,
+            pregnancy.brood,
+            parent,
+            pregnancy.dispersal,
+            null,
+            unplaced,
+          );
+        if (!pregnancy.retainedOnce && unplaced.length) {
+          const trait = has(parent, "Placenta")
+              ? "Placenta"
+              : pregnancy.maternalEstrogen
+                ? "Estrogênio"
+                : null,
+            retainedCount =
+              trait === "Placenta"
+                ? unplaced.length
+                : trait === "Estrogênio"
+                  ? 1
+                  : 0;
+          if (retainedCount > 0) {
+            parent.pregnancies ??= [];
+            parent.pregnancies.push({
+              kind: "retained-viviparous",
+              dueRound: now + 1,
+              brood: unplaced.slice(0, retainedCount),
+              dispersal: pregnancy.dispersal,
+              maternalEstrogen: !!pregnancy.maternalEstrogen,
+              retainedOnce: true,
+            });
+            emitPassiveEffect(
+              state,
+              trait,
+              trait === "Placenta"
+                ? "🫄 Placenta sustentou a prole sem espaço por mais uma rodada."
+                : "🪷 Estrogênio reteve uma cria sem espaço por mais uma rodada.",
+              {
+                pieceId: parent.id,
+                outcome: "retained-embryonic-brood",
+                value: retainedCount,
+              },
+            );
+          }
+        }
         log(
           state,
           `🔴 ${OWNERS[parent.owner]} deram à luz ${born} descendente(s).`,
