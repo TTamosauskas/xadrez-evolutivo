@@ -3018,7 +3018,7 @@ test("capture disturbance preserves fertile terrain underneath", () => {
   assertState(s);
 });
 
-test("successful multicellular predatory reproduction leaves feces for three rounds", () => {
+test("successful multicellular predation stores vivification instead of immediate prole", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
     { owner: "amber", r: 4, c: 4 },
@@ -3026,22 +3026,14 @@ test("successful multicellular predatory reproduction leaves feces for three rou
   ]);
   const parentId = s.pieces[0].id;
   s = simulate(s, move(s.pieces[0], 4, 4));
-  const site = s.deathSites[0];
-  assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
-  assert.equal(site?.cell, 36);
-  assert.equal(site?.kind, "fecal");
-  assert.equal(site?.dueRound, 3);
+  const parent = s.pieces.find((piece) => piece.id === parentId);
+  assert.equal(
+    s.pieces.some((piece) => piece.parentId === parentId),
+    false,
+  );
+  assert.equal(parent.predationEnergy, true);
+  assert.equal(s.carcasses[0]?.cell, 36);
   assert.equal(s.captureDisturbances[0]?.cell, 36);
-  assert.equal(s.captureDisturbances[0]?.dueRound, 3);
-  assert.equal(s.board[36], "neutral");
-
-  s.turn = 4;
-  tickEnvironment(context(s));
-  assert.equal(s.deathSites.length, 1);
-  s.turn = 6;
-  tickEnvironment(context(s));
-  assert.equal(s.deathSites.length, 0);
-  assert.equal(s.captureDisturbances.length, 0);
   assert.equal(s.board[36], "neutral");
   assertState(s);
 });
