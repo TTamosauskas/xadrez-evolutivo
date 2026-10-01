@@ -25,6 +25,8 @@ test("Rainha predatória entra em Fadiga após três turnos consecutivos de movi
   let state = fixture([
     { owner: "blue", r: 4, c: 3, rank: 5 },
     { owner: "amber", r: 0, c: 0, rank: 0 },
+    { owner: "amber", r: 0, c: 2, rank: 0 },
+    { owner: "amber", r: 0, c: 4, rank: 0 },
   ]);
   const id = state.pieces[0].id;
 
@@ -76,6 +78,8 @@ test("Endorfinas concedem exatamente um esforço extra antes da Fadiga", () => {
   let state = fixture([
     { owner: "blue", r: 4, c: 3, rank: 5, traits: ["Endorfinas"] },
     { owner: "amber", r: 0, c: 0, rank: 0 },
+    { owner: "amber", r: 0, c: 2, rank: 0 },
+    { owner: "amber", r: 0, c: 4, rank: 0 },
   ]);
   const id = state.pieces[0].id;
 
@@ -233,4 +237,33 @@ test("Sistema Adipocinético reduz um esforço ao terminar em casa fértil e can
     ),
   );
   assertState(state);
+});
+
+
+test("Fadiga se recupera sem bloquear locomoção quando restam até dois adversários ativos", () => {
+  const state = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 5 },
+    { owner: "amber", r: 0, c: 0, rank: 0 },
+    { owner: "amber", r: 0, c: 7, rank: 0 },
+  ]);
+  const queen = state.pieces[0];
+  state.turn = 6;
+  state.current = "blue";
+  queen.exertionStreak = 3;
+  queen.fatigueRestTurn = 6;
+  queen.lastOwnExertionTurn = 4;
+
+  assert.equal(fatigueResting(state, queen), false);
+  assert.ok(movesFor(state, queen).some((target) => !target.stay));
+
+  const next = transition(state, { type: "MOVE", id: queen.id, r: 4, c: 4 }),
+    moved = next.pieces.find((piece) => piece.id === queen.id);
+  assert.equal(moved.fatigueRestTurn, undefined);
+  assert.equal(moved.exertionStreak, 1);
+  assert.ok(
+    next.passiveEffects.some(
+      (effect) => effect.outcome === "rapid-fatigue-recovery",
+    ),
+  );
+  assertState(next);
 });
