@@ -2329,6 +2329,7 @@ export function vivificationActionsForPiece(state, piece) {
       action.type === "CHEMOSYNTHESIS" ||
       action.type === "FIX_NITROGEN" ||
       action.type === "PUPATE" ||
+      action.type === "DETOXIFY" ||
       action.type === "PARTHENOGENESIS" ||
       action.type === "REJECT_BROOD_PARASITE" ||
       (action.type === "PARASITIZE" &&
