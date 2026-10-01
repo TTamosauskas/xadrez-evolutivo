@@ -26,6 +26,7 @@ import {
   round,
   fertilityPaused,
   activePopulation,
+  replacementPressure,
   log,
   emitPassiveEffect,
   registerDiscoveries,
@@ -1627,6 +1628,23 @@ function competitiveReproductionPressure(
   };
 }
 
+export function replacementReproductionPressure(state, parent = null) {
+  const pressure = replacementPressure(state),
+    ownerPopulation = parent
+      ? state.pieces.filter((piece) => piece.owner === parent.owner).length
+      : 0,
+    rivalPopulation = parent ? activePopulation(state) - ownerPopulation : 0;
+  return {
+    ...pressure,
+    cooldown: pressure.level,
+    limit: pressure.level >= 3 && state.turn >= 160 ? 0 : Infinity,
+    suppressPredation:
+      !!parent &&
+      pressure.level >= 2 &&
+      ownerPopulation >= rivalPopulation,
+  };
+}
+
 export function dopaminePressureReductionAvailable(state, parent) {
   if (!state || !parent || !has(parent, "Dopamina")) return false;
   const population = activePopulation(state),
@@ -1644,7 +1662,8 @@ export function dopaminePressureReductionAvailable(state, parent) {
       parent,
       pressureLatched,
     ),
-    noCapture = noCaptureReproductionPressure(state);
+    noCapture = noCaptureReproductionPressure(state),
+    replacement = replacementReproductionPressure(state, parent);
   return (
     populationReproductionCooldown(
       population,
@@ -1652,7 +1671,8 @@ export function dopaminePressureReductionAvailable(state, parent) {
       state.geologicalStage,
     ) +
       competitive.cooldown +
-      noCapture.cooldown >
+      noCapture.cooldown +
+      replacement.cooldown >
     0
   );
 }
@@ -1897,6 +1917,7 @@ export function reproduce(
       pressureLatched,
     ),
     noCapturePressure = noCaptureReproductionPressure(state),
+    replacement = replacementReproductionPressure(state, parent),
     outputFor = (candidate) => {
       const base = reproductiveOutput(candidate);
       return has(candidate, "Artrópode") ? Math.min(6, base * 2) : base;
@@ -1922,12 +1943,14 @@ export function reproduce(
             state.geologicalStage,
           ),
     pressureLimit =
-      reason === "predação" && competitivePressure.suppressPredation
+      reason === "predação" &&
+      (competitivePressure.suppressPredation || replacement.suppressPredation)
         ? 0
         : Math.min(
             populationLimit,
             competitivePressure.limit,
             noCapturePressure.limit,
+            replacement.limit,
           ),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece, feeder = false) => {
@@ -2055,7 +2078,8 @@ export function reproduce(
           state.geologicalStage,
         ) +
         competitivePressure.cooldown +
-        noCapturePressure.cooldown;
+        noCapturePressure.cooldown +
+        replacement.cooldown;
       if (
         feeder &&
         pressure > 0 &&

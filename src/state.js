@@ -205,6 +205,69 @@ export function ecologicalDomainBlocked(_state, _owner, _r, _c) {
 export const activePopulation = (state) => state.pieces.length;
 export const fertilityPaused = (state) => activePopulation(state) >= 24;
 
+export const REPLACEMENT_PRESSURE_WINDOW_ROUNDS = 10;
+
+function demographicIds(state) {
+  return new Set([
+    ...(state.pieces ?? []).map((piece) => piece.id),
+    ...(state.thanatosis ?? [])
+      .map((entry) => entry?.piece?.id)
+      .filter(Number.isInteger),
+  ]);
+}
+
+export function recordDemographicDelta(state, previous) {
+  if (!state || !previous) return { births: 0, deaths: 0 };
+  const before = demographicIds(previous),
+    after = demographicIds(state),
+    births = [...after].filter((id) => !before.has(id)).length,
+    deaths = [...before].filter((id) => !after.has(id)).length;
+  if (!births && !deaths) return { births, deaths };
+
+  const now = round(state);
+  state.demographicHistory ??= [];
+  let entry = state.demographicHistory.find((item) => item.round === now);
+  if (!entry) {
+    entry = { round: now, births: 0, deaths: 0 };
+    state.demographicHistory.push(entry);
+  }
+  entry.births += births;
+  entry.deaths += deaths;
+  state.demographicHistory = state.demographicHistory.filter(
+    (item) => item.round >= now - REPLACEMENT_PRESSURE_WINDOW_ROUNDS + 1,
+  );
+  return { births, deaths };
+}
+
+export function replacementPressure(state) {
+  const population = activePopulation(state),
+    now = round(state),
+    history = (state.demographicHistory ?? []).filter(
+      (entry) =>
+        entry.round >= now - REPLACEMENT_PRESSURE_WINDOW_ROUNDS + 1 &&
+        entry.round <= now,
+    ),
+    births = history.reduce((sum, entry) => sum + entry.births, 0),
+    deaths = history.reduce((sum, entry) => sum + entry.deaths, 0),
+    net = births - deaths,
+    churn = Math.min(births, deaths);
+
+  let level = 0;
+  if (population >= 24 && (net >= 4 || churn >= 6)) level = 1;
+  if (population >= 28 && (net >= 6 || churn >= 10)) level = 2;
+  if (population >= 32 && (net >= 8 || churn >= 14)) level = 3;
+
+  return {
+    level,
+    population,
+    births,
+    deaths,
+    net,
+    churn,
+    windowRounds: REPLACEMENT_PRESSURE_WINDOW_ROUNDS,
+  };
+}
+
 export function consumeFertileTerrain(state, cell) {
   if (state.board[cell] !== "fertile") return false;
   state.board[cell] = "neutral";
@@ -1380,6 +1443,9 @@ export function createState(seed = Date.now(), options = {}) {
     populationTerrainPressure: options.populationTerrainPressure
       ? { ...options.populationTerrainPressure }
       : null,
+    demographicHistory: Array.isArray(options.demographicHistory)
+      ? options.demographicHistory.map((entry) => ({ ...entry }))
+      : [],
     ecologicalDomain: createEcologicalDomain(),
     result: null,
   };
@@ -2734,6 +2800,17 @@ export function assertState(state) {
       (integer(state.populationTerrainPressure?.startedRound, 0) &&
         integer(state.populationTerrainPressure?.lastAppliedRound, 0) &&
         integer(state.populationTerrainPressure?.level, 1, 2))
+    ) ||
+    !(
+      state.demographicHistory === undefined ||
+      (Array.isArray(state.demographicHistory) &&
+        state.demographicHistory.every(
+          (entry) =>
+            entry &&
+            integer(entry.round, 0) &&
+            integer(entry.births, 0) &&
+            integer(entry.deaths, 0),
+        ))
     ) ||
     !Array.isArray(state.seen) ||
     !Array.isArray(state.seenMutations) ||
