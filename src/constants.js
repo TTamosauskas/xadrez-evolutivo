@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 32;
+export const STATE_VERSION = 33;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const CHESS_PIECE_VALUES = Object.freeze([1, 3, 3, 5, 100, 9]);
@@ -229,7 +229,7 @@ export const TRAITS = {
   ],
   Canibalismo: [
     "🐻‍❄️",
-    "Especialização de Carnívoro: permite capturar uma peça aliada segundo a geometria da peça e converter a morte em exatamente um descendente.",
+    "Especialização de Carnívoro: permite capturar e consumir uma peça aliada segundo a geometria da peça. A ação reduz a população em uma criatura e não gera descendentes.",
   ],
   "Canibalismo Filial": [
     "🐹",
@@ -455,10 +455,6 @@ export const TRAITS = {
     "🐜",
     "Indivíduos estéreis aparentados e adjacentes aumentam a ninhada em até dois descendentes.",
   ],
-  Regeneração: [
-    "♻️",
-    "Uma vez por vida, sobrevive a uma morte não causada por captura e descansa na rodada seguinte. Não evita morte natural por senescência.",
-  ],
   Longevidade: [
     "🦜",
     "Reduz em 50% a chance de morte natural causada pela idade.",
@@ -589,7 +585,7 @@ export const TRAITS = {
   ],
   Semelparidade: [
     "🐙",
-    "Permite apenas uma reprodução bem-sucedida durante toda a vida. Após reproduzir, o organismo morre; Regeneração não evita essa morte.",
+    "Permite apenas uma reprodução bem-sucedida durante toda a vida. Após reproduzir, o organismo morre.",
   ],
   "Regressão Evolutiva": [
     "🦤",

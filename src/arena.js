@@ -59,7 +59,7 @@ export const ARENA_PRESETS = Object.freeze({
   animal: [
     { id: "microbial-predator", stage: "archean", label: "Predador microbiano", traits: ["Predação", "Transferência Horizontal", "Dormência"] },
     { id: "protoanimal", stage: "proterozoic", label: "Protoanimal filtrador", traits: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada"] },
-    { id: "dickinsonia", stage: "ediacaran", label: "Dickinsonia", traits: ["Predação", "Multicelularismo", "Regeneração", "Simetria Bilateral", "Locomoção Primitiva"], note: "Na Arena, Predação representa a raiz heterotrófica do Ramo Animal; não implica predação macroscópica para Dickinsonia." },
+    { id: "dickinsonia", stage: "ediacaran", label: "Dickinsonia", traits: ["Predação", "Multicelularismo", "Simetria Bilateral", "Locomoção Primitiva"], note: "Na Arena, Predação representa a raiz heterotrófica do Ramo Animal; não implica predação macroscópica para Dickinsonia." },
     { id: "anomalocaris", stage: "cambrian", label: "Anomalocaris", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Carnívoro", "Carapaça"] },
     { id: "nautiloid", stage: "ordovician", label: "Nautiloide gigante", traits: ["Predação", "Multicelularismo", "Jatopropulsão", "Corpo Gelatinoso", "Carnívoro", "Ovíparo", "Camuflagem"] },
     { id: "eurypterid", stage: "silurian", label: "Euriptérido", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Carapaça"] },

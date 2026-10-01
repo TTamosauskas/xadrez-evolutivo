@@ -58,13 +58,13 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
     rank: 4,
   },
   calymmian: {
-    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Regeneração", "Brotamento"],
-    animal: ["Predação", "Multicelularismo", "Respiração aeróbia", "Regeneração", "Brotamento"],
+    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Brotamento"],
+    animal: ["Predação", "Multicelularismo", "Respiração aeróbia", "Brotamento"],
     rank: 4,
   },
   ectasian: {
-    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Regeneração", "Brotamento", "Reprodução Sexuada"],
-    animal: ["Predação", "Multicelularismo", "Respiração aeróbia", "Regeneração", "Brotamento", "Reprodução Sexuada"],
+    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Brotamento", "Reprodução Sexuada"],
+    animal: ["Predação", "Multicelularismo", "Respiração aeróbia", "Brotamento", "Reprodução Sexuada"],
     rank: 4,
   },
   stenian: {
@@ -83,12 +83,12 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
     rank: 4,
   },
   ediacaran: {
-    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Reprodução Sexuada", "Regeneração", "Fragmentação", "Colônia"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Regeneração", "Fragmentação", "Carnívoro"],
+    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Reprodução Sexuada", "Fragmentação", "Colônia"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Fragmentação", "Carnívoro"],
     rank: 4,
   },
   cambrian: {
-    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Reprodução Sexuada", "Regeneração"],
+    plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Reprodução Sexuada"],
     animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Locomoção Primitiva", "Biomineralização", "Escavador", "Construtor de Nicho", "Necrófago"],
     rank: 0,
   },

@@ -198,15 +198,6 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "width": 1200,
     "height": 782
   },
-  "Regeneração": {
-    "wikipedia": "https://pt.wikipedia.org/wiki/Regenera%C3%A7%C3%A3o_(biologia)",
-    "image": "assets/discoveries/mutations/media-1fa1e793b019.jpg",
-    "source": "https://commons.wikimedia.org/wiki/File:Sea_star_regenerating_legs.jpg",
-    "author": "Brocken Inaglory. Original uploader was Brocken Inaglory",
-    "license": "CC BY-SA 3.0",
-    "width": 1200,
-    "height": 989
-  },
   "Longevidade": {
     "wikipedia": "https://pt.wikipedia.org/wiki/Senesc%C3%AAncia",
     "image": "assets/discoveries/mutations/media-c55eaf610be4.jpg",

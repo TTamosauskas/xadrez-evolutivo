@@ -32,7 +32,7 @@ import { startDisease } from "./disease.js";
 import { immediateEventRepeatAllowed } from "./scenarios.js";
 const allCells = () => Array.from({ length: 64 }, (_, i) => i);
 export const SEVERE_EVENT_IDS = new Set(["ice", "volcano", "meteor", "grb", "warming"]);
-const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.9);
+const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.95);
 export const severeEventActive = (state) =>
   !!state.event && SEVERE_EVENT_IDS.has(state.event.id);
 
@@ -443,41 +443,7 @@ function advancePrimordialConway(ctx) {
   );
   for (const site of legacyDeathSites) state.board[site.cell] = site.base;
 
-  const before = [...state.board],
-    hostileNeighbors = (cell) => {
-      const r = Math.floor(cell / 8),
-        c = cell % 8;
-      let count = 0;
-      for (let dr = -1; dr <= 1; dr++)
-        for (let dc = -1; dc <= 1; dc++)
-          if (
-            (dr || dc) &&
-            inside(r + dr, c + dc) &&
-            before[square(r + dr, c + dc)] === "hostile"
-          )
-            count++;
-      return count;
-    },
-    nextHostile = allCells().filter((cell) => {
-      const r = Math.floor(cell / 8),
-        col = cell % 8;
-      if (barrierAt(state, r, col)) return false;
-      const neighbors = hostileNeighbors(cell);
-      return neighbors === 3 || (before[cell] === "hostile" && neighbors === 2);
-    }),
-    cap = profile.hostileCap ?? 12,
-    kept = new Set(shuffle(state, nextHostile).slice(0, cap));
-
-  for (let cell = 0; cell < 64; cell++) {
-    if (before[cell] === "hostile" && !kept.has(cell)) state.board[cell] = "neutral";
-    else if (kept.has(cell)) state.board[cell] = "hostile";
-    else state.board[cell] = before[cell];
-  }
-  if (!state.board.includes("hostile")) seedCluster(state, "hostile");
-  const hostile = allCells().filter((cell) => state.board[cell] === "hostile");
-  if (hostile.length > cap)
-    for (const cell of shuffle(state, hostile).slice(cap))
-      state.board[cell] = "neutral";
+  flowHostileTerrainWithinProfile(state, profile);
 
   for (const site of legacyDeathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
@@ -622,6 +588,76 @@ function driftTerrainWithinProfile(state, type, profile) {
   state.board[to] = type;
 }
 
+function flowHostileTerrainWithinProfile(state, profile) {
+  const pattern = profile.pattern ?? "mosaic",
+    [min, max] = habitatRange(profile.hostile),
+    changeLimit = pattern === "primordial" ? 1 : 2,
+    count = state.board.filter((cell) => cell === "hostile").length;
+
+  if (count < min) {
+    let remaining = Math.min(changeLimit, min - count);
+    while (remaining-- > 0) {
+      const candidates = habitatDriftCandidates(state, "hostile").frontier;
+      const cell = chooseHabitatCell(
+        state,
+        candidates,
+        "hostile",
+        "add",
+        "clusters",
+      );
+      if (cell === null) break;
+      state.board[cell] = "hostile";
+    }
+    return;
+  }
+
+  if (count > max) {
+    let remaining = Math.min(changeLimit, count - max);
+    while (remaining-- > 0) {
+      const candidates = habitatDriftCandidates(state, "hostile").current;
+      const cell = chooseHabitatCell(
+        state,
+        candidates,
+        "hostile",
+        "remove",
+        pattern,
+      );
+      if (cell === null) break;
+      state.board[cell] = "neutral";
+    }
+    return;
+  }
+
+  for (let step = 0; step < changeLimit; step++) {
+    const frontier = habitatDriftCandidates(state, "hostile").frontier,
+      to = chooseHabitatCell(
+        state,
+        frontier,
+        "hostile",
+        "add",
+        "clusters",
+      );
+    if (to === null) break;
+    state.board[to] = "hostile";
+
+    const tail = habitatDriftCandidates(state, "hostile").current.filter(
+        (cell) => cell !== to,
+      ),
+      from = chooseHabitatCell(
+        state,
+        tail,
+        "hostile",
+        "remove",
+        pattern,
+      );
+    if (from === null) {
+      state.board[to] = "neutral";
+      break;
+    }
+    state.board[from] = "neutral";
+  }
+}
+
 function advancePatternedHabitat(ctx) {
   const state = ctx.state,
     event = state.event,
@@ -637,7 +673,7 @@ function advancePatternedHabitat(ctx) {
   for (const site of legacyDeathSites) state.board[site.cell] = site.base;
 
   driftTerrainWithinProfile(state, "fertile", profile);
-  driftTerrainWithinProfile(state, "hostile", profile);
+  flowHostileTerrainWithinProfile(state, profile);
 
   for (const site of legacyDeathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
@@ -694,17 +730,17 @@ function advanceBlockedConway(ctx) {
       return neighbors === 3 || (before[cell] === type && neighbors === 2);
     };
 
-  state.board = before.map((_, cell) =>
+  state.board = before.map((terrain, cell) =>
     alive(cell, "fertile")
       ? "fertile"
-      : alive(cell, "hostile")
+      : terrain === "hostile"
         ? "hostile"
         : "neutral",
   );
   for (const cell of state.naturalBarriers)
     state.board[cell] = before[cell] === "fertile" ? "fertile" : "neutral";
 
-  for (const type of ["fertile", "hostile"]) {
+  for (const type of ["fertile"]) {
     if (!state.board.includes(type)) seedCluster(state, type);
     const unchanged =
       before.some((terrain) => terrain === type) &&
@@ -736,6 +772,8 @@ function advanceBlockedConway(ctx) {
       state.board[move[1]] = type;
     }
   }
+
+  flowHostileTerrainWithinProfile(state, habitatProfile(state));
 
   for (const site of legacyDeathSites) {
     if (site.base !== "fertile") site.base = state.board[site.cell];
@@ -1270,15 +1308,27 @@ export function startSevereEvent(ctx, source = "eco") {
 
 export function checkPopulationClimate(ctx) {
   const state = ctx.state,
-    population = activePopulation(state);
-  if (population <= 32) state.severePopulationLatched = false;
-  if (population < 40 || state.severePopulationLatched || severeEventActive(state))
+    population = activePopulation(state),
+    stalledRounds = Math.max(
+      0,
+      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+    ),
+    populationTrigger = population >= 36,
+    stagnationTrigger = population >= 28 && stalledRounds >= 18;
+  if (population <= 24) state.severePopulationLatched = false;
+  if (
+    (!populationTrigger && !stagnationTrigger) ||
+    state.severePopulationLatched ||
+    severeEventActive(state)
+  )
     return false;
   state.severePopulationLatched = true;
-  startSevereEvent(ctx, "population");
+  startSevereEvent(ctx, stagnationTrigger ? "stagnation" : "population");
   log(
     state,
-    `🌡️ Pressão populacional: ${population} organismos ativos desencadearam um evento de impacto extremo.`,
+    stagnationTrigger
+      ? `🌡️ Estagnação ecológica: ${stalledRounds} rodadas sem captura com ${population} organismos ativos desencadearam um evento de impacto extremo.`
+      : `🌡️ Pressão populacional: ${population} organismos ativos desencadearam um evento de impacto extremo.`,
   );
   return true;
 }

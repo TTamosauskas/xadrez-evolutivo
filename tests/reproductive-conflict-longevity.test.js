@@ -367,7 +367,7 @@ test("Longevidade halves natural mortality while Imortalidade Biológica removes
       traits: [...base.traits, "Longevidade"],
     },
     immortal = {
-      traits: ["Multicelularismo", "Regeneração", "Imortalidade Biológica"],
+      traits: ["Multicelularismo", "Imortalidade Biológica"],
       bornRound: 0,
     };
   assert.equal(naturalDeathChance(state, base), 1);

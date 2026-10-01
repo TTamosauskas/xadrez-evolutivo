@@ -77,9 +77,6 @@ export const dysfunctionalResting = (state, p) =>
   has(p, "Mutação Disfuncional") &&
   Number.isInteger(p.lastMoveRound) &&
   round(state) + 1 <= p.lastMoveRound + 1;
-export const regenerationResting = (state, p) =>
-  Number.isInteger(p.regenerationRestThroughRound) &&
-  round(state) <= p.regenerationRestThroughRound;
 export const fatigueLimit = (piece) =>
   FATIGUE_LIMITS[piece?.rank] ?? 4;
 export const rapidFatigueRecovery = (state, piece) =>
@@ -135,7 +132,6 @@ export const pupating = (state, p) =>
 export const resting = (state, p) =>
   p?.hadeanHostileDeathPending ||
   dysfunctionalResting(state, p) ||
-  regenerationResting(state, p) ||
   neurodivergenceResting(state, p) ||
   intoxicationResting(state, p) ||
   hibernating(state, p) ||
@@ -366,7 +362,6 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         victim?.owner === p.owner &&
         victim.id !== p.id &&
         has(p, "Canibalismo") &&
-        reproductionReady(state, p) &&
         !filialCannibal &&
         !matriphagy,
       alliedConsumption = cannibal || filialCannibal || matriphagy,
@@ -573,8 +568,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           ((victim?.owner &&
             (victim.owner !== p.owner ||
               (victim.id !== p.id &&
-                has(p, "Canibalismo") &&
-                reproductionReady(state, p)))) ||
+                has(p, "Canibalismo")))) ||
             (egg?.owner &&
               egg.owner !== p.owner &&
               (has(p, "Ovífagia") || has(p, "Onívoro Oportunista"))))
@@ -2353,15 +2347,6 @@ export function pieceActionState(state, piece) {
       waiting: true,
       reason: "Fadiga",
       remainingRounds: 1,
-    };
-  if (regenerationResting(state, piece))
-    return {
-      waiting: true,
-      reason: "Recuperação por Regeneração",
-      remainingRounds: Math.max(
-        1,
-        piece.regenerationRestThroughRound - currentRound + 1,
-      ),
     };
   if (neurodivergenceResting(state, piece))
     return {

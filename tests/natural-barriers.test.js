@@ -394,11 +394,11 @@ test("volcano and meteor lethal cells become neutral after the severe event", ()
   }
 });
 
-test("lethal event cores bypass Regeneração and destroy existing organisms", () => {
+test("lethal event cores destroy existing organisms", () => {
   const seed = 620,
     base = fixture(
       [
-        { owner: "blue", r: 7, c: 7, traits: ["Regeneração"] },
+        { owner: "blue", r: 7, c: 7 },
         { owner: "amber", r: 0, c: 0 },
       ],
       seed,
@@ -420,12 +420,11 @@ test("lethal event cores bypass Regeneração and destroy existing organisms", (
 
   startEvent(context(base), "meteor");
   assert.ok(!base.pieces.some((piece) => piece.id === target.id));
-  assert.equal(target.regenerationUsed, undefined);
   assert.ok(base.event.lethalHazards.includes(lethal));
   assertState(base);
 });
 
-test("Voo crosses lethal cells but landing on one is fatal even with Regeneração", () => {
+test("Voo crosses lethal cells but landing on one is fatal", () => {
   const eventFor = (cell) => ({
     ...EVENTS.find((event) => event.id === "meteor"),
     startRound: 0,
@@ -441,7 +440,7 @@ test("Voo crosses lethal cells but landing on one is fatal even with Regeneraç�
       r: 4,
       c: 2,
       rank: 3,
-      traits: ["Voo", "Regeneração"],
+      traits: ["Voo"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -462,7 +461,7 @@ test("Voo crosses lethal cells but landing on one is fatal even with Regeneraç�
       r: 4,
       c: 3,
       rank: 3,
-      traits: ["Voo", "Regeneração"],
+      traits: ["Voo"],
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
@@ -475,7 +474,6 @@ test("Voo crosses lethal cells but landing on one is fatal even with Regeneraç�
   assert.ok(landed);
   assert.deepEqual([landed.r, landed.c], [4, 4]);
   assert.ok(Number.isInteger(landed.lethalDeathRound));
-  assert.equal(landed.regenerationUsed, undefined);
 
   s = simulate(s, { type: "PASS" });
   s = simulate(s, { type: "RESOLVE_LETHAL" });

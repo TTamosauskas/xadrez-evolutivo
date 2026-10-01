@@ -381,7 +381,6 @@ export const MUTATION_DISCOVERY_TOPICS = {
   "Diferenciação Celular": ["Diferenciação celular", "A diferenciação cria tipos celulares especializados; fósseis de cerca de 1,56 bilhão de anos registram multicelulares eucarióticos com desenvolvimento regular e diferenciação limitada."],
   "Dormência": ["Dormência", "Dormência reduz temporariamente a atividade e permite atravessar condições ambientais desfavoráveis."],
   "Resistência": ["Resistência a doenças", "Resistência biológica pode diminuir a chance de infecção ou limitar os efeitos de um agente patogênico."],
-  "Regeneração": ["Regeneração (biologia)", "Regeneração é a capacidade de recompor estruturas ou tecidos danificados, em graus muito diferentes entre organismos."],
   Longevidade: ["Longevidade", "Taxas de senescência e mortalidade por idade variam fortemente entre linhagens; no jogo, Longevidade reduz pela metade o risco natural de morte."],
   "Fertilidade Longeva": ["Senescência reprodutiva", "O declínio reprodutivo com a idade pode ocorrer em ritmo diferente da senescência somática; no jogo, essa mutação mantém a fertilidade apesar da idade."],
   "Imortalidade Biológica": ["Senescência negligenciável", "Alguns organismos apresentam senescência extremamente baixa ou reversões do ciclo de vida; no jogo, a característica anula apenas a morte natural por envelhecimento."],
