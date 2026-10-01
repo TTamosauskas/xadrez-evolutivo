@@ -104,7 +104,17 @@ test("Haustório consumes only adjacent photosynthetic enemies and keeps the pla
   assert.deepEqual([survivor.r, survivor.c], [4, 4]);
   assert.equal(next.pieces.some((piece) => piece.id === plantPrey.id), false);
   assert.equal(next.pieces.some((piece) => piece.id === animalPrey.id), true);
-  assert.equal(next.plantSeeds.length, 1);
+  assert.equal(next.plantSeeds.length, 0);
+  assert.equal(survivor.predationEnergy, true);
+  assert.ok(
+    movesFor(next, survivor).some(
+      (target) =>
+        target.r === survivor.r &&
+        target.c === survivor.c &&
+        target.stay &&
+        !target.capture,
+    ),
+  );
   assert.ok(
     next.logs.some((entry) => entry.text.includes("Haustório consumiu")),
   );
