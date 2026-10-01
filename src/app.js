@@ -49,6 +49,9 @@ import { animateMovementTrace } from "./movement-animation.js";
 import {
   ARENA_BRANCHES,
   ARENA_PRESETS,
+  ARENA_BODY_PLANS,
+  arenaBodyPlan,
+  oppositeArenaBodyPlan,
   arenaAISideSetup,
   arenaInterventionCount,
   arenaSelectableTraits,
@@ -522,7 +525,9 @@ const emptyArenaLegacies = () => ARENA_BRANCHES.map(() => []);
 
 function arenaValidCurrent() {
   if (!arenaFlow) return false;
-  if (arenaFlow.kind === "setup")
+  if (arenaFlow.kind === "setup") {
+    const owner = arenaFlow.owners[arenaFlow.ownerIndex];
+    if (!arenaFlow.bodyPlans?.[owner]) return false;
     return arenaFlow.current.every((genome, index) =>
       arenaSetupSelectionValid(
         genome,
@@ -531,6 +536,7 @@ function arenaValidCurrent() {
         arenaFlow.legacies?.[index] ?? [],
       ),
     );
+  }
   return arenaInterventionCount(
     arenaFlow.baseline,
     arenaFlow.current,
@@ -545,6 +551,10 @@ function arenaStatusText() {
       `${branch.label}: ${PIECES[arenaFlow.ranks[index]] ?? "?"}`,
   ).join(" · ");
   if (arenaFlow.kind === "setup") {
+    const owner = arenaFlow.owners[arenaFlow.ownerIndex],
+      bodyPlan = arenaFlow.bodyPlans?.[owner] ?? null;
+    if (!bodyPlan)
+      return "Escolha primeiro o plano corporal do Ramo Animal.";
     const costs = arenaFlow.current.map((genome, index) =>
         arenaTraitCost(genome, arenaFlow.legacies?.[index] ?? []),
       ),
@@ -594,7 +604,7 @@ function renderArenaDesigner() {
       : `Engenharia Genética · ${arenaOwnerName(owner)}`;
   $("arena-copy").textContent =
     arenaFlow.kind === "setup"
-      ? "Monte um Ramo Animal predatorial e um Ramo Vegetal fotossintético. Pré-requisitos são incluídos automaticamente; Reparo Celular e Simetria Bilateral não consomem o limite."
+      ? "Escolha primeiro Vertebrado ou Artrópode para o Ramo Animal. Depois, somente mutações compatíveis com esse plano corporal ficam disponíveis; o adversário recebe obrigatoriamente o plano oposto. Reparo Celular e Simetria Bilateral não consomem o limite."
       : "As linhagens Animal e Vegetal sobreviventes seguem adiante. Você pode fazer até duas substituições genéticas entre os dois ramos.";
   $("arena-status").textContent = arenaStatusText();
 
@@ -605,11 +615,64 @@ function renderArenaDesigner() {
     const branch = ARENA_BRANCHES[index],
       container = $(id),
       presetContainer = $(presetId),
+      bodyPlan =
+        branch.id === "animal"
+          ? arenaFlow.bodyPlans?.[owner] ??
+            arenaBodyPlan(arenaFlow.current[index])
+          : null,
       selectedTraits = new Set(arenaFlow.current[index]),
-      arenaTraits = arenaSelectableTraits(branch.id),
+      arenaTraits = arenaSelectableTraits(branch.id, bodyPlan),
       currentRank = arenaFlow.ranks[index];
     container.replaceChildren();
     presetContainer.replaceChildren();
+
+    if (branch.id === "animal" && arenaFlow.kind === "setup") {
+      const bodyPlanLabel = document.createElement("label"),
+        bodyPlanCopy = document.createElement("span"),
+        bodyPlanSelect = document.createElement("select"),
+        placeholder = document.createElement("option");
+      bodyPlanLabel.className = "arena-rank";
+      bodyPlanCopy.textContent = "Plano corporal: ";
+      placeholder.value = "";
+      placeholder.textContent = "Escolha Vertebrado ou Artrópode…";
+      placeholder.selected = !bodyPlan;
+      placeholder.disabled = true;
+      bodyPlanSelect.append(placeholder);
+      for (const candidate of ARENA_BODY_PLANS) {
+        const option = document.createElement("option");
+        option.value = candidate;
+        option.textContent = candidate;
+        option.selected = candidate === bodyPlan;
+        bodyPlanSelect.append(option);
+      }
+      bodyPlanSelect.disabled = !!arenaFlow.fixedBodyPlans?.[owner];
+      bodyPlanSelect.addEventListener("change", () => {
+        const chosen = bodyPlanSelect.value;
+        arenaFlow.bodyPlans[owner] = chosen;
+        arenaFlow.current[index] = completeArenaBranchGenome(
+          [branch.energy, chosen],
+          branch.id,
+        );
+        arenaFlow.legacies[index] = [];
+        arenaFlow.ranks[index] = arenaPreferredRank(
+          arenaFlow.current[index],
+          branch.id,
+          arenaFlow.ranks[index],
+        );
+        renderArenaDesigner();
+      });
+      bodyPlanLabel.append(bodyPlanCopy, bodyPlanSelect);
+      presetContainer.append(bodyPlanLabel);
+      if (!bodyPlan) {
+        container.append(
+          Object.assign(document.createElement("small"), {
+            textContent:
+              "As mutações animais aparecerão após a escolha do plano corporal.",
+          }),
+        );
+        continue;
+      }
+    }
 
     const rankLabel = document.createElement("label"),
       rankCopy = document.createElement("span"),
@@ -646,9 +709,16 @@ function renderArenaDesigner() {
       placeholder.textContent = "Conjunto pré-definido…";
       select.append(placeholder);
       for (const preset of ARENA_PRESETS[branch.id]) {
+        const presetGenome = arenaPresetGenome(branch.id, preset.id);
+        if (
+          branch.id === "animal" &&
+          bodyPlan &&
+          arenaBodyPlan(presetGenome) !== bodyPlan
+        )
+          continue;
         const option = document.createElement("option"),
           period = arenaPeriodName.get(preset.stage) ?? preset.stage,
-          genome = arenaPresetGenome(branch.id, preset.id),
+          genome = presetGenome,
           legacy = arenaPresetLegacy(branch.id, preset.id),
           cost = arenaTraitCost(genome, legacy);
         option.value = preset.id;
@@ -765,14 +835,27 @@ function finishArenaFlow() {
       flow.kind === "engineering"
         ? flow.baselines[nextOwner].map((genome) => [...genome])
         : null;
-    flow.current =
-      flow.kind === "engineering"
-        ? flow.baseline.map((genome) => [...genome])
-        : emptyArenaBranches();
-    flow.ranks =
-      flow.kind === "engineering"
-        ? [...flow.rankBaselines[nextOwner]]
-        : emptyArenaRanks();
+    if (flow.kind === "setup") {
+      const firstOwner = flow.owners[0],
+        firstPlan = flow.bodyPlans[firstOwner],
+        opposite = oppositeArenaBodyPlan(firstPlan);
+      flow.bodyPlans[nextOwner] = opposite;
+      flow.fixedBodyPlans[nextOwner] = true;
+      flow.current = emptyArenaBranches();
+      flow.current[0] = completeArenaBranchGenome(
+        [ARENA_BRANCHES[0].energy, opposite],
+        ARENA_BRANCHES[0].id,
+      );
+      flow.ranks = emptyArenaRanks();
+      flow.ranks[0] = arenaPreferredRank(
+        flow.current[0],
+        ARENA_BRANCHES[0].id,
+        flow.ranks[0],
+      );
+    } else {
+      flow.current = flow.baseline.map((genome) => [...genome]);
+      flow.ranks = [...flow.rankBaselines[nextOwner]];
+    }
     flow.legacies = emptyArenaLegacies();
     renderArenaDesigner();
     return;
@@ -782,12 +865,24 @@ function finishArenaFlow() {
   let blue = flow.results.blue,
     amber = flow.results.amber;
   if (flow.kind === "setup") {
-    if (!blue) blue = arenaAISideSetup(controller.difficulty, null, Date.now());
+    const bluePlan =
+        flow.bodyPlans.blue ??
+        arenaBodyPlan(blue?.genomes?.[0]) ??
+        ARENA_BODY_PLANS[0],
+      amberPlan = oppositeArenaBodyPlan(bluePlan);
+    if (!blue)
+      blue = arenaAISideSetup(
+        controller.difficulty,
+        null,
+        Date.now(),
+        bluePlan,
+      );
     if (!amber)
       amber = arenaAISideSetup(
         controller.difficulty,
         controller.difficulty === "hard" ? blue : null,
         Date.now() + 1,
+        amberPlan,
       );
   } else {
     if (!blue)
@@ -841,11 +936,20 @@ function finishArenaFlow() {
 function openArenaSetup() {
   controller.pause(true);
   if (controller.mode === "auto") {
-    const blue = arenaAISideSetup(controller.difficulty, null, Date.now()),
+    const seed = Date.now(),
+      bluePlan = ARENA_BODY_PLANS[(seed >>> 0) % ARENA_BODY_PLANS.length],
+      amberPlan = oppositeArenaBodyPlan(bluePlan),
+      blue = arenaAISideSetup(
+        controller.difficulty,
+        null,
+        seed,
+        bluePlan,
+      ),
       amber = arenaAISideSetup(
         controller.difficulty,
         controller.difficulty === "hard" ? blue : null,
-        Date.now() + 1,
+        seed + 1,
+        amberPlan,
       );
     clearSelection();
     replaceCycleState(
@@ -874,6 +978,8 @@ function openArenaSetup() {
     baselines: null,
     rankBaselines: null,
     results: {},
+    bodyPlans: {},
+    fixedBodyPlans: {},
     previous: null,
   };
   renderArenaDesigner();
@@ -940,7 +1046,10 @@ function openArenaEngineering() {
 $("arena-randomize").addEventListener("click", () => {
   if (!arenaFlow) return;
   if (arenaFlow.kind === "setup") {
-    const setup = randomArenaSetupSide(Date.now());
+    const owner = arenaFlow.owners[arenaFlow.ownerIndex],
+      requiredBodyPlan = arenaFlow.bodyPlans?.[owner] ?? null;
+    if (!requiredBodyPlan) return;
+    const setup = randomArenaSetupSide(Date.now(), requiredBodyPlan);
     arenaFlow.current = setup.genomes;
     arenaFlow.legacies = setup.legacies ?? emptyArenaLegacies();
     arenaFlow.ranks = setup.ranks;
