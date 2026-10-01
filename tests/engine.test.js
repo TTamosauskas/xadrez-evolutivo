@@ -2652,6 +2652,8 @@ test("offensive drought ends by ecological-domain population after the timeout",
   s.turn = ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS * 2 - 1;
   s.current = "blue";
   s.lastSuccessfulCaptureRound = 0;
+  // Isola a regra de domínio ecológico da nova intervenção celular anti-estagnação.
+  s.nextHabitatRound = round(s) + 100;
   assert.equal(offensiveActionCount(s), 0);
   assert.ok(legalActions(s).length > 0);
 
