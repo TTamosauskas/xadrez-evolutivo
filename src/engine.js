@@ -103,6 +103,7 @@ import {
   checkPopulation,
   tickDiseases,
   infect,
+  infectByIngestion,
   leaveBacterialTrail,
   exposePathogenCell,
   exposeFecalResidue,
@@ -302,7 +303,7 @@ export function context(state) {
         const disease = state.diseases.find(
           (d) => d.id === dead.infection?.disease,
         );
-        if (disease) infect(state, attacker, disease);
+        if (disease) infectByIngestion(state, attacker, disease);
       }
       if (dead.marsupialPouch?.length)
         releaseMarsupialPouch(ctx, dead, true);
