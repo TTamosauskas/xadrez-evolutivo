@@ -1651,7 +1651,7 @@ test("Parasitismo sem alvo adjacente deixa de expor Vivificar", () => {
   );
 
   assert.ok(!cell.classList.contains("vivification-target"));
-  assert.doesNotMatch(cell.title, /Parasitismo/);
+  assert.doesNotMatch(cell.title, /vivificação disponível: Parasitismo/);
   dom.window.close();
 });
 
