@@ -11,7 +11,7 @@ function hostileMajority(state) {
   for (let cell = 0; cell < 33; cell++) state.board[cell] = "hostile";
 }
 
-test("Hibernação inicia por 10 turnos quando casas inseguras superam seguras", () => {
+test("Hibernação inicia por 5 turnos quando casas inseguras superam seguras", () => {
   let state = fixture([
     { owner: "blue", r: 4, c: 4, rank: 4, traits: ["Hibernação"] },
     { owner: "blue", r: 6, c: 0, rank: 0 },
@@ -25,7 +25,7 @@ test("Hibernação inicia por 10 turnos quando casas inseguras superam seguras",
 
   const hibernator = state.pieces.find((piece) => piece.id === hibernatorId);
   assert.equal(state.turn, 1);
-  assert.equal(hibernator.hibernationUntilTurn, 11);
+  assert.equal(hibernator.hibernationUntilTurn, 6);
   assert.equal(hibernating(state, hibernator), true);
   assert.equal(hibernator.hibernationRearmPending, true);
   assert.ok(
@@ -108,7 +108,7 @@ test("evento severo de controle populacional não dispara Hibernação", () => {
   assertState(state);
 });
 
-test("se toda a população sobrevivente hibernaria, uma peça desperta automaticamente", () => {
+test("Hibernação não impede Domínio Ecológico quando é tudo que resta de um lado", () => {
   let state = fixture([
     { owner: "blue", r: 6, c: 0, rank: 4, traits: ["Hibernação"] },
     { owner: "amber", r: 0, c: 7, rank: 4 },
@@ -118,16 +118,9 @@ test("se toda a população sobrevivente hibernaria, uma peça desperta automati
 
   state = transition(state, { type: "MOVE", id: blueId, r: 5, c: 0 });
 
-  const blue = state.pieces.find((piece) => piece.id === blueId);
-  assert.equal(blue.hibernationUntilTurn, undefined);
-  assert.equal(hibernating(state, blue), false);
-  assert.equal(blue.hibernationRearmPending, true);
-  assert.ok(
-    state.passiveEffects.some(
-      (effect) =>
-        effect.trait === "Hibernação" &&
-        effect.outcome === "emergency-arousal",
-    ),
-  );
+  assert.ok(state.result);
+  assert.equal(state.result.winner, "amber");
+  assert.equal(state.result.kind, "ecological-domain");
+  assert.match(state.result.reason, /Hibernação/);
   assertState(state);
 });
