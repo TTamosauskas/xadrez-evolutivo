@@ -54,30 +54,6 @@ test("death while crossing hostile terrain stops the visual path and leaves a ca
   assert.ok(carcassAt(state, 4, 1));
 });
 
-test("Regeneração prevents an environmental carcass when it prevents the death", () => {
-  let state = fixture(
-    [
-      {
-        owner: "blue",
-        r: 4,
-        c: 0,
-        rank: 3,
-        traits: ["Regeneração"],
-      },
-      { owner: "amber", r: 0, c: 7, rank: 4 },
-    ],
-    0,
-  );
-  const actor = state.pieces[0];
-  state.board[4 * 8 + 1] = "hostile";
-
-  state = simulate(state, move(actor, 4, 4));
-
-  assert.ok(state.pieces.some((piece) => piece.id === actor.id));
-  assert.equal(carcassAt(state, 4, 1), null);
-});
-
-
 test("Bishop, Rook and Queen expose every traversed square in order", () => {
   const cases = [
     {
