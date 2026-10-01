@@ -1373,7 +1373,7 @@ export function render(
         }
 
         const statusBadges = [];
-        if (p.id === state.neurofocus) statusBadges.push("♾️×2");
+        if (p.id === state.neurofocus) statusBadges.push("♾️");
         if (neurodivergenceResting(state, p)) statusBadges.push("♾️⏳");
         if (intoxicationResting(state, p)) statusBadges.push("😵‍💫");
         if (
@@ -1386,7 +1386,7 @@ export function render(
           Number.isInteger(p.hibernationUntilTurn) &&
           p.hibernationUntilTurn > state.turn
         )
-          statusBadges.push(`🧸${p.hibernationUntilTurn - state.turn}`);
+          statusBadges.push("🧸");
         if (p.webTrapped) statusBadges.push("🕸️⏳");
         if (p.autotomyRecovery) statusBadges.push("✂️↻");
         if (
@@ -1408,13 +1408,8 @@ export function render(
           p.bioluminescentLureReadyRound > currentRound
         )
           statusBadges.push("🎣⏳");
-        if (
-          Number.isInteger(p.endosymbiosisDebtUntilRound) &&
-          p.endosymbiosisDebtUntilRound > currentRound
-        )
-          statusBadges.push("🔋⏳");
         if ((p.adaptiveImmuneMemory ?? []).length)
-          statusBadges.push(`🎯${p.adaptiveImmuneMemory.length}`);
+          statusBadges.push("🎯");
         if (has(p, "Estômatos"))
           statusBadges.push(stomataOpen(state, p) ? "🌬️" : "🌬️💧");
         if (has(p, "Endotermia") && cellTerrain === "hostile")
@@ -1433,7 +1428,7 @@ export function render(
         );
         if (metabolicRecoveryRemaining > 0)
           statusBadges.push(`⏳${metabolicRecoveryRemaining}`);
-        if (p.seeds) statusBadges.push(`${p.seeds}🌰`);
+        if (p.seeds) statusBadges.push("🌰");
         if (
           state.plantSeeds.some(
             (seed) =>
@@ -1449,9 +1444,9 @@ export function render(
             .filter((pregnancy) => pregnancy.kind === "ovoviviparous")
             .reduce((sum, pregnancy) => sum + pregnancy.brood.length, 0);
         if (viviparousCarried)
-          statusBadges.unshift(`🔴+${viviparousCarried}`);
+          statusBadges.unshift("🔴");
         if (ovoviviparousCarried)
-          statusBadges.unshift(`⚪+${ovoviviparousCarried}`);
+          statusBadges.unshift("⚪");
         if (statusBadges.length) {
           const status = make("span", undefined, "piece-status");
           for (const badge of statusBadges)
