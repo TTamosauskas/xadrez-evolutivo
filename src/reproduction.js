@@ -1742,7 +1742,7 @@ const TROPHIC_REPRODUCTION_RESOURCES = new Set([
 
 function reproductionResourceKind(reason, options = {}) {
   if (options.resourceKind) return options.resourceKind;
-  if (reason === "predação" || reason === "canibalismo") return "prey";
+  if (reason === "predação") return "prey";
   if (reason === "ovifagia") return "egg";
   if (reason === "necrofagia") return "carcass";
   if (reason === "coprofagia") return "feces";
