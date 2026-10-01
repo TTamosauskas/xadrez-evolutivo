@@ -1908,6 +1908,7 @@ export function feedingReachTargets(state, piece) {
         if (
           !victim ||
           victim.owner === piece.owner ||
+          hibernating(state, victim) ||
           parentalCareProtects(state, victim)
         )
           continue;
@@ -1968,6 +1969,7 @@ export function extendedCaptureTargets(state, piece) {
     if (
       !victim ||
       victim.owner === piece.owner ||
+      hibernating(state, victim) ||
       parentalCareProtects(state, victim) ||
       inkCloudAt(state, victim.r, victim.c)
     )
