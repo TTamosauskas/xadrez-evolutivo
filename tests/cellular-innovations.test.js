@@ -154,6 +154,58 @@ test("Quimiossíntese protege em casa hostil, fertiliza no turno seguinte e a re
 });
 
 
+test("Quimiossíntese neutraliza perigo severo comum sem quebrar núcleo letal", () => {
+  const make = (lethal) => {
+    const state = createState(4110 + Number(lethal), {
+      scenario: "alternative",
+      geologicalStage: "paleoarchean",
+      naturalBarriers: false,
+    });
+    state.pieces = [];
+    state.nextId = 1;
+    state.phase = "move";
+    state.current = "blue";
+    state.board.fill("neutral");
+    const parent = newPiece(state, "blue", 4, 4, {
+        rank: 0,
+        traits: ["Quimiossíntese"],
+        ancestry: ["Respiração anaeróbia", "Quimiossíntese"],
+      }),
+      rival = newPiece(state, "amber", 0, 0, { rank: 0 }),
+      cell = square(parent.r, parent.c);
+    state.pieces.push(parent, rival);
+    state.board[cell] = "hostile";
+    state.event = {
+      id: "grb",
+      source: "eco",
+      startRound: round(state),
+      startTurn: state.turn,
+      hazards: [cell],
+      lethalHazards: lethal ? [cell] : [],
+      snapshots: { [cell]: "neutral" },
+    };
+    parent.chemosynthesisCell = cell;
+    parent.chemosynthesisReadyTurn = state.turn + 1;
+    return { state, cell, parentId: parent.id };
+  };
+
+  let sample = make(false),
+    state = simulate(sample.state, { type: "PASS" });
+  assert.equal(state.board[sample.cell], "fertile");
+  assert.equal(state.event.hazards.includes(sample.cell), false);
+  assert.equal(state.event.snapshots[sample.cell], "fertile");
+  assertState(state);
+
+  sample = make(true);
+  state = simulate(sample.state, { type: "PASS" });
+  assert.equal(state.board[sample.cell], "hostile");
+  assert.equal(state.event.hazards.includes(sample.cell), true);
+  assert.equal(state.event.lethalHazards.includes(sample.cell), true);
+  assert.ok(state.pieces.some((piece) => piece.id === sample.parentId));
+  assertState(state);
+});
+
+
 test("Biomineralização deixa remanescente e o remanescente bloqueia uma captura de contato", () => {
   let state = fixture([
     {
