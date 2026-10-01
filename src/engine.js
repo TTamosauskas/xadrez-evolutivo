@@ -55,6 +55,7 @@ import {
   adjacentAlliesCount,
   intoxicationResting,
   fatigueLimit,
+  rapidFatigueRecovery,
   manipulationTargets,
   constructionTargets,
   nicheConstructionTargets,
@@ -983,17 +984,6 @@ function applyAdipokineticRecovery(state, piece) {
     },
   );
   return true;
-}
-
-function rapidFatigueRecovery(state, piece) {
-  if (!piece) return false;
-  return (
-    state.pieces.filter(
-      (candidate) =>
-        candidate.owner !== piece.owner &&
-        !hibernating(state, candidate),
-    ).length <= 2
-  );
 }
 
 function scheduleFatigue(state, piece) {
