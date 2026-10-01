@@ -39,6 +39,7 @@ export const AI_ACTION_TYPES = Object.freeze([
   "BIOLUMINESCENT_LURE",
   "PARTHENOGENESIS",
   "NURSE",
+  "DETOXIFY",
   "LAY_OVOVIVIPAROUS",
   "EXTENDED_CAPTURE",
   "RHIZOME",
@@ -270,6 +271,11 @@ export function actionPriority(state, a) {
   if (a.type === "NURSE") {
     const child = state.pieces.find((piece) => piece.id === a.childId);
     return 7 + strategicPieceValue(state, child) * 0.08;
+  }
+  if (a.type === "DETOXIFY") {
+    const actor = state.pieces.find((piece) => piece.id === a.id),
+      remaining = actor?.venom?.remaining ?? 2;
+    return remaining <= 1 ? 30 : 18;
   }
   if (a.type === "PLACE_EGG" || a.type === "LAY_OVOVIVIPAROUS") {
     let free = 0;

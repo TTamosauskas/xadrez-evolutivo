@@ -88,6 +88,7 @@ const VIVIFICATION_LABELS = Object.freeze({
   BUD: "Brotamento",
   CHEMOSYNTHESIS: "♨️ Quimiossíntese",
   PUPATE: "Metamorfose",
+  DETOXIFY: "⚗️ Detoxificar",
   PARASITIZE: "Parasitismo",
   REJECT_BROOD_PARASITE: "🪺 Rejeitar ovo parasita",
 });

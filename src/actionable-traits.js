@@ -152,6 +152,8 @@ export function actionableTraitsForPiece(state, piece) {
     if (action.type === "BIO_PROJECTILE") actionable.add("Projétil Biológico");
     if (action.type === "ELECTRODISCHARGE") actionable.add("Eletrodescarga");
     if (action.type === "HEMATOPHAGY") actionable.add("Hematofagia");
+    if (action.type === "DETOXIFY")
+      actionable.add("Biotransformação Hepática");
     if (action.type === "BROOD_PARASITIZE")
       actionable.add("Parasitismo de Ninhada");
     if (action.type === "REJECT_BROOD_PARASITE") actionable.add("Incubação");
@@ -184,6 +186,9 @@ export function actionableTraitsForPiece(state, piece) {
     hasDetritusAt = (r, c) =>
       !!organicResidueAt(state, r, c) || !!carcassAt(state, r, c);
 
+  if (targets.some((target) => target.endorphinRecovery))
+    actionable.add("Endorfinas");
+
   if (
     has(piece, "Parasitoidismo") &&
     !piece.parasitoidism &&
@@ -202,6 +207,19 @@ export function actionableTraitsForPiece(state, piece) {
   )
     actionable.add("Parasitoidismo");
 
+  const gastricRiskAvailable =
+    has(piece, "Estômago Ácido") &&
+    targets.some((target) => {
+      const victim = at(state, target.r, target.c),
+        residue = organicResidueAt(state, target.r, target.c);
+      return (
+        (!!target.capture && victim?.infection) ||
+        (has(piece, "Coprofagia") &&
+          (residue?.pathogenDiseaseIds?.length ?? 0) > 0)
+      );
+    });
+  if (gastricRiskAvailable) actionable.add("Estômago Ácido");
+
   if (piece.rumination) actionable.add("Ruminante");
   if (
     has(piece, "Eucarionte") &&
@@ -219,8 +237,14 @@ export function actionableTraitsForPiece(state, piece) {
   if (
     has(piece, "Endotermia") &&
     terrain(state, piece.r, piece.c) === "hostile"
-  )
+  ) {
     actionable.add("Endotermia");
+    if (
+      has(piece, "Coração Compartimentado") &&
+      round(state) >= (piece.heartSupportReadyRound ?? 0)
+    )
+      actionable.add("Coração Compartimentado");
+  }
 
   if (
     has(piece, "Autotomia") &&
@@ -764,6 +788,24 @@ function addActiveStateTraits(state, piece, traits) {
     traits.add("Extremófitas");
 
   if (buddingCanProgress(state, piece)) traits.add("Brotamento");
+
+  if (piece.xerophyteWaterReserve && has(piece, "Xerofitismo"))
+    traits.add("Xerofitismo");
+  if (piece.renalWaterReserve && has(piece, "Rim Concentrador"))
+    traits.add("Rim Concentrador");
+  if (
+    (piece.intestinalAbsorptionCount ?? 0) === 1 &&
+    has(piece, "Intestino")
+  )
+    traits.add("Intestino");
+
+  const retainedPregnancy = (piece.pregnancies ?? []).some(
+    (pregnancy) => pregnancy.kind === "retained-viviparous",
+  );
+  if (retainedPregnancy) {
+    if (has(piece, "Placenta")) traits.add("Placenta");
+    else if (has(piece, "Estrogênio")) traits.add("Estrogênio");
+  }
 
   if (
     has(piece, "Neurodivergência") &&

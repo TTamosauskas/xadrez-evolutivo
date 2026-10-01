@@ -375,6 +375,24 @@ export function infect(state, piece, disease) {
   return true;
 }
 
+export function infectByIngestion(state, piece, disease) {
+  if (!piece || !disease) return false;
+  if (
+    disease.source !== "population" &&
+    has(piece, "Estômago Ácido") &&
+    random(state) < 0.5
+  ) {
+    emitPassiveEffect(
+      state,
+      "Estômago Ácido",
+      "🧪 Estômago Ácido bloqueou um patógeno ingerido.",
+      { pieceId: piece.id, outcome: "blocked-ingested-pathogen" },
+    );
+    return false;
+  }
+  return infect(state, piece, disease);
+}
+
 function initialCandidates(state, source, agent, transmission) {
   if (transmission === "sexual") return sexualPathogenCandidates(state);
   if (transmission === "fecal") return fecalPathogenCandidates(state);
@@ -650,6 +668,20 @@ export function exposeFecalResidue(
         candidate.transmission === "fecal",
     );
     if (!disease || random(state) >= chance) continue;
+    if (
+      ingestion &&
+      disease.source !== "population" &&
+      has(piece, "Estômago Ácido") &&
+      random(state) < 0.5
+    ) {
+      emitPassiveEffect(
+        state,
+        "Estômago Ácido",
+        "🧪 Estômago Ácido bloqueou um patógeno ingerido com material fecal.",
+        { pieceId: piece.id, outcome: "blocked-ingested-pathogen" },
+      );
+      continue;
+    }
     if (!infect(state, piece, disease)) continue;
     recordPathogenExposure(state, piece, disease);
     log(

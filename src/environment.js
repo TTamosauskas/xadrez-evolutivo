@@ -854,7 +854,32 @@ function trim(state, count) {
       fertileCells.filter((cell) => !protectedCells.has(cell)),
     ).slice(0, removeCount);
 
-  for (const cell of removable) state.board[cell] = "neutral";
+  for (const cell of removable) {
+    const occupant = state.pieces.find(
+      (piece) => square(piece.r, piece.c) === cell,
+    );
+    state.board[cell] = "neutral";
+    if (occupant && state.event?.id && ["drought", "desert"].includes(state.event.id)) {
+      if (has(occupant, "Xerofitismo") && !occupant.xerophyteWaterReserve) {
+        occupant.xerophyteWaterReserve = 1;
+        emitPassiveEffect(
+          state,
+          "Xerofitismo",
+          "🌞 Xerofitismo armazenou água durante a perda de fertilidade.",
+          { pieceId: occupant.id, outcome: "stored-water-reserve", value: 1 },
+        );
+      }
+      if (has(occupant, "Rim Concentrador") && !occupant.renalWaterReserve) {
+        occupant.renalWaterReserve = 1;
+        emitPassiveEffect(
+          state,
+          "Rim Concentrador",
+          "🫘 Rim Concentrador preservou uma reserva hídrica durante a seca.",
+          { pieceId: occupant.id, outcome: "stored-water-reserve", value: 1 },
+        );
+      }
+    }
+  }
 
   if (fertileCells.length > count && protectedCells.size)
     for (const piece of state.pieces) {
@@ -984,6 +1009,11 @@ function earthquake(ctx) {
 }
 function endEvent(state) {
   if (!state.event) return;
+  if (["drought", "desert"].includes(state.event.id))
+    for (const piece of state.pieces) {
+      delete piece.xerophyteWaterReserve;
+      delete piece.renalWaterReserve;
+    }
   for (const [i, t] of Object.entries(state.event.snapshots))
     state.board[Number(i)] = t;
   const lethal = new Set(state.event.lethalHazards ?? []);

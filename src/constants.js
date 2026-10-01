@@ -55,9 +55,17 @@ export const TRAITS = {
     "🌬️",
     "Alterna automaticamente entre dois turnos abertos, com Fotossíntese ampliada, e dois fechados, que conservam fertilidade e bloqueiam exposição ambiental ou por esporos.",
   ],
+  Xerofitismo: [
+    "🌞",
+    "Durante Seca Severa ou Desertificação, a perda de fertilidade da casa ocupada gera uma Reserva Hídrica. A próxima Fotossíntese consome a reserva e acelera sua conclusão em até duas rodadas.",
+  ],
   Endotermia: [
     "🔥",
     "Quando um ambiente hostil comum causaria morte, converte o risco em uma rodada adicional de recuperação metabólica, no máximo uma vez por turno.",
+  ],
+  "Coração Compartimentado": [
+    "🫀",
+    "Uma vez a cada quatro rodadas, quando Endotermia evita uma morte ambiental, sustenta a resposta fisiológica sem acrescentar a rodada extra de recuperação metabólica.",
   ],
   Multicelularismo: [
     "🫧",
@@ -83,9 +91,21 @@ export const TRAITS = {
     "🤤",
     "Após reprodução bem-sucedida por alimento, reduz em uma rodada a pressão ecológica ou competitiva aplicada à recuperação reprodutiva.",
   ],
+  Endorfinas: [
+    "😌",
+    "Após Regeneração evitar uma morte, permite na rodada de recuperação exatamente um deslocamento simples para uma casa adjacente vazia válida; a ação encerra o turno.",
+  ],
   Vertebrado: [
     "🐟",
     "Plano corporal bilateral mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e a evolução completa de Peão até Cavalo, Bispo, Torre e Rainha; Rei continua disponível.",
+  ],
+  Intestino: [
+    "🪢",
+    "A cada segunda reprodução bem-sucedida por alimento, melhora a absorção e reduz em uma rodada apenas a parcela metabólica da recuperação, respeitando o mínimo de uma rodada.",
+  ],
+  "Estômago Ácido": [
+    "🧪",
+    "Reduz pela metade a transmissão de patógenos adquiridos ao ingerir presa ou fezes contaminadas. Patógenos de pressão populacional atravessam essa barreira digestiva.",
   ],
   Adrenalina: [
     "🚨",
@@ -102,6 +122,10 @@ export const TRAITS = {
   "Locomoção Terrestre": [
     "🐛",
     "Adapta o deslocamento a substratos expostos. A criatura pode mover-se e capturar também em casas neutras e hostis; casas hostis continuam oferecendo o risco ambiental normal.",
+  ],
+  "Rim Concentrador": [
+    "🫘",
+    "Durante Seca Severa ou Desertificação, a perda de fertilidade da casa ocupada gera uma Reserva Hídrica. A próxima reprodução consome a reserva e reduz em uma rodada a recuperação metabólica.",
   ],
   Rastejante: [
     "🐌",
@@ -238,6 +262,10 @@ export const TRAITS = {
   ],
   Ovífagia: ["🐍", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
   Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],
+  Placenta: [
+    "🫄",
+    "Em linhagens vivíparas, amplia a retenção embrionária: toda a parcela da ninhada sem espaço pode permanecer sustentada por uma rodada adicional antes de nova tentativa de nascimento.",
+  ],
   "Ovulação Induzida": [
     "🐇",
     "Na reprodução sexuada, reduz em uma rodada a recuperação metabólica do portador, até o mínimo de uma rodada.",
@@ -249,6 +277,10 @@ export const TRAITS = {
   Corticosteroides: [
     "🦎",
     "Orienta a colocação automática da prole para as casas válidas com menor exposição a ataques adversários.",
+  ],
+  Estrogênio: [
+    "🪷",
+    "Protege investimento embrionário: quando falta espaço no momento de eclosão ou nascimento, retém temporariamente uma cria para uma nova tentativa na rodada seguinte.",
   ],
   Forrageamento: [
     "🐔",
@@ -630,6 +662,10 @@ export const TRAITS = {
   Peçonha: [
     "🦂",
     "Especialização ofensiva de Veneno: quando uma captura de contato é frustrada sem afastar a vítima, inocula uma toxina letal que mata após dois turnos próprios.",
+  ],
+  "Biotransformação Hepática": [
+    "⚗️",
+    "Pode gastar a ação para eliminar Veneno ou Peçonha com morte diferida. Após detoxificar, entra em recarga por quatro rodadas próprias.",
   ],
   Teia: [
     "🕸️",
