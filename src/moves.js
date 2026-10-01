@@ -1637,12 +1637,8 @@ function parasitismReady(state, p) {
   );
 }
 
-export function canParasitizeSelf(state, p) {
-  return !!(
-    parasitismReady(state, p) &&
-    !fertilityPaused(state) &&
-    terrain(state, p.r, p.c) !== "fertile"
-  );
+export function canParasitizeSelf() {
+  return false;
 }
 
 export function parasitismTargets(state, p) {
@@ -1656,10 +1652,7 @@ export function parasitismTargets(state, p) {
 }
 
 export function canParasitize(state, p) {
-  return (
-    canParasitizeSelf(state, p) ||
-    parasitismTargets(state, p).length > 0
-  );
+  return parasitismTargets(state, p).length > 0;
 }
 
 export const NITROGEN_FIXATION_COOLDOWN_ROUNDS = 4;
@@ -2281,9 +2274,6 @@ export function actionsForPiece(
       id: piece.id,
       targetId: target.id,
     })),
-    ...(canParasitizeSelf(source, piece)
-      ? [{ type: "PARASITIZE", id: piece.id }]
-      : []),
     ...(canBud(source, piece) ? [{ type: "BUD", id: piece.id }] : []),
     ...(canPupate(source, piece) ? [{ type: "PUPATE", id: piece.id }] : []),
     ...nicheConstructionTargets(source, piece).map((target) => ({

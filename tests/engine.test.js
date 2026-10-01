@@ -5740,7 +5740,7 @@ test("Vivificar groups multiple legal self-actions without hidden priority", () 
   assert.ok(actions.some((action) => action.type === "BUD"));
 });
 
-test("Parasitismo targets one adjacent enemy habitat and can still fertilize itself", () => {
+test("Parasitismo targets one adjacent enemy habitat and requires a material target", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
     { owner: "amber", r: 3, c: 4 },
@@ -5778,22 +5778,6 @@ test("Parasitismo targets one adjacent enemy habitat and can still fertilize its
     { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  assert.ok(
-    legalActions(s).some(
-      (action) =>
-        action.type === "PARASITIZE" &&
-        action.id === s.pieces[0].id &&
-        action.targetId === undefined,
-    ),
-  );
-  s = simulate(s, { type: "PARASITIZE", id: s.pieces[0].id });
-  assert.equal(s.board[36], "fertile");
-
-  s = fixture([
-    { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s.board[36] = "fertile";
   assert.equal(canParasitize(s, s.pieces[0]), false);
   assert.ok(
     !legalActions(s).some(

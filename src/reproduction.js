@@ -1533,14 +1533,25 @@ function reproductionPressure(state, population) {
   );
 }
 
-function noCaptureReproductionPressure(state) {
+export function noCaptureReproductionPressure(state) {
   const elapsed = Math.max(
       0,
       round(state) - (state.lastSuccessfulCaptureRound ?? 0),
     ),
     cooldown =
-      elapsed >= 24 ? 3 : elapsed >= 18 ? 2 : elapsed >= 12 ? 1 : 0,
-    limit = elapsed >= 18 ? 1 : Infinity;
+      elapsed >= 36
+        ? 5
+        : elapsed >= 30
+          ? 4
+          : elapsed >= 24
+            ? 3
+            : elapsed >= 18
+              ? 2
+              : elapsed >= 12
+                ? 1
+                : 0,
+    lateReproductionLock = state.turn >= 120 && elapsed >= 36,
+    limit = lateReproductionLock ? 0 : elapsed >= 18 ? 1 : Infinity;
   return { elapsed, cooldown, limit };
 }
 

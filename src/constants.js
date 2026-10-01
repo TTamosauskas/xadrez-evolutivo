@@ -245,7 +245,7 @@ export const TRAITS = {
   ],
   Parasitismo: [
     "🪱",
-    "Pode tornar fértil a própria casa e atacar o habitat de uma criatura adversária adjacente escolhida, tornando a casa dela hostil.",
+    "Ataca o habitat de uma criatura adversária adjacente escolhida, tornando a casa dela hostil.",
   ],
   "Vetor Patógeno": ["🦟", "Pode desencadear surtos virais, bacterianos ou fúngicos em criaturas adversárias adjacentes."],
   Onívoro: [
