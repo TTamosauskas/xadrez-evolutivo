@@ -51,6 +51,7 @@ import {
   canWaitForRest,
   canWaitForBirth,
   dormant,
+  hibernating,
   adjacentAlliesCount,
   intoxicationResting,
   fatigueLimit,
@@ -228,6 +229,19 @@ export function context(state) {
     kill(id, reason, attacker = null, force = false, options = {}) {
       const dead = state.pieces.find((p) => p.id === id);
       if (!dead) return false;
+      if (
+        attacker &&
+        attacker.owner !== dead.owner &&
+        hibernating(state, dead)
+      ) {
+        emitPassiveEffect(
+          state,
+          "Hibernação",
+          "🧸 O hibernáculo manteve a criatura fora do alcance da captura.",
+          { pieceId: dead.id, outcome: "capture-blocked-by-hibernation" },
+        );
+        return false;
+      }
       if (!force && !attacker && has(dead, "Regeneração") && !dead.regenerationUsed) {
         dead.regenerationUsed = true;
         dead.regenerationRestThroughRound = round(state) + 1;
@@ -758,6 +772,143 @@ function resolveDueLethalDeaths(ctx) {
     }
   if (deaths) extinction(state);
   return deaths;
+}
+
+const HIBERNATION_DURATION_TURNS = 10;
+
+function hibernationPressure(state) {
+  const playable = [],
+    unsafe = new Set(),
+    now = round(state),
+    ecologicalContamination = new Set();
+
+  for (const disease of state.diseases ?? []) {
+    if (
+      disease.source === "population" ||
+      now < disease.startRound ||
+      now > disease.endRound
+    )
+      continue;
+    for (const cell of disease.contaminated ?? [])
+      ecologicalContamination.add(cell);
+  }
+
+  for (let r = 0; r < 8; r++)
+    for (let c = 0; c < 8; c++) {
+      if (barrierAt(state, r, c)) continue;
+      const cell = square(r, c);
+      playable.push(cell);
+      if (
+        terrain(state, r, c) === "hostile" ||
+        lethalHazardAt(state, r, c) ||
+        ecologicalContamination.has(cell)
+      )
+        unsafe.add(cell);
+    }
+
+  return {
+    unsafe: unsafe.size,
+    safe: Math.max(0, playable.length - unsafe.size),
+    suppressedByPopulationControl: state.event?.source === "population",
+  };
+}
+
+function clearFatigueForHibernation(piece) {
+  piece.exertionStreak = 0;
+  delete piece.fatigueRestTurn;
+  delete piece.lastOwnExertionTurn;
+  delete piece.lastReactiveExertionTurn;
+  delete piece.sleepingThroughTurn;
+  delete piece.restorativeSleepCharge;
+}
+
+function refreshHibernation(state) {
+  const pressure = hibernationPressure(state),
+    adverseMajority = pressure.unsafe > pressure.safe;
+
+  for (const piece of state.pieces) {
+    if (
+      Number.isInteger(piece.hibernationUntilTurn) &&
+      (!has(piece, "Hibernação") || piece.hibernationUntilTurn <= state.turn)
+    ) {
+      const completed = has(piece, "Hibernação");
+      delete piece.hibernationUntilTurn;
+      if (completed) {
+        log(
+          state,
+          `${OWNERS[piece.owner]}: 🧸 Hibernação encerrada; a criatura retomou a atividade.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Hibernação",
+          "🧸 Hibernação encerrada · atividade restaurada.",
+          { pieceId: piece.id, outcome: "hibernation-ended" },
+        );
+      }
+    }
+  }
+
+  if (!adverseMajority)
+    for (const piece of state.pieces)
+      if (!hibernating(state, piece) && piece.hibernationRearmPending)
+        delete piece.hibernationRearmPending;
+
+  if (adverseMajority && !pressure.suppressedByPopulationControl)
+    for (const piece of state.pieces) {
+      if (
+        !has(piece, "Hibernação") ||
+        hibernating(state, piece) ||
+        piece.hibernationRearmPending
+      )
+        continue;
+      piece.hibernationUntilTurn = state.turn + HIBERNATION_DURATION_TURNS;
+      piece.hibernationRearmPending = true;
+      clearFatigueForHibernation(piece);
+      log(
+        state,
+        `${OWNERS[piece.owner]}: 🧸 Hibernação iniciada por ambiente predominantemente adverso por ${HIBERNATION_DURATION_TURNS} turnos.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Hibernação",
+        `🧸 Hibernação iniciada · ${HIBERNATION_DURATION_TURNS} turnos de torpor protegido.`,
+        {
+          pieceId: piece.id,
+          outcome: "hibernation-started",
+          value: HIBERNATION_DURATION_TURNS,
+        },
+      );
+    }
+
+  for (const owner of ["blue", "amber"]) {
+    const survivors = state.pieces.filter((piece) => piece.owner === owner);
+    if (!survivors.length || survivors.some((piece) => !hibernating(state, piece)))
+      continue;
+    const wake = [...survivors].sort(
+      (a, b) =>
+        (a.hibernationUntilTurn ?? Infinity) -
+          (b.hibernationUntilTurn ?? Infinity) ||
+        a.id - b.id,
+    )[0];
+    delete wake.hibernationUntilTurn;
+    wake.hibernationRearmPending = true;
+    log(
+      state,
+      `${OWNERS[owner]}: 🧸 Hibernação interrompida para preservar atividade da população.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Hibernação",
+      "🧸 Uma criatura despertou porque toda a população sobrevivente estava hibernando.",
+      { pieceId: wake.id, outcome: "emergency-arousal" },
+    );
+  }
+
+  return pressure;
+}
+
+function hibernationSheltersFromEnvironment(state, piece) {
+  return hibernating(state, piece) && state.event?.source !== "population";
 }
 
 function nextOwnTurn(state, piece) {
@@ -2166,6 +2317,7 @@ function advanceTurn(ctx) {
     if (extinction(state)) return;
     restoreExtremophyteFertility(state);
     tickDiseases(ctx);
+    refreshHibernation(state);
     for (const p of [...state.pieces]) {
       const bufferedLethal =
         (p.eukaryoteBufferedTraits ?? []).includes("Mutação Letal") &&
@@ -2186,6 +2338,7 @@ function advanceTurn(ctx) {
           (!!organicResidueAt(state, p.r, p.c) &&
             organicResidueHazardousTo(p))) &&
         !dormant(state, p) &&
+        !hibernationSheltersFromEnvironment(state, p) &&
         !(
           p.decompositionImmunity &&
           p.decompositionImmunity.cell === square(p.r, p.c) &&
@@ -2314,6 +2467,7 @@ function settle(ctx) {
   const state = ctx.state;
   resolveThanatosis(state);
   recycleOccupiedOrganicResidue(state);
+  refreshHibernation(state);
   if (
     state.result ||
     extinction(state) ||
