@@ -55,6 +55,7 @@ import {
   adjacentAlliesCount,
   intoxicationResting,
   fatigueLimit,
+  rapidFatigueRecovery,
   manipulationTargets,
   constructionTargets,
   nicheConstructionTargets,
@@ -475,25 +476,25 @@ function extinction(state) {
   return false;
 }
 function ecologicalDomainPopulation(state) {
-  return {
-    blue: state.pieces.filter((piece) => piece.owner === "blue").length,
-    amber: state.pieces.filter((piece) => piece.owner === "amber").length,
+  const count = (owner) => {
+    const pieces = state.pieces.filter((piece) => piece.owner === owner);
+    return pieces.length && pieces.every((piece) => hibernating(state, piece))
+      ? 0
+      : pieces.length;
   };
+  return { blue: count("blue"), amber: count("amber") };
 }
 
 function ecologicalDomainFertileOccupation(state) {
-  return {
-    blue: state.pieces.filter(
-      (piece) =>
-        piece.owner === "blue" &&
-        terrain(state, piece.r, piece.c) === "fertile",
-    ).length,
-    amber: state.pieces.filter(
-      (piece) =>
-        piece.owner === "amber" &&
-        terrain(state, piece.r, piece.c) === "fertile",
-    ).length,
+  const count = (owner) => {
+    const pieces = state.pieces.filter((piece) => piece.owner === owner);
+    if (pieces.length && pieces.every((piece) => hibernating(state, piece)))
+      return 0;
+    return pieces.filter(
+      (piece) => terrain(state, piece.r, piece.c) === "fertile",
+    ).length;
   };
+  return { blue: count("blue"), amber: count("amber") };
 }
 
 function finishEcologicalDomain(state, trigger) {
@@ -581,6 +582,30 @@ export function resolveEcologicalDomain(state) {
     );
   }
 
+  const sideHibernation = Object.fromEntries(
+    ["blue", "amber"].map((owner) => {
+      const pieces = state.pieces.filter((piece) => piece.owner === owner);
+      return [
+        owner,
+        {
+          surviving: pieces.length > 0,
+          onlyHibernating:
+            pieces.length > 0 &&
+            pieces.every((piece) => hibernating(state, piece)),
+          active: pieces.some((piece) => !hibernating(state, piece)),
+        },
+      ];
+    }),
+  );
+  if (
+    (sideHibernation.blue.onlyHibernating && sideHibernation.amber.active) ||
+    (sideHibernation.amber.onlyHibernating && sideHibernation.blue.active)
+  )
+    return finishEcologicalDomain(
+      state,
+      "as únicas sobreviventes adversárias estão em Hibernação",
+    );
+
   const passivePending = passiveProgressPending(state);
   if (mutuallyBlocked(state) && !passivePending)
     return finishEcologicalDomain(state, "bloqueio total de ações");
@@ -662,7 +687,11 @@ function endothermyRescues(state, piece, normalHostile) {
 }
 
 export function hostileHazardKills(state, piece, normalHostile = false) {
-  if (random(state) >= 1 / 2) return false;
+  const severeHazard =
+      severeEventActive(state) &&
+      (state.event?.hazards ?? []).includes(square(piece.r, piece.c)),
+    baseRisk = severeHazard ? 2 / 3 : 1 / 2;
+  if (random(state) >= baseRisk) return false;
   if (
     normalHostile &&
     has(piece, "Extremotolerância") &&
@@ -774,7 +803,7 @@ function resolveDueLethalDeaths(ctx) {
   return deaths;
 }
 
-const HIBERNATION_DURATION_TURNS = 10;
+const HIBERNATION_DURATION_TURNS = 5;
 
 function hibernationPressure(state) {
   const playable = [],
@@ -880,30 +909,6 @@ function refreshHibernation(state) {
       );
     }
 
-  for (const owner of ["blue", "amber"]) {
-    const survivors = state.pieces.filter((piece) => piece.owner === owner);
-    if (!survivors.length || survivors.some((piece) => !hibernating(state, piece)))
-      continue;
-    const wake = [...survivors].sort(
-      (a, b) =>
-        (a.hibernationUntilTurn ?? Infinity) -
-          (b.hibernationUntilTurn ?? Infinity) ||
-        a.id - b.id,
-    )[0];
-    delete wake.hibernationUntilTurn;
-    wake.hibernationRearmPending = true;
-    log(
-      state,
-      `${OWNERS[owner]}: 🧸 Hibernação interrompida para preservar atividade da população.`,
-    );
-    emitPassiveEffect(
-      state,
-      "Hibernação",
-      "🧸 Uma criatura despertou porque toda a população sobrevivente estava hibernando.",
-      { pieceId: wake.id, outcome: "emergency-arousal" },
-    );
-  }
-
   return pressure;
 }
 
@@ -1002,6 +1007,22 @@ function scheduleFatigue(state, piece) {
 
 function recordExertion(state, piece, { reactive = false } = {}) {
   if (!piece || !has(piece, "Predação")) return false;
+
+  if (
+    piece.fatigueRestTurn === state.turn &&
+    rapidFatigueRecovery(state, piece)
+  ) {
+    delete piece.fatigueRestTurn;
+    piece.exertionStreak = 0;
+    delete piece.lastOwnExertionTurn;
+    delete piece.lastReactiveExertionTurn;
+    emitPassiveEffect(
+      state,
+      "Fadiga",
+      "🥵 Fadiga recuperou mais rápido durante a perseguição final.",
+      { pieceId: piece.id, outcome: "rapid-fatigue-recovery" },
+    );
+  }
 
   if (reactive) {
     const continuesSequence =

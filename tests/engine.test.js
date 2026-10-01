@@ -1986,6 +1986,7 @@ test("late competitive pressure starts after primitive locomotion", () => {
     s.pieces = [];
     s.nextId = 1;
     s.populationLatched = { blue: true, amber: true };
+    s.lastSuccessfulCaptureRound = round(s);
 
     const parent = newPiece(s, "blue", 4, 4, {
       traits: mobile
