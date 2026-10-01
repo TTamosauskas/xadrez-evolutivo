@@ -336,7 +336,7 @@ test("volcanoes, meteors and earthquakes can reshape natural barriers", () => {
 });
 
 
-test("severe ecological events make exactly 58 cells hostile and last five turns", () => {
+test("severe ecological events make exactly 61 cells hostile and last five turns", () => {
   for (const [id, seed] of [
     ["ice", 501],
     ["volcano", 502],
@@ -354,7 +354,7 @@ test("severe ecological events make exactly 58 cells hostile and last five turns
     s.board.fill("neutral");
     startEvent(context(s), id);
     assert.equal(s.event.id, id);
-    assert.equal(s.event.hazards.length, 58, id);
+    assert.equal(s.event.hazards.length, 61, id);
     assert.equal(
       s.event.lethalHazards.length,
       id === "volcano" ? 4 : id === "meteor" ? 1 : 0,
@@ -362,7 +362,7 @@ test("severe ecological events make exactly 58 cells hostile and last five turns
     );
     assert.equal(
       s.board.filter((cell) => cell === "hostile").length,
-      58,
+      61,
       id,
     );
     assert.equal(s.event.startTurn, s.turn);

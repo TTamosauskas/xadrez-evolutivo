@@ -1579,8 +1579,10 @@ test("population pressure governs fertility, pathogens and severe climate", () =
   state.event = null;
   state.pieces = state.pieces.slice(0, 32);
   assert.equal(checkPopulationClimate(context(state)), false);
-  assert.equal(state.severePopulationLatched, false);
+  assert.equal(state.severePopulationLatched, true);
   state.pieces = state.pieces.slice(0, 23);
+  assert.equal(checkPopulationClimate(context(state)), false);
+  assert.equal(state.severePopulationLatched, false);
   assert.equal(photosynthesisDelayTurns(state), 10);
   state.pieces = state.pieces.slice(0, 17);
   assert.equal(photosynthesisDelayTurns(state), 8);
