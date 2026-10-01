@@ -269,7 +269,6 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     (state.neurofocus && state.neurofocus !== p.id) ||
     ecologicalDomainBlocked(state, p.owner, p.r, p.c) ||
     resting(state, p) ||
-    fatigueResting(state, p) ||
     dormant(state, p)
   )
     return [];
@@ -1361,7 +1360,9 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
     return [...unique.values()];
   }
-  return targets;
+  return fatigueResting(state, p)
+    ? targets.filter((target) => target.stay)
+    : targets;
 }
 export function sexualReproductionResource(state, parent, mate) {
   const providers = [parent, mate].filter(Boolean);
