@@ -57,7 +57,7 @@ test("Estômago Ácido reduz exposição ingerida comum, enquanto pressão popul
   state.rng = 0;
 
   assert.equal(infectByIngestion(state, host, ecological), false);
-  assert.equal(host.infection, null);
+  assert.equal(host.infection, undefined);
   assert.ok(
     state.passiveEffects.some(
       (effect) =>
@@ -183,7 +183,8 @@ test("Xerofitismo converte perda real de fertilidade por seca em aceleração fo
   state = transition(state, { type: "PASS" });
   const adapted = state.pieces.find((piece) => piece.id === holder.id);
   assert.equal(adapted.xerophyteWaterReserve, undefined);
-  assert.ok(adapted.photosynthesisSinceTurn <= -4);
+  assert.equal(adapted.photosynthesisSinceTurn, 0);
+  assert.equal(adapted.xerophytePhotosynthesisBonusTurns, 4);
   assert.ok(
     state.passiveEffects.some(
       (effect) =>
