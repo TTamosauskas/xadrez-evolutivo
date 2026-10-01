@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "./helpers.js";
-import { round, square } from "../src/state.js";
+import { round } from "../src/state.js";
+import { square } from "../src/constants.js";
 import {
   legalActions,
   canParasitize,
