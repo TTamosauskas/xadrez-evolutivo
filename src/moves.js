@@ -601,6 +601,88 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     } else ray([...ORTH, ...DIAG], captureOnly);
   }
 
+  function hypermetamorphosisTargets() {
+    if (
+      !has(p, "Hipermetamorfose") ||
+      !p.hypermetamorphosisReady ||
+      state.chain
+    )
+      return;
+    if (p.rank === 1) {
+      const start = targets.length;
+      ray(DIAG, false);
+      for (let index = start; index < targets.length; index++) {
+        targets[index].hypermetamorphosis = true;
+        targets[index].noContinuation = true;
+      }
+      return;
+    }
+    if (p.rank !== 2) return;
+    for (const [dr, dc] of [
+      [-2, -1],
+      [-2, 1],
+      [2, -1],
+      [2, 1],
+      [-1, -2],
+      [-1, 2],
+      [1, -2],
+      [1, 2],
+    ]) {
+      const r = p.r + dr,
+        c = p.c + dc;
+      if (
+        !inside(r, c) ||
+        targets.some(
+          (target) =>
+            target.r === r &&
+            target.c === c &&
+            !!target.capture === !!at(state, r, c),
+        )
+      )
+        continue;
+      add(r, c, [[r, c]], {
+        hypermetamorphosis: true,
+        noContinuation: true,
+      });
+    }
+  }
+
+  function massRecruitmentTargets() {
+    if (!has(p, "Recrutamento em Massa") || state.chain) return;
+    for (const [dr, dc] of [...ORTH, ...DIAG]) {
+      const path = [];
+      for (let n = 1; n <= 2; n++) {
+        const r = p.r + dr * n,
+          c = p.c + dc * n;
+        if (!inside(r, c)) break;
+        path.push([r, c]);
+        if (barrierAt(state, r, c)) break;
+        const victim = at(state, r, c);
+        if (!victim) continue;
+        if (
+          victim.owner !== p.owner &&
+          has(p, "Predação") &&
+          state.pieces.some(
+            (ally) =>
+              ally.id !== p.id &&
+              ally.owner === p.owner &&
+              has(ally, "Recrutamento em Massa") &&
+              distance(ally, victim) === 1,
+          ) &&
+          !targets.some(
+            (target) =>
+              target.r === r && target.c === c && target.capture,
+          )
+        )
+          add(r, c, [...path], {
+            massRecruitment: true,
+            noContinuation: true,
+          });
+        break;
+      }
+    }
+  }
+
   function primitiveMovementTargets() {
     for (const [dr, dc] of [...ORTH, ...DIAG]) {
       const r = p.r + dr,
@@ -1228,6 +1310,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     phoresyTargets();
     serpentineMovementTargets();
     trailMovementTargets();
+    hypermetamorphosisTargets();
+    massRecruitmentTargets();
   } else if (
     !has(p, "Séssil") &&
     (captureUnlocked(state, p) || contactCaptureUnlocked(p))
