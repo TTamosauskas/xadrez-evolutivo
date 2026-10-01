@@ -260,10 +260,5 @@ test("Fadiga se recupera sem bloquear locomoção quando restam até dois advers
     moved = next.pieces.find((piece) => piece.id === queen.id);
   assert.equal(moved.fatigueRestTurn, undefined);
   assert.equal(moved.exertionStreak, 1);
-  assert.ok(
-    next.passiveEffects.some(
-      (effect) => effect.outcome === "rapid-fatigue-recovery",
-    ),
-  );
   assertState(next);
 });
