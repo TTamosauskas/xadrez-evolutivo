@@ -175,6 +175,88 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
   },
 });
 
+
+export const EARTH_ARTHROPOD_FOUNDER_GENOMES = Object.freeze({
+  cambrian: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Biomineralização", "Carapaça", "Carnívoro", "Esclerotização"],
+    rank: 1,
+  },
+  ordovician: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Carnívoro", "Carapaça", "Camuflagem", "Toxicidade", "Ovíparo", "Sistema Adipocinético"],
+    rank: 2,
+  },
+  silurian: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Carnívoro", "Mandíbula", "Carapaça", "Sistema Adipocinético"],
+    rank: 2,
+  },
+  devonian: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Carnívoro", "Mandíbula", "Peçonha", "Extremotolerância", "Sistema Adipocinético"],
+    rank: 2,
+  },
+  carboniferous: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Onívoro", "Voo", "Ooteca", "Metamorfose", "Esclerotização"],
+    rank: 2,
+  },
+  permian: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Carnívoro", "Metamorfose", "Esclerotização", "Extremotolerância", "Movimento Lateral"],
+    rank: 2,
+  },
+  triassic: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Carnívoro", "Metamorfose", "Parasitoidismo", "Teia", "Esclerotização"],
+    rank: 2,
+  },
+  jurassic: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Carnívoro", "Metamorfose", "Forésia", "Matrifagia", "Teia", "Esclerotização"],
+    rank: 2,
+  },
+  cretaceous: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Carnívoro", "Incubação", "Sociabilidade", "Eusocialidade", "Metamorfose", "Hipermetamorfose", "Recrutamento em Massa", "Trilhas"],
+    rank: 2,
+  },
+  paleocene: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Onívoro", "Incubação", "Sociabilidade", "Eusocialidade", "Metamorfose", "Hipermetamorfose", "Recrutamento em Massa", "Ooteca"],
+    rank: 2,
+  },
+  eocene: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Carnívoro", "Eusocialidade", "Metamorfose", "Hipermetamorfose", "Recrutamento em Massa", "Caça Cooperativa", "Ooteca"],
+    rank: 2,
+  },
+  oligocene: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Onívoro", "Eusocialidade", "Metamorfose", "Recrutamento em Massa", "Superorganismo", "Trilhas", "Ooteca"],
+    rank: 2,
+  },
+  miocene: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Herbívoro", "Eusocialidade", "Metamorfose", "Recrutamento em Massa", "Superorganismo", "Trilhas", "Extremotolerância"],
+    rank: 2,
+  },
+  pliocene: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Onívoro", "Eusocialidade", "Metamorfose", "Hipermetamorfose", "Recrutamento em Massa", "Superorganismo", "Trilhas"],
+    rank: 2,
+  },
+  pleistocene: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Onívoro", "Eusocialidade", "Metamorfose", "Hipermetamorfose", "Recrutamento em Massa", "Superorganismo", "Trilhas", "Ooteca"],
+    rank: 2,
+  },
+  holocene: {
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Percepção Espacial", "Ovíparo", "Onívoro", "Eusocialidade", "Metamorfose", "Hipermetamorfose", "Recrutamento em Massa", "Superorganismo", "Trilhas", "Ooteca"],
+    rank: 2,
+  },
+});
+
+export const EARTH_CAMBRIAN_VERTEBRATE_FOUNDER = Object.freeze({
+  animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Vertebrado", "Locomoção Articulada", "Percepção Espacial"],
+  rank: 0,
+});
+
+export function earthBodyPlanFounder(stageId, bodyPlan) {
+  if (bodyPlan === "Artrópode")
+    return EARTH_ARTHROPOD_FOUNDER_GENOMES[stageId] ?? null;
+  if (bodyPlan !== "Vertebrado") return null;
+  if (stageId === "cambrian") return EARTH_CAMBRIAN_VERTEBRATE_FOUNDER;
+  const profile = EARTH_FOUNDER_GENOMES[stageId];
+  return profile?.animal?.includes("Vertebrado") ? profile : null;
+}
+
 const EARTH_SHARED_FOUNDER_MILESTONES = Object.freeze([
   { trait: "Biofilme", debut: "paleoarchean", activeFrom: "mesoarchean", activeThrough: "orosirian" },
   { trait: "Fixação de Nitrogênio", debut: "mesoarchean", activeFrom: "neoarchean", activeThrough: "rhyacian" },
