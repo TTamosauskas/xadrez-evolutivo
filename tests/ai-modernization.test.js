@@ -120,6 +120,14 @@ test("capture geometry gains extra weight in late stalled positions", () => {
   const state = fixture([
       { owner: "blue", r: 4, c: 4, rank: 3 },
       { owner: "amber", r: 1, c: 5, rank: 0 },
+      { owner: "blue", r: 7, c: 0 },
+      { owner: "blue", r: 7, c: 1 },
+      { owner: "blue", r: 7, c: 2 },
+      { owner: "blue", r: 7, c: 3 },
+      { owner: "amber", r: 0, c: 0 },
+      { owner: "amber", r: 0, c: 1 },
+      { owner: "amber", r: 0, c: 2 },
+      { owner: "amber", r: 0, c: 3 },
     ], 9402),
     rook = state.pieces[0],
     action = { type: "MOVE", id: rook.id, r: 4, c: 5 };
