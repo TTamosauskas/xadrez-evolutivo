@@ -54,6 +54,7 @@ import { context } from "../src/engine.js";
 import { tickEnvironment } from "../src/environment.js";
 import {
   EARTH_FOUNDER_GENOMES,
+  earthBodyPlanFounder,
   earthFounderHistory,
   earthFounderPersistentTraits,
 } from "../src/scenarios.js";
@@ -201,8 +202,12 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
     for (const branch of ["plant", "animal"]) {
       const piece = branchPieces[branch],
         preferred = branch === "plant" ? "Fotossíntese" : "Predação",
+        canonicalPreset =
+          branch === "animal"
+            ? earthBodyPlanFounder(id, "Vertebrado") ?? preset
+            : preset,
         inherited = [
-          ...(preset[branch] ?? []),
+          ...(canonicalPreset[branch] ?? []),
           ...earthFounderPersistentTraits(id),
           ...(index > repairIndex ? ["Reparo Celular"] : []),
           ...(branch === "animal" && index > bilateralIndex
@@ -231,13 +236,41 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
                 trait !== "Fotossíntese" &&
                 !PLANT_DERIVED_TRAITS.has(trait);
         },
+        canonicalBodyPlan =
+          branch === "animal"
+            ? canonicalPreset.animal?.includes("Artrópode")
+              ? "Artrópode"
+              : canonicalPreset.animal?.includes("Vertebrado")
+                ? "Vertebrado"
+                : null
+            : null,
+        oppositeBodyPlan =
+          canonicalBodyPlan === "Vertebrado"
+            ? "Artrópode"
+            : canonicalBodyPlan === "Artrópode"
+              ? "Vertebrado"
+              : null,
+        bodyPlanAppropriate = (trait) => {
+          if (!oppositeBodyPlan) return true;
+          const dependencies = TRAIT_DEPENDENCIES[trait] ?? {};
+          return (
+            trait !== oppositeBodyPlan &&
+            !(dependencies.lineage ?? []).includes(oppositeBodyPlan) &&
+            !(dependencies.active ?? []).includes(oppositeBodyPlan) &&
+            !(
+              dependencies.lineageAny?.includes(oppositeBodyPlan) &&
+              !dependencies.lineageAny?.includes(canonicalBodyPlan)
+            )
+          );
+        },
         allPriorTraits = Object.entries(TRAIT_STAGE)
           .filter(
             ([, debut]) =>
               stageIndex.get(debut) < index,
           )
           .map(([trait]) => trait)
-          .filter(appropriate);
+          .filter(appropriate)
+          .filter(bodyPlanAppropriate);
 
       assert.deepEqual(
         [...piece.traits].sort(),

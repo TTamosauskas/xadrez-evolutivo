@@ -26,6 +26,7 @@ import {
   PLANT_INCOMPATIBLE_TRAITS,
   TRAIT_BRANCH_SCOPE,
   TRAIT_STAGE,
+  TRAIT_DEPENDENCIES,
   recordHistoricalTraits,
   stageComplete,
   traitCombinationValid,
@@ -53,6 +54,7 @@ import {
   EARTH_FOUNDER_GENOMES,
   earthFounderHistory,
   earthFounderPersistentTraits,
+  earthBodyPlanFounder,
   validScenario,
 } from "./scenarios.js";
 import {
@@ -1515,6 +1517,52 @@ function earthFounderRecessives(historicalTraits, activeTraits, plant) {
     .slice(-2);
 }
 
+
+function bodyPlanTraitCompatible(trait, bodyPlan) {
+  const opposite = bodyPlan === "Vertebrado" ? "Artrópode" : "Vertebrado";
+  if (trait === opposite) return false;
+  const dependencies = TRAIT_DEPENDENCIES[trait] ?? {};
+  if ((dependencies.lineage ?? []).includes(opposite)) return false;
+  if (
+    dependencies.lineageAny?.length &&
+    dependencies.lineageAny.includes(opposite) &&
+    !dependencies.lineageAny.includes(bodyPlan)
+  )
+    return false;
+  return true;
+}
+
+function bodyPlanFounderProfile(stageIndex, stageId, bodyPlan, persistent, inheritedRepair, inheritedBilateral) {
+  const curated = earthBodyPlanFounder(stageId, bodyPlan);
+  if (!curated) return null;
+  const activeSeed = [
+      ...new Set([
+        ...(curated.animal ?? []),
+        ...persistent,
+        ...inheritedRepair,
+        ...inheritedBilateral,
+      ]),
+    ].filter((trait) => bodyPlanTraitCompatible(trait, bodyPlan)),
+    traits = normalizeActiveTraits(activeSeed, "Predação"),
+    ancestry = [
+      ...new Set([
+        ...earthFounderLegacyTraits(stageIndex, "Predação"),
+        ...earthFounderHistory(stageId, "animal"),
+        ...traits,
+      ]),
+    ].filter(
+      (trait) =>
+        earthFounderTraitCompatible(trait, "Predação") &&
+        bodyPlanTraitCompatible(trait, bodyPlan),
+    );
+  return {
+    rank: curated.rank ?? 0,
+    traits,
+    ancestry,
+    recessiveTraits: earthFounderRecessives(ancestry, traits, false),
+  };
+}
+
 function previewFounderProfiles(stageIndex) {
   const stage = GEOLOGICAL_STAGES[stageIndex],
     curated = EARTH_FOUNDER_GENOMES[stage?.id],
@@ -1552,6 +1600,22 @@ function previewFounderProfiles(stageIndex) {
       ],
       plantTraits = normalizeActiveTraits(curatedPlant, "Fotossíntese"),
       animalTraits = normalizeActiveTraits(curatedAnimal, "Predação"),
+      vertebrateFounder = bodyPlanFounderProfile(
+        stageIndex,
+        stage.id,
+        "Vertebrado",
+        persistent,
+        inheritedRepair,
+        inheritedBilateral,
+      ),
+      arthropodFounder = bodyPlanFounderProfile(
+        stageIndex,
+        stage.id,
+        "Artrópode",
+        persistent,
+        inheritedRepair,
+        inheritedBilateral,
+      ),
       plantAncestry = [
         ...new Set([
           ...earthFounderLegacyTraits(stageIndex, "Fotossíntese"),
@@ -1599,6 +1663,13 @@ function previewFounderProfiles(stageIndex) {
           false,
         ),
       },
+      bodyPlans:
+        vertebrateFounder && arthropodFounder
+          ? {
+              Vertebrado: vertebrateFounder,
+              Artrópode: arthropodFounder,
+            }
+          : null,
     };
   }
   const historicalTraits = GEOLOGICAL_STAGES.slice(0, stageIndex).flatMap(
@@ -1679,6 +1750,19 @@ export function createPeriodState(
         (sum, stage) => sum + (stage.cycles?.length ?? 1),
         0,
       );
+  const bodyPlans = preview.bodyPlans;
+  let ownerFounders = null;
+  if (bodyPlans) {
+    const bluePlan =
+        scenario === "alternative" && ((Number(seed) >>> 0) & 1)
+          ? "Artrópode"
+          : "Vertebrado",
+      amberPlan = bluePlan === "Vertebrado" ? "Artrópode" : "Vertebrado";
+    ownerFounders = {
+      blue: { primary: preview.primary, companion: bodyPlans[bluePlan] },
+      amber: { primary: preview.primary, companion: bodyPlans[amberPlan] },
+    };
+  }
   return createState(seed, {
     scenario,
     geologicalStage: normalizedStage,
@@ -1687,6 +1771,7 @@ export function createPeriodState(
     historicalTraits: preview.historicalTraits,
     discoveries,
     founders: { primary: preview.primary, companion: preview.companion },
+    ownerFounders,
     canonicalPair: true,
   });
 }
@@ -2165,6 +2250,49 @@ function earthBranchFounder(previous, branch, fallback) {
   );
 }
 
+
+function ownerBranchFounder(previous, owner, branch, fallback, bodyPlan = null) {
+  const photosynthetic = branch === "Fotossíntese",
+    predicate = photosynthetic
+      ? (piece) => piece.owner === owner && canPhotosynthesize(piece)
+      : (piece) =>
+          piece.owner === owner &&
+          !canPhotosynthesize(piece) &&
+          (piece.traits ?? []).includes("Predação") &&
+          (!bodyPlan || (piece.traits ?? []).includes(bodyPlan)),
+    survivor = strongestSurvivor(previous, owner, predicate).piece,
+    extinctionFounder = previous.result?.extinctionFounder ?? null,
+    extinctMatch =
+      extinctionFounder &&
+      extinctionFounder.owner === owner &&
+      predicate(extinctionFounder)
+        ? extinctionFounder
+        : null,
+    remembered = photosynthetic
+      ? previous.energyBranchRepresentatives?.Fotossíntese ?? null
+      : previous.energyBranchRepresentatives?.Predação ?? null,
+    rememberedMatch =
+      remembered && predicate({ ...remembered, owner }) ? remembered : null;
+  return (
+    founderProfile(previous, survivor ?? extinctMatch ?? rememberedMatch) ??
+    fallback
+  );
+}
+
+function ownerBodyPlan(previous, owner) {
+  const animal = strongestSurvivor(
+    previous,
+    owner,
+    (piece) =>
+      piece.owner === owner &&
+      !canPhotosynthesize(piece) &&
+      (piece.traits ?? []).includes("Predação"),
+  ).piece;
+  if (animal?.traits?.includes("Artrópode")) return "Artrópode";
+  if (animal?.traits?.includes("Vertebrado")) return "Vertebrado";
+  return null;
+}
+
 function createEarthSuccessorState(previous, seed) {
   const priorStage = currentGeologicalStage(previous),
     candidate = stageComplete(previous)
@@ -2180,6 +2308,7 @@ function createEarthSuccessorState(previous, seed) {
       (stage) => stage.id === candidate.id,
     ),
     preview = previewFounderProfiles(stageIndex),
+    bodyPlans = preview.bodyPlans,
     primary = advanced
       ? preview.primary
       : earthBranchFounder(previous, "Fotossíntese", preview.primary),
@@ -2187,6 +2316,48 @@ function createEarthSuccessorState(previous, seed) {
       ? preview.companion
       : earthBranchFounder(previous, "Predação", preview.companion),
     founders = { primary, companion },
+    ownerFounders = bodyPlans
+      ? {
+          blue: {
+            primary: advanced
+              ? preview.primary
+              : ownerBranchFounder(
+                  previous,
+                  "blue",
+                  "Fotossíntese",
+                  preview.primary,
+                ),
+            companion: advanced
+              ? bodyPlans.Vertebrado
+              : ownerBranchFounder(
+                  previous,
+                  "blue",
+                  "Predação",
+                  bodyPlans.Vertebrado,
+                  "Vertebrado",
+                ),
+          },
+          amber: {
+            primary: advanced
+              ? preview.primary
+              : ownerBranchFounder(
+                  previous,
+                  "amber",
+                  "Fotossíntese",
+                  preview.primary,
+                ),
+            companion: advanced
+              ? bodyPlans.Artrópode
+              : ownerBranchFounder(
+                  previous,
+                  "amber",
+                  "Predação",
+                  bodyPlans.Artrópode,
+                  "Artrópode",
+                ),
+          },
+        }
+      : null,
     state = createState(seed, {
       scenario: "earth",
       geologicalStage: candidate.id,
@@ -2211,6 +2382,7 @@ function createEarthSuccessorState(previous, seed) {
       sexualPathogenUnlockTotalCycle:
         previous.sexualPathogenUnlockTotalCycle ?? null,
       founders,
+      ownerFounders,
       canonicalPair: true,
     });
   log(
@@ -2344,6 +2516,46 @@ export function createSuccessorState(previous, seed = Date.now()) {
       founderProfile(previous, nonPhotosyntheticSource) ??
       previewNonPhotosynthetic,
     founders = { primary: founder, companion },
+    bodyPlans = preview.bodyPlans,
+    priorBluePlan = ownerBodyPlan(previous, "blue"),
+    bluePlan =
+      priorBluePlan ??
+      (((Number(seed) >>> 0) & 1) ? "Artrópode" : "Vertebrado"),
+    amberPlan = bluePlan === "Vertebrado" ? "Artrópode" : "Vertebrado",
+    alternativeOwnerFounders = bodyPlans
+      ? {
+          blue: {
+            primary: ownerBranchFounder(
+              previous,
+              "blue",
+              "Fotossíntese",
+              preview.primary,
+            ),
+            companion: ownerBranchFounder(
+              previous,
+              "blue",
+              "Predação",
+              bodyPlans[bluePlan],
+              bluePlan,
+            ),
+          },
+          amber: {
+            primary: ownerBranchFounder(
+              previous,
+              "amber",
+              "Fotossíntese",
+              preview.primary,
+            ),
+            companion: ownerBranchFounder(
+              previous,
+              "amber",
+              "Predação",
+              bodyPlans[amberPlan],
+              amberPlan,
+            ),
+          },
+        }
+      : null,
     advanced = candidate.id !== priorStage.id,
     geologicalStage = candidate.id,
     cycle = advanced ? 1 : previous.cycle + 1,
@@ -2367,6 +2579,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       previous.sexualPathogenUnlockTotalCycle ?? null,
     founder,
     founders,
+    ownerFounders: alternativeOwnerFounders,
     canonicalPair: true,
   });
   if (companion)

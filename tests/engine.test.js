@@ -3636,6 +3636,7 @@ test("mass extinction starts a new Era from the strongest surviving forms", () =
   assert.equal(next.nextEventGeneration, 4);
   assert.equal(next.pieces.length, 4);
 
+  const bodyPlans = new Set();
   for (const owner of ["blue", "amber"]) {
     const founders = next.pieces.filter((piece) => piece.owner === owner),
       photosynthetic = founders.filter((piece) =>
@@ -3647,11 +3648,14 @@ test("mass extinction starts a new Era from the strongest surviving forms", () =
     assert.equal(founders.length, 2);
     assert.equal(photosynthetic.length, 1);
     assert.equal(nonPhotosynthetic.length, 1);
-    assert.equal(nonPhotosynthetic[0].rank, 5);
-    assert.ok(nonPhotosynthetic[0].traits.includes("Onívoro"));
     assert.equal(nonPhotosynthetic[0].generation, 0);
     assert.equal(nonPhotosynthetic[0].mutations, 0);
+    if (nonPhotosynthetic[0].traits.includes("Vertebrado"))
+      bodyPlans.add("Vertebrado");
+    if (nonPhotosynthetic[0].traits.includes("Artrópode"))
+      bodyPlans.add("Artrópode");
   }
+  assert.deepEqual(bodyPlans, new Set(["Vertebrado", "Artrópode"]));
 
   const canonicalPool = new Set(
     CANONICAL_FOUNDER_CELLS.map(({ r, c }) => `${r},${c}`),

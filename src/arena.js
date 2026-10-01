@@ -41,6 +41,15 @@ export const ARENA_TRAIT_LIMITS = Object.freeze(
   Object.fromEntries(ARENA_BRANCHES.map((branch) => [branch.id, branch.limit])),
 );
 export const ARENA_RANKS = Object.freeze([0, 1, 2, 3, 4, 5]);
+export const ARENA_BODY_PLANS = Object.freeze(["Vertebrado", "Artrópode"]);
+export const oppositeArenaBodyPlan = (bodyPlan) =>
+  bodyPlan === "Vertebrado" ? "Artrópode" : "Vertebrado";
+export const arenaBodyPlan = (genome = []) =>
+  genome.includes("Artrópode")
+    ? "Artrópode"
+    : genome.includes("Vertebrado")
+      ? "Vertebrado"
+      : null;
 const ARENA_BRANCH_RANK_VALUES = Object.freeze({
   animal: Object.freeze([1, 3, 4, 5, 2, 6]),
   plant: Object.freeze([1, 3, 3, 5, 100, 9]),
@@ -139,7 +148,23 @@ export function arenaTraitBranch(trait) {
   );
 }
 
-export function arenaSelectableTraits(branchId = null) {
+function arenaTraitAllowedForBodyPlan(trait, bodyPlan) {
+  if (!bodyPlan) return true;
+  const opposite = oppositeArenaBodyPlan(bodyPlan),
+    dependencies = TRAIT_DEPENDENCIES[trait] ?? {};
+  if (trait === opposite) return false;
+  if ((dependencies.lineage ?? []).includes(opposite)) return false;
+  if ((dependencies.active ?? []).includes(opposite)) return false;
+  if (
+    dependencies.lineageAny?.length &&
+    dependencies.lineageAny.includes(opposite) &&
+    !dependencies.lineageAny.includes(bodyPlan)
+  )
+    return false;
+  return true;
+}
+
+export function arenaSelectableTraits(branchId = null, bodyPlan = null) {
   const branch = ARENA_BRANCHES.find((candidate) => candidate.id === branchId);
   return Object.keys(TRAITS).filter((trait) => {
     if (
@@ -149,9 +174,12 @@ export function arenaSelectableTraits(branchId = null) {
       ARENA_BRANCH_EXCLUSIONS.has(trait)
     )
       return false;
-    if (!branch) return true;
+    if (!branch) return arenaTraitAllowedForBodyPlan(trait, bodyPlan);
     const scope = arenaTraitBranch(trait);
-    return scope === "shared" || scope === branch.scope;
+    return (
+      (scope === "shared" || scope === branch.scope) &&
+      (branch.id !== "animal" || arenaTraitAllowedForBodyPlan(trait, bodyPlan))
+    );
   });
 }
 
@@ -475,17 +503,29 @@ function arenaLegacyForGenome(branchId, genome) {
   return [];
 }
 
-export function randomArenaSide(seed = Date.now()) {
+export function randomArenaSide(seed = Date.now(), requiredBodyPlan = null) {
   const random = lcg(seed);
   return ARENA_BRANCHES.map((branch) => {
-    const pool = archetypePool(branch.id);
-    return pool[Math.floor(random() * pool.length)] ?? completeArenaBranchGenome([], branch.id);
+    let pool = archetypePool(branch.id);
+    if (branch.id === "animal" && requiredBodyPlan)
+      pool = pool.filter(
+        (genome) => arenaBodyPlan(genome) === requiredBodyPlan,
+      );
+    return (
+      pool[Math.floor(random() * pool.length)] ??
+      completeArenaBranchGenome(
+        branch.id === "animal" && requiredBodyPlan
+          ? [requiredBodyPlan]
+          : [],
+        branch.id,
+      )
+    );
   });
 }
 
-export function randomArenaSetupSide(seed = Date.now()) {
+export function randomArenaSetupSide(seed = Date.now(), requiredBodyPlan = null) {
   const random = lcg(seed),
-    genomes = randomArenaSide(seed);
+    genomes = randomArenaSide(seed, requiredBodyPlan);
   return {
     genomes,
     legacies: genomes.map((genome, index) =>
@@ -516,10 +556,17 @@ function counterScore(genome, opponentGenomes) {
   return score;
 }
 
-function adaptSetupGenome(genome, branchId, opponentGenomes) {
+function adaptSetupGenome(
+  genome,
+  branchId,
+  opponentGenomes,
+  requiredBodyPlan = null,
+) {
   let result = completeArenaBranchGenome(genome, branchId);
   const wanted = counterTargets(opponentGenomes)
-    .filter(({ trait }) => arenaSelectableTraits(branchId).includes(trait))
+    .filter(({ trait }) =>
+      arenaSelectableTraits(branchId, requiredBodyPlan).includes(trait),
+    )
     .sort((a, b) => b.weight - a.weight)
     .map(({ trait }) => trait);
   for (const trait of wanted) {
@@ -539,13 +586,24 @@ export function arenaAISide(
   difficulty = "medium",
   opponentGenomes = null,
   seed = Date.now(),
+  requiredBodyPlan = null,
 ) {
-  if (difficulty === "easy") return randomArenaSide(seed);
+  if (difficulty === "easy")
+    return randomArenaSide(seed, requiredBodyPlan);
   if (difficulty === "hard" && opponentGenomes?.length) {
     return ARENA_BRANCHES.map((branch) => {
-      const pool = archetypePool(branch.id),
-        candidates = pool.map((genome, index) => {
-          const adapted = adaptSetupGenome(genome, branch.id, opponentGenomes);
+      let pool = archetypePool(branch.id);
+      if (branch.id === "animal" && requiredBodyPlan)
+        pool = pool.filter(
+          (genome) => arenaBodyPlan(genome) === requiredBodyPlan,
+        );
+      const candidates = pool.map((genome, index) => {
+          const adapted = adaptSetupGenome(
+            genome,
+            branch.id,
+            opponentGenomes,
+            branch.id === "animal" ? requiredBodyPlan : null,
+          );
           return {
             genome: adapted,
             index,
@@ -559,12 +617,30 @@ export function arenaAISide(
             b.score - a.score ||
             b.breadth - a.breadth ||
             a.index - b.index,
-        )[0]?.genome ?? completeArenaBranchGenome([], branch.id);
+        )[0]?.genome ??
+        completeArenaBranchGenome(
+          branch.id === "animal" && requiredBodyPlan
+            ? [requiredBodyPlan]
+            : [],
+          branch.id,
+        );
     });
   }
   return ARENA_BRANCHES.map((branch, index) => {
-    const pool = archetypePool(branch.id);
-    return pool[((seed >>> 0) + index * 7) % pool.length];
+    let pool = archetypePool(branch.id);
+    if (branch.id === "animal" && requiredBodyPlan)
+      pool = pool.filter(
+        (genome) => arenaBodyPlan(genome) === requiredBodyPlan,
+      );
+    return (
+      pool[((seed >>> 0) + index * 7) % Math.max(1, pool.length)] ??
+      completeArenaBranchGenome(
+        branch.id === "animal" && requiredBodyPlan
+          ? [requiredBodyPlan]
+          : [],
+        branch.id,
+      )
+    );
   });
 }
 
@@ -572,10 +648,17 @@ export function arenaAISideSetup(
   difficulty = "medium",
   opponentSetup = null,
   seed = Date.now(),
+  requiredBodyPlan = null,
 ) {
-  if (difficulty === "easy") return randomArenaSetupSide(seed);
+  if (difficulty === "easy")
+    return randomArenaSetupSide(seed, requiredBodyPlan);
   const opponentGenomes = opponentSetup?.genomes ?? opponentSetup ?? null,
-    genomes = arenaAISide(difficulty, opponentGenomes, seed),
+    genomes = arenaAISide(
+      difficulty,
+      opponentGenomes,
+      seed,
+      requiredBodyPlan,
+    ),
     ranks = genomes.map((genome, index) => {
       const branch = ARENA_BRANCHES[index],
         allowed = arenaAllowedRanks(genome, branch.id);
