@@ -1311,7 +1311,7 @@ function recordPhotosynthesis(state, owner) {
         emitPassiveEffect(
           state,
           "Xerofitismo",
-          "🌵 Reserva hídrica acelerou a Fotossíntese em até duas rodadas.",
+          "🌞 Reserva hídrica acelerou a Fotossíntese em até duas rodadas.",
           {
             pieceId: p.id,
             outcome: "water-reserve-accelerated-photosynthesis",
