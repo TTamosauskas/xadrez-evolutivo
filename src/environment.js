@@ -1641,18 +1641,24 @@ export function checkPopulationClimate(ctx) {
   }
   if (!level || severeEventActive(state)) return false;
 
+  let pressureStarted = false;
   if (
     !state.populationTerrainPressure ||
     state.populationTerrainPressure.level !== level
-  )
+  ) {
     state.populationTerrainPressure = {
       level,
       startedRound: now,
-      lastAppliedRound: Math.max(0, now - 3),
+      lastAppliedRound: now,
     };
+    pressureStarted = true;
+  }
 
   let acted = false;
-  if (now - state.populationTerrainPressure.lastAppliedRound >= 3) {
+  if (
+    pressureStarted ||
+    now - state.populationTerrainPressure.lastAppliedRound >= 3
+  ) {
     applyPopulationTerrainPressure(ctx, level);
     state.populationTerrainPressure.lastAppliedRound = now;
     log(
