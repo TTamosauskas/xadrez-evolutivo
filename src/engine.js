@@ -690,7 +690,13 @@ export function hostileHazardKills(state, piece, normalHostile = false) {
   const severeHazard =
       severeEventActive(state) &&
       (state.event?.hazards ?? []).includes(square(piece.r, piece.c)),
-    baseRisk = severeHazard ? 2 / 3 : 1 / 2;
+    stalledRounds = Math.max(
+      0,
+      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+    ),
+    severeRisk =
+      stalledRounds >= 30 ? 5 / 6 : stalledRounds >= 18 ? 3 / 4 : 2 / 3,
+    baseRisk = severeHazard ? severeRisk : 1 / 2;
   if (random(state) >= baseRisk) return false;
   if (
     normalHostile &&
@@ -5340,26 +5346,18 @@ function resolveParasitism(ctx, action) {
     );
   if (!canParasitize(state, p)) throw Error("Parasitismo indisponível.");
 
-  if (Number.isInteger(action.targetId)) {
-    const target = parasitismTargets(state, p).find(
-      (candidate) => candidate.id === action.targetId,
-    );
-    if (!target)
-      throw Error("Escolha uma criatura adversária adjacente para o Parasitismo.");
-    state.board[square(target.r, target.c)] = "hostile";
-    log(
-      state,
-      `${OWNERS[p.owner]}: 🪱 Parasitismo atacou o habitat em ${coord(target.r, target.c)}.`,
-    );
-  } else {
-    if (!canParasitizeSelf(state, p))
-      throw Error("A própria casa não pode ser fertilizada por Parasitismo.");
-    state.board[square(p.r, p.c)] = "fertile";
-    log(
-      state,
-      `${OWNERS[p.owner]}: 🪱 Parasitismo tornou ${coord(p.r, p.c)} fértil.`,
-    );
-  }
+  if (!Number.isInteger(action.targetId))
+    throw Error("Escolha uma criatura adversária adjacente para o Parasitismo.");
+  const target = parasitismTargets(state, p).find(
+    (candidate) => candidate.id === action.targetId,
+  );
+  if (!target)
+    throw Error("Escolha uma criatura adversária adjacente para o Parasitismo.");
+  state.board[square(target.r, target.c)] = "hostile";
+  log(
+    state,
+    `${OWNERS[p.owner]}: 🪱 Parasitismo atacou o habitat em ${coord(target.r, target.c)}.`,
+  );
 
   advanceTurn(ctx);
   settle(ctx);
