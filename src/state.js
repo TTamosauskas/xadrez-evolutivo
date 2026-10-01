@@ -1340,6 +1340,7 @@ export function createState(seed = Date.now(), options = {}) {
     generationOffset: options.generationOffset ?? 0,
     maxGenerationReached: 0,
     nextHabitatGeneration: 3,
+    nextHabitatRound: options.nextHabitatRound ?? 5,
     nextEventGeneration: 4,
     pendingEcologicalEvents: 0,
     conwayWatchUntil: null,
@@ -1376,6 +1377,9 @@ export function createState(seed = Date.now(), options = {}) {
     populationLatched: { blue: false, amber: false },
     populationDiseaseCooldownUntil: 0,
     severePopulationLatched: false,
+    populationTerrainPressure: options.populationTerrainPressure
+      ? { ...options.populationTerrainPressure }
+      : null,
     ecologicalDomain: createEcologicalDomain(),
     result: null,
   };
@@ -2697,6 +2701,10 @@ export function assertState(state) {
     !integer(state.generationOffset) ||
     !integer(state.maxGenerationReached) ||
     !integer(state.nextHabitatGeneration, 3) ||
+    !(
+      state.nextHabitatRound === undefined ||
+      integer(state.nextHabitatRound, 0)
+    ) ||
     !integer(state.nextEventGeneration, 4) ||
     !integer(state.pendingEcologicalEvents) ||
     !(
@@ -2720,6 +2728,13 @@ export function assertState(state) {
     ) ||
     !integer(state.populationDiseaseCooldownUntil, 0) ||
     typeof state.severePopulationLatched !== "boolean" ||
+    !(
+      state.populationTerrainPressure === undefined ||
+      state.populationTerrainPressure === null ||
+      (integer(state.populationTerrainPressure?.startedRound, 0) &&
+        integer(state.populationTerrainPressure?.lastAppliedRound, 0) &&
+        integer(state.populationTerrainPressure?.level, 1, 2))
+    ) ||
     !Array.isArray(state.seen) ||
     !Array.isArray(state.seenMutations) ||
     state.seenMutations.some((m) => typeof m !== "string") ||

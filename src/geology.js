@@ -1912,6 +1912,14 @@ export function aquaticTerrainCell(stateOrStage, r, c) {
   return c < 3 || (c === 3 && SILURIAN_SHORE_FERTILE_ROWS.has(r));
 }
 
+export function cellularTerrainUnlocked(stateOrStage) {
+  const stage =
+    typeof stateOrStage === "string"
+      ? geologicalStage(stateOrStage)
+      : currentGeologicalStage(stateOrStage);
+  return stage.index >= geologicalStage("eoarchean").index;
+}
+
 export function conwayUnlocked(stateOrStage) {
   const stage =
     typeof stateOrStage === "string"

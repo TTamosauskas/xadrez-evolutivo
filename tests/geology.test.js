@@ -737,7 +737,7 @@ test("Eoarchean starts on its volcanic-ocean custom board", () => {
   assert.ok(state.pieces.every((piece) => !lethalHazardAt(state, piece.r, piece.c)));
   assertState(state);
 });
-test("Silurian is a stable coast and Devonian starts Conway terrain evolution", () => {
+test("Silurian keeps coastal fertility while cellular terrain begins before Devonian", () => {
   const s = createPeriodState("silurian", 1201, null, "earth"),
     shoreFertileRows = new Set([0, 2, 5, 7]);
 
@@ -795,18 +795,31 @@ test("Silurian is a stable coast and Devonian starts Conway terrain evolution", 
   assert.equal(restoreAquaticFertility(s), 1);
   assert.equal(s.board[waterCell], "fertile");
 
-  s.maxGenerationReached = 3;
-  const before = [...s.board],
-    nextHabitat = s.nextHabitatGeneration;
+  const silurianFertileBefore = s.board
+      .map((terrain, cell) => (terrain === "fertile" ? cell : null))
+      .filter((cell) => cell !== null),
+    silurianHostileCount = s.board.filter(
+      (terrain) => terrain === "hostile",
+    ).length;
+  s.turn = 10;
   tickEnvironment(context(s));
-  assert.deepEqual(s.board, before);
-  assert.equal(s.nextHabitatGeneration, nextHabitat);
+  assert.deepEqual(
+    s.board
+      .map((terrain, cell) => (terrain === "fertile" ? cell : null))
+      .filter((cell) => cell !== null),
+    silurianFertileBefore,
+  );
+  assert.equal(
+    s.board.filter((terrain) => terrain === "hostile").length,
+    silurianHostileCount,
+  );
+  assert.equal(s.nextHabitatRound, 10);
 
-  const d = createPeriodState("devonian", 1202, null, "earth");
-  d.maxGenerationReached = 3;
-  const devonianNext = d.nextHabitatGeneration;
+  const d = createPeriodState("devonian", 1202, null, "earth"),
+    devonianNext = d.nextHabitatRound;
+  d.turn = 10;
   tickEnvironment(context(d));
-  assert.equal(d.nextHabitatGeneration, devonianNext + 2);
+  assert.equal(d.nextHabitatRound, devonianNext + 5);
   assertState(s);
   assertState(d);
 });
