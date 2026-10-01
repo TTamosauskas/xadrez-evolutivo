@@ -103,6 +103,7 @@ const WAIT_STATUS_LABELS = Object.freeze({
   "Sobrecarga por Neurodivergência": "sobrecarga",
   "Intoxicação por Toxicidade": "intoxicação",
   Fadiga: "fadiga locomotora",
+  Hibernação: "hibernação",
   "Descanso por Mutação Disfuncional": "mutação disfuncional",
   "Dormência em terreno hostil": "dormência em terreno hostil",
   "Maturidade sexual": "maturidade sexual",
@@ -1381,6 +1382,11 @@ export function render(
         )
           statusBadges.push("🥵");
         if (p.sleepingThroughTurn === state.turn) statusBadges.push("😴");
+        if (
+          Number.isInteger(p.hibernationUntilTurn) &&
+          p.hibernationUntilTurn > state.turn
+        )
+          statusBadges.push(`🧸${p.hibernationUntilTurn - state.turn}`);
         if (p.webTrapped) statusBadges.push("🕸️⏳");
         if (p.autotomyRecovery) statusBadges.push("✂️↻");
         if (
@@ -1574,6 +1580,13 @@ export function render(
           piece.restorativeSleepCharge,
       )
         ? { marker: "😴", label: "Sono reparador · próximo esforço não conta para Fadiga" }
+        : null,
+      state.pieces.some(
+        (piece) =>
+          Number.isInteger(piece.hibernationUntilTurn) &&
+          piece.hibernationUntilTurn > state.turn,
+      )
+        ? { marker: "🧸", label: "Hibernação · torpor protegido e não capturável" }
         : null,
       boardElement.querySelector(".piece-pathogen-infection")
         ? {
