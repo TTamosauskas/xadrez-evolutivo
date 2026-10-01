@@ -232,7 +232,7 @@ test("Lactação spends the turn to mature an adjacent juvenile child", () => {
   assertState(afterOpponent);
 });
 
-test("Canibalismo captures an allied piece and replaces it with exactly one juvenile descendant", () => {
+test("Canibalismo consome um aliado e reduz a população sem gerar prole", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -254,22 +254,22 @@ test("Canibalismo captures an allied piece and replaces it with exactly one juve
 
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === victimId));
-  const children = s.pieces.filter((piece) => piece.parentId === attackerId);
-  assert.equal(children.length, 1);
+  assert.equal(
+    s.pieces.filter((piece) => piece.parentId === attackerId).length,
+    0,
+  );
   assert.equal(
     s.pieces.filter((piece) => piece.owner === "blue").length,
-    2,
+    1,
   );
-  assert.equal(juvenile(s, children[0]), true);
   assert.equal(
     s.pieces.find((piece) => piece.id === attackerId).nextReproductionRound,
-    6,
+    0,
   );
   assert.ok(s.deathSites.some((site) => site.cell === square(4, 4)));
   assertState(s);
 });
-
-test("Canibalismo cannot target allies while juvenile or in reproductive cooldown", () => {
+test("Canibalismo permanece disponível durante cooldown e imaturidade", () => {
   const s = fixture([
       {
         owner: "blue",
@@ -281,23 +281,17 @@ test("Canibalismo cannot target allies while juvenile or in reproductive cooldow
       { owner: "blue", r: 4, c: 4 },
       { owner: "amber", r: 0, c: 0 },
     ]),
-    attacker = s.pieces[0];
+    attacker = s.pieces[0],
+    targetsAlly = () =>
+      movesFor(s, attacker).some(
+        (target) => target.r === 4 && target.c === 4 && target.cannibal,
+      );
 
   attacker.nextReproductionRound = 3;
-  assert.ok(
-    !movesFor(s, attacker).some(
-      (target) => target.r === 4 && target.c === 4,
-    ),
-  );
-  attacker.nextReproductionRound = 0;
+  assert.equal(targetsAlly(), true);
   attacker.maturesRound = 2;
-  assert.ok(
-    !movesFor(s, attacker).some(
-      (target) => target.r === 4 && target.c === 4,
-    ),
-  );
+  assert.equal(targetsAlly(), true);
 });
-
 test("AI prioritizes a photosynthetic prey on fertile terrain", () => {
   const s = fixture([
     {
