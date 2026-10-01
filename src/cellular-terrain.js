@@ -124,33 +124,38 @@ function normalizeMask(
     next.add(rankedAdditions[i]);
   }
 
-  const minimum = Math.max(target, fixed.size);
-  if (next.size > minimum) {
+  const normalizedTarget = Math.max(target, fixed.size),
+    remainingLimit = Number.isFinite(changeLimit)
+      ? Math.max(0, changeLimit - desiredChanges)
+      : Infinity;
+  if (next.size > normalizedTarget) {
     const extra = ranked(
-      state,
-      [...next].filter((cell) => !protectedCells.has(cell)),
-      (cell) =>
-        -preferenceScore(cell, preferred, avoided) -
-        neighborCount(next, cell),
-    );
-    for (const cell of extra) {
-      if (next.size <= minimum) break;
-      next.delete(cell);
-    }
+        state,
+        [...next].filter((cell) => !protectedCells.has(cell)),
+        (cell) =>
+          -preferenceScore(cell, preferred, avoided) -
+          neighborCount(next, cell),
+      ),
+      removeCount = Math.min(
+        next.size - normalizedTarget,
+        remainingLimit,
+      );
+    for (const cell of extra.slice(0, removeCount)) next.delete(cell);
   }
 
-  if (next.size < minimum) {
+  if (next.size < normalizedTarget) {
     const pool = ranked(
-      state,
-      [...eligible].filter((cell) => !next.has(cell)),
-      (cell) =>
-        preferenceScore(cell, preferred, avoided) +
-        neighborCount(next, cell),
-    );
-    for (const cell of pool) {
-      if (next.size >= minimum) break;
-      next.add(cell);
-    }
+        state,
+        [...eligible].filter((cell) => !next.has(cell)),
+        (cell) =>
+          preferenceScore(cell, preferred, avoided) +
+          neighborCount(next, cell),
+      ),
+      addCount = Math.min(
+        normalizedTarget - next.size,
+        remainingLimit,
+      );
+    for (const cell of pool.slice(0, addCount)) next.add(cell);
   }
 
   return next;
