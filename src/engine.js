@@ -3447,18 +3447,6 @@ function executeMove(ctx, action) {
       { pieceId: p.id, outcome: "dispersal-used" },
     );
   }
-  if (target.massRecruitment) {
-    log(
-      state,
-      `${OWNERS[p.owner]}: 📣 Recrutamento em Massa coordenou a captura em ${coord(target.r, target.c)}.`,
-    );
-    emitPassiveEffect(
-      state,
-      "Recrutamento em Massa",
-      "📣 Recrutamento em Massa ampliou o alcance da captura.",
-      { pieceId: p.id, outcome: "collective-capture" },
-    );
-  }
   if (!target.stay) recordExertion(state, p);
   if (target.webEscape) {
     const trapped = p.webTrapped;
@@ -4579,6 +4567,18 @@ function executeMove(ctx, action) {
       );
     }
     if (killed && victim.owner !== p.owner) {
+      if (target.massRecruitment) {
+        log(
+          state,
+          `${OWNERS[p.owner]}: 📣 Recrutamento em Massa coordenou a captura em ${coord(target.r, target.c)}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Recrutamento em Massa",
+          "📣 Recrutamento em Massa ampliou o alcance da captura.",
+          { pieceId: p.id, outcome: "collective-capture" },
+        );
+      }
       capturedEnemy = victim;
       state.lastSuccessfulCaptureRound = round(state);
         if (state.geologicalStage === "hadean")
