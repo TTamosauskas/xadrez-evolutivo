@@ -68,6 +68,7 @@ test("sementes fazem teste de mortalidade de 50% em contato com casa hostil", ()
   const state = fixture([], 1);
   seedAt(state, 3, 3);
   state.board[27] = "hostile";
+  state.rng = 1;
 
   tickReproduction(context(state));
 
@@ -79,6 +80,7 @@ test("ovos fazem teste de mortalidade de 50% em contato com casa hostil", () => 
   const state = fixture([], 1);
   eggAtCell(state, 3, 3);
   state.board[27] = "hostile";
+  state.rng = 1;
 
   tickReproduction(context(state));
 
@@ -87,17 +89,18 @@ test("ovos fazem teste de mortalidade de 50% em contato com casa hostil", () => 
 });
 
 test("propágulos sobreviventes não repetem o teste hostil na mesma rodada", () => {
-  const state = fixture([], 682);
-  seedAt(state, 3, 3);
+  const state = fixture([], 1);
+  eggAtCell(state, 3, 3);
   state.board[27] = "hostile";
+  state.rng = 682;
 
   tickReproduction(context(state));
-  const remaining = state.plantSeeds[0];
+  const remaining = state.eggs[0];
   assert.ok(remaining);
   assert.equal(remaining.hostileRiskRound, 0);
 
   const rngAfterFirst = state.rng;
   tickReproduction(context(state));
-  assert.equal(state.plantSeeds.length, 1);
+  assert.equal(state.eggs.length, 1);
   assert.equal(state.rng, rngAfterFirst);
 });
