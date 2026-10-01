@@ -1637,7 +1637,7 @@ test("Necrófago, Onívoro Oportunista and Coprofagia use a single green reprodu
   dom.window.close();
 });
 
-test("self-only Parasitismo uses Vivificar when there is no attack target", () => {
+test("Parasitismo sem alvo adjacente deixa de expor Vivificar", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4, traits: ["Parasitismo"] },
@@ -1646,16 +1646,12 @@ test("self-only Parasitismo uses Vivificar when there is no attack target", () =
     piece = s.pieces[0];
 
   render(dom.window.document, s, { selected: piece.id });
-  const d = dom.window.document,
-    cell = d.querySelector(
-      `[data-r="${piece.r}"][data-c="${piece.c}"]`,
-    ),
-    legend = d.getElementById("board-legend");
+  const cell = dom.window.document.querySelector(
+    `[data-r="${piece.r}"][data-c="${piece.c}"]`,
+  );
 
-  assert.ok(cell.classList.contains("vivification-target"));
-  assert.match(cell.title, /vivificação disponível: Parasitismo/);
-  assert.match(legend.textContent, /Vivificar/);
-  assert.doesNotMatch(legend.textContent, /Ataque/);
+  assert.ok(!cell.classList.contains("vivification-target"));
+  assert.doesNotMatch(cell.title, /Parasitismo/);
   dom.window.close();
 });
 
