@@ -3028,6 +3028,22 @@ export function assertState(state) {
       ) ||
       !integer(p.heartSupportReadyRound ?? 0, 0) ||
       !integer(p.hepaticDetoxReadyRound ?? 0, 0) ||
+      !integer(p.exertionStreak ?? 0, 0, 12) ||
+      !(
+        p.lastOwnExertionTurn === undefined ||
+        p.lastOwnExertionTurn === null ||
+        integer(p.lastOwnExertionTurn, 0)
+      ) ||
+      !(
+        p.lastReactiveExertionTurn === undefined ||
+        p.lastReactiveExertionTurn === null ||
+        integer(p.lastReactiveExertionTurn, 0)
+      ) ||
+      !(
+        p.fatigueRestTurn === undefined ||
+        p.fatigueRestTurn === null ||
+        integer(p.fatigueRestTurn, 0)
+      ) ||
       !(
         p.endothermyUsedTurn === null ||
         p.endothermyUsedTurn === undefined ||
