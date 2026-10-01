@@ -149,6 +149,43 @@ import {
   checkPopulationClimate,
   offensiveActionCount,
 } from "./environment.js";
+
+function grantPredationVivification(
+  state,
+  attacker,
+  victim,
+  { force = false } = {},
+) {
+  if (!force && !predatoryReproductionAvailable(attacker, victim)) return false;
+  const fresh = !attacker.predationEnergy;
+  attacker.predationEnergy = true;
+  if (trophicSpecializationMatches(attacker, victim))
+    attacker.predationEnergyEfficient = true;
+  if (fresh) {
+    log(
+      state,
+      `${OWNERS[attacker.owner]}: ⭕ Predação armazenou energia vivificante para uma reprodução futura.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Predação",
+      "⭕ A captura bem-sucedida armazenou uma carga de energia vivificante.",
+      {
+        pieceId: attacker.id,
+        outcome: "stored-predation-vivification",
+        value: 1,
+      },
+    );
+  }
+  return true;
+}
+
+function consumePredationVivification(piece) {
+  if (!piece?.predationEnergy) return false;
+  piece.predationEnergy = false;
+  piece.predationEnergyEfficient = false;
+  return true;
+}
 function applyChemicalCaptureDefense(state, dead, attacker) {
   if (!attacker || attacker.owner === dead.owner) return;
   if (has(dead, "Veneno")) {
@@ -3113,14 +3150,10 @@ function resolveFeedingReach(ctx, action) {
 
   const victimCell = square(victim.r, victim.c),
     killed = ctx.kill(victim.id, option.trait, piece);
-  let born = 0;
   if (killed) {
     state.lastSuccessfulCaptureRound = round(state);
-    if (predatoryReproductionAvailable(piece, victim))
-      born = reproduce(ctx, piece, null, "predação", {
-        resourceKind: "prey",
-      });
-    if (!born) markCarcass(state, victimCell);
+    grantPredationVivification(state, piece, victim);
+    markCarcass(state, victimCell);
     log(
       state,
       `${OWNERS[piece.owner]}: ${TRAITS[option.trait][0]} ${option.trait} capturou uma presa adjacente a partir de ${coord(piece.r, piece.c)}.`,
@@ -3132,7 +3165,6 @@ function resolveFeedingReach(ctx, action) {
       { pieceId: piece.id, outcome: "feeding-reach-capture" },
     );
   }
-  if (born > 0 && deferReproductionPlacement(state, piece)) return;
   completeMove(ctx, piece, false, false);
 }
 
@@ -3203,28 +3235,10 @@ function resolveExtendedCapture(ctx, action) {
 
   const victimCell = square(victim.r, victim.c),
     killed = ctx.kill(victim.id, option.trait, piece);
-  let born = 0;
   if (killed) {
     state.lastSuccessfulCaptureRound = round(state);
-    if (
-      option.trait === "Tromba" &&
-      predatoryReproductionAvailable(piece, victim)
-    )
-      born = reproduce(ctx, piece, null, "predação", {
-        resourceKind: "prey",
-        trophicEfficiency: true,
-      });
-    if (
-      born > 0 &&
-      option.trait === "Tromba" &&
-      multicellularLineage(piece)
-    )
-      markOrganicResidue(
-        state,
-        victimCell,
-        fecalPathogenDiseaseIdsForHost(state, piece),
-      );
-    else markCarcass(state, victimCell);
+    grantPredationVivification(state, piece, victim);
+    markCarcass(state, victimCell);
     log(
       state,
       `${OWNERS[piece.owner]}: ${TRAITS[option.trait][0]} ${option.trait} capturou sem deslocamento em ${coord(victim.r, victim.c)}.`,
@@ -3239,7 +3253,6 @@ function resolveExtendedCapture(ctx, action) {
       },
     );
   }
-  if (born > 0 && deferReproductionPlacement(state, piece)) return;
   completeMove(ctx, piece, false, false);
 }
 
@@ -4490,23 +4503,17 @@ function executeMove(ctx, action) {
       `captura por ${botanicalPredation}`,
       p,
     );
-    let born = 0;
     if (killed) {
       state.lastSuccessfulCaptureRound = round(state);
-        born = reproduce(ctx, p, null, "predação", {
-        resourceKind: "prey",
-      });
-      if (!born) {
-        markCarcass(state, victimCell);
-        markCaptureDisturbance(state, victimCell);
-      }
+      grantPredationVivification(state, p, victim, { force: true });
+      markCarcass(state, victimCell);
+      markCaptureDisturbance(state, victimCell);
       log(
         state,
         `${OWNERS[p.owner]}: ${botanicalPredation === "Haustório" ? "🪝" : "👄"} ${botanicalPredation} consumiu uma criatura em ${coord(victim.r, victim.c)} sem deslocamento.`,
       );
     }
     ctx.reserved.delete(victimCell);
-    if (born > 0 && deferReproductionPlacement(state, p)) return;
     completeMove(ctx, p, false, false);
     return;
   }
@@ -4888,6 +4895,9 @@ function executeMove(ctx, action) {
       target.stay &&
       p.seeds > 0,
     sharedBiofilmResource = biofilmResource(state, p),
+    storedPredationEnergy =
+      !!p.predationEnergy &&
+      (has(p, "Predação") || has(p, "Mixotrofia")),
     fertileResource =
       !scavenging &&
       !coprophagy &&
@@ -4910,14 +4920,15 @@ function executeMove(ctx, action) {
       !fruitConsumption &&
       !synzooCollection &&
       (
+        storedPredationEnergy ||
         (canUseFertileResource(state, p) &&
           (terrain(state, p.r, p.c) === "fertile" || collectorStay)) ||
         !!sharedBiofilmResource
       ),
-    predation =
-      pieceCapture &&
-      victim.owner !== p.owner &&
-      predatoryReproductionAvailable(p, victim);
+    predationCapture =
+      capturedPieceKilled &&
+      !!capturedEnemy &&
+      predatoryReproductionAvailable(p, capturedEnemy);
   log(
     state,
     `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
@@ -4937,7 +4948,7 @@ function executeMove(ctx, action) {
       second,
       locomotion: false,
       collectorStay: false,
-      predation,
+      predation: false,
       manipulation,
     };
     state.chain = null;
@@ -4980,6 +4991,11 @@ function executeMove(ctx, action) {
       { pieceId: p.id, outcome: "shared-fertile-resource" },
     );
   }
+  const useStoredPredationEnergy =
+    !capture &&
+    target.stay &&
+    storedPredationEnergy &&
+    !has(p, "Reprodução Sexuada");
   let born = 0;
   const paedogenic = paedogenesisReady(state, p);
   if (fruitConsumption && plantSeed) {
@@ -5048,7 +5064,7 @@ function executeMove(ctx, action) {
       state,
       `${OWNERS[p.owner]}: 🐻‍❄️ Canibalismo consumiu um aliado sem gerar descendentes.`,
     );
-  } else if (fertile || predation) {
+  } else if (fertile || useStoredPredationEnergy) {
     const hadeanFirstFertileChild =
         state.geologicalStage === "hadean" &&
         fertile &&
@@ -5068,9 +5084,9 @@ function executeMove(ctx, action) {
       ctx,
       p,
       null,
-      predation ? "predação" : "casa fértil",
+      useStoredPredationEnergy ? "energia de predação" : "casa fértil",
       {
-        fertileReproduction: !predation && consumedFertile,
+        fertileReproduction: !useStoredPredationEnergy && consumedFertile,
         forcedCount: hadeanFirstFertileChild
           ? 1
           : paedogenic
@@ -5080,8 +5096,8 @@ function executeMove(ctx, action) {
         immediateDevelopment: paedogenic,
         paedogenesis: paedogenic,
         trophicEfficiency:
-          predation && trophicSpecializationMatches(p, victim),
-        resourceKind: predation
+          useStoredPredationEnergy && !!p.predationEnergyEfficient,
+        resourceKind: useStoredPredationEnergy
           ? "prey"
           : collectorStay
             ? "seed"
@@ -5095,21 +5111,22 @@ function executeMove(ctx, action) {
     )
       markHadeanTutorialStep(state, "divided");
     if (collectorStay && born) consumeCollectorSeed(state, p);
+    if (useStoredPredationEnergy && born)
+      consumePredationVivification(p);
   }
+  if (predationCapture) grantPredationVivification(state, p, capturedEnemy);
   if (capturedPieceKilled && state.geologicalStage !== "hadean") {
     const captureCell = square(p.r, p.c),
-      trophicReproduction = predation && born > 0,
       cannibalConsumption = cannibalism,
       fecalReproduction =
-        (trophicReproduction || cannibalConsumption) &&
-        multicellularLineage(p);
+        cannibalConsumption && multicellularLineage(p);
     if (fecalReproduction)
       markOrganicResidue(
         state,
         captureCell,
         fecalPathogenDiseaseIdsForHost(state, p),
       );
-    else if (!trophicReproduction && !cannibalConsumption) {
+    else if (!cannibalConsumption) {
       markCarcass(state, captureCell);
       markCaptureDisturbance(state, captureCell, p.id);
     }
@@ -5436,7 +5453,9 @@ function consumeSexualResource(state, parent, mate) {
   if (!resource) return null;
   const provider = state.pieces.find((piece) => piece.id === resource.providerId);
   if (!provider) return null;
-  if (resource.kind === "fertile") {
+  if (resource.kind === "predation-energy") {
+    if (!consumePredationVivification(provider)) return null;
+  } else if (resource.kind === "fertile") {
     if (!consumeReproductionResource(state, provider, resource.cell)) return null;
   } else if (resource.kind === "biofilm") {
     if (!consumeReproductionResource(state, provider, resource.cell)) return null;

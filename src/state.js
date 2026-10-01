@@ -681,6 +681,7 @@ export function newPiece(state, owner, r, c, source = {}) {
           : [],
       pawnDir: owner === "blue" ? -1 : 1,
       seeds: 0,
+      predationEnergy: false,
       pregnancies: [],
       bornRound: source.bornRound ?? bornRound,
       maturesRound: source.maturesRound ?? bornRound,

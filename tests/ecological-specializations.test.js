@@ -74,7 +74,7 @@ test("Hematofagia mantém o hospedeiro vivo e gera no máximo uma prole predató
   assertState(state);
 });
 
-test("Autotomia reduz a forma e a próxima reprodução restaura sem criar prole", () => {
+test("Autotomia restaura a forma quando a energia de uma captura é vivificada", () => {
   let state = fixture([
     {
       owner: "blue",
@@ -90,9 +90,17 @@ test("Autotomia reduz a forma e a próxima reprodução restaura sem criar prole
       rank: 5,
       traits: ["Autotomia"],
     },
+    {
+      owner: "blue",
+      r: 0,
+      c: 0,
+      rank: 4,
+    },
   ], 202);
   state.current = "blue";
-  const attacker = state.pieces.find((piece) => piece.owner === "blue"),
+  const attacker = state.pieces.find(
+      (piece) => piece.owner === "blue" && piece.r === 4,
+    ),
     defenderId = state.pieces.find((piece) => piece.owner === "amber").id;
 
   state = simulate(state, move(attacker, 4, 4));
@@ -107,9 +115,19 @@ test("Autotomia reduz a forma e a próxima reprodução restaura sem criar prole
   state = simulate(state, move(defender, 4, 3));
 
   defender = state.pieces.find((piece) => piece.id === defenderId);
+  assert.equal(defender.rank, 4);
+  assert.deepEqual(defender.autotomyRecovery, { originalRank: 5 });
+  assert.equal(defender.predationEnergy, true);
+
+  state.current = "amber";
+  state.phase = "move";
+  defender = state.pieces.find((piece) => piece.id === defenderId);
+  state = simulate(state, move(defender, defender.r, defender.c));
+
+  defender = state.pieces.find((piece) => piece.id === defenderId);
   assert.equal(defender.rank, 5);
   assert.equal(defender.autotomyRecovery, null);
-  assert.equal(state.pieces.length, 1);
+  assert.equal(defender.predationEnergy, false);
   assertState(state);
 });
 
@@ -197,7 +215,7 @@ test("Alelopatia madura após três rodadas e acrescenta custo reprodutivo rival
   assertState(state);
 });
 
-test("Parasitismo de Ninhada substitui um slot da próxima postura", () => {
+test("Parasitismo de Ninhada substitui um slot quando a energia predatória é vivificada", () => {
   let state = fixture([
     {
       owner: "blue",
@@ -213,9 +231,17 @@ test("Parasitismo de Ninhada substitui um slot da próxima postura", () => {
       rank: 0,
       traits: ["Ovíparo"],
     },
+    {
+      owner: "blue",
+      r: 0,
+      c: 0,
+      rank: 4,
+    },
   ], 205);
   state.current = "blue";
-  const parasite = state.pieces.find((piece) => piece.owner === "blue"),
+  const parasite = state.pieces.find(
+      (piece) => piece.owner === "blue" && piece.r === 4,
+    ),
     hostId = state.pieces.find((piece) => piece.owner === "amber").id;
 
   state = simulate(state, {
@@ -232,7 +258,16 @@ test("Parasitismo de Ninhada substitui um slot da próxima postura", () => {
   state = simulate(state, move(host, 4, 5));
 
   host = state.pieces.find((piece) => piece.id === hostId);
+  assert.equal(host.predationEnergy, true);
+  assert.ok(host.broodParasite);
+
+  state = simulate(state, { type: "PASS" });
+  host = state.pieces.find((piece) => piece.id === hostId);
+  state = simulate(state, move(host, host.r, host.c));
+
+  host = state.pieces.find((piece) => piece.id === hostId);
   assert.equal(host.broodParasite, null);
+  assert.equal(host.predationEnergy, false);
   assert.ok(state.eggs.length > 0);
   assert.ok(
     state.eggs.some((egg) =>
