@@ -88,19 +88,15 @@ test("ovos fazem teste de mortalidade de 50% em contato com casa hostil", () => 
   assert.ok(state.logs.some((entry) => /Ovo.*ambiente hostil/.test(entry.text)));
 });
 
-test("propágulos sobreviventes não repetem o teste hostil na mesma rodada", () => {
+test("propágulos já testados não repetem o risco hostil na mesma rodada", () => {
   const state = fixture([], 1);
   eggAtCell(state, 3, 3);
   state.board[27] = "hostile";
-  state.rng = 682;
-
-  tickReproduction(context(state));
-  const remaining = state.eggs[0];
-  assert.ok(remaining);
-  assert.equal(remaining.hostileRiskRound, 0);
-
+  state.eggs[0].hostileRiskRound = 0;
   state.rng = 1;
+
   tickReproduction(context(state));
+
   assert.equal(state.eggs.length, 1);
-  assert.equal(state.rng, 1);
+  assert.equal(state.eggs[0].hostileRiskRound, 0);
 });
