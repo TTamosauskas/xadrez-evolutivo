@@ -2467,7 +2467,6 @@ function settle(ctx) {
   const state = ctx.state;
   resolveThanatosis(state);
   recycleOccupiedOrganicResidue(state);
-  refreshHibernation(state);
   if (
     state.result ||
     extinction(state) ||
@@ -2481,6 +2480,7 @@ function settle(ctx) {
   )
     return;
 
+  refreshHibernation(state);
   if (mutuallyBlocked(state)) {
     resolveEcologicalDomain(state);
     return;
