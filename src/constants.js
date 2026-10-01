@@ -7,6 +7,7 @@ export const SYMBOLS = {
   blue: ["♙", "♘", "♗", "♖", "♔", "♕"],
   amber: ["♟", "♞", "♝", "♜", "♚", "♛"],
 };
+export const FATIGUE_LIMITS = Object.freeze([5, 4, 4, 3, 5, 3]);
 export const PIECE_LIFE_HISTORY = Object.freeze([
   Object.freeze({ brood: 4, metabolism: 3, maturity: 1 }),
   Object.freeze({ brood: 3, metabolism: 4, maturity: 2 }),
@@ -93,7 +94,7 @@ export const TRAITS = {
   ],
   Endorfinas: [
     "😌",
-    "Após Regeneração evitar uma morte, permite na rodada de recuperação exatamente um deslocamento simples para uma casa adjacente vazia válida; a ação encerra o turno.",
+    "Aumenta em um esforço o limite de Fadiga da criatura: ao atingir o limite normal, ainda suporta mais um lance de movimento, captura ou fuga antes do descanso locomotor obrigatório.",
   ],
   Vertebrado: [
     "🐟",
