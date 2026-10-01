@@ -1533,6 +1533,17 @@ function reproductionPressure(state, population) {
   );
 }
 
+function noCaptureReproductionPressure(state) {
+  const elapsed = Math.max(
+      0,
+      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+    ),
+    cooldown =
+      elapsed >= 24 ? 3 : elapsed >= 18 ? 2 : elapsed >= 12 ? 1 : 0,
+    limit = elapsed >= 18 ? 1 : Infinity;
+  return { elapsed, cooldown, limit };
+}
+
 function competitiveReproductionPressure(
   state,
   parent,
@@ -1577,14 +1588,16 @@ export function dopaminePressureReductionAvailable(state, parent) {
       state,
       parent,
       pressureLatched,
-    );
+    ),
+    noCapture = noCaptureReproductionPressure(state);
   return (
     populationReproductionCooldown(
       population,
       pressureLatched,
       state.geologicalStage,
     ) +
-      competitive.cooldown >
+      competitive.cooldown +
+      noCapture.cooldown >
     0
   );
 }
@@ -1828,6 +1841,7 @@ export function reproduce(
       parent,
       pressureLatched,
     ),
+    noCapturePressure = noCaptureReproductionPressure(state),
     outputFor = (candidate) => {
       const base = reproductiveOutput(candidate);
       return has(candidate, "Artrópode") ? Math.min(6, base * 2) : base;
@@ -1855,7 +1869,11 @@ export function reproduce(
     pressureLimit =
       reason === "predação" && competitivePressure.suppressPredation
         ? 0
-        : Math.min(populationLimit, competitivePressure.limit),
+        : Math.min(
+            populationLimit,
+            competitivePressure.limit,
+            noCapturePressure.limit,
+          ),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece, feeder = false) => {
       const hadeanBasalFertility =
