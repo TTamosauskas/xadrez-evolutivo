@@ -100,6 +100,10 @@ export const TRAITS = {
     "😴",
     "Ao concluir um turno de Fadiga em segurança, entra automaticamente em sono reparador. O primeiro esforço locomotor após despertar não aumenta a Fadiga.",
   ],
+  Hibernação: [
+    "🧸",
+    "Quando a maioria das casas jogáveis fica hostil ou contaminada por patógenos ecológicos, entra em torpor por 10 turnos: não age, não pode ser capturada e evita riscos hostis comuns. Controles populacionais não ativam o efeito.",
+  ],
   Vertebrado: [
     "🐟",
     "Plano corporal bilateral mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e a evolução completa de Peão até Cavalo, Bispo, Torre e Rainha; Rei continua disponível.",
