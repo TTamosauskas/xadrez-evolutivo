@@ -183,6 +183,7 @@ export const ECOLOGICAL_DOMAIN_START_TURN = 200;
 export const ECOLOGICAL_DOMAIN_REQUIRED_TURNS = 3;
 export const ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS = 3;
 export const ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS = 24;
+export const ECOLOGICAL_DOMAIN_LOW_PRESSURE_ROUNDS = 18;
 export const ecologicalQuadrant = (r, c) =>
   (r >= 4 ? 2 : 0) + (c >= 4 ? 1 : 0);
 export const createEcologicalDomain = () => ({
