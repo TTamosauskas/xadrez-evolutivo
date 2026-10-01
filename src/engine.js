@@ -53,6 +53,7 @@ import {
   dormant,
   adjacentAlliesCount,
   intoxicationResting,
+  fatigueLimit,
   manipulationTargets,
   constructionTargets,
   nicheConstructionTargets,
@@ -759,6 +760,80 @@ function resolveDueLethalDeaths(ctx) {
   return deaths;
 }
 
+function nextOwnTurn(state, piece) {
+  return state.turn + (piece.owner === state.current ? 2 : 1);
+}
+
+function scheduleFatigue(state, piece) {
+  const restTurn = nextOwnTurn(state, piece);
+  piece.fatigueRestTurn = Math.max(piece.fatigueRestTurn ?? -1, restTurn);
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🥵 Fadiga acumulada; a criatura ficará sem locomoção no próximo turno próprio.`,
+  );
+}
+
+function recordExertion(state, piece, { reactive = false } = {}) {
+  if (!piece || !has(piece, "Predação")) return false;
+
+  if (reactive) {
+    const continuesSequence =
+      piece.lastOwnExertionTurn === state.turn - 1 ||
+      piece.lastReactiveExertionTurn === state.turn;
+    if (!continuesSequence) piece.exertionStreak = 0;
+    piece.lastReactiveExertionTurn = state.turn;
+  } else {
+    if (piece.lastOwnExertionTurn === state.turn) return false;
+    const continuesSequence =
+      piece.lastOwnExertionTurn === state.turn - 2 ||
+      piece.lastReactiveExertionTurn === state.turn - 1;
+    if (!continuesSequence) piece.exertionStreak = 0;
+    piece.lastOwnExertionTurn = state.turn;
+  }
+
+  piece.exertionStreak = (piece.exertionStreak ?? 0) + 1;
+  const normalLimit = fatigueLimit(piece),
+    endorphinAllowance = has(piece, "Endorfinas") ? 1 : 0;
+
+  if (
+    has(piece, "Endorfinas") &&
+    piece.exertionStreak === normalLimit + 1
+  )
+    emitPassiveEffect(
+      state,
+      "Endorfinas",
+      "😌 Endorfinas permitiram um último esforço além do limite normal de Fadiga.",
+      {
+        pieceId: piece.id,
+        outcome: "extended-fatigue-limit",
+        value: 1,
+      },
+    );
+
+  if (piece.exertionStreak >= normalLimit + endorphinAllowance)
+    scheduleFatigue(state, piece);
+  return true;
+}
+
+function recoverFatigueAfterTurn(state, owner, turn) {
+  for (const piece of state.pieces) {
+    if (piece.owner !== owner || !has(piece, "Predação")) continue;
+    const exertedThisTurn = piece.lastOwnExertionTurn === turn;
+    if (piece.fatigueRestTurn === turn) {
+      delete piece.fatigueRestTurn;
+      piece.exertionStreak = 0;
+      delete piece.lastOwnExertionTurn;
+      delete piece.lastReactiveExertionTurn;
+      continue;
+    }
+    if (!exertedThisTurn) {
+      piece.exertionStreak = 0;
+      delete piece.lastOwnExertionTurn;
+      delete piece.lastReactiveExertionTurn;
+    }
+  }
+}
+
 function reactiveRelocation(ctx, piece, r, c, reason) {
   const state = ctx.state,
     origin = square(piece.r, piece.c),
@@ -1069,6 +1144,7 @@ function triggerAdrenalineEscape(ctx, attacker, victim) {
     target.c,
     "fuga por Adrenalina",
   );
+  recordExertion(state, victim, { reactive: true });
   if (state.pieces.some((piece) => piece.id === attacker.id))
     reactiveRelocation(
       ctx,
@@ -1918,6 +1994,7 @@ function advanceTurn(ctx) {
     }
   tickParasitoidism(ctx, acting, before);
   tickRuminantRecovery(state, acting, before);
+  recoverFatigueAfterTurn(state, acting, before);
   for (const p of state.pieces) {
     moveDirection(p);
     if (
@@ -2984,6 +3061,7 @@ function triggerInkEscape(ctx, attacker, victim) {
     round(state) + metabolicReproductionCooldown(victim);
   const escape = pick(state, cells);
   reactiveRelocation(ctx, victim, escape.r, escape.c, "fuga por Tinta");
+  recordExertion(state, victim, { reactive: true });
   log(
     state,
     `${OWNERS[victim.owner]}: 🌫️ Tinta obscureceu a região e permitiu fuga para ${coord(escape.r, escape.c)}.`,
@@ -3061,36 +3139,7 @@ function executeMove(ctx, action) {
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
-  if (target.endorphinRecovery) {
-    const moved = reactiveRelocation(
-      ctx,
-      p,
-      target.r,
-      target.c,
-      "deslocamento durante recuperação por Endorfinas",
-    );
-    delete p.regenerationRestThroughRound;
-    state.neurodivergenceAction = null;
-    state.neurofocus = null;
-    if (moved && state.pieces.some((piece) => piece.id === p.id)) {
-      log(
-        state,
-        `${OWNERS[p.owner]}: 😌 Endorfinas permitiram um deslocamento simples durante a recuperação.`,
-      );
-      emitPassiveEffect(
-        state,
-        "Endorfinas",
-        "😌 Endorfinas permitiram um deslocamento simples durante a recuperação.",
-        {
-          pieceId: p.id,
-          outcome: "endorphin-recovery-move",
-        },
-      );
-    }
-    advanceTurn(ctx);
-    settle(ctx);
-    return;
-  }
+  if (!target.stay) recordExertion(state, p);
   if (target.webEscape) {
     const trapped = p.webTrapped;
     state.webs = (state.webs ?? []).filter(
@@ -3841,6 +3890,7 @@ function executeMove(ctx, action) {
         escape.c,
         "fuga por Ofuscamento por movimento",
       );
+      recordExertion(state, victim, { reactive: true });
       log(
         state,
         `${OWNERS[victim.owner]}: 🦓 Ofuscamento por movimento desviou a criatura para ${coord(escape.r, escape.c)}.`,
@@ -3884,6 +3934,7 @@ function executeMove(ctx, action) {
           target.c,
           "fuga por Movimento proteano",
         );
+        recordExertion(state, victim, { reactive: true });
         log(
           state,
           `${OWNERS[victim.owner]}: 🦌 Movimento proteano desviou a criatura para ${coord(target.r, target.c)}.`,
