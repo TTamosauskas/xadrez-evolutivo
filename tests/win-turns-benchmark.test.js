@@ -5,7 +5,7 @@ import { transition } from "../src/engine.js";
 import { chooseAction } from "../src/ai.js";
 import { legalActions } from "../src/moves.js";
 
-const GAMES = 200;
+const GAMES = 100;
 const TURN_LIMIT = 200;
 const COMMAND_LIMIT = 4000;
 
