@@ -818,7 +818,9 @@ export const TRAIT_DEPENDENCIES = {
   },
   Biomineralização: { lineage: ["Multicelularismo"] },
   "Imunidade Adaptativa": { lineage: ["Vertebrado"] },
-  Endorfinas: { lineage: ["Vertebrado", "Regeneração"] },
+  Endorfinas: {
+    lineage: ["Vertebrado", "Regeneração", "Locomoção Primitiva"],
+  },
   Intestino: { lineage: ["Ingestão", "Simetria Bilateral"] },
   "Estômago Ácido": { lineage: ["Vertebrado", "Ingestão"] },
   "Biotransformação Hepática": {
