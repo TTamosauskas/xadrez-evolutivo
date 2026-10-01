@@ -88,7 +88,7 @@ test("Autotomia reduz a forma e a próxima reprodução restaura sem criar prole
       r: 4,
       c: 4,
       rank: 5,
-      traits: ["Regeneração", "Autotomia"],
+      traits: ["Autotomia"],
     },
   ], 202);
   state.current = "blue";
