@@ -422,7 +422,6 @@ test("regression hides about half of eligible active positive phenotypes", () =>
           "Reparo Celular",
           "Multicelularismo",
           "Resistência",
-          "Regeneração",
           "Reprodução Sexuada",
           "Regressão Evolutiva",
         ],
