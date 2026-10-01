@@ -1528,7 +1528,7 @@ test("predatory reproduction uses concentric red and green capture rings", () =>
   dom.window.close();
 });
 
-test("Canibalismo and egg consumption use the same concentric capture-reproduction marker", () => {
+test("Canibalismo usa ataque simples enquanto ovos mantêm marcador reprodutivo", () => {
   let dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 3, rank: 4, traits: ["Canibalismo"] },
@@ -1543,8 +1543,8 @@ test("Canibalismo and egg consumption use the same concentric capture-reproducti
     `[data-r="${ally.r}"][data-c="${ally.c}"]`,
   );
   assert.ok(target.classList.contains("attack-target"));
-  assert.ok(target.classList.contains("capture-reproduction-target"));
-  assert.match(target.title, /Canibalismo com reprodução/);
+  assert.ok(!target.classList.contains("capture-reproduction-target"));
+  assert.match(target.title, /Canibalismo/);
   dom.window.close();
 
   for (const trait of ["Ovífagia", "Onívoro Oportunista"]) {
@@ -1794,17 +1794,15 @@ test("imminent deterministic deaths render a centered top 🤢 marker", () => {
     ...new Set([
       ...protectedPiece.traits,
       "Mutação Letal",
-      "Regeneração",
     ]),
   ];
   protectedPiece.deleteriousDue = 1;
-  protectedPiece.regenerationUsed = false;
 
   assert.equal(
     deterministicDeathNextTurn(s, doomed),
     "Mutação Letal",
   );
-  assert.equal(deterministicDeathNextTurn(s, protectedPiece), null);
+  assert.equal(deterministicDeathNextTurn(s, protectedPiece), "Mutação Letal");
 
   render(dom.window.document, s);
   const doomedCell = dom.window.document.querySelector(
@@ -1830,7 +1828,7 @@ test("imminent deterministic deaths render a centered top 🤢 marker", () => {
     doomedCell.getAttribute("aria-label"),
     /morte determinada no próximo turno: Mutação Letal/,
   );
-  assert.equal(protectedCell.querySelector(".terminal-death-mark"), null);
+  assert.equal(protectedCell.querySelector(".terminal-death-mark")?.textContent, "🤢");
   assert.match(deathRule, /top:\s*1%/);
   assert.match(deathRule, /left:\s*50%/);
   assert.match(deathRule, /translateX\(-50%\)/);
@@ -1909,9 +1907,6 @@ test("death prediction covers natural maximum age, deferred Semelparidade and te
   victim.venom = { remaining: 1, infectedTurn: 1 };
   assert.equal(deterministicDeathNextTurn(poisoned, victim), "Veneno");
 
-  victim.traits = [...new Set([...victim.traits, "Regeneração"])];
-  victim.regenerationUsed = false;
-  assert.equal(deterministicDeathNextTurn(poisoned, victim), null);
 });
 
 test("pieces with no available action fade on board without a duplicate wait badge", () => {
