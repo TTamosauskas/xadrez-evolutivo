@@ -87,41 +87,142 @@ export function fallbackAction(state) {
   );
 }
 
-function futureCaptureOptions(state, piece, action) {
+function movedHypothetical(state, piece, action) {
   if (
     !piece ||
     action.type !== "MOVE" ||
     !Number.isInteger(action.r) ||
     !Number.isInteger(action.c)
   )
-    return 0;
+    return null;
   const occupied = state.pieces.find(
     (otherPiece) =>
       otherPiece.id !== piece.id &&
       otherPiece.r === action.r &&
       otherPiece.c === action.c,
   );
-  if (occupied) return 0;
-  const moved = { ...piece, r: action.r, c: action.c },
-    hypothetical = {
+  if (occupied) return null;
+  const moved = { ...piece, r: action.r, c: action.c };
+  return {
+    moved,
+    state: {
       ...state,
       chain: null,
       pieces: state.pieces.map((otherPiece) =>
         otherPiece.id === piece.id ? moved : otherPiece,
       ),
-    };
-  return movesFor(hypothetical, moved, { ignoreChain: true }).filter(
-    (target) => {
-      if (!target.capture) return false;
-      const victim = hypothetical.pieces.find(
-        (otherPiece) =>
-          otherPiece.id !== moved.id &&
-          otherPiece.r === target.r &&
-          otherPiece.c === target.c,
-      );
-      return victim && victim.owner !== moved.owner;
     },
-  ).length;
+  };
+}
+
+function enemyCaptureTargets(state, piece) {
+  return movesFor(state, piece, { ignoreChain: true }).filter((target) => {
+    if (!target.capture) return false;
+    const victim = state.pieces.find(
+      (otherPiece) =>
+        otherPiece.id !== piece.id &&
+        otherPiece.r === target.r &&
+        otherPiece.c === target.c,
+    );
+    return victim && victim.owner !== piece.owner;
+  });
+}
+
+function futureCaptureOptions(state, piece, action) {
+  const hypothetical = movedHypothetical(state, piece, action);
+  return hypothetical
+    ? enemyCaptureTargets(hypothetical.state, hypothetical.moved).length
+    : 0;
+}
+
+function escapeRoutesFrom(state, enemy, hunter) {
+  if (!enemy || !hunter) return 0;
+  const currentDistance = distance(enemy, hunter);
+  return movesFor(state, enemy, { ignoreChain: true }).filter((target) => {
+    if (target.capture) return false;
+    return distance(target, hunter) > currentDistance;
+  }).length;
+}
+
+function secondPlyCapturePotential(state, moved) {
+  const nextMoves = movesFor(state, moved, { ignoreChain: true })
+    .filter((target) => !target.capture)
+    .sort(
+      (a, b) =>
+        nearestEnemyDistance(state, moved.owner, a.r, a.c) -
+          nearestEnemyDistance(state, moved.owner, b.r, b.c) ||
+        a.r - b.r ||
+        a.c - b.c,
+    )
+    .slice(0, 6);
+  let best = 0;
+  for (const target of nextMoves) {
+    const next = movedHypothetical(state, moved, {
+      type: "MOVE",
+      id: moved.id,
+      r: target.r,
+      c: target.c,
+    });
+    if (!next) continue;
+    best = Math.max(best, enemyCaptureTargets(next.state, next.moved).length);
+  }
+  return best;
+}
+
+export function captureGeometryPriority(state, piece, action) {
+  const hypothetical = movedHypothetical(state, piece, action);
+  if (!hypothetical) return 0;
+
+  const immediate = enemyCaptureTargets(
+      hypothetical.state,
+      hypothetical.moved,
+    ).length,
+    secondPly = secondPlyCapturePotential(
+      hypothetical.state,
+      hypothetical.moved,
+    ),
+    nearbyEnemies = hypothetical.state.pieces
+      .filter((candidate) => candidate.owner !== piece.owner)
+      .sort(
+        (a, b) =>
+          distance(hypothetical.moved, a) -
+            distance(hypothetical.moved, b) ||
+          a.id - b.id,
+      )
+      .slice(0, 3);
+
+  let escapeReduction = 0;
+  for (const enemyAfter of nearbyEnemies) {
+    const enemyBefore = state.pieces.find(
+      (candidate) => candidate.id === enemyAfter.id,
+    );
+    if (!enemyBefore) continue;
+    const before = escapeRoutesFrom(state, enemyBefore, piece),
+      after = escapeRoutesFrom(
+        hypothetical.state,
+        enemyAfter,
+        hypothetical.moved,
+      );
+    escapeReduction += Math.max(0, before - after);
+  }
+
+  const stalledRounds = Math.max(
+      0,
+      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+    ),
+    lateGame = state.turn >= 120 || state.pieces.length <= 8,
+    pressureMultiplier =
+      lateGame || stalledRounds >= 18
+        ? 1.75
+        : stalledRounds >= 12
+          ? 1.35
+          : 1;
+
+  return (
+    immediate * 7 +
+    secondPly * 3 +
+    Math.min(6, escapeReduction) * 1.5
+  ) * pressureMultiplier;
 }
 
 export function crowdingPenalty(count) {
@@ -357,11 +458,10 @@ export function actionPriority(state, a) {
     ).length,
     hunt =
       p &&
-      (has(p, "Predação") || has(p, "Mixotrofia")) &&
       enemies.length &&
       Number.isInteger(a.r) &&
       !enemyVictim
-        ? Math.min(14, futureCaptureOptions(state, p, a) * 4)
+        ? Math.min(34, captureGeometryPriority(state, p, a))
         : 0,
     captureValue = enemyVictim
       ? 10 +
