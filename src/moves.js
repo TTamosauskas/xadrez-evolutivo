@@ -79,6 +79,15 @@ export const dysfunctionalResting = (state, p) =>
 export const regenerationResting = (state, p) =>
   Number.isInteger(p.regenerationRestThroughRound) &&
   round(state) <= p.regenerationRestThroughRound;
+export const endorphinRecoveryActive = (state, p) =>
+  !!p &&
+  has(p, "Endorfinas") &&
+  has(p, "Locomoção Primitiva") &&
+  regenerationResting(state, p) &&
+  !dysfunctionalResting(state, p) &&
+  !neurodivergenceResting(state, p) &&
+  !intoxicationResting(state, p) &&
+  !pupating(state, p);
 export const neurodivergenceResting = (state, p) =>
   Number.isInteger(p?.neurodivergenceRestThroughRound) &&
   round(state) <= p.neurodivergenceRestThroughRound;
@@ -260,11 +269,52 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     !state.pieces.some((x) => x.id === p.id) ||
     (state.neurofocus && state.neurofocus !== p.id) ||
     ecologicalDomainBlocked(state, p.owner, p.r, p.c) ||
-    resting(state, p) ||
+    (resting(state, p) && !endorphinRecoveryActive(state, p)) ||
     dormant(state, p)
   )
     return [];
   if (!ignoreChain && state.chain && state.chain !== p.id) return [];
+  if (endorphinRecoveryActive(state, p)) {
+    const terrestrialRestriction =
+        has(p, "Locomoção Primitiva") &&
+        !has(p, "Locomoção Terrestre"),
+      targets = [];
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = p.r + dr,
+          c = p.c + dc;
+        if (
+          !inside(r, c) ||
+          ecologicalDomainBlocked(state, p.owner, r, c) ||
+          at(state, r, c) ||
+          eggAt(state, r, c) ||
+          plantSeedAt(state, r, c) ||
+          fragmentAt(state, r, c) ||
+          barrierAt(state, r, c) ||
+          lethalHazardAt(state, r, c) ||
+          (terrestrialRestriction && terrain(state, r, c) !== "fertile")
+        )
+          continue;
+        targets.push({
+          r,
+          c,
+          path: [[r, c]],
+          capture: false,
+          cannibal: false,
+          filialCannibal: false,
+          matriphagy: false,
+          eggCapture: null,
+          seedCapture: null,
+          fruitConsume: null,
+          synzooCollect: null,
+          stay: false,
+          endorphinRecovery: true,
+          noContinuation: true,
+        });
+      }
+    return targets;
+  }
   if (p.webTrapped) {
     const active = (state.webs ?? []).some(
       (entry) =>
@@ -2057,6 +2107,17 @@ export function chemosynthesisAvailable() {
   return false;
 }
 
+export function detoxificationAvailable(state, piece) {
+  return !!(
+    piece &&
+    has(piece, "Biotransformação Hepática") &&
+    piece.venom &&
+    round(state) >= (piece.hepaticDetoxReadyRound ?? 0) &&
+    !resting(state, piece) &&
+    !dormant(state, piece)
+  );
+}
+
 export function canRejectBroodParasite(state, piece) {
   return !!(
     piece?.broodParasite &&
@@ -2154,6 +2215,9 @@ export function actionsForPiece(
       parentId: piece.id,
       id: mate.id,
     })),
+    ...(detoxificationAvailable(source, piece)
+      ? [{ type: "DETOXIFY", id: piece.id }]
+      : []),
     ...(chemosynthesisAvailable(source, piece)
       ? [{ type: "CHEMOSYNTHESIS", id: piece.id }]
       : []),
