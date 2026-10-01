@@ -865,7 +865,7 @@ function trim(state, count) {
         emitPassiveEffect(
           state,
           "Xerofitismo",
-          "🌵 Xerofitismo armazenou água durante a perda de fertilidade.",
+          "🌞 Xerofitismo armazenou água durante a perda de fertilidade.",
           { pieceId: occupant.id, outcome: "stored-water-reserve", value: 1 },
         );
       }
