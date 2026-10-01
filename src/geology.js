@@ -598,6 +598,7 @@ export const TRAIT_STAGE = {
   "Manada": "jurassic",
   "Hierarquia": "cretaceous",
   "Superorganismo": "oligocene",
+  "Recrutamento em Massa": "cretaceous",
   "Caça Cooperativa": "eocene",
   "Mutualismo": "devonian",
   "Ocitocina": "jurassic",
@@ -624,6 +625,7 @@ export const TRAIT_STAGE = {
   "Acasalamento Preferencial": "cambrian",
   "Onívoro Oportunista": "carboniferous",
   "Metamorfose": "carboniferous",
+  Hipermetamorfose: "cretaceous",
   "Cuidado Parental": "permian",
   "Promiscuidade": "jurassic",
   "Pedogênese": "cretaceous",
@@ -1106,6 +1108,14 @@ export const TRAIT_DEPENDENCIES = {
   Superorganismo: {
     lineage: ["Eusocialidade", "Artrópode"],
   },
+  "Recrutamento em Massa": {
+    lineage: [
+      "Artrópode",
+      "Locomoção Terrestre",
+      "Eusocialidade",
+      "Percepção Espacial",
+    ],
+  },
   "Caça Cooperativa": {
     lineage: ["Sociabilidade", "Percepção Espacial"],
     lineageAny: ["Carnívoro", "Onívoro"],
@@ -1150,6 +1160,12 @@ export const TRAIT_DEPENDENCIES = {
   Metamorfose: {
     lineage: ["Artrópode", "Ovíparo", "Locomoção Terrestre"],
   },
+  Hipermetamorfose: {
+    lineage: ["Artrópode", "Metamorfose"],
+  },
+  Ooteca: {
+    lineage: ["Artrópode", "Ovíparo"],
+  },
 };
 
 export const BODY_PLAN_TRAITS = new Set(["Vertebrado", "Artrópode"]);
@@ -1182,6 +1198,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Monogamia",
   "Acasalamento Múltiplo",
   "Metamorfose",
+  "Hipermetamorfose",
   "Locomoção Primitiva",
   "Jatopropulsão",
   "Pulo",
@@ -1329,6 +1346,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Forrageamento",
   "Hierarquia",
   "Superorganismo",
+  "Recrutamento em Massa",
   "Caça Cooperativa",
   "Mutualismo",
   "Feromônios",
@@ -1467,6 +1485,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Forrageamento",
   "Hierarquia",
   "Superorganismo",
+  "Recrutamento em Massa",
   "Caça Cooperativa",
   "Assimetria Flutuante",
   "Ataxia",
@@ -1509,6 +1528,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Monogamia",
   "Acasalamento Múltiplo",
   "Metamorfose",
+  "Hipermetamorfose",
   "Pele Glandular",
   "Escamas",
   "Osteodermos",
@@ -1586,6 +1606,7 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   "Fertilidade Longeva": "predation",
   "Imortalidade Biológica": "predation",
   Metamorfose: "predation",
+  Hipermetamorfose: "predation",
   "Pele Glandular": "predation",
   Escamas: "predation",
   Osteodermos: "predation",
@@ -1627,6 +1648,7 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Forrageamento: "predation",
   Hierarquia: "predation",
   Superorganismo: "predation",
+  "Recrutamento em Massa": "predation",
   "Caça Cooperativa": "predation",
   Feromônios: "predation",
   Bioluminescência: "predation",
@@ -2088,6 +2110,7 @@ const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
   "Forrageamento",
   "Hierarquia",
   "Superorganismo",
+  "Recrutamento em Massa",
   "Caça Cooperativa",
   "Mutualismo",
   "Partenogênese",
@@ -2098,6 +2121,7 @@ const OPTIONAL_NON_COMPLETION_TRAITS = new Set([
   "Longevidade",
   "Fertilidade Longeva",
   "Imortalidade Biológica",
+  "Hipermetamorfose",
   "Feromônios",
   "Bioluminescência",
   "Bioluminescência Predatória",

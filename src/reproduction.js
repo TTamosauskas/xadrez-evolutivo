@@ -2629,6 +2629,7 @@ export function tickReproduction(ctx) {
       Number.isInteger(piece.pupaUntilRound) &&
       now >= piece.pupaUntilRound
     ) {
+      const originalRank = piece.rank;
       piece.rank = piece.rank === 0 ? 1 : piece.rank === 1 ? 2 : piece.rank;
       piece.pupaUntilRound = null;
       piece.maturesRound = now;
@@ -2636,6 +2637,22 @@ export function tickReproduction(ctx) {
         state,
         `${OWNERS[piece.owner]}: 🦋 Metamorfose completou-se; a criatura emergiu como ${PIECES[piece.rank]}.`,
       );
+      if (
+        piece.rank !== originalRank &&
+        has(piece, "Hipermetamorfose")
+      ) {
+        piece.hypermetamorphosisReady = true;
+        log(
+          state,
+          `${OWNERS[piece.owner]}: 🐞 Hipermetamorfose preparou uma ação dispersiva de geometria complementar.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Hipermetamorfose",
+          "🐞 Hipermetamorfose: ação dispersiva disponível.",
+          { pieceId: piece.id, outcome: "dispersal-ready" },
+        );
+      }
     }
 
   tickFragments(ctx);

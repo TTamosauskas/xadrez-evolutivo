@@ -3087,6 +3087,7 @@ export function assertState(state) {
       typeof (p.paedogenesisUsed ?? false) !== "boolean" ||
       !(p.pupaUntilRound === null || p.pupaUntilRound === undefined || integer(p.pupaUntilRound, 0)) ||
       typeof (p.metamorphosisUsed ?? false) !== "boolean" ||
+      typeof (p.hypermetamorphosisReady ?? false) !== "boolean" ||
       !(p.pairedWithId === null || p.pairedWithId === undefined || integer(p.pairedWithId, 1)) ||
       !integer(p.biparentalGuardCharges ?? 0, 0) ||
       !Array.isArray(p.marsupialPouch ?? []) ||

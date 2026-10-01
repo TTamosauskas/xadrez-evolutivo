@@ -114,7 +114,7 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
   },
   permian: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Embriófitas", "Traqueófitas", "Gimnospermas"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Ooteca", "Voo", "Carnívoro"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Locomoção Primitiva", "Vertebrado", "Locomoção Articulada", "Locomoção Terrestre", "Respiração Pulmonar", "Percepção Espacial", "Ovíparo", "Ovíparos Amniotas", "Voo", "Carnívoro"],
     rank: 3,
   },
   triassic: {
@@ -229,7 +229,7 @@ const CONTEXT_AFFINITIES = {
   Veneno: ["Carnívoro"],
   Necrófago: ["Predação"],
   Coprofagia: ["Locomoção Terrestre"],
-  Ooteca: ["Ovíparo"],
+  Ooteca: ["Artrópode", "Ovíparo"],
   Mimetismo: ["Camuflagem"],
   Sociabilidade: ["Incubação"],
   Eusocialidade: ["Sociabilidade"],

@@ -399,6 +399,10 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Recuo");
   if (targets.some((target) => target.sliding))
     actionable.add("Deslizamento");
+  if (targets.some((target) => target.hypermetamorphosis))
+    actionable.add("Hipermetamorfose");
+  if (targets.some((target) => target.massRecruitment))
+    actionable.add("Recrutamento em Massa");
   if (
     has(piece, "Manada") &&
     state.pieces.some(

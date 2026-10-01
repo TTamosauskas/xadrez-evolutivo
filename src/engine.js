@@ -3434,6 +3434,19 @@ function executeMove(ctx, action) {
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
+  if (target.hypermetamorphosis) {
+    p.hypermetamorphosisReady = false;
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🐞 Hipermetamorfose usou a geometria dispersiva até ${coord(target.r, target.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Hipermetamorfose",
+      "🐞 Hipermetamorfose consumiu a ação dispersiva.",
+      { pieceId: p.id, outcome: "dispersal-used" },
+    );
+  }
   if (!target.stay) recordExertion(state, p);
   if (target.webEscape) {
     const trapped = p.webTrapped;
@@ -4554,6 +4567,18 @@ function executeMove(ctx, action) {
       );
     }
     if (killed && victim.owner !== p.owner) {
+      if (target.massRecruitment) {
+        log(
+          state,
+          `${OWNERS[p.owner]}: 📣 Recrutamento em Massa coordenou a captura em ${coord(target.r, target.c)}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Recrutamento em Massa",
+          "📣 Recrutamento em Massa ampliou o alcance da captura.",
+          { pieceId: p.id, outcome: "collective-capture" },
+        );
+      }
       capturedEnemy = victim;
       state.lastSuccessfulCaptureRound = round(state);
         if (state.geologicalStage === "hadean")
