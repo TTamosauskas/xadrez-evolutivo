@@ -764,6 +764,82 @@ function nextOwnTurn(state, piece) {
   return state.turn + (piece.owner === state.current ? 2 : 1);
 }
 
+function effectiveFatigueLimit(piece) {
+  return fatigueLimit(piece) + (has(piece, "Endorfinas") ? 1 : 0);
+}
+
+function immediateCaptureThreatNextTurn(state, piece, turn) {
+  const threatState = {
+    ...state,
+    turn: turn + 1,
+    current: other(piece.owner),
+    phase: "move",
+    chain: null,
+    chainOptions: [],
+    chainTrait: null,
+    chainOrigin: null,
+    neurofocus: null,
+    serotoninReposition: null,
+  };
+  return threatState.pieces
+    .filter((enemy) => enemy.owner !== piece.owner)
+    .some((enemy) =>
+      movesFor(threatState, enemy, { ignoreChain: true }).some(
+        (target) =>
+          target.capture &&
+          target.r === piece.r &&
+          target.c === piece.c,
+      ),
+    );
+}
+
+function safeForRestorativeSleep(state, piece, turn) {
+  return (
+    !!piece &&
+    has(piece, "Ciclo de Sono") &&
+    terrain(state, piece.r, piece.c) !== "hostile" &&
+    !lethalHazardAt(state, piece.r, piece.c) &&
+    !carcassDisturbanceHazardousTo(state, piece, piece.r, piece.c) &&
+    !(
+      organicResidueAt(state, piece.r, piece.c) &&
+      organicResidueHazardousTo(piece)
+    ) &&
+    !immediateCaptureThreatNextTurn(state, piece, turn)
+  );
+}
+
+function applyAdipokineticRecovery(state, piece) {
+  if (
+    !piece ||
+    !has(piece, "Sistema Adipocinético") ||
+    terrain(state, piece.r, piece.c) !== "fertile" ||
+    (piece.exertionStreak ?? 0) <= 0 ||
+    piece.adipokineticRecoveryTurn === state.turn
+  )
+    return false;
+
+  piece.adipokineticRecoveryTurn = state.turn;
+  piece.exertionStreak = Math.max(0, piece.exertionStreak - 1);
+  if (
+    Number.isInteger(piece.fatigueRestTurn) &&
+    piece.fatigueRestTurn > state.turn &&
+    piece.exertionStreak < effectiveFatigueLimit(piece)
+  )
+    delete piece.fatigueRestTurn;
+
+  emitPassiveEffect(
+    state,
+    "Sistema Adipocinético",
+    "⛽ Sistema Adipocinético repôs reservas na casa fértil · esforço acumulado −1.",
+    {
+      pieceId: piece.id,
+      outcome: "reduced-fatigue-on-fertile-landing",
+      value: 1,
+    },
+  );
+  return true;
+}
+
 function scheduleFatigue(state, piece) {
   const restTurn = nextOwnTurn(state, piece);
   piece.fatigueRestTurn = Math.max(piece.fatigueRestTurn ?? -1, restTurn);
@@ -789,6 +865,21 @@ function recordExertion(state, piece, { reactive = false } = {}) {
       piece.lastReactiveExertionTurn === state.turn - 1;
     if (!continuesSequence) piece.exertionStreak = 0;
     piece.lastOwnExertionTurn = state.turn;
+  }
+
+  if (piece.restorativeSleepCharge) {
+    delete piece.restorativeSleepCharge;
+    emitPassiveEffect(
+      state,
+      "Ciclo de Sono",
+      "😴 Sono Reparador absorveu o primeiro esforço após despertar.",
+      {
+        pieceId: piece.id,
+        outcome: "restorative-sleep-absorbed-exertion",
+        value: 1,
+      },
+    );
+    return true;
   }
 
   piece.exertionStreak = (piece.exertionStreak ?? 0) + 1;
@@ -820,6 +911,20 @@ function recoverFatigueAfterTurn(state, owner, turn) {
     if (piece.owner !== owner || !has(piece, "Predação")) continue;
     const exertedThisTurn = piece.lastOwnExertionTurn === turn;
     if (piece.fatigueRestTurn === turn) {
+      if (safeForRestorativeSleep(state, piece, turn)) {
+        piece.sleepingThroughTurn = turn + 1;
+        piece.restorativeSleepCharge = true;
+        emitPassiveEffect(
+          state,
+          "Ciclo de Sono",
+          "😴 Ciclo de Sono aprofundou o descanso em segurança · o próximo esforço não contará para Fadiga.",
+          {
+            pieceId: piece.id,
+            outcome: "restorative-sleep",
+            value: 1,
+          },
+        );
+      }
       delete piece.fatigueRestTurn;
       piece.exertionStreak = 0;
       delete piece.lastOwnExertionTurn;
@@ -1145,6 +1250,7 @@ function triggerAdrenalineEscape(ctx, attacker, victim) {
     "fuga por Adrenalina",
   );
   recordExertion(state, victim, { reactive: true });
+  applyAdipokineticRecovery(state, victim);
   if (state.pieces.some((piece) => piece.id === attacker.id))
     reactiveRelocation(
       ctx,
@@ -2009,6 +2115,12 @@ function advanceTurn(ctx) {
   recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
+  for (const piece of state.pieces)
+    if (
+      Number.isInteger(piece.sleepingThroughTurn) &&
+      piece.sleepingThroughTurn < state.turn
+    )
+      delete piece.sleepingThroughTurn;
   maturePostHadeanChemosynthesis(state);
   if (state.geologicalStage === "hadean")
     advanceHadeanEnvironment(state);
@@ -2313,6 +2425,8 @@ function completeMove(
     })
   )
     return;
+  if (p.lastOwnExertionTurn === state.turn)
+    applyAdipokineticRecovery(state, p);
   advanceTurn(ctx);
   settle(ctx);
 }
@@ -3062,6 +3176,7 @@ function triggerInkEscape(ctx, attacker, victim) {
   const escape = pick(state, cells);
   reactiveRelocation(ctx, victim, escape.r, escape.c, "fuga por Tinta");
   recordExertion(state, victim, { reactive: true });
+  applyAdipokineticRecovery(state, victim);
   log(
     state,
     `${OWNERS[victim.owner]}: 🌫️ Tinta obscureceu a região e permitiu fuga para ${coord(escape.r, escape.c)}.`,
@@ -3891,6 +4006,7 @@ function executeMove(ctx, action) {
         "fuga por Ofuscamento por movimento",
       );
       recordExertion(state, victim, { reactive: true });
+  applyAdipokineticRecovery(state, victim);
       log(
         state,
         `${OWNERS[victim.owner]}: 🦓 Ofuscamento por movimento desviou a criatura para ${coord(escape.r, escape.c)}.`,
@@ -3935,6 +4051,7 @@ function executeMove(ctx, action) {
           "fuga por Movimento proteano",
         );
         recordExertion(state, victim, { reactive: true });
+  applyAdipokineticRecovery(state, victim);
         log(
           state,
           `${OWNERS[victim.owner]}: 🦌 Movimento proteano desviou a criatura para ${coord(target.r, target.c)}.`,
