@@ -72,6 +72,7 @@ import {
   neurodivergenceResting,
   intoxicationResting,
   fatigueResting,
+  rapidFatigueRecovery,
 } from "./moves.js";
 import { corticalMoveSuggestions } from "./positioning.js";
 import {
@@ -1378,7 +1379,8 @@ export function render(
         if (intoxicationResting(state, p)) statusBadges.push("😵‍💫");
         if (
           Number.isInteger(p.fatigueRestTurn) &&
-          p.fatigueRestTurn >= state.turn
+          p.fatigueRestTurn >= state.turn &&
+          !rapidFatigueRecovery(state, p)
         )
           statusBadges.push("🥵");
         if (p.sleepingThroughTurn === state.turn) statusBadges.push("😴");
@@ -1565,7 +1567,8 @@ export function render(
       state.pieces.some(
         (piece) =>
           Number.isInteger(piece.fatigueRestTurn) &&
-          piece.fatigueRestTurn >= state.turn,
+          piece.fatigueRestTurn >= state.turn &&
+          !rapidFatigueRecovery(state, piece),
       )
         ? { marker: "🥵", label: "Fadiga · próximo turno próprio sem locomoção" }
         : null,
