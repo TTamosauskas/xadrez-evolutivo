@@ -1628,6 +1628,23 @@ function competitiveReproductionPressure(
   };
 }
 
+export function replacementReproductionPressure(state, parent = null) {
+  const pressure = replacementPressure(state),
+    ownerPopulation = parent
+      ? state.pieces.filter((piece) => piece.owner === parent.owner).length
+      : 0,
+    rivalPopulation = parent ? activePopulation(state) - ownerPopulation : 0;
+  return {
+    ...pressure,
+    cooldown: pressure.level,
+    limit: pressure.level >= 3 && state.turn >= 160 ? 0 : Infinity,
+    suppressPredation:
+      !!parent &&
+      pressure.level >= 2 &&
+      ownerPopulation >= rivalPopulation,
+  };
+}
+
 export function dopaminePressureReductionAvailable(state, parent) {
   if (!state || !parent || !has(parent, "Dopamina")) return false;
   const population = activePopulation(state),
@@ -1645,7 +1662,8 @@ export function dopaminePressureReductionAvailable(state, parent) {
       parent,
       pressureLatched,
     ),
-    noCapture = noCaptureReproductionPressure(state);
+    noCapture = noCaptureReproductionPressure(state),
+    replacement = replacementReproductionPressure(state, parent);
   return (
     populationReproductionCooldown(
       population,
@@ -1653,7 +1671,8 @@ export function dopaminePressureReductionAvailable(state, parent) {
       state.geologicalStage,
     ) +
       competitive.cooldown +
-      noCapture.cooldown >
+      noCapture.cooldown +
+      replacement.cooldown >
     0
   );
 }
@@ -1898,15 +1917,7 @@ export function reproduce(
       pressureLatched,
     ),
     noCapturePressure = noCaptureReproductionPressure(state),
-    replacement = replacementPressure(state),
-    ownerPopulation = state.pieces.filter(
-      (piece) => piece.owner === parent.owner,
-    ).length,
-    rivalPopulation = population - ownerPopulation,
-    replacementSuppressPredation =
-      replacement.level >= 2 && ownerPopulation >= rivalPopulation,
-    replacementLimit =
-      replacement.level >= 3 && state.turn >= 160 ? 0 : Infinity,
+    replacement = replacementReproductionPressure(state, parent),
     outputFor = (candidate) => {
       const base = reproductiveOutput(candidate);
       return has(candidate, "Artrópode") ? Math.min(6, base * 2) : base;
@@ -1933,13 +1944,13 @@ export function reproduce(
           ),
     pressureLimit =
       reason === "predação" &&
-      (competitivePressure.suppressPredation || replacementSuppressPredation)
+      (competitivePressure.suppressPredation || replacement.suppressPredation)
         ? 0
         : Math.min(
             populationLimit,
             competitivePressure.limit,
             noCapturePressure.limit,
-            replacementLimit,
+            replacement.limit,
           ),
     wanted = Math.min(baseWanted, pressureLimit),
     cooldown = (piece, feeder = false) => {
@@ -2068,7 +2079,7 @@ export function reproduce(
         ) +
         competitivePressure.cooldown +
         noCapturePressure.cooldown +
-        replacement.level;
+        replacement.cooldown;
       if (
         feeder &&
         pressure > 0 &&
