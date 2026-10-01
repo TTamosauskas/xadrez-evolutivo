@@ -5,6 +5,7 @@ import {
   AI_ACTION_TYPES,
   AI_SEARCH_PROFILES,
   chooseAction,
+  captureGeometryPriority,
   evaluateForAI,
   strategicPieceValue,
 } from "../src/ai.js";
@@ -97,4 +98,39 @@ test("hard Arena setup can add a legal counter that is absent from static preset
   assert.ok(hard[0].includes("Herbívoro"));
   assert.ok(arenaSetupGenomeValid(hard[0], "animal"));
   assert.ok(arenaSetupGenomeValid(hard[1], "plant"));
+});
+
+
+test("capture geometry rewards moves that create a concrete next-turn capture", () => {
+  const state = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 3 },
+      { owner: "amber", r: 1, c: 5, rank: 0 },
+    ], 9401),
+    rook = state.pieces[0],
+    attacking = { type: "MOVE", id: rook.id, r: 4, c: 5 },
+    drifting = { type: "MOVE", id: rook.id, r: 4, c: 3 };
+
+  assert.ok(
+    captureGeometryPriority(state, rook, attacking) >
+      captureGeometryPriority(state, rook, drifting),
+  );
+});
+
+test("capture geometry gains extra weight in late stalled positions", () => {
+  const state = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 3 },
+      { owner: "amber", r: 1, c: 5, rank: 0 },
+    ], 9402),
+    rook = state.pieces[0],
+    action = { type: "MOVE", id: rook.id, r: 4, c: 5 };
+
+  state.turn = 20;
+  state.lastSuccessfulCaptureRound = 10;
+  const early = captureGeometryPriority(state, rook, action);
+
+  state.turn = 160;
+  state.lastSuccessfulCaptureRound = 40;
+  const stalled = captureGeometryPriority(state, rook, action);
+
+  assert.ok(stalled > early);
 });
