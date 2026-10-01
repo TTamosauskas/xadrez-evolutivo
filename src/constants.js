@@ -102,7 +102,7 @@ export const TRAITS = {
   ],
   Hibernação: [
     "🧸",
-    "Quando a maioria das casas jogáveis fica hostil ou contaminada por patógenos ecológicos, entra em torpor por 10 turnos: não age, não pode ser capturada e evita riscos hostis comuns. Controles populacionais não ativam o efeito.",
+    "Quando a maioria das casas jogáveis fica hostil ou contaminada por patógenos ecológicos, entra em torpor por 5 turnos: não age, não pode ser capturada e evita riscos hostis comuns. Controles populacionais não ativam o efeito.",
   ],
   Vertebrado: [
     "🐟",
