@@ -757,7 +757,15 @@ function renderArenaDesigner() {
         input.checked = true;
         input.disabled = true;
       }
-      if (trait !== branch.energy) {
+      if (
+        branch.id === "animal" &&
+        bodyPlan &&
+        trait === bodyPlan
+      ) {
+        input.checked = true;
+        input.disabled = true;
+      }
+      if (trait !== branch.energy && trait !== bodyPlan) {
         const candidateTraits = new Set(selectedTraits);
         if (input.checked) candidateTraits.delete(trait);
         else candidateTraits.add(trait);
