@@ -120,7 +120,7 @@ test("Hibernação não impede Domínio Ecológico quando é tudo que resta de u
 
   assert.ok(state.result);
   assert.equal(state.result.winner, "amber");
-  assert.equal(state.result.kind, "ecological-domain");
+  assert.equal(state.result.victoryType, "ecological-domain");
   assert.match(state.result.reason, /Hibernação/);
   assertState(state);
 });
