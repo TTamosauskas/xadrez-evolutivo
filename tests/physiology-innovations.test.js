@@ -16,7 +16,7 @@ import { infectByIngestion } from "../src/disease.js";
 import { tickEnvironment } from "../src/environment.js";
 
 const NEW_ICONS = Object.freeze({
-  Xerofitismo: "🌞",
+  Xerofitismo: "💦",
   "Coração Compartimentado": "🫀",
   Endorfinas: "😌",
   Intestino: "🪢",
