@@ -1258,6 +1258,50 @@ function hatchEgg(ctx, egg) {
   return born;
 }
 
+
+function propaguleSurvivesEnvironment(state, propagule, kind) {
+  if (!propagule || !inside(propagule.r, propagule.c)) return false;
+  const icon = kind === "egg" ? "🥚" : "🌱",
+    label = kind === "egg" ? "Ovo" : "Semente",
+    cell = coord(propagule.r, propagule.c);
+
+  if (lethalHazardAt(state, propagule.r, propagule.c)) {
+    log(
+      state,
+      `${icon} ${label} das ${OWNERS[propagule.owner]} foi eliminado em ambiente letal em ${cell}.`,
+    );
+    return false;
+  }
+
+  if (terrain(state, propagule.r, propagule.c) !== "hostile")
+    return true;
+
+  const now = round(state);
+  if (propagule.hostileRiskRound === now) return true;
+  propagule.hostileRiskRound = now;
+  if (random(state) >= 1 / 2) return true;
+
+  log(
+    state,
+    `${icon} ${label} das ${OWNERS[propagule.owner]} morreu em ambiente hostil em ${cell}.`,
+  );
+  return false;
+}
+
+function resolveSeedEnvironment(state, seed) {
+  if (propaguleSurvivesEnvironment(state, seed, "seed")) return true;
+  state.plantSeeds = state.plantSeeds.filter(
+    (candidate) => candidate.id !== seed.id,
+  );
+  return false;
+}
+
+function resolveEggEnvironment(state, egg) {
+  if (propaguleSurvivesEnvironment(state, egg, "egg")) return true;
+  state.eggs = state.eggs.filter((candidate) => candidate.id !== egg.id);
+  return false;
+}
+
 function zoochoryMode(profile) {
   if (has(profile, "Capsaicina")) return "capsaicina";
   if (has(profile, "Endozoocoria")) return "endozoocoria";
@@ -2658,6 +2702,7 @@ export function tickReproduction(ctx) {
   tickFragments(ctx);
 
   for (const seed of [...state.plantSeeds]) {
+    if (!resolveSeedEnvironment(state, seed)) continue;
     if (seed.transport?.kind === "endozoocoria") {
       if (now < seed.transport.releaseRound) continue;
       const cell = seed.transport.cell,
@@ -2864,6 +2909,7 @@ export function tickReproduction(ctx) {
   }
 
   for (const egg of [...state.eggs]) {
+    if (!resolveEggEnvironment(state, egg)) continue;
     if (egg.mode !== "basal") {
       if (eggCanHatch(ctx, egg)) hatchEgg(ctx, egg);
       continue;
