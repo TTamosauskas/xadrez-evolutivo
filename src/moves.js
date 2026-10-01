@@ -82,11 +82,19 @@ export const regenerationResting = (state, p) =>
   round(state) <= p.regenerationRestThroughRound;
 export const fatigueLimit = (piece) =>
   FATIGUE_LIMITS[piece?.rank] ?? 4;
+export const rapidFatigueRecovery = (state, piece) =>
+  !!piece &&
+  state.pieces.filter(
+    (candidate) =>
+      candidate.owner !== piece.owner &&
+      !hibernating(state, candidate),
+  ).length <= 2;
 export const fatigueResting = (state, piece) =>
   !!piece &&
   has(piece, "Predação") &&
   Number.isInteger(piece.fatigueRestTurn) &&
-  piece.fatigueRestTurn === state.turn;
+  piece.fatigueRestTurn === state.turn &&
+  !rapidFatigueRecovery(state, piece);
 export const neurodivergenceResting = (state, p) =>
   Number.isInteger(p?.neurodivergenceRestThroughRound) &&
   round(state) <= p.neurodivergenceRestThroughRound;
