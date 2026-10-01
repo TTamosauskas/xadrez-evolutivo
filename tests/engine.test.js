@@ -112,6 +112,7 @@ import {
   GEOLOGICAL_STAGES,
   habitatProfile,
   aquaticFertilityRegime,
+  cellularTerrainUnlocked,
   conwayUnlocked,
   captureUnlocked,
   contactCaptureUnlocked,
@@ -154,7 +155,7 @@ test("detailed geological phases expose distinct habitat presets", () => {
   assert.equal(pleistocene.pattern, "steppe");
   assert.equal(holocene.pattern, "anthropic");
 });
-test("first generation-3 habitat update preserves every geological preset", () => {
+test("first round-5 cellular habitat update preserves geological bounds", () => {
   const cellsOf = (state, type) =>
       new Set(
         state.board
@@ -162,10 +163,12 @@ test("first generation-3 habitat update preserves every geological preset", () =
           .filter((cell) => cell !== null),
       ),
     retained = (before, after) =>
-      [...before].filter((cell) => after.has(cell)).length;
+      [...before].filter((cell) => after.has(cell)).length,
+    devonianIndex = GEOLOGICAL_STAGES.find(
+      (entry) => entry.id === "devonian",
+    ).index;
 
   for (const [index, stage] of GEOLOGICAL_STAGES.entries()) {
-    if (stage.id === "proterozoic") continue;
     const s = createState(900 + index, {
         geologicalStage: stage.id,
         naturalBarriers: true,
@@ -173,14 +176,13 @@ test("first generation-3 habitat update preserves every geological preset", () =
       beforeFertile = cellsOf(s, "fertile"),
       beforeHostile = cellsOf(s, "hostile");
 
-    s.maxGenerationReached = 3;
+    s.turn = 10;
     tickEnvironment(context(s));
 
     const afterFertile = cellsOf(s, "fertile"),
       afterHostile = cellsOf(s, "hostile"),
-      conwayActive =
-        stage.index >=
-        GEOLOGICAL_STAGES.find((entry) => entry.id === "devonian").index;
+      cellularActive = cellularTerrainUnlocked(s);
+
     assert.ok(
       Math.abs(afterFertile.size - beforeFertile.size) <= 2,
       `${stage.period}: preset fértil mudou de ${beforeFertile.size} para ${afterFertile.size}`,
@@ -189,28 +191,22 @@ test("first generation-3 habitat update preserves every geological preset", () =
       Math.abs(afterHostile.size - beforeHostile.size) <= 2,
       `${stage.period}: preset hostil mudou de ${beforeHostile.size} para ${afterHostile.size}`,
     );
-    assert.ok(
-      retained(beforeFertile, afterFertile) >=
-        Math.max(0, beforeFertile.size - 2),
-      `${stage.period}: geometria fértil foi reescrita no primeiro tick`,
-    );
+    if (stage.index < devonianIndex)
+      assert.deepEqual(afterFertile, beforeFertile, stage.id);
     assert.ok(
       retained(beforeHostile, afterHostile) >=
         Math.max(0, beforeHostile.size - 2),
-      `${stage.period}: geometria hostil foi reescrita no primeiro tick`,
+      `${stage.period}: geometria hostil foi reescrita em excesso`,
     );
-    assert.equal(s.nextHabitatGeneration, conwayActive ? 5 : 3);
-    if (!conwayActive) {
-      assert.deepEqual(afterFertile, beforeFertile);
-      assert.deepEqual(afterHostile, beforeHostile);
-    }
+    assert.equal(s.nextHabitatRound, cellularActive ? 10 : 5);
     assertState(s);
   }
 });
 
-test("pre-Devonian custom habitats stay outside Conway while preserving their phase presets", () => {
+test("pre-Devonian periods keep aquatic fertility while hostile terrain evolves cellularly", () => {
   const hadean = createCampaignState(898);
   assert.equal(aquaticFertilityRegime(hadean), true);
+  assert.equal(cellularTerrainUnlocked(hadean), false);
   assert.equal(hadean.board.filter((cell) => cell === "fertile").length, 3);
 
   for (const [index, id] of [
@@ -228,16 +224,24 @@ test("pre-Devonian custom habitats stay outside Conway while preserving their ph
         geologicalStage: id,
         naturalBarriers: true,
       }),
-      before = [...state.board];
+      fertileBefore = state.board.filter((cell) => cell === "fertile").length,
+      hostileBefore = state.board.filter((cell) => cell === "hostile").length;
     assert.equal(aquaticFertilityRegime(state), true, id);
     assert.equal(conwayUnlocked(state), false, id);
-    assert.ok(state.board.includes("fertile"), id);
-    if ((stage.habitat.hostile ?? 0) > 0)
-      assert.ok(state.board.includes("hostile"), id);
-    state.maxGenerationReached = 3;
+    assert.equal(cellularTerrainUnlocked(state), true, id);
+    state.turn = 10;
     tickEnvironment(context(state));
+    assert.equal(
+      state.board.filter((cell) => cell === "fertile").length,
+      fertileBefore,
+      id,
+    );
+    assert.equal(
+      state.board.filter((cell) => cell === "hostile").length,
+      hostileBefore,
+      id,
+    );
     advanceConway(context(state));
-    assert.deepEqual(state.board, before, id);
     assertState(state);
   }
 
@@ -247,6 +251,7 @@ test("pre-Devonian custom habitats stay outside Conway while preserving their ph
   });
   assert.equal(aquaticFertilityRegime(silurian), false);
   assert.equal(conwayUnlocked(silurian), false);
+  assert.equal(cellularTerrainUnlocked(silurian), true);
   assertState(hadean);
   assertState(silurian);
 });
@@ -1578,7 +1583,8 @@ test("population pressure governs fertility, pathogens and severe climate", () =
   assert.equal(state.severePopulationLatched, true);
   state.event = null;
   state.pieces = state.pieces.slice(0, 32);
-  assert.equal(checkPopulationClimate(context(state)), false);
+  assert.equal(checkPopulationClimate(context(state)), true);
+  assert.equal(state.populationTerrainPressure.level, 1);
   assert.equal(state.severePopulationLatched, true);
   state.pieces = state.pieces.slice(0, 23);
   assert.equal(checkPopulationClimate(context(state)), false);
@@ -2769,7 +2775,7 @@ const stateHasDistinctOutbreak = (state) =>
   state.diseases.length > 1 ||
   (state.event && state.diseases.length > 0);
 
-test("generation milestones drive habitat and queue ecological events", () => {
+test("round cadence drives habitat while generations continue queuing ecological events", () => {
   const s = createState(2, {
       scenario: "earth",
       geologicalStage: "devonian",
@@ -2777,17 +2783,22 @@ test("generation milestones drive habitat and queue ecological events", () => {
     ctx = context(s);
   s.maxGenerationReached = 4;
   tickEnvironment(ctx);
-  assert.equal(s.nextHabitatGeneration, 5);
+  assert.equal(s.nextHabitatRound, 5);
+  assert.equal(s.nextHabitatGeneration, 3);
   assert.equal(s.nextEventGeneration, 10);
   assert.ok(s.event || s.diseases.length);
   const first = s.event?.id ?? "pathogen";
+
   s.maxGenerationReached = 10;
   s.turn = 2;
   tickEnvironment(ctx);
   assert.equal(s.nextEventGeneration, 16);
+  assert.equal(s.nextHabitatRound, 5);
   assert.ok(s.event || s.diseases.length);
+
   s.turn = 20;
   tickEnvironment(ctx);
+  assert.ok(s.nextHabitatRound > 5);
   assert.ok(s.event || s.diseases.length);
   const current = s.event?.id ?? "pathogen";
   assert.ok(first !== current || stateHasDistinctOutbreak(s));
