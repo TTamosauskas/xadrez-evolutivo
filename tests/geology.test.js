@@ -54,6 +54,7 @@ import { context } from "../src/engine.js";
 import { tickEnvironment } from "../src/environment.js";
 import {
   EARTH_FOUNDER_GENOMES,
+  earthBodyPlanFounder,
   earthFounderHistory,
   earthFounderPersistentTraits,
 } from "../src/scenarios.js";
@@ -201,8 +202,12 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
     for (const branch of ["plant", "animal"]) {
       const piece = branchPieces[branch],
         preferred = branch === "plant" ? "Fotossíntese" : "Predação",
+        canonicalPreset =
+          branch === "animal"
+            ? earthBodyPlanFounder(id, "Vertebrado") ?? preset
+            : preset,
         inherited = [
-          ...(preset[branch] ?? []),
+          ...(canonicalPreset[branch] ?? []),
           ...earthFounderPersistentTraits(id),
           ...(index > repairIndex ? ["Reparo Celular"] : []),
           ...(branch === "animal" && index > bilateralIndex
