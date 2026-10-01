@@ -225,6 +225,14 @@ export function captureGeometryPriority(state, piece, action) {
   ) * pressureMultiplier;
 }
 
+export function resolutionPressureLevel(state) {
+  const elapsed = Math.max(
+    0,
+    round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+  );
+  return elapsed >= 24 ? 3 : elapsed >= 18 ? 2 : elapsed >= 12 ? 1 : 0;
+}
+
 export function crowdingPenalty(count) {
   return count > 12 ? Math.min(36, (count - 12) * 2) : 0;
 }
@@ -309,7 +317,7 @@ function barrierPriority(state, action) {
   return 3 + balance.enemies * 2 - balance.allies;
 }
 
-export function actionPriority(state, a) {
+export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 0 } = {}) {
   if (a.type === "CHEMOSYNTHESIS") return 13;
   if (a.type === "FIX_NITROGEN")
     return 8 + placementPriority(state, a);
@@ -461,7 +469,11 @@ export function actionPriority(state, a) {
       enemies.length &&
       Number.isInteger(a.r) &&
       !enemyVictim
-        ? Math.min(34, captureGeometryPriority(state, p, a))
+        ? Math.min(34, captureGeometryPriority(state, p, a)) * geometryScale
+        : 0,
+    resolutionCaptureBonus =
+      enemyVictim
+        ? resolutionLevel * (12 + Math.max(0, 4 - enemies.length) * 4)
         : 0,
     captureValue = enemyVictim
       ? 10 +
@@ -519,6 +531,7 @@ export function actionPriority(state, a) {
   return (
     familyReproductionBonus +
     hunt +
+    resolutionCaptureBonus +
     captureValue +
     cannibalValue +
     fertileValue +
@@ -700,21 +713,39 @@ function sideValue(state, owner) {
   return pieces + branchValue * 0.45 + brood - crowdingPenalty(population);
 }
 
-export function evaluateForAI(state, owner) {
+export function evaluateForAI(
+  state,
+  owner,
+  { resolutionLevel = 0 } = {},
+) {
   if (state.result)
     return state.result.winner === owner
       ? 100000
       : state.result.winner
         ? -100000
         : 0;
-  return sideValue(state, owner) - sideValue(state, other(owner));
+  const base = sideValue(state, owner) - sideValue(state, other(owner));
+  if (!resolutionLevel) return base;
+  const ownPopulation = state.pieces.filter(
+      (piece) => piece.owner === owner,
+    ).length,
+    enemyPopulation = state.pieces.filter(
+      (piece) => piece.owner === other(owner),
+    ).length,
+    extinctionPressure = Math.max(0, 6 - enemyPopulation) * 8;
+  return (
+    base +
+    resolutionLevel *
+      ((ownPopulation - enemyPopulation) * 4 + extinctionPressure)
+  );
 }
 
-function orderedActions(state, limit = Infinity) {
+function orderedActions(state, limit = Infinity, priorityOptions = {}) {
   return legalActions(state)
     .sort(
       (a, b) =>
-        actionPriority(state, b) - actionPriority(state, a) ||
+        actionPriority(state, b, priorityOptions) -
+          actionPriority(state, a, priorityOptions) ||
         String(a.type).localeCompare(String(b.type)) ||
         (a.id ?? 0) - (b.id ?? 0) ||
         (a.r ?? 0) - (b.r ?? 0) ||
@@ -740,10 +771,18 @@ function searchValue(
     context.nodes >= context.maxNodes ||
     context.now() > context.deadline
   )
-    return evaluateForAI(state, owner);
+    return evaluateForAI(state, owner, {
+      resolutionLevel: context.resolutionLevel,
+    });
 
-  const actions = orderedActions(state, context.branchWidth);
-  if (!actions.length) return evaluateForAI(state, owner);
+  const actions = orderedActions(
+    state,
+    context.branchWidth,
+    context.priorityOptions,
+  );
+  if (!actions.length) return evaluateForAI(state, owner, {
+      resolutionLevel: context.resolutionLevel,
+    });
 
   const maximizing = state.current === owner;
   let best = maximizing ? -Infinity : Infinity;
@@ -776,7 +815,11 @@ function searchValue(
     }
     if (beta <= alpha) break;
   }
-  return Number.isFinite(best) ? best : evaluateForAI(state, owner);
+  return Number.isFinite(best)
+    ? best
+    : evaluateForAI(state, owner, {
+        resolutionLevel: context.resolutionLevel,
+      });
 }
 
 function profileFor(difficulty, cortexAvailable, options) {
@@ -807,7 +850,15 @@ export function chooseAction(
     stats = null,
   } = {},
 ) {
-  const actions = orderedActions(state);
+  const activeResolutionLevel =
+      difficulty === "medium" || difficulty === "hard"
+        ? resolutionPressureLevel(state)
+        : 0,
+    priorityOptions = {
+      geometryScale: difficulty === "hard" ? 0.25 : 1,
+      resolutionLevel: activeResolutionLevel,
+    },
+    actions = orderedActions(state, Infinity, priorityOptions);
   if (!actions.length) return { type: "PASS" };
 
   const cortexAvailable = actions.some(
@@ -836,6 +887,8 @@ export function chooseAction(
       deadline,
       maxNodes: profile.maxNodes,
       branchWidth: profile.branchWidth,
+      priorityOptions,
+      resolutionLevel: activeResolutionLevel,
       nodes: 0,
     };
 
@@ -860,8 +913,10 @@ export function chooseAction(
     let value =
       remainingDepth > 0 || next.current === state.current
         ? searchValue(next, owner, remainingDepth, context)
-        : evaluateForAI(next, owner);
-    value += actionPriority(state, action) * 0.08;
+        : evaluateForAI(next, owner, {
+            resolutionLevel: activeResolutionLevel,
+          });
+    value += actionPriority(state, action, priorityOptions) * 0.08;
 
     if (value > score) {
       score = value;
