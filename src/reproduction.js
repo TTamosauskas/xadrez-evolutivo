@@ -1890,6 +1890,22 @@ export function reproduce(
         TROPHIC_REPRODUCTION_RESOURCES.has(resourceKind)
       )
         metabolic *= 2;
+      if (feeder && piece.intestinalAbsorptionPending) {
+        const beforeIntestine = metabolic;
+        metabolic = Math.max(1, metabolic - 1);
+        delete piece.intestinalAbsorptionPending;
+        if (metabolic < beforeIntestine)
+          emitPassiveEffect(
+            state,
+            "Intestino",
+            "🪢 Intestino aumentou a assimilação alimentar · recuperação metabólica −1.",
+            {
+              pieceId: piece.id,
+              outcome: "intestinal-absorption",
+              value: 1,
+            },
+          );
+      }
       if (options.trophicEfficiency) metabolic = Math.max(1, metabolic - 1);
       if (mates.length > 1) metabolic *= 2;
       if (
@@ -2206,6 +2222,15 @@ export function reproduce(
     );
     if (has(parent, "Ooteca") && options.fertileReproduction)
       parent.oothecaPrimed = true;
+    if (
+      has(parent, "Intestino") &&
+      TROPHIC_REPRODUCTION_RESOURCES.has(resourceKind)
+    ) {
+      parent.intestinalAbsorptionCount =
+        ((parent.intestinalAbsorptionCount ?? 0) + 1) % 2;
+      if (parent.intestinalAbsorptionCount === 0)
+        parent.intestinalAbsorptionPending = true;
+    }
     applyCooldown();
     if (
       mates.length === 1 &&
