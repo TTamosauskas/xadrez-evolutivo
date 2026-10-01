@@ -73,6 +73,7 @@ import {
   hematophagyTargets,
   broodParasitismTargets,
   canRejectBroodParasite,
+  detoxificationAvailable,
   chemosynthesisAvailable,
   nitrogenFixationTargets,
   pheromoneTargets,
@@ -1429,6 +1430,7 @@ function actionActorId(state, action) {
       "PHEROMONE_SIGNAL",
       "BIOLUMINESCENT_LURE",
       "NURSE",
+      "DETOXIFY",
       "NICHE_BUILD",
       "BUD",
       "PUPATE",
@@ -3054,6 +3056,36 @@ function executeMove(ctx, action) {
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
+  if (target.endorphinRecovery) {
+    const moved = reactiveRelocation(
+      ctx,
+      p,
+      target.r,
+      target.c,
+      "deslocamento durante recuperação por Endorfinas",
+    );
+    delete p.regenerationRestThroughRound;
+    state.neurodivergenceAction = null;
+    state.neurofocus = null;
+    if (moved && state.pieces.some((piece) => piece.id === p.id)) {
+      log(
+        state,
+        `${OWNERS[p.owner]}: 😌 Endorfinas permitiram um deslocamento simples durante a recuperação.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Endorfinas",
+        "😌 Endorfinas permitiram um deslocamento simples durante a recuperação.",
+        {
+          pieceId: p.id,
+          outcome: "endorphin-recovery-move",
+        },
+      );
+    }
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
   if (target.webEscape) {
     const trapped = p.webTrapped;
     state.webs = (state.webs ?? []).filter(
@@ -5003,6 +5035,35 @@ function resolveNursing(ctx, action) {
   settle(ctx);
 }
 
+function resolveDetoxification(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!piece || !detoxificationAvailable(state, piece))
+    throw Error("Biotransformação Hepática indisponível.");
+  const source = piece.venom?.source ?? "toxina";
+  delete piece.venom;
+  piece.hepaticDetoxReadyRound = round(state) + 4;
+  log(
+    state,
+    `${OWNERS[piece.owner]}: ⚗️ Biotransformação Hepática eliminou ${source} e consumiu a ação.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Biotransformação Hepática",
+    "⚗️ Biotransformação Hepática eliminou o agente tóxico; a ação foi consumida.",
+    {
+      pieceId: piece.id,
+      outcome: "hepatic-detoxification",
+      value: 4,
+    },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function consumeSexualResource(state, parent, mate) {
   const resource = sexualReproductionResource(state, parent, mate);
   if (!resource) return null;
@@ -5700,6 +5761,8 @@ export function transition(previous, action) {
     resolveAggressiveMate(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
     resolveNursing(ctx, action);
+  else if (action.type === "DETOXIFY" && state.phase === "move")
+    resolveDetoxification(ctx, action);
   else if (action.type === "NICHE_BUILD" && state.phase === "move")
     resolveNicheBuild(ctx, action);
   else if (action.type === "BUD" && state.phase === "move")
