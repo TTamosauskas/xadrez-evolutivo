@@ -5052,6 +5052,7 @@ function executeMove(ctx, action) {
             ? "seed"
             : "fertile",
         resourceProviderId: consumedFertile ? p.id : null,
+        ignoreSuccessPressure: hadeanFirstFertileChild,
       },
     );
     if (
