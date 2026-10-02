@@ -4,7 +4,7 @@ import { fixture, move } from "./helpers.js";
 import { simulate } from "../src/engine.js";
 import { movesFor } from "../src/moves.js";
 
-test("capture disturbance immunity keeps a dormant predator active after capture", () => {
+test("fresh predation fertility keeps a dormant predator active before remains appear", () => {
   let state = fixture([
     {
       owner: "blue",
@@ -21,9 +21,10 @@ test("capture disturbance immunity keeps a dormant predator active after capture
   state = simulate(state, move(predator, 4, 4));
 
   const survivor = state.pieces.find((piece) => piece.id === predator.id);
-  assert.equal(state.board[36], "neutral");
-  assert.equal(state.captureDisturbances[0]?.cell, 36);
-  assert.equal(survivor.decompositionImmunity.cell, 36);
+  assert.equal(state.board[36], "fertile");
+  assert.equal(state.captureDisturbances.length, 0);
+  assert.equal(state.carcasses.length, 0);
+  assert.equal(survivor.predationEnergy, true);
   assert.ok(
     movesFor(state, survivor).some(
       (target) => target.r === 3 && target.c === 4 && target.capture,
