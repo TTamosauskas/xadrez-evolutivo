@@ -19,6 +19,7 @@ import { GEOLOGICAL_STAGES, traitUnlocked } from "../src/geology.js";
 import { square } from "../src/constants.js";
 import {
   energyValue,
+  movementEnergyCost,
   reproductionEnergyCost,
 } from "../src/energy.js";
 
@@ -264,7 +265,7 @@ test("Canibalismo permanece disponível durante cooldown e imaturidade", () => {
         (target) => target.r === 4 && target.c === 4 && target.cannibal,
       );
 
-  attacker.energy = 0;
+  attacker.energy = movementEnergyCost(attacker);
   assert.equal(targetsAlly(), true);
   attacker.maturesRound = 2;
   assert.equal(targetsAlly(), true);
