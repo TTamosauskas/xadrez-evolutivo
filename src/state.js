@@ -692,6 +692,9 @@ export function newPiece(state, owner, r, c, source = {}) {
       bornRound: source.bornRound ?? bornRound,
       maturesRound: source.maturesRound ?? bornRound,
       energy: Number.isFinite(source.energy) ? source.energy : null,
+      energyCapacitySnapshot: Number.isFinite(source.energyCapacitySnapshot)
+        ? source.energyCapacitySnapshot
+        : null,
       nextReproductionRound: source.nextReproductionRound ?? bornRound,
       oothecaPrimed: source.oothecaPrimed ?? false,
       somaticMutations: [],
@@ -772,6 +775,7 @@ export function newPiece(state, owner, r, c, source = {}) {
   normalized.energy = Number.isFinite(source.energy)
     ? Math.min(energyCapacity(normalized), source.energy)
     : energyCapacity(normalized);
+  normalized.energyCapacitySnapshot = energyCapacity(normalized);
   return normalized;
 }
 
@@ -3312,6 +3316,8 @@ export function assertState(state) {
       !Number.isInteger(p.energy) ||
       p.energy > energyCapacity(p) ||
       p.energy < -64 ||
+      !Number.isInteger(p.energyCapacitySnapshot) ||
+      p.energyCapacitySnapshot < 1 ||
       !integer(p.nextReproductionRound) ||
       (p.lethalDeathRound !== undefined &&
         !integer(p.lethalDeathRound, 0)) ||
