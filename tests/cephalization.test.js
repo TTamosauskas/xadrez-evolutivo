@@ -47,7 +47,10 @@ test("Cefalização is mandatory in the Ediacaran and precedes both Cambrian bod
   const ediacaran = GEOLOGICAL_STAGES.find((stage) => stage.id === "ediacaran");
 
   assert.ok(ediacaran.required.includes("Cefalização"));
-  assert.deepEqual(ediacaran.cycles[1], ["Cefalização"]);
+  assert.deepEqual(
+    ediacaran.cycles[0],
+    ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização"],
+  );
   assert.ok(TRAIT_DEPENDENCIES.Vertebrado.lineage.includes("Cefalização"));
   assert.ok(TRAIT_DEPENDENCIES["Artrópode"].lineage.includes("Cefalização"));
 });
