@@ -2177,6 +2177,7 @@ test("pre-locomotion predation places offspring toward the nearest rival", () =>
     reproduce(context(s), parent, null, "predação", {
       forcedCount: 1,
       ignoreReadiness: true,
+      ignoreSuccessPressure: true,
       immediateDevelopment: true,
     }),
     1,
@@ -3365,6 +3366,7 @@ test("opening mutation guarantee is independent per side from the second round o
     reproduce(context(s), blue, null, "teste", {
       forcedCount: 1,
       ignoreReadiness: true,
+      ignoreSuccessPressure: true,
       immediateDevelopment: true,
     }),
     1,
@@ -3380,6 +3382,7 @@ test("opening mutation guarantee is independent per side from the second round o
     reproduce(context(s), amber, null, "teste", {
       forcedCount: 1,
       ignoreReadiness: true,
+      ignoreSuccessPressure: true,
       immediateDevelopment: true,
     }),
     1,
