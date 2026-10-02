@@ -17,7 +17,10 @@ import {
   newPiece,
 } from "../src/state.js";
 import { TRAITS, has, square } from "../src/constants.js";
-import { energyValue } from "../src/energy.js";
+import {
+  energyValue,
+  reproductionEnergyCost,
+} from "../src/energy.js";
 import { actionsForPiece } from "../src/moves.js";
 import { reproduce } from "../src/reproduction.js";
 import { infect, tickDiseases } from "../src/disease.js";
@@ -72,7 +75,7 @@ test("Eucarionte amortece no máximo duas mutações negativas até a primeira a
   assert.equal(has(piece, "Ataxia"), true);
 });
 
-test("Endossimbiose antecipa uma reprodução em uma rodada e cobra dívida +2", () => {
+test("Endossimbiose permite reproduzir faltando 1 Energia e cobra dívida +2", () => {
   const state = fixture([
       {
         owner: "blue",
