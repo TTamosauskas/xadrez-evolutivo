@@ -16,6 +16,7 @@ import {
   traitCombinationValid,
 } from "../src/geology.js";
 import { TRAITS, square } from "../src/constants.js";
+import { energyValue } from "../src/energy.js";
 import { assertState, round } from "../src/state.js";
 import { reproduce } from "../src/reproduction.js";
 
