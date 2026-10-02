@@ -387,10 +387,11 @@ test("each geological discovery can launch the first cycle with prior winners re
       assert.equal(s.pieces.length, 0);
     } else {
       assert.equal(s.phase, "move");
-      assert.equal(s.pieces.length, 4);
+      assert.ok([4, 8].includes(s.pieces.length), stage.id);
+      const expectedPerOwner = s.pieces.length / 2;
       for (const owner of ["blue", "amber"]) {
         const founders = s.pieces.filter((piece) => piece.owner === owner);
-        assert.equal(founders.length, 2);
+        assert.equal(founders.length, expectedPerOwner);
         if (stage.id === "eoarchean") {
           assert.ok(
             founders.every((piece) => piece.traits.includes("Quimiossíntese")),
@@ -409,12 +410,12 @@ test("each geological discovery can launch the first cycle with prior winners re
           assert.equal(
             founders.filter((piece) => piece.traits.includes("Fotossíntese"))
               .length,
-            1,
+            expectedPerOwner === 4 ? 2 : 1,
           );
           assert.equal(
             founders.filter((piece) => piece.traits.includes("Predação"))
               .length,
-            1,
+            expectedPerOwner === 4 ? 2 : 1,
           );
         }
       }

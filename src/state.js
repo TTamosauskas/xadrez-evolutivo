@@ -1272,6 +1272,26 @@ export function earthFounderStarts(geologicalStage, cycle = 1, state = null) {
   ];
 }
 
+function founderPartnerCell(owner, r, c, occupied) {
+  const direction = owner === "blue" ? 1 : -1,
+    candidates = [
+      [r + direction, c],
+      [r + direction, c - 1],
+      [r + direction, c + 1],
+      [r, c - 1],
+      [r, c + 1],
+      [r - direction, c],
+      [r - direction, c - 1],
+      [r - direction, c + 1],
+    ];
+  for (const [rr, cc] of candidates) {
+    const cell = square(rr, cc);
+    if (inside(rr, cc) && !occupied.has(cell))
+      return { r: rr, c: cc, cell };
+  }
+  return null;
+}
+
 export function createState(seed = Date.now(), options = {}) {
   const founder = options.founder ?? null,
     founders = options.founders ?? null,
@@ -1489,35 +1509,66 @@ export function createState(seed = Date.now(), options = {}) {
             ? [canonicalStarts[0], canonicalStarts[2]]
             : canonicalStarts;
         })();
+    const sourceFor = (owner, slot) =>
+        ownerPair
+          ? ownerFounders[owner][slot]
+          : balancedPair
+            ? founders[slot]
+            : founders?.[owner] ?? founder,
+      sexualFounderStart =
+        scenario !== "arena" &&
+        starts.every(([owner, , , slot]) =>
+          (sourceFor(owner, slot)?.traits ?? []).includes(
+            "Reprodução Sexuada",
+          ),
+        ),
+      occupiedFounderCells = new Set(
+        starts.map(([, r, c]) => square(r, c)),
+      ),
+      sexualFounderCells = [];
     for (const [owner, r, c, slot] of starts) {
-      const source = ownerPair
-        ? ownerFounders[owner][slot]
-        : balancedPair
-          ? founders[slot]
-          : founders?.[owner] ?? founder;
-      const piece = newPiece(
-        state,
-        owner,
-        r,
-        c,
-        source
-          ? {
-              rank: source.rank,
-              traits: source.traits,
-              ancestry: source.ancestry,
-              genome: source.genome,
-              reproGenes: source.reproGenes,
-              recessiveTraits: source.recessiveTraits,
-              mutations: 0,
-              generation: 0,
-            }
-          : state.geologicalStage === "hadean"
-            ? { rank: 4 }
-            : {},
-      );
+      const source = sourceFor(owner, slot);
+      const profile = source
+        ? {
+            rank: source.rank,
+            traits: source.traits,
+            ancestry: source.ancestry,
+            genome: source.genome,
+            reproGenes: source.reproGenes,
+            recessiveTraits: source.recessiveTraits,
+            mutations: 0,
+            generation: 0,
+          }
+        : state.geologicalStage === "hadean"
+          ? { rank: 4 }
+          : {};
+      const piece = newPiece(state, owner, r, c, profile);
       state.pieces.push(piece);
       rememberEnergyBranchRepresentative(state, piece);
+
+      if (sexualFounderStart) {
+        const partnerCell = founderPartnerCell(
+          owner,
+          r,
+          c,
+          occupiedFounderCells,
+        );
+        if (!partnerCell)
+          throw Error("Posição de parceiro fundador indisponível.");
+        occupiedFounderCells.add(partnerCell.cell);
+        const partner = newPiece(
+          state,
+          owner,
+          partnerCell.r,
+          partnerCell.c,
+          profile,
+        );
+        state.pieces.push(partner);
+        sexualFounderCells.push(partnerCell.cell);
+        rememberEnergyBranchRepresentative(state, partner);
+      }
     }
+    state.sexualFounderCells = sexualFounderCells;
   }
   if (
     options.naturalBarriers !== false &&
@@ -1525,6 +1576,9 @@ export function createState(seed = Date.now(), options = {}) {
   )
     seedNaturalBarriers(state);
   seedHabitat(state);
+  for (const cell of state.sexualFounderCells ?? [])
+    state.board[cell] = "fertile";
+  delete state.sexualFounderCells;
   recordDiscovery(state, "mutations", "Respiração anaeróbia");
   if (scenario !== "arena") recordDiscovery(state, "geology", state.geologicalStage);
   log(
@@ -1535,7 +1589,9 @@ export function createState(seed = Date.now(), options = {}) {
         ? `Arena · Fase ${state.arenaPhase || state.cycle} começa com duas linhagens de cada lado.`
         : state.geologicalStage === "hadean"
           ? "Pré-Cambriano · Hadeano começa com dois Reis protocelulares sem Locomoção Primitiva: divida e capture quando houver contato."
-          : `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com um organismo de cada lado.`,
+          : state.pieces.some((piece) => has(piece, "Reprodução Sexuada"))
+            ? `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com dois pares fundadores sexualmente compatíveis de cada lado.`
+            : `${geologicalLabel(state)} · ${state.cycle}º Ciclo começa com um organismo de cada lado.`,
   );
   return state;
 }
