@@ -8,6 +8,7 @@ import {
   reproductionEnergyCost,
   restoreEnergy,
   spendEnergy,
+  normalizeEnergy,
 } from "./energy.js";
 import {
   activateOrigin,
@@ -6194,6 +6195,7 @@ export function transition(previous, action) {
       settle(ctx);
     }
   } else throw Error("Ação incompatível com a fase da partida.");
+  for (const piece of state.pieces) normalizeEnergy(piece);
   if (action.type === "MOVE") {
     const acted = state.pieces.find((piece) => piece.id === action.id);
     if (acted) releaseEukaryoteBuffers(state, acted, "action");
