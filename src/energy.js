@@ -24,13 +24,20 @@ export function energyCapacity(piece) {
 
 export function energyValue(piece) {
   if (!piece) return 0;
-  if (!Number.isFinite(piece.energy)) return energyCapacity(piece);
-  return Math.min(energyCapacity(piece), piece.energy);
+  const capacity = energyCapacity(piece);
+  if (!Number.isFinite(piece.energy)) return capacity;
+  const previousCapacity = Number.isFinite(piece.energyCapacitySnapshot)
+      ? piece.energyCapacitySnapshot
+      : capacity,
+    preservedDeficit = previousCapacity - piece.energy;
+  return Math.min(capacity, capacity - preservedDeficit);
 }
 
 export function normalizeEnergy(piece) {
   if (!piece) return 0;
-  piece.energy = Math.min(energyCapacity(piece), energyValue(piece));
+  const capacity = energyCapacity(piece);
+  piece.energy = energyValue(piece);
+  piece.energyCapacitySnapshot = capacity;
   return piece.energy;
 }
 
@@ -46,6 +53,7 @@ export function spendEnergy(piece, cost, turn = null) {
   const amount = Math.max(0, cost ?? 0);
   if (!canSpendEnergy(piece, amount)) return false;
   piece.energy = energyValue(piece) - amount;
+  piece.energyCapacitySnapshot = energyCapacity(piece);
   if (Number.isInteger(turn)) piece.lastEnergySpendTurn = turn;
   return true;
 }
@@ -53,6 +61,7 @@ export function spendEnergy(piece, cost, turn = null) {
 export function applyEnergyDelta(piece, delta, turn = null) {
   if (!piece || !Number.isFinite(delta) || delta === 0) return energyValue(piece);
   piece.energy = Math.min(energyCapacity(piece), energyValue(piece) + delta);
+  piece.energyCapacitySnapshot = energyCapacity(piece);
   if (delta < 0 && Number.isInteger(turn)) piece.lastEnergySpendTurn = turn;
   return piece.energy;
 }
