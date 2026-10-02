@@ -208,7 +208,7 @@ test("Brotamento infrutífero encerra o turno sem lançar erro", () => {
   s.turn = 8;
   s.current = "blue";
   parent.stationarySinceRound = 0;
-  parent.energy = 2;
+  parent.energy = 4;
   s.board[cell] = "fertile";
 
   assert.ok(
@@ -221,7 +221,7 @@ test("Brotamento infrutífero encerra o turno sem lançar erro", () => {
   const after = s.pieces.find((piece) => piece.id === parentId);
   assert.equal(s.turn, 9);
   assert.equal(s.board[cell], "neutral");
-  assert.equal(energyValue(after), 3);
+  assert.equal(energyValue(after), 5);
   assert.equal(
     s.pieces.filter((piece) => piece.parentId === parentId).length,
     0,
