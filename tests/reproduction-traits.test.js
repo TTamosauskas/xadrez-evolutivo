@@ -285,13 +285,14 @@ test("pressão populacional reduz o sucesso reprodutivo por tentativa inteira", 
 test("Ovulação Induzida soma 10 pontos percentuais ao sucesso sexual até 95%", () => {
   const parent = { traits: ["Ovulação Induzida"] },
     mate = { traits: [] };
-  assert.equal(
-    reproductiveSuccessRate(
-      { pieces: Array.from({ length: 24 }, () => ({})) },
-      parent,
-      [mate],
-    ),
-    0.8,
+  assert.ok(
+    Math.abs(
+      reproductiveSuccessRate(
+        { pieces: Array.from({ length: 24 }, () => ({})) },
+        parent,
+        [mate],
+      ) - 0.8,
+    ) < 1e-9,
   );
   assert.equal(
     reproductiveSuccessRate(
@@ -301,6 +302,41 @@ test("Ovulação Induzida soma 10 pontos percentuais ao sucesso sexual até 95%"
     ),
     0.95,
   );
+});
+
+test("tentativa infrutífera elimina a ninhada inteira e emite feedback", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    nextRoll = (seed) =>
+      ((Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
+  let seed = 1;
+  while (nextRoll(seed) < 0.9) seed++;
+  s.disableReproductiveSuccessPressure = false;
+  s.rng = seed;
+
+  assert.equal(
+    reproduce(context(s), parent, null, "teste infrutífero", {
+      forcedCount: 4,
+      immediateDevelopment: true,
+      ignoreReadiness: true,
+    }),
+    0,
+  );
+  assert.equal(
+    s.pieces.filter((piece) => piece.parentId === parent.id).length,
+    0,
+  );
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Reprodução infrutífera" &&
+        effect.outcome === "infruitful-reproduction",
+    ),
+  );
+  assertState(s);
 });
 
 test("consumir Casa Fértil para Vivificar recupera 1 Fadiga", () => {
