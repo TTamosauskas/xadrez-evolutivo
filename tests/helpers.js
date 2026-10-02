@@ -20,6 +20,7 @@ export function fixture(
   s.naturalBarriers = [];
   s.barriers = [];
   s.board.fill("neutral");
+  s.disableReproductiveSuccessPressure = true;
   for (const spec of specs) {
     const requestedTraits = (spec.traits ?? []).flatMap((trait) =>
         trait === "Locomoção"
