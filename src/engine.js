@@ -355,6 +355,7 @@ export function context(state) {
         reproduce(ctx, dead, null, "Ooteca", {
           immediateDevelopment: true,
           ignoreReadiness: true,
+          ignoreSuccessPressure: true,
           resourceKind: "stored",
         });
       scatterSeeds(state, dead);
