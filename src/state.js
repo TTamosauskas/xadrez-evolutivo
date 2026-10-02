@@ -695,7 +695,6 @@ export function newPiece(state, owner, r, c, source = {}) {
       energyCapacitySnapshot: Number.isFinite(source.energyCapacitySnapshot)
         ? source.energyCapacitySnapshot
         : null,
-      nextReproductionRound: source.nextReproductionRound ?? bornRound,
       oothecaPrimed: source.oothecaPrimed ?? false,
       somaticMutations: [],
       pathogenMutationDiseases: [],
@@ -724,8 +723,6 @@ export function newPiece(state, owner, r, c, source = {}) {
       eukaryoteBufferedTraits: Array.isArray(source.eukaryoteBufferedTraits)
         ? [...source.eukaryoteBufferedTraits]
         : [],
-      endosymbiosisDebtUntilRound:
-        source.endosymbiosisDebtUntilRound ?? null,
       endosymbiosisEnergyDebt: source.endosymbiosisEnergyDebt ?? false,
       lastEnergyActivityTurn: source.lastEnergyActivityTurn ?? null,
       lastOwnEnergyExertionTurn: source.lastOwnEnergyExertionTurn ?? null,
@@ -1966,8 +1963,6 @@ export function activateOrigin(state) {
     amber = newPiece(state, "amber", amberCell.r, amberCell.c, source);
 
   state.hadeanTutorial.dividedAtTurn = state.turn;
-  for (const piece of [blue, amber])
-    piece.nextReproductionRound = round(state);
   state.pieces.push(blue, amber);
   registerDiscoveries(state, blue);
   registerDiscoveries(state, amber);
@@ -3318,7 +3313,6 @@ export function assertState(state) {
       p.energy < -64 ||
       !Number.isInteger(p.energyCapacitySnapshot) ||
       p.energyCapacitySnapshot < 1 ||
-      !integer(p.nextReproductionRound) ||
       (p.lethalDeathRound !== undefined &&
         !integer(p.lethalDeathRound, 0)) ||
       (p.lethalDeathReason !== undefined &&
@@ -3379,11 +3373,6 @@ export function assertState(state) {
       ) ||
       new Set(p.eukaryoteBufferedTraits ?? []).size !==
         (p.eukaryoteBufferedTraits ?? []).length ||
-      !(
-        p.endosymbiosisDebtUntilRound === null ||
-        p.endosymbiosisDebtUntilRound === undefined ||
-        integer(p.endosymbiosisDebtUntilRound, 0)
-      ) ||
       typeof (p.endosymbiosisEnergyDebt ?? false) !== "boolean" ||
       !(
         p.lastEnergyActivityTurn === undefined ||
@@ -3425,22 +3414,6 @@ export function assertState(state) {
       ) ||
       !integer(p.heartSupportReadyRound ?? 0, 0) ||
       !integer(p.hepaticDetoxReadyRound ?? 0, 0) ||
-      !integer(p.exertionStreak ?? 0, 0, 12) ||
-      !(
-        p.lastOwnExertionTurn === undefined ||
-        p.lastOwnExertionTurn === null ||
-        integer(p.lastOwnExertionTurn, 0)
-      ) ||
-      !(
-        p.lastReactiveExertionTurn === undefined ||
-        p.lastReactiveExertionTurn === null ||
-        integer(p.lastReactiveExertionTurn, 0)
-      ) ||
-      !(
-        p.fatigueRestTurn === undefined ||
-        p.fatigueRestTurn === null ||
-        integer(p.fatigueRestTurn, 0)
-      ) ||
       !(
         p.hibernationUntilTurn === undefined ||
         p.hibernationUntilTurn === null ||
