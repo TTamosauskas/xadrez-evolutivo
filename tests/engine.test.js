@@ -36,6 +36,12 @@ import {
   resolveEcologicalDomain,
 } from "../src/engine.js";
 import {
+  energyCapacity,
+  energyValue,
+  movementEnergyCost,
+  reproductionEnergyCost,
+} from "../src/energy.js";
+import {
   movesFor,
   partnersFor,
   legalActions,
@@ -1767,7 +1773,7 @@ test("ordinary fertile movement does not repeat the Hadean reproduction tutorial
   assertState(s);
 });
 
-test("fertile reproduction uses the piece metabolic recovery profile", () => {
+test("fertile reproduction converts the metabolic profile into Energy cost", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração anaeróbia"] },
     { owner: "amber", r: 0, c: 0 },
@@ -1778,7 +1784,7 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(anaerobicQueen.nextReproductionRound, round(s) + 7);
+  assert.equal(energyValue(anaerobicQueen), 3);
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Respiração aeróbia"] },
@@ -1790,7 +1796,7 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(aerobicQueen.nextReproductionRound, round(s) + 6);
+  assert.equal(energyValue(aerobicQueen), 4);
 
   s = fixture([
     {
@@ -1808,11 +1814,11 @@ test("fertile reproduction uses the piece metabolic recovery profile", () => {
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(inducedPawn.nextReproductionRound, round(s) + 4);
+  assert.equal(energyValue(inducedPawn), 0);
   assertState(s);
 });
 
-test("predatory reproduction uses the same metabolic recovery profile", () => {
+test("predatory reproduction uses the same Energy recovery profile", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 0, traits: ["Predação"] },
     { owner: "amber", r: 3, c: 3, rank: 0 },
@@ -1821,7 +1827,7 @@ test("predatory reproduction uses the same metabolic recovery profile", () => {
   assert.equal(reproduce(context(s), predator, null, "predação", {
     forcedCount: 1,
   }), 1);
-  assert.equal(predator.nextReproductionRound, round(s) + 4);
+  assert.equal(energyValue(predator), 0);
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Predação"] },
@@ -1831,7 +1837,7 @@ test("predatory reproduction uses the same metabolic recovery profile", () => {
   assert.equal(reproduce(context(s), predator, null, "predação", {
     forcedCount: 1,
   }), 1);
-  assert.equal(predator.nextReproductionRound, round(s) + 7);
+  assert.equal(energyValue(predator), 3);
 
   s = fixture([
     {
@@ -1847,7 +1853,7 @@ test("predatory reproduction uses the same metabolic recovery profile", () => {
   assert.equal(reproduce(context(s), predator, null, "predação", {
     forcedCount: 1,
   }), 1);
-  assert.equal(predator.nextReproductionRound, round(s) + 6);
+  assert.equal(energyValue(predator), 4);
 
   s = fixture([
     {
@@ -1867,11 +1873,11 @@ test("predatory reproduction uses the same metabolic recovery profile", () => {
   assert.equal(reproduce(context(s), predator, null, "predação", {
     forcedCount: 1,
   }), 1);
-  assert.equal(predator.nextReproductionRound, round(s) + 5);
+  assert.equal(energyValue(predator), 5);
   assertState(s);
 });
 
-test("metabolic recovery blocks predatory reproduction but preserves capture", () => {
+test("insufficient reproductive Energy blocks vivification but preserves capture", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -1886,7 +1892,7 @@ test("metabolic recovery blocks predatory reproduction but preserves capture", (
   const predator = s.pieces[0],
     victimId = s.pieces[1].id,
     before = s.pieces.filter((piece) => piece.owner === "blue").length;
-  predator.nextReproductionRound = round(s) + 3;
+  predator.energy = movementEnergyCost(predator);
 
   assert.ok(
     movesFor(s, predator).some(
@@ -2893,15 +2899,15 @@ test("diet specializes stored predation energy and green-resource access", () =>
     parent = s.pieces.find((piece) => piece.id === parentId);
     assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
     assert.equal(parent.predationEnergy, false);
-    return parent.nextReproductionRound;
+    return energyValue(parent);
   };
 
   const basalAnimal = captureCooldown([], []),
     carnivoreAnimal = captureCooldown(["Carnívoro"], []),
     basalPlant = captureCooldown([], ["Fotossíntese"]),
     herbivorePlant = captureCooldown(["Herbívoro"], ["Fotossíntese"]);
-  assert.equal(carnivoreAnimal, basalAnimal - 1);
-  assert.equal(herbivorePlant, basalPlant - 1);
+  assert.equal(carnivoreAnimal, basalAnimal + 1);
+  assert.equal(herbivorePlant, basalPlant + 1);
 
   for (const [traits, expected] of [
     [["Carnívoro"], false],
