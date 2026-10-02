@@ -1315,6 +1315,7 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
         "Biomineralização",
         "Simetria Bilateral",
         "Locomoção Primitiva",
+        "Cefalização",
       ],
     }),
     p = s.pieces[0],
@@ -1327,6 +1328,7 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
     "Multicelularismo",
     "Simetria Bilateral",
     "Locomoção Primitiva",
+    "Cefalização",
   ];
   p.traits = ["Multicelularismo"];
   assert.equal(traitUnlocked(s, "Escavador", p), true);
