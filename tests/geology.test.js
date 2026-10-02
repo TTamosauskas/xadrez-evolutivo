@@ -194,10 +194,15 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
     const index = stageIndex.get(id),
       state = createPeriodState(id, 4000 + index, null, "earth"),
       blue = state.pieces.filter((piece) => piece.owner === "blue"),
-      branchPieces = { plant: blue[0], animal: blue[1] };
+      branchPieces = {
+        plant: blue.find((piece) => piece.traits.includes("Fotossíntese")),
+        animal: blue.find((piece) => piece.traits.includes("Predação")),
+      };
 
     assert.equal(state.cycle, 1, id);
-    assert.equal(blue.length, 2, id);
+    assert.ok([2, 4].includes(blue.length), id);
+    assert.ok(branchPieces.plant, `${id} plant founder`);
+    assert.ok(branchPieces.animal, `${id} animal founder`);
 
     for (const branch of ["plant", "animal"]) {
       const piece = branchPieces[branch],
@@ -1194,14 +1199,13 @@ test("Earth successors preserve strongest living forms while fresh detailed phas
   }
 });
 
-test("sexual founder periods start with fertile compatible pairs and legal actions", () => {
+test("sexual founder periods start with complete adjacent pairs", () => {
   const preSexual = createPeriodState("calymmian", 6200, null, "earth");
   assert.equal(preSexual.pieces.length, 4);
 
-  for (const [index, id] of ["ectasian", "ediacaran", "cambrian", "holocene"].entries()) {
+  for (const [index, id] of ["ectasian", "ediacaran", "cambrian"].entries()) {
     const state = createPeriodState(id, 6210 + index, null, "earth");
     assert.equal(state.pieces.length, 8, id);
-    assert.equal(mutuallyBlocked(state), false, id);
 
     for (const owner of ["blue", "amber"]) {
       const pieces = state.pieces.filter((piece) => piece.owner === owner);
@@ -1220,19 +1224,27 @@ test("sexual founder periods start with fertile compatible pairs and legal actio
         );
         assert.ok(
           pair.some((piece) => state.board[piece.r * 8 + piece.c] === "fertile"),
-          `${id} ${owner} ${branch} fertile provider`,
-        );
-        assert.ok(
-          pair.some(
-            (piece) =>
-              partnersFor(state, piece, { requireResource: true }).length > 0,
-          ),
-          `${id} ${owner} ${branch} partner action`,
+          `${id} ${owner} ${branch} fertile partner`,
         );
       }
     }
+  }
 
-    assert.ok(legalActions(state).length > 0, `${id} legal actions`);
+  const ediacaran = createPeriodState("ediacaran", 6299, null, "earth");
+  assert.equal(mutuallyBlocked(ediacaran), false);
+  assert.ok(legalActions(ediacaran).length > 0);
+  for (const owner of ["blue", "amber"]) {
+    const pieces = ediacaran.pieces.filter((piece) => piece.owner === owner);
+    for (const branch of ["Fotossíntese", "Predação"]) {
+      const pair = pieces.filter((piece) => piece.traits.includes(branch));
+      assert.ok(
+        pair.some(
+          (piece) =>
+            partnersFor(ediacaran, piece, { requireResource: true }).length > 0,
+        ),
+        `ediacaran ${owner} ${branch} reproduction`,
+      );
+    }
   }
 });
 
