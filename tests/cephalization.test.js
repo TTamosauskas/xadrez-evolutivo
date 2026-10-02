@@ -4,7 +4,11 @@ import { fixture, move } from "./helpers.js";
 import { movesFor } from "../src/moves.js";
 import { transition } from "../src/engine.js";
 import { round } from "../src/state.js";
-import { TRAIT_STAGE, TRAIT_DEPENDENCIES } from "../src/geology.js";
+import {
+  GEOLOGICAL_STAGES,
+  TRAIT_STAGE,
+  TRAIT_DEPENDENCIES,
+} from "../src/geology.js";
 
 function pursuitState() {
   const state = fixture([
@@ -37,6 +41,15 @@ test("Cefalização belongs to the Ediacaran predatory bilateral lineage", () =>
       "Locomoção Primitiva",
     ],
   );
+});
+
+test("Cefalização is mandatory in the Ediacaran and precedes both Cambrian body plans", () => {
+  const ediacaran = GEOLOGICAL_STAGES.find((stage) => stage.id === "ediacaran");
+
+  assert.ok(ediacaran.required.includes("Cefalização"));
+  assert.deepEqual(ediacaran.cycles[1], ["Cefalização"]);
+  assert.ok(TRAIT_DEPENDENCIES.Vertebrado.lineage.includes("Cefalização"));
+  assert.ok(TRAIT_DEPENDENCIES["Artrópode"].lineage.includes("Cefalização"));
 });
 
 test("Cefalização creates a pursuit capture exactly two cells away after 12 stalled rounds", () => {
