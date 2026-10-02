@@ -980,12 +980,15 @@ export function render(
         slidingTarget = !!targetEntry?.sliding,
         hypermetamorphosisTarget = !!targetEntry?.hypermetamorphosis,
         massRecruitmentTarget = !!targetEntry?.massRecruitment,
+        cephalizationTarget = !!targetEntry?.cephalization,
         movementSuggestion =
           hypermetamorphosisTarget
             ? "🐞"
             : massRecruitmentTarget
               ? "📣"
-              : jumpTarget
+              : cephalizationTarget
+                ? "📍"
+                : jumpTarget
             ? "🐎"
             : jetTarget
               ? "🦑"
