@@ -185,7 +185,7 @@ test("only-child is a lifetime one-offspring limit and respiratory insufficiency
     }),
     1,
   );
-  assert.equal(energyValue(respiratoryParent), -2);
+  assert.equal(energyValue(respiratoryParent), -4);
 
   const predator = fixture([
       {
@@ -336,7 +336,7 @@ test("malabsorption doubles the Energy load after reproductive predation", () =>
     reproduce(context(s), parent, null, "predação", { forcedCount: 1 }),
     1,
   );
-  assert.equal(energyValue(parent), -2);
+  assert.equal(energyValue(parent), -4);
 });
 
 test("semelparity kills the parent after the first successful reproduction", () => {
