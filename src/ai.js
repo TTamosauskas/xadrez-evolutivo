@@ -471,6 +471,24 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
       !enemyVictim
         ? Math.min(34, captureGeometryPriority(state, p, a)) * geometryScale
         : 0,
+    stalledRounds = Math.max(
+      0,
+      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+    ),
+    pursuit =
+      p &&
+      has(p, "Predação") &&
+      enemies.length &&
+      a.type === "MOVE" &&
+      !enemyVictim &&
+      Number.isInteger(a.r) &&
+      stalledRounds >= 10
+        ? Math.max(
+            0,
+            nearestEnemyDistance(state, p.owner, p.r, p.c) -
+              nearestEnemyDistance(state, p.owner, a.r, a.c),
+          ) * (stalledRounds >= 16 ? 8 : 4)
+        : 0,
     resolutionCaptureBonus =
       enemyVictim
         ? resolutionLevel * (12 + Math.max(0, 4 - enemies.length) * 4)
@@ -531,6 +549,7 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
   return (
     familyReproductionBonus +
     hunt +
+    pursuit +
     resolutionCaptureBonus +
     captureValue +
     cannibalValue +
