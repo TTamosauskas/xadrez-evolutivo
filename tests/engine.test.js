@@ -2262,6 +2262,7 @@ test("basal predation keeps one replacement birth above the population threshold
     reproduce(context(s), parent, null, "predação", {
       forcedCount: 1,
       ignoreReadiness: true,
+      ignoreSuccessPressure: true,
       immediateDevelopment: true,
     }),
     1,
