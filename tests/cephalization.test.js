@@ -4,7 +4,7 @@ import { fixture, move } from "./helpers.js";
 import { movesFor } from "../src/moves.js";
 import { transition } from "../src/engine.js";
 import { round } from "../src/state.js";
-import { TRAIT_STAGE, TRAIT_DEPENDENCIES } from "../src/geology.js";
+import { TRAIT_STAGE, TRAIT_DEPENDENCIES, TRAIT_BRANCH_SCOPE, PLANT_INCOMPATIBLE_TRAITS } from "../src/geology.js";
 
 function pursuitState() {
   const state = fixture([
@@ -43,6 +43,8 @@ test("Cefalização is mandatory in the Ediacaran predatory bilateral lineage", 
   assert.ok(
     TRAIT_DEPENDENCIES["Artrópode"].lineage.includes("Cefalização"),
   );
+  assert.equal(TRAIT_BRANCH_SCOPE.Cefalização, "predation");
+  assert.equal(PLANT_INCOMPATIBLE_TRAITS.has("Cefalização"), true);
 });
 
 test("Cefalização creates a pursuit capture exactly two cells away after 12 stalled rounds", () => {
