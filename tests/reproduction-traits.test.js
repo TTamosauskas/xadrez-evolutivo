@@ -147,7 +147,7 @@ test("Diferenciação Celular specializes one child without increasing brood siz
 });
 
 
-test("Brotamento repeats on a four-round cadence and Colônia shares identity and cooldown", () => {
+test("Brotamento shares colony identity and recovers through the unified Energy cadence", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -541,7 +541,7 @@ test("Marsupial holds viviparous offspring for one postnatal round", () => {
   assertState(s);
 });
 
-test("Acasalamento Múltiplo creates biparental sub-broods and doubles recovery", () => {
+test("Acasalamento Múltiplo creates biparental sub-broods and doubles the Energy load", () => {
   const traits = [
       "Reprodução Sexuada",
       "Ovíparo",
