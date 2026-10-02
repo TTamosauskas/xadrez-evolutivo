@@ -1187,7 +1187,12 @@ test("Earth successors preserve strongest living forms while fresh detailed phas
     );
     assert.equal(fresh.geologicalStage, id);
     const sexual = fresh.pieces.some((piece) =>
-      piece.traits.includ
+      piece.traits.includes("Reprodução Sexuada"),
+    );
+    assert.equal(fresh.pieces.length, sexual ? 8 : 4);
+    assertState(fresh);
+  }
+});
 
 test("sexual founder periods start with fertile compatible pairs and legal actions", () => {
   const preSexual = createPeriodState("calymmian", 6200, null, "earth");
@@ -1218,22 +1223,19 @@ test("sexual founder periods start with fertile compatible pairs and legal actio
           `${id} ${owner} ${branch} fertile provider`,
         );
         assert.ok(
-          pair.some((piece) => partnersFor(state, piece, { requireResource: true }).length),
+          pair.some(
+            (piece) =>
+              partnersFor(state, piece, { requireResource: true }).length > 0,
+          ),
           `${id} ${owner} ${branch} partner action`,
         );
       }
     }
 
-    const currentActions = legalActions(state);
-    assert.ok(currentActions.length > 0, `${id} legal actions`);
+    assert.ok(legalActions(state).length > 0, `${id} legal actions`);
   }
 });
-es("Reprodução Sexuada"),
-    );
-    assert.equal(fresh.pieces.length, sexual ? 8 : 4);
-    assertState(fresh);
-  }
-});
+
 test("successor gives both sides the winner's dominant lineage and its photosynthetic counterpart", () => {
   const s = createState(119);
   s.pieces = [];
