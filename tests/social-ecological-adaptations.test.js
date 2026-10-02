@@ -104,7 +104,7 @@ test("Hierarquia recommends an unavailable reproducer before more useful members
       { owner: "amber", r: 0, c: 0, rank: 4 },
     ]),
     unavailable = s.pieces[1];
-  unavailable.nextReproductionRound = round(s) + 4;
+  unavailable.energy = 0;
   s.phase = "social-defense";
   s.socialDefense = {
     attackerId: s.pieces[4].id,
@@ -187,12 +187,15 @@ test("Mutualismo links adjacent opposite energy branches and reduces metabolic r
     }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 6);
+  assert.equal(
+    energyValue(parent),
+    energyCapacity(parent) - reproductionEnergyCost(parent) + 1,
+  );
   assert.ok(
     s.passiveEffects.some(
       (effect) =>
         effect.trait === "Mutualismo" &&
-        effect.outcome === "reduced-metabolic-recovery",
+        effect.outcome === "reduced-reproductive-energy",
     ),
   );
   assertState(s);
