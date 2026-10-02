@@ -142,7 +142,6 @@ test("Canibalismo Filial consumes a direct juvenile child and restores reproduct
       c: 4,
       rank: 4,
       traits: ["Canibalismo", "Canibalismo Filial"],
-      energy: 2,
     },
     {
       owner: "blue",
@@ -156,8 +155,10 @@ test("Canibalismo Filial consumes a direct juvenile child and restores reproduct
     { owner: "amber", r: 0, c: 0, rank: 4 },
   ]);
   const parentId = s.pieces[0].id,
-    childId = s.pieces[1].id,
-    target = movesFor(s, s.pieces[0]).find(
+    childId = s.pieces[1].id;
+  s.pieces[0].energy = 2;
+  s.pieces[0].energyCapacitySnapshot = s.pieces[0].energyCapacitySnapshot ?? 11;
+  const target = movesFor(s, s.pieces[0]).find(
       (candidate) => candidate.r === 4 && candidate.c === 5,
     );
   assert.equal(target?.filialCannibal, true);
