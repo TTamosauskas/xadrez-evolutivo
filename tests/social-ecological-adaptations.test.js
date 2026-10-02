@@ -167,7 +167,7 @@ test("Caça Cooperativa neutralizes Chifre when two hunters surround the prey", 
   assertState(s);
 });
 
-test("Mutualismo links adjacent opposite energy branches and reduces metabolic recovery by one", () => {
+test("Mutualismo links adjacent opposite energy branches and restores 1 Energy", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Mutualismo"] },
       {
@@ -188,10 +188,7 @@ test("Mutualismo links adjacent opposite energy branches and reduces metabolic r
     }),
     1,
   );
-  assert.equal(
-    energyValue(parent),
-    energyCapacity(parent) - reproductionEnergyCost(parent) + 1,
-  );
+  assert.equal(energyValue(parent), 4);
   assert.ok(
     s.passiveEffects.some(
       (effect) =>
