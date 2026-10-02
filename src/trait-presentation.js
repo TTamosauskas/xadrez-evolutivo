@@ -72,7 +72,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Ovovivíparo: "Carrega prole por 3 rodadas e depois põe ovo adjacente.",
   Ovífagia: "Pode capturar ovos inimigos e reproduzir pela ninhada.",
   Vivíparo: "Carrega prole por 3 rodadas antes do nascimento.",
-  "Ovulação Induzida": "Reduz em 1 rodada a recuperação reprodutiva.",
+  "Ovulação Induzida": "Reprodução sexuada recebe +10 pontos percentuais de sucesso, até 95%.",
   Testosterona: "Proles automáticas priorizam posições de maior potencial ofensivo.",
   Corticosteroides: "Proles automáticas priorizam posições menos expostas a ataques.",
   Forrageamento: "Proles automáticas priorizam casas próximas de aliados fotossintéticos.",
