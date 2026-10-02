@@ -364,7 +364,7 @@ function crowdedReproductionState(dopamine) {
   return { s, parent };
 }
 
-test("Dopamina discounts reproductive pressure without changing metabolism", () => {
+test("Dopamina neutraliza 1 ponto do custo energético por pressão reprodutiva", () => {
   const baseline = crowdedReproductionState(false),
     rewarded = crowdedReproductionState(true);
 
@@ -392,8 +392,7 @@ test("Dopamina discounts reproductive pressure without changing metabolism", () 
   );
 
   assert.equal(
-    baseline.parent.nextReproductionRound -
-      rewarded.parent.nextReproductionRound,
+    energyValue(rewarded.parent) - energyValue(baseline.parent),
     1,
   );
   assert.ok(
