@@ -285,7 +285,7 @@ export const TRAITS = {
   ],
   "Ovulação Induzida": [
     "🐇",
-    "Na reprodução sexuada, reduz em uma rodada a recuperação metabólica do portador, até o mínimo de uma rodada.",
+    "Na reprodução sexuada, aumenta em 10 pontos percentuais a chance de a tentativa gerar descendentes, até 95%.",
   ],
   Testosterona: [
     "🐊",

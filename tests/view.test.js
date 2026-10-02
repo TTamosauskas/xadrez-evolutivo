@@ -368,6 +368,26 @@ test("Hadean founder vivification appears only after selecting the current playe
   dom.window.close();
 });
 
+test("selected predator shows a compact fatigue bar", () => {
+  const dom = setup(),
+    s = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 0 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    piece = s.pieces[0];
+  piece.exertionStreak = 2;
+
+  render(dom.window.document, s, { selected: piece.id });
+  const panel = dom.window.document.querySelector("#selected .selected-fatigue"),
+    track = panel?.querySelector(".selected-fatigue-track");
+
+  assert.ok(panel);
+  assert.match(panel.textContent, /Fadiga 2\/5/);
+  assert.equal(track?.getAttribute("aria-valuenow"), "2");
+  assert.equal(track?.getAttribute("aria-valuemax"), "5");
+  dom.window.close();
+});
+
 test("mobile selected-piece summary stays below the board", () => {
   const dom = setup(),
     s = fixture([

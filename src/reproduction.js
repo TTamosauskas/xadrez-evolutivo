@@ -1,5 +1,6 @@
 import {
   BIRTH_RATES,
+  FATIGUE_LIMITS,
   PIECE_LIFE_HISTORY,
   PIECES,
   TRAITS,
@@ -1536,6 +1537,22 @@ export function reproductiveOutput(profile) {
   return Math.min(4, base);
 }
 
+export function reproductiveSuccessRate(state, parent = null, mates = []) {
+  const population = activePopulation(state),
+    base =
+      population <= 15
+        ? 0.9
+        : population <= 23
+          ? 0.8
+          : population <= 31
+            ? 0.7
+            : 0.6,
+    induced =
+      mates.length > 0 &&
+      [parent, ...mates].some((piece) => has(piece, "Ovulação Induzida"));
+  return Math.min(0.95, base + (induced ? 0.1 : 0));
+}
+
 export function populationReproductionLimit(
   population,
   pressureLatched = false,
@@ -1679,6 +1696,16 @@ export function dopaminePressureReductionAvailable(state, parent) {
 
 export function consumeReproductionResource(state, parent, cell) {
   if (!consumeFertileTerrain(state, cell)) return 0;
+  if ((parent?.exertionStreak ?? 0) > 0) {
+    parent.exertionStreak = Math.max(0, parent.exertionStreak - 1);
+    const limit =
+      (FATIGUE_LIMITS[parent.rank] ?? 4) + (has(parent, "Endorfinas") ? 1 : 0);
+    if (
+      Number.isInteger(parent.fatigueRestTurn) &&
+      parent.exertionStreak < limit
+    )
+      delete parent.fatigueRestTurn;
+  }
   if (parent?.chemosynthesisFertileCell === cell) {
     delete parent.chemosynthesisFertileCell;
     parent.chemosynthesisNeutralThroughTurn = state.turn + 1;
@@ -1958,21 +1985,6 @@ export function reproduce(
         state.geologicalStage === "hadean" && resourceKind === "fertile";
       if (hadeanBasalFertility) return round(state);
       let metabolic = metabolicReproductionCooldown(piece);
-      if (mates.length && has(piece, "Ovulação Induzida")) {
-        const beforeOvulation = metabolic;
-        metabolic = Math.max(1, metabolic - 1);
-        if (metabolic < beforeOvulation)
-          emitPassiveEffect(
-            state,
-            "Ovulação Induzida",
-            "🐇 Ovulação Induzida acelerou a recuperação metabólica.",
-            {
-              pieceId: piece.id,
-              outcome: "reduced-metabolic-recovery",
-              value: beforeOvulation - metabolic,
-            },
-          );
-      }
       if (has(piece, "Insuficiência Respiratória"))
         metabolic *= 2;
       if (
@@ -2259,6 +2271,35 @@ export function reproduce(
       },
     );
     return 1;
+  }
+
+  if (
+    !options.ignoreSuccessPressure &&
+    !state.disableReproductiveSuccessPressure
+  ) {
+    const successRate = reproductiveSuccessRate(state, parent, mates);
+    if (random(state) >= successRate) {
+      if (mates.length) transmitSexualPathogen(state, [parent, ...mates]);
+      applyCooldown();
+      if (Number.isInteger(options.resourceCell))
+        consumeReproductionResource(state, parent, options.resourceCell);
+      else options.onFailedAttempt?.();
+      log(
+        state,
+        `${OWNERS[parent.owner]}: 🥀 Reprodução infrutífera por ${reason}; a tentativa não gerou descendentes.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Reprodução infrutífera",
+        "🥀 Reprodução infrutífera — a tentativa não gerou descendentes.",
+        {
+          pieceId: parent.id,
+          outcome: "infruitful-reproduction",
+          value: Math.round(successRate * 100),
+        },
+      );
+      return 0;
+    }
   }
 
   let produced = 0;

@@ -16,6 +16,8 @@ import {
 import {
   reproduce,
   tickReproduction,
+  consumeReproductionResource,
+  reproductiveSuccessRate,
 } from "../src/reproduction.js";
 import {
   attemptHorizontalTransfer,
@@ -263,42 +265,94 @@ test("Cuidado Parental removes a protected juvenile from capture targets", () =>
   assertState(s);
 });
 
-test("Ovulação Induzida emits feedback only when sexual recovery is actually reduced", () => {
+test("pressão populacional reduz o sucesso reprodutivo por tentativa inteira", () => {
+  const parent = { traits: [] };
+  for (const [population, expected] of [
+    [15, 0.9],
+    [16, 0.8],
+    [24, 0.7],
+    [32, 0.6],
+  ])
+    assert.equal(
+      reproductiveSuccessRate(
+        { pieces: Array.from({ length: population }, () => ({})) },
+        parent,
+      ),
+      expected,
+    );
+});
+
+test("Ovulação Induzida soma 10 pontos percentuais ao sucesso sexual até 95%", () => {
+  const parent = { traits: ["Ovulação Induzida"] },
+    mate = { traits: [] };
+  assert.ok(
+    Math.abs(
+      reproductiveSuccessRate(
+        { pieces: Array.from({ length: 24 }, () => ({})) },
+        parent,
+        [mate],
+      ) - 0.8,
+    ) < 1e-9,
+  );
+  assert.equal(
+    reproductiveSuccessRate(
+      { pieces: Array.from({ length: 10 }, () => ({})) },
+      parent,
+      [mate],
+    ),
+    0.95,
+  );
+});
+
+test("tentativa infrutífera elimina a ninhada inteira e emite feedback", () => {
   const s = fixture([
-      {
-        owner: "blue",
-        r: 4,
-        c: 4,
-        rank: 5,
-        traits: ["Reprodução Sexuada", "Ovulação Induzida"],
-      },
-      {
-        owner: "blue",
-        r: 4,
-        c: 5,
-        rank: 5,
-        traits: ["Reprodução Sexuada", "Herbívoro"],
-      },
+      { owner: "blue", r: 4, c: 4 },
       { owner: "amber", r: 0, c: 0 },
     ]),
     parent = s.pieces[0],
-    mate = s.pieces[1];
+    nextRoll = (seed) =>
+      ((Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
+  let seed = 1;
+  while (nextRoll(seed) < 0.9) seed++;
+  s.disableReproductiveSuccessPressure = false;
+  s.rng = seed;
 
   assert.equal(
-    reproduce(context(s), parent, mate, "teste", {
-      forcedCount: 1,
+    reproduce(context(s), parent, null, "teste infrutífero", {
+      forcedCount: 4,
       immediateDevelopment: true,
+      ignoreReadiness: true,
     }),
-    1,
+    0,
   );
-  const effect = s.passiveEffects.find(
-    (candidate) => candidate.trait === "Ovulação Induzida",
+  assert.equal(
+    s.pieces.filter((piece) => piece.parentId === parent.id).length,
+    0,
   );
-  assert.ok(effect);
-  assert.equal(effect.pieceId, parent.id);
-  assert.equal(effect.outcome, "reduced-metabolic-recovery");
-  assert.equal(effect.value, 1);
-  assert.match(effect.text, /acelerou a recuperação metabólica/);
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Reprodução infrutífera" &&
+        effect.outcome === "infruitful-reproduction",
+    ),
+  );
+  assertState(s);
+});
+
+test("consumir Casa Fértil para Vivificar recupera 1 Fadiga", () => {
+  const s = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 0 },
+      { owner: "amber", r: 0, c: 0 },
+    ]),
+    parent = s.pieces[0],
+    cell = parent.r * 8 + parent.c;
+  parent.exertionStreak = 3;
+  parent.fatigueRestTurn = s.turn + 2;
+  s.board[cell] = "fertile";
+
+  assert.equal(consumeReproductionResource(s, parent, cell), 1);
+  assert.equal(parent.exertionStreak, 2);
+  assert.equal(parent.fatigueRestTurn, undefined);
   assertState(s);
 });
 

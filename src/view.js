@@ -73,6 +73,7 @@ import {
   neurodivergenceResting,
   intoxicationResting,
   fatigueResting,
+  fatigueLimit,
   rapidFatigueRecovery,
 } from "./moves.js";
 import { corticalMoveSuggestions } from "./positioning.js";
@@ -1746,6 +1747,32 @@ export function render(
       symbol,
       doc.createTextNode(` ${PIECES[actor.rank]} (${ownerName})`),
     );
+    const fatigueMax =
+        fatigueLimit(actor) + (has(actor, "Endorfinas") ? 1 : 0),
+      fatigueValue = Math.min(
+        fatigueMax,
+        Math.max(0, actor.exertionStreak ?? 0),
+      ),
+      fatiguePanel = has(actor, "Predação")
+        ? make("div", undefined, "selected-fatigue")
+        : null;
+    if (fatiguePanel) {
+      const fatigueLabel = make(
+          "div",
+          `Fadiga ${fatigueValue}/${fatigueMax}`,
+          "selected-fatigue-label",
+        ),
+        fatigueTrack = make("div", undefined, "selected-fatigue-track"),
+        fatigueFill = make("div", undefined, "selected-fatigue-fill");
+      fatigueFill.style.width = `${(fatigueValue / fatigueMax) * 100}%`;
+      fatigueTrack.setAttribute("role", "progressbar");
+      fatigueTrack.setAttribute("aria-label", "Fadiga");
+      fatigueTrack.setAttribute("aria-valuemin", "0");
+      fatigueTrack.setAttribute("aria-valuemax", String(fatigueMax));
+      fatigueTrack.setAttribute("aria-valuenow", String(fatigueValue));
+      fatigueTrack.append(fatigueFill);
+      fatiguePanel.append(fatigueLabel, fatigueTrack);
+    }
     const actionableTraits = actionableTraitsForPiece(state, actor),
       traitOrder = (a, b) =>
         Number(actionableTraits.has(b)) -
@@ -1925,7 +1952,11 @@ export function render(
             (TRAIT_DISPLAY_ORDER.get(a) ?? Number.MAX_SAFE_INTEGER) -
             (TRAIT_DISPLAY_ORDER.get(b) ?? Number.MAX_SAFE_INTEGER),
         ),
-      selectedContent = [heading, ...statusDetails];
+      selectedContent = [
+        heading,
+        ...(fatiguePanel ? [fatiguePanel] : []),
+        ...statusDetails,
+      ];
 
     if (advantages.length)
       selectedContent.push(

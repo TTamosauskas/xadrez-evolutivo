@@ -9,6 +9,13 @@ const SPECIAL_EXPLANATIONS = Object.freeze({
     game:
       "No jogo: Clique no círculo verde ⭕ que aparece quando a reprodução estiver disponível.",
   },
+  "Reprodução infrutífera": {
+    title: "🥀 Reprodução infrutífera",
+    realWorld:
+      "Na vida: Tentativas reprodutivas podem terminar sem descendentes por falhas na fecundação, incompatibilidades biológicas, condições fisiológicas ou limitações ambientais.",
+    game:
+      "No jogo: A tentativa reprodutiva pode gerar a ninhada completa ou nenhum descendente. Populações maiores reduzem a chance de sucesso.",
+  },
   "Casa Hostil": {
     title: "🟥 Casa Hostil",
     realWorld:
