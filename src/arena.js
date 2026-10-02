@@ -20,6 +20,7 @@ const BASAL = "Respiração anaeróbia";
 export const ARENA_FOUNDATIONAL_TRAITS = new Set([
   "Reparo Celular",
   "Simetria Bilateral",
+  "Cefalização",
 ]);
 export const ARENA_BRANCHES = Object.freeze([
   {

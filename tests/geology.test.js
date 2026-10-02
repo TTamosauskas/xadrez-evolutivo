@@ -87,7 +87,7 @@ test("mandatory innovation sequence follows the revised evolutionary milestones"
     stenian: ["Carnívoro"],
     tonian: ["Colônia", "Séssil"],
     cryogenian: ["Fragmentação"],
-    ediacaran: ["Simetria Bilateral", "Locomoção Primitiva", "Escavador", "Construtor de Nicho", "Biomineralização"],
+    ediacaran: ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização", "Escavador", "Construtor de Nicho", "Biomineralização"],
     cambrian: ["Locomoção Articulada", "Percepção Espacial", "Carapaça"],
     ordovician: ["Embriófitas", "Tropismo"],
     silurian: ["Traqueófitas", "Estômatos", "Locomoção Terrestre", "Mandíbula"],
@@ -475,7 +475,7 @@ test("geological phases follow the expanded didactic sequence and declare mandat
   ]);
   assert.deepEqual(byId.neoarchean.cycles, [["Dormência"]]);
   assert.deepEqual(byId.ediacaran.cycles, [
-    ["Simetria Bilateral", "Locomoção Primitiva"],
+    ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização"],
     ["Escavador", "Construtor de Nicho"],
     ["Biomineralização"],
   ]);
@@ -701,6 +701,10 @@ test("cellular repair and bilateral symmetry gate complex body plans", () => {
   assert.equal(traitUnlocked(s, "Vertebrado", p), false);
   p.traits.push("Simetria Bilateral");
   p.ancestry.push("Simetria Bilateral");
+  assert.equal(traitUnlocked(s, "Vertebrado", p), false);
+  assert.equal(traitUnlocked(s, "Artrópode", p), false);
+  p.traits.push("Cefalização");
+  p.ancestry.push("Cefalização");
   assert.equal(traitUnlocked(s, "Vertebrado", p), true);
   assert.equal(traitUnlocked(s, "Artrópode", p), true);
 });
@@ -1315,6 +1319,7 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
         "Biomineralização",
         "Simetria Bilateral",
         "Locomoção Primitiva",
+        "Cefalização",
       ],
     }),
     p = s.pieces[0],
@@ -1327,6 +1332,7 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
     "Multicelularismo",
     "Simetria Bilateral",
     "Locomoção Primitiva",
+    "Cefalização",
   ];
   p.traits = ["Multicelularismo"];
   assert.equal(traitUnlocked(s, "Escavador", p), true);

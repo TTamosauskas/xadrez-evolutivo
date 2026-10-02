@@ -263,6 +263,10 @@ const EARTH_SHARED_FOUNDER_MILESTONES = Object.freeze([
   { trait: "Diferenciação Celular", debut: "calymmian", activeFrom: "ectasian", activeThrough: null },
 ]);
 
+const EARTH_ANIMAL_FOUNDER_MILESTONES = Object.freeze([
+  { trait: "Cefalização", debut: "ediacaran" },
+]);
+
 const earthFounderStageIds = Object.freeze(Object.keys(EARTH_FOUNDER_GENOMES));
 const founderStageIndex = (stageId) => earthFounderStageIds.indexOf(stageId);
 
@@ -288,7 +292,13 @@ export function earthFounderHistory(stageId, branch) {
   const legacyKey = branch === "plant" ? "plantLegacy" : "animalLegacy",
     completedShared = EARTH_SHARED_FOUNDER_MILESTONES
       .filter((entry) => founderStageIndex(entry.debut) < stageIndex)
-      .map((entry) => entry.trait);
+      .map((entry) => entry.trait),
+    completedBranch =
+      branch === "animal"
+        ? EARTH_ANIMAL_FOUNDER_MILESTONES
+            .filter((entry) => founderStageIndex(entry.debut) < stageIndex)
+            .map((entry) => entry.trait)
+        : [];
   return [
     ...new Set([
       ...entries
@@ -298,6 +308,7 @@ export function earthFounderHistory(stageId, branch) {
           ...(profile[legacyKey] ?? []),
         ]),
       ...completedShared,
+      ...completedBranch,
     ]),
   ];
 }
