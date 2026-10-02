@@ -2993,7 +2993,7 @@ test("capture without trophic reproduction keeps disturbance for the carcass lif
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  s.pieces[0].energy = movementEnergyCost(s.pieces[0]);
+  s.pieces[0].energy = reproductionEnergyCost(s.pieces[0]) - 1;
   s.pieces[0].energyCapacitySnapshot = energyCapacity(s.pieces[0]);
   s = simulate(s, move(s.pieces[0], 4, 4));
   let attacker = s.pieces.find((piece) => piece.id === 1);
