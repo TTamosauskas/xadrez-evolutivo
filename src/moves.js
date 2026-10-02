@@ -326,7 +326,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     filialCannibalismMode =
       has(p, "Canibalismo Filial") &&
       has(p, "Canibalismo") &&
-      (p.nextReproductionRound ?? 0) > round(state) &&
+      energyValue(p) < reproductionEnergyCost(p) &&
       !enemyCaptureAvailableWithoutFilial(state, p),
     terrestrialRestriction =
       has(p, "Locomoção Primitiva") &&
