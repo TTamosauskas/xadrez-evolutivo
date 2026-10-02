@@ -256,10 +256,7 @@ export function replacementPressure(state) {
     net = births - deaths,
     churn = Math.min(births, deaths);
 
-  let level = 0;
-  if (population >= 24 && (net >= 4 || churn >= 6)) level = 1;
-  if (population >= 28 && (net >= 6 || churn >= 10)) level = 2;
-  if (population >= 32 && (net >= 8 || churn >= 14)) level = 3;
+  const level = 0;
 
   return {
     level,
