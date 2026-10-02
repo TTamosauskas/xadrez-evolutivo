@@ -87,7 +87,7 @@ test("mandatory innovation sequence follows the revised evolutionary milestones"
     stenian: ["Carnívoro"],
     tonian: ["Colônia", "Séssil"],
     cryogenian: ["Fragmentação"],
-    ediacaran: ["Simetria Bilateral", "Locomoção Primitiva", "Escavador", "Construtor de Nicho", "Biomineralização"],
+    ediacaran: ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização", "Escavador", "Construtor de Nicho", "Biomineralização"],
     cambrian: ["Locomoção Articulada", "Percepção Espacial", "Carapaça"],
     ordovician: ["Embriófitas", "Tropismo"],
     silurian: ["Traqueófitas", "Estômatos", "Locomoção Terrestre", "Mandíbula"],
