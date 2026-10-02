@@ -5058,6 +5058,7 @@ function executeMove(ctx, action) {
           : collectorStay
             ? "seed"
             : "fertile",
+        resourceProviderId: consumedFertile ? p.id : null,
       },
     );
     if (
@@ -5576,6 +5577,7 @@ function resolveParthenogenesis(ctx, action) {
     forcedCount: 1,
     fertileReproduction: resource.kind === "fertile",
     resourceKind: resource.kind,
+    resourceProviderId: resource.providerId,
   });
   if (born)
     emitPassiveEffect(
@@ -5624,6 +5626,7 @@ function resolveAggressiveMate(ctx, action) {
     forcedCount: 1,
     fertileReproduction: resource.kind === "fertile",
     resourceKind: resource.kind,
+    resourceProviderId: resource.providerId,
   });
   if (born) {
     log(
@@ -5730,6 +5733,7 @@ function choosePartner(ctx, id) {
         fertileReproduction: resource.kind === "fertile",
         additionalMate: sexualCannibalism ? null : secondMate,
         resourceKind: resource.kind,
+        resourceProviderId: resource.providerId,
       },
     );
   if (sexualCannibalism) {
