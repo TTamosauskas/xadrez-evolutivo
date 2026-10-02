@@ -14,7 +14,11 @@ import {
 } from "../src/geology.js";
 import { round } from "../src/state.js";
 import { square } from "../src/constants.js";
-import { metabolicReproductionCooldown } from "../src/reproduction.js";
+import {
+  energyCapacity,
+  energyValue,
+  reproductionEnergyCost,
+} from "../src/energy.js";
 
 test("novas mutações ocupam períodos e loci funcionais coerentes", () => {
   assert.equal(TRAIT_STAGE.Peçonha, "devonian");
@@ -99,10 +103,13 @@ test("Projétil Biológico cria hostilidade temporária sem deslocar o atacante"
       (entry) => entry.cell === square(target.r, target.c),
     ),
   );
-  assert.ok(moved.nextReproductionRound > round(state));
+  assert.equal(
+    energyValue(moved),
+    energyCapacity(moved) - reproductionEnergyCost(moved),
+  );
 });
 
-test("Eletrodescarga mata em geometria de Cavalo e aplica recuperação triplicada", () => {
+test("Eletrodescarga mata em geometria de Cavalo e consome toda a Energia", () => {
   const state = fixture([
     {
       owner: "blue",
@@ -118,8 +125,7 @@ test("Eletrodescarga mata em geometria de Cavalo e aplica recuperação triplica
     { owner: "amber", r: 2, c: 3 },
   ], 12);
   const attacker = state.pieces.find((piece) => piece.owner === "blue"),
-    target = state.pieces.find((piece) => piece.owner === "amber"),
-    expected = round(state) + metabolicReproductionCooldown(attacker) * 3;
+    target = state.pieces.find((piece) => piece.owner === "amber");
   state.current = "blue";
   assert.ok(
     electricDischargeTargets(state, attacker).some(
@@ -133,7 +139,7 @@ test("Eletrodescarga mata em geometria de Cavalo e aplica recuperação triplica
     }),
     survivor = next.pieces.find((piece) => piece.id === attacker.id);
   assert.equal(next.pieces.some((piece) => piece.id === target.id), false);
-  assert.equal(survivor.nextReproductionRound, expected);
+  assert.equal(energyValue(survivor), 0);
 });
 
 test("Predação em Massa consome no máximo duas presas menores adicionais", () => {
