@@ -1166,20 +1166,15 @@ export function render(
           p?.id === actor.id &&
           vivificationActions.length
         ),
-        predationFeedingVisual =
-          !!predationFeedingSite &&
-          actor?.id === predationFeedingSite.sourceId &&
-          p?.id === actor.id,
         vivificationTarget =
-          !predationFeedingVisual &&
-          (reproductionTarget ||
-            zoochoryResourceTarget ||
-            organicRecyclingTarget ||
-            nicheBuildTarget ||
-            nitrogenFixationTarget ||
-            selfVivificationTarget ||
-            !!rhizomeAction ||
-            (originHere && origin?.selected)),
+          reproductionTarget ||
+          zoochoryResourceTarget ||
+          organicRecyclingTarget ||
+          nicheBuildTarget ||
+          nitrogenFixationTarget ||
+          selfVivificationTarget ||
+          !!rhizomeAction ||
+          (originHere && origin?.selected),
         nurse = nursing.some((child) => child.id === p?.id),
         eggPlacementTarget = eggPlacement.some(
           (target) => target.r === r && target.c === c,
