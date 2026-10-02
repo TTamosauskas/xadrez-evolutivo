@@ -2273,7 +2273,10 @@ export function reproduce(
     return 1;
   }
 
-  if (!options.ignoreSuccessPressure) {
+  if (
+    !options.ignoreSuccessPressure &&
+    !state.disableReproductiveSuccessPressure
+  ) {
     const successRate = reproductiveSuccessRate(state, parent, mates);
     if (random(state) >= successRate) {
       if (mates.length) transmitSexualPathogen(state, [parent, ...mates]);
