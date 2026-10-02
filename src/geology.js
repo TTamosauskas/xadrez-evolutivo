@@ -256,9 +256,9 @@ export const GEOLOGICAL_STAGES = [
     group: "Proterozoico · Neoproterozoica",
     period: "Ediacarano",
     chronology: { eon: "Proterozoico", era: "Neoproterozoica", period: "Ediacarano" },
-    required: ["Simetria Bilateral", "Locomoção Primitiva", "Escavador", "Construtor de Nicho", "Biomineralização"],
+    required: ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização", "Escavador", "Construtor de Nicho", "Biomineralização"],
     cycles: [
-      ["Simetria Bilateral", "Locomoção Primitiva"],
+      ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização"],
       ["Escavador", "Construtor de Nicho"],
       ["Biomineralização"],
     ],
@@ -985,14 +985,18 @@ export const TRAIT_DEPENDENCIES = {
   },
   Serotonina: { lineage: ["Multicelularismo", "Locomoção Primitiva"] },
   Dopamina: { lineage: ["Multicelularismo", "Locomoção Primitiva"] },
-  Vertebrado: { lineage: ["Locomoção Primitiva", "Simetria Bilateral"] },
+  Vertebrado: {
+    lineage: ["Locomoção Primitiva", "Simetria Bilateral", "Cefalização"],
+  },
   Adrenalina: { lineage: ["Vertebrado", "Locomoção Articulada"] },
   Estrogênio: {
     lineage: ["Vertebrado", "Reprodução Sexuada"],
   },
   Testosterona: { lineage: ["Vertebrado", "Reprodução Sexuada"] },
   Corticosteroides: { lineage: ["Vertebrado", "Respiração aeróbia"] },
-  "Artrópode": { lineage: ["Locomoção Primitiva", "Simetria Bilateral"] },
+  "Artrópode": {
+    lineage: ["Locomoção Primitiva", "Simetria Bilateral", "Cefalização"],
+  },
   "Sistema Adipocinético": { lineage: ["Artrópode", "Locomoção Articulada"] },
   "Locomoção Articulada": {
     lineage: ["Locomoção Primitiva"],
