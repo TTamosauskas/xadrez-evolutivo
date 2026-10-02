@@ -133,7 +133,7 @@ test("Partenogênese disappears when a legal sexual partner exists", () => {
   assert.equal(parthenogenesisAvailable(s, s.pieces[0]), false);
 });
 
-test("Canibalismo Filial consumes a direct juvenile child and clears cooldown", () => {
+test("Canibalismo Filial consumes a direct juvenile child and restores reproductive Energy", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -141,7 +141,7 @@ test("Canibalismo Filial consumes a direct juvenile child and clears cooldown", 
       c: 4,
       rank: 4,
       traits: ["Canibalismo", "Canibalismo Filial"],
-      nextReproductionRound: 5,
+      energy: 2,
     },
     {
       owner: "blue",
@@ -164,13 +164,13 @@ test("Canibalismo Filial consumes a direct juvenile child and clears cooldown", 
   s = transition(s, move(s.pieces[0], 4, 5));
   const parent = s.pieces.find((piece) => piece.id === parentId);
   assert.ok(parent);
-  assert.equal(parent.nextReproductionRound, round(s));
+  assert.equal(energyValue(parent), reproductionEnergyCost(parent));
   assert.equal(s.pieces.some((piece) => piece.id === childId), false);
   assert.ok(
     s.passiveEffects.some(
       (effect) =>
         effect.trait === "Canibalismo Filial" &&
-        effect.outcome === "reset-reproductive-cooldown",
+        effect.outcome === "restored-reproductive-energy",
     ),
   );
   assertState(s);
@@ -184,7 +184,7 @@ test("Canibalismo Filial is unavailable while an enemy capture exists", () => {
       c: 4,
       rank: 4,
       traits: ["Canibalismo", "Canibalismo Filial"],
-      nextReproductionRound: 5,
+      energy: 2,
     },
     {
       owner: "blue",
