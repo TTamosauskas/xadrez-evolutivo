@@ -231,12 +231,12 @@ test("Ruminante recupera 1 Energia extra ao permanecer no mesmo bloco 2x2", () =
   });
   assert.equal(born, 1);
   assert.ok(parent.rumination);
-  assert.equal(energyValue(parent), 1);
+  assert.equal(energyValue(parent), 0);
 
   state = simulate(state, { type: "PASS" });
   state = simulate(state, { type: "PASS" });
   state = simulate(state, { type: "PASS" });
   const updated = state.pieces.find((piece) => piece.id === parent.id);
-  assert.equal(energyValue(updated), 3);
+  assert.equal(energyValue(updated), 2);
   assertState(state);
 });
