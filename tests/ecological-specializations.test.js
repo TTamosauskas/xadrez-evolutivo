@@ -111,7 +111,6 @@ test("Autotomia restaura a forma quando a energia de uma captura é vivificada",
 
   state.current = "amber";
   state.phase = "move";
-  defender.nextReproductionRound = round(state);
   state = simulate(state, move(defender, 4, 3));
 
   defender = state.pieces.find((piece) => piece.id === defenderId);
@@ -197,8 +196,6 @@ test("Alelopatia madura após três rodadas e acrescenta custo reprodutivo rival
     allelopathySourceAt(state, rival.r, rival.c, rival.owner)?.id,
     source.id,
   );
-  const expected =
-    round(state) + metabolicReproductionCooldown(rival) + 1;
   const born = reproduce(
     { state, reserved: new Set() },
     rival,
@@ -211,7 +208,7 @@ test("Alelopatia madura após três rodadas e acrescenta custo reprodutivo rival
     },
   );
   assert.equal(born, 1);
-  assert.equal(rival.nextReproductionRound, expected);
+  assert.equal(energyValue(rival), 0);
   assertState(state);
 });
 
@@ -254,7 +251,6 @@ test("Parasitismo de Ninhada substitui um slot quando a energia predatória é v
 
   state.current = "amber";
   state.phase = "move";
-  host.nextReproductionRound = round(state);
   state = simulate(state, move(host, 4, 5));
 
   host = state.pieces.find((piece) => piece.id === hostId);
