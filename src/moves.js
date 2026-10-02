@@ -1542,7 +1542,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
     return [...unique.values()];
   }
-  return canSpendEnergy(p, movementEnergyCost(p))
+  return p.restorativeSleepCharge || canSpendEnergy(p, movementEnergyCost(p))
     ? targets
     : targets.filter((target) => target.stay);
 }
