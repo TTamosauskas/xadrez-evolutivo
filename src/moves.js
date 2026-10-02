@@ -6,7 +6,6 @@ import {
   energyBranch,
   canPhotosynthesize,
   largeFunctionalForm,
-  FATIGUE_LIMITS,
 } from "./constants.js";
 import {
   canSpendEnergy,
@@ -84,27 +83,6 @@ export const dysfunctionalResting = (state, p) =>
   has(p, "Mutação Disfuncional") &&
   Number.isInteger(p.lastMoveRound) &&
   round(state) + 1 <= p.lastMoveRound + 1;
-export const fatigueLimit = (piece) =>
-  FATIGUE_LIMITS[piece?.rank] ?? 4;
-export const rapidFatigueRecovery = (state, piece) => {
-  if (!piece) return false;
-  const activeEnemies = state.pieces.filter(
-      (candidate) =>
-        candidate.owner !== piece.owner &&
-        !hibernating(state, candidate),
-    ).length,
-    stalledRounds = Math.max(
-      0,
-      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
-    );
-  return activeEnemies <= 2 || stalledRounds >= 16;
-};
-export const fatigueResting = (state, piece) =>
-  !!piece &&
-  has(piece, "Predação") &&
-  Number.isInteger(piece.fatigueRestTurn) &&
-  piece.fatigueRestTurn === state.turn &&
-  !rapidFatigueRecovery(state, piece);
 export const neurodivergenceResting = (state, p) =>
   Number.isInteger(p?.neurodivergenceRestThroughRound) &&
   round(state) <= p.neurodivergenceRestThroughRound;
