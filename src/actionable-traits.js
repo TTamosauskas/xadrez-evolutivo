@@ -1,5 +1,11 @@
 import { has, distance, square, functionalSizeClass } from "./constants.js";
 import {
+  energyCapacity,
+  energyValue,
+  movementEnergyCost,
+  reproductionEnergyShortfall,
+} from "./energy.js";
+import {
   at,
   eggAt,
   plantSeedAt,
@@ -24,8 +30,6 @@ import {
   nicheConstructionTargets,
   adjacentAlliesCount,
   neurodivergenceResting,
-  fatigueLimit,
-  fatigueResting,
   dormant,
   pieceActionState,
 } from "./moves.js";
@@ -190,8 +194,7 @@ export function actionableTraitsForPiece(state, piece) {
 
   if (
     has(piece, "Endorfinas") &&
-    !fatigueResting(state, piece) &&
-    (piece.exertionStreak ?? 0) >= fatigueLimit(piece) &&
+    energyValue(piece) <= movementEnergyCost(piece) &&
     targets.some((target) => !target.stay)
   )
     actionable.add("Endorfinas");
@@ -212,7 +215,7 @@ export function actionableTraitsForPiece(state, piece) {
 
   if (
     has(piece, "Sistema Adipocinético") &&
-    (piece.exertionStreak ?? 0) > 0 &&
+    energyValue(piece) < energyCapacity(piece) &&
     targets.some(
       (target) =>
         !target.stay &&
@@ -260,7 +263,7 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Eucarionte");
   if (
     has(piece, "Endossimbiose") &&
-    (piece.nextReproductionRound ?? 0) === round(state) + 1
+    reproductionEnergyShortfall(piece) === 1
   )
     actionable.add("Endossimbiose");
   if ((piece.adaptiveImmuneMemory ?? []).length)
