@@ -3012,6 +3012,8 @@ test("capture without trophic reproduction keeps disturbance for the carcass lif
   s = simulate(s, { type: "PASS" });
   s = simulate(s, { type: "PASS" });
   s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
   assert.equal(s.captureDisturbances.length, 0);
   assert.equal(s.carcasses.length, 0);
   assert.ok(s.pieces.some((piece) => piece.id === attacker.id));
