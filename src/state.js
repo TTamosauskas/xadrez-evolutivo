@@ -723,6 +723,11 @@ export function newPiece(state, owner, r, c, source = {}) {
         : [],
       endosymbiosisDebtUntilRound:
         source.endosymbiosisDebtUntilRound ?? null,
+      endosymbiosisEnergyDebt: source.endosymbiosisEnergyDebt ?? false,
+      lastEnergyActivityTurn: source.lastEnergyActivityTurn ?? null,
+      lastOwnEnergyExertionTurn: source.lastOwnEnergyExertionTurn ?? null,
+      lastReactiveEnergyExertionTurn:
+        source.lastReactiveEnergyExertionTurn ?? null,
       adaptiveImmuneMemory: Array.isArray(source.adaptiveImmuneMemory)
         ? [...new Set(source.adaptiveImmuneMemory)]
         : [],
@@ -3372,6 +3377,22 @@ export function assertState(state) {
         p.endosymbiosisDebtUntilRound === null ||
         p.endosymbiosisDebtUntilRound === undefined ||
         integer(p.endosymbiosisDebtUntilRound, 0)
+      ) ||
+      typeof (p.endosymbiosisEnergyDebt ?? false) !== "boolean" ||
+      !(
+        p.lastEnergyActivityTurn === undefined ||
+        p.lastEnergyActivityTurn === null ||
+        integer(p.lastEnergyActivityTurn, 0)
+      ) ||
+      !(
+        p.lastOwnEnergyExertionTurn === undefined ||
+        p.lastOwnEnergyExertionTurn === null ||
+        integer(p.lastOwnEnergyExertionTurn, 0)
+      ) ||
+      !(
+        p.lastReactiveEnergyExertionTurn === undefined ||
+        p.lastReactiveEnergyExertionTurn === null ||
+        integer(p.lastReactiveEnergyExertionTurn, 0)
       ) ||
       !Array.isArray(p.adaptiveImmuneMemory ?? []) ||
       (p.adaptiveImmuneMemory ?? []).some(
