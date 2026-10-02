@@ -593,7 +593,7 @@ function passiveProgressPending(state) {
       Number.isInteger(piece.chemosynthesisReadyTurn) ||
       Number.isInteger(piece.photosynthesisReadyTurn) ||
       Number.isInteger(piece.extremophyteSinceRound) ||
-      (piece.nextReproductionRound ?? now) > now ||
+      energyValue(piece) < energyCapacity(piece) ||
       juvenile(state, piece),
   );
 }
@@ -705,18 +705,14 @@ function endothermyRescues(state, piece, normalHostile) {
         value: 1,
       },
     );
-  } else
-    piece.nextReproductionRound =
-      (piece.nextReproductionRound ?? now) <= now
-        ? now + 1
-        : piece.nextReproductionRound + 1;
+  } else applyEnergyDelta(piece, -1, state.turn);
   piece.endothermyUsedTurn = state.turn;
   emitPassiveEffect(
     state,
     "Endotermia",
     heartSupport
       ? "🔥 Endotermia evitou a morte ambiental com suporte cardiovascular."
-      : "🔥 Endotermia converteu o estresse ambiental em custo metabólico · recuperação +1.",
+      : "🔥 Endotermia converteu o estresse ambiental em custo energético · Energia −1.",
     {
       pieceId: piece.id,
       outcome: "endothermy-rescued-hostile-risk",
@@ -725,7 +721,9 @@ function endothermyRescues(state, piece, normalHostile) {
   );
   log(
     state,
-    `${OWNERS[piece.owner]}: 🔥 Endotermia evitou a morte ambiental e acrescentou 1 rodada de recuperação.`,
+    heartSupport
+      ? `${OWNERS[piece.owner]}: 🔥 Endotermia evitou a morte ambiental com suporte cardiovascular.`
+      : `${OWNERS[piece.owner]}: 🔥 Endotermia evitou a morte ambiental ao custo de 1 Energia.`,
   );
   return true;
 }
@@ -2589,7 +2587,7 @@ function completeMove(
     })
   )
     return;
-  if (p.lastOwnExertionTurn === state.turn)
+  if (p.lastOwnEnergyExertionTurn === state.turn)
     applyAdipokineticRecovery(state, p);
   advanceTurn(ctx);
   settle(ctx);
@@ -2986,10 +2984,8 @@ function resolveBiologicalProjectile(ctx, action) {
     cell,
     expiresTurn: state.turn + 2,
   });
-  piece.nextReproductionRound = Math.max(
-    piece.nextReproductionRound ?? 0,
-    round(state) + metabolicReproductionCooldown(piece),
-  );
+  spendEnergy(piece, reproductionEnergyCost(piece), state.turn);
+  piece.lastEnergyActivityTurn = state.turn;
   log(
     state,
     `${OWNERS[piece.owner]}: 🪲 Projétil Biológico tornou ${coord(target.r, target.c)} temporariamente hostil.`,
@@ -3021,23 +3017,21 @@ function resolveElectricDischarge(ctx, action) {
     markCarcass(state, cell);
     state.lastSuccessfulCaptureRound = round(state);
   }
-  const cooldown = metabolicReproductionCooldown(piece) * 3;
-  piece.nextReproductionRound = Math.max(
-    piece.nextReproductionRound ?? 0,
-    round(state) + cooldown,
-  );
+  const cost = energyCapacity(piece);
+  spendEnergy(piece, cost, state.turn);
+  piece.lastEnergyActivityTurn = state.turn;
   log(
     state,
-    `${OWNERS[piece.owner]}: ⚡ Eletrodescarga atingiu ${coord(target.r, target.c)}; recuperação metabólica ${cooldown} rodada(s).`,
+    `${OWNERS[piece.owner]}: ⚡ Eletrodescarga atingiu ${coord(target.r, target.c)} e consumiu toda a Energia disponível.`,
   );
   emitPassiveEffect(
     state,
     "Eletrodescarga",
-    `⚡ Eletrodescarga: recuperação metabólica por ${cooldown} rodada(s).`,
+    "⚡ Eletrodescarga consumiu toda a Energia disponível.",
     {
       pieceId: piece.id,
       outcome: killed ? "electrical-kill" : "electrical-hit",
-      value: cooldown,
+      value: cost,
     },
   );
   advanceTurn(ctx);
@@ -4495,16 +4489,20 @@ function executeMove(ctx, action) {
           );
     capturedPieceKilled = killed;
     if (killed && filialCannibalism) {
-      p.nextReproductionRound = round(state);
+      const needed = Math.max(
+        0,
+        reproductionEnergyCost(p) - energyValue(p),
+      );
+      if (needed) restoreEnergy(p, needed);
       log(
         state,
-        `${OWNERS[p.owner]}: 🐹 Canibalismo Filial encerrou a recuperação metabólica.`,
+        `${OWNERS[p.owner]}: 🐹 Canibalismo Filial restaurou Energia suficiente para nova reprodução.`,
       );
       emitPassiveEffect(
         state,
         "Canibalismo Filial",
-        "🐹 Canibalismo Filial encerrou a recuperação metabólica.",
-        { pieceId: p.id, outcome: "reset-reproductive-cooldown" },
+        "🐹 Canibalismo Filial restaurou Energia reprodutiva.",
+        { pieceId: p.id, outcome: "restored-reproductive-energy", value: needed },
       );
     }
     if (killed && matriphagy) {
@@ -4968,7 +4966,7 @@ function executeMove(ctx, action) {
       emitPassiveEffect(
         state,
         "Capsaicina",
-        "🌶️ Capsaicina dobrou a recuperação metabólica do consumidor.",
+        "🌶️ Capsaicina dobrou o custo energético reprodutivo do consumidor.",
         {
           pieceId: p.id,
           outcome: "doubled-metabolic-recovery",
