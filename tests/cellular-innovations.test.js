@@ -17,6 +17,7 @@ import {
   newPiece,
 } from "../src/state.js";
 import { TRAITS, has, square } from "../src/constants.js";
+import { energyValue } from "../src/energy.js";
 import { actionsForPiece } from "../src/moves.js";
 import { reproduce } from "../src/reproduction.js";
 import { infect, tickDiseases } from "../src/disease.js";
@@ -86,17 +87,16 @@ test("Endossimbiose antecipa uma reprodução em uma rodada e cobra dívida +2",
       },
       { owner: "amber", r: 0, c: 0, rank: 0, traits: ["Respiração anaeróbia"] },
     ], 4102),
-    parent = state.pieces.find((candidate) => candidate.owner === "blue"),
-    now = round(state);
-  parent.nextReproductionRound = now + 1;
+    parent = state.pieces.find((candidate) => candidate.owner === "blue");
+  parent.energy = 3;
   assert.equal(reproductionReady(state, parent), true);
   const born = reproduce(context(state), parent, null, "teste endossimbiótico", {
     forcedCount: 1,
     immediateDevelopment: true,
   });
   assert.equal(born, 1);
-  assert.ok(parent.nextReproductionRound >= now + 3);
-  assert.equal(parent.endosymbiosisDebtUntilRound, parent.nextReproductionRound);
+  assert.equal(energyValue(parent), -2);
+  assert.equal(parent.endosymbiosisEnergyDebt, true);
   assertState(state);
 });
 
@@ -120,7 +120,6 @@ test("Quimiossíntese protege em casa hostil, fertiliza no turno seguinte e a re
   state.pieces.push(parent, rival);
   const cell = square(parent.r, parent.c);
   state.board[cell] = "hostile";
-  parent.nextReproductionRound = round(state);
 
   assert.equal(
     actionsForPiece(state, parent).some(
@@ -310,7 +309,7 @@ test("Estômatos alternam automaticamente dois turnos abertos e dois fechados", 
   assert.equal(stomataOpen(state, piece), true);
 });
 
-test("Endotermia converte um risco hostil letal em uma rodada de recuperação", () => {
+test("Endotermia converte um risco hostil letal em custo de 1 Energia", () => {
   const state = fixture([
       {
         owner: "blue",
@@ -321,12 +320,10 @@ test("Endotermia converte um risco hostil letal em uma rodada de recuperação",
       },
       { owner: "amber", r: 0, c: 0, rank: 0, traits: ["Respiração anaeróbia"] },
     ], 1),
-    piece = state.pieces.find((candidate) => candidate.owner === "blue"),
-    now = round(state);
-  piece.nextReproductionRound = now;
+    piece = state.pieces.find((candidate) => candidate.owner === "blue");
   state.rng = 1;
   const killed = hostileHazardKills(state, piece, true);
   assert.equal(killed, false);
-  assert.equal(piece.nextReproductionRound, now + 1);
+  assert.equal(energyValue(piece), 4);
   assert.equal(piece.endothermyUsedTurn, state.turn);
 });
