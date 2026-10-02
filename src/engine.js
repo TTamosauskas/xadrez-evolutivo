@@ -3559,9 +3559,11 @@ function executeMove(ctx, action) {
               ? "jet"
               : target.jump
               ? "jump"
-              : target.echolocation
-                ? "echolocation"
-                : p.rank === 1 && movementDistance > 1
+              : target.cephalization
+                ? "cephalization"
+                : target.echolocation
+                  ? "echolocation"
+                  : p.rank === 1 && movementDistance > 1
                   ? "knight"
                   : "move",
           jumpedCell: jumpedPiece
@@ -3927,7 +3929,7 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
-    distance(p, victim) === 1
+    (distance(p, victim) === 1 || target.cephalization)
   ) {
     const remnant = mineralRemnantAt(state, victim.r, victim.c);
     if (remnant) {
@@ -4309,7 +4311,7 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
-    distance(p, victim) === 1
+    (distance(p, victim) === 1 || target.cephalization)
   ) {
     emitNeutralizedPhysicalDefenses(state, p, victim);
     const blockingTrait = contactCaptureBlockingTrait(state, p, victim);
@@ -4575,6 +4577,18 @@ function executeMove(ctx, action) {
       );
     }
     if (killed && victim.owner !== p.owner) {
+      if (target.cephalization) {
+        log(
+          state,
+          `${OWNERS[p.owner]}: 📍 Cefalização converteu a busca dirigida em investida até ${coord(target.r, target.c)}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Cefalização",
+          "📍 Cefalização permitiu uma investida de perseguição a duas casas.",
+          { pieceId: p.id, outcome: "cephalization-pursuit-capture" },
+        );
+      }
       if (target.massRecruitment) {
         log(
           state,
