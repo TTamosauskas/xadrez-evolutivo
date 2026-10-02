@@ -142,6 +142,9 @@ import {
   markCarcass,
   markOrganicResidue,
   markCaptureDisturbance,
+  beginPredationFeedingSite,
+  finalizePredationFeedingSite,
+  settlePredationFeedingSites,
   advanceConway,
   severeEventActive,
   tickSevereEventTurn,
@@ -161,18 +164,19 @@ function grantPredationVivification(
   attacker.predationEnergy = true;
   if (trophicSpecializationMatches(attacker, victim))
     attacker.predationEnergyEfficient = true;
+  beginPredationFeedingSite(state, attacker, square(attacker.r, attacker.c));
   if (fresh) {
     log(
       state,
-      `${OWNERS[attacker.owner]}: ⭕ Predação armazenou energia vivificante para uma reprodução futura.`,
+      `${OWNERS[attacker.owner]}: 🟩 Predação tornou o local de alimentação fértil para uma reprodução.`,
     );
     emitPassiveEffect(
       state,
       "Predação",
-      "⭕ A captura bem-sucedida armazenou uma carga de energia vivificante.",
+      "🟩 A captura bem-sucedida criou uma Casa Fértil temporária sob o predador.",
       {
         pieceId: attacker.id,
-        outcome: "stored-predation-vivification",
+        outcome: "predation-feeding-site",
         value: 1,
       },
     );
@@ -180,11 +184,9 @@ function grantPredationVivification(
   return true;
 }
 
-function consumePredationVivification(piece) {
+function consumePredationVivification(state, piece) {
   if (!piece?.predationEnergy) return false;
-  piece.predationEnergy = false;
-  piece.predationEnergyEfficient = false;
-  return true;
+  return finalizePredationFeedingSite(state, piece.id);
 }
 function applyChemicalCaptureDefense(state, dead, attacker) {
   if (!attacker || attacker.owner === dead.owner) return;
@@ -5112,7 +5114,7 @@ function executeMove(ctx, action) {
       markHadeanTutorialStep(state, "divided");
     if (collectorStay && born) consumeCollectorSeed(state, p);
     if (useStoredPredationEnergy && born)
-      consumePredationVivification(p);
+      consumePredationVivification(state, p);
   }
   if (predationCapture) grantPredationVivification(state, p, capturedEnemy);
   if (capturedPieceKilled && state.geologicalStage !== "hadean") {
@@ -6237,6 +6239,7 @@ export function transition(previous, action) {
     const acted = state.pieces.find((piece) => piece.id === action.id);
     if (acted) releaseEukaryoteBuffers(state, acted, "action");
   }
+  settlePredationFeedingSites(state);
   recordDemographicDelta(state, previous);
   logBoardChanges(previous, state);
   state.revision++;
