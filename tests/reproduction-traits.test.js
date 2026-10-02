@@ -186,6 +186,56 @@ test("Brotamento shares colony identity and recovers through the unified Energy 
   assertState(s);
 });
 
+test("Brotamento infrutífero encerra o turno sem lançar erro", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: ["Brotamento", "Herbívoro"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parentId = s.pieces[0].id,
+    parent = s.pieces[0],
+    cell = parent.r * 8 + parent.c,
+    nextRoll = (seed) =>
+      ((Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
+  let seed = 1;
+  while (nextRoll(seed) < 0.9) seed++;
+  s.disableReproductiveSuccessPressure = false;
+  s.rng = seed;
+  s.turn = 8;
+  s.current = "blue";
+  parent.stationarySinceRound = 0;
+  parent.energy = 2;
+  s.board[cell] = "fertile";
+
+  assert.ok(
+    legalActions(s).some(
+      (action) => action.type === "BUD" && action.id === parentId,
+    ),
+  );
+
+  s = transition(s, { type: "BUD", id: parentId });
+  const after = s.pieces.find((piece) => piece.id === parentId);
+  assert.equal(s.turn, 9);
+  assert.equal(s.board[cell], "neutral");
+  assert.equal(energyValue(after), 3);
+  assert.equal(
+    s.pieces.filter((piece) => piece.parentId === parentId).length,
+    0,
+  );
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Reprodução infrutífera" &&
+        effect.outcome === "infruitful-reproduction",
+    ),
+  );
+  assertState(s);
+});
+
 test("Séssil suppresses locomotion and establishes immediate offspring from the outer ring", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 4, traits: ["Séssil"] },
