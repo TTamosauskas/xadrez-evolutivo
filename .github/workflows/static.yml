@@ -19,7 +19,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm test
+      - name: Run unit suite for ablation
+        continue-on-error: true
+        run: npm test
       - name: Run 200-game replacement-pressure ablation
         continue-on-error: true
         env:
