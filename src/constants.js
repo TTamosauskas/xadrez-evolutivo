@@ -41,7 +41,7 @@ export const TRAITS = {
   ],
   Endossimbiose: [
     "🔋",
-    "Permite antecipar uma reprodução quando falta exatamente uma rodada de recuperação, cobrando duas rodadas adicionais de débito metabólico depois.",
+    "Permite reproduzir quando falta exatamente 1 Energia, assumindo ainda 2 pontos adicionais de dívida energética depois.",
   ],
   Quimiossíntese: [
     "♨️",
@@ -65,11 +65,11 @@ export const TRAITS = {
   ],
   Endotermia: [
     "🔥",
-    "Quando um ambiente hostil comum causaria morte, converte o risco em uma rodada adicional de recuperação metabólica, no máximo uma vez por turno.",
+    "Quando um ambiente hostil comum causaria morte, converte o risco em custo de 1 Energia, no máximo uma vez por turno.",
   ],
   "Coração Compartimentado": [
     "🫀",
-    "Uma vez a cada quatro rodadas, quando Endotermia evita uma morte ambiental, sustenta a resposta fisiológica sem acrescentar a rodada extra de recuperação metabólica.",
+    "Uma vez a cada quatro rodadas, quando Endotermia evita uma morte ambiental, sustenta a resposta fisiológica sem cobrar Energia.",
   ],
   Multicelularismo: [
     "🫧",
@@ -97,15 +97,15 @@ export const TRAITS = {
   ],
   Dopamina: [
     "🤤",
-    "Após reprodução bem-sucedida por alimento, reduz em uma rodada a pressão ecológica ou competitiva aplicada à recuperação reprodutiva.",
+    "Após reprodução bem-sucedida por alimento, neutraliza 1 ponto do custo energético adicional causado por pressão ecológica ou competitiva.",
   ],
   Endorfinas: [
     "😌",
-    "Aumenta em um esforço o limite de Fadiga da criatura: ao atingir o limite normal, ainda suporta mais um lance de movimento, captura ou fuga antes do descanso locomotor obrigatório.",
+    "Aumenta a Energia máxima exatamente pelo custo de um esforço locomotor da forma, permitindo um movimento, captura ou fuga adicional.",
   ],
   "Ciclo de Sono": [
     "😴",
-    "Ao concluir um turno de Fadiga em segurança, entra automaticamente em sono reparador. O primeiro esforço locomotor após despertar não aumenta a Fadiga.",
+    "Ao repousar com Energia insuficiente em segurança, entra em sono reparador. O primeiro esforço locomotor após despertar custa 0 Energia.",
   ],
   Hibernação: [
     "🧸",
@@ -117,7 +117,7 @@ export const TRAITS = {
   ],
   Intestino: [
     "🪢",
-    "A cada segunda reprodução bem-sucedida por alimento, melhora a absorção e reduz em uma rodada apenas a parcela metabólica da recuperação, respeitando o mínimo de uma rodada.",
+    "A cada segunda reprodução bem-sucedida por alimento, melhora a absorção e devolve 1 Energia após o investimento reprodutivo.",
   ],
   "Estômago Ácido": [
     "🧪",
@@ -133,7 +133,7 @@ export const TRAITS = {
   ],
   "Sistema Adipocinético": [
     "⛽",
-    "Ao terminar um esforço locomotor em uma casa fértil, repõe parte das reservas mobilizadas e reduz em 1 o esforço acumulado de Fadiga, uma vez por turno.",
+    "Ao terminar um esforço locomotor em uma Casa Fértil, recupera Energia equivalente ao custo locomotor da forma, uma vez por turno.",
   ],
   "Locomoção Articulada": [
     "🦵",
@@ -145,7 +145,7 @@ export const TRAITS = {
   ],
   "Rim Concentrador": [
     "🫘",
-    "Durante Seca Severa ou Desertificação, a perda de fertilidade da casa ocupada gera uma Reserva Hídrica. A próxima reprodução consome a reserva e reduz em uma rodada a recuperação metabólica.",
+    "Durante Seca Severa ou Desertificação, a perda de fertilidade da casa ocupada gera uma Reserva Hídrica. A próxima reprodução consome a reserva e devolve 1 Energia.",
   ],
   Rastejante: [
     "🐌",
@@ -224,11 +224,11 @@ export const TRAITS = {
   ],
   Carnívoro: [
     "🍖",
-    "Especialização alimentar: ao reproduzir por captura de uma criatura não fotossintética, reduz em uma rodada a recuperação metabólica.",
+    "Especialização alimentar: ao reproduzir por captura de uma criatura não fotossintética, devolve 1 Energia.",
   ],
   Herbívoro: [
     "🥬",
-    "Especialização alimentar: ao reproduzir por captura de uma criatura fotossintética, reduz em uma rodada a recuperação metabólica. Do Cambriano em diante, também permite Vivificar usando casas férteis.",
+    "Especialização alimentar: ao reproduzir por captura de uma criatura fotossintética, devolve 1 Energia. Do Cambriano em diante, também permite Vivificar usando Casas Férteis.",
   ],
   Granívoro: [
     "🐿️",
@@ -240,7 +240,7 @@ export const TRAITS = {
   ],
   "Canibalismo Filial": [
     "🐹",
-    "Se estiver em recuperação metabólica e não houver captura inimiga disponível, pode consumir uma cria direta ainda juvenil para encerrar imediatamente a espera reprodutiva.",
+    "Se estiver sem Energia suficiente para reproduzir e não houver captura inimiga disponível, pode consumir uma cria direta ainda juvenil para restaurar a Energia reprodutiva necessária.",
   ],
   "Canibalismo Sexual": [
     "𒌐",
@@ -257,7 +257,7 @@ export const TRAITS = {
   "Vetor Patógeno": ["🦟", "Pode desencadear surtos virais, bacterianos ou fúngicos em criaturas adversárias adjacentes."],
   Onívoro: [
     "🐻",
-    "Combina as especializações de Carnívoro e Herbívoro: reduz a recuperação metabólica após reprodução por qualquer presa e, do Cambriano em diante, também permite Vivificar em casas férteis.",
+    "Combina as especializações de Carnívoro e Herbívoro: devolve 1 Energia após reprodução por qualquer presa e, do Cambriano em diante, também permite Vivificar em Casas Férteis.",
   ],
   "Respiração Cutânea": [
     "🐸",
@@ -316,7 +316,7 @@ export const TRAITS = {
   ],
   "Respiração aeróbia": [
     "🔵",
-    "Metabolismo mais eficiente com oxigênio. Mantém a capacidade metabólica basal e reduz em uma rodada a recuperação metabólica após qualquer reprodução.",
+    "Metabolismo mais eficiente com oxigênio. Mantém a capacidade metabólica basal e devolve 1 Energia após qualquer reprodução.",
   ],
   "Respiração Pulmonar": [
     "🫁",
@@ -428,7 +428,7 @@ export const TRAITS = {
   ],
   Mutualismo: [
     "🫂",
-    "Portadores aliados adjacentes de ramos energéticos opostos reduzem em uma rodada a própria recuperação metabólica após reproduzir, até o mínimo de uma.",
+    "Portadores aliados adjacentes de ramos energéticos opostos devolvem 1 Energia após reproduzir.",
   ],
   Manada: [
     "🦬",
@@ -556,11 +556,11 @@ export const TRAITS = {
   Esterilidade: ["🚫", "Impede a reprodução."],
   "Insuficiência Respiratória": [
     "😮‍💨",
-    "Dobra o intervalo de recuperação metabólica após qualquer reprodução.",
+    "Dobra a carga energética de recuperação causada pela reprodução.",
   ],
   "Anemia Falciforme": [
     "🛑",
-    "Anula a redução de uma rodada na recuperação metabólica fornecida por Respiração aeróbia.",
+    "Anula a devolução de 1 Energia fornecida por Respiração aeróbia após reprodução.",
   ],
   "Assimetria Flutuante": [
     "👹",
@@ -592,7 +592,7 @@ export const TRAITS = {
   ],
   "Má absorção Alimentar": [
     "🐼",
-    "Ao consumir uma casa fértil para reproduzir, consome também uma segunda casa fértil adjacente, quando houver; recursos alimentares como presa, ovo, carcaça e fezes dobram sua recuperação metabólica.",
+    "Ao consumir uma Casa Fértil para reproduzir, consome também uma segunda Casa Fértil adjacente, quando houver; recursos alimentares como presa, ovo, carcaça e fezes dobram a carga energética reprodutiva.",
   ],
   Semelparidade: [
     "🐙",
@@ -664,7 +664,7 @@ export const TRAITS = {
   ],
   "Acasalamento Múltiplo": [
     "🦭",
-    "Permite dois parceiros na mesma reprodução; a ninhada potencial combina duas subninhadas biparentais e o custo de recuperação metabólica dos três participantes é dobrado, antes das pressões ecológicas.",
+    "Permite dois parceiros na mesma reprodução; a ninhada potencial combina duas subninhadas biparentais e a carga energética reprodutiva dos três participantes é dobrada antes das pressões ecológicas.",
   ],
   Metamorfose: [
     "🦋",
@@ -680,7 +680,7 @@ export const TRAITS = {
   ],
   Toxicidade: [
     "😵‍💫",
-    "Ao ser capturada por contato, intoxica o agressor: ele perde o próximo turno próprio, tem as defesas reativas suspensas e sua recuperação metabólica é adiada em uma rodada.",
+    "Ao ser capturada por contato, intoxica o agressor: ele perde o próximo turno próprio, tem as defesas reativas suspensas e perde 1 Energia.",
   ],
   Veneno: ["🫟", "Especialização de Toxicidade que condena o agressor à morte após dois turnos próprios."],
   Peçonha: [
@@ -697,7 +697,7 @@ export const TRAITS = {
   ],
   "Projétil Biológico": [
     "🪲",
-    "Dispara uma secreção na geometria do Cavalo sem se deslocar, tornando temporariamente hostil a casa ocupada pelo alvo e entrando em recuperação metabólica normal.",
+    "Dispara uma secreção na geometria do Cavalo sem se deslocar, tornando temporariamente hostil a casa ocupada pelo alvo e gastando o custo energético reprodutivo da forma.",
   ],
   "Predação em Massa": [
     "🐋",
@@ -713,7 +713,7 @@ export const TRAITS = {
   ],
   Eletrodescarga: [
     "⚡",
-    "Mata um inimigo na geometria do Cavalo sem deslocamento nem reprodução; o disparo impõe recuperação metabólica triplicada.",
+    "Mata um inimigo na geometria do Cavalo sem deslocamento nem reprodução; o disparo consome toda a Energia disponível.",
   ],
   Hematofagia: [
     "🩸",
@@ -749,11 +749,11 @@ export const TRAITS = {
   ],
   Rizoma: [
     "🫚",
-    "Propaga um clone a duas casas ortogonais por um corredor subterrâneo contínuo, consumindo recurso reprodutivo e aplicando recuperação metabólica normal.",
+    "Propaga um clone a duas casas ortogonais por um corredor subterrâneo contínuo, consumindo recurso e Energia reprodutiva normais.",
   ],
   Ruminante: [
     "🐄",
-    "Após reproduzir, acelera a recuperação metabólica enquanto permanece no mesmo bloco de quatro casas, reduzindo uma rodada adicional por turno próprio.",
+    "Após reproduzir, recupera +1 Energia adicional por turno próprio enquanto permanece no mesmo bloco de quatro casas.",
   ],
   "Mutação Letal": ["💀", "A peça morre após três rodadas completas."],
   "Mutação Disfuncional": [
@@ -818,7 +818,7 @@ export const TRAITS = {
   ],
   Capsaicina: [
     "🌶️",
-    "Especializa frutos endozoocóricos: consumidores com Pelos têm recuperação metabólica dobrada, enquanto Penas evita essa penalidade.",
+    "Especializa frutos endozoocóricos: consumidores com Pelos têm carga energética reprodutiva dobrada, enquanto Penas evita essa penalidade.",
   ],
   Epizoocoria: [
     "🌾",
