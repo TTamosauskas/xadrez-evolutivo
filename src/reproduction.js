@@ -2160,14 +2160,23 @@ export function reproduce(
       apply(parent, true);
       for (const candidate of mates) apply(candidate, false);
     },
+    markReproductiveAttempt = () => {
+      for (const piece of [parent, ...mates])
+        if (piece) piece.lastEnergyActivityTurn = state.turn;
+      const provider = [parent, ...mates].find(
+        (piece) => piece?.id === options.resourceProviderId,
+      );
+      if (provider) provider.lastEnergyActivityTurn = state.turn;
+    },
     rewardInfruitfulVivification = () => {
-      if (resourceKind !== "fertile") return 0;
+      if (!["fertile", "biofilm"].includes(resourceKind)) return 0;
       const recipient =
           [parent, ...mates].find(
             (piece) => piece.id === options.resourceProviderId,
           ) ?? parent,
         before = energyValue(recipient);
       restoreEnergy(recipient, 1);
+      recipient.lastEnergyActivityTurn = state.turn;
       return Math.max(0, energyValue(recipient) - before);
     },
     makeRequestedBrood = (count) => {
@@ -2251,6 +2260,7 @@ export function reproduce(
         transmitSexualPathogen(state, [parent, ...mates]);
       if (!has(profile, "Subfertilidade") || random(state) >= 0.5)
         return false;
+      markReproductiveAttempt();
       if (Number.isInteger(options.resourceCell))
         consumeReproductionResource(state, parent, options.resourceCell);
       else options.onFailedAttempt?.();
@@ -2299,6 +2309,7 @@ export function reproduce(
     const successRate = reproductiveSuccessRate(state, parent, mates);
     if (random(state) >= successRate) {
       if (mates.length) transmitSexualPathogen(state, [parent, ...mates]);
+      markReproductiveAttempt();
       if (Number.isInteger(options.resourceCell))
         consumeReproductionResource(state, parent, options.resourceCell);
       else options.onFailedAttempt?.();
