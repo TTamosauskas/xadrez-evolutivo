@@ -89,7 +89,7 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
   },
   cambrian: {
     plant: ["Fotossíntese", "Multicelularismo", "Respiração aeróbia", "Reprodução Sexuada"],
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Locomoção Primitiva", "Biomineralização", "Escavador", "Construtor de Nicho", "Necrófago"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Locomoção Primitiva", "Cefalização", "Biomineralização", "Escavador", "Construtor de Nicho", "Necrófago"],
     rank: 0,
   },
   ordovician: {
@@ -178,7 +178,7 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
 
 export const EARTH_ARTHROPOD_FOUNDER_GENOMES = Object.freeze({
   cambrian: {
-    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Biomineralização", "Carapaça", "Carnívoro", "Esclerotização"],
+    animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Locomoção Primitiva", "Cefalização", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Biomineralização", "Carapaça", "Carnívoro", "Esclerotização"],
     rank: 1,
   },
   ordovician: {
@@ -244,7 +244,7 @@ export const EARTH_ARTHROPOD_FOUNDER_GENOMES = Object.freeze({
 });
 
 export const EARTH_CAMBRIAN_VERTEBRATE_FOUNDER = Object.freeze({
-  animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Vertebrado", "Locomoção Articulada", "Percepção Espacial"],
+  animal: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada", "Simetria Bilateral", "Locomoção Primitiva", "Cefalização", "Vertebrado", "Locomoção Articulada", "Percepção Espacial"],
   rank: 0,
 });
 
