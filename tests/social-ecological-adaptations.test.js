@@ -26,6 +26,7 @@ import {
 } from "../src/geology.js";
 import { assertState, clone, round } from "../src/state.js";
 import { square, TRAITS, STATE_VERSION } from "../src/constants.js";
+import { energyCapacity, energyValue, reproductionEnergyCost } from "../src/energy.js";
 import { deserialize } from "../src/storage.js";
 
 test("Tropismo directs photosynthetic offspring toward another fertile cell", () => {
