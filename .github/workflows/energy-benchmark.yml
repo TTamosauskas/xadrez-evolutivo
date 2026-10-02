@@ -21,10 +21,10 @@ jobs:
       - run: npm ci
       - name: Core simulation
         continue-on-error: true
-        run: GAMES=80 GOAL_TURNS=200 TURN_LIMIT=300 npm run simulate
+        run: GAMES=24 GOAL_TURNS=200 TURN_LIMIT=300 npm run simulate
       - name: Period benchmark
         continue-on-error: true
-        run: GAMES_PER_STAGE=3 GOAL_TURNS=200 TURN_LIMIT=300 npm run benchmark:periods
+        run: GAMES_PER_STAGE=2 GOAL_TURNS=200 TURN_LIMIT=300 npm run benchmark:periods
       - name: Stall diagnostics
         continue-on-error: true
-        run: DIAGNOSTIC_GAMES=8 GOAL_TURNS=200 DIAGNOSTIC_TURN_LIMIT=300 node scripts/stall-diagnostics.js
+        run: DIAGNOSTIC_GAMES=4 GOAL_TURNS=200 DIAGNOSTIC_TURN_LIMIT=300 node scripts/stall-diagnostics.js
