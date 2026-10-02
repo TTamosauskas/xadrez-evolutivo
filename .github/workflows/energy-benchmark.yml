@@ -11,29 +11,20 @@ permissions:
 jobs:
   benchmark:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: HEAD core simulation
+      - name: Energy smoke simulation
         continue-on-error: true
-        run: GAMES=24 GOAL_TURNS=200 TURN_LIMIT=300 npm run simulate
-      - name: HEAD period benchmark
+        run: GAMES=8 GOAL_TURNS=200 TURN_LIMIT=300 npm run simulate
+      - name: Energy period smoke
         continue-on-error: true
-        run: GAMES_PER_STAGE=2 GOAL_TURNS=200 TURN_LIMIT=300 npm run benchmark:periods
-      - name: HEAD stall diagnostics
+        run: GAMES_PER_STAGE=1 GOAL_TURNS=200 TURN_LIMIT=300 npm run benchmark:periods
+      - name: Energy stall diagnostics
         continue-on-error: true
-        run: DIAGNOSTIC_GAMES=4 GOAL_TURNS=200 DIAGNOSTIC_TURN_LIMIT=300 node scripts/stall-diagnostics.js
-      - name: MAIN core simulation
-        continue-on-error: true
-        run: |
-          git worktree add /tmp/xadrez-main origin/main
-          cd /tmp/xadrez-main
-          npm ci
-          GAMES=24 GOAL_TURNS=200 TURN_LIMIT=300 npm run simulate
+        run: DIAGNOSTIC_GAMES=2 GOAL_TURNS=200 DIAGNOSTIC_TURN_LIMIT=300 node scripts/stall-diagnostics.js
