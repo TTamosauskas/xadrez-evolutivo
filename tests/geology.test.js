@@ -49,8 +49,8 @@ import {
   restoreAquaticFertility,
   lethalHazardAt,
 } from "../src/state.js";
-import { movesFor } from "../src/moves.js";
-import { context } from "../src/engine.js";
+import { legalActions, movesFor, partnersFor } from "../src/moves.js";
+import { context, mutuallyBlocked } from "../src/engine.js";
 import { tickEnvironment } from "../src/environment.js";
 import {
   EARTH_FOUNDER_GENOMES,
@@ -1186,7 +1186,51 @@ test("Earth successors preserve strongest living forms while fresh detailed phas
       200 + GEOLOGICAL_STAGES.findIndex((stage) => stage.id === id),
     );
     assert.equal(fresh.geologicalStage, id);
-    assert.equal(fresh.pieces.length, 4);
+    const sexual = fresh.pieces.some((piece) =>
+      piece.traits.includ
+
+test("sexual founder periods start with fertile compatible pairs and legal actions", () => {
+  const preSexual = createPeriodState("calymmian", 6200, null, "earth");
+  assert.equal(preSexual.pieces.length, 4);
+
+  for (const [index, id] of ["ectasian", "ediacaran", "cambrian", "holocene"].entries()) {
+    const state = createPeriodState(id, 6210 + index, null, "earth");
+    assert.equal(state.pieces.length, 8, id);
+    assert.equal(mutuallyBlocked(state), false, id);
+
+    for (const owner of ["blue", "amber"]) {
+      const pieces = state.pieces.filter((piece) => piece.owner === owner);
+      assert.equal(pieces.length, 4, `${id} ${owner}`);
+
+      for (const branch of ["Fotossíntese", "Predação"]) {
+        const pair = pieces.filter((piece) => piece.traits.includes(branch));
+        assert.equal(pair.length, 2, `${id} ${owner} ${branch}`);
+        assert.equal(
+          Math.max(
+            Math.abs(pair[0].r - pair[1].r),
+            Math.abs(pair[0].c - pair[1].c),
+          ),
+          1,
+          `${id} ${owner} ${branch} adjacency`,
+        );
+        assert.ok(
+          pair.some((piece) => state.board[piece.r * 8 + piece.c] === "fertile"),
+          `${id} ${owner} ${branch} fertile provider`,
+        );
+        assert.ok(
+          pair.some((piece) => partnersFor(state, piece, { requireResource: true }).length),
+          `${id} ${owner} ${branch} partner action`,
+        );
+      }
+    }
+
+    const currentActions = legalActions(state);
+    assert.ok(currentActions.length > 0, `${id} legal actions`);
+  }
+});
+es("Reprodução Sexuada"),
+    );
+    assert.equal(fresh.pieces.length, sexual ? 8 : 4);
     assertState(fresh);
   }
 });
