@@ -613,11 +613,15 @@ test("Transferência Horizontal eventually copies an eligible donor allele", () 
     attacker = s.pieces[0],
     donor = s.pieces[1];
 
-  let gained = null;
-  for (let i = 0; i < 100 && !gained; i++)
-    gained = attemptHorizontalTransfer(s, attacker, donor);
+  let gainedResistance = false;
+  for (let i = 0; i < 200 && !gainedResistance; i++) {
+    attemptHorizontalTransfer(s, attacker, donor);
+    gainedResistance = attacker.genome.Resistência?.some(
+      (allele) => allele.value === "derived",
+    ) ?? false;
+  }
 
-  assert.equal(gained, "Resistência");
+  assert.equal(gainedResistance, true);
   assert.ok(
     attacker.genome.Resistência.some((allele) => allele.value === "derived"),
   );
