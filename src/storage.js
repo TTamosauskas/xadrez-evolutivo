@@ -1,9 +1,14 @@
 import { assertState, createCampaignState } from "./state.js";
 import { STATE_VERSION } from "./constants.js";
 import { normalizeGenome } from "./genetics.js";
+import {
+  energyCapacity,
+  movementEnergyCost,
+  reproductionEnergyCost,
+} from "./energy.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -414,6 +419,41 @@ function migrateDetailedGeology(state) {
   return state;
 }
 
+function migrateUnifiedEnergy(state) {
+  const currentRound = Math.floor((state.turn ?? 0) / 2);
+  for (const piece of state.pieces ?? []) {
+    const capacity = energyCapacity(piece);
+    if (!Number.isFinite(piece.energy)) {
+      const fatigue = Math.max(0, piece.exertionStreak ?? 0),
+        locomotorEnergy = capacity - fatigue * movementEnergyCost(piece),
+        remainingRecovery = Math.max(
+          0,
+          (piece.nextReproductionRound ?? currentRound) - currentRound,
+        ),
+        reproductiveEnergy =
+          remainingRecovery > 0
+            ? reproductionEnergyCost(piece) - remainingRecovery
+            : capacity;
+      piece.energy = Math.min(
+        capacity,
+        locomotorEnergy,
+        reproductiveEnergy,
+      );
+    } else piece.energy = Math.min(capacity, piece.energy);
+    if (
+      Number.isInteger(piece.endosymbiosisDebtUntilRound) &&
+      piece.endosymbiosisDebtUntilRound > currentRound
+    )
+      piece.endosymbiosisEnergyDebt = true;
+    piece.nextReproductionRound = currentRound;
+    piece.exertionStreak = 0;
+    delete piece.fatigueRestTurn;
+    delete piece.lastOwnExertionTurn;
+    delete piece.lastReactiveExertionTurn;
+  }
+  return state;
+}
+
 function migrateLegacy(data) {
   let state = normalizeLegacyZoochory(structuredClone(data));
   if (
@@ -476,6 +516,7 @@ function migrateLegacy(data) {
     for (const piece of state.pieces ?? []) delete piece.decompositionImmunity;
   }
   migrateDetailedGeology(state);
+  if (data.version <= 33) migrateUnifiedEnergy(state);
   state.version = STATE_VERSION;
   normalizeLegacyTraitNames(state);
   if (Array.isArray(state?.discoveries?.read))
