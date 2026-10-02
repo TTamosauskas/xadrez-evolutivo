@@ -17,6 +17,10 @@ import { negativeMutationChance, reproduce } from "../src/reproduction.js";
 import { fallbackAction } from "../src/ai.js";
 import { GEOLOGICAL_STAGES, traitUnlocked } from "../src/geology.js";
 import { square } from "../src/constants.js";
+import {
+  energyValue,
+  reproductionEnergyCost,
+} from "../src/energy.js";
 
 test("childhood begins only after Multicelularismo and Precocidade Sexual shortens it", () => {
   const unicellular = fixture([
@@ -142,52 +146,26 @@ test("cellular repair halves negative mutation pressure to the current baseline"
   );
 });
 
-test("successful reproduction uses metabolic recovery and induced ovulation shortens it", () => {
+test("successful reproduction spends Energy and requires recovery before another attempt", () => {
   const normal = fixture([
       { owner: "blue", r: 4, c: 4, rank: 5 },
       { owner: "amber", r: 0, c: 0 },
     ]),
-    parent = normal.pieces[0];
+    parent = normal.pieces[0],
+    cost = reproductionEnergyCost(parent);
 
+  assert.equal(energyValue(parent), 14);
   assert.equal(
     reproduce(context(normal), parent, null, "teste", { forcedCount: 1 }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 7);
-  assert.equal(
-    reproduce(context(normal), parent, null, "teste", { forcedCount: 1 }),
-    0,
-  );
-  normal.turn = 10;
+  assert.equal(cost, 10);
+  assert.equal(energyValue(parent), 4);
   assert.equal(reproductionReady(normal, parent), false);
-  normal.turn = 14;
-  assert.equal(reproductionReady(normal, parent), true);
 
-  const induced = fixture([
-      {
-        owner: "blue",
-        r: 4,
-        c: 4,
-        rank: 5,
-        traits: ["Multicelularismo", "Vivíparo", "Ovulação Induzida"],
-      },
-      { owner: "amber", r: 0, c: 0 },
-    ]),
-    inducedParent = induced.pieces[0];
-  assert.ok(inducedParent.traits.includes("Vivíparo"));
-  assert.ok(inducedParent.traits.includes("Ovulação Induzida"));
-  assert.equal(
-    reproduce(context(induced), inducedParent, null, "teste", {
-      forcedCount: 1,
-    }),
-    1,
-  );
-  assert.equal(inducedParent.nextReproductionRound, 7);
-  induced.turn = 10;
-  assert.equal(reproductionReady(induced, inducedParent), false);
-  induced.turn = 14;
-  assert.equal(reproductionReady(induced, inducedParent), true);
-  assertState(induced);
+  parent.energy = cost;
+  assert.equal(reproductionReady(normal, parent), true);
+  assertState(normal);
 });
 
 test("Lactação spends the turn to mature an adjacent juvenile child", () => {
@@ -262,9 +240,8 @@ test("Canibalismo consome um aliado e reduz a população sem gerar prole", () =
     s.pieces.filter((piece) => piece.owner === "blue").length,
     1,
   );
-  assert.equal(
-    s.pieces.find((piece) => piece.id === attackerId).nextReproductionRound,
-    0,
+  assert.ok(
+    energyValue(s.pieces.find((piece) => piece.id === attackerId)) >= 0,
   );
   assert.ok(s.deathSites.some((site) => site.cell === square(4, 4)));
   assertState(s);
@@ -287,7 +264,7 @@ test("Canibalismo permanece disponível durante cooldown e imaturidade", () => {
         (target) => target.r === 4 && target.c === 4 && target.cannibal,
       );
 
-  attacker.nextReproductionRound = 3;
+  attacker.energy = 0;
   assert.equal(targetsAlly(), true);
   attacker.maturesRound = 2;
   assert.equal(targetsAlly(), true);
