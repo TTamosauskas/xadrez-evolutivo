@@ -1419,6 +1419,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Biotransformação Hepática",
   "Simetria Bilateral",
   "Locomoção Primitiva",
+  "Cefalização",
   "Jatopropulsão",
   "Pulo",
   "Movimento proteano",
