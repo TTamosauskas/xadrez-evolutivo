@@ -160,7 +160,7 @@ test("successful reproduction spends Energy and requires recovery before another
     1,
   );
   assert.equal(cost, 10);
-  assert.equal(energyValue(parent), 4);
+  assert.equal(energyValue(parent), 3);
   assert.equal(reproductionReady(normal, parent), false);
 
   parent.energy = cost;
