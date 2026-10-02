@@ -23,7 +23,11 @@ import {
   attemptHorizontalTransfer,
   canBud,
 } from "../src/reproduction-traits.js";
-import { energyValue } from "../src/energy.js";
+import {
+  energyCapacity,
+  energyValue,
+  reproductionEnergyCost,
+} from "../src/energy.js";
 
 test("Biofilme shares one occupied fertile resource across a connected network per round", () => {
   let s = fixture([
@@ -175,6 +179,8 @@ test("Brotamento repeats on a four-round cadence and Colônia shares identity an
   assert.equal(canBud(s, parent), false);
   s.turn = 16;
   assert.equal(canBud(s, parent), false);
+  parent.energy = energyCapacity(parent);
+  parent.energyCapacitySnapshot = energyCapacity(parent);
   s.board[36] = "fertile";
   assert.equal(canBud(s, parent), true);
   assertState(s);
@@ -567,9 +573,9 @@ test("Acasalamento Múltiplo creates biparental sub-broods and doubles recovery"
     new Set(children.map((child) => child.parentIds[1])),
     new Set([first.id, second.id]),
   );
-  assert.ok(parent.nextReproductionRound >= 6);
-  assert.ok(first.nextReproductionRound >= 6);
-  assert.ok(second.nextReproductionRound >= 6);
+  assert.equal(energyValue(parent), -4);
+  assert.equal(energyValue(first), -4);
+  assert.equal(energyValue(second), -4);
   assertState(s);
 });
 
