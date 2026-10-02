@@ -1298,12 +1298,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       !has(p, "Predação") ||
       !has(p, "Locomoção Primitiva") ||
       has(p, "Séssil") ||
-      stalledRounds < 12 ||
-      targets.some((target) => {
-        if (!target.capture) return false;
-        const victim = at(state, target.r, target.c);
-        return !!victim && victim.owner !== p.owner;
-      })
+      stalledRounds < 8
     )
       return;
 
