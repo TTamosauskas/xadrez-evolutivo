@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 33;
+export const STATE_VERSION = 34;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const CHESS_PIECE_VALUES = Object.freeze([1, 3, 3, 5, 100, 9]);
@@ -8,6 +8,9 @@ export const SYMBOLS = {
   amber: ["♟", "♞", "♝", "♜", "♚", "♛"],
 };
 export const FATIGUE_LIMITS = Object.freeze([5, 4, 4, 3, 5, 3]);
+export const ENERGY_CAPACITIES = Object.freeze([5, 8, 8, 11, 11, 14]);
+export const MOVEMENT_ENERGY_COSTS = Object.freeze([1, 2, 2, 3, 2, 4]);
+export const REPRODUCTION_ENERGY_COSTS = Object.freeze([4, 6, 6, 8, 8, 10]);
 export const PIECE_LIFE_HISTORY = Object.freeze([
   Object.freeze({ brood: 4, metabolism: 3, maturity: 1 }),
   Object.freeze({ brood: 3, metabolism: 4, maturity: 2 }),
