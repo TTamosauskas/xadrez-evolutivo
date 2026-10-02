@@ -440,6 +440,7 @@ function migrateUnifiedEnergy(state) {
         reproductiveEnergy,
       );
     } else piece.energy = Math.min(capacity, piece.energy);
+    piece.energyCapacitySnapshot = capacity;
     if (
       Number.isInteger(piece.endosymbiosisDebtUntilRound) &&
       piece.endosymbiosisDebtUntilRound > currentRound
