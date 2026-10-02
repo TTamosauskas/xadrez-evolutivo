@@ -701,6 +701,10 @@ test("cellular repair and bilateral symmetry gate complex body plans", () => {
   assert.equal(traitUnlocked(s, "Vertebrado", p), false);
   p.traits.push("Simetria Bilateral");
   p.ancestry.push("Simetria Bilateral");
+  assert.equal(traitUnlocked(s, "Vertebrado", p), false);
+  assert.equal(traitUnlocked(s, "Artrópode", p), false);
+  p.traits.push("Cefalização");
+  p.ancestry.push("Cefalização");
   assert.equal(traitUnlocked(s, "Vertebrado", p), true);
   assert.equal(traitUnlocked(s, "Artrópode", p), true);
 });
