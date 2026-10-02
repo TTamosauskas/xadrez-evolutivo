@@ -891,11 +891,7 @@ function hibernationPressure(state) {
   };
 }
 
-function clearFatigueForHibernation(piece) {
-  delete piece.exertionStreak;
-  delete piece.fatigueRestTurn;
-  delete piece.lastOwnExertionTurn;
-  delete piece.lastReactiveExertionTurn;
+function clearEnergyStateForHibernation(piece) {
   delete piece.lastOwnEnergyExertionTurn;
   delete piece.lastReactiveEnergyExertionTurn;
   delete piece.sleepingThroughTurn;
@@ -943,7 +939,7 @@ function refreshHibernation(state) {
         continue;
       piece.hibernationUntilTurn = state.turn + HIBERNATION_DURATION_TURNS;
       piece.hibernationRearmPending = true;
-      clearFatigueForHibernation(piece);
+      clearEnergyStateForHibernation(piece);
       log(
         state,
         `${OWNERS[piece.owner]}: 🧸 Hibernação iniciada por ambiente predominantemente adverso por ${HIBERNATION_DURATION_TURNS} turnos.`,
@@ -1095,10 +1091,6 @@ function recoverEnergyAfterTurn(state, owner, turn) {
       energyValue(piece) >= reproductionEnergyCost(piece)
     )
       delete piece.endosymbiosisEnergyDebt;
-    delete piece.exertionStreak;
-    delete piece.fatigueRestTurn;
-    delete piece.lastOwnExertionTurn;
-    delete piece.lastReactiveExertionTurn;
   }
 }
 
