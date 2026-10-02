@@ -1509,16 +1509,25 @@ export function createState(seed = Date.now(), options = {}) {
             ? [canonicalStarts[0], canonicalStarts[2]]
             : canonicalStarts;
         })();
-    const occupiedFounderCells = new Set(
+    const sourceFor = (owner, slot) =>
+        ownerPair
+          ? ownerFounders[owner][slot]
+          : balancedPair
+            ? founders[slot]
+            : founders?.[owner] ?? founder,
+      sexualFounderStart =
+        scenario !== "arena" &&
+        starts.every(([owner, , , slot]) =>
+          (sourceFor(owner, slot)?.traits ?? []).includes(
+            "Reprodução Sexuada",
+          ),
+        ),
+      occupiedFounderCells = new Set(
         starts.map(([, r, c]) => square(r, c)),
       ),
       sexualFounderCells = [];
     for (const [owner, r, c, slot] of starts) {
-      const source = ownerPair
-        ? ownerFounders[owner][slot]
-        : balancedPair
-          ? founders[slot]
-          : founders?.[owner] ?? founder;
+      const source = sourceFor(owner, slot);
       const profile = source
         ? {
             rank: source.rank,
@@ -1537,10 +1546,7 @@ export function createState(seed = Date.now(), options = {}) {
       state.pieces.push(piece);
       rememberEnergyBranchRepresentative(state, piece);
 
-      if (
-        scenario !== "arena" &&
-        (source?.traits ?? []).includes("Reprodução Sexuada")
-      ) {
+      if (sexualFounderStart) {
         const partnerCell = founderPartnerCell(
           owner,
           r,
