@@ -5,6 +5,7 @@ import { simulate } from "../src/engine.js";
 import { actionsForPiece } from "../src/moves.js";
 import { TRAIT_STAGE } from "../src/geology.js";
 import { TRAITS, square } from "../src/constants.js";
+import { energyValue } from "../src/energy.js";
 import {
   allelopathySourceAt,
   assertState,
