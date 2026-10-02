@@ -7,7 +7,6 @@ export const SYMBOLS = {
   blue: ["♙", "♘", "♗", "♖", "♔", "♕"],
   amber: ["♟", "♞", "♝", "♜", "♚", "♛"],
 };
-export const FATIGUE_LIMITS = Object.freeze([5, 4, 4, 3, 5, 3]);
 export const ENERGY_CAPACITIES = Object.freeze([5, 8, 8, 11, 11, 14]);
 export const MOVEMENT_ENERGY_COSTS = Object.freeze([1, 2, 2, 3, 2, 4]);
 export const REPRODUCTION_ENERGY_COSTS = Object.freeze([4, 6, 6, 8, 8, 10]);
