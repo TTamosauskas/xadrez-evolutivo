@@ -26,7 +26,7 @@ function pursuitState() {
   return state;
 }
 
-test("Cefalização belongs to the Ediacaran predatory bilateral lineage", () => {
+test("Cefalização is mandatory in the Ediacaran predatory bilateral lineage", () => {
   assert.equal(TRAIT_STAGE.Cefalização, "ediacaran");
   assert.deepEqual(
     TRAIT_DEPENDENCIES.Cefalização.lineage,
@@ -36,6 +36,12 @@ test("Cefalização belongs to the Ediacaran predatory bilateral lineage", () =>
       "Simetria Bilateral",
       "Locomoção Primitiva",
     ],
+  );
+  assert.ok(
+    TRAIT_DEPENDENCIES.Vertebrado.lineage.includes("Cefalização"),
+  );
+  assert.ok(
+    TRAIT_DEPENDENCIES["Artrópode"].lineage.includes("Cefalização"),
   );
 });
 
