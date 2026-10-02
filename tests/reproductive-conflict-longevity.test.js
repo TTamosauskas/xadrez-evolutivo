@@ -23,6 +23,7 @@ import {
   traitCombinationValid,
 } from "../src/geology.js";
 import { TRAITS, STATE_VERSION, square } from "../src/constants.js";
+import { energyValue, reproductionEnergyCost } from "../src/energy.js";
 import { deserialize } from "../src/storage.js";
 
 test("approved icons reserve 🕷️ for Matrifagia and move Ooteca to 🪩", () => {
