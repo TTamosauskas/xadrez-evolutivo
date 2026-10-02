@@ -23,6 +23,11 @@ import {
   attemptHorizontalTransfer,
   canBud,
 } from "../src/reproduction-traits.js";
+import {
+  energyCapacity,
+  energyValue,
+  reproductionEnergyCost,
+} from "../src/energy.js";
 
 test("Biofilme shares one occupied fertile resource across a connected network per round", () => {
   let s = fixture([
@@ -142,7 +147,7 @@ test("Diferenciação Celular specializes one child without increasing brood siz
 });
 
 
-test("Brotamento repeats on a four-round cadence and Colônia shares identity and cooldown", () => {
+test("Brotamento shares colony identity and recovers through the unified Energy cadence", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -174,8 +179,60 @@ test("Brotamento repeats on a four-round cadence and Colônia shares identity an
   assert.equal(canBud(s, parent), false);
   s.turn = 16;
   assert.equal(canBud(s, parent), false);
+  parent.energy = energyCapacity(parent);
+  parent.energyCapacitySnapshot = energyCapacity(parent);
   s.board[36] = "fertile";
   assert.equal(canBud(s, parent), true);
+  assertState(s);
+});
+
+test("Brotamento infrutífero encerra o turno sem lançar erro", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: ["Brotamento", "Herbívoro"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parentId = s.pieces[0].id,
+    parent = s.pieces[0],
+    cell = parent.r * 8 + parent.c,
+    nextRoll = (seed) =>
+      ((Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
+  let seed = 1;
+  while (nextRoll(seed) < 0.9) seed++;
+  s.disableReproductiveSuccessPressure = false;
+  s.rng = seed;
+  s.turn = 8;
+  s.current = "blue";
+  parent.stationarySinceRound = 0;
+  parent.energy = 4;
+  s.board[cell] = "fertile";
+
+  assert.ok(
+    legalActions(s).some(
+      (action) => action.type === "BUD" && action.id === parentId,
+    ),
+  );
+
+  s = transition(s, { type: "BUD", id: parentId });
+  const after = s.pieces.find((piece) => piece.id === parentId);
+  assert.equal(s.turn, 9);
+  assert.equal(s.board[cell], "neutral");
+  assert.equal(energyValue(after), 5);
+  assert.equal(
+    s.pieces.filter((piece) => piece.parentId === parentId).length,
+    0,
+  );
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Reprodução infrutífera" &&
+        effect.outcome === "infruitful-reproduction",
+    ),
+  );
   assertState(s);
 });
 
@@ -339,20 +396,42 @@ test("tentativa infrutífera elimina a ninhada inteira e emite feedback", () => 
   assertState(s);
 });
 
-test("consumir Casa Fértil para Vivificar recupera 1 Fadiga", () => {
+test("Vivificação infrutífera em Casa Fértil recupera exatamente 1 Energia", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 4, rank: 0 },
       { owner: "amber", r: 0, c: 0 },
     ]),
     parent = s.pieces[0],
-    cell = parent.r * 8 + parent.c;
-  parent.exertionStreak = 3;
-  parent.fatigueRestTurn = s.turn + 2;
+    cell = parent.r * 8 + parent.c,
+    nextRoll = (seed) =>
+      ((Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
+  let seed = 1;
+  while (nextRoll(seed) < 0.9) seed++;
+  s.disableReproductiveSuccessPressure = false;
+  s.rng = seed;
+  parent.energy = 2;
   s.board[cell] = "fertile";
 
-  assert.equal(consumeReproductionResource(s, parent, cell), 1);
-  assert.equal(parent.exertionStreak, 2);
-  assert.equal(parent.fatigueRestTurn, undefined);
+  assert.equal(
+    reproduce(context(s), parent, null, "casa fértil", {
+      forcedCount: 4,
+      immediateDevelopment: true,
+      ignoreReadiness: true,
+      resourceCell: cell,
+      resourceKind: "fertile",
+      resourceProviderId: parent.id,
+    }),
+    0,
+  );
+  assert.equal(s.board[cell], "neutral");
+  assert.equal(energyValue(parent), 3);
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Reprodução infrutífera" &&
+        /recuperou 1 Energia/.test(effect.text),
+    ),
+  );
   assertState(s);
 });
 
@@ -512,7 +591,7 @@ test("Marsupial holds viviparous offspring for one postnatal round", () => {
   assertState(s);
 });
 
-test("Acasalamento Múltiplo creates biparental sub-broods and doubles recovery", () => {
+test("Acasalamento Múltiplo creates biparental sub-broods and doubles the Energy load", () => {
   const traits = [
       "Reprodução Sexuada",
       "Ovíparo",
@@ -544,9 +623,9 @@ test("Acasalamento Múltiplo creates biparental sub-broods and doubles recovery"
     new Set(children.map((child) => child.parentIds[1])),
     new Set([first.id, second.id]),
   );
-  assert.ok(parent.nextReproductionRound >= 6);
-  assert.ok(first.nextReproductionRound >= 6);
-  assert.ok(second.nextReproductionRound >= 6);
+  assert.equal(energyValue(parent), -4);
+  assert.equal(energyValue(first), -4);
+  assert.equal(energyValue(second), -4);
   assertState(s);
 });
 

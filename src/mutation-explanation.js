@@ -14,7 +14,7 @@ const SPECIAL_EXPLANATIONS = Object.freeze({
     realWorld:
       "Na vida: Tentativas reprodutivas podem terminar sem descendentes por falhas na fecundação, incompatibilidades biológicas, condições fisiológicas ou limitações ambientais.",
     game:
-      "No jogo: A tentativa reprodutiva pode gerar a ninhada completa ou nenhum descendente. Populações maiores reduzem a chance de sucesso.",
+      "No jogo: A tentativa reprodutiva pode gerar a ninhada completa ou nenhum descendente. Populações maiores reduzem a chance de sucesso. Quando uma Vivificação com Casa Fértil é infrutífera, a criatura recupera 1 Energia.",
   },
   "Casa Hostil": {
     title: "🟥 Casa Hostil",

@@ -1,5 +1,12 @@
 import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square, has, energyBranch, canPhotosynthesize } from "./constants.js";
 import {
+  energyCapacity,
+  energyDebt,
+  energyValue,
+  movementEnergyCost,
+  reproductionEnergyCost,
+} from "./energy.js";
+import {
   at,
   eggAt,
   plantSeedAt,
@@ -72,9 +79,6 @@ import {
   pieceActionState,
   neurodivergenceResting,
   intoxicationResting,
-  fatigueResting,
-  fatigueLimit,
-  rapidFatigueRecovery,
 } from "./moves.js";
 import { corticalMoveSuggestions } from "./positioning.js";
 import {
@@ -104,12 +108,11 @@ const WAIT_STATUS_LABELS = Object.freeze({
   Metamorfose: "metamorfose",
   "Sobrecarga por Neurodivergência": "sobrecarga",
   "Intoxicação por Toxicidade": "intoxicação",
-  Fadiga: "fadiga locomotora",
+  "Energia insuficiente": "energia insuficiente",
   Hibernação: "hibernação",
   "Descanso por Mutação Disfuncional": "mutação disfuncional",
   "Dormência em terreno hostil": "dormência em terreno hostil",
   "Maturidade sexual": "maturidade sexual",
-  "Recuperação metabólica": "recuperação metabólica",
   "Sem ação legal disponível": "nenhuma ação disponível",
 });
 const compactWaitStatus = ({ reason, remainingRounds } = {}) => {
@@ -127,9 +130,6 @@ const maxPieceWaitTurns = (state, piece, actionState) => {
       actionState?.remainingRounds ?? 0,
       juvenile(state, piece)
         ? Math.max(0, piece.maturesRound - currentRound)
-        : 0,
-      (piece.nextReproductionRound ?? 0) > currentRound
-        ? piece.nextReproductionRound - currentRound
         : 0,
       Number.isInteger(piece.pupaUntilRound)
         ? Math.max(0, piece.pupaUntilRound - currentRound)
@@ -1223,7 +1223,7 @@ export function render(
       const terrainLabel = cellInfo.terrain.label,
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza, Respiração anaeróbia${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrainLabel}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : cellInfo.objectLabel ? `, ${cellInfo.objectLabel}` : barrier ? "" : ", vazia"}${cellInfo.accessibleFacts.length ? `, ${cellInfo.accessibleFacts.join(", ")}` : ""}${target ? ", destino disponível" : ""}${crawlerTarget ? ", travessia de borda por Rastejante" : ""}${lateralTarget ? targetEntry?.lateralSwapId ? ", troca lateral com aliado" : ", Movimento Lateral" : ""}${escalationTarget ? targetEntry?.escalationSwapId ? ", troca vertical por Escansão" : ", deslocamento por Escansão" : ""}${bioadhesionTarget ? targetEntry?.bioadhesionSwapId ? ", troca periférica por Bioadesão" : ", percurso do perímetro por Bioadesão" : ""}${arborealTarget ? ", travessia de dossel por Arborícola" : ""}${arborealSupport ? ", apoio de rota Arborícola" : ""}${phoresyTarget ? ", transporte por Forésia" : ""}${phoresyCarrier ? ", transportador aliado de Forésia" : ""}${serpentineTarget ? ", trajetória por Serpenteamento" : ""}${trailTarget ? ", extensão de Trilhas" : ""}${tigmotaxisTarget ? ", continuação por Tigmotaxia" : ""}${recoilTarget ? ", retorno por Recuo" : ""}${slidingTarget ? ", continuação por Deslizamento" : ""}${hypermetamorphosisTarget ? ", 🐞 geometria dispersiva por Hipermetamorfose" : ""}${massRecruitmentTarget ? ", 📣 captura coletiva por Recrutamento em Massa" : ""}${vivificationTarget ? nicheBuildTarget ? ", vivificação disponível: 🧱 criar barreira por Construtor de Nicho" : nitrogenFixationTarget ? ", ação disponível: ☁️ Fixação de Nitrogênio" : zoochoryResourceTarget ? targetEntry?.fruitConsume ? ", vivificação disponível: consumir fruto zoocórico" : ", vivificação disponível: armazenar semente sinzoocórica" : selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? has(actor, "Necrófago") ? ", vivificação disponível: Necrofagia" : ", vivificação disponível: Onívoro Oportunista" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : cannibalTarget ? ", alvo de Canibalismo" : granivoryReproductionTarget ? ", semente consumível por Granívoro com reprodução" : eggReproductionTarget ? has(actor, "Ovífagia") ? ", alvo de Ovífagia com reprodução" : ", ovo consumível por Onívoro Oportunista com reprodução" : predatoryReproductionTarget ? ", alvo de ataque com reprodução predatória" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${pheromoneTarget ? ", 👃 aliado alcançável por Feromônios" : ""}${bioluminescentLureTarget ? ", 🎣 presa atraível por Bioluminescência Predatória" : ""}${partner ? ", parceiro disponível" : ""}${aggressivePartner ? aggressiveCounter ? ", 🦆 parceiro adversário; contra-agressão letal" : ", 🦆 parceiro adversário para Cópula Agressiva" : ""}${filialCannibalTarget ? ", 🐹 cria filial consumível para encerrar recuperação metabólica" : ""}${matriphagyTarget ? ", 🕷️ progenitor consumível por Matrifagia" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}${hierarchyRecommended ? ", 🐃 membro recomendado pela Hierarquia para sacrifício" : ""}${superBestMember ? ", 🐝 membro com melhor movimento sugerido pelo Superorganismo" : superMemberPulse ? ", membro sinalizado pelo Superorganismo" : ""}${superMoveTarget ? ", 🐝 movimento sugerido pelo Superorganismo" : ""}${serotoninTarget ? ", destino de reposicionamento por Serotonina" : ""}${cortexOffensive ? ", melhor posição ofensiva sugerida pelo Córtex Pré-Frontal" : ""}${cortexDefensive ? ", melhor posição defensiva sugerida pelo Córtex Pré-Frontal" : ""}`;
+          : `${coord(r, c)}, ${terrainLabel}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : cellInfo.objectLabel ? `, ${cellInfo.objectLabel}` : barrier ? "" : ", vazia"}${cellInfo.accessibleFacts.length ? `, ${cellInfo.accessibleFacts.join(", ")}` : ""}${target ? ", destino disponível" : ""}${crawlerTarget ? ", travessia de borda por Rastejante" : ""}${lateralTarget ? targetEntry?.lateralSwapId ? ", troca lateral com aliado" : ", Movimento Lateral" : ""}${escalationTarget ? targetEntry?.escalationSwapId ? ", troca vertical por Escansão" : ", deslocamento por Escansão" : ""}${bioadhesionTarget ? targetEntry?.bioadhesionSwapId ? ", troca periférica por Bioadesão" : ", percurso do perímetro por Bioadesão" : ""}${arborealTarget ? ", travessia de dossel por Arborícola" : ""}${arborealSupport ? ", apoio de rota Arborícola" : ""}${phoresyTarget ? ", transporte por Forésia" : ""}${phoresyCarrier ? ", transportador aliado de Forésia" : ""}${serpentineTarget ? ", trajetória por Serpenteamento" : ""}${trailTarget ? ", extensão de Trilhas" : ""}${tigmotaxisTarget ? ", continuação por Tigmotaxia" : ""}${recoilTarget ? ", retorno por Recuo" : ""}${slidingTarget ? ", continuação por Deslizamento" : ""}${hypermetamorphosisTarget ? ", 🐞 geometria dispersiva por Hipermetamorfose" : ""}${massRecruitmentTarget ? ", 📣 captura coletiva por Recrutamento em Massa" : ""}${vivificationTarget ? nicheBuildTarget ? ", vivificação disponível: 🧱 criar barreira por Construtor de Nicho" : nitrogenFixationTarget ? ", ação disponível: ☁️ Fixação de Nitrogênio" : zoochoryResourceTarget ? targetEntry?.fruitConsume ? ", vivificação disponível: consumir fruto zoocórico" : ", vivificação disponível: armazenar semente sinzoocórica" : selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? has(actor, "Necrófago") ? ", vivificação disponível: Necrofagia" : ", vivificação disponível: Onívoro Oportunista" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : cannibalTarget ? ", alvo de Canibalismo" : granivoryReproductionTarget ? ", semente consumível por Granívoro com reprodução" : eggReproductionTarget ? has(actor, "Ovífagia") ? ", alvo de Ovífagia com reprodução" : ", ovo consumível por Onívoro Oportunista com reprodução" : predatoryReproductionTarget ? ", alvo de ataque com reprodução predatória" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${pheromoneTarget ? ", 👃 aliado alcançável por Feromônios" : ""}${bioluminescentLureTarget ? ", 🎣 presa atraível por Bioluminescência Predatória" : ""}${partner ? ", parceiro disponível" : ""}${aggressivePartner ? aggressiveCounter ? ", 🦆 parceiro adversário; contra-agressão letal" : ", 🦆 parceiro adversário para Cópula Agressiva" : ""}${filialCannibalTarget ? ", 🐹 cria filial consumível para restaurar Energia reprodutiva" : ""}${matriphagyTarget ? ", 🕷️ progenitor consumível por Matrifagia" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}${hierarchyRecommended ? ", 🐃 membro recomendado pela Hierarquia para sacrifício" : ""}${superBestMember ? ", 🐝 membro com melhor movimento sugerido pelo Superorganismo" : superMemberPulse ? ", membro sinalizado pelo Superorganismo" : ""}${superMoveTarget ? ", 🐝 movimento sugerido pelo Superorganismo" : ""}${serotoninTarget ? ", destino de reposicionamento por Serotonina" : ""}${cortexOffensive ? ", melhor posição ofensiva sugerida pelo Córtex Pré-Frontal" : ""}${cortexDefensive ? ", melhor posição defensiva sugerida pelo Córtex Pré-Frontal" : ""}`;
       const baseAccessibleLabel = label,
         accessibleLabel = terminalDeath
           ? `${baseAccessibleLabel}, morte determinada no próximo turno: ${terminalDeath}`
@@ -1384,12 +1384,8 @@ export function render(
         if (p.id === state.neurofocus) statusBadges.push("♾️");
         if (neurodivergenceResting(state, p)) statusBadges.push("♾️⏳");
         if (intoxicationResting(state, p)) statusBadges.push("😵‍💫");
-        if (
-          Number.isInteger(p.fatigueRestTurn) &&
-          p.fatigueRestTurn >= state.turn &&
-          !rapidFatigueRecovery(state, p)
-        )
-          statusBadges.push("🥵");
+        if (energyValue(p) < movementEnergyCost(p))
+          statusBadges.push("🪫");
         if (p.sleepingThroughTurn === state.turn) statusBadges.push("😴");
         if (
           Number.isInteger(p.hibernationUntilTurn) &&
@@ -1432,12 +1428,6 @@ export function render(
           statusBadges.push("🌫️⏳");
         if (p.venom)
           statusBadges.push(p.venom.source === "Peçonha" ? "🦂" : "☠");
-        const metabolicRecoveryRemaining = Math.max(
-          0,
-          (p.nextReproductionRound ?? 0) - currentRound,
-        );
-        if (metabolicRecoveryRemaining > 0)
-          statusBadges.push(`⏳${metabolicRecoveryRemaining}`);
         if (p.seeds) statusBadges.push("🌰");
         if (
           state.plantSeeds.some(
@@ -1573,19 +1563,16 @@ export function render(
         ? { marker: "😵‍💫", label: "Intoxicação · sem ação" }
         : null,
       state.pieces.some(
-        (piece) =>
-          Number.isInteger(piece.fatigueRestTurn) &&
-          piece.fatigueRestTurn >= state.turn &&
-          !rapidFatigueRecovery(state, piece),
+        (piece) => energyValue(piece) < movementEnergyCost(piece),
       )
-        ? { marker: "🥵", label: "Fadiga · próximo turno próprio sem locomoção" }
+        ? { marker: "🪫", label: "Energia insuficiente para locomoção" }
         : null,
       state.pieces.some(
         (piece) =>
           piece.sleepingThroughTurn === state.turn ||
           piece.restorativeSleepCharge,
       )
-        ? { marker: "😴", label: "Sono reparador · próximo esforço não conta para Fadiga" }
+        ? { marker: "😴", label: "Sono reparador · próximo esforço locomotor custa 0 Energia" }
         : null,
       state.pieces.some(
         (piece) =>
@@ -1747,31 +1734,34 @@ export function render(
       symbol,
       doc.createTextNode(` ${PIECES[actor.rank]} (${ownerName})`),
     );
-    const fatigueMax =
-        fatigueLimit(actor) + (has(actor, "Endorfinas") ? 1 : 0),
-      fatigueValue = Math.min(
-        fatigueMax,
-        Math.max(0, actor.exertionStreak ?? 0),
-      ),
-      fatiguePanel = has(actor, "Predação")
-        ? make("div", undefined, "selected-fatigue")
-        : null;
-    if (fatiguePanel) {
-      const fatigueLabel = make(
+    const energyMax = energyCapacity(actor),
+      rawEnergy = energyValue(actor),
+      visibleEnergy = Math.max(0, rawEnergy),
+      energyPanel = make("div", undefined, "selected-energy");
+    {
+      const debt = energyDebt(actor),
+        energyLabel = make(
           "div",
-          `Fadiga ${fatigueValue}/${fatigueMax}`,
-          "selected-fatigue-label",
+          debt
+            ? `Energia 0/${energyMax} · dívida ${debt}`
+            : `Energia ${visibleEnergy}/${energyMax}`,
+          "selected-energy-label",
         ),
-        fatigueTrack = make("div", undefined, "selected-fatigue-track"),
-        fatigueFill = make("div", undefined, "selected-fatigue-fill");
-      fatigueFill.style.width = `${(fatigueValue / fatigueMax) * 100}%`;
-      fatigueTrack.setAttribute("role", "progressbar");
-      fatigueTrack.setAttribute("aria-label", "Fadiga");
-      fatigueTrack.setAttribute("aria-valuemin", "0");
-      fatigueTrack.setAttribute("aria-valuemax", String(fatigueMax));
-      fatigueTrack.setAttribute("aria-valuenow", String(fatigueValue));
-      fatigueTrack.append(fatigueFill);
-      fatiguePanel.append(fatigueLabel, fatigueTrack);
+        energyTrack = make("div", undefined, "selected-energy-track"),
+        energyFill = make("div", undefined, "selected-energy-fill"),
+        energyCosts = make(
+          "div",
+          `Mover −${movementEnergyCost(actor)} · Reproduzir −${reproductionEnergyCost(actor)}`,
+          "selected-energy-costs",
+        );
+      energyFill.style.width = `${(visibleEnergy / energyMax) * 100}%`;
+      energyTrack.setAttribute("role", "progressbar");
+      energyTrack.setAttribute("aria-label", "Energia");
+      energyTrack.setAttribute("aria-valuemin", "0");
+      energyTrack.setAttribute("aria-valuemax", String(energyMax));
+      energyTrack.setAttribute("aria-valuenow", String(visibleEnergy));
+      energyTrack.append(energyFill);
+      energyPanel.append(energyLabel, energyTrack, energyCosts);
     }
     const actionableTraits = actionableTraitsForPiece(state, actor),
       traitOrder = (a, b) =>
@@ -1828,16 +1818,7 @@ export function render(
         0,
         2 - (actor.eukaryoteBufferUses ?? 0),
       ),
-      endosymbiosisDebtRemaining =
-        Number.isInteger(actor.endosymbiosisDebtUntilRound) &&
-        actor.endosymbiosisDebtUntilRound > currentRound
-          ? actor.endosymbiosisDebtUntilRound - currentRound
-          : 0,
-      selectedWaitStatus =
-        actorActionState.reason === "Recuperação metabólica" &&
-        endosymbiosisDebtRemaining > 0
-          ? `⏳ ${actorActionState.remainingRounds} t recuperação metabólica por Endossimbiose.`
-          : compactWaitStatus(actorActionState);
+      selectedWaitStatus = compactWaitStatus(actorActionState);
     if (actorActionState.waiting)
       statusDetails.push(
         make(
@@ -1873,16 +1854,11 @@ export function render(
           "selected-status",
         ),
       );
-    if (
-      (actor.nextReproductionRound ?? 0) > currentRound &&
-      actorActionState.reason !== "Recuperação metabólica"
-    )
+    if (energyDebt(actor) > 0)
       statusDetails.push(
         make(
           "p",
-          endosymbiosisDebtRemaining > 0
-            ? `⏳ ${actor.nextReproductionRound - currentRound} t recuperação metabólica por Endossimbiose.`
-            : `⏳ ${actor.nextReproductionRound - currentRound} t recuperação metabólica.`,
+          `🔋 Dívida energética · ${energyDebt(actor)} ponto(s) a recuperar.`,
           "selected-status",
         ),
       );
@@ -1954,7 +1930,7 @@ export function render(
         ),
       selectedContent = [
         heading,
-        ...(fatiguePanel ? [fatiguePanel] : []),
+        energyPanel,
         ...statusDetails,
       ];
 

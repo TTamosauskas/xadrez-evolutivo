@@ -233,7 +233,7 @@ function runGame(initial, seed) {
     let action;
     if (mutuallyBlocked(s)) {
       mutualBlocks++;
-      action = { type: "CONWAY_STEP" };
+      action = { type: "RESOLVE_BLOCKED" };
       conwaySteps++;
     } else {
       const actions = legalActions(s);

@@ -12,6 +12,11 @@ import {
 } from "../src/state.js";
 import { fixture } from "./helpers.js";
 import { TRAITS, EVENTS } from "../src/constants.js";
+import {
+  energyCapacity,
+  movementEnergyCost,
+  reproductionEnergyCost,
+} from "../src/energy.js";
 import { render, traitFrameSlots, establishedTraits } from "../src/view.js";
 import {
   actionableTraitsForPiece,
@@ -368,22 +373,23 @@ test("Hadean founder vivification appears only after selecting the current playe
   dom.window.close();
 });
 
-test("selected predator shows a compact fatigue bar", () => {
+test("selected piece shows a compact unified Energy bar", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4, rank: 0 },
       { owner: "amber", r: 0, c: 0 },
     ]),
     piece = s.pieces[0];
-  piece.exertionStreak = 2;
+  piece.energy = 3;
 
   render(dom.window.document, s, { selected: piece.id });
-  const panel = dom.window.document.querySelector("#selected .selected-fatigue"),
-    track = panel?.querySelector(".selected-fatigue-track");
+  const panel = dom.window.document.querySelector("#selected .selected-energy"),
+    track = panel?.querySelector(".selected-energy-track");
 
   assert.ok(panel);
-  assert.match(panel.textContent, /Fadiga 2\/5/);
-  assert.equal(track?.getAttribute("aria-valuenow"), "2");
+  assert.match(panel.textContent, /Energia 3\/5/);
+  assert.match(panel.textContent, /Mover −1 · Reproduzir −4/);
+  assert.equal(track?.getAttribute("aria-valuenow"), "3");
   assert.equal(track?.getAttribute("aria-valuemax"), "5");
   dom.window.close();
 });
@@ -1479,6 +1485,7 @@ test("Vivificar and targeted Parasitismo use green and red board rings", () => {
   ];
   piece.ancestry = [...piece.traits];
   piece.rank = 4;
+  piece.energy = energyCapacity(piece);
   piece.r = 4;
   piece.c = 4;
   enemy.r = 3;
@@ -1537,7 +1544,7 @@ test("predatory reproduction uses concentric red and green capture rings", () =>
     /\.cell\.legal\.capture-reproduction-target::before[\s\S]*width:\s*70%[\s\S]*border:\s*4px solid #5bd66c/,
   );
 
-  predator.nextReproductionRound = round(s) + 2;
+  predator.energy = movementEnergyCost(predator);
   render(dom.window.document, s, { selected: predator.id });
   target = dom.window.document.querySelector(
     `[data-r="${prey.r}"][data-c="${prey.c}"]`,
@@ -1599,7 +1606,7 @@ test("Canibalismo usa ataque simples enquanto ovos mantêm marcador reprodutivo"
         : /Onívoro Oportunista com reprodução/,
     );
 
-    actor.nextReproductionRound = round(s) + 2;
+    actor.energy = movementEnergyCost(actor);
     render(dom.window.document, s, { selected: actor.id });
     target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
     assert.ok(target.classList.contains("attack-target"), trait);
@@ -1960,7 +1967,7 @@ test("pieces with no available action fade on board without a duplicate wait bad
   dom.window.close();
 });
 
-test("board only counts metabolic recovery while selected details keep cellular counters", () => {
+test("board shows low Energy while selected details keep cellular counters", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -1981,8 +1988,8 @@ test("board only counts metabolic recovery while selected details keep cellular 
     currentRound = round(s);
 
   piece.eukaryoteBufferUses = 1;
-  piece.nextReproductionRound = currentRound + 2;
-  piece.endosymbiosisDebtUntilRound = currentRound + 2;
+  piece.energy = -2;
+  piece.endosymbiosisEnergyDebt = true;
   piece.pheromoneReadyRound = currentRound + 3;
   piece.bioluminescentLureReadyRound = currentRound + 4;
   piece.parasitoidism = { remaining: 3 };
@@ -1994,7 +2001,7 @@ test("board only counts metabolic recovery while selected details keep cellular 
     boardStatus = cell.querySelector(".piece-status")?.textContent ?? "",
     selected = d.getElementById("selected").textContent;
 
-  assert.match(boardStatus, /⏳2/);
+  assert.match(boardStatus, /🪫/);
   assert.match(boardStatus, /👃⏳/);
   assert.match(boardStatus, /🎣⏳/);
   assert.doesNotMatch(boardStatus, /🔋⏳/);
@@ -2007,14 +2014,12 @@ test("board only counts metabolic recovery while selected details keep cellular 
   assert.doesNotMatch(boardStatus, /🦂2/);
 
   assert.match(selected, /🔘 Eucarionte · 1 amortecimento restante\./);
-  assert.match(
-    selected,
-    /⏳ 2 t recuperação metabólica por Endossimbiose\./,
-  );
+  assert.match(selected, /Energia 0\/5 · dívida 2/);
+  assert.match(selected, /Dívida energética · 2 ponto\(s\) a recuperar\./);
   dom.window.close();
 });
 
-test("selected-piece lifecycle countdowns use compact wait copy", () => {
+test("selected-piece lifecycle and Energy states use compact copy", () => {
   const dom = setup(),
     s = fixture([
       {
@@ -2029,7 +2034,7 @@ test("selected-piece lifecycle countdowns use compact wait copy", () => {
     currentRound = round(s);
 
   piece.maturesRound = currentRound + 1;
-  piece.nextReproductionRound = currentRound + 5;
+  piece.energy = 0;
   s.board[piece.r * 8 + piece.c] = "fertile";
 
   render(dom.window.document, s, { selected: piece.id });
@@ -2037,11 +2042,11 @@ test("selected-piece lifecycle countdowns use compact wait copy", () => {
     mobileSummary = dom.window.document.getElementById("mobile-selected-summary");
 
   assert.match(selected.textContent, /⏳ 1 t maturidade sexual\./);
-  assert.match(selected.textContent, /⏳ 5 t recuperação metabólica\./);
-  assert.match(mobileSummary.textContent, /⏳ 5 t/);
+  assert.match(selected.textContent, /Energia 0\/5/);
+  assert.match(mobileSummary.textContent, /⏳ 1 t/);
   assert.doesNotMatch(
     mobileSummary.textContent,
-    /maturidade sexual|recuperação metabólica/i,
+    /maturidade sexual|energia insuficiente/i,
   );
   assert.doesNotMatch(selected.textContent, /rodada\(s\) restante/);
   dom.window.close();
@@ -2289,7 +2294,7 @@ test("Hierarquia highlights a recommended social sacrifice without choosing it",
       { owner: "amber", r: 0, c: 0, rank: 4 },
     ]),
     unavailable = s.pieces[1];
-  unavailable.nextReproductionRound = round(s) + 4;
+  unavailable.energy = 0;
   s.phase = "social-defense";
   s.current = "blue";
   s.socialDefense = {
@@ -2800,7 +2805,7 @@ test("game-over dialog can be held closed until the result delay expires", () =>
 });
 
 
-test("piece badges use numeric counters only for metabolic recovery", () => {
+test("piece badges represent low Energy without a legacy recovery counter", () => {
   const dom = setup(),
     s = fixture([
       { owner: "blue", r: 4, c: 4, rank: 4 },
@@ -2811,7 +2816,7 @@ test("piece badges use numeric counters only for metabolic recovery", () => {
 
   s.turn = 4;
   s.current = "blue";
-  piece.nextReproductionRound = round(s) + 3;
+  piece.energy = 0;
   piece.hibernationUntilTurn = s.turn + 7;
   piece.adaptiveImmuneMemory = ["virus:contact", "bacteria:trail"];
   piece.seeds = 4;
@@ -2829,7 +2834,7 @@ test("piece badges use numeric counters only for metabolic recovery", () => {
       (node) => node.textContent,
     );
 
-  assert.ok(badges.includes("⏳3"));
+  assert.ok(badges.includes("🪫"));
   assert.ok(badges.includes("🧸"));
   assert.ok(badges.includes("🎯"));
   assert.ok(badges.includes("🌰"));
@@ -2837,7 +2842,7 @@ test("piece badges use numeric counters only for metabolic recovery", () => {
   assert.ok(badges.includes("♾️"));
   assert.equal(
     badges.filter((badge) => /\d/.test(badge)).join(" "),
-    "⏳3",
+    "",
   );
   dom.window.close();
 });

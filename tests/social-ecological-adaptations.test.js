@@ -26,6 +26,7 @@ import {
 } from "../src/geology.js";
 import { assertState, clone, round } from "../src/state.js";
 import { square, TRAITS, STATE_VERSION } from "../src/constants.js";
+import { energyCapacity, energyValue, reproductionEnergyCost } from "../src/energy.js";
 import { deserialize } from "../src/storage.js";
 
 test("Tropismo directs photosynthetic offspring toward another fertile cell", () => {
@@ -104,7 +105,7 @@ test("Hierarquia recommends an unavailable reproducer before more useful members
       { owner: "amber", r: 0, c: 0, rank: 4 },
     ]),
     unavailable = s.pieces[1];
-  unavailable.nextReproductionRound = round(s) + 4;
+  unavailable.energy = 0;
   s.phase = "social-defense";
   s.socialDefense = {
     attackerId: s.pieces[4].id,
@@ -166,7 +167,7 @@ test("Caça Cooperativa neutralizes Chifre when two hunters surround the prey", 
   assertState(s);
 });
 
-test("Mutualismo links adjacent opposite energy branches and reduces metabolic recovery by one", () => {
+test("Mutualismo links adjacent opposite energy branches and restores 1 Energy", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Mutualismo"] },
       {
@@ -187,12 +188,12 @@ test("Mutualismo links adjacent opposite energy branches and reduces metabolic r
     }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 6);
+  assert.equal(energyValue(parent), 4);
   assert.ok(
     s.passiveEffects.some(
       (effect) =>
         effect.trait === "Mutualismo" &&
-        effect.outcome === "reduced-metabolic-recovery",
+        effect.outcome === "reduced-reproductive-energy",
     ),
   );
   assertState(s);

@@ -24,6 +24,7 @@ import {
 } from "../src/positioning.js";
 import { deserialize } from "../src/storage.js";
 import { has } from "../src/constants.js";
+import { energyValue } from "../src/energy.js";
 
 test("new loci keep one active evasion, offspring orientation and cognitive phenotype", () => {
   assert.ok(
@@ -364,7 +365,7 @@ function crowdedReproductionState(dopamine) {
   return { s, parent };
 }
 
-test("Dopamina discounts reproductive pressure without changing metabolism", () => {
+test("Dopamina neutraliza 1 ponto do custo energético por pressão reprodutiva", () => {
   const baseline = crowdedReproductionState(false),
     rewarded = crowdedReproductionState(true);
 
@@ -392,8 +393,7 @@ test("Dopamina discounts reproductive pressure without changing metabolism", () 
   );
 
   assert.equal(
-    baseline.parent.nextReproductionRound -
-      rewarded.parent.nextReproductionRound,
+    energyValue(rewarded.parent) - energyValue(baseline.parent),
     1,
   );
   assert.ok(

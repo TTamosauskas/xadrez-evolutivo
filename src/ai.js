@@ -1,4 +1,10 @@
 import { legalActions, movesFor, actionsForPiece } from "./moves.js";
+import {
+  energyCapacity,
+  energyValue,
+  movementEnergyCost,
+  reproductionEnergyCost,
+} from "./energy.js";
 import { simulate } from "./engine.js";
 import {
   has,
@@ -246,9 +252,12 @@ export function strategicPieceValue(state, piece) {
     negative = carriedNegativeMutations(piece),
     hiddenPositive = hiddenPositiveRecessives(piece),
     currentRound = round(state),
+    lowEnergy =
+      energyValue(piece) <
+      Math.min(movementEnergyCost(piece), reproductionEnergyCost(piece)),
     unavailable =
       (piece.maturesRound ?? 0) > currentRound ||
-      (piece.nextReproductionRound ?? 0) > currentRound,
+      lowEnergy,
     impaired =
       (piece.pupaUntilRound ?? 0) > currentRound ||
       (piece.neurodivergenceRestThroughRound ?? -1) >= currentRound ||
@@ -272,7 +281,8 @@ export function strategicPieceValue(state, piece) {
     (piece.infection ? 5 : 0) -
     (piece.venom ? 5 : 0) -
     (piece.broodParasite ? 2 : 0) -
-    (piece.autotomyRecovery ? 1.5 : 0) -
+    (piece.autotomyRecovery ? 1.5 : 0) +
+    (energyValue(piece) / Math.max(1, energyCapacity(piece))) * 1.5 -
     (unavailable ? 1.25 : 0) -
     (impaired ? 2 : 0) -
     terrainPenalty

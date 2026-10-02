@@ -5,6 +5,7 @@ import {
   has,
   inside,
 } from "./constants.js";
+import { energyReadyForReproduction } from "./energy.js";
 import {
   juvenile,
   reproductionReady,
@@ -189,7 +190,7 @@ export function paedogenesisReady(state, piece) {
     !piece.paedogenesisUsed &&
     !has(piece, "Esterilidade") &&
     !Number.isInteger(piece.pupaUntilRound) &&
-    round(state) >= (piece.nextReproductionRound ?? 0)
+    energyReadyForReproduction(piece)
   );
 }
 

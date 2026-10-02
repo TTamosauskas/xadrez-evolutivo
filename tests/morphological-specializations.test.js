@@ -16,6 +16,7 @@ import {
   traitCombinationValid,
 } from "../src/geology.js";
 import { TRAITS, square } from "../src/constants.js";
+import { energyValue } from "../src/energy.js";
 import { assertState, round } from "../src/state.js";
 import { reproduce } from "../src/reproduction.js";
 
@@ -190,7 +191,6 @@ test("Rizoma cria um clone exatamente duas casas ortogonais", () => {
   state.current = "blue";
   const parent = state.pieces.find((piece) => piece.owner === "blue");
   state.board[square(parent.r, parent.c)] = "fertile";
-  parent.nextReproductionRound = round(state);
   const target = rhizomeTargets(state, parent).find(
     (candidate) => candidate.r === 4 && candidate.c === 6,
   );
@@ -210,7 +210,7 @@ test("Rizoma cria um clone exatamente duas casas ortogonais", () => {
   assertState(state);
 });
 
-test("Ruminante reduz recuperação em uma rodada extra ao permanecer no mesmo bloco 2x2", () => {
+test("Ruminante recupera 1 Energia extra ao permanecer no mesmo bloco 2x2", () => {
   let state = fixture([
     {
       owner: "blue",
@@ -231,12 +231,12 @@ test("Ruminante reduz recuperação em uma rodada extra ao permanecer no mesmo b
   });
   assert.equal(born, 1);
   assert.ok(parent.rumination);
-  const scheduled = parent.nextReproductionRound;
+  assert.equal(energyValue(parent), 0);
 
   state = simulate(state, { type: "PASS" });
   state = simulate(state, { type: "PASS" });
   state = simulate(state, { type: "PASS" });
   const updated = state.pieces.find((piece) => piece.id === parent.id);
-  assert.equal(updated.nextReproductionRound, scheduled - 1);
+  assert.equal(energyValue(updated), 2);
   assertState(state);
 });

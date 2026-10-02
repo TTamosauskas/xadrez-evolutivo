@@ -19,6 +19,7 @@ import {
   pathogenMortalityChance,
 } from "../src/disease.js";
 import { square } from "../src/constants.js";
+import { energyValue } from "../src/energy.js";
 
 const animalTraits = [
   "Reparo Celular",
@@ -128,7 +129,7 @@ test("nanism forces pawn form", () => {
   assert.equal(p.rank, 0);
 });
 
-test("only-child is a lifetime one-offspring limit and respiratory insufficiency slows recovery", () => {
+test("only-child is a lifetime one-offspring limit and respiratory insufficiency creates Energy debt", () => {
   const only = fixture([
       {
         owner: "blue",
@@ -153,7 +154,6 @@ test("only-child is a lifetime one-offspring limit and respiratory insufficiency
     1,
   );
   assert.equal(onlyParent.lifetimeOffspring, 1);
-  only.turn = onlyParent.nextReproductionRound * 2;
   assert.equal(
     reproduce(context(only), onlyParent, null, "teste", {
       forcedCount: 4,
@@ -185,7 +185,7 @@ test("only-child is a lifetime one-offspring limit and respiratory insufficiency
     }),
     1,
   );
-  assert.equal(respiratoryParent.nextReproductionRound, 14);
+  assert.equal(energyValue(respiratoryParent), -4);
 
   const predator = fixture([
       {
@@ -209,7 +209,7 @@ test("only-child is a lifetime one-offspring limit and respiratory insufficiency
     }),
     1,
   );
-  assert.equal(predatorParent.nextReproductionRound, 14);
+  assert.equal(energyValue(predatorParent), -4);
 });
 
 test("only-child sexual partner becomes unavailable after one descendant", () => {
@@ -273,7 +273,7 @@ test("subfertility can spend a reproductive attempt without offspring", () => {
     reproduce(context(s), parent, null, "teste", { forcedCount: 1 }),
     0,
   );
-  assert.equal(parent.nextReproductionRound, 7);
+  assert.equal(energyValue(parent), 14);
   assert.deepEqual(
     s.passiveEffects.at(-1),
     {
@@ -314,7 +314,7 @@ test("malabsorption consumes one additional adjacent fertile resource", () => {
   assert.equal(s.board[extra], "neutral");
 });
 
-test("malabsorption doubles recovery after reproductive predation", () => {
+test("malabsorption doubles the Energy load after reproductive predation", () => {
   const s = fixture([
       {
         owner: "blue",
@@ -336,7 +336,7 @@ test("malabsorption doubles recovery after reproductive predation", () => {
     reproduce(context(s), parent, null, "predação", { forcedCount: 1 }),
     1,
   );
-  assert.equal(parent.nextReproductionRound, 14);
+  assert.equal(energyValue(parent), -4);
 });
 
 test("semelparity kills the parent after the first successful reproduction", () => {

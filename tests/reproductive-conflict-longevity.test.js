@@ -23,6 +23,7 @@ import {
   traitCombinationValid,
 } from "../src/geology.js";
 import { TRAITS, STATE_VERSION, square } from "../src/constants.js";
+import { energyValue, reproductionEnergyCost } from "../src/energy.js";
 import { deserialize } from "../src/storage.js";
 
 test("approved icons reserve 🕷️ for Matrifagia and move Ooteca to 🪩", () => {
@@ -133,7 +134,7 @@ test("Partenogênese disappears when a legal sexual partner exists", () => {
   assert.equal(parthenogenesisAvailable(s, s.pieces[0]), false);
 });
 
-test("Canibalismo Filial consumes a direct juvenile child and clears cooldown", () => {
+test("Canibalismo Filial consumes a direct juvenile child and restores reproductive Energy", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -141,7 +142,6 @@ test("Canibalismo Filial consumes a direct juvenile child and clears cooldown", 
       c: 4,
       rank: 4,
       traits: ["Canibalismo", "Canibalismo Filial"],
-      nextReproductionRound: 5,
     },
     {
       owner: "blue",
@@ -155,8 +155,10 @@ test("Canibalismo Filial consumes a direct juvenile child and clears cooldown", 
     { owner: "amber", r: 0, c: 0, rank: 4 },
   ]);
   const parentId = s.pieces[0].id,
-    childId = s.pieces[1].id,
-    target = movesFor(s, s.pieces[0]).find(
+    childId = s.pieces[1].id;
+  s.pieces[0].energy = 2;
+  s.pieces[0].energyCapacitySnapshot = s.pieces[0].energyCapacitySnapshot ?? 11;
+  const target = movesFor(s, s.pieces[0]).find(
       (candidate) => candidate.r === 4 && candidate.c === 5,
     );
   assert.equal(target?.filialCannibal, true);
@@ -164,13 +166,13 @@ test("Canibalismo Filial consumes a direct juvenile child and clears cooldown", 
   s = transition(s, move(s.pieces[0], 4, 5));
   const parent = s.pieces.find((piece) => piece.id === parentId);
   assert.ok(parent);
-  assert.equal(parent.nextReproductionRound, round(s));
+  assert.equal(energyValue(parent), reproductionEnergyCost(parent));
   assert.equal(s.pieces.some((piece) => piece.id === childId), false);
   assert.ok(
     s.passiveEffects.some(
       (effect) =>
         effect.trait === "Canibalismo Filial" &&
-        effect.outcome === "reset-reproductive-cooldown",
+        effect.outcome === "restored-reproductive-energy",
     ),
   );
   assertState(s);
@@ -184,7 +186,7 @@ test("Canibalismo Filial is unavailable while an enemy capture exists", () => {
       c: 4,
       rank: 4,
       traits: ["Canibalismo", "Canibalismo Filial"],
-      nextReproductionRound: 5,
+      energy: 2,
     },
     {
       owner: "blue",
@@ -383,7 +385,6 @@ test("Fertilidade Longeva cancels only age-based infertility", () => {
       traits: ["Respiração anaeróbia", "Multicelularismo", "Simetria Bilateral"],
       bornRound: 0,
       maturesRound: 0,
-      nextReproductionRound: 0,
       pregnancies: [],
       lifetimeOffspring: 0,
     };

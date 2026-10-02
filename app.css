@@ -1009,16 +1009,16 @@ main {
   flex: 0 0 auto;
   font-size: 30px;
 }
-.selected-fatigue {
+.selected-energy {
   margin: -6px 0 14px;
 }
-.selected-fatigue-label {
+.selected-energy-label {
   margin-bottom: 5px;
   color: #c1c6b5;
   font-size: 12px;
   font-weight: 750;
 }
-.selected-fatigue-track {
+.selected-energy-track {
   width: 100%;
   height: 7px;
   overflow: hidden;
@@ -1026,11 +1026,16 @@ main {
   border-radius: 999px;
   background: #1d231c;
 }
-.selected-fatigue-fill {
+.selected-energy-fill {
   height: 100%;
   border-radius: inherit;
   background: #c1c6b5;
   transition: width 160ms ease;
+}
+.selected-energy-costs {
+  margin-top: 5px;
+  color: #8f9686;
+  font-size: 11px;
 }
 .selected-cell-heading {
   display: flex;

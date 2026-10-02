@@ -63,6 +63,11 @@ import {
   arenaSetupSelectionValid,
   completeArenaBranchGenome,
 } from "./arena.js";
+import {
+  canAdvanceReproductionWithEndosymbiosis,
+  energyCapacity,
+  energyReadyForReproduction,
+} from "./energy.js";
 export const clone = (value) => structuredClone(value);
 export function random(state) {
   state.rng = (Math.imul(state.rng, 1664525) + 1013904223) >>> 0;
@@ -489,11 +494,8 @@ export const juvenile = (state, piece) =>
   multicellular(piece) &&
   Number.isInteger(piece.maturesRound) &&
   round(state) < piece.maturesRound;
-export const endosymbiosisAdvanceAvailable = (state, piece) =>
-  !!piece &&
-  has(piece, "Endossimbiose") &&
-  (piece.endosymbiosisDebtUntilRound ?? -1) <= round(state) &&
-  (piece.nextReproductionRound ?? 0) === round(state) + 1;
+export const endosymbiosisAdvanceAvailable = (_state, piece) =>
+  !!piece && canAdvanceReproductionWithEndosymbiosis(piece);
 
 export const reproductionReady = (state, piece) =>
   !!piece &&
@@ -508,8 +510,7 @@ export const reproductionReady = (state, piece) =>
   !(piece.pregnancies ?? []).some(
     (pregnancy) => pregnancy.kind === "ovoviviparous",
   ) &&
-  (round(state) >= (piece.nextReproductionRound ?? 0) ||
-    endosymbiosisAdvanceAvailable(state, piece));
+  energyReadyForReproduction(piece);
 
 export const stomataOpen = (state, piece) => {
   if (!piece || !has(piece, "Estômatos")) return null;
@@ -690,7 +691,10 @@ export function newPiece(state, owner, r, c, source = {}) {
       pregnancies: [],
       bornRound: source.bornRound ?? bornRound,
       maturesRound: source.maturesRound ?? bornRound,
-      nextReproductionRound: source.nextReproductionRound ?? bornRound,
+      energy: Number.isFinite(source.energy) ? source.energy : null,
+      energyCapacitySnapshot: Number.isFinite(source.energyCapacitySnapshot)
+        ? source.energyCapacitySnapshot
+        : null,
       oothecaPrimed: source.oothecaPrimed ?? false,
       somaticMutations: [],
       pathogenMutationDiseases: [],
@@ -719,8 +723,11 @@ export function newPiece(state, owner, r, c, source = {}) {
       eukaryoteBufferedTraits: Array.isArray(source.eukaryoteBufferedTraits)
         ? [...source.eukaryoteBufferedTraits]
         : [],
-      endosymbiosisDebtUntilRound:
-        source.endosymbiosisDebtUntilRound ?? null,
+      endosymbiosisEnergyDebt: source.endosymbiosisEnergyDebt ?? false,
+      lastEnergyActivityTurn: source.lastEnergyActivityTurn ?? null,
+      lastOwnEnergyExertionTurn: source.lastOwnEnergyExertionTurn ?? null,
+      lastReactiveEnergyExertionTurn:
+        source.lastReactiveEnergyExertionTurn ?? null,
       adaptiveImmuneMemory: Array.isArray(source.adaptiveImmuneMemory)
         ? [...new Set(source.adaptiveImmuneMemory)]
         : [],
@@ -761,7 +768,12 @@ export function newPiece(state, owner, r, c, source = {}) {
     piece.colonyId = state.nextColonyId++;
     state.colonyCooldowns[piece.colonyId] ??= bornRound;
   }
-  return normalizePhotosyntheticRank(piece);
+  const normalized = normalizePhotosyntheticRank(piece);
+  normalized.energy = Number.isFinite(source.energy)
+    ? Math.min(energyCapacity(normalized), source.energy)
+    : energyCapacity(normalized);
+  normalized.energyCapacitySnapshot = energyCapacity(normalized);
+  return normalized;
 }
 
 export function registerDiscoveries(state, piece) {
@@ -1951,8 +1963,6 @@ export function activateOrigin(state) {
     amber = newPiece(state, "amber", amberCell.r, amberCell.c, source);
 
   state.hadeanTutorial.dividedAtTurn = state.turn;
-  for (const piece of [blue, amber])
-    piece.nextReproductionRound = round(state);
   state.pieces.push(blue, amber);
   registerDiscoveries(state, blue);
   registerDiscoveries(state, amber);
@@ -3298,7 +3308,11 @@ export function assertState(state) {
       !integer(p.generation) ||
       !integer(p.bornRound) ||
       !integer(p.maturesRound) ||
-      !integer(p.nextReproductionRound) ||
+      !Number.isInteger(p.energy) ||
+      p.energy > energyCapacity(p) ||
+      p.energy < -64 ||
+      !Number.isInteger(p.energyCapacitySnapshot) ||
+      p.energyCapacitySnapshot < 1 ||
       (p.lethalDeathRound !== undefined &&
         !integer(p.lethalDeathRound, 0)) ||
       (p.lethalDeathReason !== undefined &&
@@ -3359,10 +3373,21 @@ export function assertState(state) {
       ) ||
       new Set(p.eukaryoteBufferedTraits ?? []).size !==
         (p.eukaryoteBufferedTraits ?? []).length ||
+      typeof (p.endosymbiosisEnergyDebt ?? false) !== "boolean" ||
       !(
-        p.endosymbiosisDebtUntilRound === null ||
-        p.endosymbiosisDebtUntilRound === undefined ||
-        integer(p.endosymbiosisDebtUntilRound, 0)
+        p.lastEnergyActivityTurn === undefined ||
+        p.lastEnergyActivityTurn === null ||
+        integer(p.lastEnergyActivityTurn, 0)
+      ) ||
+      !(
+        p.lastOwnEnergyExertionTurn === undefined ||
+        p.lastOwnEnergyExertionTurn === null ||
+        integer(p.lastOwnEnergyExertionTurn, 0)
+      ) ||
+      !(
+        p.lastReactiveEnergyExertionTurn === undefined ||
+        p.lastReactiveEnergyExertionTurn === null ||
+        integer(p.lastReactiveEnergyExertionTurn, 0)
       ) ||
       !Array.isArray(p.adaptiveImmuneMemory ?? []) ||
       (p.adaptiveImmuneMemory ?? []).some(
@@ -3389,22 +3414,6 @@ export function assertState(state) {
       ) ||
       !integer(p.heartSupportReadyRound ?? 0, 0) ||
       !integer(p.hepaticDetoxReadyRound ?? 0, 0) ||
-      !integer(p.exertionStreak ?? 0, 0, 12) ||
-      !(
-        p.lastOwnExertionTurn === undefined ||
-        p.lastOwnExertionTurn === null ||
-        integer(p.lastOwnExertionTurn, 0)
-      ) ||
-      !(
-        p.lastReactiveExertionTurn === undefined ||
-        p.lastReactiveExertionTurn === null ||
-        integer(p.lastReactiveExertionTurn, 0)
-      ) ||
-      !(
-        p.fatigueRestTurn === undefined ||
-        p.fatigueRestTurn === null ||
-        integer(p.fatigueRestTurn, 0)
-      ) ||
       !(
         p.hibernationUntilTurn === undefined ||
         p.hibernationUntilTurn === null ||
