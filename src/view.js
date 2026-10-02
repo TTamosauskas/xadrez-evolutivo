@@ -18,6 +18,7 @@ import {
   organicResidueAt,
   carcassAt,
   captureDisturbanceAt,
+  predationFeedingSiteAt,
   lethalHazardAt,
   terrain,
   webAt,
@@ -340,6 +341,7 @@ function cellSelectionInfo(state, r, c) {
     inkCloud = inkCloudAt(state, r, c),
     allelopathy = allelopathySourceAt(state, r, c),
     captureDisturbance = captureDisturbanceAt(state, r, c),
+    predationFeedingSite = predationFeedingSiteAt(state, r, c),
     lethalHazard = lethalHazardAt(state, r, c),
     piece = at(state, r, c),
     infectionDisease = infectionDiseaseForPiece(state, piece),
@@ -1115,6 +1117,7 @@ export function render(
           (entry) => entry.cell === square(r, c),
         ) ?? null,
         captureDisturbance = captureDisturbanceAt(state, r, c),
+        predationFeedingSite = predationFeedingSiteAt(state, r, c),
         lethalHazard = lethalHazardAt(state, r, c),
         organicRecyclingTarget = !!(
           actor &&
@@ -1163,15 +1166,20 @@ export function render(
           p?.id === actor.id &&
           vivificationActions.length
         ),
+        predationFeedingVisual =
+          !!predationFeedingSite &&
+          actor?.id === predationFeedingSite.sourceId &&
+          p?.id === actor.id,
         vivificationTarget =
-          reproductionTarget ||
-          zoochoryResourceTarget ||
-          organicRecyclingTarget ||
-          nicheBuildTarget ||
-          nitrogenFixationTarget ||
-          selfVivificationTarget ||
-          !!rhizomeAction ||
-          (originHere && origin?.selected),
+          !predationFeedingVisual &&
+          (reproductionTarget ||
+            zoochoryResourceTarget ||
+            organicRecyclingTarget ||
+            nicheBuildTarget ||
+            nitrogenFixationTarget ||
+            selfVivificationTarget ||
+            !!rhizomeAction ||
+            (originHere && origin?.selected)),
         nurse = nursing.some((child) => child.id === p?.id),
         eggPlacementTarget = eggPlacement.some(
           (target) => target.r === r && target.c === c,
