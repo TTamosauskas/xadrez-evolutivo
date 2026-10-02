@@ -269,7 +269,7 @@ function runGame(initial, seed) {
       (candidate) => isCaptureAction(state, candidate),
     );
     if (mutuallyBlocked(state)) {
-      action = { type: "CONWAY_STEP" };
+      action = { type: "RESOLVE_BLOCKED" };
       conwaySteps++;
     } else if (policy === "random") {
       const actions = legalActions(state);
