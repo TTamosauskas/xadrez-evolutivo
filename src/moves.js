@@ -9,6 +9,13 @@ import {
   FATIGUE_LIMITS,
 } from "./constants.js";
 import {
+  canSpendEnergy,
+  energyCapacity,
+  energyValue,
+  movementEnergyCost,
+  reproductionEnergyCost,
+} from "./energy.js";
+import {
   at,
   eggAt,
   plantSeedAt,
@@ -1535,9 +1542,9 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
     return [...unique.values()];
   }
-  return fatigueResting(state, p)
-    ? targets.filter((target) => target.stay)
-    : targets;
+  return canSpendEnergy(p, movementEnergyCost(p))
+    ? targets
+    : targets.filter((target) => target.stay);
 }
 export function sexualReproductionResource(state, parent, mate) {
   const providers = [parent, mate].filter(Boolean);
@@ -1978,11 +1985,11 @@ export function nitrogenFixationTargets(state, piece) {
   return targets;
 }
 
-const metabolicActionReady = (state, piece) =>
+const metabolicActionReady = (state, piece, cost = reproductionEnergyCost(piece)) =>
   !!piece &&
   !resting(state, piece) &&
   !dormant(state, piece) &&
-  round(state) >= (piece.nextReproductionRound ?? 0);
+  canSpendEnergy(piece, cost);
 
 function knightEnemyTargets(state, piece) {
   if (!piece) return [];
@@ -2005,7 +2012,7 @@ function knightEnemyTargets(state, piece) {
 export function biologicalProjectileTargets(state, piece) {
   if (
     !has(piece, "Projétil Biológico") ||
-    !metabolicActionReady(state, piece) ||
+    !metabolicActionReady(state, piece, reproductionEnergyCost(piece)) ||
     inkCloudAt(state, piece.r, piece.c)
   )
     return [];
@@ -2019,7 +2026,7 @@ export function biologicalProjectileTargets(state, piece) {
 export function electricDischargeTargets(state, piece) {
   if (
     !has(piece, "Eletrodescarga") ||
-    !metabolicActionReady(state, piece) ||
+    !metabolicActionReady(state, piece, energyCapacity(piece)) ||
     inkCloudAt(state, piece.r, piece.c)
   )
     return [];
@@ -2515,11 +2522,20 @@ export function pieceActionState(state, piece) {
       reason: "Hibernação",
       remainingRounds: Math.max(1, piece.hibernationUntilTurn - state.turn),
     };
-  if (fatigueResting(state, piece))
+  if (
+    energyValue(piece) < energyCapacity(piece) &&
+    actionsAfterPieceChange(state, piece, {
+      energy: energyCapacity(piece),
+    }).length
+  )
     return {
       waiting: true,
-      reason: "Fadiga",
-      remainingRounds: 1,
+      reason: "Energia insuficiente",
+      remainingRounds: Math.max(
+        1,
+        Math.min(movementEnergyCost(piece), reproductionEnergyCost(piece)) -
+          energyValue(piece),
+      ),
     };
   if (neurodivergenceResting(state, piece))
     return {
@@ -2562,18 +2578,6 @@ export function pieceActionState(state, piece) {
       waiting: true,
       reason: "Maturidade sexual",
       remainingRounds: Math.max(1, piece.maturesRound - currentRound),
-    };
-
-  if (
-    (piece.nextReproductionRound ?? 0) > currentRound &&
-    actionsAfterPieceChange(state, piece, {
-      nextReproductionRound: currentRound,
-    }).length
-  )
-    return {
-      waiting: true,
-      reason: "Recuperação metabólica",
-      remainingRounds: piece.nextReproductionRound - currentRound,
     };
 
   return {
@@ -2646,7 +2650,7 @@ export function canWaitForRest(state, owner) {
       p.owner === owner &&
       !ecologicalDomainBlocked(state, p.owner, p.r, p.c) &&
       (resting(state, p) ||
-        fatigueResting(state, p) ||
+        energyValue(p) < energyCapacity(p) ||
         dormant(state, p) ||
         hibernating(state, p)),
   );
