@@ -2441,7 +2441,16 @@ export function reproduce(
     }
     if (paedogenic) parent.paedogenesisUsed = true;
     if (options.budding) {
-      applyEnergyDelta(parent, -BUDDING_STATIONARY_ROUNDS, state.turn);
+      const buddingGap = Math.max(
+        0,
+        reproductionEnergyCost(parent) - energyValue(parent),
+      );
+      if (buddingGap < BUDDING_STATIONARY_ROUNDS)
+        applyEnergyDelta(
+          parent,
+          -(BUDDING_STATIONARY_ROUNDS - buddingGap),
+          state.turn,
+        );
       if (has(parent, "Colônia") && parent.colonyId)
         state.colonyCooldowns[parent.colonyId] =
           round(state) + COLONY_BUD_COOLDOWN;
