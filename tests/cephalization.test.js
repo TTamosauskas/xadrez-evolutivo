@@ -25,7 +25,7 @@ function pursuitState() {
       c: 4,
     },
   ]);
-  state.turn = 24;
+  state.turn = 16;
   state.current = "blue";
   state.lastSuccessfulCaptureRound = 0;
   return state;
@@ -57,7 +57,7 @@ test("Cefalização is mandatory in the Ediacaran and precedes both Cambrian bod
   assert.ok(PLANT_INCOMPATIBLE_TRAITS.has("Cefalização"));
 });
 
-test("Cefalização creates a pursuit capture exactly two cells away after 12 stalled rounds", () => {
+test("Cefalização creates a pursuit capture exactly two cells away after 8 stalled rounds", () => {
   const state = pursuitState(),
     predator = state.pieces.find((piece) => piece.owner === "blue"),
     target = movesFor(state, predator).find(
@@ -74,17 +74,45 @@ test("Cefalização creates a pursuit capture exactly two cells away after 12 st
   ]);
 });
 
-test("Cefalização does not activate before offensive stagnation reaches 12 rounds", () => {
+test("Cefalização does not activate before offensive stagnation reaches 8 rounds", () => {
   const state = pursuitState(),
     predator = state.pieces.find((piece) => piece.owner === "blue");
-  state.turn = 22;
+  state.turn = 14;
 
-  assert.equal(round(state), 11);
+  assert.equal(round(state), 7);
   assert.equal(
     movesFor(state, predator).some(
       (target) => target.r === 2 && target.c === 4 && target.cephalization,
     ),
     false,
+  );
+});
+
+test("Cefalização remains available even when another immediate capture exists", () => {
+  const state = pursuitState();
+  state.pieces.push({
+    id: 99,
+    owner: "amber",
+    rank: 0,
+    r: 4,
+    c: 5,
+    traits: [],
+    ancestry: [],
+  });
+  const predator = state.pieces.find((piece) => piece.owner === "blue"),
+    targets = movesFor(state, predator);
+
+  assert.equal(
+    targets.some(
+      (target) => target.r === 4 && target.c === 5 && target.capture,
+    ),
+    true,
+  );
+  assert.equal(
+    targets.some(
+      (target) => target.r === 2 && target.c === 4 && target.cephalization,
+    ),
+    true,
   );
 });
 
@@ -112,7 +140,7 @@ test("Cefalização resolves through the normal move-capture path and occupies t
   assert.equal(moved.r, prey.r);
   assert.equal(moved.c, prey.c);
   assert.equal(next.pieces.some((piece) => piece.id === prey.id), false);
-  assert.equal(next.lastSuccessfulCaptureRound, 12);
+  assert.equal(next.lastSuccessfulCaptureRound, 8);
   assert.equal(
     next.passiveEffects.some(
       (effect) =>
