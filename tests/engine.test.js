@@ -1900,8 +1900,13 @@ test("metabolic recovery blocks predatory reproduction but preserves capture", (
     s.pieces.filter((piece) => piece.owner === "blue").length,
     before,
   );
-  assert.equal(s.carcasses[0]?.cell, 36);
-  assert.equal(s.captureDisturbances[0]?.dueRound, 3);
+  assert.equal(s.board[36], "fertile");
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.equal(
+    s.pieces.find((piece) => piece.id === predator.id)?.predationEnergy,
+    true,
+  );
   assertState(s);
 });
 
@@ -2830,6 +2835,9 @@ test("Predação stores one vivification charge and reproduces only on a later a
     false,
   );
   assert.equal(parent.predationEnergy, true);
+  assert.equal(s.board[square(parent.r, parent.c)], "fertile");
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
   assert.ok(
     movesFor(s, parent).some(
       (target) =>
@@ -2846,6 +2854,9 @@ test("Predação stores one vivification charge and reproduces only on a later a
   parent = s.pieces.find((piece) => piece.id === parentId);
   assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
   assert.equal(parent.predationEnergy, false);
+  assert.equal(s.board[36], "neutral");
+  assert.equal(s.carcasses[0]?.cell, 36);
+  assert.equal(s.captureDisturbances[0]?.cell, 36);
   assert.equal(
     predatoryReproductionAvailable(
       {
@@ -2977,19 +2988,28 @@ test("capture without trophic reproduction keeps disturbance for the carcass lif
   ]);
   s.pieces[0].nextReproductionRound = round(s) + 10;
   s = simulate(s, move(s.pieces[0], 4, 4));
-  const attacker = s.pieces.find((piece) => piece.id === 1),
-    disturbance = s.captureDisturbances[0];
+  let attacker = s.pieces.find((piece) => piece.id === 1);
   assert.equal(s.deathSites.length, 0);
-  assert.equal(s.carcasses[0]?.cell, 36);
-  assert.equal(s.carcasses[0]?.dueRound, 3);
-  assert.equal(disturbance.cell, 36);
-  assert.equal(disturbance.dueRound, 3);
-  assert.equal(disturbance.sourceId, attacker.id);
-  assert.equal(s.board[36], "neutral");
-  assert.equal(attacker.decompositionImmunity.cell, 36);
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.equal(s.board[36], "fertile");
+  assert.equal(attacker.predationEnergy, true);
 
   s = simulate(s, { type: "PASS" });
-  assert.equal(s.captureDisturbances.length, 1);
+  attacker = s.pieces.find((piece) => piece.id === 1);
+  const departure = movesFor(s, attacker).find(
+    (target) => !target.stay && !target.capture,
+  );
+  assert.ok(departure);
+  s = simulate(s, move(attacker, departure.r, departure.c));
+  const disturbance = s.captureDisturbances[0];
+  assert.equal(s.carcasses[0]?.cell, 36);
+  assert.equal(disturbance?.cell, 36);
+  assert.equal(disturbance?.sourceId, attacker.id);
+  assert.equal(s.board[36], "neutral");
+
+  s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
   s = simulate(s, { type: "PASS" });
   s = simulate(s, { type: "PASS" });
   s = simulate(s, { type: "PASS" });
@@ -3010,10 +3030,10 @@ test("capture disturbance preserves fertile terrain underneath", () => {
   s.pieces[0].nextReproductionRound = round(s) + 10;
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.equal(s.deathSites.length, 0);
-  assert.equal(s.carcasses[0]?.cell, 36);
-  assert.equal(s.carcasses[0]?.base, "fertile");
-  assert.equal(s.captureDisturbances[0]?.cell, 36);
-  assert.equal(s.captureDisturbances[0]?.base, "fertile");
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.equal(s.predationFeedingSites[0]?.cell, 36);
+  assert.equal(s.predationFeedingSites[0]?.base, "fertile");
   assert.equal(s.board[36], "fertile");
   assertState(s);
 });
@@ -3032,9 +3052,40 @@ test("successful multicellular predation stores vivification instead of immediat
     false,
   );
   assert.equal(parent.predationEnergy, true);
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.equal(s.board[36], "fertile");
+  assertState(s);
+});
+
+test("leaving a predation feeding site turns the green cell into remains", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const predatorId = s.pieces[0].id;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  let predator = s.pieces.find((piece) => piece.id === predatorId);
+  assert.equal(s.board[36], "fertile");
+  assert.equal(predator.predationEnergy, true);
+
+  s = simulate(s, { type: "PASS" });
+  predator = s.pieces.find((piece) => piece.id === predatorId);
+  const departure = movesFor(s, predator).find(
+    (target) =>
+      !target.stay &&
+      !target.capture &&
+      (target.r !== predator.r || target.c !== predator.c),
+  );
+  assert.ok(departure);
+  s = simulate(s, move(predator, departure.r, departure.c));
+
+  predator = s.pieces.find((piece) => piece.id === predatorId);
+  assert.equal(predator.predationEnergy, false);
+  assert.equal(s.board[36], "neutral");
   assert.equal(s.carcasses[0]?.cell, 36);
   assert.equal(s.captureDisturbances[0]?.cell, 36);
-  assert.equal(s.board[36], "neutral");
   assertState(s);
 });
 
@@ -4139,7 +4190,9 @@ test("infected predatory capture stores vivification without immediate trophic r
     s.pieces.some((piece) => piece.parentId === source.id),
     false,
   );
-  assert.equal(s.carcasses.some((site) => site.cell === 36), true);
+  assert.equal(s.carcasses.some((site) => site.cell === 36), false);
+  assert.equal(s.board[36], "fertile");
+  assert.equal(s.predationFeedingSites[0]?.cell, 36);
   assertState(s);
 });
 
@@ -5409,8 +5462,9 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
   const survivor = s.pieces.find((piece) => piece.id === king.id);
   assert.deepEqual([survivor.r, survivor.c], [4, 4]);
   assert.ok(!s.pieces.some((piece) => piece.id === 2));
-  assert.ok(s.captureDisturbances.some((entry) => entry.cell === 36));
-  assert.equal(survivor.decompositionImmunity.cell, 36);
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.equal(s.board[36], "fertile");
+  assert.equal(survivor.predationEnergy, true);
   assertState(s);
 
   s = fixture([

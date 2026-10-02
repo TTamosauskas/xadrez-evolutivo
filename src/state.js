@@ -162,6 +162,10 @@ export const chemosynthesisExhaustedAt = (state, r, c) =>
 export const captureDisturbanceAt = (state, r, c) =>
   state.captureDisturbances?.find((entry) => entry.cell === square(r, c)) ??
   null;
+export const predationFeedingSiteAt = (state, r, c) =>
+  (state.predationFeedingSites ?? []).find(
+    (entry) => entry.cell === square(r, c),
+  ) ?? null;
 export const hadeanPlayableCell = (r, c) =>
   r >= 2 && r <= 5 && c >= 2 && c <= 5;
 export const hadeanCentralCell = hadeanPlayableCell;
@@ -1418,6 +1422,7 @@ export function createState(seed = Date.now(), options = {}) {
     chemosynthesisExhausted: [],
     thanatosis: [],
     captureDisturbances: [],
+    predationFeedingSites: [],
     fertilityRecovery: [],
     extremophyteFertility: [],
     diseases: [],
