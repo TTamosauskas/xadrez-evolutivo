@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture } from "./helpers.js";
 import { TRAITS } from "../src/constants.js";
+import { energyCapacity, energyValue } from "../src/energy.js";
 import {
   context,
   hostileHazardKills,
@@ -89,7 +90,7 @@ function trophicReproduction(state, parent) {
   });
 }
 
-test("Intestino reduz em uma rodada somente cada segunda recuperação alimentar", () => {
+test("Intestino devolve 1 Energia somente a cada segunda alimentação reprodutiva", () => {
   const baseline = fixture([
       { owner: "blue", r: 4, c: 4, rank: 5 },
       { owner: "amber", r: 0, c: 0, rank: 4 },
@@ -104,28 +105,22 @@ test("Intestino reduz em uma rodada somente cada segunda recuperação alimentar
   assert.equal(trophicReproduction(baseline, plain), 1);
   assert.equal(trophicReproduction(adapted, gut), 1);
   assert.equal(gut.intestinalAbsorptionCount, 1);
-  assert.equal(
-    plain.nextReproductionRound,
-    gut.nextReproductionRound,
-  );
+  assert.equal(energyValue(plain), energyValue(gut));
 
   assert.equal(trophicReproduction(baseline, plain), 1);
   assert.equal(trophicReproduction(adapted, gut), 1);
   assert.equal(gut.intestinalAbsorptionCount, 0);
-  assert.equal(
-    plain.nextReproductionRound - gut.nextReproductionRound,
-    1,
-  );
+  assert.equal(energyValue(gut) - energyValue(plain), 1);
   assert.ok(
     adapted.passiveEffects.some(
       (effect) =>
         effect.trait === "Intestino" &&
-        effect.outcome === "intestinal-absorption",
+        effect.outcome === "intestinal-energy",
     ),
   );
 });
 
-test("Rim Concentrador consome uma reserva hídrica para reduzir metabolismo reprodutivo", () => {
+test("Rim Concentrador consome reserva hídrica para devolver 1 Energia reprodutiva", () => {
   const baseline = fixture([
       { owner: "blue", r: 4, c: 4, rank: 5 },
       { owner: "amber", r: 0, c: 0, rank: 4 },
@@ -141,10 +136,7 @@ test("Rim Concentrador consome uma reserva hídrica para reduzir metabolismo rep
   assert.equal(trophicReproduction(baseline, plain), 1);
   assert.equal(trophicReproduction(adapted, kidney), 1);
   assert.equal(kidney.renalWaterReserve, undefined);
-  assert.equal(
-    plain.nextReproductionRound - kidney.nextReproductionRound,
-    1,
-  );
+  assert.equal(energyValue(kidney) - energyValue(plain), 1);
 });
 
 test("Xerofitismo converte perda real de fertilidade por seca em aceleração fotossintética", () => {
@@ -210,10 +202,9 @@ test("Coração Compartimentado absorve ocasionalmente o custo metabólico da En
     ]),
     piece = state.pieces[0];
   state.rng = 0;
-  piece.nextReproductionRound = 0;
 
   assert.equal(hostileHazardKills(state, piece, true), false);
-  assert.equal(piece.nextReproductionRound, 0);
+  assert.equal(energyValue(piece), energyCapacity(piece));
   assert.equal(piece.heartSupportReadyRound, 4);
   assert.ok(
     state.passiveEffects.some(
