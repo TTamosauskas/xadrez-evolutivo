@@ -24,6 +24,7 @@ import {
 } from "../src/positioning.js";
 import { deserialize } from "../src/storage.js";
 import { has } from "../src/constants.js";
+import { energyValue } from "../src/energy.js";
 
 test("new loci keep one active evasion, offspring orientation and cognitive phenotype", () => {
   assert.ok(
