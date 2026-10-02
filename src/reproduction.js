@@ -1,6 +1,5 @@
 import {
   BIRTH_RATES,
-  FATIGUE_LIMITS,
   PIECE_LIFE_HISTORY,
   PIECES,
   TRAITS,
@@ -13,6 +12,13 @@ import {
   energyBranch,
   canPhotosynthesize,
 } from "./constants.js";
+import {
+  applyEnergyDelta,
+  energyValue,
+  reproductionEnergyCost,
+  restoreEnergy,
+  spendEnergy,
+} from "./energy.js";
 import {
   at,
   eggAt,
@@ -1696,16 +1702,6 @@ export function dopaminePressureReductionAvailable(state, parent) {
 
 export function consumeReproductionResource(state, parent, cell) {
   if (!consumeFertileTerrain(state, cell)) return 0;
-  if ((parent?.exertionStreak ?? 0) > 0) {
-    parent.exertionStreak = Math.max(0, parent.exertionStreak - 1);
-    const limit =
-      (FATIGUE_LIMITS[parent.rank] ?? 4) + (has(parent, "Endorfinas") ? 1 : 0);
-    if (
-      Number.isInteger(parent.fatigueRestTurn) &&
-      parent.exertionStreak < limit
-    )
-      delete parent.fatigueRestTurn;
-  }
   if (parent?.chemosynthesisFertileCell === cell) {
     delete parent.chemosynthesisFertileCell;
     parent.chemosynthesisNeutralThroughTurn = state.turn + 1;
@@ -1980,10 +1976,10 @@ export function reproduce(
             replacement.limit,
           ),
     wanted = Math.min(baseWanted, pressureLimit),
-    cooldown = (piece, feeder = false) => {
+    recoveryRounds = (piece, feeder = false) => {
       const hadeanBasalFertility =
         state.geologicalStage === "hadean" && resourceKind === "fertile";
-      if (hadeanBasalFertility) return round(state);
+      if (hadeanBasalFertility) return 0;
       let metabolic = metabolicReproductionCooldown(piece);
       if (has(piece, "Insuficiência Respiratória"))
         metabolic *= 2;
@@ -1995,7 +1991,7 @@ export function reproduce(
         emitPassiveEffect(
           state,
           "Alelopatia",
-          "🍂 Alelopatia rival aumentou a recuperação metabólica em 1 rodada.",
+          "🍂 Alelopatia rival aumentou o custo energético reprodutivo em 1.",
           {
             pieceId: piece.id,
             outcome: "allelopathic-reproductive-cost",
@@ -2016,10 +2012,10 @@ export function reproduce(
           emitPassiveEffect(
             state,
             "Rim Concentrador",
-            "🫘 Reserva hídrica renal reduziu a recuperação metabólica em 1 rodada.",
+            "🫘 Reserva hídrica renal devolveu 1 Energia ao investimento reprodutivo.",
             {
               pieceId: piece.id,
-              outcome: "renal-water-reserve",
+              outcome: "renal-water-energy",
               value: 1,
             },
           );
@@ -2032,10 +2028,10 @@ export function reproduce(
           emitPassiveEffect(
             state,
             "Intestino",
-            "🪢 Intestino aumentou a assimilação alimentar · recuperação metabólica −1.",
+            "🪢 Intestino devolveu 1 Energia após alimentação reprodutiva.",
             {
               pieceId: piece.id,
-              outcome: "intestinal-absorption",
+              outcome: "intestinal-energy",
               value: 1,
             },
           );
@@ -2060,7 +2056,7 @@ export function reproduce(
         emitPassiveEffect(
           state,
           "Anemia Falciforme",
-          "🛑 Anemia Falciforme anulou a eficiência metabólica de 🔵 Respiração aeróbia.",
+          "🛑 Anemia Falciforme anulou a eficiência energética de 🔵 Respiração aeróbia.",
           {
             pieceId: piece.id,
             outcome: "neutralized-aerobic-metabolism",
@@ -2074,10 +2070,10 @@ export function reproduce(
         emitPassiveEffect(
           state,
           "Mutualismo",
-          "🫂 Mutualismo reduziu a recuperação metabólica em 1 rodada.",
+          "🫂 Mutualismo devolveu 1 Energia após a reprodução.",
           {
             pieceId: piece.id,
-            outcome: "reduced-metabolic-recovery",
+            outcome: "reduced-reproductive-energy",
             value: 1,
           },
         );
@@ -2102,7 +2098,7 @@ export function reproduce(
         emitPassiveEffect(
           state,
           "Dopamina",
-          "🤤 Dopamina reduziu em 1 rodada a pressão reprodutiva.",
+          "🤤 Dopamina neutralizou 1 ponto de custo energético por pressão reprodutiva.",
           {
             pieceId: piece.id,
             outcome: "reduced-reproductive-pressure",
@@ -2110,18 +2106,30 @@ export function reproduce(
           },
         );
       }
-      return round(state) + metabolic + pressure;
+      return metabolic + pressure;
     },
-    applyCooldown = () => {
+    applyEnergyCost = () => {
       const apply = (piece, feeder = false) => {
-        piece.nextReproductionRound = cooldown(piece, feeder);
-        if (endosymbioticAdvanceIds.has(piece.id)) {
-          piece.nextReproductionRound += 2;
-          piece.endosymbiosisDebtUntilRound = piece.nextReproductionRound;
+        const hadeanBasalFertility =
+          state.geologicalStage === "hadean" && resourceKind === "fertile";
+        if (hadeanBasalFertility) return;
+        const baseMetabolism = pieceLifeHistory(piece).metabolism,
+          recovery = recoveryRounds(piece, feeder),
+          cost = reproductionEnergyCost(piece),
+          advanced = endosymbioticAdvanceIds.has(piece.id);
+        if (advanced || options.ignoreReadiness)
+          applyEnergyDelta(piece, -cost, state.turn);
+        else if (!spendEnergy(piece, cost, state.turn))
+          applyEnergyDelta(piece, -cost, state.turn);
+        const modifier = recovery - baseMetabolism;
+        if (modifier) applyEnergyDelta(piece, -modifier, state.turn);
+        if (advanced) {
+          applyEnergyDelta(piece, -2, state.turn);
+          piece.endosymbiosisEnergyDebt = true;
           emitPassiveEffect(
             state,
             "Endossimbiose",
-            "🔋 Endossimbiose antecipou a reprodução · débito energético +2.",
+            "🔋 Endossimbiose antecipou a reprodução · dívida energética +2.",
             {
               pieceId: piece.id,
               outcome: "endosymbiotic-energy-debt",
@@ -2129,9 +2137,10 @@ export function reproduce(
             },
           );
         }
+        piece.lastEnergyActivityTurn = state.turn;
         if (
           has(piece, "Ruminante") &&
-          piece.nextReproductionRound > round(state)
+          energyValue(piece) < reproductionEnergyCost(piece)
         ) {
           piece.rumination = {
             block: ruminationBlock(piece),
@@ -2140,7 +2149,7 @@ export function reproduce(
           emitPassiveEffect(
             state,
             "Ruminante",
-            "🐄 Ruminante iniciou ruminação no bloco atual e pode acelerar a recuperação metabólica.",
+            "🐄 Ruminante iniciou recuperação energética no bloco atual.",
             {
               pieceId: piece.id,
               outcome: "started-rumination",
@@ -2150,6 +2159,16 @@ export function reproduce(
       };
       apply(parent, true);
       for (const candidate of mates) apply(candidate, false);
+    },
+    rewardInfruitfulVivification = () => {
+      if (resourceKind !== "fertile") return 0;
+      const recipient =
+          [parent, ...mates].find(
+            (piece) => piece.id === options.resourceProviderId,
+          ) ?? parent,
+        before = energyValue(recipient);
+      restoreEnergy(recipient, 1);
+      return Math.max(0, energyValue(recipient) - before);
     },
     makeRequestedBrood = (count) => {
       const brood = [],
@@ -2232,13 +2251,13 @@ export function reproduce(
         transmitSexualPathogen(state, [parent, ...mates]);
       if (!has(profile, "Subfertilidade") || random(state) >= 0.5)
         return false;
-      applyCooldown();
       if (Number.isInteger(options.resourceCell))
         consumeReproductionResource(state, parent, options.resourceCell);
       else options.onFailedAttempt?.();
+      const energyGain = rewardInfruitfulVivification();
       log(
         state,
-        `${OWNERS[parent.owner]}: 😩 Subfertilidade impediu a geração de prole por ${reason}.`,
+        `${OWNERS[parent.owner]}: 😩 Subfertilidade impediu a geração de prole por ${reason}${energyGain ? `; Vivificação recuperou ${energyGain} Energia` : ""}.`,
       );
       emitPassiveEffect(
         state,
@@ -2255,7 +2274,7 @@ export function reproduce(
     const restoredRank = parent.autotomyRecovery.originalRank;
     parent.rank = restoredRank;
     parent.autotomyRecovery = null;
-    applyCooldown();
+    applyEnergyCost();
     log(
       state,
       `${OWNERS[parent.owner]}: ✂️ Autotomia regenerou a forma ${PIECES[restoredRank]} usando energia reprodutiva.`,
@@ -2280,18 +2299,20 @@ export function reproduce(
     const successRate = reproductiveSuccessRate(state, parent, mates);
     if (random(state) >= successRate) {
       if (mates.length) transmitSexualPathogen(state, [parent, ...mates]);
-      applyCooldown();
       if (Number.isInteger(options.resourceCell))
         consumeReproductionResource(state, parent, options.resourceCell);
       else options.onFailedAttempt?.();
+      const energyGain = rewardInfruitfulVivification();
       log(
         state,
-        `${OWNERS[parent.owner]}: 🥀 Reprodução infrutífera por ${reason}; a tentativa não gerou descendentes.`,
+        `${OWNERS[parent.owner]}: 🥀 Reprodução infrutífera por ${reason}; a tentativa não gerou descendentes${energyGain ? ` e recuperou ${energyGain} Energia` : ""}.`,
       );
       emitPassiveEffect(
         state,
         "Reprodução infrutífera",
-        "🥀 Reprodução infrutífera — a tentativa não gerou descendentes.",
+        energyGain
+          ? `🥀 Reprodução infrutífera — nenhum descendente foi gerado. Vivificar recuperou ${energyGain} Energia.`
+          : "🥀 Reprodução infrutífera — a tentativa não gerou descendentes.",
         {
           pieceId: parent.id,
           outcome: "infruitful-reproduction",
@@ -2399,7 +2420,7 @@ export function reproduce(
       if (parent.intestinalAbsorptionCount === 0)
         parent.intestinalAbsorptionPending = true;
     }
-    applyCooldown();
+    applyEnergyCost();
     if (
       mates.length === 1 &&
       (has(parent, "Monogamia") || has(mates[0], "Monogamia"))
@@ -2409,10 +2430,7 @@ export function reproduce(
     }
     if (paedogenic) parent.paedogenesisUsed = true;
     if (options.budding) {
-      parent.nextReproductionRound = Math.max(
-        parent.nextReproductionRound,
-        round(state) + BUDDING_STATIONARY_ROUNDS,
-      );
+      applyEnergyDelta(parent, -BUDDING_STATIONARY_ROUNDS, state.turn);
       if (has(parent, "Colônia") && parent.colonyId)
         state.colonyCooldowns[parent.colonyId] =
           round(state) + COLONY_BUD_COOLDOWN;
