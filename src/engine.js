@@ -5304,11 +5304,11 @@ function resolveBudding(ctx, action) {
     );
   if (!canBud(state, p)) throw Error("Brotamento indisponível.");
   const born = bud(ctx, p);
-  if (!born) throw Error("Brotamento sem espaço ou capacidade populacional.");
-  log(
-    state,
-    `${OWNERS[p.owner]}: 🪸 Brotamento produziu um descendente.`,
-  );
+  if (born)
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🪸 Brotamento produziu um descendente.`,
+    );
   advanceTurn(ctx);
   settle(ctx);
 }
