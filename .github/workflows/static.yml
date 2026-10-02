@@ -19,7 +19,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm test
+      - name: Diagnose test files
+        shell: bash
+        run: |
+          for file in tests/*.test.js; do
+            echo "=== $file ==="
+            timeout 45s node --test "$file"
+          done
       # Long-running anti-stagnation simulations and geological benchmarks are
       # intentionally paused while the mutation/mechanics set is still evolving.
       # Re-enable them after the planned gameplay systems are complete.
