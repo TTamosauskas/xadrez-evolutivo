@@ -23,6 +23,13 @@ jobs:
       # Long-running anti-stagnation simulations and geological benchmarks are
       # intentionally paused while the mutation/mechanics set is still evolving.
       # Re-enable them after the planned gameplay systems are complete.
+      - name: Run 200-game buffed Cefalização benchmark
+        continue-on-error: true
+        env:
+          GAMES: 200
+          GOAL_TURNS: 200
+          TURN_LIMIT: 300
+        run: npm run simulate
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/main'
