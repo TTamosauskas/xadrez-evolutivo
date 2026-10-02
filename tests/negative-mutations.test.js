@@ -209,7 +209,7 @@ test("only-child is a lifetime one-offspring limit and respiratory insufficiency
     }),
     1,
   );
-  assert.equal(energyValue(predatorParent), -2);
+  assert.equal(energyValue(predatorParent), -4);
 });
 
 test("only-child sexual partner becomes unavailable after one descendant", () => {
