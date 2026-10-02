@@ -3154,8 +3154,8 @@ function resolveFeedingReach(ctx, action) {
     killed = ctx.kill(victim.id, option.trait, piece);
   if (killed) {
     state.lastSuccessfulCaptureRound = round(state);
-    grantPredationVivification(state, piece, victim);
-    markCarcass(state, victimCell);
+    const feedingSite = grantPredationVivification(state, piece, victim);
+    if (!feedingSite) markCarcass(state, victimCell);
     log(
       state,
       `${OWNERS[piece.owner]}: ${TRAITS[option.trait][0]} ${option.trait} capturou uma presa adjacente a partir de ${coord(piece.r, piece.c)}.`,
@@ -3239,8 +3239,8 @@ function resolveExtendedCapture(ctx, action) {
     killed = ctx.kill(victim.id, option.trait, piece);
   if (killed) {
     state.lastSuccessfulCaptureRound = round(state);
-    grantPredationVivification(state, piece, victim);
-    markCarcass(state, victimCell);
+    const feedingSite = grantPredationVivification(state, piece, victim);
+    if (!feedingSite) markCarcass(state, victimCell);
     log(
       state,
       `${OWNERS[piece.owner]}: ${TRAITS[option.trait][0]} ${option.trait} capturou sem deslocamento em ${coord(victim.r, victim.c)}.`,
@@ -4508,8 +4508,6 @@ function executeMove(ctx, action) {
     if (killed) {
       state.lastSuccessfulCaptureRound = round(state);
       grantPredationVivification(state, p, victim, { force: true });
-      markCarcass(state, victimCell);
-      markCaptureDisturbance(state, victimCell);
       log(
         state,
         `${OWNERS[p.owner]}: ${botanicalPredation === "Haustório" ? "🪝" : "👄"} ${botanicalPredation} consumiu uma criatura em ${coord(victim.r, victim.c)} sem deslocamento.`,
@@ -5128,14 +5126,15 @@ function executeMove(ctx, action) {
         captureCell,
         fecalPathogenDiseaseIdsForHost(state, p),
       );
-    else if (!cannibalConsumption) {
+    else if (!cannibalConsumption && !predationCapture) {
       markCarcass(state, captureCell);
       markCaptureDisturbance(state, captureCell, p.id);
     }
-    p.decompositionImmunity = {
-      cell: captureCell,
-      throughTurn: state.turn + 2,
-    };
+    if (!predationCapture)
+      p.decompositionImmunity = {
+        cell: captureCell,
+        throughTurn: state.turn + 2,
+      };
     if (fecalReproduction && canPhotosynthesize(p)) {
       consumeOrganicResidue(state, captureCell);
       if (state.event?.hazards.includes(captureCell))
