@@ -348,6 +348,72 @@ export function consumeCarcass(state, cell) {
   return true;
 }
 
+function restorePredationFeedingBase(state, site) {
+  if (state.event?.hazards.includes(site.cell))
+    state.event.snapshots[site.cell] = site.base;
+  else
+    state.board[site.cell] = site.base;
+}
+
+export function finalizePredationFeedingSite(state, sourceId) {
+  const sites = state.predationFeedingSites ?? [],
+    site = sites.find((entry) => entry.sourceId === sourceId);
+  if (!site) return false;
+  state.predationFeedingSites = sites.filter((entry) => entry !== site);
+  restorePredationFeedingBase(state, site);
+  markCarcass(state, site.cell);
+  markCaptureDisturbance(state, site.cell, sourceId, 3);
+  const source = state.pieces.find((piece) => piece.id === sourceId);
+  if (source) {
+    source.predationEnergy = false;
+    source.predationEnergyEfficient = false;
+  }
+  return true;
+}
+
+export function beginPredationFeedingSite(state, source, cell) {
+  if (!source) return false;
+  const previous = (state.predationFeedingSites ?? []).find(
+    (entry) => entry.sourceId === source.id,
+  );
+  if (previous && previous.cell !== cell)
+    finalizePredationFeedingSite(state, source.id);
+
+  const occupant = (state.predationFeedingSites ?? []).find(
+    (entry) => entry.cell === cell && entry.sourceId !== source.id,
+  );
+  if (occupant)
+    finalizePredationFeedingSite(state, occupant.sourceId);
+
+  state.predationFeedingSites ??= [];
+  let site = state.predationFeedingSites.find(
+    (entry) => entry.sourceId === source.id,
+  );
+  if (!site) {
+    const base = state.event?.hazards.includes(cell)
+      ? state.event.snapshots[cell] ?? "neutral"
+      : state.board[cell];
+    site = { sourceId: source.id, cell, base };
+    state.predationFeedingSites.push(site);
+  }
+  if (state.event?.hazards.includes(cell))
+    state.event.snapshots[cell] = "fertile";
+  state.board[cell] = "fertile";
+  return true;
+}
+
+export function settlePredationFeedingSites(state) {
+  for (const site of [...(state.predationFeedingSites ?? [])]) {
+    const source = state.pieces.find((piece) => piece.id === site.sourceId);
+    if (
+      !source ||
+      square(source.r, source.c) !== site.cell ||
+      !source.predationEnergy
+    )
+      finalizePredationFeedingSite(state, site.sourceId);
+  }
+}
+
 export function markCaptureDisturbance(
   state,
   cell,
