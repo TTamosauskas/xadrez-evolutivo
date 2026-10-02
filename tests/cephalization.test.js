@@ -103,7 +103,7 @@ test("Cefalização remains available even when another immediate capture exists
     },
     {
       owner: "amber",
-      r: 4,
+      r: 3,
       c: 5,
     },
   ]);
@@ -116,7 +116,7 @@ test("Cefalização remains available even when another immediate capture exists
 
   assert.equal(
     targets.some(
-      (target) => target.r === 4 && target.c === 5 && target.capture,
+      (target) => target.r === 3 && target.c === 5 && target.capture,
     ),
     true,
   );
