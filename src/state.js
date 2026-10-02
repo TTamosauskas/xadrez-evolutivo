@@ -596,6 +596,7 @@ export function log(state, text) {
 }
 const PASSIVE_EXPLANATION_TOPICS = new Set([
   "Reprodução",
+  "Reprodução infrutífera",
   "Casa Hostil",
   "Casa Fértil",
 ]);
