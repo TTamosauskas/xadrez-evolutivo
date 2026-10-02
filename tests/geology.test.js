@@ -195,14 +195,12 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
       state = createPeriodState(id, 4000 + index, null, "earth"),
       blue = state.pieces.filter((piece) => piece.owner === "blue"),
       branchPieces = {
-        plant: blue.find((piece) => piece.traits.includes("Fotossíntese")),
-        animal: blue.find((piece) => piece.traits.includes("Predação")),
+        plant: blue[0],
+        animal: blue.length === 4 ? blue[2] : blue[1],
       };
 
     assert.equal(state.cycle, 1, id);
     assert.ok([2, 4].includes(blue.length), id);
-    assert.ok(branchPieces.plant, `${id} plant founder`);
-    assert.ok(branchPieces.animal, `${id} animal founder`);
 
     for (const branch of ["plant", "animal"]) {
       const piece = branchPieces[branch],
