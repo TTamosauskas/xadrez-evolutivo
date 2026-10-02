@@ -2830,6 +2830,9 @@ test("Predação stores one vivification charge and reproduces only on a later a
     false,
   );
   assert.equal(parent.predationEnergy, true);
+  assert.equal(s.board[square(parent.r, parent.c)], "fertile");
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
   assert.ok(
     movesFor(s, parent).some(
       (target) =>
@@ -2846,6 +2849,9 @@ test("Predação stores one vivification charge and reproduces only on a later a
   parent = s.pieces.find((piece) => piece.id === parentId);
   assert.ok(s.pieces.some((piece) => piece.parentId === parentId));
   assert.equal(parent.predationEnergy, false);
+  assert.equal(s.board[36], "neutral");
+  assert.equal(s.carcasses[0]?.cell, 36);
+  assert.equal(s.captureDisturbances[0]?.cell, 36);
   assert.equal(
     predatoryReproductionAvailable(
       {
@@ -3032,9 +3038,40 @@ test("successful multicellular predation stores vivification instead of immediat
     false,
   );
   assert.equal(parent.predationEnergy, true);
+  assert.equal(s.carcasses.length, 0);
+  assert.equal(s.captureDisturbances.length, 0);
+  assert.equal(s.board[36], "fertile");
+  assertState(s);
+});
+
+test("leaving a predation feeding site turns the green cell into remains", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Carnívoro"] },
+    { owner: "amber", r: 4, c: 4 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const predatorId = s.pieces[0].id;
+  s = simulate(s, move(s.pieces[0], 4, 4));
+  let predator = s.pieces.find((piece) => piece.id === predatorId);
+  assert.equal(s.board[36], "fertile");
+  assert.equal(predator.predationEnergy, true);
+
+  s = simulate(s, { type: "PASS" });
+  predator = s.pieces.find((piece) => piece.id === predatorId);
+  const departure = movesFor(s, predator).find(
+    (target) =>
+      !target.stay &&
+      !target.capture &&
+      (target.r !== predator.r || target.c !== predator.c),
+  );
+  assert.ok(departure);
+  s = simulate(s, move(predator, departure.r, departure.c));
+
+  predator = s.pieces.find((piece) => piece.id === predatorId);
+  assert.equal(predator.predationEnergy, false);
+  assert.equal(s.board[36], "neutral");
   assert.equal(s.carcasses[0]?.cell, 36);
   assert.equal(s.captureDisturbances[0]?.cell, 36);
-  assert.equal(s.board[36], "neutral");
   assertState(s);
 });
 
