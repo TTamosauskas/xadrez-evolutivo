@@ -1,5 +1,15 @@
 import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance, TRAITS, PIECES, functionalSizeClass } from "./constants.js";
 import {
+  applyEnergyDelta,
+  canSpendEnergy,
+  energyCapacity,
+  energyValue,
+  movementEnergyCost,
+  reproductionEnergyCost,
+  restoreEnergy,
+  spendEnergy,
+} from "./energy.js";
+import {
   activateOrigin,
   clone,
   at,
@@ -56,8 +66,6 @@ import {
   hibernating,
   adjacentAlliesCount,
   intoxicationResting,
-  fatigueLimit,
-  rapidFatigueRecovery,
   manipulationTargets,
   constructionTargets,
   nicheConstructionTargets,
@@ -207,8 +215,7 @@ function applyChemicalCaptureDefense(state, dead, attacker) {
       attacker.intoxicationRestThroughRound ?? -1,
       currentRound + 1,
     );
-    if ((attacker.nextReproductionRound ?? currentRound) > currentRound)
-      attacker.nextReproductionRound++;
+    applyEnergyDelta(attacker, -1, state.turn);
     log(
       state,
       `${OWNERS[dead.owner]}: 😵‍💫 Toxicidade intoxicou o agressor por um turno próprio.`,
@@ -886,10 +893,12 @@ function hibernationPressure(state) {
 }
 
 function clearFatigueForHibernation(piece) {
-  piece.exertionStreak = 0;
+  delete piece.exertionStreak;
   delete piece.fatigueRestTurn;
   delete piece.lastOwnExertionTurn;
   delete piece.lastReactiveExertionTurn;
+  delete piece.lastOwnEnergyExertionTurn;
+  delete piece.lastReactiveEnergyExertionTurn;
   delete piece.sleepingThroughTurn;
   delete piece.restorativeSleepCharge;
 }
@@ -959,14 +968,6 @@ function hibernationSheltersFromEnvironment(state, piece) {
   return hibernating(state, piece) && state.event?.source !== "population";
 }
 
-function nextOwnTurn(state, piece) {
-  return state.turn + (piece.owner === state.current ? 2 : 1);
-}
-
-function effectiveFatigueLimit(piece) {
-  return fatigueLimit(piece) + (has(piece, "Endorfinas") ? 1 : 0);
-}
-
 function immediateCaptureThreatNextTurn(state, piece, turn) {
   const threatState = {
     ...state,
@@ -1012,127 +1013,76 @@ function applyAdipokineticRecovery(state, piece) {
     !piece ||
     !has(piece, "Sistema Adipocinético") ||
     terrain(state, piece.r, piece.c) !== "fertile" ||
-    (piece.exertionStreak ?? 0) <= 0 ||
+    piece.lastEnergyActivityTurn !== state.turn ||
+    energyValue(piece) >= energyCapacity(piece) ||
     piece.adipokineticRecoveryTurn === state.turn
   )
     return false;
 
   piece.adipokineticRecoveryTurn = state.turn;
-  piece.exertionStreak = Math.max(0, piece.exertionStreak - 1);
-  if (
-    Number.isInteger(piece.fatigueRestTurn) &&
-    piece.fatigueRestTurn > state.turn &&
-    piece.exertionStreak < effectiveFatigueLimit(piece)
-  )
-    delete piece.fatigueRestTurn;
-
+  restoreEnergy(piece, movementEnergyCost(piece));
   emitPassiveEffect(
     state,
     "Sistema Adipocinético",
-    "⛽ Sistema Adipocinético repôs reservas na casa fértil · esforço acumulado −1.",
+    "⛽ Sistema Adipocinético repôs Energia na Casa Fértil.",
     {
       pieceId: piece.id,
-      outcome: "reduced-fatigue-on-fertile-landing",
-      value: 1,
+      outcome: "restored-energy-on-fertile-landing",
+      value: movementEnergyCost(piece),
     },
   );
   return true;
 }
 
-function scheduleFatigue(state, piece) {
-  const restTurn = nextOwnTurn(state, piece);
-  piece.fatigueRestTurn = Math.max(piece.fatigueRestTurn ?? -1, restTurn);
-  log(
-    state,
-    `${OWNERS[piece.owner]}: 🥵 Fadiga acumulada; a criatura ficará sem locomoção no próximo turno próprio.`,
-  );
-}
-
 function recordExertion(state, piece, { reactive = false } = {}) {
-  if (!piece || !has(piece, "Predação")) return false;
+  if (!piece) return false;
 
-  if (
-    piece.fatigueRestTurn === state.turn &&
-    rapidFatigueRecovery(state, piece)
-  ) {
-    delete piece.fatigueRestTurn;
-    piece.exertionStreak = 0;
-    delete piece.lastOwnExertionTurn;
-    delete piece.lastReactiveExertionTurn;
-    emitPassiveEffect(
-      state,
-      "Fadiga",
-      "🥵 Fadiga recuperou mais rápido durante a perseguição final.",
-      { pieceId: piece.id, outcome: "rapid-fatigue-recovery" },
-    );
-  }
-
-  if (reactive) {
-    const continuesSequence =
-      piece.lastOwnExertionTurn === state.turn - 1 ||
-      piece.lastReactiveExertionTurn === state.turn;
-    if (!continuesSequence) piece.exertionStreak = 0;
-    piece.lastReactiveExertionTurn = state.turn;
-  } else {
-    if (piece.lastOwnExertionTurn === state.turn) return false;
-    const continuesSequence =
-      piece.lastOwnExertionTurn === state.turn - 2 ||
-      piece.lastReactiveExertionTurn === state.turn - 1;
-    if (!continuesSequence) piece.exertionStreak = 0;
-    piece.lastOwnExertionTurn = state.turn;
-  }
+  if (!reactive && piece.lastOwnEnergyExertionTurn === state.turn)
+    return false;
+  if (reactive) piece.lastReactiveEnergyExertionTurn = state.turn;
+  else piece.lastOwnEnergyExertionTurn = state.turn;
+  piece.lastEnergyActivityTurn = state.turn;
 
   if (piece.restorativeSleepCharge) {
     delete piece.restorativeSleepCharge;
     emitPassiveEffect(
       state,
       "Ciclo de Sono",
-      "😴 Sono Reparador absorveu o primeiro esforço após despertar.",
+      "😴 Sono Reparador tornou o primeiro esforço locomotor gratuito.",
       {
         pieceId: piece.id,
-        outcome: "restorative-sleep-absorbed-exertion",
-        value: 1,
+        outcome: "restorative-sleep-absorbed-energy-cost",
+        value: movementEnergyCost(piece),
       },
     );
     return true;
   }
 
-  piece.exertionStreak = (piece.exertionStreak ?? 0) + 1;
-  const normalLimit = fatigueLimit(piece),
-    endorphinAllowance = has(piece, "Endorfinas") ? 1 : 0;
-
-  if (
-    has(piece, "Endorfinas") &&
-    piece.exertionStreak === normalLimit + 1
-  )
-    emitPassiveEffect(
-      state,
-      "Endorfinas",
-      "😌 Endorfinas permitiram um último esforço além do limite normal de Fadiga.",
-      {
-        pieceId: piece.id,
-        outcome: "extended-fatigue-limit",
-        value: 1,
-      },
-    );
-
-  if (piece.exertionStreak >= normalLimit + endorphinAllowance)
-    scheduleFatigue(state, piece);
-  return true;
+  const cost = movementEnergyCost(piece);
+  if (reactive) {
+    applyEnergyDelta(piece, -cost, state.turn);
+    return true;
+  }
+  return spendEnergy(piece, cost, state.turn);
 }
 
-function recoverFatigueAfterTurn(state, owner, turn) {
+function recoverEnergyAfterTurn(state, owner, turn) {
   for (const piece of state.pieces) {
-    if (piece.owner !== owner || !has(piece, "Predação")) continue;
-    const exertedThisTurn = piece.lastOwnExertionTurn === turn;
-    if (piece.fatigueRestTurn === turn) {
-      if (safeForRestorativeSleep(state, piece, turn)) {
+    if (piece.owner !== owner) continue;
+    const inactive = piece.lastEnergyActivityTurn !== turn;
+    if (inactive && energyValue(piece) < energyCapacity(piece)) {
+      const before = energyValue(piece);
+      restoreEnergy(piece, 1);
+      if (
+        before < movementEnergyCost(piece) &&
+        safeForRestorativeSleep(state, piece, turn)
+      ) {
         piece.sleepingThroughTurn = turn + 1;
         piece.restorativeSleepCharge = true;
         emitPassiveEffect(
           state,
           "Ciclo de Sono",
-          "😴 Ciclo de Sono aprofundou o descanso em segurança · o próximo esforço não contará para Fadiga.",
+          "😴 Ciclo de Sono preparou um esforço locomotor gratuito após o repouso.",
           {
             pieceId: piece.id,
             outcome: "restorative-sleep",
@@ -1140,17 +1090,16 @@ function recoverFatigueAfterTurn(state, owner, turn) {
           },
         );
       }
-      delete piece.fatigueRestTurn;
-      piece.exertionStreak = 0;
-      delete piece.lastOwnExertionTurn;
-      delete piece.lastReactiveExertionTurn;
-      continue;
     }
-    if (!exertedThisTurn) {
-      piece.exertionStreak = 0;
-      delete piece.lastOwnExertionTurn;
-      delete piece.lastReactiveExertionTurn;
-    }
+    if (
+      piece.endosymbiosisEnergyDebt &&
+      energyValue(piece) >= reproductionEnergyCost(piece)
+    )
+      delete piece.endosymbiosisEnergyDebt;
+    delete piece.exertionStreak;
+    delete piece.fatigueRestTurn;
+    delete piece.lastOwnExertionTurn;
+    delete piece.lastReactiveExertionTurn;
   }
 }
 
@@ -1981,24 +1930,18 @@ function ruminationBlock(piece) {
 function tickRuminantRecovery(state, acting, before) {
   for (const piece of state.pieces) {
     if (!piece.rumination || piece.owner !== acting) continue;
-    if (
-      piece.rumination.block !== ruminationBlock(piece) ||
-      (piece.nextReproductionRound ?? 0) <= round(state)
-    ) {
+    if (piece.rumination.block !== ruminationBlock(piece)) {
       piece.rumination = null;
       continue;
     }
     if (piece.rumination.startedTurn >= before) continue;
-    piece.nextReproductionRound = Math.max(
-      round(state),
-      piece.nextReproductionRound - 1,
-    );
-    if (piece.nextReproductionRound <= round(state)) {
+    if (energyValue(piece) < energyCapacity(piece)) restoreEnergy(piece, 1);
+    if (energyValue(piece) >= reproductionEnergyCost(piece)) {
       piece.rumination = null;
       emitPassiveEffect(
         state,
         "Ruminante",
-        "🐄 Ruminante completou a recuperação metabólica dentro do mesmo bloco.",
+        "🐄 Ruminante completou a recuperação energética dentro do mesmo bloco.",
         {
           pieceId: piece.id,
           outcome: "completed-rumination",
@@ -2318,7 +2261,7 @@ function advanceTurn(ctx) {
     }
   tickParasitoidism(ctx, acting, before);
   tickRuminantRecovery(state, acting, before);
-  recoverFatigueAfterTurn(state, acting, before);
+  recoverEnergyAfterTurn(state, acting, before);
   for (const p of state.pieces) {
     moveDirection(p);
     if (
