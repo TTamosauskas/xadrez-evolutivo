@@ -258,8 +258,7 @@ export const GEOLOGICAL_STAGES = [
     chronology: { eon: "Proterozoico", era: "Neoproterozoica", period: "Ediacarano" },
     required: ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização", "Escavador", "Construtor de Nicho", "Biomineralização"],
     cycles: [
-      ["Simetria Bilateral", "Locomoção Primitiva"],
-      ["Cefalização"],
+      ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização"],
       ["Escavador", "Construtor de Nicho"],
       ["Biomineralização"],
     ],
