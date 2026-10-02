@@ -385,7 +385,6 @@ test("Fertilidade Longeva cancels only age-based infertility", () => {
       traits: ["Respiração anaeróbia", "Multicelularismo", "Simetria Bilateral"],
       bornRound: 0,
       maturesRound: 0,
-      nextReproductionRound: 0,
       pregnancies: [],
       lifetimeOffspring: 0,
     };
