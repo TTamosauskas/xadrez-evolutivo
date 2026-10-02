@@ -64,7 +64,7 @@ test("seeds share cells with ordinary movement and become food only for a ready 
 
   assert.equal(target?.seedCapture, seed.id);
 
-  actor.nextReproductionRound = 999;
+  actor.energy = movementEnergyCost(actor);
   const restingTarget = movesFor(granivore, actor).find(
     (candidate) => candidate.r === 4 && candidate.c === 1,
   );
