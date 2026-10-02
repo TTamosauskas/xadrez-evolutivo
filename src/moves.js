@@ -1288,6 +1288,78 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }];
   }
 
+  function cephalizationTargets() {
+    const stalledRounds = Math.max(
+      0,
+      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+    );
+    if (
+      !has(p, "Cefalização") ||
+      !has(p, "Predação") ||
+      !has(p, "Locomoção Primitiva") ||
+      has(p, "Séssil") ||
+      stalledRounds < 12 ||
+      targets.some((target) => {
+        if (!target.capture) return false;
+        const victim = at(state, target.r, target.c);
+        return !!victim && victim.owner !== p.owner;
+      })
+    )
+      return;
+
+    const candidates = state.pieces
+      .filter(
+        (victim) =>
+          victim.owner !== p.owner &&
+          !hibernating(state, victim) &&
+          distance(p, victim) === 2,
+      )
+      .sort((a, b) => a.id - b.id);
+
+    for (const victim of candidates) {
+      if (
+        targets.some(
+          (target) =>
+            target.r === victim.r &&
+            target.c === victim.c &&
+            target.capture,
+        )
+      )
+        continue;
+
+      const stepR = Math.sign(victim.r - p.r),
+        stepC = Math.sign(victim.c - p.c),
+        middleR = p.r + stepR,
+        middleC = p.c + stepC;
+      if (
+        !inside(middleR, middleC) ||
+        ecologicalDomainBlocked(state, p.owner, middleR, middleC) ||
+        at(state, middleR, middleC) ||
+        eggAt(state, middleR, middleC) ||
+        plantSeedAt(state, middleR, middleC) ||
+        fragmentAt(state, middleR, middleC) ||
+        barrierAt(state, middleR, middleC) ||
+        lethalHazardAt(state, middleR, middleC) ||
+        (terrestrialRestriction &&
+          terrain(state, middleR, middleC) !== "fertile")
+      )
+        continue;
+
+      add(
+        victim.r,
+        victim.c,
+        [
+          [middleR, middleC],
+          [victim.r, victim.c],
+        ],
+        {
+          cephalization: true,
+          noContinuation: true,
+        },
+      );
+    }
+  }
+
   const mobile =
     has(p, "Locomoção Primitiva") &&
     !has(p, "Séssil");
@@ -1325,6 +1397,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     trailMovementTargets();
     hypermetamorphosisTargets();
     massRecruitmentTargets();
+    cephalizationTargets();
   } else if (
     !has(p, "Séssil") &&
     (captureUnlocked(state, p) || contactCaptureUnlocked(p))

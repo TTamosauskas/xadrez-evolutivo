@@ -513,6 +513,7 @@ export const TRAIT_STAGE = {
   "Parasitismo": "cambrian",
   "Vetor Patógeno": "cretaceous",
   "Locomoção Primitiva": "ediacaran",
+  Cefalização: "ediacaran",
   "Serotonina": "ediacaran",
   "Dopamina": "ediacaran",
   "Endorfinas": "cambrian",
@@ -979,6 +980,9 @@ export const TRAIT_DEPENDENCIES = {
   "Vetor Patógeno": { lineage: ["Parasitismo"] },
   "Precocidade Sexual": { lineage: ["Reprodução Sexuada"] },
   "Locomoção Primitiva": { lineage: ["Predação"] },
+  Cefalização: {
+    lineage: ["Predação", "Multicelularismo", "Simetria Bilateral", "Locomoção Primitiva"],
+  },
   Serotonina: { lineage: ["Multicelularismo", "Locomoção Primitiva"] },
   Dopamina: { lineage: ["Multicelularismo", "Locomoção Primitiva"] },
   Vertebrado: { lineage: ["Locomoção Primitiva", "Simetria Bilateral"] },

@@ -84,6 +84,10 @@ export const TRAITS = {
     "🔀",
     "Permite deslocar-se uma casa para um espaço fértil; capturas continuam dependendo de Predação.",
   ],
+  Cefalização: [
+    "📍",
+    "Sob estagnação ofensiva, permite uma investida contra uma presa exatamente a duas casas quando a casa intermediária está livre e o trajeto é válido. A investida usa as defesas normais da presa e não pode ser encadeada com outra extensão de movimento.",
+  ],
   Serotonina: [
     "😊",
     "Após uma tentativa de captura ser frustrada por uma defesa, permite um reposicionamento voluntário para uma casa adjacente vazia válida e encerra o turno.",
