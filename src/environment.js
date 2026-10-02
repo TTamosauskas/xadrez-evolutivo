@@ -1876,6 +1876,45 @@ export function offensiveActionCount(state) {
   return count;
 }
 
+export function openOffensiveHabitatCorridor(state, pressure = 0) {
+  if (pressure < 2) return 0;
+  const stalledRounds = Math.max(
+    0,
+    round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+  );
+  if (stalledRounds < 16) return 0;
+
+  const corridor = nearestPopulationCorridor(state, { requireEdit: true });
+  if (!corridor) return 0;
+
+  const protectedCells = new Set([
+      ...state.barriers,
+      ...state.deathSites.map((site) => site.cell),
+      ...state.fertileTraces.map((trace) => trace.cell),
+      ...state.carcasses.map((entry) => entry.cell),
+      ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
+      ...(state.event?.hazards ?? []),
+    ]),
+    limit = pressure >= 3 ? 2 : 1;
+  let opened = 0;
+
+  for (const cell of corridor.path.slice(1, -1)) {
+    if (opened >= limit || protectedCells.has(cell)) continue;
+    if (state.board[cell] === "hostile") {
+      state.board[cell] = "neutral";
+      opened++;
+      continue;
+    }
+    if (state.naturalBarriers.includes(cell)) {
+      state.naturalBarriers = state.naturalBarriers.filter(
+        (barrier) => barrier !== cell,
+      );
+      opened++;
+    }
+  }
+  return opened;
+}
+
 function offensiveTerrainRepair(state) {
   const baseline = offensiveActionCount(state),
     candidates = allCells().filter((cell) => {
@@ -1982,6 +2021,12 @@ export function tickEnvironment(ctx) {
   ) {
     const pressure = habitatPressureLevel(state);
     advanceBasalCellularHabitat(ctx, pressure);
+    const opened = openOffensiveHabitatCorridor(state, pressure);
+    if (opened > 0)
+      log(
+        state,
+        `Corredor ecológico abriu ${opened} passagem(ns) sob pressão ofensiva prolongada.`,
+      );
     state.nextHabitatRound += habitatIntervalRounds(pressure);
   }
 
