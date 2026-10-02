@@ -5,6 +5,7 @@ import { simulate } from "../src/engine.js";
 import { movesFor } from "../src/moves.js";
 import { createState, newPiece } from "../src/state.js";
 import { traitUnlocked } from "../src/geology.js";
+import { movementEnergyCost } from "../src/energy.js";
 
 function addSeed(state, owner, r, c) {
   const seed = {
