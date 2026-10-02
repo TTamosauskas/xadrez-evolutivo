@@ -200,7 +200,6 @@ function normalizeCycleInnovationPressure(state) {
     piece.rumination ??= null;
     piece.eukaryoteBufferUses ??= 0;
     piece.eukaryoteBufferedTraits ??= [];
-    piece.endosymbiosisDebtUntilRound ??= null;
     piece.adaptiveImmuneMemory ??= [];
     piece.adaptiveImmuneNotifiedDisease ??= null;
     piece.stomataStartedRound ??= piece.bornRound ?? 0;
@@ -446,11 +445,12 @@ function migrateUnifiedEnergy(state) {
       piece.endosymbiosisDebtUntilRound > currentRound
     )
       piece.endosymbiosisEnergyDebt = true;
-    piece.nextReproductionRound = currentRound;
-    piece.exertionStreak = 0;
+    delete piece.nextReproductionRound;
+    delete piece.exertionStreak;
     delete piece.fatigueRestTurn;
     delete piece.lastOwnExertionTurn;
     delete piece.lastReactiveExertionTurn;
+    delete piece.endosymbiosisDebtUntilRound;
   }
   return state;
 }
