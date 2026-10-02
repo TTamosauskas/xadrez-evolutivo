@@ -475,7 +475,7 @@ test("geological phases follow the expanded didactic sequence and declare mandat
   ]);
   assert.deepEqual(byId.neoarchean.cycles, [["Dormência"]]);
   assert.deepEqual(byId.ediacaran.cycles, [
-    ["Simetria Bilateral", "Locomoção Primitiva"],
+    ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização"],
     ["Escavador", "Construtor de Nicho"],
     ["Biomineralização"],
   ]);
@@ -1331,6 +1331,7 @@ test("evolutionary dependencies follow lineage ancestry without cumulative trait
     "Multicelularismo",
     "Simetria Bilateral",
     "Locomoção Primitiva",
+    "Cefalização",
   ];
   p.traits = ["Multicelularismo"];
   assert.equal(traitUnlocked(s, "Escavador", p), true);
