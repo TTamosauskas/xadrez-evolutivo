@@ -89,16 +89,28 @@ test("Cefalização does not activate before offensive stagnation reaches 8 roun
 });
 
 test("Cefalização remains available even when another immediate capture exists", () => {
-  const state = pursuitState();
-  state.pieces.push({
-    id: 99,
-    owner: "amber",
-    rank: 0,
-    r: 4,
-    c: 5,
-    traits: [],
-    ancestry: [],
-  });
+  const state = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      traits: ["Cefalização"],
+    },
+    {
+      owner: "amber",
+      r: 2,
+      c: 4,
+    },
+    {
+      owner: "amber",
+      r: 4,
+      c: 5,
+    },
+  ]);
+  state.turn = 16;
+  state.current = "blue";
+  state.lastSuccessfulCaptureRound = 0;
+
   const predator = state.pieces.find((piece) => piece.owner === "blue"),
     targets = movesFor(state, predator);
 
