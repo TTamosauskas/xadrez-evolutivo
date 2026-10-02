@@ -489,8 +489,8 @@ test("each original Hadean King guarantees chemosynthesis on its first reproduct
     undefined,
   );
   assert.equal(
-    s.pieces.find((piece) => piece.id === blue.id).nextReproductionRound,
-    round(s),
+    energyValue(s.pieces.find((piece) => piece.id === blue.id)),
+    energyCapacity(s.pieces.find((piece) => piece.id === blue.id)),
   );
   assert.equal(
     s.passiveEffects.some(
@@ -514,9 +514,9 @@ test("each original Hadean King guarantees chemosynthesis on its first reproduct
   );
   assert.ok(amberFirstChild);
   assert.ok(amberFirstChild.traits.includes("Quimiossíntese"));
-  assert.ok(
-    s.pieces.find((piece) => piece.id === amber.id).nextReproductionRound <=
-      round(s),
+  assert.equal(
+    energyValue(s.pieces.find((piece) => piece.id === amber.id)),
+    energyCapacity(s.pieces.find((piece) => piece.id === amber.id)),
   );
   assertState(s);
 });
@@ -536,7 +536,6 @@ test("later Hadean offspring use an exact 50 percent chemosynthesis gate", () =>
     parent.ancestry = [...parent.traits];
     parent.genome = genomeFromTraits(parent.traits);
     syncGenomePhenotype(parent);
-    parent.nextReproductionRound = round(s);
     s.board[square(parent.r, parent.c)] = "fertile";
     s.rng = rng;
     const before = new Set(s.pieces.map((piece) => piece.id)),
@@ -570,7 +569,6 @@ test("offspring exhaust viable adjacent cells before using lethal cells", () => 
   parent.c = 2;
   rival.r = 5;
   rival.c = 5;
-  parent.nextReproductionRound = round(s);
   const before = new Set(s.pieces.map((piece) => piece.id));
 
   const born = reproduce(context(s), parent, null, "teste", {
@@ -741,15 +739,15 @@ test("Hadean chemosynthesis turns a cell fertile one turn after hostile pressure
   );
   assert.equal(s.hadeanTutorial.fertile, false);
 
-  const cooldownBeforeConversion = s.pieces.find(
-    (piece) => piece.id === sample.child.id,
-  ).nextReproductionRound;
+  const energyBeforeConversion = energyValue(
+    s.pieces.find((piece) => piece.id === sample.child.id),
+  );
   s = transition(s, { type: "PASS" });
   assert.equal(s.board[cell], "fertile");
   assert.equal(s.hadeanTutorial.fertile, true);
   assert.equal(
-    s.pieces.find((piece) => piece.id === sample.child.id).nextReproductionRound,
-    cooldownBeforeConversion,
+    energyValue(s.pieces.find((piece) => piece.id === sample.child.id)),
+    energyBeforeConversion,
   );
   assert.equal(
     s.passiveEffects.some(
@@ -2434,7 +2432,6 @@ test("natural infertility does not cancel a viviparous pregnancy already in prog
   s.turn = 58;
   parent.bornRound = 0;
   parent.maturesRound = 0;
-  parent.nextReproductionRound = 0;
   assert.equal(pieceAge(s, parent), 29);
   assert.equal(reproductionReady(s, parent), true);
   assert.equal(
@@ -2504,7 +2501,8 @@ test("Hadean ecological domain triggers as soon as all 16 playable cells are occ
     const cell = playable[index],
       owner = index < 8 ? "blue" : "amber",
       piece = newPiece(s, owner, cell.r, cell.c, { rank: 4 });
-    piece.nextReproductionRound = round(s) + 100;
+    piece.energy = 0;
+    piece.energyCapacitySnapshot = energyCapacity(piece);
     piece.maturesRound = round(s) + 10;
     s.pieces.push(piece);
   }
@@ -2514,7 +2512,8 @@ test("Hadean ecological domain triggers as soon as all 16 playable cells are occ
 
   const last = playable.at(-1),
     finalPiece = newPiece(s, "blue", last.r, last.c, { rank: 4 });
-  finalPiece.nextReproductionRound = round(s) + 100;
+  finalPiece.energy = 0;
+  finalPiece.energyCapacitySnapshot = energyCapacity(finalPiece);
   finalPiece.maturesRound = round(s) + 10;
   s.pieces.push(finalPiece);
 
@@ -2994,7 +2993,8 @@ test("capture without trophic reproduction keeps disturbance for the carcass lif
     { owner: "amber", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  s.pieces[0].nextReproductionRound = round(s) + 10;
+  s.pieces[0].energy = movementEnergyCost(s.pieces[0]);
+  s.pieces[0].energyCapacitySnapshot = energyCapacity(s.pieces[0]);
   s = simulate(s, move(s.pieces[0], 4, 4));
   let attacker = s.pieces.find((piece) => piece.id === 1);
   assert.equal(s.deathSites.length, 0);
@@ -3035,7 +3035,8 @@ test("capture disturbance preserves fertile terrain underneath", () => {
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.board[36] = "fertile";
-  s.pieces[0].nextReproductionRound = round(s) + 10;
+  s.pieces[0].energy = movementEnergyCost(s.pieces[0]);
+  s.pieces[0].energyCapacitySnapshot = energyCapacity(s.pieces[0]);
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.equal(s.deathSites.length, 0);
   assert.equal(s.carcasses.length, 0);
