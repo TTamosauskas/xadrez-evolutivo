@@ -8,6 +8,7 @@ import {
   GEOLOGICAL_STAGES,
   TRAIT_STAGE,
   TRAIT_DEPENDENCIES,
+  PLANT_INCOMPATIBLE_TRAITS,
 } from "../src/geology.js";
 
 function pursuitState() {
@@ -53,6 +54,7 @@ test("Cefalização is mandatory in the Ediacaran and precedes both Cambrian bod
   );
   assert.ok(TRAIT_DEPENDENCIES.Vertebrado.lineage.includes("Cefalização"));
   assert.ok(TRAIT_DEPENDENCIES["Artrópode"].lineage.includes("Cefalização"));
+  assert.ok(PLANT_INCOMPATIBLE_TRAITS.has("Cefalização"));
 });
 
 test("Cefalização creates a pursuit capture exactly two cells away after 12 stalled rounds", () => {
