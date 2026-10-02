@@ -23,6 +23,7 @@ import {
   attemptHorizontalTransfer,
   canBud,
 } from "../src/reproduction-traits.js";
+import { energyValue } from "../src/energy.js";
 
 test("Biofilme shares one occupied fertile resource across a connected network per round", () => {
   let s = fixture([
@@ -339,20 +340,42 @@ test("tentativa infrutífera elimina a ninhada inteira e emite feedback", () => 
   assertState(s);
 });
 
-test("consumir Casa Fértil para Vivificar recupera 1 Fadiga", () => {
+test("Vivificação infrutífera em Casa Fértil recupera exatamente 1 Energia", () => {
   const s = fixture([
       { owner: "blue", r: 4, c: 4, rank: 0 },
       { owner: "amber", r: 0, c: 0 },
     ]),
     parent = s.pieces[0],
-    cell = parent.r * 8 + parent.c;
-  parent.exertionStreak = 3;
-  parent.fatigueRestTurn = s.turn + 2;
+    cell = parent.r * 8 + parent.c,
+    nextRoll = (seed) =>
+      ((Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
+  let seed = 1;
+  while (nextRoll(seed) < 0.9) seed++;
+  s.disableReproductiveSuccessPressure = false;
+  s.rng = seed;
+  parent.energy = 2;
   s.board[cell] = "fertile";
 
-  assert.equal(consumeReproductionResource(s, parent, cell), 1);
-  assert.equal(parent.exertionStreak, 2);
-  assert.equal(parent.fatigueRestTurn, undefined);
+  assert.equal(
+    reproduce(context(s), parent, null, "casa fértil", {
+      forcedCount: 4,
+      immediateDevelopment: true,
+      ignoreReadiness: true,
+      resourceCell: cell,
+      resourceKind: "fertile",
+      resourceProviderId: parent.id,
+    }),
+    0,
+  );
+  assert.equal(s.board[cell], "neutral");
+  assert.equal(energyValue(parent), 3);
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Reprodução infrutífera" &&
+        /recuperou 1 Energia/.test(effect.text),
+    ),
+  );
   assertState(s);
 });
 
