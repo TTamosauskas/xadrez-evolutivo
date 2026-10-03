@@ -43,15 +43,25 @@ export const ARENA_TRAIT_LIMITS = Object.freeze(
   Object.fromEntries(ARENA_BRANCHES.map((branch) => [branch.id, branch.limit])),
 );
 export const ARENA_RANKS = Object.freeze([0, 1, 2, 3, 4, 5]);
-export const ARENA_BODY_PLANS = Object.freeze(["Vertebrado", "Artrópode"]);
-export const oppositeArenaBodyPlan = (bodyPlan) =>
-  bodyPlan === "Vertebrado" ? "Artrópode" : "Vertebrado";
+export const ARENA_BODY_PLANS = Object.freeze([
+  "Vertebrado",
+  "Artrópode",
+  "Molusco",
+]);
+export const otherArenaBodyPlans = (bodyPlan) =>
+  ARENA_BODY_PLANS.filter((candidate) => candidate !== bodyPlan);
+export const oppositeArenaBodyPlan = (bodyPlan, offset = 0) => {
+  const alternatives = otherArenaBodyPlans(bodyPlan);
+  return (
+    alternatives[
+      Math.abs(Number(offset) || 0) % Math.max(1, alternatives.length)
+    ] ??
+    ARENA_BODY_PLANS.find((candidate) => candidate !== bodyPlan) ??
+    ARENA_BODY_PLANS[0]
+  );
+};
 export const arenaBodyPlan = (genome = []) =>
-  genome.includes("Artrópode")
-    ? "Artrópode"
-    : genome.includes("Vertebrado")
-      ? "Vertebrado"
-      : null;
+  ARENA_BODY_PLANS.find((plan) => genome.includes(plan)) ?? null;
 const ARENA_BRANCH_RANK_VALUES = Object.freeze({
   animal: Object.freeze([1, 3, 4, 5, 2, 6]),
   plant: Object.freeze([1, 3, 3, 5, 100, 9]),
@@ -72,7 +82,8 @@ export const ARENA_PRESETS = Object.freeze({
     { id: "protoanimal", stage: "proterozoic", label: "Protoanimal filtrador", traits: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada"] },
     { id: "dickinsonia", stage: "ediacaran", label: "Dickinsonia", traits: ["Predação", "Multicelularismo", "Simetria Bilateral", "Locomoção Primitiva"], note: "Na Arena, Predação representa a raiz heterotrófica do Ramo Animal; não implica predação macroscópica para Dickinsonia." },
     { id: "anomalocaris", stage: "cambrian", label: "Anomalocaris", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Carnívoro", "Carapaça"] },
-    { id: "nautiloid", stage: "ordovician", label: "Nautiloide gigante", traits: ["Predação", "Multicelularismo", "Jatopropulsão", "Corpo Gelatinoso", "Carnívoro", "Ovíparo", "Camuflagem"] },
+    { id: "nautiloid", stage: "ordovician", label: "Nautiloide gigante", traits: ["Predação", "Multicelularismo", "Molusco", "Jatopropulsão", "Percepção Espacial", "Corpo Gelatinoso", "Carnívoro", "Ovíparo", "Camuflagem", "Carapaça"] },
+    { id: "coleoid", stage: "carboniferous", label: "Cefalópode coleoide", traits: ["Predação", "Multicelularismo", "Molusco", "Jatopropulsão", "Percepção Espacial", "Corpo Gelatinoso", "Tinta", "Carnívoro", "Ovíparo", "Camuflagem"] },
     { id: "eurypterid", stage: "silurian", label: "Euriptérido", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Carapaça"] },
     { id: "dunkleosteus", stage: "devonian", label: "Dunkleosteus", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Carnívoro", "Mandíbula", "Carapaça"] },
     { id: "meganeura", stage: "carboniferous", label: "Meganeura", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Voo", "Carnívoro", "Visão Binocular"] },
@@ -152,16 +163,19 @@ export function arenaTraitBranch(trait) {
 
 function arenaTraitAllowedForBodyPlan(trait, bodyPlan) {
   if (!bodyPlan) return true;
-  const opposite = oppositeArenaBodyPlan(bodyPlan),
+  const otherPlans = otherArenaBodyPlans(bodyPlan),
     dependencies = TRAIT_DEPENDENCIES[trait] ?? {};
-  if (trait === opposite) return false;
-  if ((dependencies.lineage ?? []).includes(opposite)) return false;
-  if ((dependencies.active ?? []).includes(opposite)) return false;
+  if (otherPlans.includes(trait)) return false;
   if (
-    dependencies.lineageAny?.length &&
-    dependencies.lineageAny.includes(opposite) &&
-    !dependencies.lineageAny.includes(bodyPlan)
+    [...(dependencies.lineage ?? []), ...(dependencies.active ?? [])].some(
+      (dependency) => otherPlans.includes(dependency),
+    )
   )
+    return false;
+  const planAlternatives = (dependencies.lineageAny ?? []).filter(
+    (dependency) => ARENA_BODY_PLANS.includes(dependency),
+  );
+  if (planAlternatives.length && !planAlternatives.includes(bodyPlan))
     return false;
   return true;
 }
@@ -231,12 +245,18 @@ function preferredArenaScope(preferred) {
   return null;
 }
 
-function preferredDependency(dependencies, preferred) {
-  const scope = preferredArenaScope(preferred);
+function preferredDependency(dependencies, preferred, activeTraits = null) {
+  const bodyPlan = ARENA_BODY_PLANS.find((plan) => activeTraits?.has(plan)),
+    eligible = bodyPlan
+      ? dependencies.filter((dependency) =>
+          arenaTraitAllowedForBodyPlan(dependency, bodyPlan),
+        )
+      : dependencies,
+    scope = preferredArenaScope(preferred);
   return (
-    dependencies.find((dependency) => arenaTraitBranch(dependency) === scope) ??
-    dependencies.find((dependency) => arenaTraitBranch(dependency) === "shared") ??
-    dependencies[0] ??
+    eligible.find((dependency) => arenaTraitBranch(dependency) === scope) ??
+    eligible.find((dependency) => arenaTraitBranch(dependency) === "shared") ??
+    eligible[0] ??
     null
   );
 }
@@ -270,7 +290,7 @@ export function completeArenaGenome(input, preferred = null) {
         deps?.lineageAny?.length &&
         !deps.lineageAny.some((dependency) => set.has(dependency))
       ) {
-        const dependency = preferredDependency(deps.lineageAny, preferred);
+        const dependency = preferredDependency(deps.lineageAny, preferred, set);
         if (dependency && dependency !== BASAL) {
           set.add(dependency);
           changed = true;
@@ -316,6 +336,11 @@ export function arenaAllowedRanks(genome, branchId) {
       allowed = [1, 2, 3, 4, 5];
     else if (articulated && completed.includes("Artrópode"))
       allowed = [1, 2, 4];
+    else if (
+      completed.includes("Molusco") &&
+      completed.includes("Jatopropulsão")
+    )
+      allowed = [2, 3, 4];
     else allowed = [4];
   }
 
@@ -380,12 +405,19 @@ export function arenaRankRestrictionReason(genome, rank, branchId) {
       return "Peão é exclusivo do ramo fotossintético.";
     if (completed.includes("Artrópode") && [3, 5].includes(rank))
       return "Artrópodes não podem assumir Torre ou Rainha.";
+    if (completed.includes("Molusco")) {
+      if ([1, 5].includes(rank))
+        return "Moluscos usam Rei, Bispo ou Torre.";
+      if ([2, 3].includes(rank) && !completed.includes("Jatopropulsão"))
+        return "Formas derivadas moluscas exigem Jatopropulsão.";
+    }
     if (
       [1, 2, 3, 5].includes(rank) &&
+      !completed.includes("Molusco") &&
       (!completed.includes("Locomoção Articulada") ||
         (!completed.includes("Vertebrado") && !completed.includes("Artrópode")))
     )
-      return "Formas derivadas animais exigem Locomoção Articulada e Vertebrado ou Artrópode.";
+      return "Formas derivadas de Vertebrados e Artrópodes exigem Locomoção Articulada.";
   }
   return "Esta forma é incompatível com o genoma selecionado.";
 }
@@ -415,7 +447,9 @@ export function arenaGenomeValid(genome, branchId = null) {
     normalizedBillable = normalized.filter(
       (trait) => !ARENA_FOUNDATIONAL_TRAITS.has(trait),
     );
-  if (normalized.includes("Vertebrado") && normalized.includes("Artrópode"))
+  if (
+    ARENA_BODY_PLANS.filter((plan) => normalized.includes(plan)).length > 1
+  )
     return false;
   if (branch) {
     if (!normalized.includes(branch.energy)) return false;

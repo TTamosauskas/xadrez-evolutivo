@@ -30,6 +30,7 @@ import {
   TRAIT_BRANCH_SCOPE,
   TRAIT_STAGE,
   TRAIT_DEPENDENCIES,
+  BODY_PLAN_TRAITS,
   recordHistoricalTraits,
   stageComplete,
   traitCombinationValid,
@@ -1708,15 +1709,21 @@ function earthFounderRecessives(historicalTraits, activeTraits, plant) {
 
 
 function bodyPlanTraitCompatible(trait, bodyPlan) {
-  const opposite = bodyPlan === "Vertebrado" ? "Artrópode" : "Vertebrado";
-  if (trait === opposite) return false;
-  const dependencies = TRAIT_DEPENDENCIES[trait] ?? {};
-  if ((dependencies.lineage ?? []).includes(opposite)) return false;
+  const otherPlans = [...BODY_PLAN_TRAITS].filter(
+      (candidate) => candidate !== bodyPlan,
+    ),
+    dependencies = TRAIT_DEPENDENCIES[trait] ?? {};
+  if (otherPlans.includes(trait)) return false;
   if (
-    dependencies.lineageAny?.length &&
-    dependencies.lineageAny.includes(opposite) &&
-    !dependencies.lineageAny.includes(bodyPlan)
+    [...(dependencies.lineage ?? []), ...(dependencies.active ?? [])].some(
+      (dependency) => otherPlans.includes(dependency),
+    )
   )
+    return false;
+  const planAlternatives = (dependencies.lineageAny ?? []).filter(
+    (dependency) => BODY_PLAN_TRAITS.has(dependency),
+  );
+  if (planAlternatives.length && !planAlternatives.includes(bodyPlan))
     return false;
   return true;
 }
@@ -1808,6 +1815,14 @@ function previewFounderProfiles(stageIndex) {
         inheritedRepair,
         inheritedBilateral,
       ),
+      molluskFounder = bodyPlanFounderProfile(
+        stageIndex,
+        stage.id,
+        "Molusco",
+        persistent,
+        inheritedRepair,
+        inheritedBilateral,
+      ),
       plantAncestry = [
         ...new Set([
           ...earthFounderLegacyTraits(stageIndex, "Fotossíntese"),
@@ -1863,10 +1878,11 @@ function previewFounderProfiles(stageIndex) {
         ),
       },
       bodyPlans:
-        vertebrateFounder && arthropodFounder
+        vertebrateFounder && arthropodFounder && molluskFounder
           ? {
               Vertebrado: vertebrateFounder,
               Artrópode: arthropodFounder,
+              Molusco: molluskFounder,
             }
           : null,
     };
@@ -1956,11 +1972,16 @@ export function createPeriodState(
   const bodyPlans = preview.bodyPlans;
   let ownerFounders = null;
   if (bodyPlans) {
-    const bluePlan =
-        scenario === "alternative" && ((Number(seed) >>> 0) & 1)
-          ? "Artrópode"
+    const availablePlans = Object.keys(bodyPlans),
+      bluePlan =
+        scenario === "alternative"
+          ? availablePlans[(Number(seed) >>> 0) % availablePlans.length]
           : "Vertebrado",
-      amberPlan = bluePlan === "Vertebrado" ? "Artrópode" : "Vertebrado";
+      alternatives = availablePlans.filter((plan) => plan !== bluePlan),
+      amberPlan =
+        scenario === "alternative"
+          ? alternatives[(Number(seed) >>> 8) % alternatives.length]
+          : "Artrópode";
     ownerFounders = {
       blue: { primary: preview.primary, companion: bodyPlans[bluePlan] },
       amber: { primary: preview.primary, companion: bodyPlans[amberPlan] },
@@ -2498,9 +2519,11 @@ function ownerBodyPlan(previous, owner) {
       !canPhotosynthesize(piece) &&
       (piece.traits ?? []).includes("Predação"),
   ).piece;
-  if (animal?.traits?.includes("Artrópode")) return "Artrópode";
-  if (animal?.traits?.includes("Vertebrado")) return "Vertebrado";
-  return null;
+  return (
+    [...BODY_PLAN_TRAITS].find((plan) =>
+      animal?.traits?.includes(plan),
+    ) ?? null
+  );
 }
 
 function createEarthSuccessorState(previous, seed) {
@@ -2727,11 +2750,20 @@ export function createSuccessorState(previous, seed = Date.now()) {
       previewNonPhotosynthetic,
     founders = { primary: founder, companion },
     bodyPlans = preview.bodyPlans,
+    availablePlans = bodyPlans ? Object.keys(bodyPlans) : [],
     priorBluePlan = ownerBodyPlan(previous, "blue"),
+    priorAmberPlan = ownerBodyPlan(previous, "amber"),
     bluePlan =
       priorBluePlan ??
-      (((Number(seed) >>> 0) & 1) ? "Artrópode" : "Vertebrado"),
-    amberPlan = bluePlan === "Vertebrado" ? "Artrópode" : "Vertebrado",
+      availablePlans[(Number(seed) >>> 0) % Math.max(1, availablePlans.length)] ??
+      "Vertebrado",
+    alternativePlans = availablePlans.filter((plan) => plan !== bluePlan),
+    amberPlan =
+      priorAmberPlan && priorAmberPlan !== bluePlan
+        ? priorAmberPlan
+        : alternativePlans[
+            (Number(seed) >>> 8) % Math.max(1, alternativePlans.length)
+          ] ?? "Artrópode",
     alternativeOwnerFounders = bodyPlans
       ? {
           blue: {

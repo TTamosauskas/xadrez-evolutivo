@@ -248,9 +248,58 @@ export const EARTH_CAMBRIAN_VERTEBRATE_FOUNDER = Object.freeze({
   rank: 0,
 });
 
+const MOLLUSK_FOUNDER_STAGE_IDS = Object.freeze([
+  "cambrian",
+  "ordovician",
+  "silurian",
+  "devonian",
+  "carboniferous",
+  "permian",
+  "triassic",
+  "jurassic",
+  "cretaceous",
+  "paleocene",
+  "eocene",
+  "oligocene",
+  "miocene",
+  "pliocene",
+  "pleistocene",
+  "holocene",
+]);
+
+function molluskFounderGenome(stageId) {
+  const index = MOLLUSK_FOUNDER_STAGE_IDS.indexOf(stageId);
+  if (index < 0) return null;
+  const animal = [
+    "Predação",
+    "Multicelularismo",
+    "Ingestão",
+    "Respiração aeróbia",
+    "Reprodução Sexuada",
+    "Simetria Bilateral",
+    "Locomoção Primitiva",
+    "Cefalização",
+    "Molusco",
+    "Jatopropulsão",
+    "Percepção Espacial",
+    "Carnívoro",
+    "Biomineralização",
+    "Carapaça",
+  ];
+  if (index >= 1) animal.push("Ovíparo", "Camuflagem");
+  if (index >= 2) animal.push("Locomoção Terrestre");
+  if (index >= 4) animal.push("Corpo Gelatinoso", "Tinta");
+  if (index >= 5) animal.push("Contorcionismo", "Mimetismo");
+  return {
+    animal: [...new Set(animal)],
+    rank: index === 0 ? 4 : index < 3 ? 2 : 3,
+  };
+}
+
 export function earthBodyPlanFounder(stageId, bodyPlan) {
   if (bodyPlan === "Artrópode")
     return EARTH_ARTHROPOD_FOUNDER_GENOMES[stageId] ?? null;
+  if (bodyPlan === "Molusco") return molluskFounderGenome(stageId);
   if (bodyPlan !== "Vertebrado") return null;
   if (stageId === "cambrian") return EARTH_CAMBRIAN_VERTEBRATE_FOUNDER;
   const profile = EARTH_FOUNDER_GENOMES[stageId];
@@ -314,7 +363,7 @@ export function earthFounderHistory(stageId, branch) {
 }
 
 const CONTEXT_AFFINITIES = {
-  "Percepção Espacial": ["Locomoção Articulada"],
+  "Percepção Espacial": ["Locomoção Articulada", "Jatopropulsão"],
   "Respiração Pulmonar": ["Vertebrado", "Locomoção Terrestre"],
   Carapaça: ["Predação"],
   Ingestão: ["Multicelularismo", "Predação"],
