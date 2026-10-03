@@ -2401,18 +2401,21 @@ export function reproduce(
         state,
         `${OWNERS[parent.owner]}: 🥀 Reprodução infrutífera por ${reason}; a tentativa não gerou descendentes${energyGain ? ` e recuperou ${energyGain} Energia` : ""}.`,
       );
-      emitPassiveEffect(
-        state,
-        "Reprodução infrutífera",
-        energyGain
-          ? `🥀 Reprodução infrutífera — nenhum descendente foi gerado. Vivificar recuperou ${energyGain} Energia.`
-          : "🥀 Reprodução infrutífera — a tentativa não gerou descendentes.",
-        {
-          pieceId: parent.id,
-          outcome: "infruitful-reproduction",
-          value: Math.round(successRate * 100),
-        },
-      );
+      if (!state.seen.includes("tutorial-infruitful-reproduction")) {
+        state.seen.push("tutorial-infruitful-reproduction");
+        emitPassiveEffect(
+          state,
+          "Reprodução infrutífera",
+          "Reprodução infrutífera. Sem prole a peça recupera energia.",
+          {
+            pieceId: parent.id,
+            outcome: "tutorial-infruitful-reproduction",
+            theme: "tutorial-tooltip",
+            targetR: parent.r,
+            targetC: parent.c,
+          },
+        );
+      }
       return 0;
     }
   }
