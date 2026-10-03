@@ -544,7 +544,7 @@ export const MUTATION_DISCOVERY_TOPICS = {
   Rádula: ["Rádula", "A rádula é uma faixa denticulada usada por muitos moluscos para raspar ou cortar alimento; no jogo, converte fertilidade adjacente em Energia."],
   Bisso: ["Bisso", "Fios de bisso fixam diversos bivalves a substratos submersos; no jogo, permitem ocupar barreiras naturais ou temporárias sem destruí-las."],
   "Concha Camerada": ["Concha camerada", "Câmaras internas e o sifúnculo participam do controle de flutuabilidade em cefalópodes conchíferos; no jogo, especializam a proteção ambiental da Carapaça."],
-  "Ventosas Quimiotáteis": ["Ventosas de cefalópodes", "Ventosas combinam aderência, tato e quimiorrecepção; no jogo, seguram a presa e neutralizam fugas baseadas em deslocamento."],
+  "Ventosas Quimiotáteis": ["Ventosas de cefalópodes", "Ventosas combinam aderência, tato e quimiorrecepção; no jogo, seguram a presa e neutralizam fugas reativas baseadas em deslocamento."],
   "Regeneração de Braços": ["Regeneração em cefalópodes", "Cefalópodes conseguem regenerar braços, musculatura e tecido nervoso; no jogo, uma forma perdida por Autotomia retorna depois de três turnos próprios."],
   "Visão Polarizada": ["Visão de polarização", "Cefalópodes detectam padrões de luz polarizada; no jogo, essa via visual melhora a detecção de Camuflagem e conserva percepção curta dentro da Tinta."],
   "Tentáculo Preênsil": ["Tentáculos de cefalópodes", "Tentáculos especializados podem projetar-se, prender a presa e retraí-la para os braços; no jogo, puxam um inimigo distante para contato."],
