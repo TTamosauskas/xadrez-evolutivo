@@ -293,7 +293,12 @@ function molluskFounderGenome(stageId) {
   if (index >= 4)
     animal.push("Corpo Gelatinoso", "Ventosas Quimiotáteis", "Tinta");
   if (index >= 5)
-    animal.push("Contorcionismo", "Mimetismo", "Regeneração de Braços");
+    animal.push(
+      "Contorcionismo",
+      "Mimetismo",
+      "Autotomia",
+      "Regeneração de Braços",
+    );
   if (index >= 7)
     animal.push("Visão Polarizada", "Tentáculo Preênsil");
   if (index >= 8) animal.push("Cromatóforos Neurais");
