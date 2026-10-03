@@ -157,6 +157,12 @@ export function actionableTraitsForPiece(state, piece) {
       actionable.add("Parasitismo de Ninhada");
     if (action.type === "REJECT_BROOD_PARASITE") actionable.add("Incubação");
     if (action.type === "RHIZOME") actionable.add("Rizoma");
+    if (["MONOCARP_STORE", "MONOCARP_BLOOM"].includes(action.type))
+      actionable.add("Monocarpismo");
+    if (action.type === "PARTNER" && has(piece, "Mimetismo Sexual")) {
+      const mate = state.pieces.find((candidate) => candidate.id === action.id);
+      if (mate && distance(piece, mate) > 1) actionable.add("Mimetismo Sexual");
+    }
     if (action.type === "CHEMOSYNTHESIS") actionable.add("Quimiossíntese");
     if (action.type === "FIX_NITROGEN")
       actionable.add("Fixação de Nitrogênio");
@@ -170,8 +176,15 @@ export function actionableTraitsForPiece(state, piece) {
       actionable.add(action.trait);
   }
 
-  const targets = movesFor(state, piece),
-    reproductiveReady =
+  const targets = movesFor(state, piece);
+  if (targets.some((target) => target.haustoriumDrain))
+    actionable.add("Haustório");
+  if (targets.some((target) => target.botanicalPredation === "Carnivoria"))
+    actionable.add("Carnivoria");
+  if (targets.some((target) => target.botanicalCapture === "Hemiepifitismo"))
+    actionable.add("Hemiepifitismo");
+
+  const reproductiveReady =
       reproductionReady(state, piece) || paedogenesisReady(state, piece),
     locomotionTrait = firstExplicitTrait(piece, [
       "Locomoção Terrestre",
@@ -821,6 +834,16 @@ function addActiveStateTraits(state, piece, traits) {
 
   if (piece.xerophyteWaterReserve && has(piece, "Xerofitismo"))
     traits.add("Xerofitismo");
+  if (piece.carnivoryNutrition && has(piece, "Carnivoria"))
+    traits.add("Carnivoria");
+  if (
+    Number.isInteger(piece.sismonastiaClosedThroughTurn) &&
+    state.turn <= piece.sismonastiaClosedThroughTurn &&
+    has(piece, "Sismonastia")
+  )
+    traits.add("Sismonastia");
+  if ((piece.monocarpismCharges ?? 0) > 0 && has(piece, "Monocarpismo"))
+    traits.add("Monocarpismo");
   if (piece.renalWaterReserve && has(piece, "Rim Concentrador"))
     traits.add("Rim Concentrador");
   if (
@@ -1141,6 +1164,18 @@ function markCaptureContext(state, attacker, victim, byId) {
         "Escamas",
       ])
         if (has(victim, trait)) victimTraits.add(trait);
+    if (has(victim, "Sismonastia"))
+      victimTraits.add("Sismonastia");
+    if (
+      has(victim, "Armadilha Deceptiva") &&
+      !has(attacker, "Fotossíntese")
+    )
+      victimTraits.add("Armadilha Deceptiva");
+    if (
+      has(victim, "Polinização Deceptiva") &&
+      has(attacker, "Artrópode")
+    )
+      victimTraits.add("Polinização Deceptiva");
     if (has(victim, "Madeira")) {
       victimTraits.add("Madeira");
       if (has(attacker, "Roedor")) attackerTraits.add("Roedor");
