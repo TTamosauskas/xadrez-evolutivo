@@ -162,6 +162,14 @@ test("Ventosas Quimiotáteis suppress Tinta in adjacent captures", () => {
   gripped = simulate(gripped, move(grippedAttacker, 4, 4));
   assert.equal(gripped.pieces.some((piece) => piece.id === grippedVictimId), false);
   assert.equal(gripped.inkClouds.length, 0);
+  assert.ok(
+    gripped.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Ventosas Quimiotáteis" &&
+        effect.outcome === "suppressed-reactive-escape" &&
+        /Tinta/.test(effect.text),
+    ),
+  );
 });
 
 test("Regeneração de Braços restores a Mollusk form after three own turns", () => {
@@ -325,4 +333,12 @@ test("Cromatóforos Neurais use self-vivification and remove both attack directi
   assert.equal(visible.chromaticCrypsis, false);
   assert.ok(visible.chromaticReadyRound > round(state) - 1);
   assertState(state);
+});
+
+
+test("active Mollusk mutations explain their existing board-circle interaction", () => {
+  assert.match(TRAITS.Rádula[1], /círculo verde/iu);
+  assert.match(TRAITS.Bisso[1], /círculo verde/iu);
+  assert.match(TRAITS["Tentáculo Preênsil"][1], /círculo vermelho/iu);
+  assert.match(TRAITS["Cromatóforos Neurais"][1], /círculo verde/iu);
 });
