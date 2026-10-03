@@ -82,8 +82,9 @@ export const ARENA_PRESETS = Object.freeze({
     { id: "protoanimal", stage: "proterozoic", label: "Protoanimal filtrador", traits: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada"] },
     { id: "dickinsonia", stage: "ediacaran", label: "Dickinsonia", traits: ["Predação", "Multicelularismo", "Simetria Bilateral", "Locomoção Primitiva"], note: "Na Arena, Predação representa a raiz heterotrófica do Ramo Animal; não implica predação macroscópica para Dickinsonia." },
     { id: "anomalocaris", stage: "cambrian", label: "Anomalocaris", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Carnívoro", "Carapaça"] },
-    { id: "nautiloid", stage: "ordovician", label: "Nautiloide gigante", traits: ["Predação", "Multicelularismo", "Molusco", "Jatopropulsão", "Percepção Espacial", "Corpo Gelatinoso", "Carnívoro", "Ovíparo", "Camuflagem", "Carapaça"] },
-    { id: "coleoid", stage: "carboniferous", label: "Cefalópode coleoide", traits: ["Predação", "Multicelularismo", "Molusco", "Jatopropulsão", "Percepção Espacial", "Corpo Gelatinoso", "Tinta", "Carnívoro", "Ovíparo", "Camuflagem"] },
+    { id: "nautiloid", stage: "ordovician", label: "Nautiloide gigante", traits: ["Predação", "Multicelularismo", "Ingestão", "Molusco", "Jatopropulsão", "Percepção Espacial", "Carnívoro", "Ovíparo", "Camuflagem", "Biomineralização", "Carapaça", "Rádula", "Concha Camerada"] },
+    { id: "bivalve", stage: "ordovician", label: "Bivalve bissado", traits: ["Predação", "Multicelularismo", "Ingestão", "Molusco", "Carapaça", "Bisso", "Ovíparo"] },
+    { id: "coleoid", stage: "carboniferous", label: "Cefalópode coleoide", traits: ["Predação", "Multicelularismo", "Ingestão", "Molusco", "Jatopropulsão", "Percepção Espacial", "Corpo Gelatinoso", "Tinta", "Ventosas Quimiotáteis", "Rádula", "Carnívoro", "Ovíparo", "Camuflagem"] },
     { id: "eurypterid", stage: "silurian", label: "Euriptérido", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Carapaça"] },
     { id: "dunkleosteus", stage: "devonian", label: "Dunkleosteus", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Carnívoro", "Mandíbula", "Carapaça"] },
     { id: "meganeura", stage: "carboniferous", label: "Meganeura", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Voo", "Carnívoro", "Visão Binocular"] },
@@ -342,6 +343,11 @@ export function arenaAllowedRanks(genome, branchId) {
       completed.includes("Jatopropulsão")
     )
       allowed = [2, 3, 4];
+    else if (
+      completed.includes("Molusco") &&
+      completed.includes("Bisso")
+    )
+      allowed = [2, 4];
     else allowed = [4];
   }
 
@@ -409,8 +415,14 @@ export function arenaRankRestrictionReason(genome, rank, branchId) {
     if (completed.includes("Molusco")) {
       if ([1, 5].includes(rank))
         return "Moluscos usam Rei, Bispo ou Torre.";
-      if ([2, 3].includes(rank) && !completed.includes("Jatopropulsão"))
-        return "Formas derivadas moluscas exigem Jatopropulsão.";
+      if (
+        rank === 2 &&
+        !completed.includes("Jatopropulsão") &&
+        !completed.includes("Bisso")
+      )
+        return "A forma Bispo de Moluscos exige Jatopropulsão ou Bisso.";
+      if (rank === 3 && !completed.includes("Jatopropulsão"))
+        return "A forma Torre de Moluscos exige Jatopropulsão.";
     }
     if (
       [1, 2, 3, 5].includes(rank) &&

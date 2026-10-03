@@ -45,6 +45,13 @@ test("Arena restricts chess forms from the selected branch and body plan", () =>
     ),
     [2, 3, 4],
   );
+  assert.deepEqual(
+    arenaAllowedRanks(
+      animal("Molusco", "Carapaça", "Bisso"),
+      "animal",
+    ),
+    [2, 4],
+  );
 
   assert.deepEqual(arenaAllowedRanks(plant(), "plant"), [0]);
   assert.deepEqual(

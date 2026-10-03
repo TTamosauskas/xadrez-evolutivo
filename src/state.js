@@ -750,6 +750,15 @@ export function newPiece(state, owner, r, c, source = {}) {
         ? structuredClone(source.autotomyRecovery)
         : null,
       inkReadyRound: source.inkReadyRound ?? bornRound,
+      tentacleReadyRound: source.tentacleReadyRound ?? bornRound,
+      chromaticReadyRound: source.chromaticReadyRound ?? bornRound,
+      chromaticCrypsis: source.chromaticCrypsis ?? false,
+      tentacleProtection: source.tentacleProtection
+        ? structuredClone(source.tentacleProtection)
+        : null,
+      byssusAttached: source.byssusAttached
+        ? structuredClone(source.byssusAttached)
+        : null,
       broodParasite: source.broodParasite
         ? structuredClone(source.broodParasite)
         : null,
@@ -3361,7 +3370,9 @@ export function assertState(state) {
       cells.has(square(p.r, p.c)) ||
       (state.naturalBarriers.includes(square(p.r, p.c)) &&
         !p.traits?.includes("Escalador") &&
-        !p.traits?.includes("Trepadeira")) ||
+        !p.traits?.includes("Trepadeira") &&
+        !p.traits?.includes("Bisso") &&
+        p.byssusAttached?.cell !== square(p.r, p.c)) ||
       (state.barriers.includes(square(p.r, p.c)) &&
         !p.traits?.includes("Trepadeira"))
     )
@@ -3432,10 +3443,24 @@ export function assertState(state) {
         p.hematophagyDepletedUntilRound !== null &&
         !integer(p.hematophagyDepletedUntilRound, 0)) ||
       (p.inkReadyRound !== undefined && !integer(p.inkReadyRound, 0)) ||
+      (p.tentacleReadyRound !== undefined &&
+        !integer(p.tentacleReadyRound, 0)) ||
+      (p.chromaticReadyRound !== undefined &&
+        !integer(p.chromaticReadyRound, 0)) ||
+      typeof (p.chromaticCrypsis ?? false) !== "boolean" ||
+      (p.tentacleProtection !== undefined &&
+        p.tentacleProtection !== null &&
+        (!integer(p.tentacleProtection.sourceId, 1) ||
+          !integer(p.tentacleProtection.throughTurn, 0))) ||
+      (p.byssusAttached !== undefined &&
+        p.byssusAttached !== null &&
+        !integer(p.byssusAttached.cell, 0, 63)) ||
       (p.autotomyRecovery !== undefined &&
         p.autotomyRecovery !== null &&
         (!integer(p.autotomyRecovery.originalRank, 1, 5) ||
-          p.autotomyRecovery.originalRank <= p.rank)) ||
+          p.autotomyRecovery.originalRank === p.rank ||
+          (p.autotomyRecovery.turnsRemaining !== undefined &&
+            !integer(p.autotomyRecovery.turnsRemaining, 1, 3)))) ||
       (p.broodParasite !== undefined &&
         p.broodParasite !== null &&
         (!integer(p.broodParasite.parasiteId, 1) ||

@@ -1799,3 +1799,19 @@ summary {
   color: #c62828;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.55);
 }
+
+
+/* Mollusk specializations */
+.piece.chromatic-crypsis {
+  display: inline-block;
+  transform: rotate(180deg);
+  border-radius: 50%;
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.piece.chromatic-crypsis.chromatic-owner-blue {
+  box-shadow: 0 0 0 2px #fff8df;
+}
+.piece.chromatic-crypsis.chromatic-owner-amber {
+  box-shadow: 0 0 0 2px #242623;
+}

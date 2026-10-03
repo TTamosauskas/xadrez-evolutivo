@@ -43,6 +43,11 @@ export const AI_ACTION_TYPES = Object.freeze([
   "FIX_NITROGEN",
   "PHEROMONE_SIGNAL",
   "BIOLUMINESCENT_LURE",
+  "RASP",
+  "BYSSUS_ATTACH",
+  "TENTACLE_PULL",
+  "CHROMATIC_CRYPSIS",
+  "CHROMATIC_WAIT",
   "PARTHENOGENESIS",
   "MONOCARP_STORE",
   "MONOCARP_BLOOM",
@@ -422,6 +427,17 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
     const target = state.pieces.find((piece) => piece.id === a.targetId);
     return 10 + strategicPieceValue(state, target) * 0.12;
   }
+  if (a.type === "RASP") {
+    const piece = state.pieces.find((candidate) => candidate.id === a.id);
+    return 8 + Math.max(0, energyCapacity(piece) - energyValue(piece));
+  }
+  if (a.type === "BYSSUS_ATTACH") return 5 + placementPriority(state, a);
+  if (a.type === "TENTACLE_PULL") {
+    const target = state.pieces.find((piece) => piece.id === a.targetId);
+    return 11 + strategicPieceValue(state, target) * 0.1;
+  }
+  if (a.type === "CHROMATIC_CRYPSIS") return 7;
+  if (a.type === "CHROMATIC_WAIT") return 1;
   if (a.type === "EXTENDED_CAPTURE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
     return (a.trait === "Tromba" ? 16 : 13) + strategicPieceValue(state, target) * 0.16;

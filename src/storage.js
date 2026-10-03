@@ -8,7 +8,7 @@ import {
 } from "./energy.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -195,6 +195,11 @@ function normalizeCycleInnovationPressure(state) {
     piece.hematophagyDepletedUntilRound ??= null;
     piece.autotomyRecovery ??= null;
     piece.inkReadyRound ??= piece.bornRound ?? 0;
+    piece.tentacleReadyRound ??= piece.bornRound ?? 0;
+    piece.chromaticReadyRound ??= piece.bornRound ?? 0;
+    piece.chromaticCrypsis ??= false;
+    piece.tentacleProtection ??= null;
+    piece.byssusAttached ??= null;
     piece.broodParasite ??= null;
     piece.parasitoidism ??= null;
     piece.rumination ??= null;
