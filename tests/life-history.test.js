@@ -30,8 +30,8 @@ import {
 } from "../src/energy.js";
 
 test("Rei predatório basal é mais eficiente que Cavalo sem aumentar a ninhada", () => {
-  const king = { rank: 4, traits: ["Predação"] },
-    knight = { rank: 1, traits: ["Predação"] };
+  const king = { rank: 4, traits: ["Predação", "Reparo Celular"] },
+    knight = { rank: 1, traits: ["Predação", "Reparo Celular"] };
 
   assert.equal(energyCapacity(king), 8);
   assert.equal(movementEnergyCost(king), 1);
