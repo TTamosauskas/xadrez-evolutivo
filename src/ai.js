@@ -43,6 +43,9 @@ export const AI_ACTION_TYPES = Object.freeze([
   "FIX_NITROGEN",
   "PHEROMONE_SIGNAL",
   "BIOLUMINESCENT_LURE",
+  "RADULA",
+  "TENTACLE_PULL",
+  "CHROMATOPHORES",
   "PARTHENOGENESIS",
   "MONOCARP_STORE",
   "MONOCARP_BLOOM",
@@ -76,6 +79,7 @@ export const AI_ACTION_TYPES = Object.freeze([
 export const AI_MOVE_MECHANIC_FLAGS = Object.freeze([
   "arboreal",
   "bioadhesion",
+  "byssus",
   "botanicalCapture",
   "botanicalPredation",
   "cephalization",
@@ -392,6 +396,7 @@ function moveMechanicPriority(state, piece, target) {
   if (target.phoresy) value += 3;
   if (target.arboreal) value += 3;
   if (target.bioadhesion) value += 3;
+  if (target.byssus) value += 4;
   if (target.escalation) value += 3;
   if (target.serpentine) value += 3;
   if (target.crawler || target.lateral || target.jet || target.jump) value += 2;
@@ -421,6 +426,32 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
   if (a.type === "BIOLUMINESCENT_LURE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
     return 10 + strategicPieceValue(state, target) * 0.12;
+  }
+  if (a.type === "RADULA") {
+    const actor = state.pieces.find((piece) => piece.id === a.id),
+      deficit = actor
+        ? Math.max(0, energyCapacity(actor) - energyValue(actor))
+        : 0;
+    return 5 + Math.min(6, deficit * 2) + placementPriority(state, a) * 0.2;
+  }
+  if (a.type === "TENTACLE_PULL") {
+    const target = state.pieces.find((piece) => piece.id === a.targetId);
+    return 9 + strategicPieceValue(state, target) * 0.1;
+  }
+  if (a.type === "CHROMATOPHORES") {
+    const actor = state.pieces.find((piece) => piece.id === a.id);
+    if (!actor) return 1;
+    if (actor.chromatophoreDisguise) return 2;
+    const threatened = legalActions({
+      ...state,
+      current: other(actor.owner),
+    }).some(
+      (action) =>
+        action.type === "MOVE" &&
+        action.r === actor.r &&
+        action.c === actor.c,
+    );
+    return threatened ? 12 : 2;
   }
   if (a.type === "EXTENDED_CAPTURE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
