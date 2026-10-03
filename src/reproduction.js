@@ -13,6 +13,8 @@ import {
   canPhotosynthesize,
   purePredatoryBranch,
   basalRankFor,
+  nextEvolutionaryForm,
+  previousEvolutionaryForm,
 } from "./constants.js";
 import {
   applyEnergyDelta,
@@ -108,21 +110,6 @@ const POSITIVE = Object.keys(TRAITS).filter(
   (trait) =>
     trait !== BASAL_GENETIC_TRAIT && !NEGATIVE_GENETIC_TRAITS.has(trait),
 );
-const DERIVED_FORM_NEXT = new Map([
-  [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 5],
-]);
-function previousDerivedRank(piece) {
-  if (piece?.rank === 1)
-    return canPhotosynthesize(piece) ? 0 : purePredatoryBranch(piece) ? 4 : 0;
-  if (piece?.rank === 2) return 1;
-  if (piece?.rank === 3) return 2;
-  if (piece?.rank === 5) return 3;
-  return null;
-}
-
 export function applyAirSacRankFloor(profile) {
   if (
     !has(profile, "Nanismo") &&
@@ -185,11 +172,8 @@ function eusocialBonus(state, parent) {
 }
 
 function nextDerivedRank(piece) {
-  const next =
-    piece?.rank === 4 && purePredatoryBranch(piece)
-      ? 1
-      : DERIVED_FORM_NEXT.get(piece.rank);
-  if (next === undefined) return null;
+  const next = nextEvolutionaryForm(piece);
+  if (next === null) return null;
 
   if (has(piece, "Fotossíntese")) {
     if (!has(piece, "Multicelularismo")) return null;
@@ -199,7 +183,6 @@ function nextDerivedRank(piece) {
   }
 
   if (!has(piece, "Locomoção Articulada")) return null;
-  if (has(piece, "Artrópode") && ![1, 2].includes(next)) return null;
   return has(piece, "Vertebrado") || has(piece, "Artrópode") ? next : null;
 }
 
@@ -230,7 +213,7 @@ export function deleteriousMutationPools(state, piece) {
       .filter((trait) => NEGATIVE_GENETIC_TRAITS.has(trait))
       .map((trait) => ({ geneLoss: trait, reversal: true })),
     deleteriousOptions = [];
-  const previousRank = previousDerivedRank(piece);
+  const previousRank = previousEvolutionaryForm(piece);
   if (previousRank !== null)
     deleteriousOptions.push({
       rank: previousRank,
