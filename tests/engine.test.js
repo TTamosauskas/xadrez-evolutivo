@@ -340,7 +340,7 @@ test("Hadean starts with three fertile central cells and the gray ancestor consu
   assert.ok(vivificationHint);
   assert.equal(
     vivificationHint.text,
-    "⭕ (verde) indica capacidade de reproduzir.",
+    "Clique em Vivificar para tentar uma reprodução.",
   );
   assert.equal(
     s.passiveEffects.filter((effect) => effect.trait === "Reprodução").length,
