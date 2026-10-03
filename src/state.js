@@ -3282,6 +3282,7 @@ export function assertState(state) {
       !Number.isInteger(p.rank) ||
       p.rank < 0 ||
       p.rank > 5 ||
+      (p.rank === 0 && purePredatoryBranch(p)) ||
       !Array.isArray(p.traits) ||
       p.traits.some((t) => !TRAITS[t]) ||
       !traitCombinationValid(p.traits) ||
