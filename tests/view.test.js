@@ -687,7 +687,7 @@ test("contextual mutations form an evenly spaced frame while the energy branch s
   );
   assert.equal(
     refreshed.querySelector(".piece-energy-core")?.dataset.trait,
-    "Predação",
+    "Fotossíntese",
   );
   dom.window.close();
 });
