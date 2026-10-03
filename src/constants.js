@@ -133,7 +133,7 @@ export const TRAITS = {
   ],
   Dopamina: [
     "🤤",
-    "Mantida no genoma, mas sem efeito enquanto os controles globais de pressão reprodutiva estão desativados.",
+    "Após reprodução bem-sucedida por alimento, neutraliza 1 ponto do custo energético adicional causado por pressão ecológica ou competitiva.",
   ],
   Endorfinas: [
     "😌",
@@ -612,7 +612,7 @@ export const TRAITS = {
     "🦉",
     "Neutraliza integralmente a evasão de criaturas Notívagas durante rodadas noturnas.",
   ],
-  Resistência: ["🧬", "Impede infecções por patógenos ecológicos. Surtos disparados por pressão populacional estão desativados."],
+  Resistência: ["🧬", "Impede infecções por patógenos ecológicos e reduz em 75% a mortalidade individual causada por patógenos de pressão populacional."],
   "Reprodução Sexuada": [
     "❤️",
     "Substitui a reprodução basal individual em casas férteis e sementes por acasalamento entre dois portadores reprodutivamente aptos; rotas reprodutivas especializadas permanecem disponíveis. Quando a inovação surge em uma ninhada com pelo menos dois descendentes, estabelece dois fundadores sexuais.",

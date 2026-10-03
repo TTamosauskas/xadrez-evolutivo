@@ -365,13 +365,13 @@ function crowdedReproductionState(dopamine) {
   return { s, parent };
 }
 
-test("Dopamina não aplica bônus quando a pressão reprodutiva global está desativada", () => {
+test("Dopamina neutraliza 1 ponto do custo energético por pressão reprodutiva", () => {
   const baseline = crowdedReproductionState(false),
     rewarded = crowdedReproductionState(true);
 
   assert.equal(
     dopaminePressureReductionAvailable(rewarded.s, rewarded.parent),
-    false,
+    true,
   );
   assert.equal(
     reproduce(context(baseline.s), baseline.parent, null, "teste", {
@@ -394,15 +394,14 @@ test("Dopamina não aplica bônus quando a pressão reprodutiva global está des
 
   assert.equal(
     energyValue(rewarded.parent) - energyValue(baseline.parent),
-    0,
+    1,
   );
-  assert.equal(
+  assert.ok(
     rewarded.s.passiveEffects.some(
       (effect) =>
         effect.trait === "Dopamina" &&
         effect.outcome === "reduced-reproductive-pressure",
     ),
-    false,
   );
   assertState(baseline.s);
   assertState(rewarded.s);

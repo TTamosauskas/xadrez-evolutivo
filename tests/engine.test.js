@@ -1544,10 +1544,13 @@ test("successful reproduction can trigger Vetor Patógeno transmission", () => {
   assert.equal(triggered, true);
 });
 
-test("population-triggered pathogen outbreaks stay disabled", () => {
-  assert.equal(populationPathogenChance(0), 0);
-  assert.equal(populationPathogenChance(10), 0);
-  assert.equal(populationPathogenChance(30), 0);
+test("population pathogen incidence grows with imbalance and respects active-outbreak cooldown", () => {
+  assert.equal(populationPathogenChance(0), 0.05);
+  assert.equal(populationPathogenChance(3), 0.17);
+  assert.equal(populationPathogenChance(5), 0.25);
+  assert.equal(populationPathogenChance(8), 0.37);
+  assert.equal(populationPathogenChance(10), 0.45);
+  assert.equal(populationPathogenChance(30), 0.45);
 
   const s = fixture([]);
   for (let i = 0; i < 18; i++)
@@ -1557,36 +1560,45 @@ test("population-triggered pathogen outbreaks stay disabled", () => {
   s.turn = 2;
   s.rng = 1972;
   checkPopulation(s);
-  assert.equal(
-    s.diseases.some((disease) => disease.source === "population"),
-    false,
+  assert.equal(s.diseases.length, 1);
+  assert.equal(s.diseases[0].source, "population");
+  assert.ok(
+    s.logs.some((entry) =>
+      entry.text.includes("Pressão demográfica: diferença 16"),
+    ),
   );
+  for (let i = 0; i < 20; i++) checkPopulation(s);
+  assert.equal(s.diseases.length, 1);
+  assert.equal(s.notices.length, 1);
   assertState(s);
 });
-test("global population throttles stay disabled while extreme climate remains", () => {
+
+test("population pressure governs fertility, pathogens and severe climate", () => {
   const state = fixture([]);
   for (let i = 0; i < 40; i++)
     state.pieces.push(
       newPiece(state, i < 20 ? "blue" : "amber", Math.floor(i / 8), i % 8),
     );
-
-  assert.equal(photosynthesisDelayTurns(state), 6);
-  assert.equal(fertilityPaused(state), false);
+  assert.equal(photosynthesisDelayTurns(state), null);
+  assert.equal(fertilityPaused(state), true);
   assert.equal(checkPopulationClimate(context(state)), true);
   assert.ok(SEVERE_EVENT_IDS.has(state.event.id));
   assert.equal(state.severePopulationLatched, true);
-
   state.event = null;
   state.pieces = state.pieces.slice(0, 32);
-  assert.equal(checkPopulationClimate(context(state)), false);
-  assert.equal(state.populationTerrainPressure, null);
+  assert.equal(checkPopulationClimate(context(state)), true);
+  assert.equal(state.populationTerrainPressure.level, 1);
   assert.equal(state.severePopulationLatched, true);
-
   state.pieces = state.pieces.slice(0, 23);
   assert.equal(checkPopulationClimate(context(state)), false);
   assert.equal(state.severePopulationLatched, false);
+  assert.equal(photosynthesisDelayTurns(state), 10);
+  state.pieces = state.pieces.slice(0, 17);
+  assert.equal(photosynthesisDelayTurns(state), 8);
+  state.pieces = state.pieces.slice(0, 11);
   assert.equal(photosynthesisDelayTurns(state), 6);
 });
+
 test("piece life history defines brood, metabolic recovery and sexual maturity", () => {
   assert.deepEqual(
     PIECE_LIFE_HISTORY.map(({ brood, metabolism, maturity }) => [
@@ -1901,9 +1913,12 @@ test("insufficient reproductive Energy blocks vivification but preserves capture
   assertState(s);
 });
 
-test("population size no longer depletes fertile terrain", () => {
-  for (const population of [23, 24, 32, 40, 44])
-    assert.equal(fertilityDepletionRate(population), 0);
+test("gradual population pressure exhausts fertility without arbitrary attrition deaths", () => {
+  assert.equal(fertilityDepletionRate(23), 0);
+  assert.equal(fertilityDepletionRate(24), 0.05);
+  assert.equal(fertilityDepletionRate(32), 0.15);
+  assert.equal(fertilityDepletionRate(40), 0.25);
+  assert.equal(fertilityDepletionRate(44), 0.3);
 
   const s = fixture([]);
   for (let i = 0; i < 24; i++)
@@ -1912,13 +1927,13 @@ test("population size no longer depletes fertile terrain", () => {
     );
   for (let i = 32; i < 52; i++) s.board[i] = "fertile";
   tickEnvironment(context(s));
-  assert.equal(s.board.filter((cell) => cell === "fertile").length, 20);
-  assert.equal(
-    s.logs.some((entry) => entry.text.includes("Superpopulação esgotou")),
-    false,
+  assert.equal(s.board.filter((cell) => cell === "fertile").length, 19);
+  assert.ok(
+    s.logs.some((entry) => entry.text.includes("Superpopulação esgotou 1")),
   );
   assertState(s);
 });
+
 test("aquatic crowding depletion stays exhausted while consumed cells recover", () => {
   const s = createState(902, {
     geologicalStage: "archean",
@@ -1945,16 +1960,30 @@ test("aquatic crowding depletion stays exhausted while consumed cells recover", 
   assertState(s);
 });
 
-test("population size no longer limits brood or adds reproductive cooldown", () => {
-  for (const population of [17, 18, 23, 24, 27, 28, 32, 40]) {
-    assert.equal(populationReproductionLimit(population, true), Infinity);
-    assert.equal(populationReproductionLimit(population, false), Infinity);
-    assert.equal(populationReproductionCooldown(population, true), 0);
-    assert.equal(populationReproductionCooldown(population, false), 0);
-  }
-  assert.equal(populationReproductionLimit(30, true, "ordovician"), Infinity);
-  assert.equal(populationReproductionCooldown(30, true, "ordovician"), 0);
+test("reproduction pressure uses hidden hysteresis without suppressing early recovery", () => {
+  assert.equal(populationReproductionLimit(17, true), Infinity);
+  assert.equal(populationReproductionLimit(18, true), 2);
+  assert.equal(populationReproductionLimit(23, true), 2);
+  assert.equal(populationReproductionLimit(23, false), Infinity);
+  assert.equal(populationReproductionLimit(24, false), 2);
+  assert.equal(populationReproductionLimit(27, false), 2);
+  assert.equal(populationReproductionLimit(28, false), 1);
+  assert.equal(populationReproductionLimit(25, false, "ordovician"), 2);
+  assert.equal(populationReproductionLimit(26, false, "ordovician"), 1);
+
+  assert.equal(populationReproductionCooldown(17, true), 0);
+  assert.equal(populationReproductionCooldown(18, true), 1);
+  assert.equal(populationReproductionCooldown(23, true), 1);
+  assert.equal(populationReproductionCooldown(23, false), 0);
+  assert.equal(populationReproductionCooldown(24, false), 1);
+  assert.equal(populationReproductionCooldown(28, false), 2);
+  assert.equal(populationReproductionCooldown(32, false), 3);
+  assert.equal(populationReproductionCooldown(25, false, "ordovician"), 1);
+  assert.equal(populationReproductionCooldown(26, false, "ordovician"), 2);
+  assert.equal(populationReproductionCooldown(30, false, "ordovician"), 3);
+
 });
+
 test("late competitive pressure starts after primitive locomotion", () => {
   const makeState = (mobile) => {
     const s = createState(812, {
@@ -2017,7 +2046,7 @@ test("late competitive pressure starts after primitive locomotion", () => {
       ignoreReadiness: true,
       immediateDevelopment: true,
     }),
-    4,
+    2,
   );
   assert.equal(
     reproduce(context(mobile.s), mobile.parent, null, "teste", {
@@ -2025,7 +2054,7 @@ test("late competitive pressure starts after primitive locomotion", () => {
       ignoreReadiness: true,
       immediateDevelopment: true,
     }),
-    4,
+    1,
   );
 });
 
@@ -5872,7 +5901,7 @@ test("Parasitismo targets one adjacent enemy habitat and requires a material tar
     if (s.pieces.some((piece) => piece.r === r && piece.c === col)) continue;
     s.pieces.push(newPiece(s, cell % 2 ? "blue" : "amber", r, col));
   }
-  assert.equal(fertilityPaused(s), false);
+  assert.equal(fertilityPaused(s), true);
   const seededEnemy = s.pieces.find(
     (piece) => piece.owner !== s.pieces[0].owner && piece.id !== 2,
   );

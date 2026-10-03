@@ -42,8 +42,11 @@ const SEVERE_HAZARD_COUNT = Math.ceil(64 * 0.95);
 export const severeEventActive = (state) =>
   !!state.event && SEVERE_EVENT_IDS.has(state.event.id);
 
-export function fertilityDepletionRate() {
-  return 0;
+export function fertilityDepletionRate(population) {
+  if (population < 24) return 0;
+  return Number(
+    Math.min(0.3, 0.05 + (population - 24) * 0.0125).toFixed(2),
+  );
 }
 
 function depletePausedFertility(state) {
@@ -586,7 +589,28 @@ function hostilePressurePreference(state) {
   return scores.filter((entry) => entry.score > 0).slice(0, 20).map((entry) => entry.cell);
 }
 
-function habitatPressureLevel() {
+function habitatPressureLevel(state) {
+  const now = round(state),
+    stalledRounds = Math.max(
+      0,
+      now - (state.lastSuccessfulCaptureRound ?? 0),
+    ),
+    population = activePopulation(state),
+    offensive = offensiveActionCount(state),
+    replacement = replacementPressure(state);
+  if (
+    replacement.level >= 3 ||
+    (now >= 70 && offensive <= 2)
+  )
+    return 3;
+  if (
+    replacement.level >= 2 ||
+    stalledRounds >= 18 ||
+    population >= 32 ||
+    (now >= 18 && offensive === 0)
+  )
+    return 2;
+  if (replacement.level >= 1 || stalledRounds >= 12) return 1;
   return 0;
 }
 
@@ -1676,53 +1700,69 @@ export function checkPopulationClimate(ctx) {
       0,
       now - (state.lastSuccessfulCaptureRound ?? 0),
     ),
-    sustainedExtremePressure =
-      population >= 36 || (population >= 28 && stalledRounds >= 18);
+    level =
+      population >= 36 || (population >= 28 && stalledRounds >= 18)
+        ? 2
+        : population >= 32
+          ? 1
+          : 0;
 
   if (population <= 24) {
     state.severePopulationLatched = false;
     state.populationTerrainPressure = null;
     return false;
   }
-  if (severeEventActive(state)) return false;
+  if (!level || severeEventActive(state)) return false;
 
-  const triggerExtreme = (source) => {
-    if (state.severePopulationLatched) return false;
-    state.severePopulationLatched = true;
-    startSevereEvent(ctx, source);
-    log(
-      state,
-      source === "stagnation"
-        ? `🌡️ Estagnação ecológica persistente: ${stalledRounds} rodadas sem captura com ${population} organismos ativos desencadearam um evento de impacto extremo.`
-        : `🌡️ Pressão populacional extrema: ${population} organismos ativos desencadearam um evento de impacto extremo.`,
-    );
-    return true;
-  };
-
-  if (population >= 40)
-    return triggerExtreme(stalledRounds >= 18 ? "stagnation" : "population");
-
-  if (!sustainedExtremePressure) {
-    state.populationTerrainPressure = null;
-    return false;
-  }
-
+  let pressureStarted = false;
   if (
     !state.populationTerrainPressure ||
-    state.populationTerrainPressure.level !== 2
+    state.populationTerrainPressure.level !== level
   ) {
     state.populationTerrainPressure = {
-      level: 2,
+      level,
       startedRound: now,
       lastAppliedRound: now,
     };
-    return false;
+    pressureStarted = true;
   }
 
-  if (now - state.populationTerrainPressure.startedRound < 6)
-    return false;
+  let acted = false;
+  if (
+    pressureStarted ||
+    now - state.populationTerrainPressure.lastAppliedRound >= 3
+  ) {
+    applyPopulationTerrainPressure(ctx, level);
+    state.populationTerrainPressure.lastAppliedRound = now;
+    log(
+      state,
+      level >= 2
+        ? `🌡️ Pressão populacional intensa remodelou a hostilidade ao redor das maiores aglomerações.`
+        : `🌡️ Pressão populacional local deslocou a hostilidade para regiões congestionadas.`,
+    );
+    acted = true;
+  }
 
-  return triggerExtreme(stalledRounds >= 18 ? "stagnation" : "population");
+  const severeTrigger =
+    population >= 40 ||
+    (level >= 2 &&
+      now - state.populationTerrainPressure.startedRound >= 6);
+  if (
+    severeTrigger &&
+    !state.severePopulationLatched &&
+    !severeEventActive(state)
+  ) {
+    state.severePopulationLatched = true;
+    startSevereEvent(ctx, stalledRounds >= 18 ? "stagnation" : "population");
+    log(
+      state,
+      stalledRounds >= 18
+        ? `🌡️ Estagnação ecológica persistente: ${stalledRounds} rodadas sem captura com ${population} organismos ativos superaram a resposta celular e desencadearam um evento de impacto extremo.`
+        : `🌡️ Pressão populacional extrema: ${population} organismos ativos superaram a resposta celular e desencadearam um evento de impacto extremo.`,
+    );
+    return true;
+  }
+  return acted;
 }
 
 function conwayPath(state, start, goal) {

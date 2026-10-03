@@ -11,7 +11,7 @@ import {
 import { hostileHazardKills } from "../src/engine.js";
 import { noCaptureReproductionPressure } from "../src/reproduction.js";
 
-test("seca de capturas não aplica mais pressão reprodutiva global", () => {
+test("pressão sem captura continua escalando e bloqueia reprodução tardia", () => {
   const s = fixture([
     { owner: "blue", r: 4, c: 4 },
     { owner: "amber", r: 0, c: 0 },
@@ -19,12 +19,19 @@ test("seca de capturas não aplica mais pressão reprodutiva global", () => {
   s.turn = 200;
   const now = round(s);
 
-  for (const elapsed of [0, 12, 18, 24, 30, 36]) {
+  for (const [elapsed, cooldown, limit] of [
+    [0, 0, Infinity],
+    [12, 1, Infinity],
+    [18, 2, 1],
+    [24, 3, 1],
+    [30, 4, 1],
+    [36, 5, 0],
+  ]) {
     s.lastSuccessfulCaptureRound = now - elapsed;
     assert.deepEqual(noCaptureReproductionPressure(s), {
       elapsed,
-      cooldown: 0,
-      limit: Infinity,
+      cooldown,
+      limit,
     });
   }
 });

@@ -360,15 +360,20 @@ test("Cuidado Parental removes a protected juvenile from capture targets", () =>
   assertState(s);
 });
 
-test("sucesso reprodutivo não varia mais com a população ativa", () => {
+test("pressão populacional reduz o sucesso reprodutivo por tentativa inteira", () => {
   const parent = { traits: [] };
-  for (const population of [15, 16, 24, 32, 48])
+  for (const [population, expected] of [
+    [15, 0.9],
+    [16, 0.8],
+    [24, 0.7],
+    [32, 0.6],
+  ])
     assert.equal(
       reproductiveSuccessRate(
         { pieces: Array.from({ length: population }, () => ({})) },
         parent,
       ),
-      0.9,
+      expected,
     );
 });
 
@@ -381,7 +386,7 @@ test("Ovulação Induzida soma 10 pontos percentuais ao sucesso sexual até 95%"
         { pieces: Array.from({ length: 24 }, () => ({})) },
         parent,
         [mate],
-      ) - 0.95,
+      ) - 0.8,
     ) < 1e-9,
   );
   assert.equal(
