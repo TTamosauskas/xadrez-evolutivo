@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { square } from "../src/constants.js";
 import { actionsForPiece, movesFor, radulaTargets, tentacleTargets } from "../src/moves.js";
 import { simulate } from "../src/engine.js";
-import { energyValue } from "../src/energy.js";
+import { energyCapacity, energyValue } from "../src/energy.js";
 import { fixture, move } from "./helpers.js";
 
 const mol = (...traits) => [
@@ -20,7 +20,7 @@ test("Rádula turns adjacent fertility into energy without offspring", () => {
   s.board[square(4,5)]="fertile";
   const p=s.pieces[0], count=s.pieces.length;
   p.energy=0;
-  p.energyCapacitySnapshot=4;
+  p.energyCapacitySnapshot=energyCapacity(p);
   assert.ok(radulaTargets(s,p).some(t=>t.r===4&&t.c===5));
   s=simulate(s,{type:"RADULA",id:p.id,r:4,c:5});
   assert.equal(s.board[square(4,5)],"neutral");
@@ -51,7 +51,7 @@ test("Tentáculo pulls prey and blocks its immediate counterattack", () => {
   s.geologicalStage="jurassic";
   const a=s.pieces[0], id=s.pieces[1].id;
   a.energy=4;
-  a.energyCapacitySnapshot=4;
+  a.energyCapacitySnapshot=energyCapacity(a);
   const before=energyValue(a);
   const option=tentacleTargets(s,a).find(t=>t.targetId===id);
   assert.deepEqual([option.r,option.c],[4,5]);
