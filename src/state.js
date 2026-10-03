@@ -3361,7 +3361,9 @@ export function assertState(state) {
       cells.has(square(p.r, p.c)) ||
       (state.naturalBarriers.includes(square(p.r, p.c)) &&
         !p.traits?.includes("Escalador") &&
-        !p.traits?.includes("Trepadeira")) ||
+        !p.traits?.includes("Trepadeira") &&
+        !p.traits?.includes("Bisso") &&
+        p.byssusAttached?.cell !== square(p.r, p.c)) ||
       (state.barriers.includes(square(p.r, p.c)) &&
         !p.traits?.includes("Trepadeira"))
     )
