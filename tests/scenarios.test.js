@@ -58,8 +58,9 @@ test("new campaigns default to Vida na Terra while low-level legacy states stay 
   assert.equal(createState(1).scenario, "alternative");
 });
 
-test("Vida na Terra não inicia linhagens predatórias como Peões", () => {
-  let sawBasalPredatoryKing = false;
+test("Vida na Terra separa Peão fotossintético de Rei predatório basal", () => {
+  let sawBasalPredatoryKing = false,
+    sawPhotosyntheticPawn = false;
   for (const [index, stage] of GEOLOGICAL_STAGES.entries()) {
     if (stage.id === "hadean") continue;
     const state = createPeriodState(stage.id, 900 + index, null, "earth"),
@@ -70,10 +71,23 @@ test("Vida na Terra não inicia linhagens predatórias como Peões", () => {
       );
     for (const piece of predators)
       assert.notEqual(piece.rank, 0, `${stage.id}: Peão predatório inicial`);
+    for (const piece of state.pieces.filter((candidate) => candidate.rank === 0))
+      assert.equal(
+        canPhotosynthesize(piece),
+        true,
+        `${stage.id}: todo Peão fundador deve pertencer ao ramo fotossintético`,
+      );
     if (predators.some((piece) => piece.rank === 4))
       sawBasalPredatoryKing = true;
+    if (
+      state.pieces.some(
+        (piece) => piece.rank === 0 && canPhotosynthesize(piece),
+      )
+    )
+      sawPhotosyntheticPawn = true;
   }
   assert.equal(sawBasalPredatoryKing, true);
+  assert.equal(sawPhotosyntheticPawn, true);
 });
 
 test("Vida na Terra defines phase-specific founder layouts across the expanded timeline", () => {
