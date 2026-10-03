@@ -4935,6 +4935,7 @@ test("Dormência no longer protects active pieces from hostile terrain", () => {
   s.rng = 1;
 
   s = simulate(s, { type: "PASS" });
+  s = simulate(s, { type: "PASS" });
 
   assert.equal(s.pieces.some((piece) => piece.id === pieceId), false);
 });
