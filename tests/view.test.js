@@ -631,11 +631,10 @@ test("contextual mutations form an evenly spaced frame while the energy branch s
     s = createState(20),
     piece = s.pieces[0];
   piece.traits = [
+    "Fotossíntese",
     "Multicelularismo",
-    "Predação",
-    "Dormência",
-    "Carapaça",
-    "Veneno",
+    "Embriófitas",
+    "Extremófitas",
   ];
   s.board[piece.r * 8 + piece.c] = "hostile";
   render(dom.window.document, s, { selected: piece.id });
@@ -647,7 +646,7 @@ test("contextual mutations form an evenly spaced frame while the energy branch s
     css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
     badges = [...frame.querySelectorAll(".trait-badge")];
   assert.ok(frame);
-  assert.deepEqual(badges.map((badge) => badge.dataset.trait), ["Dormência"]);
+  assert.deepEqual(badges.map((badge) => badge.dataset.trait), ["Extremófitas"]);
   assert.deepEqual(
     badges.map((icon) =>
       [...icon.classList].find((name) => name.startsWith("trait-slot-")),
@@ -655,13 +654,11 @@ test("contextual mutations form an evenly spaced frame while the energy branch s
     ["trait-slot-0"],
   );
   assert.equal(frame.querySelector(".trait-overflow"), null);
-  assert.ok(!badges.some((badge) => badge.dataset.trait === "Predação"));
-  assert.ok(!badges.some((badge) => badge.dataset.trait === "Carapaça"));
-  assert.ok(!badges.some((badge) => badge.dataset.trait === "Veneno"));
+  assert.ok(!badges.some((badge) => badge.dataset.trait === "Dormência"));
 
   const core = cell.querySelector(".piece-energy-core");
-  assert.equal(core?.dataset.trait, "Predação");
-  assert.equal(core?.textContent, "👾");
+  assert.equal(core?.dataset.trait, "Fotossíntese");
+  assert.equal(core?.textContent, "🟢");
   assert.ok(core?.classList.contains("blue"));
   assert.match(
     css,
@@ -1350,7 +1347,7 @@ test("stationary environmental effects remain actionable while active", () => {
   s.board[piece.r * 8 + piece.c] = "hostile";
 
   const actionable = actionableTraitsForPiece(s, piece);
-  assert.ok(actionable.has("Dormência"));
+  assert.equal(actionable.has("Dormência"), false);
   assert.ok(actionable.has("Extremófitas"));
 });
 
