@@ -33,7 +33,7 @@ test("expanded Mollusk mutation metadata stays coherent",()=>{
 
 test("Ventosas suppress Tinta during adjacent capture",()=>{
   let s=fixture([
-    {owner:"blue",r:4,c:4,rank:4,traits:mol("Jatopropulsão","Locomoção Terrestre","Corpo Gelatinoso","Ventosas Quimiotáteis")},
+    {owner:"blue",r:4,c:4,rank:4,traits:mol("Jatopropulsão","Locomoção Terrestre","Corpo Gelatinoso","Ventosas Quimiotáteis","Mandíbula")},
     {owner:"amber",r:4,c:5,rank:2,traits:mol("Jatopropulsão","Locomoção Terrestre","Corpo Gelatinoso","Tinta")},
   ],12003);
   s.geologicalStage="carboniferous";
@@ -45,7 +45,7 @@ test("Ventosas suppress Tinta during adjacent capture",()=>{
 
 test("Regeneração de Braços restores the Mollusk form after three own turns",()=>{
   let s=fixture([
-    {owner:"blue",r:4,c:3,rank:4},
+    {owner:"blue",r:4,c:3,rank:4,traits:["Mandíbula"]},
     {owner:"amber",r:4,c:4,rank:3,traits:mol("Autotomia","Jatopropulsão","Corpo Gelatinoso","Ventosas Quimiotáteis","Regeneração de Braços")},
   ],12004);
   const a=s.pieces[0],id=s.pieces[1].id;
