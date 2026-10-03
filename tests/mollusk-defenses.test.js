@@ -14,7 +14,7 @@ const mol=(...traits)=>[
 test("expanded Mollusk mutation metadata stays coherent",()=>{
   const expected={
     Rádula:["👅","cambrian"],Bisso:["🧵","ordovician"],
-    "Concha Camerada":["🌀","ordovician"],
+    "Concha Camerada":["🎈","ordovician"],
     "Ventosas Quimiotáteis":["🫳","carboniferous"],
     "Regeneração de Braços":["🦾","permian"],
     "Visão Polarizada":["🧿","jurassic"],
@@ -33,8 +33,8 @@ test("expanded Mollusk mutation metadata stays coherent",()=>{
 
 test("Ventosas suppress Tinta during adjacent capture",()=>{
   let s=fixture([
-    {owner:"blue",r:4,c:4,rank:4,traits:mol("Jatopropulsão","Corpo Gelatinoso","Ventosas Quimiotáteis")},
-    {owner:"amber",r:4,c:5,rank:2,traits:mol("Jatopropulsão","Corpo Gelatinoso","Tinta")},
+    {owner:"blue",r:4,c:4,rank:4,traits:mol("Jatopropulsão","Locomoção Terrestre","Corpo Gelatinoso","Ventosas Quimiotáteis")},
+    {owner:"amber",r:4,c:5,rank:2,traits:mol("Jatopropulsão","Locomoção Terrestre","Corpo Gelatinoso","Tinta")},
   ],12003);
   s.geologicalStage="carboniferous";
   const a=s.pieces[0],id=s.pieces[1].id;
@@ -61,7 +61,7 @@ test("Regeneração de Braços restores the Mollusk form after three own turns",
 
 test("Visão Polarizada detects Camuflagem at two cells through Tinta",()=>{
   const s=fixture([
-    {owner:"blue",r:4,c:2,rank:3,traits:mol("Jatopropulsão","Corpo Gelatinoso","Percepção Espacial","Visão Polarizada")},
+    {owner:"blue",r:4,c:2,rank:3,traits:mol("Jatopropulsão","Locomoção Terrestre","Corpo Gelatinoso","Percepção Espacial","Visão Polarizada")},
     {owner:"amber",r:4,c:4,rank:4,traits:mol("Camuflagem")},
   ],12005);
   s.geologicalStage="jurassic";
