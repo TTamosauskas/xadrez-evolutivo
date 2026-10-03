@@ -204,7 +204,10 @@ function nextDerivedRank(piece) {
 }
 
 export function negativeMutationChance(piece) {
-  const normalized = piece?.rank === 0 ? 1 / 5 : 1 / 3,
+  const basal =
+      piece?.rank === 0 ||
+      (piece?.rank === 4 && purePredatoryBranch(piece)),
+    normalized = basal ? 1 / 5 : 1 / 3,
     repairAdjusted = has(piece, "Reparo Celular")
       ? normalized
       : Math.min(1, normalized * 2);
