@@ -524,11 +524,17 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           )
             break;
         } else if (occupied) {
-          const distantCapture =
-            n > 1 &&
-            (!has(p, "Percepção Espacial") ||
-              inkCloudAt(state, p.r, p.c) ||
-              inkCloudAt(state, r, c));
+          const hemiepiphyticGeometry =
+              victim &&
+              has(p, "Fotossíntese") &&
+              has(p, "Hemiepifitismo") &&
+              has(victim, "Fotossíntese"),
+            distantCapture =
+              n > 1 &&
+              !hemiepiphyticGeometry &&
+              (!has(p, "Percepção Espacial") ||
+                inkCloudAt(state, p.r, p.c) ||
+                inkCloudAt(state, r, c));
           if (!distantCapture && captureAllowed) add(r, c, [...path]);
         } else if (!captureOnly && movementAllowed) {
           add(r, c, [...path]);
