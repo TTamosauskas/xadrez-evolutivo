@@ -174,7 +174,7 @@ export const TRAITS = {
   ],
   Molusco: [
     "🐙",
-    "Plano corporal animal mutuamente exclusivo com Vertebrado e Artrópode. Em períodos aquáticos, o pé muscular permite terminar movimentos em Casas Neutras; Jatopropulsão libera Bispo e Torre, enquanto Bisso libera a forma Bispo.",
+    "Plano corporal animal mutuamente exclusivo com Vertebrado e Artrópode. Em períodos aquáticos, o pé muscular permite terminar movimentos em Casas Neutras; Jatopropulsão libera as formas Bispo e Torre.",
   ],
   Rádula: [
     "👅",
@@ -185,7 +185,7 @@ export const TRAITS = {
     "Permite ocupar e atravessar Barreiras Naturais e de Evento sem destruí-las. Representa uma rota bivalve incompatível com Rádula e Jatopropulsão.",
   ],
   "Concha Camerada": [
-    "🌀",
+    "🎈",
     "Especialização de Carapaça: aumenta de 25% para 50% a chance de bloquear o risco de uma Casa Hostil.",
   ],
   "Ventosas Quimiotáteis": [
