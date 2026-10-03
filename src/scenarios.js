@@ -290,7 +290,7 @@ function molluskFounderGenome(stageId) {
   if (index >= 1) animal.push("Ovíparo", "Camuflagem");
   if (index >= 2) animal.push("Locomoção Terrestre");
   if (index >= 4)
-    animal.push("Corpo Gelatinoso", "Tinta", "Ventosas Quimiotáteis");
+    animal.push("Corpo Gelatinoso", "Tinta", "Ventosas Quimiotáteis", "Autotomia");
   if (index >= 5)
     animal.push("Contorcionismo", "Mimetismo", "Regeneração de Braços");
   if (index >= 7)
