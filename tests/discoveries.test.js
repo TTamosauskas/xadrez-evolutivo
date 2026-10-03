@@ -284,6 +284,15 @@ test("curated Biology media stays landscape and semantically representative", ()
     Endozoocoria: "Ara_ararauna_-_se_alimentando_de_frutos_e_sementes",
     Epizoocoria: "Epizoochory_-_black_Labrador_with_hooked_Geum_fruits",
     Mirmecocoria: "Mimercoria.jpg",
+    Molusco: "Mollusca_Diversity.png",
+    Rádula: "SEM_images_of_radulae_of_the_oblong_rocksnail_",
+    Bisso: "Mussel_%26_Byssal_Threads.jpg",
+    "Concha Camerada": "NautilusCutawayLogarithmicSpiral.jpg",
+    "Ventosas Quimiotáteis": "Humbolt_squid_tentacles_and_beak.jpg",
+    "Regeneração de Braços": "PZSL1907Plate20.png",
+    "Visão Polarizada": "Cuttlefish_eye_closeup.JPG",
+    "Tentáculo Preênsil": "Loligo_vulgaris_with_captured_Sparus_aurata.jpeg",
+    "Cromatóforos Neurais": "Camouflage_octopus.jpg",
   };
 
   const images = new Set();
