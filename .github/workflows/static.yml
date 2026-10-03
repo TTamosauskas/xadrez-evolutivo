@@ -20,6 +20,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Run 200-game replacement benchmark
+        env:
+          GAMES: 200
+          GOAL_TURNS: 200
+          TURN_LIMIT: 300
+        run: npm run simulate
       # Long-running anti-stagnation simulations and geological benchmarks are
       # intentionally paused while the mutation/mechanics set is still evolving.
       # Re-enable them after the planned gameplay systems are complete.
