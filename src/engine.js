@@ -6119,6 +6119,7 @@ function resolveChromatophores(ctx, action) {
   if (!piece || !chromatophoreActionAvailable(state, piece))
     throw Error("Cromatóforos Neurais indisponíveis.");
 
+  piece.lastEnergyActivityTurn = state.turn;
   if (piece.chromatophoreDisguise) {
     revealChromatophore(state, piece, "após permanecer imóvel");
   } else {
