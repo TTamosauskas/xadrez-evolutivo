@@ -64,7 +64,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Rádula: "Vivifica Casa Fértil ortogonal adjacente: torna-a neutra e recupera até 2 Energia.",
   Bisso: "Vivifica uma Barreira Natural ou de Evento adjacente para fixar-se sem destruí-la.",
   "Concha Camerada": "Eleva de 25% para 50% a proteção ambiental oferecida por Carapaça.",
-  "Ventosas Quimiotáteis": "Capturas adjacentes agarram a presa e bloqueiam fugas por deslocamento.",
+  "Ventosas Quimiotáteis": "Capturas adjacentes agarram a presa e bloqueiam fugas reativas baseadas em deslocamento.",
   "Regeneração de Braços": "Após Autotomia, restaura a forma original depois de 3 turnos próprios.",
   "Visão Polarizada": "Detecta Camuflagem até 2 casas e preserva percepção curta sob Tinta.",
   "Tentáculo Preênsil": "Puxa uma presa a 2–3 casas para junto do Molusco; custa 1 Energia e impede contra-ataque imediato.",
