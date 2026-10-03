@@ -219,19 +219,19 @@ export const TRAITS = {
   Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Capturas alimentares válidas podem gerar reprodução."],
   Ingestão: [
     "👄",
-    "Adaptação multicelular que permite capturar e consumir organismos multicelulares; exige Multicelularismo e mantém a reprodução predatória após uma captura válida.",
+    "Adaptação multicelular que permite capturar organismos multicelulares independentemente da dieta; a captura só alimenta Vivificação quando a especialização alimentar for compatível.",
   ],
   Carnívoro: [
     "🍖",
-    "Especialização alimentar: ao reproduzir por captura de uma criatura não fotossintética, devolve 1 Energia.",
+    "Não restringe capturas. Apenas presas não fotossintéticas alimentam a Vivificação predatória e devolvem 1 Energia após a reprodução.",
   ],
   Herbívoro: [
     "🥬",
-    "Especialização alimentar: ao reproduzir por captura de uma criatura fotossintética, devolve 1 Energia. Do Cambriano em diante, também permite Vivificar usando Casas Férteis.",
+    "Não restringe capturas. Apenas presas fotossintéticas alimentam a Vivificação predatória e devolvem 1 Energia após a reprodução. Do Cambriano em diante, também permite Vivificar usando Casas Férteis.",
   ],
   Granívoro: [
     "🐿️",
-    "Especialização alimentar de herbívoros e onívoros: permite consumir sementes 🌰 adversárias alcançáveis e usar esse alimento para a reprodução normal da criatura.",
+    "Não restringe capturas comuns. Permite consumir sementes 🌰 adversárias alcançáveis e usar esse recurso como alimento reprodutivo.",
   ],
   Canibalismo: [
     "🐻‍❄️",
@@ -256,7 +256,7 @@ export const TRAITS = {
   "Vetor Patógeno": ["🦟", "Pode desencadear surtos virais, bacterianos ou fúngicos em criaturas adversárias adjacentes."],
   Onívoro: [
     "🐻",
-    "Combina as especializações de Carnívoro e Herbívoro: devolve 1 Energia após reprodução por qualquer presa e, do Cambriano em diante, também permite Vivificar em Casas Férteis.",
+    "Combina Carnívoro e Herbívoro sem restringir capturas: qualquer presa pode alimentar a Vivificação predatória e devolver 1 Energia após a reprodução; do Cambriano em diante, também permite Vivificar em Casas Férteis.",
   ],
   "Respiração Cutânea": [
     "🐸",
@@ -264,7 +264,7 @@ export const TRAITS = {
   ],
   Necrófago: [
     "🐺",
-    "Reproduz consumindo uma carcaça 🦴 deixada por uma captura que matou sem gerar descendência.",
+    "Não restringe capturas comuns. Permite Vivificar consumindo uma carcaça 🦴 deixada por uma morte sem reprodução.",
   ],
   Coprofagia: [
     "💩",
@@ -279,7 +279,7 @@ export const TRAITS = {
     "🪳",
     "Mantém a prole internamente por três rodadas; depois o progenitor pode gastar um turno para depositar um ovo ⚪ adjacente, que eclode na rodada seguinte.",
   ],
-  Ovífagia: ["🐍", "Permite capturar ovos inimigos e reproduzir conforme a ninhada consumida."],
+  Ovífagia: ["🐍", "Não restringe capturas comuns. Permite consumir ovos inimigos como recurso de Vivificação."],
   Vivíparo: ["🔴", "A prole é carregada por três rodadas antes de nascer."],
   Placenta: [
     "🫄",
@@ -635,7 +635,7 @@ export const TRAITS = {
   ],
   "Onívoro Oportunista": [
     "🐷",
-    "Especialização de Onívoro: permite aproveitar carcaças 🦴 e ovos como rotas reprodutivas de baixa eficiência quando faltam as especializações correspondentes.",
+    "Não restringe capturas comuns. Permite a Onívoro aproveitar carcaças 🦴 e ovos como rotas reprodutivas de baixa eficiência sem as especializações próprias.",
   ],
   "Acasalamento Preferencial": [
     "🦚",
