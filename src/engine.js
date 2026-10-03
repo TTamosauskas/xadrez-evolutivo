@@ -6006,6 +6006,137 @@ function resolveBioluminescentLure(ctx, action) {
   settle(ctx);
 }
 
+function resolveRadula(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    target = radulaTargets(state, piece).find(
+      (candidate) => candidate.r === action.r && candidate.c === action.c,
+    );
+  if (!piece || !target) throw Error("Rádula indisponível.");
+
+  const cell = square(target.r, target.c),
+    before = energyValue(piece);
+  if (!consumeFertileTerrain(state, cell))
+    throw Error("Rádula exige uma Casa Fértil adjacente.");
+  restoreEnergy(piece, 2);
+  const gained = Math.max(0, energyValue(piece) - before);
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 👅 Rádula raspou ${coord(target.r, target.c)} e recuperou ${gained} Energia.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Rádula",
+    `👅 Rádula raspou o substrato e recuperou ${gained} Energia.`,
+    {
+      pieceId: piece.id,
+      outcome: "radula-grazing",
+      value: gained,
+    },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveTentaclePull(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    ),
+    option = tentacleTargets(state, piece).find(
+      (candidate) => candidate.targetId === action.targetId,
+    ),
+    target = state.pieces.find(
+      (candidate) =>
+        candidate.id === option?.targetId &&
+        candidate.owner !== piece?.owner,
+    );
+  if (!piece || !option || !target || !spendEnergy(piece, 1, state.turn))
+    throw Error("Tentáculo Preênsil indisponível.");
+
+  reactiveRelocation(
+    ctx,
+    target,
+    option.r,
+    option.c,
+    "tração por Tentáculo Preênsil",
+  );
+  target.lastMoveRound = round(state);
+  target.stationarySinceRound = round(state);
+  piece.tentacleReadyRound = round(state) + TENTACLE_COOLDOWN_ROUNDS;
+  piece.tentacleGuard = {
+    targetId: target.id,
+    throughTurn: state.turn + 1,
+  };
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 〰️ Tentáculo Preênsil puxou a presa para ${coord(option.r, option.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Tentáculo Preênsil",
+    "〰️ Tentáculo puxou a presa para perto; ela não pode contra-atacar este Molusco no próximo turno.",
+    {
+      pieceId: piece.id,
+      outcome: "tentacle-pull",
+      value: TENTACLE_COOLDOWN_ROUNDS,
+    },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveChromatophores(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!piece || !chromatophoreActionAvailable(state, piece))
+    throw Error("Cromatóforos Neurais indisponíveis.");
+
+  if (piece.chromatophoreDisguise) {
+    piece.chromatophoreDisguise = false;
+    piece.chromatophoreReadyRound =
+      round(state) + CHROMATOPHORE_COOLDOWN_ROUNDS;
+    log(
+      state,
+      `${OWNERS[piece.owner]}: 🎨 Cromatóforos Neurais encerraram a Cripsis Cromática.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Cromatóforos Neurais",
+      "🎨 O padrão cromático retornou ao estado normal.",
+      {
+        pieceId: piece.id,
+        outcome: "chromatophore-revealed",
+        value: CHROMATOPHORE_COOLDOWN_ROUNDS,
+      },
+    );
+  } else {
+    piece.chromatophoreDisguise = true;
+    log(
+      state,
+      `${OWNERS[piece.owner]}: 🎨 Cromatóforos Neurais ativaram Cripsis Cromática.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Cromatóforos Neurais",
+      "🎨 Cromatóforos alteraram padrão e coloração: a criatura não pode atacar nem ser atacada até se revelar.",
+      {
+        pieceId: piece.id,
+        outcome: "chromatophore-disguise",
+      },
+    );
+  }
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveParthenogenesis(ctx, action) {
   const state = ctx.state,
     parent = state.pieces.find(
@@ -6567,6 +6698,12 @@ export function transition(previous, action) {
     resolvePheromoneSignal(ctx, action);
   else if (action.type === "BIOLUMINESCENT_LURE" && state.phase === "move")
     resolveBioluminescentLure(ctx, action);
+  else if (action.type === "RADULA" && state.phase === "move")
+    resolveRadula(ctx, action);
+  else if (action.type === "TENTACLE_PULL" && state.phase === "move")
+    resolveTentaclePull(ctx, action);
+  else if (action.type === "CHROMATOPHORES" && state.phase === "move")
+    resolveChromatophores(ctx, action);
   else if (action.type === "PARTHENOGENESIS" && state.phase === "move")
     resolveParthenogenesis(ctx, action);
   else if (action.type === "MONOCARP_STORE" && state.phase === "move")
