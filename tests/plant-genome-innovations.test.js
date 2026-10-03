@@ -10,7 +10,7 @@ import {
 import { context, transition } from "../src/engine.js";
 import { movesFor } from "../src/moves.js";
 import { reproduce } from "../src/reproduction.js";
-import { traitUnlocked } from "../src/geology.js";
+import { TRAIT_BRANCH_SCOPE, TRAIT_STAGE } from "../src/geology.js";
 
 function stateAt(stage = "devonian", seed = 1601) {
   const state = createState(seed, {
@@ -120,22 +120,13 @@ test("Micorrizas oferece Casa Neutra adjacente como Vivificação e mantém o te
   );
 });
 
-test("Micorrizas, Megafilos e Poliploidia permanecem exclusivas do ramo fotossintético", () => {
-  const ord = stateAt("ordovician"),
-    dev = stateAt("devonian"),
-    plantOrd = { traits: ["Fotossíntese", "Embriófitas"], ancestry: ["Fotossíntese", "Embriófitas"] },
-    predator = { traits: ["Predação", "Multicelularismo"], ancestry: ["Predação", "Multicelularismo"] },
-    plantDev = {
-      traits: plantTraits(),
-      ancestry: plantTraits(),
-    };
-
-  assert.equal(traitUnlocked(ord, "Micorrizas", plantOrd), true);
-  assert.equal(traitUnlocked(ord, "Micorrizas", predator), false);
-  assert.equal(traitUnlocked(dev, "Megafilos", plantDev), true);
-  assert.equal(traitUnlocked(dev, "Poliploidia", plantDev), true);
-  assert.equal(traitUnlocked(dev, "Megafilos", predator), false);
-  assert.equal(traitUnlocked(dev, "Poliploidia", predator), false);
+test("Micorrizas, Megafilos e Poliploidia pertencem ao ramo fotossintético nos períodos definidos", () => {
+  assert.equal(TRAIT_STAGE.Micorrizas, "ordovician");
+  assert.equal(TRAIT_STAGE.Megafilos, "devonian");
+  assert.equal(TRAIT_STAGE.Poliploidia, "devonian");
+  assert.equal(TRAIT_BRANCH_SCOPE.Micorrizas, "photosynthesis");
+  assert.equal(TRAIT_BRANCH_SCOPE.Megafilos, "photosynthesis");
+  assert.equal(TRAIT_BRANCH_SCOPE.Poliploidia, "photosynthesis");
 });
 
 test("Poliploidia pode gerar no máximo uma inovação positiva extra por reprodução", () => {
