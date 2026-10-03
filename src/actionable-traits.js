@@ -973,8 +973,7 @@ function camouflageBlocksCurrentAttack(state, victim, attackers) {
       (has(attacker, "Visão Polarizada") && d <= 2)
     )
       return false;
-    
-      diagonalTegument =
+    const diagonalTegument =
         d === 1 &&
         Math.abs(attacker.r - victim.r) === 1 &&
         Math.abs(attacker.c - victim.c) === 1 &&
