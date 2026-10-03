@@ -4724,24 +4724,24 @@ test("plant ranks fertilize the immediate neighborhood according to their form",
     {
       rank: 1,
       extra: 3,
-      traits: ["Fotossíntese", "Multicelularismo"],
+      traits: ["Fotossíntese", "Multicelularismo", "Trepadeira"],
     },
     {
       rank: 2,
       extra: 4,
-      traits: ["Fotossíntese", "Multicelularismo"],
+      traits: ["Fotossíntese", "Multicelularismo", "Gimnospermas"],
       allowed: new Set([27, 29, 43, 45]),
     },
     {
       rank: 3,
       extra: 4,
-      traits: ["Fotossíntese", "Multicelularismo", "Traqueófitas"],
+      traits: ["Fotossíntese", "Multicelularismo", "Gimnospermas", "Angiospermas"],
       allowed: new Set([28, 35, 37, 44]),
     },
     {
       rank: 5,
       extra: 5,
-      traits: ["Fotossíntese", "Multicelularismo", "Traqueófitas"],
+      traits: ["Fotossíntese", "Multicelularismo", "Gimnospermas", "Angiospermas", "Madeira"],
     },
   ];
 
@@ -4919,30 +4919,21 @@ test("Eusocialidade gains up to two offspring from adjacent sterile kin", () => 
   assertState(s);
 });
 
-test("Dormência immobilizes on hostile terrain but the piece remains capturable", () => {
-  let s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Voo"] },
-    { owner: "amber", r: 4, c: 4, traits: ["Dormência"] },
-  ]);
-  s.board[36] = "hostile";
-  s.rng = 1000;
-  const sleeper = s.pieces[1],
-    attacker = s.pieces[0];
-  assert.equal(movesFor(s, sleeper).length, 0);
-  assert.ok(movesFor(s, attacker).some((t) => t.r === 4 && t.c === 4));
-  s = simulate(s, move(attacker, 4, 4));
-  assert.ok(!s.pieces.some((p) => p.id === sleeper.id));
+test("Dormência no longer immobilizes or protects active pieces on hostile terrain", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Fotossíntese", "Dormência"],
+      },
+      { owner: "amber", r: 0, c: 0, traits: ["Predação"] },
+    ]),
+    piece = s.pieces[0];
+  s.board[piece.r * 8 + piece.c] = "hostile";
 
-  s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Dormência"] },
-    { owner: "amber", r: 0, c: 0 },
-  ]);
-  s.board[36] = "hostile";
-  s = simulate(s, move(s.pieces[0], 4, 4));
-  const dormantPiece = s.pieces.find((p) => p.owner === "blue");
-  assert.equal(dormantPiece.r, 4);
-  assert.equal(dormantPiece.c, 4);
-  assert.equal(movesFor(s, dormantPiece).length, 0);
+  assert.ok(movesFor(s, piece).length > 0);
 });
 
 test("Visão Binocular, not Visão Noturna, counters distant Camuflagem", () => {
