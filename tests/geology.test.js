@@ -619,7 +619,12 @@ test("Hadean and Archean innovations follow the revised energy sequence", () => 
     "Respiração anaeróbia", "Quimiossíntese", "Fotossíntese", "Predação",
     "Transferência Horizontal", "Reparo Celular",
   ]);
-  assert.equal(traitUnlocked(neo, "Dormência", basal), true);
+  const photosynthetic = {
+    traits: ["Respiração anaeróbia", "Fotossíntese"],
+    ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+  };
+  assert.equal(traitUnlocked(neo, "Dormência", basal), false);
+  assert.equal(traitUnlocked(neo, "Dormência", photosynthetic), true);
 });
 test("Transferência Horizontal is the Paleoarchean mandatory innovation", () => {
   const basal = {
@@ -1679,6 +1684,10 @@ test("all photosynthetic innovations after Fotossíntese require Multicelularism
     };
 
   for (const trait of PLANT_DERIVED_TRAITS) {
+    if (trait === "Dormência") {
+      assert.equal(traitUnlocked(s, trait, unicellularPlant), true, trait);
+      continue;
+    }
     assert.ok(MULTICELLULAR_DEPENDENT_TRAITS.has(trait), trait);
     assert.equal(traitUnlocked(s, trait, unicellularPlant), false, trait);
   }
