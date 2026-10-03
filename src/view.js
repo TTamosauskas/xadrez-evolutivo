@@ -1,4 +1,4 @@
-import { OWNERS, PIECES, SYMBOLS, TRAITS, PATHOGEN_AGENTS, coord, square, has, energyBranch, canPhotosynthesize } from "./constants.js";
+import { OWNERS, PIECES, SYMBOLS, TRAITS, TRAIT_DETAILS, PATHOGEN_AGENTS, coord, square, has, energyBranch, canPhotosynthesize } from "./constants.js";
 import {
   energyCapacity,
   energyDebt,
@@ -2191,14 +2191,26 @@ export function render(
                 ? TRAITS[traitName][0]
                 : "🧬";
         const item = make("li", undefined, "mutation-item");
+        const copy = make("span", line, "mutation-copy");
         item.append(
           make(
             "span",
             icon,
             "mutation-icon",
           ),
-          make("span", line, "mutation-copy"),
+          copy,
         );
+        const details = traitName ? TRAIT_DETAILS[traitName] : null;
+        if (details) {
+          const modalDetails = make("div", undefined, "mutation-detail-sections");
+          modalDetails.append(
+            make("strong", "Na vida", "mutation-detail-heading"),
+            make("p", details.life, "mutation-detail-copy"),
+            make("strong", "No jogo", "mutation-detail-heading"),
+            make("p", details.game, "mutation-detail-copy"),
+          );
+          copy.append(modalDetails);
+        }
         list.append(item);
       }
       $("notice-content").replaceChildren(list);
