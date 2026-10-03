@@ -57,6 +57,8 @@ test("Mollusk specializations use unique icons, stages and lineage rules", () =>
     assert.ok(TRAIT_DEPENDENCIES[trait].lineage.includes("Molusco"));
   }
   assert.ok(TRAIT_INCOMPATIBILITIES.Rádula.includes("Bisso"));
+  assert.ok(TRAIT_INCOMPATIBILITIES.Bisso.includes("Jatopropulsão"));
+  assert.ok(TRAIT_INCOMPATIBILITIES.Jatopropulsão.includes("Bisso"));
   assert.ok(TRAIT_INCOMPATIBILITIES["Concha Camerada"].includes("Corpo Gelatinoso"));
   assert.ok(TRAIT_INCOMPATIBILITIES["Visão Polarizada"].includes("Visão Binocular"));
 });
