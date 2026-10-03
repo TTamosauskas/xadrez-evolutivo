@@ -92,6 +92,9 @@ import {
   nitrogenFixationTargets,
   pheromoneTargets,
   bioluminescentLureTargets,
+  sexualMimicryBridge,
+  monocarpismStoreAvailable,
+  monocarpismBloomAvailable,
   NITROGEN_FIXATION_COOLDOWN_ROUNDS,
   PHEROMONE_COOLDOWN_ROUNDS,
   BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS,
@@ -113,6 +116,7 @@ import {
   releaseMarsupialPouch,
   consumeCollectorSeed,
   releaseCarriedPlantSeeds,
+  monocarpicBloom,
 } from "./reproduction.js";
 import {
   checkPopulation,
@@ -1484,8 +1488,109 @@ function inoculatePeconha(state, attacker, victim) {
   return true;
 }
 
+function triggerPlantCaptureResponse(ctx, attacker, victim, defense) {
+  const state = ctx.state;
+  if (!attacker || !victim || attacker.owner === victim.owner) return false;
+
+  if (
+    has(victim, "Armadilha Deceptiva") &&
+    has(victim, "Carnivoria") &&
+    !canPhotosynthesize(attacker) &&
+    random(state) < 1 / 5
+  ) {
+    const killed = ctx.kill(
+      attacker.id,
+      "captura por Armadilha Deceptiva",
+      victim,
+      true,
+      { consumed: true, suppressTanatosis: true },
+    );
+    if (killed) {
+      victim.carnivoryNutrition = true;
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 💋 Armadilha Deceptiva capturou o agressor após a defesa por ${defense}.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Armadilha Deceptiva",
+        "💋 Armadilha Deceptiva converteu a tentativa frustrada em reserva nutricional.",
+        {
+          pieceId: victim.id,
+          outcome: "countercaptured-attacker",
+          value: 2,
+        },
+      );
+      advanceTurn(ctx);
+      settle(ctx);
+      return true;
+    }
+  }
+
+  if (
+    has(victim, "Polinização Deceptiva") &&
+    has(attacker, "Artrópode") &&
+    has(victim, "Reprodução Sexuada") &&
+    random(state) < 1 / 2
+  ) {
+    const closure = victim.sismonastiaClosedThroughTurn;
+    if (defense === "Sismonastia")
+      delete victim.sismonastiaClosedThroughTurn;
+    const partner = partnersFor(state, victim, { requireResource: false })[0] ?? null,
+      resource = partner
+        ? sexualReproductionResource(state, victim, partner)
+        : null;
+    let born = 0;
+    if (partner && resource) {
+      born = reproduce(ctx, victim, partner, "Polinização Deceptiva", {
+        forcedCount: 1,
+        ignoreSuccessPressure: true,
+        fertileReproduction: resource.kind === "fertile",
+        resourceKind: resource.kind,
+        resourceProviderId: resource.providerId,
+      });
+      if (born) consumeSexualResource(state, victim, partner);
+    }
+    if (Number.isInteger(closure) && state.pieces.some((p) => p.id === victim.id))
+      victim.sismonastiaClosedThroughTurn = closure;
+    if (born) {
+      log(
+        state,
+        `${OWNERS[victim.owner]}: 👅 Polinização Deceptiva converteu o contato do artrópode em uma prole.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Polinização Deceptiva",
+        "👅 A tentativa de captura produziu polinização e uma prole.",
+        {
+          pieceId: victim.id,
+          outcome: "deceptive-pollination",
+          value: born,
+        },
+      );
+      if (
+        has(victim, "Mimetismo Sexual") &&
+        distance(victim, partner) > 1 &&
+        sexualMimicryBridge(state, victim, partner)
+      )
+        emitPassiveEffect(
+          state,
+          "Mimetismo Sexual",
+          "😏 Um Artrópode ampliou a rota de Reprodução Sexuada.",
+          {
+            pieceId: victim.id,
+            outcome: "arthropod-pollination-bridge",
+          },
+        );
+    }
+  }
+  return false;
+}
+
 function finishFrustratedCapture(ctx, attacker, defense, victim = null) {
   if (victim) inoculatePeconha(ctx.state, attacker, victim);
+  if (victim && triggerPlantCaptureResponse(ctx, attacker, victim, defense))
+    return;
   if (offerSerotoninReposition(ctx, attacker, defense)) return;
   advanceTurn(ctx);
   settle(ctx);
@@ -1787,6 +1892,8 @@ function actionActorId(state, action) {
       "RHIZOME",
       "LAY_OVOVIVIPAROUS",
       "PARTHENOGENESIS",
+      "MONOCARP_STORE",
+      "MONOCARP_BLOOM",
     ].includes(action.type)
   )
     return action.id ?? null;
@@ -3557,6 +3664,35 @@ function executeMove(ctx, action) {
     completeMove(ctx, p, false, false);
     return;
   }
+  if (target.haustoriumDrain) {
+    const victim = at(state, target.r, target.c),
+      cell = square(target.r, target.c);
+    if (
+      !victim ||
+      victim.owner === p.owner ||
+      !has(victim, "Fotossíntese") ||
+      terrain(state, target.r, target.c) !== "fertile"
+    )
+      throw Error("Haustório exige uma planta inimiga sobre Casa Fértil adjacente.");
+    consumeFertileTerrain(state, cell);
+    restoreEnergy(p, 1);
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🪝 Haustório drenou a Casa Fértil sob ${coord(victim.r, victim.c)}; a planta hospedeira permaneceu viva.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Haustório",
+      "🪝 Haustório drenou a fertilidade do hospedeiro e recuperou 1 Energia.",
+      {
+        pieceId: p.id,
+        outcome: "drained-host-fertility",
+        value: 1,
+      },
+    );
+    completeMove(ctx, p, false, false);
+    return;
+  }
   const second = state.chain === p.id,
     locomotion =
       has(p, "Bipedalismo") &&
@@ -3896,6 +4032,31 @@ function executeMove(ctx, action) {
       finishFrustratedCapture(ctx, p, "Biomineralização", victim);
       return;
     }
+  }
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    reactiveDefensesActive &&
+    has(victim, "Sismonastia") &&
+    random(state) < 1 / 4
+  ) {
+    victim.sismonastiaClosedThroughTurn = state.turn + 1;
+    log(
+      state,
+      `${OWNERS[victim.owner]}: ✔️ Sismonastia fechou estruturas e interrompeu a captura.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Sismonastia",
+      "✔️ Sismonastia bloqueou a captura; Fotossíntese expansiva e reprodução ficam suspensas no próximo turno próprio.",
+      {
+        pieceId: victim.id,
+        outcome: "prevented-capture",
+        value: 1,
+      },
+    );
+    finishFrustratedCapture(ctx, p, "Sismonastia", victim);
+    return;
   }
   if (
     pieceCapture &&
@@ -4440,7 +4601,7 @@ function executeMove(ctx, action) {
     return;
   }
   if (
-    botanicalPredation &&
+    botanicalPredation === "Carnivoria" &&
     pieceCapture &&
     victim.owner !== p.owner
   ) {
@@ -4448,15 +4609,26 @@ function executeMove(ctx, action) {
     ctx.reserved.add(victimCell);
     const killed = ctx.kill(
       victim.id,
-      `captura por ${botanicalPredation}`,
+      "captura por Carnivoria",
       p,
+      true,
+      { consumed: true, suppressTanatosis: true },
     );
     if (killed) {
-      state.lastSuccessfulCaptureRound = round(state);
-      grantPredationVivification(state, p, victim, { force: true });
+      p.carnivoryNutrition = true;
       log(
         state,
-        `${OWNERS[p.owner]}: ${botanicalPredation === "Haustório" ? "🪝" : "👄"} ${botanicalPredation} consumiu uma criatura em ${coord(victim.r, victim.c)} sem deslocamento.`,
+        `${OWNERS[p.owner]}: 🥓 Carnivoria consumiu uma criatura em ${coord(victim.r, victim.c)} e armazenou nutrientes.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Carnivoria",
+        "🥓 Carnivoria gerou reserva nutricional: próxima reprodução custa 2 Energia a menos.",
+        {
+          pieceId: p.id,
+          outcome: "stored-carnivory-nutrition",
+          value: 2,
+        },
       );
     }
     ctx.reserved.delete(victimCell);
@@ -4525,6 +4697,21 @@ function executeMove(ctx, action) {
       );
     }
     if (killed && victim.owner !== p.owner) {
+      if (target.botanicalCapture === "Hemiepifitismo") {
+        log(
+          state,
+          `${OWNERS[p.owner]}: 🪢 Hemiepifitismo suprimiu a planta hospedeira em ${coord(victim.r, victim.c)} e ocupou seu espaço.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Hemiepifitismo",
+          "🪢 Hemiepifitismo substituiu competitivamente uma planta inimiga.",
+          {
+            pieceId: p.id,
+            outcome: "captured-photosynthetic-host",
+          },
+        );
+      }
       if (target.cephalization) {
         log(
           state,
@@ -5365,6 +5552,71 @@ function resolveParasitism(ctx, action) {
   settle(ctx);
 }
 
+function resolveMonocarpismStore(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!piece || !monocarpismStoreAvailable(state, piece))
+    throw Error("Investimento de Monocarpismo indisponível.");
+  const cost = reproductionEnergyCost(piece),
+    nutritionUsed = !!piece.carnivoryNutrition,
+    resource = consumeSexualResource(state, piece, null);
+  if (!resource) throw Error("Monocarpismo exige um recurso reprodutivo.");
+  if (!spendEnergy(piece, cost, state.turn))
+    throw Error("Energia insuficiente para investir em Monocarpismo.");
+  if (nutritionUsed) delete piece.carnivoryNutrition;
+  piece.monocarpismCharges = Math.min(4, (piece.monocarpismCharges ?? 0) + 1);
+  piece.lastEnergyActivityTurn = state.turn;
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🕰️ Monocarpismo acumulou investimento reprodutivo ${piece.monocarpismCharges}/4.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Monocarpismo",
+    `🕰️ Investimento reprodutivo acumulado: ${piece.monocarpismCharges}/4.`,
+    {
+      pieceId: piece.id,
+      outcome: "stored-monocarpic-investment",
+      value: piece.monocarpismCharges,
+    },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveMonocarpismBloom(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!piece || !monocarpismBloomAvailable(state, piece))
+    throw Error("Floração monocárpica indisponível.");
+  const charges = piece.monocarpismCharges ?? 0,
+    born = monocarpicBloom(ctx, piece);
+  if (!born) throw Error("Não há espaço para a floração monocárpica.");
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🕰️ Floração monocárpica dispersou ${born} semente(s) a até três casas.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Monocarpismo",
+    `🕰️ Floração terminal liberou ${born} semente(s); a planta completou seu ciclo de vida.`,
+    {
+      pieceId: piece.id,
+      outcome: "terminal-monocarpic-bloom",
+      value: born,
+    },
+  );
+  ctx.kill(piece.id, `Monocarpismo após ${charges} investimento(s)`, null);
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveNursing(ctx, action) {
   const state = ctx.state,
     parent = state.pieces.find(
@@ -5742,6 +5994,29 @@ function choosePartner(ctx, id) {
         resourceProviderId: resource.providerId,
       },
     );
+  if (
+    born > 0 &&
+    has(p, "Mimetismo Sexual") &&
+    distance(p, firstMate) > 1
+  ) {
+    const bridge = sexualMimicryBridge(state, p, firstMate);
+    if (bridge) {
+      log(
+        state,
+        `${OWNERS[p.owner]}: 😏 Mimetismo Sexual usou um Artrópode como ponte de polinização.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Mimetismo Sexual",
+        "😏 Um Artrópode ampliou a área disponível para Reprodução Sexuada.",
+        {
+          pieceId: p.id,
+          outcome: "arthropod-pollination-bridge",
+          value: bridge.id,
+        },
+      );
+    }
+  }
   if (sexualCannibalism) {
     ctx.kill(
       firstMate.id,
@@ -6110,6 +6385,10 @@ export function transition(previous, action) {
     resolveBioluminescentLure(ctx, action);
   else if (action.type === "PARTHENOGENESIS" && state.phase === "move")
     resolveParthenogenesis(ctx, action);
+  else if (action.type === "MONOCARP_STORE" && state.phase === "move")
+    resolveMonocarpismStore(ctx, action);
+  else if (action.type === "MONOCARP_BLOOM" && state.phase === "move")
+    resolveMonocarpismBloom(ctx, action);
   else if (action.type === "AGGRESSIVE_MATE" && state.phase === "move")
     resolveAggressiveMate(ctx, action);
   else if (action.type === "NURSE" && state.phase === "move")
