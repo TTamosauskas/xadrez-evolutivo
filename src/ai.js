@@ -332,21 +332,21 @@ function moveMechanicPriority(state, piece, target) {
   if (!piece || !target) return 0;
   let value = 0;
   if (target.webEscape) value += 14;
-  if (target.mycorrhiza) value += 11;
-  if (target.cutaneous) value += 9;
-  if (target.vascular) value += 9;
-  if (target.seedCapture) value += 11;
-  if (target.fruitConsume) value += 7;
-  if (target.synzooCollect) value += 5;
+  if (target.mycorrhiza) value += 3;
+  if (target.cutaneous) value += 2.5;
+  if (target.vascular) value += 2.5;
+  if (target.seedCapture) value += 5;
+  if (target.fruitConsume) value += 3;
+  if (target.synzooCollect) value += 2;
   if (target.haustoriumDrain) {
     const deficit = Math.max(0, energyCapacity(piece) - energyValue(piece));
-    value += 6 + Math.min(4, deficit);
+    value += 4 + Math.min(3, deficit);
   }
-  if (target.botanicalPredation) value += 7;
-  if (target.botanicalCapture) value += 6;
-  if (target.hypermetamorphosis) value += 5;
-  if (target.massRecruitment) value += 5;
-  if (target.cephalization) value += 4;
+  if (target.botanicalPredation) value += 6;
+  if (target.botanicalCapture) value += 5;
+  if (target.hypermetamorphosis) value += 3;
+  if (target.massRecruitment) value += 4;
+  if (target.cephalization) value += 3;
   if (target.phoresy) value += 3;
   if (target.arboreal) value += 3;
   if (target.bioadhesion) value += 3;
@@ -564,6 +564,8 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
         (has(victim, "Fotossíntese") ? 5 : 0) +
         (predatoryReproductionAvailable(p, victim) ? 7 : 0) +
         (targetTerrain === "fertile" ? 3 : 0) +
+        Math.min(12, stalledRounds * 0.75) +
+        Math.max(0, ownPopulation - enemies.length) * 1.5 +
         (enemies.length <= 2 ? 30 : 0)
       : 0,
     cannibalValue = alliedVictim
@@ -939,7 +941,7 @@ export function chooseAction(
         ? resolutionPressureLevel(state)
         : 0,
     priorityOptions = {
-      geometryScale: difficulty === "hard" ? 0.25 : 1,
+      geometryScale: difficulty === "hard" ? 0.75 : 1,
       resolutionLevel: activeResolutionLevel,
     },
     actions = orderedActions(state, Infinity, priorityOptions);

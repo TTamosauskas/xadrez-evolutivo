@@ -211,7 +211,7 @@ test("Haustorio is evaluated as a drain action rather than a destructive capture
   );
 });
 
-test("Micorrizas receives explicit strategic value during root ordering", () => {
+test("Micorrizas receives contextual strategic value during root ordering", () => {
   const state = fixture([
       {
         owner: "blue",
@@ -232,8 +232,20 @@ test("Micorrizas receives explicit strategic value during root ordering", () => 
   plant.energyCapacitySnapshot = 20;
   const target = movesFor(state, plant).find((entry) => entry.mycorrhiza);
   assert.ok(target);
-  const action = { type: "MOVE", id: plant.id, r: target.r, c: target.c };
-  assert.ok(actionPriority(state, action) >= 10);
+  const action = { type: "MOVE", id: plant.id, r: target.r, c: target.c },
+    ordinary = movesFor(state, plant).find(
+      (entry) => !entry.mycorrhiza && !entry.capture && !entry.stay,
+    );
+  assert.ok(ordinary);
+  assert.ok(
+    actionPriority(state, action) >
+      actionPriority(state, {
+        type: "MOVE",
+        id: plant.id,
+        r: ordinary.r,
+        c: ordinary.c,
+      }),
+  );
 });
 
 
@@ -251,5 +263,75 @@ test("long AI benchmarks use named difficulty profiles instead of tiny search ca
     assert.doesNotMatch(source, /budget:\s*5/);
     assert.doesNotMatch(source, /maxNodes:\s*(?:12|30)/);
     assert.doesNotMatch(source, /now:\s*\(\)\s*=>\s*0/);
+  }
+});
+
+
+test("medium and hard convert a stalled capture opportunity instead of defaulting to easy reproduction", () => {
+  const state = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 3,
+      },
+      {
+        owner: "blue",
+        r: 6,
+        c: 6,
+        rank: 0,
+        traits: [
+          "Respiração anaeróbia",
+          "Reparo Celular",
+          "Eucarionte",
+          "Multicelularismo",
+          "Fotossíntese",
+          "Embriófitas",
+          "Traqueófitas",
+        ],
+        energy: 20,
+        energyCapacitySnapshot: 20,
+      },
+      {
+        owner: "amber",
+        r: 4,
+        c: 5,
+        rank: 0,
+        traits: [
+          "Respiração anaeróbia",
+          "Reparo Celular",
+          "Eucarionte",
+          "Multicelularismo",
+          "Fotossíntese",
+        ],
+      },
+    ], 9504),
+    predator = state.pieces[0],
+    plant = state.pieces[1];
+
+  state.turn = 40;
+  state.lastSuccessfulCaptureRound = 5;
+  state.board[plant.r * 8 + plant.c] = "fertile";
+
+  const capture = { type: "MOVE", id: predator.id, r: 4, c: 5 };
+  assert.ok(
+    legalActions(state).some(
+      (action) =>
+        action.type === capture.type &&
+        action.id === capture.id &&
+        action.r === capture.r &&
+        action.c === capture.c,
+    ),
+  );
+
+  for (const [difficulty, maxNodes] of [
+    ["medium", 80],
+    ["hard", 240],
+  ]) {
+    const chosen = chooseAction(state, difficulty, {
+      now: () => 0,
+      maxNodes,
+    });
+    assert.deepEqual(chosen, capture);
   }
 });
