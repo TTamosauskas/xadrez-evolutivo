@@ -756,6 +756,8 @@ export function newPiece(state, owner, r, c, source = {}) {
         : null,
       chromatophoreReadyRound: source.chromatophoreReadyRound ?? bornRound,
       chromatophoreDisguise: source.chromatophoreDisguise === true,
+      chromatophoreRevealTurn:
+        source.chromatophoreRevealTurn ?? null,
       broodParasite: source.broodParasite
         ? structuredClone(source.broodParasite)
         : null,
@@ -3444,6 +3446,9 @@ export function assertState(state) {
       (p.chromatophoreReadyRound !== undefined &&
         !integer(p.chromatophoreReadyRound, 0)) ||
       typeof (p.chromatophoreDisguise ?? false) !== "boolean" ||
+      (p.chromatophoreRevealTurn !== undefined &&
+        p.chromatophoreRevealTurn !== null &&
+        !integer(p.chromatophoreRevealTurn, 0)) ||
       (p.tentacleGuard !== undefined &&
         p.tentacleGuard !== null &&
         (!integer(p.tentacleGuard.targetId, 1) ||
