@@ -170,7 +170,7 @@ test("Regeneração de Braços restores a Mollusk form after three own turns", (
       r: 4,
       c: 4,
       rank: 2,
-      traits: ["Molusco", "Jatopropulsão", "Corpo Gelatinoso", "Autotomia", "Ventosas Quimiotáteis", "Regeneração de Braços"],
+      traits: ["Molusco", "Locomoção Terrestre", "Jatopropulsão", "Corpo Gelatinoso", "Autotomia", "Ventosas Quimiotáteis", "Regeneração de Braços"],
     },
   ], 9705);
   const attacker = state.pieces[0],
