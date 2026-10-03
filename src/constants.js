@@ -388,7 +388,7 @@ export const TRAITS = {
   ],
   Madeira: [
     "🪵",
-    "O crescimento lenhoso reforça o organismo: ao sofrer uma tentativa de captura, possui 25% de chance de resistir e encerrar a ação do agressor. Em angiospermas, libera a forma vegetal Rainha.",
+    "O crescimento lenhoso reforça o organismo: ao sofrer uma tentativa de captura, possui 25% de chance de resistir e encerrar a ação do agressor. Em linhagens floríferas derivadas, completa a combinação que libera a forma vegetal Rainha.",
   ],
   Trepadeira: [
     "🌿",
