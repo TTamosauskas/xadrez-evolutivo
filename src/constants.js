@@ -1,8 +1,8 @@
 export const SIZE = 8;
-export const STATE_VERSION = 34;
+export const STATE_VERSION = 35;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
-export const CHESS_PIECE_VALUES = Object.freeze([1, 3, 3, 5, 100, 9]);
+export const CHESS_PIECE_VALUES = Object.freeze([1, 3, 3, 5, 2, 9]);
 export const SYMBOLS = {
   blue: ["♙", "♘", "♗", "♖", "♔", "♕"],
   amber: ["♟", "♞", "♝", "♜", "♚", "♛"],
@@ -214,7 +214,7 @@ export const TRAITS = {
   Voo: ["🐦", "Permite atravessar casas hostis."],
   "Sacos Aéreos": [
     "🦖",
-    "Favorece gigantismo: descendentes que expressam Sacos Aéreos nunca nascem como Peões; o mínimo é Cavalo.",
+    "Favorece gigantismo no ramo predatório: descendentes que expressam Sacos Aéreos não permanecem na forma basal Rei; o mínimo é Cavalo.",
   ],
   Predação: ["👾", "Define um ramo energético hereditário incompatível com Fotossíntese. Capturas alimentares válidas podem gerar reprodução."],
   Ingestão: [
@@ -603,7 +603,7 @@ export const TRAITS = {
   ],
   Nanismo: [
     "📉",
-    "Força a forma funcional de Peão e reduz visualmente o organismo ao tamanho de uma peça juvenil.",
+    "Força a menor forma funcional do ramo: Peão em Fotossíntese e Rei em Predação, reduzindo visualmente o organismo ao tamanho de uma peça juvenil.",
   ],
   Gigantismo: [
     "📈",
@@ -934,5 +934,9 @@ export const energyBranch = (piece) =>
         : null;
 export const canPhotosynthesize = (piece) =>
   has(piece, "Fotossíntese") || has(piece, "Mixotrofia");
+export const purePredatoryBranch = (piece) =>
+  !!piece && has(piece, "Predação") && !canPhotosynthesize(piece);
+export const basalRankFor = (piece) =>
+  canPhotosynthesize(piece) ? 0 : purePredatoryBranch(piece) ? 4 : piece?.rank ?? 4;
 export const distance = (a, b) =>
   Math.max(Math.abs(a.r - b.r), Math.abs(a.c - b.c));
