@@ -3576,7 +3576,7 @@ function triggerAutotomy(ctx, attacker, victim) {
   const originalRank = victim.rank;
   victim.rank = reducedRank;
   victim.autotomyRecovery = has(victim, "Regeneração de Braços")
-    ? { originalRank, regenerationTurnsRemaining: 3 }
+    ? { originalRank, regenerationTurnsRemaining: 4 }
     : { originalRank };
   if (has(victim, "Regeneração de Braços"))
     emitPassiveEffect(
@@ -6022,6 +6022,7 @@ function resolveRadula(ctx, action) {
   if (!consumeFertileTerrain(state, cell))
     throw Error("Rádula exige uma Casa Fértil adjacente.");
   restoreEnergy(piece, 2);
+  piece.lastEnergyActivityTurn = state.turn;
   const gained = Math.max(0, energyValue(piece) - before);
   log(
     state,
@@ -6057,6 +6058,7 @@ function resolveTentaclePull(ctx, action) {
     );
   if (!piece || !option || !target || !spendEnergy(piece, 1, state.turn))
     throw Error("Tentáculo Preênsil indisponível.");
+  piece.lastEnergyActivityTurn = state.turn;
 
   reactiveRelocation(
     ctx,
