@@ -86,6 +86,53 @@ main {
 .board-stage {
   position: relative;
 }
+.board-tutorial-tooltip {
+  position: absolute;
+  z-index: 40;
+  width: min(280px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid #b9c7aa;
+  border-radius: 10px;
+  background: #20271d;
+  color: #f4f2e9;
+  box-shadow: 0 8px 24px #000b;
+  transform: translateX(-50%);
+  text-align: left;
+}
+.board-tutorial-tooltip.above {
+  transform: translate(-50%, -100%);
+}
+.board-tutorial-tooltip::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: #20271d;
+  border: solid #b9c7aa;
+  transform: translateX(-50%) rotate(45deg);
+}
+.board-tutorial-tooltip.below::before {
+  top: -6px;
+  border-width: 1px 0 0 1px;
+}
+.board-tutorial-tooltip.above::before {
+  bottom: -6px;
+  border-width: 0 1px 1px 0;
+}
+.board-tutorial-tooltip-copy {
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+.board-tutorial-tooltip button {
+  width: 100%;
+  padding: 7px 10px;
+  background: #3d4b35;
+  cursor: pointer;
+}
+
 .toastify.xe-passive-toast {
   box-sizing: border-box;
   width: max-content;
