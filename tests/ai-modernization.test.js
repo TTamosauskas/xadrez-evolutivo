@@ -244,6 +244,7 @@ test("long AI benchmarks use named difficulty profiles instead of tiny search ca
     "./simulate.js",
     "../scripts/aquatic-founder-benchmark.js",
     "../scripts/land-transition-benchmark.js",
+    "../scripts/ai-intelligence-benchmark.js",
   ]) {
     const source = readFileSync(new URL(relative, import.meta.url), "utf8");
     assert.match(source, /AI_DIFFICULTY/);
