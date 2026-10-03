@@ -223,11 +223,11 @@ export const TRAITS = {
   ],
   Carnívoro: [
     "🍖",
-    "Não restringe capturas. Apenas presas não fotossintéticas alimentam a Vivificação predatória e devolvem 1 Energia após a reprodução.",
+    "Não restringe capturas. Apenas criaturas não fotossintéticas alimentam a Vivificação predatória e devolvem 1 Energia após a reprodução.",
   ],
   Herbívoro: [
     "🥬",
-    "Não restringe capturas. Apenas presas fotossintéticas alimentam a Vivificação predatória e devolvem 1 Energia após a reprodução. Do Cambriano em diante, também permite Vivificar usando Casas Férteis.",
+    "Não restringe capturas. Apenas criaturas fotossintéticas alimentam a Vivificação predatória e devolvem 1 Energia após a reprodução. Do Cambriano em diante, também permite Vivificar usando Casas Férteis.",
   ],
   Granívoro: [
     "🐿️",
@@ -256,7 +256,7 @@ export const TRAITS = {
   "Vetor Patógeno": ["🦟", "Pode desencadear surtos virais, bacterianos ou fúngicos em criaturas adversárias adjacentes."],
   Onívoro: [
     "🐻",
-    "Combina Carnívoro e Herbívoro sem restringir capturas: qualquer presa pode alimentar a Vivificação predatória e devolver 1 Energia após a reprodução; do Cambriano em diante, também permite Vivificar em Casas Férteis.",
+    "Combina Carnívoro e Herbívoro sem restringir capturas: qualquer criatura pode alimentar a Vivificação predatória e devolver 1 Energia após a reprodução; do Cambriano em diante, também permite Vivificar em Casas Férteis.",
   ],
   "Respiração Cutânea": [
     "🐸",
