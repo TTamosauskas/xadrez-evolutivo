@@ -266,8 +266,7 @@ export function strategicPieceValue(state, piece) {
     terrainPenalty = lethalHazardAt(state, piece.r, piece.c)
       ? 18
       : terrain(state, piece.r, piece.c) === "hostile"
-        ? has(piece, "Dormência") ||
-          has(piece, "Endotermia") ||
+        ? has(piece, "Endotermia") ||
           has(piece, "Extremotolerância")
           ? 0.75
           : 2.5
@@ -551,7 +550,6 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
       targetCell !== null && lethalHazardAt(state, a.r, a.c) ? 10000 : 0,
     hostilePenalty =
       targetTerrain === "hostile" &&
-      !has(p, "Dormência") &&
       !has(p, "Endotermia") &&
       !has(p, "Extremotolerância")
         ? 8
