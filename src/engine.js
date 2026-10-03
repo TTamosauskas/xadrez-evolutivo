@@ -98,6 +98,12 @@ import {
   NITROGEN_FIXATION_COOLDOWN_ROUNDS,
   PHEROMONE_COOLDOWN_ROUNDS,
   BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS,
+  TENTACLE_COOLDOWN_ROUNDS,
+  CHROMATIC_COOLDOWN_ROUNDS,
+  radulaTargets,
+  byssusTargets,
+  tentacleTargets,
+  chromaticCrypsisAvailable,
 } from "./moves.js";
 import {
   reproduce,
@@ -784,12 +790,16 @@ export function hostileHazardKills(state, piece, normalHostile = false) {
   }
   if (!has(piece, "Carapaça"))
     return !endothermyRescues(state, piece, normalHostile);
-  if (random(state) >= 1 / 4)
+  const chamberedShell = has(piece, "Concha Camerada"),
+    shellChance = chamberedShell ? 1 / 2 : 1 / 4;
+  if (random(state) >= shellChance)
     return !endothermyRescues(state, piece, normalHostile);
   emitPassiveEffect(
     state,
-    "Carapaça",
-    "🐚 Carapaça bloqueou o risco hostil.",
+    chamberedShell ? "Concha Camerada" : "Carapaça",
+    chamberedShell
+      ? "🌀 Concha Camerada ampliou a proteção da Carapaça contra o ambiente hostil."
+      : "🐚 Carapaça bloqueou o risco hostil.",
     { pieceId: piece.id, outcome: "blocked-hostile-risk" },
   );
   return false;
@@ -2365,6 +2375,32 @@ function advanceHadeanEnvironment(state) {
   return true;
 }
 
+function tickArmRegeneration(state, owner) {
+  for (const piece of state.pieces) {
+    if (
+      piece.owner !== owner ||
+      !has(piece, "Regeneração de Braços") ||
+      !Number.isInteger(piece.autotomyRecovery?.turnsRemaining)
+    )
+      continue;
+    piece.autotomyRecovery.turnsRemaining--;
+    if (piece.autotomyRecovery.turnsRemaining > 0) continue;
+    const restoredRank = piece.autotomyRecovery.originalRank;
+    piece.rank = restoredRank;
+    piece.autotomyRecovery = null;
+    log(
+      state,
+      `${OWNERS[piece.owner]}: 🦾 Regeneração de Braços restaurou a forma ${PIECES[restoredRank]}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Regeneração de Braços",
+      `🦾 Regeneração completa: forma ${PIECES[restoredRank]} restaurada.`,
+      { pieceId: piece.id, outcome: "restored-autotomy-form", value: restoredRank },
+    );
+  }
+}
+
 function advanceTurn(ctx) {
   const state = ctx.state;
   if (resolveNeurodivergentActionEnd(ctx)) return;
@@ -2389,6 +2425,7 @@ function advanceTurn(ctx) {
     }
   tickParasitoidism(ctx, acting, before);
   tickRuminantRecovery(state, acting, before);
+  tickArmRegeneration(state, acting);
   recoverEnergyAfterTurn(state, acting, before);
   for (const p of state.pieces) {
     moveDirection(p);
@@ -3466,6 +3503,11 @@ function lowerAutotomyRank(piece) {
       return new Map([
         [2, 1],
       ]).get(piece.rank) ?? null;
+    if (has(piece, "Molusco"))
+      return new Map([
+        [3, 2],
+        [2, 4],
+      ]).get(piece.rank) ?? null;
     return new Map([
       [5, 3],
       [3, 2],
@@ -3495,19 +3537,26 @@ function triggerAutotomy(ctx, attacker, victim) {
   if (!Number.isInteger(reducedRank)) return false;
   const originalRank = victim.rank;
   victim.rank = reducedRank;
-  victim.autotomyRecovery = { originalRank };
+  victim.autotomyRecovery = {
+    originalRank,
+    ...(has(victim, "Regeneração de Braços")
+      ? { turnsRemaining: 3 }
+      : {}),
+  };
   log(
     ctx.state,
     `${OWNERS[victim.owner]}: ✂️ Autotomia sacrificou a forma ${PIECES[originalRank]} e preservou a criatura como ${PIECES[reducedRank]}.`,
   );
   emitPassiveEffect(
     ctx.state,
-    "Autotomia",
-    `✂️ Autotomia: ${PIECES[originalRank]} sobreviveu como ${PIECES[reducedRank]}.`,
+    has(victim, "Regeneração de Braços") ? "Regeneração de Braços" : "Autotomia",
+    has(victim, "Regeneração de Braços")
+      ? "🦾 Regeneração iniciada: a forma original retorna em 3 turnos próprios."
+      : `✂️ Autotomia: ${PIECES[originalRank]} sobreviveu como ${PIECES[reducedRank]}.`,
     {
       pieceId: victim.id,
       outcome: "autotomy-survival",
-      value: reducedRank,
+      value: has(victim, "Regeneração de Braços") ? 3 : reducedRank,
     },
   );
   finishFrustratedCapture(ctx, attacker, "Autotomia", victim);
@@ -3532,6 +3581,7 @@ function executeMove(ctx, action) {
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
+  if (p.chromaticCrypsis) endChromaticCrypsis(state, p);
   if (target.hypermetamorphosis) {
     p.hypermetamorphosisReady = false;
     log(
@@ -4024,13 +4074,19 @@ function executeMove(ctx, action) {
     cooperativeHunt =
       pieceCapture &&
       victim.owner !== p.owner &&
-      cooperativeHunters(state, p, victim).length >= 2;
+      cooperativeHunters(state, p, victim).length >= 2,
+    suctionGrip =
+      pieceCapture &&
+      victim.owner !== p.owner &&
+      distance(p, victim) === 1 &&
+      has(p, "Ventosas Quimiotáteis");
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
     !target.crawler &&
     has(victim, "Camuflagem") &&
-    has(p, "Visão Binocular") &&
+    (has(p, "Visão Binocular") ||
+      (has(p, "Visão Polarizada") && distance(p, victim) <= 2)) &&
     (
       distance(p, victim) > 1 ||
       (
@@ -4043,8 +4099,12 @@ function executeMove(ctx, action) {
   )
     emitPassiveEffect(
       state,
-      "Visão Binocular",
-      "👀 Visão Binocular detectou Camuflagem.",
+      has(p, "Visão Polarizada") && distance(p, victim) <= 2
+        ? "Visão Polarizada"
+        : "Visão Binocular",
+      has(p, "Visão Polarizada") && distance(p, victim) <= 2
+        ? "🧿 Visão Polarizada detectou a criatura camuflada."
+        : "👀 Visão Binocular detectou Camuflagem.",
       { pieceId: p.id, outcome: "neutralized-camouflage" },
     );
   if (
@@ -4368,6 +4428,7 @@ function executeMove(ctx, action) {
     victim.owner !== p.owner &&
     reactiveDefensesActive &&
     has(victim, "Ofuscamento por movimento") &&
+    !suctionGrip &&
     aggressiveNeutralizedTrait !== "Ofuscamento por movimento"
   ) {
     const cells = proteanEscapeCells(state, victim);
@@ -4401,6 +4462,7 @@ function executeMove(ctx, action) {
     victim.owner !== p.owner &&
     reactiveDefensesActive &&
     has(victim, "Movimento proteano") &&
+    !suctionGrip &&
     aggressiveNeutralizedTrait !== "Movimento proteano"
   ) {
     if (
@@ -4447,6 +4509,7 @@ function executeMove(ctx, action) {
     victim.owner !== p.owner &&
     reactiveDefensesActive &&
     has(victim, "Adrenalina") &&
+    !suctionGrip &&
     aggressiveNeutralizedTrait !== "Adrenalina"
   ) {
     if (triggerAdrenalineEscape(ctx, p, victim)) return;
@@ -4602,6 +4665,7 @@ function executeMove(ctx, action) {
     pieceCapture &&
     victim.owner !== p.owner &&
     reactiveDefensesActive &&
+    !suctionGrip &&
     triggerInkEscape(ctx, p, victim)
   )
     return;
@@ -5801,6 +5865,155 @@ function resolveNitrogenFixation(ctx, action) {
   settle(ctx);
 }
 
+function resolveRadula(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) => candidate.id === action.id && candidate.owner === state.current,
+    ),
+    target = radulaTargets(state, piece).find(
+      (candidate) => candidate.r === action.r && candidate.c === action.c,
+    );
+  if (!piece || !target) throw Error("Rádula indisponível.");
+  consumeFertileTerrain(state, square(target.r, target.c));
+  const before = energyValue(piece);
+  restoreEnergy(piece, 2);
+  const gained = energyValue(piece) - before;
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 👅 Rádula raspou ${coord(target.r, target.c)} e recuperou ${gained} Energia.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Rádula",
+    `👅 Rádula raspou o substrato e recuperou ${gained} Energia.`,
+    { pieceId: piece.id, outcome: "rasped-fertility", value: gained },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveByssusAttach(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) => candidate.id === action.id && candidate.owner === state.current,
+    ),
+    target = byssusTargets(state, piece).find(
+      (candidate) => candidate.r === action.r && candidate.c === action.c,
+    );
+  if (!piece || !target) throw Error("Bisso indisponível.");
+  if (!recordExertion(state, piece)) throw Error("Energia insuficiente para Bisso.");
+  reactiveRelocation(ctx, piece, target.r, target.c, "fixação por Bisso");
+  if (state.pieces.some((candidate) => candidate.id === piece.id)) {
+    piece.byssusAttached = { cell: square(target.r, target.c) };
+    log(
+      state,
+      `${OWNERS[piece.owner]}: 🧵 Bisso fixou a criatura ao substrato em ${coord(target.r, target.c)}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Bisso",
+      "🧵 Bisso fixou a criatura ao substrato sem destruir a barreira.",
+      { pieceId: piece.id, outcome: "attached-to-barrier" },
+    );
+  }
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveTentaclePull(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) => candidate.id === action.id && candidate.owner === state.current,
+    ),
+    option = tentacleTargets(state, piece).find(
+      (candidate) => candidate.targetId === action.targetId,
+    ),
+    target = state.pieces.find(
+      (candidate) => candidate.id === option?.targetId && candidate.owner !== piece?.owner,
+    );
+  if (!piece || !option || !target) throw Error("Tentáculo Preênsil indisponível.");
+  if (!spendEnergy(piece, 1, state.turn)) throw Error("Energia insuficiente para Tentáculo Preênsil.");
+  reactiveRelocation(
+    ctx,
+    target,
+    option.landingR,
+    option.landingC,
+    "puxão por Tentáculo Preênsil",
+  );
+  if (state.pieces.some((candidate) => candidate.id === target.id))
+    target.tentacleProtection = {
+      sourceId: piece.id,
+      throughTurn: state.turn + 1,
+    };
+  piece.tentacleReadyRound = round(state) + TENTACLE_COOLDOWN_ROUNDS;
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 〰️ Tentáculo Preênsil puxou a presa para ${coord(option.landingR, option.landingC)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Tentáculo Preênsil",
+    "〰️ Tentáculo puxou a presa; ela não pode contra-atacar este Molusco no próximo turno.",
+    {
+      pieceId: piece.id,
+      outcome: "pulled-prey",
+      value: TENTACLE_COOLDOWN_ROUNDS,
+    },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveChromaticCrypsis(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) => candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!piece || !chromaticCrypsisAvailable(state, piece))
+    throw Error("Cromatóforos Neurais indisponíveis.");
+  piece.chromaticCrypsis = true;
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🎨 Cromatóforos Neurais ativaram Cripsis Cromática.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Cromatóforos Neurais",
+    "🎨 Cripsis Cromática: a criatura não pode atacar nem ser atacada até sua próxima ação.",
+    { pieceId: piece.id, outcome: "entered-chromatic-crypsis" },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function endChromaticCrypsis(state, piece) {
+  if (!piece?.chromaticCrypsis) return false;
+  piece.chromaticCrypsis = false;
+  piece.chromaticReadyRound = round(state) + CHROMATIC_COOLDOWN_ROUNDS;
+  emitPassiveEffect(
+    state,
+    "Cromatóforos Neurais",
+    "🎨 O padrão cromático retornou ao normal.",
+    {
+      pieceId: piece.id,
+      outcome: "left-chromatic-crypsis",
+      value: CHROMATIC_COOLDOWN_ROUNDS,
+    },
+  );
+  return true;
+}
+
+function resolveChromaticWait(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) => candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!piece?.chromaticCrypsis) throw Error("Cripsis Cromática indisponível.");
+  endChromaticCrypsis(state, piece);
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolvePheromoneSignal(ctx, action) {
   const state = ctx.state,
     emitter = state.pieces.find(
@@ -6437,6 +6650,16 @@ export function transition(previous, action) {
     resolvePheromoneSignal(ctx, action);
   else if (action.type === "BIOLUMINESCENT_LURE" && state.phase === "move")
     resolveBioluminescentLure(ctx, action);
+  else if (action.type === "RASP" && state.phase === "move")
+    resolveRadula(ctx, action);
+  else if (action.type === "BYSSUS_ATTACH" && state.phase === "move")
+    resolveByssusAttach(ctx, action);
+  else if (action.type === "TENTACLE_PULL" && state.phase === "move")
+    resolveTentaclePull(ctx, action);
+  else if (action.type === "CHROMATIC_CRYPSIS" && state.phase === "move")
+    resolveChromaticCrypsis(ctx, action);
+  else if (action.type === "CHROMATIC_WAIT" && state.phase === "move")
+    resolveChromaticWait(ctx, action);
   else if (action.type === "PARTHENOGENESIS" && state.phase === "move")
     resolveParthenogenesis(ctx, action);
   else if (action.type === "MONOCARP_STORE" && state.phase === "move")
