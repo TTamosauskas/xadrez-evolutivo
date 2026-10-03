@@ -219,14 +219,14 @@ test("Parasitismo de Ninhada substitui um slot quando a energia predatória é v
       owner: "blue",
       r: 4,
       c: 5,
-      rank: 0,
+      rank: 2,
       traits: ["Ovíparo", "Parasitismo", "Parasitismo de Ninhada"],
     },
     {
       owner: "amber",
       r: 3,
       c: 4,
-      rank: 0,
+      rank: 2,
       traits: ["Ovíparo"],
     },
     {
