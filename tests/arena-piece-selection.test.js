@@ -38,14 +38,26 @@ test("Arena restricts chess forms from the selected branch and body plan", () =>
     [1, 2, 4],
   );
 
-  assert.deepEqual(arenaAllowedRanks(plant(), "plant"), [0, 4]);
+  assert.deepEqual(arenaAllowedRanks(plant(), "plant"), [0]);
   assert.deepEqual(
     arenaAllowedRanks(plant("Multicelularismo"), "plant"),
-    [0, 1, 2, 4],
+    [0, 4],
   );
   assert.deepEqual(
-    arenaAllowedRanks(plant("Traqueófitas"), "plant"),
-    [0, 1, 2, 3, 4, 5],
+    arenaAllowedRanks(plant("Trepadeira"), "plant"),
+    [0, 4, 1],
+  );
+  assert.deepEqual(
+    arenaAllowedRanks(plant("Gimnospermas"), "plant"),
+    [0, 4, 1, 2],
+  );
+  assert.deepEqual(
+    arenaAllowedRanks(plant("Angiospermas"), "plant"),
+    [0, 4, 1, 2, 3],
+  );
+  assert.deepEqual(
+    arenaAllowedRanks(plant("Angiospermas", "Madeira"), "plant"),
+    [0, 4, 1, 2, 3, 5],
   );
 });
 
@@ -163,12 +175,12 @@ test("Arena AI setup always returns genome and form combinations that are legal"
 test("Arena engineering never introduces a mutation incompatible with the inherited form", () => {
   const base = [
       animal("Vertebrado", "Locomoção Articulada", "Carnívoro"),
-      plant("Traqueófitas", "Madeira"),
+      plant("Angiospermas", "Madeira"),
     ],
     ranks = [5, 3],
     opponent = [
       animal("Artrópode", "Locomoção Articulada", "Camuflagem"),
-      plant("Traqueófitas", "Espinhos"),
+      plant("Angiospermas", "Espinhos"),
     ];
 
   for (const difficulty of ["easy", "medium", "hard"]) {
