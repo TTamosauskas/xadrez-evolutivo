@@ -357,12 +357,22 @@ test("mutation Wikipedia links are direct article links", () => {
   );
 });
 
-test("mutation labels map only to encyclopedia-worthy discoveries", () => {
+test("piece-form mutations stay out of Biology discoveries", () => {
   assert.equal(mutationDiscoveryId("Fotossíntese"), "Fotossíntese");
-  assert.equal(mutationDiscoveryId("Mutação de peça: Cavalo"), "rank:1");
-  assert.equal(mutationDiscoveryId("Mutação de peça: Rainha"), "rank:5");
-  assert.equal(mutationDiscoveryId("Mutação de peça: Peão"), "rank:0");
+  assert.equal(mutationDiscoveryId("Mutação de peça: Cavalo"), null);
+  assert.equal(mutationDiscoveryId("Mutação de peça: Rainha"), null);
+  assert.equal(mutationDiscoveryId("Mutação de peça: Peão"), null);
   assert.equal(mutationDiscoveryId("Perda de Fotossíntese"), null);
+
+  const state = createState(206);
+  state.discoveries.mutations.push("rank:1", "rank:5");
+  assert.equal(isDiscoveryUnread(state, "mutations", "rank:1"), false);
+  assert.equal(
+    discoveredContent(state, "mutations").some((entry) =>
+      entry.id.startsWith("rank:"),
+    ),
+    false,
+  );
 });
 
 
@@ -371,7 +381,13 @@ test("editor discovery mode can reveal the complete catalog without mutating pro
     before = structuredClone(state.discoveries);
   for (const [category] of DISCOVERY_CATEGORIES) {
     const entries = discoveredContent(state, category, true);
-    assert.equal(entries.length, Object.keys(DISCOVERY_CONTENT[category]).length, category);
+    assert.equal(
+      entries.length,
+      Object.keys(DISCOVERY_CONTENT[category]).filter(
+        (id) => !(category === "mutations" && id.startsWith("rank:")),
+      ).length,
+      category,
+    );
   }
   assert.deepEqual(state.discoveries, before);
 });
