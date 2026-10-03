@@ -13,6 +13,7 @@ export const CHESS_FORMS = Object.freeze({
 export const EVOLUTION_PATHS = Object.freeze({
   photosynthetic: Object.freeze([
     CHESS_FORMS.PAWN,
+    CHESS_FORMS.KING,
     CHESS_FORMS.KNIGHT,
     CHESS_FORMS.BISHOP,
     CHESS_FORMS.ROOK,
@@ -108,7 +109,7 @@ export const TRAITS = {
   ],
   Multicelularismo: [
     "🫧",
-    "Protege contra capturas alimentares de organismos incapazes de consumir formas multicelulares; a proteção vale mesmo contra outros organismos multicelulares. Em linhagens fotossintéticas, libera formas vegetais Cavalo e Bispo.",
+    "Protege contra capturas alimentares de organismos incapazes de consumir formas multicelulares; a proteção vale mesmo contra outros organismos multicelulares. Em linhagens fotossintéticas, libera a forma vegetal Rei.",
   ],
   "Diferenciação Celular": [
     "🧩",
@@ -387,11 +388,11 @@ export const TRAITS = {
   ],
   Madeira: [
     "🪵",
-    "O crescimento lenhoso reforça o organismo: ao sofrer uma tentativa de captura, possui 25% de chance de resistir e encerrar a ação do agressor.",
+    "O crescimento lenhoso reforça o organismo: ao sofrer uma tentativa de captura, possui 25% de chance de resistir e encerrar a ação do agressor. Em angiospermas, libera a forma vegetal Rainha.",
   ],
   Trepadeira: [
     "🌿",
-    "Forma vegetal trepadora capaz de ocupar barreiras, fertilizá-las por Fotossíntese e usar barreiras como suporte para a reprodução.",
+    "Forma vegetal trepadora capaz de ocupar barreiras, fertilizá-las por Fotossíntese e usar barreiras como suporte para a reprodução. Libera a forma vegetal Cavalo.",
   ],
   Espinhos: [
     "🌵",
@@ -403,11 +404,11 @@ export const TRAITS = {
   ],
   Gimnospermas: [
     "🌲",
-    "A reprodução gera sementes que se dispersam por três rodadas antes de germinar.",
+    "A reprodução gera sementes que se dispersam por três rodadas antes de germinar e libera a forma vegetal Bispo.",
   ],
   Angiospermas: [
     "🌸",
-    "Ao completar Fotossíntese, a casa fértil adicional também pode ser uma casa neutra ocupada por uma criatura aliada.",
+    "Ao completar Fotossíntese, a casa fértil adicional também pode ser uma casa neutra ocupada por uma criatura aliada e libera a forma vegetal Torre.",
   ],
   "Construtor de Nicho": [
     "🧱",
@@ -523,7 +524,7 @@ export const TRAITS = {
   ],
   Dormência: [
     "💤",
-    "Em casas hostis, fica imobilizada e evita o risco ambiental enquanto permanecer ali.",
+    "Sementes em terreno hostil entram em dormência: permanecem imóveis, suspendem dispersão e germinação e evitam o risco ambiental comum até o ambiente melhorar. Ambientes letais continuam fatais.",
   ],
   Carapaça: ["🐚", "Tem 25% de chance de bloquear o risco de uma casa hostil; quando a proteção falha, aplica-se o risco ambiental normal."],
   Camuflagem: ["😶‍🌫️", "Só pode ser capturada por uma peça adjacente."],
