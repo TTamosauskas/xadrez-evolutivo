@@ -99,7 +99,7 @@ test("explicit Arena setup rejects an incompatible selected form", () => {
 
 test("Arena setup preserves the explicitly selected form for each branch", () => {
   const animalGenome = animal("Vertebrado", "Locomoção Articulada"),
-    plantGenome = plant("Traqueófitas"),
+    plantGenome = plant("Gimnospermas", "Angiospermas"),
     state = createArenaState(
       {
         blue: [animalGenome, plantGenome],
