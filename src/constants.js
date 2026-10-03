@@ -379,7 +379,7 @@ export const TRAITS = {
     "Permite capturar uma criatura inimiga não fotossintética adjacente sem se deslocar. A digestão gera uma reserva nutricional que reduz em 2 o custo da próxima reprodução.",
   ],
   Hemiepifitismo: [
-    "🪢",
+    "🧗",
     "Permite capturar peças fotossintéticas inimigas usando a geometria de captura da forma; a interação representa substituição competitiva do hospedeiro e não gera Vivificação predatória.",
   ],
   Monocarpismo: [
