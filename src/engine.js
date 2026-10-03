@@ -4125,6 +4125,42 @@ function executeMove(ctx, action) {
     finishFrustratedCapture(ctx, p, "Cuidado Parental", victim);
     return;
   }
+  if (suctionGrip && reactiveDefensesActive) {
+    const escapeCells = proteanEscapeCells(state, victim),
+      blockedTrait =
+        has(victim, "Ofuscamento por movimento") &&
+        aggressiveNeutralizedTrait !== "Ofuscamento por movimento" &&
+        movementDazzleReady(state, victim)
+          ? "Ofuscamento por movimento"
+          : has(victim, "Movimento proteano") &&
+              aggressiveNeutralizedTrait !== "Movimento proteano" &&
+              escapeCells.length &&
+              !(
+                has(p, "Interceptação preditiva") &&
+                !inkCloudAt(state, p.r, p.c) &&
+                !inkCloudAt(state, victim.r, victim.c)
+              )
+            ? "Movimento proteano"
+            : has(victim, "Adrenalina") &&
+                aggressiveNeutralizedTrait !== "Adrenalina" &&
+                adrenalineEscapeCells(state, victim).length
+              ? "Adrenalina"
+              : has(victim, "Tinta") &&
+                  round(state) >= (victim.inkReadyRound ?? 0) &&
+                  escapeCells.length
+                ? "Tinta"
+                : null;
+    if (blockedTrait)
+      emitPassiveEffect(
+        state,
+        "Ventosas Quimiotáteis",
+        `🫳 Ventosas agarraram a presa e impediram a fuga por ${blockedTrait}.`,
+        {
+          pieceId: p.id,
+          outcome: "suppressed-reactive-escape",
+        },
+      );
+  }
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
