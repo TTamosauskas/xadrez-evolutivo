@@ -142,6 +142,7 @@ import {
   paedogenesisReady,
   parentalCareProtects,
   predatoryReproductionAvailable,
+  predatoryVivificationAvailable,
   trophicSpecializationMatches,
 } from "./reproduction-traits.js";
 import {
@@ -168,7 +169,7 @@ function grantPredationVivification(
   victim,
   { force = false } = {},
 ) {
-  if (!force && !predatoryReproductionAvailable(attacker, victim)) return false;
+  if (!force && !predatoryVivificationAvailable(attacker, victim)) return false;
   const fresh = !attacker.predationEnergy;
   attacker.predationEnergy = true;
   if (trophicSpecializationMatches(attacker, victim))
@@ -4877,7 +4878,7 @@ function executeMove(ctx, action) {
     predationCapture =
       capturedPieceKilled &&
       !!capturedEnemy &&
-      predatoryReproductionAvailable(p, capturedEnemy);
+      predatoryVivificationAvailable(p, capturedEnemy);
   log(
     state,
     `${OWNERS[p.owner]}: ${coord(p.r, p.c)}${target.stay ? " · permanência" : ""}.`,
