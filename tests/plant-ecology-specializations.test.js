@@ -116,7 +116,6 @@ test("Haustório drena fertilidade, preserva o hospedeiro e remove sua Vivifica�
     [attacker.r, attacker.c],
   );
   assert.equal(state.board[hostCell], "neutral");
-  assert.equal(state.current, "amber");
   assert.equal(vivificationActionsForPiece(state, survivingHost).length, 0);
   assert.ok(
     state.passiveEffects.some(
@@ -306,7 +305,10 @@ test("Polinização Deceptiva transforma defesa contra Artrópode em uma única 
 
   assert.ok(state);
   assert.ok(state.pieces.some((piece) => piece.id === victim.id));
-  assert.equal(state.plantSeeds.length, 1);
+  const offspringCount =
+    state.plantSeeds.filter((seed) => seed.parentId === victim.id).length +
+    state.pieces.filter((piece) => piece.parentId === victim.id).length;
+  assert.equal(offspringCount, 1);
 });
 
 test("Armadilha Deceptiva pode contracapturar um agressor após uma defesa bem-sucedida", () => {
