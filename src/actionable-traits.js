@@ -30,7 +30,6 @@ import {
   nicheConstructionTargets,
   adjacentAlliesCount,
   neurodivergenceResting,
-  dormant,
   pieceActionState,
 } from "./moves.js";
 import {
@@ -126,12 +125,6 @@ function addStationaryActionableTraits(state, piece, actionable) {
     )
   )
     actionable.add("Extremófitas");
-
-  if (
-    (piece.traits ?? []).includes("Dormência") &&
-    dormant(state, piece)
-  )
-    actionable.add("Dormência");
 
   if (buddingCanProgress(state, piece))
     actionable.add("Brotamento");
@@ -751,7 +744,6 @@ export function actionableTraitsForPiece(state, piece) {
 
 
 const ACTIVE_WAIT_TRAITS = Object.freeze({
-  "Dormência em terreno hostil": "Dormência",
   Metamorfose: "Metamorfose",
   "Descanso por Mutação Disfuncional": "Mutação Disfuncional",
 });
