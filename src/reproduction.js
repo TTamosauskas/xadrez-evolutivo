@@ -2372,7 +2372,10 @@ export function reproduce(
 
   if (wanted <= 0) return 0;
 
-  if (parent.autotomyRecovery) {
+  if (
+    parent.autotomyRecovery &&
+    !Number.isInteger(parent.autotomyRecovery.turnsRemaining)
+  ) {
     const restoredRank = parent.autotomyRecovery.originalRank;
     parent.rank = restoredRank;
     parent.autotomyRecovery = null;
