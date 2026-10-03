@@ -155,6 +155,7 @@ test("Diferenciação Celular specializes one child without increasing brood siz
           "Eucarionte",
           "Multicelularismo",
           "Diferenciação Celular",
+          "Trepadeira",
         ],
       },
       { owner: "amber", r: 0, c: 0 },
@@ -173,7 +174,7 @@ test("Diferenciação Celular specializes one child without increasing brood siz
   assert.equal(children.length, 2);
   assert.deepEqual(
     [...new Set(children.map((child) => child.rank))].sort((a, b) => a - b),
-    [0, 4],
+    [1, 4],
   );
   assert.ok(
     s.passiveEffects.some(
