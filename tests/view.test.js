@@ -1233,7 +1233,10 @@ test("actionable mutations appear first, bold and with concise descriptions", ()
   );
   assert.ok(predation.classList.contains("actionable-trait"));
   assert.ok(predation.querySelector("strong"));
-  assert.match(predation.textContent, /Se alimenta ao capturar organismos/);
+  assert.match(
+    predation.textContent,
+    /Pode capturar qualquer criatura legal; a dieta decide se a captura Vivifica\./,
+  );
   assert.ok(!resistance.classList.contains("actionable-trait"));
   assert.equal(resistance.querySelector("strong"), null);
   assert.ok(rows.indexOf(predation) < rows.indexOf(resistance));
