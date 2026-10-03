@@ -98,7 +98,7 @@ test("Endossimbiose permite reproduzir faltando 1 Energia e cobra dívida +2", (
     immediateDevelopment: true,
   });
   assert.equal(born, 1);
-  assert.equal(energyValue(parent), -2);
+  assert.equal(energyValue(parent), -3);
   assert.equal(parent.endosymbiosisEnergyDebt, true);
   assertState(state);
 });
