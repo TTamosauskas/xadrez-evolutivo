@@ -5877,6 +5877,7 @@ function resolveRadula(ctx, action) {
   consumeFertileTerrain(state, square(target.r, target.c));
   const before = energyValue(piece);
   restoreEnergy(piece, 2);
+  piece.lastEnergyActivityTurn = state.turn;
   const gained = energyValue(piece) - before;
   log(
     state,
