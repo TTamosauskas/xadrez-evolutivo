@@ -2425,40 +2425,23 @@ test("application UI starts with the Hadean common ancestor, then plays division
       ),
     );
     assert.equal(d.querySelector(".toastify.xe-passive-toast"), null);
+    const originTooltip = d.querySelector(".board-tutorial-tooltip");
+    assert.ok(originTooltip);
+    assert.match(
+      originTooltip.textContent,
+      /⭕ \(verde\) indica capacidade de reproduzir\./,
+    );
+    const understood = originTooltip.querySelector("button");
+    assert.ok(understood);
+    assert.equal(understood.textContent, "Entendi");
+    understood.click();
+    assert.equal(d.querySelector(".board-tutorial-tooltip"), null);
 
     originCell = d.querySelector(".origin-piece").parentElement;
     originCell.click();
 
-    const reproductionToast = d.querySelector(".toastify.xe-passive-toast");
-    assert.ok(reproductionToast);
-    assert.match(reproductionToast.textContent, /Primeira Reprodução feita\./);
-    const reproductionMore = reproductionToast.querySelector(".toast-more");
-    assert.ok(reproductionMore);
-    assert.equal(reproductionMore.textContent, "SAIBA MAIS");
-    reproductionMore.click();
-
-    const reproductionDialog = d.querySelector("#mutation-dialog[open]");
-    assert.ok(reproductionDialog);
-    assert.equal(
-      d.getElementById("mutation-dialog-title").textContent,
-      "Reprodução",
-    );
-    assert.match(
-      d.getElementById("mutation-dialog-real").textContent,
-      /^Na vida: A hipótese do Mundo de RNA diz que a evolução começou/,
-    );
-    const reproductionGameCopy = d.getElementById("mutation-dialog-game");
-    assert.match(
-      reproductionGameCopy.textContent,
-      /^No jogo: Clique no círculo verde .* que aparece quando a reprodução estiver disponível\.$/,
-    );
-    assert.ok(
-      reproductionGameCopy.querySelector(
-        ".legend-action-ring.vivify.inline-action-ring",
-      ),
-    );
-    click("mutation-dialog-close");
-    reproductionDialog.dispatchEvent(new w.Event("close"));
+    assert.equal(d.querySelector(".toastify.xe-passive-toast"), null);
+    assert.equal(d.querySelector("#mutation-dialog[open]"), null);
 
     assert.equal(d.querySelectorAll(".origin-piece").length, 0);
     assert.equal(d.querySelectorAll(".piece.blue").length, 1);

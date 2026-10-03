@@ -73,7 +73,9 @@ let selected = null,
   confirmAction = null,
   selectedScenario = "earth",
   arenaFlow = null,
-  mutationDialogResume = false;
+  mutationDialogResume = false,
+  activeTutorialTooltip = null;
+const tutorialTooltipQueue = [];
 try {
   const savedScenario = localStorage.getItem("xe_scenario");
   if (["earth", "alternative", "arena"].includes(savedScenario))
@@ -87,6 +89,57 @@ const report = (text) => {
 function clearSelection() {
   selected = selectedCell = null;
 }
+
+function renderTutorialTooltip() {
+  document.querySelector(".board-tutorial-tooltip")?.remove();
+  if (!activeTutorialTooltip) return;
+
+  const { targetR, targetC, text } = activeTutorialTooltip,
+    cell = $("board").querySelector(
+      `[data-r="${targetR}"][data-c="${targetC}"]`,
+    ),
+    stage = $("board").closest(".board-stage");
+  if (!cell || !stage) return;
+
+  const cellRect = cell.getBoundingClientRect(),
+    stageRect = stage.getBoundingClientRect(),
+    tooltip = document.createElement("div"),
+    copy = document.createElement("div"),
+    button = document.createElement("button"),
+    placeBelow = targetR < 4;
+
+  tooltip.className =
+    `board-tutorial-tooltip ${placeBelow ? "below" : "above"}`;
+  tooltip.setAttribute("role", "status");
+  tooltip.style.left =
+    `${cellRect.left - stageRect.left + cellRect.width / 2}px`;
+  tooltip.style.top = placeBelow
+    ? `${cellRect.bottom - stageRect.top + 8}px`
+    : `${cellRect.top - stageRect.top - 8}px`;
+
+  copy.className = "board-tutorial-tooltip-copy";
+  copy.textContent = text;
+  button.type = "button";
+  button.textContent = "Entendi";
+  button.addEventListener("click", () => {
+    activeTutorialTooltip = tutorialTooltipQueue.shift() ?? null;
+    renderTutorialTooltip();
+  });
+  tooltip.append(copy, button);
+  stage.append(tooltip);
+}
+
+function showTutorialTooltip(effect) {
+  const tooltip = {
+    id: effect.id,
+    text: effect.text,
+    targetR: effect.targetR,
+    targetC: effect.targetC,
+  };
+  if (activeTutorialTooltip) tutorialTooltipQueue.push(tooltip);
+  else activeTutorialTooltip = tooltip;
+  renderTutorialTooltip();
+}
 const passiveToastPresenter = createPassiveEffectToastPresenter(document, {
   onSelect: openMutationExplanation,
 });
@@ -94,7 +147,10 @@ const controller = new Controller(
   createCampaignState(Date.now(), selectedScenario),
   {
     report,
-    toast: (effect) => passiveToastPresenter.show(effect),
+    toast: (effect) =>
+      effect.theme === "tutorial-tooltip"
+        ? showTutorialTooltip(effect)
+        : passiveToastPresenter.show(effect),
     render: (state, busy, showResult = true, movementTrace = null) => {
       if (selected && !state.pieces.some((p) => p.id === selected))
         clearSelection();
@@ -105,6 +161,7 @@ const controller = new Controller(
         mode: controller.mode,
         showResult,
       });
+      renderTutorialTooltip();
       animateMovementTrace(document, movementTrace, {
         fast: controller.mode === "auto",
       });
@@ -134,6 +191,9 @@ $("difficulty").value = controller.difficulty;
 
 let cycleStartState = clone(controller.state);
 function replaceCycleState(next) {
+  activeTutorialTooltip = null;
+  tutorialTooltipQueue.length = 0;
+  document.querySelector(".board-tutorial-tooltip")?.remove();
   controller.replace(next);
   cycleStartState = clone(next);
 }

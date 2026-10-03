@@ -334,9 +334,17 @@ test("Hadean starts with three fertile central cells and the gray ancestor consu
   ).length;
   s = transition(s, { type: "ORIGIN_CLICK" });
   assert.equal(s.origin.selected, true);
+  const vivificationHint = s.passiveEffects.find(
+    (effect) => effect.outcome === "tutorial-vivification-ring",
+  );
+  assert.ok(vivificationHint);
+  assert.equal(
+    vivificationHint.text,
+    "⭕ (verde) indica capacidade de reproduzir.",
+  );
   assert.equal(
     s.passiveEffects.filter((effect) => effect.trait === "Reprodução").length,
-    reproductionEffectsBefore,
+    reproductionEffectsBefore + 1,
   );
 
   s = transition(s, { type: "ORIGIN_CLICK" });
@@ -344,15 +352,11 @@ test("Hadean starts with three fertile central cells and the gray ancestor consu
   assert.equal(s.origin, null);
   assert.equal(s.pieces.length, 2);
   assert.equal(s.hadeanTutorial.divided, true);
-  const reproductionEffects = s.passiveEffects.filter(
-    (effect) =>
-      effect.trait === "Reprodução" &&
-      effect.text === "Primeira Reprodução feita.",
-  );
-  assert.equal(reproductionEffects.length, 1);
   assert.equal(
-    reproductionEffects[0].outcome,
-    "hadean-reproduction-tutorial",
+    s.passiveEffects.some(
+      (effect) => effect.text === "Primeira Reprodução feita.",
+    ),
+    false,
   );
   assert.ok(s.seen.includes("reproduction"));
 
@@ -1222,9 +1226,16 @@ test("Voo bypasses hostile traversal but not hostile landing; knight only tests 
   s.board[35] = "hostile";
   const lost = transition(s, move(s.pieces[0], 3, 3));
   assert.ok(!lost.pieces.some((p) => p.id === 1));
-  assert.deepEqual(
-    lost.notices.find((entry) => entry.title === "Casas hostis")?.lines,
-    ["Casas vermelhas oferecem perigo de morte."],
+  assert.equal(
+    lost.notices.some((entry) => entry.title === "Casas hostis"),
+    false,
+  );
+  assert.ok(
+    lost.passiveEffects.some(
+      (effect) =>
+        effect.outcome === "tutorial-hostile-cell" &&
+        effect.text === "Casa hostil 🟥 oferece perigo de morte",
+    ),
   );
 
   s.pieces[0].traits = [

@@ -184,16 +184,21 @@ function grantPredationVivification(
       state,
       `${OWNERS[attacker.owner]}: 🟩 Predação tornou o local de alimentação fértil para uma reprodução.`,
     );
-    emitPassiveEffect(
-      state,
-      "Predação",
-      "🟩 A captura bem-sucedida criou uma Casa Fértil temporária sob o predador.",
-      {
-        pieceId: attacker.id,
-        outcome: "predation-feeding-site",
-        value: 1,
-      },
-    );
+    if (!state.seen.includes("tutorial-predation-fertility")) {
+      state.seen.push("tutorial-predation-fertility");
+      emitPassiveEffect(
+        state,
+        "Predação",
+        "Predação fertilizou a casa",
+        {
+          pieceId: attacker.id,
+          outcome: "tutorial-predation-fertility",
+          theme: "tutorial-tooltip",
+          targetR: attacker.r,
+          targetC: attacker.c,
+        },
+      );
+    }
   }
   return true;
 }
@@ -802,18 +807,37 @@ function nocturnalRound(state) {
   return (round(state) + 1) % 2 === 0;
 }
 
+function emitTerrainTutorialTooltip(state, kind, piece, r, c) {
+  const key = kind === "lethal" ? "tutorial-lethal-cell" : "tutorial-hostile-cell";
+  if (state.seen.includes(key)) return false;
+  state.seen.push(key);
+  emitPassiveEffect(
+    state,
+    kind === "lethal" ? "Casa Letal" : "Casa Hostil",
+    kind === "lethal"
+      ? "Casa letal ☠️ implica em morte imediata"
+      : "Casa hostil 🟥 oferece perigo de morte",
+    {
+      pieceId: piece?.id ?? null,
+      outcome: key,
+      theme: "tutorial-tooltip",
+      targetR: r,
+      targetC: c,
+    },
+  );
+  return true;
+}
+
 function markLethalDeath(state, piece, reason = "ambiente letal") {
   if (!piece || Number.isInteger(piece.lethalDeathRound)) return false;
   piece.lethalDeathRound = round(state) + 1;
   piece.lethalDeathReason = reason;
-  notice(
+  emitTerrainTutorialTooltip(
     state,
-    "Casa letal",
-    [
-      "☠️ A criatura caiu em uma casa letal.",
-      "Ela permanecerá visível até a próxima rodada e então morrerá.",
-    ],
-    "hostile",
+    "lethal",
+    piece,
+    piece.r,
+    piece.c,
   );
   log(
     state,
@@ -1135,12 +1159,7 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
       state.turn <= piece.decompositionImmunity.throughTurn
     )
   ) {
-    notice(
-      state,
-      "Casas hostis",
-      ["Casas vermelhas oferecem perigo de morte."],
-      "hostile",
-    );
+    emitTerrainTutorialTooltip(state, "hostile", piece, r, c);
     piece.hostileRiskRound = round(state);
     if (hostileHazardKills(state, piece, terrain(state, r, c) === "hostile")) {
       const killed = ctx.kill(piece.id, reason + " em casa hostil");
@@ -3862,12 +3881,7 @@ function executeMove(ctx, action) {
         state.turn <= p.decompositionImmunity.throughTurn
       )
     ) {
-      notice(
-        state,
-        "Casas hostis",
-        ["Casas vermelhas oferecem perigo de morte."],
-        "hostile",
-      );
+      emitTerrainTutorialTooltip(state, "hostile", p, r, c);
       if (hostileHazardKills(state, p, terrain(state, r, c) === "hostile")) {
         if (state.movementTrace) {
           const stopIndex = state.movementTrace.path.findIndex(
@@ -4941,12 +4955,7 @@ function executeMove(ctx, action) {
       state.turn <= p.decompositionImmunity.throughTurn
     )
   ) {
-    notice(
-      state,
-      "Casas hostis",
-      ["Casas vermelhas oferecem perigo de morte."],
-      "hostile",
-    );
+    emitTerrainTutorialTooltip(state, "hostile", p, p.r, p.c);
     p.hostileRiskRound = round(state);
     if (hostileHazardKills(state, p, landingTerrain === "hostile")) {
       const killed = ctx.kill(p.id, "casa hostil após captura");

@@ -624,6 +624,7 @@ const PASSIVE_EXPLANATION_TOPICS = new Set([
   "Reprodução",
   "Reprodução infrutífera",
   "Casa Hostil",
+  "Casa Letal",
   "Casa Fértil",
 ]);
 
@@ -631,7 +632,14 @@ export function emitPassiveEffect(
   state,
   trait,
   text,
-  { pieceId = null, outcome = null, value = null, theme = null } = {},
+  {
+    pieceId = null,
+    outcome = null,
+    value = null,
+    theme = null,
+    targetR = null,
+    targetC = null,
+  } = {},
 ) {
   if (
     (!TRAITS[trait] && !PASSIVE_EXPLANATION_TOPICS.has(trait)) ||
@@ -649,6 +657,10 @@ export function emitPassiveEffect(
     text,
   };
   if (typeof theme === "string") effect.theme = theme;
+  if (Number.isInteger(targetR) && Number.isInteger(targetC)) {
+    effect.targetR = targetR;
+    effect.targetC = targetC;
+  }
   state.passiveEffects.push(effect);
   if (state.passiveEffects.length > 24) state.passiveEffects.shift();
 }
@@ -1978,6 +1990,20 @@ export function activateOrigin(state) {
     throw Error("Hadeano indisponível.");
   if (!state.origin.selected) {
     state.origin.selected = true;
+    if (!state.seen.includes("tutorial-vivification-ring")) {
+      state.seen.push("tutorial-vivification-ring");
+      emitPassiveEffect(
+        state,
+        "Reprodução",
+        "⭕ (verde) indica capacidade de reproduzir.",
+        {
+          outcome: "tutorial-vivification-ring",
+          theme: "tutorial-tooltip",
+          targetR: state.origin.r,
+          targetC: state.origin.c,
+        },
+      );
+    }
     return false;
   }
 
@@ -2017,12 +2043,6 @@ export function activateOrigin(state) {
   state.hadeanTutorial.divided = true;
   if (!state.seen.includes("reproduction"))
     state.seen.push("reproduction");
-  emitPassiveEffect(
-    state,
-    "Reprodução",
-    "Primeira Reprodução feita.",
-    { outcome: "hadean-reproduction-tutorial", theme: "neutral" },
-  );
   log(
     state,
     `${geologicalLabel(state)} · 1º Ciclo: o ancestral consumiu a casa fértil primordial e se dividiu em dois Reis protocelulares sobre as duas casas férteis restantes do núcleo.`,
@@ -3842,6 +3862,12 @@ export function assertState(state) {
         ) ||
         (effect.value !== null && !Number.isFinite(effect.value)) ||
         (effect.pieceId !== null && !integer(effect.pieceId, 1)) ||
+        (effect.targetR !== undefined &&
+          (!integer(effect.targetR, 0, 7) ||
+            !integer(effect.targetC, 0, 7))) ||
+        (effect.targetC !== undefined &&
+          (!integer(effect.targetC, 0, 7) ||
+            !integer(effect.targetR, 0, 7))) ||
         typeof effect.text !== "string",
     )
   )
