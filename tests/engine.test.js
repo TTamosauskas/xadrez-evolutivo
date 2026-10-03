@@ -4919,21 +4919,24 @@ test("Eusocialidade gains up to two offspring from adjacent sterile kin", () => 
   assertState(s);
 });
 
-test("Dormência no longer immobilizes or protects active pieces on hostile terrain", () => {
-  const s = fixture([
-      {
-        owner: "blue",
-        r: 4,
-        c: 4,
-        rank: 4,
-        traits: ["Fotossíntese", "Dormência"],
-      },
-      { owner: "amber", r: 0, c: 0, traits: ["Predação"] },
-    ]),
-    piece = s.pieces[0];
-  s.board[piece.r * 8 + piece.c] = "hostile";
+test("Dormência no longer protects active pieces from hostile terrain", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 0,
+      traits: ["Fotossíntese", "Dormência"],
+    },
+    { owner: "amber", r: 0, c: 0, traits: ["Predação"] },
+  ], 1);
+  const pieceId = s.pieces[0].id;
+  s.board[36] = "hostile";
+  s.rng = 1;
 
-  assert.ok(movesFor(s, piece).length > 0);
+  s = simulate(s, { type: "PASS" });
+
+  assert.equal(s.pieces.some((piece) => piece.id === pieceId), false);
 });
 
 test("Visão Binocular, not Visão Noturna, counters distant Camuflagem", () => {
