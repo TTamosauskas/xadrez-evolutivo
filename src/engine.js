@@ -2407,6 +2407,29 @@ function tickMolluskRegeneration(state, owner) {
   }
 }
 
+function revealChromatophore(state, piece, reason = "ao fim da postura") {
+  if (!piece?.chromatophoreDisguise) return false;
+  piece.chromatophoreDisguise = false;
+  piece.chromatophoreRevealTurn = null;
+  piece.chromatophoreReadyRound =
+    round(state) + CHROMATOPHORE_COOLDOWN_ROUNDS;
+  log(
+    state,
+    `${OWNERS[piece.owner]}: 🎨 Cromatóforos Neurais retornaram ao padrão normal ${reason}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Cromatóforos Neurais",
+    "🎨 O padrão cromático retornou ao estado normal.",
+    {
+      pieceId: piece.id,
+      outcome: "chromatophore-revealed",
+      value: CHROMATOPHORE_COOLDOWN_ROUNDS,
+    },
+  );
+  return true;
+}
+
 function advanceTurn(ctx) {
   const state = ctx.state;
   if (resolveNeurodivergentActionEnd(ctx)) return;
@@ -2432,6 +2455,14 @@ function advanceTurn(ctx) {
   tickParasitoidism(ctx, acting, before);
   tickRuminantRecovery(state, acting, before);
   tickMolluskRegeneration(state, acting);
+  for (const piece of state.pieces)
+    if (
+      piece.owner === acting &&
+      piece.chromatophoreDisguise &&
+      Number.isInteger(piece.chromatophoreRevealTurn) &&
+      before >= piece.chromatophoreRevealTurn
+    )
+      revealChromatophore(state, piece, "ao fim do turno próprio seguinte");
   recoverEnergyAfterTurn(state, acting, before);
   for (const p of state.pieces) {
     moveDirection(p);
@@ -3625,21 +3656,8 @@ function executeMove(ctx, action) {
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
-  if (p.chromatophoreDisguise) {
-    p.chromatophoreDisguise = false;
-    p.chromatophoreReadyRound =
-      round(state) + CHROMATOPHORE_COOLDOWN_ROUNDS;
-    log(
-      state,
-      `${OWNERS[p.owner]}: 🎨 Cromatóforos Neurais retornaram ao padrão normal após o deslocamento.`,
-    );
-    emitPassiveEffect(
-      state,
-      "Cromatóforos Neurais",
-      "🎨 O padrão cromático retornou ao estado normal.",
-      { pieceId: p.id, outcome: "chromatophore-revealed" },
-    );
-  }
+  if (p.chromatophoreDisguise)
+    revealChromatophore(state, p, "após o deslocamento");
   if (target.hypermetamorphosis) {
     p.hypermetamorphosisReady = false;
     log(
@@ -6102,25 +6120,10 @@ function resolveChromatophores(ctx, action) {
     throw Error("Cromatóforos Neurais indisponíveis.");
 
   if (piece.chromatophoreDisguise) {
-    piece.chromatophoreDisguise = false;
-    piece.chromatophoreReadyRound =
-      round(state) + CHROMATOPHORE_COOLDOWN_ROUNDS;
-    log(
-      state,
-      `${OWNERS[piece.owner]}: 🎨 Cromatóforos Neurais encerraram a Cripsis Cromática.`,
-    );
-    emitPassiveEffect(
-      state,
-      "Cromatóforos Neurais",
-      "🎨 O padrão cromático retornou ao estado normal.",
-      {
-        pieceId: piece.id,
-        outcome: "chromatophore-revealed",
-        value: CHROMATOPHORE_COOLDOWN_ROUNDS,
-      },
-    );
+    revealChromatophore(state, piece, "após permanecer imóvel");
   } else {
     piece.chromatophoreDisguise = true;
+    piece.chromatophoreRevealTurn = state.turn + 2;
     log(
       state,
       `${OWNERS[piece.owner]}: 🎨 Cromatóforos Neurais ativaram Cripsis Cromática.`,
