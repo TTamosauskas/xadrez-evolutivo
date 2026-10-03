@@ -172,10 +172,11 @@ function arenaTraitAllowedForBodyPlan(trait, bodyPlan) {
     )
   )
     return false;
-  const planAlternatives = (dependencies.lineageAny ?? []).filter(
-    (dependency) => ARENA_BODY_PLANS.includes(dependency),
-  );
-  if (planAlternatives.length && !planAlternatives.includes(bodyPlan))
+  const alternatives = dependencies.lineageAny ?? [];
+  if (
+    alternatives.length &&
+    alternatives.every((dependency) => otherPlans.includes(dependency))
+  )
     return false;
   return true;
 }

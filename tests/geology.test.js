@@ -263,10 +263,10 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
               otherBodyPlans.includes(dependency),
             ) &&
             !(
-              alternatives.some((dependency) =>
+              alternatives.length &&
+              alternatives.every((dependency) =>
                 otherBodyPlans.includes(dependency),
-              ) &&
-              !alternatives.includes(canonicalBodyPlan)
+              )
             )
           );
         },

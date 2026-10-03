@@ -1720,10 +1720,11 @@ function bodyPlanTraitCompatible(trait, bodyPlan) {
     )
   )
     return false;
-  const planAlternatives = (dependencies.lineageAny ?? []).filter(
-    (dependency) => BODY_PLAN_TRAITS.has(dependency),
-  );
-  if (planAlternatives.length && !planAlternatives.includes(bodyPlan))
+  const alternatives = dependencies.lineageAny ?? [];
+  if (
+    alternatives.length &&
+    alternatives.every((dependency) => otherPlans.includes(dependency))
+  )
     return false;
   return true;
 }

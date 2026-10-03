@@ -145,7 +145,7 @@ test("Tinta cria nuvem e desloca a vítima antes da captura", () => {
       r: 4,
       c: 3,
       rank: 2,
-      traits: ["Molusco", "Cefalização", "Jatopropulsão", "Corpo Gelatinoso", "Tinta"],
+      traits: ["Molusco", "Cefalização", "Jatopropulsão", "Locomoção Terrestre", "Corpo Gelatinoso", "Tinta"],
     },
   ], 203);
   state.current = "blue";
