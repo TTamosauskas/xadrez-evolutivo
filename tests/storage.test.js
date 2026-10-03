@@ -8,6 +8,7 @@ import {
 } from "../src/storage.js";
 import {
   createState,
+  createPeriodState,
   clone,
   assertState,
 } from "../src/state.js";
@@ -21,9 +22,11 @@ test("current save schema round-trips deterministic state", () => {
 });
 
 test("v34 migration converts predatory Pawns to basal Kings preserving Energy deficit", () => {
-  const legacy = createState(3401),
-    piece = legacy.pieces.find((candidate) =>
-      candidate.traits.includes("Predação"),
+  const legacy = createPeriodState("cambrian", 3401, null, "earth"),
+    piece = legacy.pieces.find(
+      (candidate) =>
+        candidate.traits.includes("Predação") &&
+        !candidate.traits.includes("Fotossíntese"),
     );
   assert.ok(piece);
   piece.rank = 0;
