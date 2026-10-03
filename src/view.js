@@ -652,7 +652,10 @@ export function render(
   const manipulation = manipulationTargets(state),
     construction = constructionTargets(state),
     nicheConstruction =
-      state.phase === "move" && actor && actor.owner === state.current
+      state.phase === "move" &&
+      actor &&
+      actor.owner === state.current &&
+      !actor.chromatophoreDisguise
         ? nicheConstructionTargets(state, actor)
         : [],
     domesticPlacement = domesticPlacementTargets(state),
@@ -684,15 +687,20 @@ export function render(
       actor &&
       has(actor, "Ataxia") &&
       targets.filter((target) => !target.stay).length > 1,
-    nursing = actor ? nursingTargets(state, actor) : [],
+    nursing =
+      actor && !actor.chromatophoreDisguise
+        ? nursingTargets(state, actor)
+        : [],
     eggPlacement = eggPlacementTargets(state),
-    ovoviviparousPlacement = actor
-      ? ovoviviparousPlacementTargets(state, actor)
-      : [];
+    ovoviviparousPlacement =
+      actor && !actor.chromatophoreDisguise
+        ? ovoviviparousPlacementTargets(state, actor)
+        : [];
   const aggressiveMates =
       state.phase === "move" &&
       actor &&
-      actor.owner === state.current
+      actor.owner === state.current &&
+      !actor.chromatophoreDisguise
         ? aggressivePartnersFor(state, actor)
         : [],
     parthenogenesisReady =
@@ -711,7 +719,8 @@ export function render(
         )
       : state.phase === "move" &&
           actor &&
-          actor.owner === state.current
+          actor.owner === state.current &&
+          !actor.chromatophoreDisguise
         ? partnersFor(state, actor)
         : [];
   $("turn").textContent =
