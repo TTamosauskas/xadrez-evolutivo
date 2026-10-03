@@ -2069,21 +2069,8 @@ export function render(
         ),
       ),
     );
-    const ancestralDescription = make(
-      "p",
-      undefined,
-      "selected-ancestral",
-    );
-    ancestralDescription.append(
-      doc.createTextNode(
-        "O Último Ancestral Comum Universal já possuía metabolismo anaeróbio. Clique em ",
-      ),
-      make("span", undefined, "legend-action-ring vivify inline-action-ring"),
-      doc.createTextNode(" para realizar a primeira reprodução."),
-    );
     $("selected").replaceChildren(
       heading,
-      ancestralDescription,
       make("div", "Vantagens Evolutivas", "selected-group-heading"),
       trait,
     );

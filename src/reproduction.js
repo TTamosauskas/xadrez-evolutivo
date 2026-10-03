@@ -2406,11 +2406,12 @@ export function reproduce(
         emitPassiveEffect(
           state,
           "Reprodução infrutífera",
-          "Reprodução infrutífera. Sem prole a peça recupera energia.",
+          "Reprodução infrutífera. Vivificar recuperou energia",
           {
             pieceId: parent.id,
             outcome: "tutorial-infruitful-reproduction",
             theme: "tutorial-tooltip",
+            inlineVivificationRing: true,
             targetR: parent.r,
             targetC: parent.c,
           },

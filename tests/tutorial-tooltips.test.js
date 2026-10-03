@@ -28,7 +28,11 @@ test("first click on the grey ancestral King emits the Vivification ring tooltip
 
   const effects = tutorialEffects(state, "tutorial-vivification-ring");
   assert.equal(effects.length, 1);
-  assert.equal(effects[0].text, "⭕ (verde) indica capacidade de reproduzir.");
+  assert.equal(
+    effects[0].text,
+    "Clique em Vivificar para tentar uma reprodução.",
+  );
+  assert.equal(effects[0].inlineVivificationRing, true);
   assert.deepEqual(
     [effects[0].targetR, effects[0].targetC],
     [origin.r, origin.c],
@@ -75,8 +79,9 @@ test("first infruitful reproduction emits one anchored tooltip and later failure
   assert.equal(effects.length, 1);
   assert.equal(
     effects[0].text,
-    "Reprodução infrutífera. Sem prole a peça recupera energia.",
+    "Reprodução infrutífera. Vivificar recuperou energia",
   );
+  assert.equal(effects[0].inlineVivificationRing, true);
   assert.deepEqual([effects[0].targetR, effects[0].targetC], [4, 4]);
 
   state.rng = seed;

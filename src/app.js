@@ -94,7 +94,8 @@ function renderTutorialTooltip() {
   document.querySelector(".board-tutorial-tooltip")?.remove();
   if (!activeTutorialTooltip) return;
 
-  const { targetR, targetC, text } = activeTutorialTooltip,
+  const { targetR, targetC, text, inlineVivificationRing } =
+      activeTutorialTooltip,
     cell = $("board").querySelector(
       `[data-r="${targetR}"][data-c="${targetC}"]`,
     ),
@@ -118,7 +119,19 @@ function renderTutorialTooltip() {
     : `${cellRect.top - stageRect.top - 8}px`;
 
   copy.className = "board-tutorial-tooltip-copy";
-  copy.textContent = text;
+  if (inlineVivificationRing && text.includes("Vivificar")) {
+    const markerIndex = text.indexOf("Vivificar"),
+      before = text.slice(0, markerIndex),
+      after = text.slice(markerIndex),
+      ring = document.createElement("span");
+    ring.className = "legend-action-ring vivify inline-action-ring";
+    ring.setAttribute("aria-label", "círculo verde");
+    copy.append(
+      document.createTextNode(before),
+      ring,
+      document.createTextNode(` ${after}`),
+    );
+  } else copy.textContent = text;
   button.type = "button";
   button.textContent = "Entendi";
   button.addEventListener("click", () => {
@@ -135,6 +148,7 @@ function showTutorialTooltip(effect) {
     text: effect.text,
     targetR: effect.targetR,
     targetC: effect.targetC,
+    inlineVivificationRing: effect.inlineVivificationRing === true,
   };
   if (activeTutorialTooltip) tutorialTooltipQueue.push(tooltip);
   else activeTutorialTooltip = tooltip;

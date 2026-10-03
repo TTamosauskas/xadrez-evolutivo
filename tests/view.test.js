@@ -303,18 +303,13 @@ test("Hadean common ancestor is a gray King that splits after the second click",
 
   assert.ok(origin.classList.contains("vivification-target"));
   assert.match(origin.title ?? "", /Vivificar disponível/);
-  assert.match(d.getElementById("selected").textContent, /Último Ancestral Comum Universal/);
+  assert.doesNotMatch(
+    d.getElementById("selected").textContent,
+    /Último Ancestral Comum Universal/,
+  );
   assert.match(d.getElementById("selected").textContent, /Vantagens Evolutivas/);
   assert.match(d.getElementById("selected").textContent, /Respiração anaeróbia/);
-  assert.match(
-    d.getElementById("selected").textContent,
-    /Clique em .*para realizar a primeira reprodução/,
-  );
-  assert.ok(
-    d.querySelector(
-      "#selected .selected-ancestral .legend-action-ring.vivify.inline-action-ring",
-    ),
-  );
+  assert.equal(d.querySelector("#selected .selected-ancestral"), null);
   assert.equal(
     d.querySelectorAll("#board .piece.origin-piece").length,
     1,
@@ -2410,26 +2405,24 @@ test("application UI starts with the Hadean common ancestor, then plays division
 
     let originCell = d.querySelector(".origin-piece").parentElement;
     originCell.click();
-    const ancestralCopy = d.querySelector("#selected .selected-ancestral");
-    assert.match(
-      ancestralCopy.textContent,
-      /O Último Ancestral Comum Universal já possuía metabolismo anaeróbio/,
-    );
-    assert.match(
-      ancestralCopy.textContent,
-      /para realizar a primeira reprodução/,
-    );
-    assert.ok(
-      ancestralCopy.querySelector(
-        ".legend-action-ring.vivify.inline-action-ring",
-      ),
-    );
+    assert.equal(d.querySelector("#selected .selected-ancestral"), null);
     assert.equal(d.querySelector(".toastify.xe-passive-toast"), null);
     const originTooltip = d.querySelector(".board-tutorial-tooltip");
     assert.ok(originTooltip);
     assert.match(
       originTooltip.textContent,
-      /⭕ \(verde\) indica capacidade de reproduzir\./,
+      /Clique em .*Vivificar para tentar uma reprodução\./,
+    );
+    assert.ok(
+      originTooltip.querySelector(
+        ".legend-action-ring.vivify.inline-action-ring",
+      ),
+    );
+    assert.equal(
+      originTooltip
+        .querySelector(".legend-action-ring.vivify.inline-action-ring")
+        ?.getAttribute("aria-label"),
+      "círculo verde",
     );
     const understood = originTooltip.querySelector("button");
     assert.ok(understood);

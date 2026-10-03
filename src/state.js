@@ -639,6 +639,7 @@ export function emitPassiveEffect(
     theme = null,
     targetR = null,
     targetC = null,
+    inlineVivificationRing = false,
   } = {},
 ) {
   if (
@@ -657,6 +658,7 @@ export function emitPassiveEffect(
     text,
   };
   if (typeof theme === "string") effect.theme = theme;
+  if (inlineVivificationRing === true) effect.inlineVivificationRing = true;
   if (Number.isInteger(targetR) && Number.isInteger(targetC)) {
     effect.targetR = targetR;
     effect.targetC = targetC;
@@ -1995,10 +1997,11 @@ export function activateOrigin(state) {
       emitPassiveEffect(
         state,
         "Reprodução",
-        "⭕ (verde) indica capacidade de reproduzir.",
+        "Clique em Vivificar para tentar uma reprodução.",
         {
           outcome: "tutorial-vivification-ring",
           theme: "tutorial-tooltip",
+          inlineVivificationRing: true,
           targetR: state.origin.r,
           targetC: state.origin.c,
         },
