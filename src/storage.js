@@ -199,6 +199,7 @@ function normalizeCycleInnovationPressure(state) {
     piece.tentacleGuard ??= null;
     piece.chromatophoreReadyRound ??= piece.bornRound ?? 0;
     piece.chromatophoreDisguise ??= false;
+    piece.chromatophoreRevealTurn ??= null;
     piece.broodParasite ??= null;
     piece.parasitoidism ??= null;
     piece.rumination ??= null;
