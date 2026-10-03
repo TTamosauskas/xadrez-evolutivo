@@ -1924,6 +1924,11 @@ export function reproduce(
     dispersal = seedPlant ? "local" : dispersalMode(parent),
     population = activePopulation(state),
     pressureLatched = reproductionPressure(state, population),
+    primitiveLocomotionReached =
+      has(parent, "Locomoção Primitiva") ||
+      (parent.ancestry ?? []).includes("Locomoção Primitiva"),
+    preLocomotionPredation =
+      reason === "predação" && !primitiveLocomotionReached,
     competitivePressure = competitiveReproductionPressure(
       state,
       parent,
