@@ -75,8 +75,8 @@ export const AI_ACTION_TYPES = Object.freeze([
 
 export const AI_SEARCH_PROFILES = Object.freeze({
   easy: Object.freeze({ budget: 0, maxNodes: 0, depth: 0, branchWidth: 0 }),
-  medium: Object.freeze({ budget: 180, maxNodes: 320, depth: 1, branchWidth: 16 }),
-  hard: Object.freeze({ budget: 900, maxNodes: 1800, depth: 3, branchWidth: 12 }),
+  medium: Object.freeze({ budget: 180, maxNodes: 320, depth: 1, branchWidth: 10 }),
+  hard: Object.freeze({ budget: 900, maxNodes: 1800, depth: 3, branchWidth: 8 }),
 });
 
 const CORTICAL_SEARCH_PROFILE = Object.freeze({
@@ -958,13 +958,11 @@ export function chooseAction(
       cortexAvailable,
       { budget, maxNodes, depth, branchWidth },
     ),
-    startedAt = now(),
-    deadline = startedAt + profile.budget,
     owner = state.current,
     effectiveMaxNodes = Math.max(profile.maxNodes, actions.length),
     context = {
       now,
-      deadline,
+      deadline: Infinity,
       maxNodes: effectiveMaxNodes,
       branchWidth: profile.branchWidth,
       priorityOptions,
@@ -1006,18 +1004,26 @@ export function chooseAction(
     return chosen;
   }
 
-  const searchWidth = Math.min(
-      roots.length,
-      Math.max(1, profile.branchWidth || roots.length),
-    ),
+  context.deadline = now() + profile.budget;
+  const rootSearchWidth =
+      difficulty === "hard"
+        ? 4
+        : difficulty === "medium" || cortexAvailable
+          ? 2
+          : 1,
+    searchWidth = Math.min(roots.length, rootSearchWidth),
     candidates = roots.slice(0, searchWidth);
   let completedDepth = 0,
     attemptedSearchRoots = 0;
 
   for (let iterationDepth = 1; iterationDepth <= profile.depth; iterationDepth++) {
-    const iteration = [];
+    const iteration = [],
+      iterationCandidates =
+        difficulty === "hard"
+          ? candidates.slice(0, Math.max(1, 5 - iterationDepth * 2))
+          : candidates;
     let complete = true;
-    for (const candidate of candidates) {
+    for (const candidate of iterationCandidates) {
       if (
         context.nodes >= context.maxNodes ||
         context.now() > context.deadline
@@ -1043,7 +1049,7 @@ export function chooseAction(
       attemptedSearchRoots++;
       iteration.push({ candidate, value });
     }
-    if (!complete || iteration.length !== candidates.length) break;
+    if (!complete || iteration.length !== iterationCandidates.length) break;
     for (const entry of iteration) entry.candidate.value = entry.value;
     candidates.sort(
       (a, b) => b.value - a.value || a.order - b.order,

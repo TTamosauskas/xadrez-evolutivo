@@ -282,7 +282,7 @@ function runGame(initial, seed) {
       pseudo = (Math.imul(pseudo, 1664525) + 1013904223) >>> 0;
       action = actions[pseudo % actions.length] ?? { type: "PASS" };
     } else {
-      action = chooseAction(state, policy, { now: () => 0 });
+      action = chooseAction(state, policy);
     }
 
     const captureAttempt = isCaptureAction(state, action),
@@ -480,7 +480,7 @@ function aggregate(runs) {
 const report = {
   gamesPerStage,
   aiPolicy,
-  aiSearch: "profile-node-cap",
+  aiSearch: "real-profile-budget",
   goalTurns,
   turnLimit,
   commandLimit,

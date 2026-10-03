@@ -99,7 +99,7 @@ function run(initial, seed) {
         pseudo = (Math.imul(pseudo, 1664525) + 1013904223) >>> 0;
         action = actions[pseudo % actions.length] ?? { type: "PASS" };
       } else
-        action = chooseAction(state, policyFor(seed), { now: () => 0 });
+        action = chooseAction(state, policyFor(seed));
     }
     const next = transition(state, action);
     assert.notEqual(next, state);
@@ -160,7 +160,7 @@ for (const entry of CASES) {
     stage: entry.stage,
     cycle: entry.cycle,
     aiPolicy,
-    aiSearch: "profile-node-cap",
+    aiSearch: "real-profile-budget",
     current: summarize(current),
     legacy: entry.compareLegacy ? summarize(legacy) : null,
   };

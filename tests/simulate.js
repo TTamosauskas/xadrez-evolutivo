@@ -131,7 +131,7 @@ function classify(run) {
 const report = {
   games: count,
   aiPolicy,
-  aiSearch: "profile-node-cap",
+  aiSearch: "real-profile-budget",
   goalTurns,
   turnLimit,
   commandLimit,
@@ -187,7 +187,7 @@ for (let seed = 1; seed <= count; seed++) {
       random = (Math.imul(random, 1664525) + 1013904223) >>> 0;
       action = actions[random % actions.length] ?? { type: "PASS" };
     } else
-      action = chooseAction(s, policy, { now: () => 0 });
+      action = chooseAction(s, policy);
 
     const captureAttempt = isCaptureAction(s, action),
       victim = captureAttempt

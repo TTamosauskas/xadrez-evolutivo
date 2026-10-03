@@ -254,7 +254,7 @@ function runGame(initial, seed) {
         random = (Math.imul(random, 1664525) + 1013904223) >>> 0;
         action = actions[random % actions.length] ?? { type: "PASS" };
       } else
-        action = chooseAction(s, policy, { now: () => 0 });
+        action = chooseAction(s, policy);
       if (action.type === "PASS") passes++;
     }
 
@@ -330,7 +330,7 @@ function runGame(initial, seed) {
 const report = {
   gamesPerStage,
   aiPolicy,
-  aiSearch: "profile-node-cap",
+  aiSearch: "real-profile-budget",
   paired: true,
   goalTurns,
   capTurns: turnLimit,

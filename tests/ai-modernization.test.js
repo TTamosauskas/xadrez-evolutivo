@@ -41,7 +41,8 @@ test("hard search is materially deeper and larger than medium search", () => {
   assert.ok(hard.depth >= 3);
   assert.ok(hard.budget >= medium.budget * 4);
   assert.ok(hard.maxNodes >= medium.maxNodes * 4);
-  assert.ok(hard.branchWidth >= 8);
+  assert.equal(medium.branchWidth, 10);
+  assert.equal(hard.branchWidth, 8);
 });
 
 test("AI valuation penalizes deleterious genetics instead of rewarding trait count", () => {
@@ -246,8 +247,9 @@ test("long AI benchmarks use named difficulty profiles instead of tiny search ca
   ]) {
     const source = readFileSync(new URL(relative, import.meta.url), "utf8");
     assert.match(source, /AI_DIFFICULTY/);
-    assert.match(source, /profile-node-cap/);
+    assert.match(source, /real-profile-budget/);
     assert.doesNotMatch(source, /budget:\s*5/);
     assert.doesNotMatch(source, /maxNodes:\s*(?:12|30)/);
+    assert.doesNotMatch(source, /now:\s*\(\)\s*=>\s*0/);
   }
 });
