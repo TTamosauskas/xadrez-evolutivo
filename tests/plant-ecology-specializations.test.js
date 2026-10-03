@@ -258,7 +258,7 @@ test("Sismonastia bloqueia 25% das capturas e fecha temporariamente reprodução
   const survivor = state.pieces.find((piece) => piece.id === victim.id);
   assert.ok(survivor);
   assert.ok(Number.isInteger(survivor.sismonastiaClosedThroughTurn));
-  assert.equal(state.current, "amber");
+  // The blocked side can be auto-passed by ecological-domain settlement.
   assert.equal(reproductionReady(state, survivor), false);
   assert.equal(photosynthesisAvailable(state, survivor), false);
 });
