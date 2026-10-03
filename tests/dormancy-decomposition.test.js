@@ -2,16 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { fixture, move } from "./helpers.js";
 import { simulate } from "../src/engine.js";
-import { movesFor } from "../src/moves.js";
+import { dormant, movesFor } from "../src/moves.js";
 
-test("fresh predation fertility keeps a dormant predator active before remains appear", () => {
+test("fresh predation fertility stays active before remains appear", () => {
   let state = fixture([
     {
       owner: "blue",
       r: 4,
       c: 3,
       rank: 4,
-      traits: ["Dormência", "Predação"],
+      traits: ["Predação"],
     },
     { owner: "amber", r: 4, c: 4, rank: 4 },
     { owner: "amber", r: 3, c: 4, rank: 4 },
@@ -30,4 +30,21 @@ test("fresh predation fertility keeps a dormant predator active before remains a
       (target) => target.r === 3 && target.c === 4 && target.capture,
     ),
   );
+});
+
+test("Dormência has no active-piece state", () => {
+  const state = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 3,
+        rank: 4,
+        traits: ["Dormência", "Predação"],
+      },
+      { owner: "amber", r: 0, c: 0, rank: 4 },
+    ]),
+    piece = state.pieces[0];
+  state.board[piece.r * 8 + piece.c] = "hostile";
+
+  assert.equal(dormant(state, piece), false);
 });
