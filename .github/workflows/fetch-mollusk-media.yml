@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - polish-mollusk-discoveries
+    paths:
+      - .github/workflows/fetch-mollusk-media.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   fetch:
@@ -63,8 +65,20 @@ jobs:
               print(p.name, w, h, round(w/h, 2))
               assert w >= 900 and h >= 420 and w/h >= 1.2
           PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mollusk-discovery-media
-          path: fetched-media
-          if-no-files-found: error
+      - name: Commit curated media to branch
+        run: |
+          mkdir -p assets/discoveries/mutations
+          cp fetched-media/molusco.png assets/discoveries/mutations/media-a9614b51ad62.png
+          cp fetched-media/radula.png assets/discoveries/mutations/media-2861276a2d80.png
+          cp fetched-media/bisso.jpg assets/discoveries/mutations/media-02e1eafef9c6.jpg
+          cp fetched-media/concha.jpg assets/discoveries/mutations/media-77db4d4c21e9.jpg
+          cp fetched-media/ventosas.jpg assets/discoveries/mutations/media-e5a97ef0a802.jpg
+          cp fetched-media/regeneracao.jpg assets/discoveries/mutations/media-81016d3c2a10.jpg
+          cp fetched-media/visao.jpg assets/discoveries/mutations/media-263aa049f11e.jpg
+          cp fetched-media/tentaculo.jpg assets/discoveries/mutations/media-c054ccdc3a21.jpg
+          cp fetched-media/cromatoforos.jpg assets/discoveries/mutations/media-08c346aa5a46.jpg
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/discoveries/mutations
+          git commit -m "Add curated Mollusk discovery media"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
