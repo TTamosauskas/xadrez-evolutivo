@@ -796,6 +796,31 @@ main {
   color: #242623;
   text-shadow: 1px 0 #f7eace77;
 }
+.piece.chromatophore-disguise {
+  display: inline-block;
+  transform: rotate(180deg);
+}
+
+.chromatophore-owner-ring {
+  position: absolute;
+  z-index: 3;
+  width: 72%;
+  aspect-ratio: 1;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+  pointer-events: none;
+  opacity: 0.9;
+}
+.chromatophore-owner-ring.blue {
+  color: #fff8df;
+  box-shadow: 0 0 0 1px #403b31;
+}
+.chromatophore-owner-ring.amber {
+  color: #242623;
+  box-shadow: 0 0 0 1px #f7eace99;
+}
+
 .piece.origin-piece {
   color: #8f9698;
   text-shadow:
