@@ -358,6 +358,17 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         victim.owner !== p.owner &&
         distance(p, victim) === 1 &&
         contactCaptureUnlocked(p);
+    if (
+      victim?.owner !== p.owner &&
+      (
+        victim?.chromatophoreDisguise ||
+        (
+          victim?.tentacleGuard?.targetId === p.id &&
+          state.turn <= victim.tentacleGuard.throughTurn
+        )
+      )
+    )
+      return;
     if (victim?.owner !== p.owner && hibernating(state, victim)) return;
     const fruitConsume =
         !!plantSeed &&
@@ -411,7 +422,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     if (
       (naturalBarrier || eventBarrier) &&
       !has(p, "Escavador") &&
-      !has(p, "Escalador")
+      !has(p, "Escalador") &&
+      !has(p, "Bisso")
     )
       return;
     if (egg) {
@@ -438,24 +450,28 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       parentalCareProtects(state, victim)
     )
       return;
-    if (
-      victim &&
-      has(victim, "Camuflagem") &&
-      !extra.crawler &&
-      (!has(p, "Visão Binocular") ||
-        inkCloudAt(state, p.r, p.c) ||
-        inkCloudAt(state, victim.r, victim.c)) &&
-      (
-        distance(p, victim) > 1 ||
+    if (victim && has(victim, "Camuflagem") && !extra.crawler) {
+      const d = distance(p, victim),
+        inked =
+          !!inkCloudAt(state, p.r, p.c) ||
+          !!inkCloudAt(state, victim.r, victim.c),
+        detected =
+          (has(p, "Visão Binocular") && !inked) ||
+          (has(p, "Visão Polarizada") && d <= 2);
+      if (
+        !detected &&
         (
-          distance(p, victim) === 1 &&
-          Math.abs(p.r - victim.r) === 1 &&
-          Math.abs(p.c - victim.c) === 1 &&
-          (has(victim, "Pelos") || has(victim, "Penas"))
+          d > 1 ||
+          (
+            d === 1 &&
+            Math.abs(p.r - victim.r) === 1 &&
+            Math.abs(p.c - victim.c) === 1 &&
+            (has(victim, "Pelos") || has(victim, "Penas"))
+          )
         )
       )
-    )
-      return;
+        return;
+    }
     targets.push({
       r,
       c,
@@ -470,6 +486,9 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       seedCapture: seedCapture ? plantSeed.id : null,
       fruitConsume: fruitConsume ? plantSeed.id : null,
       synzooCollect: synzooCollect ? plantSeed.id : null,
+      byssus:
+        !!extra.byssus ||
+        ((naturalBarrier || eventBarrier) && has(p, "Bisso")),
       ...extra,
       noContinuation:
         !!extra.noContinuation || fruitConsume || synzooCollect,
@@ -521,13 +540,14 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           if (
             !captureOnly &&
             movementAllowed &&
-            (has(p, "Escavador") || has(p, "Escalador"))
+            (has(p, "Escavador") || has(p, "Escalador") || has(p, "Bisso"))
           )
-            add(r, c, [...path]);
+            add(r, c, [...path], { byssus: has(p, "Bisso") });
           if (
             !has(p, "Voo") &&
             !has(p, "Escavador") &&
-            !has(p, "Escalador")
+            !has(p, "Escalador") &&
+            !has(p, "Bisso")
           )
             break;
         } else if (occupied) {
@@ -539,9 +559,14 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
             distantCapture =
               n > 1 &&
               !hemiepiphyticGeometry &&
-              (!has(p, "Percepção Espacial") ||
-                inkCloudAt(state, p.r, p.c) ||
-                inkCloudAt(state, r, c));
+              (
+                !has(p, "Percepção Espacial") ||
+                (
+                  (inkCloudAt(state, p.r, p.c) ||
+                    inkCloudAt(state, r, c)) &&
+                  !(has(p, "Visão Polarizada") && n <= 2)
+                )
+              );
           if (!distantCapture && captureAllowed) add(r, c, [...path]);
         } else if (!captureOnly && movementAllowed) {
           add(r, c, [...path]);
