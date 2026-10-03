@@ -974,7 +974,10 @@ test("Arena survivor selection preserves Animal first and Plant second even if o
 test("Arena carries survivor piece forms into the next engineered phase", () => {
   const state = createArenaState(
     {
-      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[4]],
+      blue: [
+        ARENA_ARCHETYPES[0],
+        arenaPresetGenome("plant", "cretaceous-flower"),
+      ],
       amber: [ARENA_ARCHETYPES[1], ARENA_ARCHETYPES[5]],
     },
     8,
@@ -984,7 +987,10 @@ test("Arena carries survivor piece forms into the next engineered phase", () => 
   const next = createArenaSuccessorState(
     state,
     {
-      blue: [ARENA_ARCHETYPES[0], ARENA_ARCHETYPES[4]],
+      blue: [
+        ARENA_ARCHETYPES[0],
+        arenaPresetGenome("plant", "cretaceous-flower"),
+      ],
       amber: [ARENA_ARCHETYPES[1], ARENA_ARCHETYPES[5]],
     },
     9,
