@@ -721,11 +721,7 @@ export const ACTIVE_TRAIT_FAMILIES = [
   },
   {
     id: "plant-nutrition",
-    traits: ["Haustório", "Carnivoria", "Armadilha Deceptiva"],
-  },
-  {
-    id: "deceptive-pollination",
-    traits: ["Polinização Deceptiva", "Mimetismo Sexual"],
+    traits: ["Haustório", "Carnivoria"],
   },
   {
     id: "development",
