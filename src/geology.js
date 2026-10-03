@@ -1694,11 +1694,7 @@ export const TRAIT_INCOMPATIBILITIES = Object.freeze({
 
 export function traitCombinationValid(traits) {
   const set = new Set(traits ?? []);
-  if (
-    [...PLANT_DERIVED_TRAITS].some((trait) => set.has(trait)) &&
-    !set.has("Fotossíntese")
-  )
-    return false;
+  if (set.has("Dormência") && !set.has("Fotossíntese")) return false;
   if (
     set.has("Fotossíntese") &&
     [...PLANT_INCOMPATIBLE_TRAITS].some((trait) => set.has(trait))
@@ -1719,8 +1715,11 @@ export function traitCombinationValid(traits) {
 
 export function normalizeEnergyBranch(traits, preferred = null) {
   const set = new Set(traits ?? []);
-  if (!set.has("Fotossíntese"))
-    for (const trait of PLANT_DERIVED_TRAITS) set.delete(trait);
+  if (
+    !set.has("Fotossíntese") &&
+    (set.has("Predação") || preferred === "Predação")
+  )
+    set.delete("Dormência");
   if (
     set.has("Fotossíntese") &&
     [...PLANT_INCOMPATIBLE_TRAITS].some((trait) => set.has(trait))
