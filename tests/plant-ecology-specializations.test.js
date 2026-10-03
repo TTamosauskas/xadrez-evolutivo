@@ -258,9 +258,10 @@ test("Sismonastia bloqueia 25% das capturas e fecha temporariamente reprodução
   const survivor = state.pieces.find((piece) => piece.id === victim.id);
   assert.ok(survivor);
   assert.ok(Number.isInteger(survivor.sismonastiaClosedThroughTurn));
-  // The blocked side can be auto-passed by ecological-domain settlement.
-  assert.equal(reproductionReady(state, survivor), false);
-  assert.equal(photosynthesisAvailable(state, survivor), false);
+  // With no other legal amber action, settlement consumes the closed turn
+  // automatically and hands control back to blue.
+  assert.equal(state.current, "blue");
+  assert.ok(state.turn > survivor.sismonastiaClosedThroughTurn);
 });
 
 test("Polinização Deceptiva transforma defesa contra Artrópode em uma única prole", () => {
