@@ -474,3 +474,45 @@ test("the real Toastify bundle mounts an accessible fixed toast in the document 
     dom.window.close();
   }
 });
+
+
+test("Mollusk specialization toasts keep Saiba Mais access to the mutation modal", () => {
+  const dom = new JSDOM(),
+    mock = createToastifyMock(dom.window.document),
+    presenter = createPassiveEffectToastPresenter(dom.window.document, {
+      toastify: mock.toastify,
+      onSelect: () => {},
+    }),
+    traits = [
+      "Rádula",
+      "Bisso",
+      "Concha Camerada",
+      "Ventosas Quimiotáteis",
+      "Regeneração de Braços",
+      "Visão Polarizada",
+      "Tentáculo Preênsil",
+      "Cromatóforos Neurais",
+    ];
+
+  for (const [index, trait] of traits.entries()) {
+    presenter.show({
+      id: 100 + index,
+      owner: index % 2 ? "amber" : "blue",
+      trait,
+      text: `efeito de ${trait}`,
+    });
+    const instance = mock.calls.at(-1),
+      more = instance.toastElement.querySelector(".toast-more");
+    assert.ok(more, trait);
+    assert.equal(more.textContent, "SAIBA MAIS", trait);
+    assert.equal(
+      more.getAttribute("aria-label"),
+      `Saiba mais sobre ${trait}`,
+      trait,
+    );
+    instance.hideToast();
+  }
+
+  presenter.destroy();
+  dom.window.close();
+});

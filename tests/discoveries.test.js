@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { EVENTS, TRAITS } from "../src/constants.js";
 import { GEOLOGICAL_STAGES, TRAIT_STAGE } from "../src/geology.js";
 import {
@@ -284,6 +285,15 @@ test("curated Biology media stays landscape and semantically representative", ()
     Endozoocoria: "Ara_ararauna_-_se_alimentando_de_frutos_e_sementes",
     Epizoocoria: "Epizoochory_-_black_Labrador_with_hooked_Geum_fruits",
     Mirmecocoria: "Mimercoria.jpg",
+    Molusco: "Mollusca_Diversity.png",
+    Rádula: "SEM_images_of_radulae_of_the_oblong_rocksnail_",
+    Bisso: "Mussel_%26_Byssal_Threads.jpg",
+    "Concha Camerada": "NautilusCutawayLogarithmicSpiral.jpg",
+    "Ventosas Quimiotáteis": "Humbolt_squid_tentacles_and_beak.jpg",
+    "Regeneração de Braços": "PZSL1907Plate20.png",
+    "Visão Polarizada": "Cuttlefish_eye_closeup.JPG",
+    "Tentáculo Preênsil": "Loligo_vulgaris_with_captured_Sparus_aurata.jpeg",
+    "Cromatóforos Neurais": "Camouflage_octopus.jpg",
   };
 
   const images = new Set();
@@ -294,6 +304,7 @@ test("curated Biology media stays landscape and semantically representative", ()
       /^assets\/discoveries\/mutations\/media-[a-f0-9]{12}\.(?:jpg|png|webp|gif)$/,
       trait,
     );
+    assert.equal(existsSync(entry.image), true, `${trait}: arquivo local ausente`);
     assert.ok(entry.imageWidth >= 900, trait);
     assert.ok(entry.imageHeight >= 420, trait);
     assert.ok(entry.imageWidth / entry.imageHeight >= 1.2, trait);
@@ -357,12 +368,22 @@ test("mutation Wikipedia links are direct article links", () => {
   );
 });
 
-test("mutation labels map only to encyclopedia-worthy discoveries", () => {
+test("piece-form mutations stay out of Biology discoveries", () => {
   assert.equal(mutationDiscoveryId("Fotossíntese"), "Fotossíntese");
-  assert.equal(mutationDiscoveryId("Mutação de peça: Cavalo"), "rank:1");
-  assert.equal(mutationDiscoveryId("Mutação de peça: Rainha"), "rank:5");
-  assert.equal(mutationDiscoveryId("Mutação de peça: Peão"), "rank:0");
+  assert.equal(mutationDiscoveryId("Mutação de peça: Cavalo"), null);
+  assert.equal(mutationDiscoveryId("Mutação de peça: Rainha"), null);
+  assert.equal(mutationDiscoveryId("Mutação de peça: Peão"), null);
   assert.equal(mutationDiscoveryId("Perda de Fotossíntese"), null);
+
+  const state = createState(206);
+  state.discoveries.mutations.push("rank:1", "rank:5");
+  assert.equal(isDiscoveryUnread(state, "mutations", "rank:1"), false);
+  assert.equal(
+    discoveredContent(state, "mutations").some((entry) =>
+      entry.id.startsWith("rank:"),
+    ),
+    false,
+  );
 });
 
 
@@ -371,7 +392,13 @@ test("editor discovery mode can reveal the complete catalog without mutating pro
     before = structuredClone(state.discoveries);
   for (const [category] of DISCOVERY_CATEGORIES) {
     const entries = discoveredContent(state, category, true);
-    assert.equal(entries.length, Object.keys(DISCOVERY_CONTENT[category]).length, category);
+    assert.equal(
+      entries.length,
+      Object.keys(DISCOVERY_CONTENT[category]).filter(
+        (id) => !(category === "mutations" && id.startsWith("rank:")),
+      ).length,
+      category,
+    );
   }
   assert.deepEqual(state.discoveries, before);
 });

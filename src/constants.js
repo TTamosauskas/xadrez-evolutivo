@@ -810,11 +810,11 @@ export const TRAITS = {
   ],
   Rádula: [
     "🪚",
-    "Moluscos podem Vivificar uma Casa Fértil ortogonalmente adjacente: o substrato torna-se neutro e a criatura recupera até 2 Energia.",
+    "Clique no círculo verde ⭕ de uma Casa Fértil ortogonalmente adjacente: o substrato torna-se neutro e a criatura recupera até 2 Energia.",
   ],
   Bisso: [
     "🧵",
-    "Moluscos conchados podem Vivificar uma Barreira Natural ou de Evento adjacente para fixar-se nela sem destruí-la.",
+    "Clique no círculo verde ⭕ de uma Barreira Natural ou de Evento adjacente para fixar-se nela sem destruí-la.",
   ],
   "Concha Camerada": [
     "🏺",
@@ -834,11 +834,11 @@ export const TRAITS = {
   ],
   "Tentáculo Preênsil": [
     "➿",
-    "Pode atacar uma presa a duas ou três casas em linha reta ou diagonal para puxá-la à casa adjacente; custa 1 Energia e a presa não pode capturar esse Molusco em seu próximo turno. Recarga de quatro rodadas.",
+    "Clique no círculo vermelho de ataque marcado com ➿ sobre uma presa a duas ou três casas em linha reta ou diagonal para puxá-la à casa adjacente; custa 1 Energia e a presa não pode capturar esse Molusco em seu próximo turno. Recarga de quatro rodadas.",
   ],
   "Cromatóforos Neurais": [
     "🎨",
-    "Pode Vivificar a própria casa para entrar em Cripsis Cromática: assume temporariamente a cor adversária e fica invertido; até sua próxima ação não pode atacar nem ser atacado. Ao mover ou esperar, volta ao normal e entra em recarga de quatro rodadas.",
+    "Clique no círculo verde ⭕ da própria casa para entrar em Cripsis Cromática: assume temporariamente a cor adversária e fica invertido; até sua próxima ação não pode atacar nem ser atacado. Ao mover ou esperar, volta ao normal e entra em recarga de quatro rodadas.",
   ],
   Tinta: [
     "🌫️",
