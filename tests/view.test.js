@@ -387,10 +387,10 @@ test("selected piece shows a compact unified Energy bar", () => {
     track = panel?.querySelector(".selected-energy-track");
 
   assert.ok(panel);
-  assert.match(panel.textContent, /Energia 3\/5/);
-  assert.match(panel.textContent, /Mover −1 · Reproduzir −4/);
+  assert.match(panel.textContent, /Energia 3\/8/);
+  assert.match(panel.textContent, /Mover −1 · Reproduzir −5/);
   assert.equal(track?.getAttribute("aria-valuenow"), "3");
-  assert.equal(track?.getAttribute("aria-valuemax"), "5");
+  assert.equal(track?.getAttribute("aria-valuemax"), "8");
   dom.window.close();
 });
 
@@ -2017,7 +2017,7 @@ test("board shows low Energy while selected details keep cellular counters", () 
   assert.doesNotMatch(boardStatus, /🦂2/);
 
   assert.match(selected, /🔘 Eucarionte · 1 amortecimento restante\./);
-  assert.match(selected, /Energia 0\/5 · dívida 2/);
+  assert.match(selected, /Energia 0\/8 · dívida 2/);
   assert.match(selected, /Dívida energética · 2 ponto\(s\) a recuperar\./);
   dom.window.close();
 });
@@ -2045,7 +2045,7 @@ test("selected-piece lifecycle and Energy states use compact copy", () => {
     mobileSummary = dom.window.document.getElementById("mobile-selected-summary");
 
   assert.match(selected.textContent, /⏳ 1 t maturidade sexual\./);
-  assert.match(selected.textContent, /Energia 0\/5/);
+  assert.match(selected.textContent, /Energia 0\/8/);
   assert.match(mobileSummary.textContent, /⏳ 1 t/);
   assert.doesNotMatch(
     mobileSummary.textContent,
