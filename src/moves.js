@@ -440,22 +440,39 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       return;
     if (
       victim &&
-      has(victim, "Camuflagem") &&
-      !extra.crawler &&
-      (!has(p, "Visão Binocular") ||
-        inkCloudAt(state, p.r, p.c) ||
-        inkCloudAt(state, victim.r, victim.c)) &&
-      (
-        distance(p, victim) > 1 ||
-        (
-          distance(p, victim) === 1 &&
-          Math.abs(p.r - victim.r) === 1 &&
-          Math.abs(p.c - victim.c) === 1 &&
-          (has(victim, "Pelos") || has(victim, "Penas"))
-        )
-      )
+      victim.owner !== p.owner &&
+      victim.chromaticCrypsis
     )
       return;
+    if (
+      victim &&
+      victim.owner !== p.owner &&
+      p.tentacleProtection?.sourceId === victim.id &&
+      state.turn <= (p.tentacleProtection?.throughTurn ?? -1)
+    )
+      return;
+    if (victim && has(victim, "Camuflagem") && !extra.crawler) {
+      const inked =
+          !!inkCloudAt(state, p.r, p.c) ||
+          !!inkCloudAt(state, victim.r, victim.c),
+        binocularDetection = has(p, "Visão Binocular") && !inked,
+        polarizedDetection =
+          has(p, "Visão Polarizada") && distance(p, victim) <= 2;
+      if (
+        !binocularDetection &&
+        !polarizedDetection &&
+        (
+          distance(p, victim) > 1 ||
+          (
+            distance(p, victim) === 1 &&
+            Math.abs(p.r - victim.r) === 1 &&
+            Math.abs(p.c - victim.c) === 1 &&
+            (has(victim, "Pelos") || has(victim, "Penas"))
+          )
+        )
+      )
+        return;
+    }
     targets.push({
       r,
       c,
@@ -536,12 +553,19 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
               has(p, "Fotossíntese") &&
               has(p, "Hemiepifitismo") &&
               has(victim, "Fotossíntese"),
+            polarizedRange =
+              has(p, "Visão Polarizada") && n <= 2,
             distantCapture =
               n > 1 &&
               !hemiepiphyticGeometry &&
-              (!has(p, "Percepção Espacial") ||
-                inkCloudAt(state, p.r, p.c) ||
-                inkCloudAt(state, r, c));
+              (
+                !has(p, "Percepção Espacial") ||
+                (
+                  (inkCloudAt(state, p.r, p.c) ||
+                    inkCloudAt(state, r, c)) &&
+                  !polarizedRange
+                )
+              );
           if (!distantCapture && captureAllowed) add(r, c, [...path]);
         } else if (!captureOnly && movementAllowed) {
           add(r, c, [...path]);
@@ -1923,6 +1947,149 @@ export function canParasitize(state, p) {
 export const NITROGEN_FIXATION_COOLDOWN_ROUNDS = 4;
 export const PHEROMONE_COOLDOWN_ROUNDS = 3;
 export const BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS = 4;
+export const TENTACLE_COOLDOWN_ROUNDS = 4;
+export const CHROMATIC_COOLDOWN_ROUNDS = 4;
+
+export const chromaticCrypsisActive = (piece) => !!piece?.chromaticCrypsis;
+
+export function radulaTargets(state, piece) {
+  if (
+    !piece ||
+    !has(piece, "Rádula") ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    energyValue(piece) >= energyCapacity(piece)
+  )
+    return [];
+  const targets = [];
+  for (const [dr, dc] of ORTH) {
+    const r = piece.r + dr,
+      c = piece.c + dc;
+    if (
+      !inside(r, c) ||
+      ecologicalDomainBlocked(state, piece.owner, r, c) ||
+      terrain(state, r, c) !== "fertile" ||
+      at(state, r, c) ||
+      eggAt(state, r, c) ||
+      plantSeedAt(state, r, c) ||
+      fragmentAt(state, r, c) ||
+      barrierAt(state, r, c)
+    )
+      continue;
+    targets.push({ r, c });
+  }
+  return targets;
+}
+
+export function byssusTargets(state, piece) {
+  if (
+    !piece ||
+    !has(piece, "Bisso") ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    !canSpendEnergy(piece, movementEnergyCost(piece))
+  )
+    return [];
+  const targets = [];
+  for (const [dr, dc] of ORTH) {
+    const r = piece.r + dr,
+      c = piece.c + dc;
+    if (
+      !inside(r, c) ||
+      ecologicalDomainBlocked(state, piece.owner, r, c) ||
+      (!naturalBarrierAt(state, r, c) && !eventBarrierAt(state, r, c)) ||
+      at(state, r, c) ||
+      eggAt(state, r, c) ||
+      plantSeedAt(state, r, c) ||
+      fragmentAt(state, r, c)
+    )
+      continue;
+    targets.push({ r, c });
+  }
+  return targets;
+}
+
+export function tentacleTargets(state, piece) {
+  if (
+    !piece ||
+    !has(piece, "Tentáculo Preênsil") ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    round(state) < (piece.tentacleReadyRound ?? 0) ||
+    !canSpendEnergy(piece, 1)
+  )
+    return [];
+  const targets = [];
+  for (const victim of state.pieces) {
+    if (
+      victim.owner === piece.owner ||
+      victim.chromaticCrypsis
+    )
+      continue;
+    const dr = victim.r - piece.r,
+      dc = victim.c - piece.c,
+      range = Math.max(Math.abs(dr), Math.abs(dc));
+    if (
+      range < 2 ||
+      range > 3 ||
+      !(dr === 0 || dc === 0 || Math.abs(dr) === Math.abs(dc))
+    )
+      continue;
+    const stepR = Math.sign(dr),
+      stepC = Math.sign(dc),
+      landingR = piece.r + stepR,
+      landingC = piece.c + stepC;
+    if (
+      !inside(landingR, landingC) ||
+      ecologicalDomainBlocked(state, victim.owner, landingR, landingC) ||
+      at(state, landingR, landingC) ||
+      eggAt(state, landingR, landingC) ||
+      plantSeedAt(state, landingR, landingC) ||
+      fragmentAt(state, landingR, landingC) ||
+      barrierAt(state, landingR, landingC) ||
+      lethalHazardAt(state, landingR, landingC)
+    )
+      continue;
+    let clear = true;
+    for (let step = 1; step < range; step++) {
+      const r = piece.r + stepR * step,
+        c = piece.c + stepC * step;
+      if (
+        (r !== landingR || c !== landingC) &&
+        (
+          at(state, r, c) ||
+          eggAt(state, r, c) ||
+          plantSeedAt(state, r, c) ||
+          fragmentAt(state, r, c) ||
+          barrierAt(state, r, c)
+        )
+      ) {
+        clear = false;
+        break;
+      }
+    }
+    if (!clear) continue;
+    targets.push({
+      targetId: victim.id,
+      r: victim.r,
+      c: victim.c,
+      landingR,
+      landingC,
+    });
+  }
+  return targets;
+}
+
+export function chromaticCrypsisAvailable(state, piece) {
+  return !!(
+    piece &&
+    has(piece, "Cromatóforos Neurais") &&
+    !piece.chromaticCrypsis &&
+    round(state) >= (piece.chromaticReadyRound ?? 0) &&
+    !resting(state, piece) &&
+    !dormant(state, piece)
+  );
+}
 
 function signalingAligned(a, b) {
   const dr = Math.abs(a.r - b.r),
@@ -2419,6 +2586,27 @@ export function actionsForPiece(
   )
     return [];
 
+  if (piece.chromaticCrypsis) {
+    const moves = movesFor(source, piece)
+      .filter(
+        (target) =>
+          !target.stay &&
+          !target.capture &&
+          !target.eggCapture &&
+          !target.seedCapture &&
+          !target.fruitConsume &&
+          !target.synzooCollect &&
+          !at(source, target.r, target.c),
+      )
+      .map((target) => ({
+        type: "MOVE",
+        id: piece.id,
+        r: target.r,
+        c: target.c,
+      }));
+    return [...moves, { type: "CHROMATIC_WAIT", id: piece.id }];
+  }
+
   const mates =
     source.chain && source.chain !== piece.id
       ? []
@@ -2438,7 +2626,7 @@ export function actionsForPiece(
       c: target.c,
     }));
 
-  return [
+  const actions = [
     ...movesFor(source, piece).map((target) => ({
       type: "MOVE",
       id: piece.id,
@@ -2553,7 +2741,52 @@ export function actionsForPiece(
       r: target.r,
       c: target.c,
     })),
+    ...radulaTargets(source, piece).map((target) => ({
+      type: "RASP",
+      id: piece.id,
+      r: target.r,
+      c: target.c,
+    })),
+    ...byssusTargets(source, piece).map((target) => ({
+      type: "BYSSUS_ATTACH",
+      id: piece.id,
+      r: target.r,
+      c: target.c,
+    })),
+    ...tentacleTargets(source, piece).map((target) => ({
+      type: "TENTACLE_PULL",
+      id: piece.id,
+      targetId: target.targetId,
+    })),
+    ...(chromaticCrypsisAvailable(source, piece)
+      ? [{ type: "CHROMATIC_CRYPSIS", id: piece.id }]
+      : []),
   ];
+
+  return actions.filter((action) => {
+    const targetPiece =
+      action.type === "MOVE"
+        ? at(source, action.r, action.c)
+        : Number.isInteger(action.targetId)
+          ? source.pieces.find((candidate) => candidate.id === action.targetId)
+          : action.type === "AGGRESSIVE_MATE"
+            ? source.pieces.find((candidate) => candidate.id === action.id)
+            : null;
+    if (
+      targetPiece &&
+      targetPiece.owner !== piece.owner &&
+      targetPiece.chromaticCrypsis
+    )
+      return false;
+    if (
+      targetPiece &&
+      targetPiece.owner !== piece.owner &&
+      piece.tentacleProtection?.sourceId === targetPiece.id &&
+      source.turn <= (piece.tentacleProtection?.throughTurn ?? -1)
+    )
+      return false;
+    return true;
+  });
 }
 
 function actionsAfterPieceChange(state, piece, changes) {
@@ -2576,6 +2809,8 @@ export function vivificationActionsForPiece(state, piece) {
       action.type === "PARTHENOGENESIS" ||
       action.type === "MONOCARP_STORE" ||
       action.type === "MONOCARP_BLOOM" ||
+      action.type === "CHROMATIC_CRYPSIS" ||
+      action.type === "CHROMATIC_WAIT" ||
       action.type === "REJECT_BROOD_PARASITE" ||
       (action.type === "PARASITIZE" &&
         !Number.isInteger(action.targetId)),
