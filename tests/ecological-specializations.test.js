@@ -260,6 +260,7 @@ test("Parasitismo de Ninhada substitui um slot quando a energia predatória é v
 
   state = simulate(state, { type: "PASS" });
   host = state.pieces.find((piece) => piece.id === hostId);
+  state.board[host.r * 8 + host.c] = "neutral";
   state = simulate(state, move(host, host.r, host.c));
 
   host = state.pieces.find((piece) => piece.id === hostId);
