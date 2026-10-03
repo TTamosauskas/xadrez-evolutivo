@@ -499,6 +499,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         const builtBarrier = builtBarrierAt(state, r, c),
           naturalBarrier = naturalBarrierAt(state, r, c),
           eventBarrier = eventBarrierAt(state, r, c),
+          victim = at(state, r, c),
           occupied = occupiedTarget(r, c),
           movementAllowed = n <= movementLimit,
           captureAllowed = n <= captureLimit;
