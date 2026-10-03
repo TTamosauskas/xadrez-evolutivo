@@ -6679,7 +6679,23 @@ export function transition(previous, action) {
     return state;
   }
   if (previous.result || previous.notices.length) return previous;
-  const state = clone(previous);
+  const state = clone(previous),
+    actingPieceId =
+      Number.isInteger(action.id)
+        ? action.id
+        : Number.isInteger(action.parentId)
+          ? action.parentId
+          : null,
+    disguisedActor = Number.isInteger(actingPieceId)
+      ? state.pieces.find((piece) => piece.id === actingPieceId)
+      : null;
+  if (
+    disguisedActor?.chromatophoreDisguise &&
+    !["MOVE", "CHROMATOPHORES"].includes(action.type)
+  )
+    throw Error(
+      "Cripsis Cromática permite apenas mover para uma casa vazia ou esperar.",
+    );
   action = resolveAtaxicMove(state, action);
   const ctx = context(state);
   state.movementTrace = null;
