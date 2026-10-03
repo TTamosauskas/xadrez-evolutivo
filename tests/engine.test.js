@@ -972,7 +972,7 @@ test("stationary reproduction keeps its parent and unique occupancy with Ooteca"
   s.board[36] = "fertile";
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(s.pieces.some((p) => p.id === 1));
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 5);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 4);
   assertState(s);
 });
 test("Ooteca only releases after successful reproduction on a fertile square", () => {
@@ -1811,7 +1811,7 @@ test("fertile reproduction converts the metabolic profile into Energy cost", () 
     forcedCount: 1,
     fertileReproduction: true,
   }), 1);
-  assert.equal(energyValue(inducedPawn), 0);
+  assert.equal(energyValue(inducedPawn), 2);
   assertState(s);
 });
 
@@ -1824,7 +1824,7 @@ test("predatory reproduction uses the same Energy recovery profile", () => {
   assert.equal(reproduce(context(s), predator, null, "predação", {
     forcedCount: 1,
   }), 1);
-  assert.equal(energyValue(predator), 0);
+  assert.equal(energyValue(predator), 2);
 
   s = fixture([
     { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Predação"] },
@@ -3497,6 +3497,7 @@ test("cycle innovation pressure blocks a seventh new positive mutation without b
       "Dormência",
       "Multicelularismo",
       "Resistência",
+      "Eucarionte",
     ],
     capped = makeState(cappedTraits),
     cappedBefore = capped.s.nextId;
@@ -4913,8 +4914,8 @@ test("Eusocialidade gains up to two offspring from adjacent sterile kin", () => 
       { owner: "amber", r: 0, c: 0 },
     ]),
     parent = s.pieces[0];
-  assert.equal(reproduce(context(s), parent), 6);
-  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 9);
+  assert.equal(reproduce(context(s), parent), 5);
+  assert.equal(s.pieces.filter((p) => p.owner === "blue").length, 8);
   assertState(s);
 });
 
@@ -5447,7 +5448,7 @@ test("Multicelularismo blocks capture until the predator obtains Ingestão", () 
   assertState(s);
 });
 
-test("Predação uses traditional piece capture geometry before Locomoção", () => {
+test("Predação uses basal King capture geometry before Locomoção", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 4 },
     { owner: "amber", r: 4, c: 4 },
@@ -5476,14 +5477,14 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
   assertState(s);
 
   s = fixture([
-    { owner: "blue", r: 4, c: 3, rank: 0 },
+    { owner: "blue", r: 4, c: 3, rank: 4 },
     { owner: "amber", r: 3, c: 3 },
     { owner: "amber", r: 3, c: 4 },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.geologicalStage = "cambrian";
-  const pawn = s.pieces[0];
-  pawn.traits = pawn.traits.filter(
+  const basalKing = s.pieces[0];
+  basalKing.traits = basalKing.traits.filter(
     (trait) =>
       ![
         "Locomoção Primitiva",
@@ -5491,8 +5492,8 @@ test("Predação uses traditional piece capture geometry before Locomoção", ()
         "Locomoção Terrestre",
       ].includes(trait),
   );
-  const targets = movesFor(s, pawn);
-  assert.ok(!targets.some((target) => target.r === 3 && target.c === 3));
+  const targets = movesFor(s, basalKing);
+  assert.ok(targets.some((target) => target.r === 3 && target.c === 3));
   assert.ok(targets.some((target) => target.r === 3 && target.c === 4));
 });
 

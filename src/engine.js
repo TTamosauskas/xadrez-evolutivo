@@ -1,4 +1,4 @@
-import { has, canPhotosynthesize, inside, square, other, OWNERS, coord, distance, TRAITS, PIECES, functionalSizeClass } from "./constants.js";
+import { has, canPhotosynthesize, purePredatoryBranch, inside, square, other, OWNERS, coord, distance, TRAITS, PIECES, functionalSizeClass } from "./constants.js";
 import {
   applyEnergyDelta,
   canSpendEnergy,
@@ -3322,7 +3322,21 @@ function triggerInkEscape(ctx, attacker, victim) {
 }
 
 function lowerAutotomyRank(piece) {
-  if (!piece || piece.rank <= 0) return null;
+  if (!piece) return null;
+  if (purePredatoryBranch(piece)) {
+    if (piece.rank === 4) return null;
+    if (piece.rank === 1) return 4;
+    if (has(piece, "Artrópode"))
+      return new Map([
+        [2, 1],
+      ]).get(piece.rank) ?? null;
+    return new Map([
+      [5, 3],
+      [3, 2],
+      [2, 1],
+    ]).get(piece.rank) ?? null;
+  }
+  if (piece.rank <= 0) return null;
   if (has(piece, "Artrópode")) {
     const lower = new Map([
       [4, 2],

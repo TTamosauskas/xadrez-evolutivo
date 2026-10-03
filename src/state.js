@@ -10,6 +10,8 @@ import {
   PIECE_LIFE_HISTORY,
   CHESS_PIECE_VALUES,
   STATE_VERSION,
+  purePredatoryBranch,
+  basalRankFor,
 } from "./constants.js";
 import {
   GEOLOGICAL_STAGES,
@@ -572,7 +574,7 @@ export function releaseEukaryoteBuffers(state, piece, trigger) {
     (trait) => !eligible.has(trait),
   );
   for (const trait of released) {
-    if (trait === "Nanismo") piece.rank = 0;
+    if (trait === "Nanismo") piece.rank = basalRankFor(piece);
     if (trait === "Mutação Letal")
       piece.deleteriousDue = round(state) + 3;
     log(
@@ -761,9 +763,12 @@ export function newPiece(state, owner, r, c, source = {}) {
       ? "Fotossíntese"
       : null;
   syncGenomePhenotype(piece, preferredEnergy);
-  if (has(piece, "Nanismo")) piece.rank = 0;
-  else if (has(piece, "Artrópode") && ![0, 1, 2, 4].includes(piece.rank))
-    piece.rank = 2;
+  if (has(piece, "Nanismo")) piece.rank = basalRankFor(piece);
+  else {
+    if (purePredatoryBranch(piece) && piece.rank === 0) piece.rank = 4;
+    if (has(piece, "Artrópode") && ![1, 2, 4].includes(piece.rank))
+      piece.rank = 2;
+  }
   if (has(piece, "Colônia") && piece.colonyId === null) {
     piece.colonyId = state.nextColonyId++;
     state.colonyCooldowns[piece.colonyId] ??= bornRound;
@@ -1701,7 +1706,10 @@ function bodyPlanFounderProfile(stageIndex, stageId, bodyPlan, persistent, inher
         bodyPlanTraitCompatible(trait, bodyPlan),
     );
   return {
-    rank: curated.rank ?? 0,
+    rank:
+      (curated.rank ?? 0) === 0
+        ? 4
+        : curated.rank ?? 4,
     traits,
     ancestry,
     recessiveTraits: earthFounderRecessives(ancestry, traits, false),
@@ -1799,7 +1807,10 @@ function previewFounderProfiles(stageIndex) {
         ),
       },
       companion: {
-        rank: prePrimitiveLocomotion ? 4 : (curated.rank ?? 0),
+        rank:
+          prePrimitiveLocomotion || (curated.rank ?? 0) === 0
+            ? 4
+            : curated.rank,
         traits: animalTraits,
         ancestry: animalAncestry,
         recessiveTraits: earthFounderRecessives(
@@ -1836,7 +1847,7 @@ function previewFounderProfiles(stageIndex) {
     animalRank = prePrimitiveLocomotion
       ? 4
       : stageIndex <= cambrianStageIndex
-        ? 0
+        ? 4
         : derivedRanks[
             Math.min(
               derivedRanks.length - 1,
@@ -3271,6 +3282,7 @@ export function assertState(state) {
       !Number.isInteger(p.rank) ||
       p.rank < 0 ||
       p.rank > 5 ||
+      (p.rank === 0 && purePredatoryBranch(p)) ||
       !Array.isArray(p.traits) ||
       p.traits.some((t) => !TRAITS[t]) ||
       !traitCombinationValid(p.traits) ||

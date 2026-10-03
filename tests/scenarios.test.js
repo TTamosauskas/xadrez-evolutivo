@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { EVENTS, STATE_VERSION } from "../src/constants.js";
+import {
+  EVENTS,
+  STATE_VERSION,
+  canPhotosynthesize,
+} from "../src/constants.js";
 import {
   GEOLOGICAL_STAGES,
   eventWeights,
@@ -52,6 +56,38 @@ import {
 test("new campaigns default to Vida na Terra while low-level legacy states stay alternative", () => {
   assert.equal(createCampaignState(1).scenario, "earth");
   assert.equal(createState(1).scenario, "alternative");
+});
+
+test("Vida na Terra separa Peão fotossintético de Rei predatório basal", () => {
+  let sawBasalPredatoryKing = false,
+    sawPhotosyntheticPawn = false;
+  for (const [index, stage] of GEOLOGICAL_STAGES.entries()) {
+    if (stage.id === "hadean") continue;
+    const state = createPeriodState(stage.id, 900 + index, null, "earth"),
+      predators = state.pieces.filter(
+        (piece) =>
+          piece.traits.includes("Predação") &&
+          !canPhotosynthesize(piece),
+      );
+    for (const piece of predators)
+      assert.notEqual(piece.rank, 0, `${stage.id}: Peão predatório inicial`);
+    for (const piece of state.pieces.filter((candidate) => candidate.rank === 0))
+      assert.equal(
+        canPhotosynthesize(piece),
+        true,
+        `${stage.id}: todo Peão fundador deve pertencer ao ramo fotossintético`,
+      );
+    if (predators.some((piece) => piece.rank === 4))
+      sawBasalPredatoryKing = true;
+    if (
+      state.pieces.some(
+        (piece) => piece.rank === 0 && canPhotosynthesize(piece),
+      )
+    )
+      sawPhotosyntheticPawn = true;
+  }
+  assert.equal(sawBasalPredatoryKing, true);
+  assert.equal(sawPhotosyntheticPawn, true);
 });
 
 test("Vida na Terra defines phase-specific founder layouts across the expanded timeline", () => {
@@ -191,7 +227,7 @@ test("strongest survivor uses branch-specific piece value before genetic tie-bre
       "amber",
       (piece) => piece.traits.includes("Fotossíntese"),
     ).piece.id,
-    plantKing.id,
+    plantQueen.id,
   );
 });
 

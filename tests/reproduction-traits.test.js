@@ -29,9 +29,15 @@ import {
   reproductionEnergyCost,
 } from "../src/energy.js";
 
-test("Predação usa a ninhada normal da forma", () => {
-  const expected = [4, 3, 2, 2, 1, 1];
-  for (let rank = 0; rank < expected.length; rank++) {
+test("Predação usa a ninhada normal das formas válidas do ramo", () => {
+  const cases = [
+    [4, 3],
+    [1, 3],
+    [2, 2],
+    [3, 2],
+    [5, 1],
+  ];
+  for (const [rank, expected] of cases) {
     const s = fixture([
         {
           owner: "blue",
@@ -50,10 +56,10 @@ test("Predação usa a ninhada normal da forma", () => {
       ignoreSuccessPressure: true,
     });
 
-    assert.equal(born, expected[rank], `rank ${rank}`);
+    assert.equal(born, expected, `rank ${rank}`);
     assert.equal(
       s.pieces.filter((piece) => piece.parentId === parent.id).length,
-      expected[rank],
+      expected,
       `rank ${rank}`,
     );
     assertState(s);
@@ -239,7 +245,7 @@ test("Brotamento infrutífero encerra o turno sem lançar erro", () => {
   s.turn = 8;
   s.current = "blue";
   parent.stationarySinceRound = 0;
-  parent.energy = 4;
+  parent.energy = 5;
   s.board[cell] = "fertile";
 
   assert.ok(
@@ -252,7 +258,7 @@ test("Brotamento infrutífero encerra o turno sem lançar erro", () => {
   const after = s.pieces.find((piece) => piece.id === parentId);
   assert.equal(s.turn, 9);
   assert.equal(s.board[cell], "neutral");
-  assert.equal(energyValue(after), 5);
+  assert.equal(energyValue(after), 6);
   assert.equal(
     s.pieces.filter((piece) => piece.parentId === parentId).length,
     0,
@@ -654,9 +660,9 @@ test("Acasalamento Múltiplo creates biparental sub-broods and doubles the Energ
     new Set(children.map((child) => child.parentIds[1])),
     new Set([first.id, second.id]),
   );
-  assert.equal(energyValue(parent), -4);
-  assert.equal(energyValue(first), -4);
-  assert.equal(energyValue(second), -4);
+  assert.equal(energyValue(parent), -2);
+  assert.equal(energyValue(first), -2);
+  assert.equal(energyValue(second), -2);
   assertState(s);
 });
 

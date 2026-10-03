@@ -22,20 +22,20 @@ const plant = (...traits) =>
   completeArenaBranchGenome(traits, "plant");
 
 test("Arena restricts chess forms from the selected branch and body plan", () => {
-  assert.deepEqual(arenaAllowedRanks(animal(), "animal"), [0, 4]);
+  assert.deepEqual(arenaAllowedRanks(animal(), "animal"), [4]);
   assert.deepEqual(
     arenaAllowedRanks(
       animal("Vertebrado", "Locomoção Articulada"),
       "animal",
     ),
-    [0, 1, 2, 3, 4, 5],
+    [1, 2, 3, 4, 5],
   );
   assert.deepEqual(
     arenaAllowedRanks(
       animal("Artrópode", "Locomoção Articulada"),
       "animal",
     ),
-    [0, 1, 2, 4],
+    [1, 2, 4],
   );
 
   assert.deepEqual(arenaAllowedRanks(plant(), "plant"), [0, 4]);
@@ -65,8 +65,9 @@ test("Arena mutations can further restrict the available chess form", () => {
     massPredator = animal("Locomoção Articulada", "Predação em Massa");
 
   assert.equal(arenaRankValid(airSacs, 0, "animal"), false);
+  assert.equal(arenaRankValid(airSacs, 4, "animal"), false);
   assert.match(
-    arenaRankRestrictionReason(airSacs, 0, "animal"),
+    arenaRankRestrictionReason(airSacs, 4, "animal"),
     /Sacos Aéreos/,
   );
   assert.deepEqual(arenaAllowedRanks(massPredator, "animal"), [3, 5]);

@@ -299,7 +299,7 @@ export function completeArenaBranchGenome(input, branchId) {
 
 export function arenaAllowedRanks(genome, branchId) {
   const completed = completeArenaBranchGenome(genome, branchId);
-  if (completed.includes("Nanismo")) return [0];
+  if (completed.includes("Nanismo")) return [branchId === "plant" ? 0 : 4];
 
   let allowed;
   if (branchId === "plant") {
@@ -311,14 +311,16 @@ export function arenaAllowedRanks(genome, branchId) {
   } else {
     const articulated = completed.includes("Locomoção Articulada");
     if (articulated && completed.includes("Vertebrado"))
-      allowed = [...ARENA_RANKS];
+      allowed = [1, 2, 3, 4, 5];
     else if (articulated && completed.includes("Artrópode"))
-      allowed = [0, 1, 2, 4];
-    else allowed = [0, 4];
+      allowed = [1, 2, 4];
+    else allowed = [4];
   }
 
   if (completed.includes("Sacos Aéreos"))
-    allowed = allowed.filter((rank) => rank !== 0);
+    allowed = allowed.filter(
+      (rank) => rank !== 0 && (branchId === "plant" || rank !== 4),
+    );
   if (completed.includes("Predação em Massa"))
     allowed = allowed.filter((rank) => [3, 5].includes(rank));
   return allowed;
@@ -335,9 +337,15 @@ export function arenaRankValid(genome, rank, branchId) {
 export function arenaRankRestrictionReason(genome, rank, branchId) {
   if (arenaRankValid(genome, rank, branchId)) return null;
   const completed = completeArenaBranchGenome(genome, branchId);
-  if (completed.includes("Nanismo") && rank !== 0)
-    return "Nanismo força a forma Peão.";
-  if (completed.includes("Sacos Aéreos") && rank === 0)
+  const basalRank = branchId === "plant" ? 0 : 4;
+  if (completed.includes("Nanismo") && rank !== basalRank)
+    return branchId === "plant"
+      ? "Nanismo força a forma Peão."
+      : "Nanismo força a forma Rei.";
+  if (
+    completed.includes("Sacos Aéreos") &&
+    (rank === 0 || (branchId === "animal" && rank === 4))
+  )
     return "Sacos Aéreos exige Cavalo ou forma superior.";
   if (completed.includes("Predação em Massa") && ![3, 5].includes(rank))
     return "Predação em Massa exige uma forma grande: Torre ou Rainha.";
@@ -351,6 +359,8 @@ export function arenaRankRestrictionReason(genome, rank, branchId) {
     )
       return "Torre e Rainha vegetais exigem Traqueófitas.";
   } else {
+    if (rank === 0)
+      return "Peão é exclusivo do ramo fotossintético.";
     if (completed.includes("Artrópode") && [3, 5].includes(rank))
       return "Artrópodes não podem assumir Torre ou Rainha.";
     if (

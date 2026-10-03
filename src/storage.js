@@ -8,7 +8,7 @@ import {
 } from "./energy.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -455,6 +455,37 @@ function migrateUnifiedEnergy(state) {
   return state;
 }
 
+function migratePredatoryBaseForm(value) {
+  if (Array.isArray(value)) {
+    for (const child of value) migratePredatoryBaseForm(child);
+    return value;
+  }
+  if (!value || typeof value !== "object") return value;
+
+  if (
+    value.rank === 0 &&
+    Array.isArray(value.traits) &&
+    value.traits.includes("Predação") &&
+    !value.traits.includes("Fotossíntese") &&
+    !value.traits.includes("Mixotrofia")
+  ) {
+    const oldCapacity = Number.isFinite(value.energyCapacitySnapshot)
+        ? value.energyCapacitySnapshot
+        : 5,
+      oldEnergy = Number.isFinite(value.energy) ? value.energy : oldCapacity;
+    value.rank = 4;
+    if (Number.isFinite(value.energy)) {
+      const newCapacity = energyCapacity(value),
+        deficit = oldCapacity - oldEnergy;
+      value.energy = Math.min(newCapacity, newCapacity - deficit);
+      value.energyCapacitySnapshot = newCapacity;
+    }
+  }
+
+  for (const child of Object.values(value)) migratePredatoryBaseForm(child);
+  return value;
+}
+
 function migrateLegacy(data) {
   let state = normalizeLegacyZoochory(structuredClone(data));
   if (
@@ -525,6 +556,7 @@ function migrateLegacy(data) {
       key === "mutations:Garras" ? "mutations:Presas" : key,
     );
   normalizeStoredGenomes(state);
+  if (data.version <= 34) migratePredatoryBaseForm(state);
   normalizeLegacyNeurodivergenceState(state);
   normalizeLegacyDefenseState(state);
   preserveLegacyVenomLineage(state);

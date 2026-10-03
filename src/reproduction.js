@@ -11,6 +11,8 @@ import {
   coord,
   energyBranch,
   canPhotosynthesize,
+  purePredatoryBranch,
+  basalRankFor,
 } from "./constants.js";
 import {
   applyEnergyDelta,
@@ -112,18 +114,23 @@ const DERIVED_FORM_NEXT = new Map([
   [2, 3],
   [3, 5],
 ]);
-const DERIVED_FORM_PREVIOUS = new Map([
-  [1, 0],
-  [2, 1],
-  [3, 2],
-  [5, 3],
-]);
+function previousDerivedRank(piece) {
+  if (piece?.rank === 1)
+    return canPhotosynthesize(piece) ? 0 : purePredatoryBranch(piece) ? 4 : 0;
+  if (piece?.rank === 2) return 1;
+  if (piece?.rank === 3) return 2;
+  if (piece?.rank === 5) return 3;
+  return null;
+}
 
 export function applyAirSacRankFloor(profile) {
   if (
     !has(profile, "Nanismo") &&
     has(profile, "Sacos Aéreos") &&
-    profile.rank === 0
+    (
+      profile.rank === 0 ||
+      (profile.rank === 4 && purePredatoryBranch(profile))
+    )
   )
     profile.rank = 1;
   return profile;
@@ -131,12 +138,14 @@ export function applyAirSacRankFloor(profile) {
 
 export function normalizeBodyPlanRank(profile) {
   if (has(profile, "Nanismo")) {
-    profile.rank = 0;
+    profile.rank = basalRankFor(profile);
     return profile;
   }
+  if (purePredatoryBranch(profile) && profile.rank === 0)
+    profile.rank = 4;
   if (
     has(profile, "Artrópode") &&
-    ![0, 1, 2, 4].includes(profile.rank)
+    ![1, 2, 4].includes(profile.rank)
   )
     profile.rank = 2;
   return profile;
@@ -176,7 +185,10 @@ function eusocialBonus(state, parent) {
 }
 
 function nextDerivedRank(piece) {
-  const next = DERIVED_FORM_NEXT.get(piece.rank);
+  const next =
+    piece?.rank === 4 && purePredatoryBranch(piece)
+      ? 1
+      : DERIVED_FORM_NEXT.get(piece.rank);
   if (next === undefined) return null;
 
   if (has(piece, "Fotossíntese")) {
@@ -192,7 +204,10 @@ function nextDerivedRank(piece) {
 }
 
 export function negativeMutationChance(piece) {
-  const normalized = piece?.rank === 0 ? 1 / 5 : 1 / 3,
+  const basal =
+      piece?.rank === 0 ||
+      (piece?.rank === 4 && purePredatoryBranch(piece)),
+    normalized = basal ? 1 / 5 : 1 / 3,
     repairAdjusted = has(piece, "Reparo Celular")
       ? normalized
       : Math.min(1, normalized * 2);
@@ -215,9 +230,10 @@ export function deleteriousMutationPools(state, piece) {
       .filter((trait) => NEGATIVE_GENETIC_TRAITS.has(trait))
       .map((trait) => ({ geneLoss: trait, reversal: true })),
     deleteriousOptions = [];
-  if (DERIVED_FORM_PREVIOUS.has(piece.rank))
+  const previousRank = previousDerivedRank(piece);
+  if (previousRank !== null)
     deleteriousOptions.push({
-      rank: DERIVED_FORM_PREVIOUS.get(piece.rank),
+      rank: previousRank,
     });
   deleteriousOptions.push(...positiveLosses);
   for (const trait of NEGATIVE)
@@ -283,6 +299,7 @@ function mutation(
   const gains = [];
   if (
     p.rank === 4 &&
+    canPhotosynthesize(p) &&
     (pawnMutationUnlocked(state, p) ||
       (has(p, "Fotossíntese") && has(p, "Multicelularismo")))
   )
@@ -723,7 +740,7 @@ function complementaryArcheanEnergyBranch(state, child) {
 
 function differentiatedRank(state, child) {
   if (!child || has(child, "Nanismo")) return null;
-  if (child.rank === 4) return 0;
+  if (child.rank === 4 && canPhotosynthesize(child)) return 0;
   const next = nextDerivedRank(child);
   if (next === null) return null;
   if (canPhotosynthesize(child)) return next;
@@ -1501,6 +1518,8 @@ function layPlantSeeds(ctx, parent, brood) {
 }
 
 export function pieceLifeHistory(profile) {
+  if (profile?.rank === 4 && purePredatoryBranch(profile))
+    return Object.freeze({ brood: 3, metabolism: 3, maturity: 1 });
   return (
     PIECE_LIFE_HISTORY[profile?.rank] ??
     PIECE_LIFE_HISTORY[0]
@@ -1534,6 +1553,7 @@ export function sexualMaturityRounds(profile) {
 }
 
 export function reproductiveOutput(profile) {
+  if (profile?.rank === 4 && purePredatoryBranch(profile)) return 3;
   if (!has(profile, "Fotossíntese"))
     return BIRTH_RATES[profile.rank];
   const advanced = ["Traqueófitas", "Gimnospermas", "Angiospermas"].some(
@@ -2767,7 +2787,14 @@ export function tickReproduction(ctx) {
       now >= piece.pupaUntilRound
     ) {
       const originalRank = piece.rank;
-      piece.rank = piece.rank === 0 ? 1 : piece.rank === 1 ? 2 : piece.rank;
+      piece.rank =
+        piece.rank === 4 && purePredatoryBranch(piece)
+          ? 1
+          : piece.rank === 0
+            ? 1
+            : piece.rank === 1
+              ? 2
+              : piece.rank;
       piece.pupaUntilRound = null;
       piece.maturesRound = now;
       log(

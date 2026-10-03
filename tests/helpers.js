@@ -53,6 +53,7 @@ export function fixture(
       },
       p = newPiece(s, source.owner, source.r, source.c, source),
       {
+        rank: _rank,
         traits: _traits,
         ancestry: _ancestry,
         genome: _genome,

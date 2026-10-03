@@ -8,6 +8,7 @@ import {
 } from "../src/storage.js";
 import {
   createState,
+  createPeriodState,
   clone,
   assertState,
 } from "../src/state.js";
@@ -18,6 +19,29 @@ test("current save schema round-trips deterministic state", () => {
   const state = createState(3);
   assert.equal(state.version, STATE_VERSION);
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
+});
+
+test("v34 migration converts predatory Pawns to basal Kings preserving Energy deficit", () => {
+  const legacy = createPeriodState("cambrian", 3401, null, "earth"),
+    piece = legacy.pieces.find(
+      (candidate) =>
+        candidate.traits.includes("Predação") &&
+        !candidate.traits.includes("Fotossíntese"),
+    );
+  assert.ok(piece);
+  piece.rank = 0;
+  piece.energy = 3;
+  piece.energyCapacitySnapshot = 5;
+  legacy.version = 34;
+
+  const restored = deserialize(JSON.stringify(legacy)),
+    migrated = restored.pieces.find((candidate) => candidate.id === piece.id);
+
+  assert.equal(restored.version, STATE_VERSION);
+  assert.equal(migrated.rank, 4);
+  assert.equal(migrated.energy, 6);
+  assert.equal(migrated.energyCapacitySnapshot, 8);
+  assertState(restored);
 });
 
 test("current saves retire Locomoção Avançada from state and genome", () => {

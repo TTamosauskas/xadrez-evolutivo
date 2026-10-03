@@ -91,7 +91,7 @@ test("Endossimbiose permite reproduzir faltando 1 Energia e cobra dívida +2", (
       { owner: "amber", r: 0, c: 0, rank: 0, traits: ["Respiração anaeróbia"] },
     ], 4102),
     parent = state.pieces.find((candidate) => candidate.owner === "blue");
-  parent.energy = 3;
+  parent.energy = 4;
   assert.equal(reproductionReady(state, parent), true);
   const born = reproduce(context(state), parent, null, "teste endossimbiótico", {
     forcedCount: 1,
@@ -327,6 +327,6 @@ test("Endotermia converte um risco hostil letal em custo de 1 Energia", () => {
   state.rng = 1;
   const killed = hostileHazardKills(state, piece, true);
   assert.equal(killed, false);
-  assert.equal(energyValue(piece), 4);
+  assert.equal(energyValue(piece), 7);
   assert.equal(piece.endothermyUsedTurn, state.turn);
 });

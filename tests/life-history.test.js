@@ -13,15 +13,48 @@ import {
 } from "../src/state.js";
 import { context, simulate, transition } from "../src/engine.js";
 import { movesFor, nursingTargets } from "../src/moves.js";
-import { negativeMutationChance, reproduce } from "../src/reproduction.js";
+import {
+  negativeMutationChance,
+  pieceLifeHistory,
+  reproductiveOutput,
+  reproduce,
+} from "../src/reproduction.js";
 import { fallbackAction } from "../src/ai.js";
 import { GEOLOGICAL_STAGES, traitUnlocked } from "../src/geology.js";
 import { square } from "../src/constants.js";
 import {
+  energyCapacity,
   energyValue,
   movementEnergyCost,
   reproductionEnergyCost,
 } from "../src/energy.js";
+
+test("Rei predatório basal é mais eficiente que Cavalo sem aumentar a ninhada", () => {
+  const king = { rank: 4, traits: ["Predação", "Reparo Celular"] },
+    knight = { rank: 1, traits: ["Predação", "Reparo Celular"] };
+
+  assert.equal(energyCapacity(king), 8);
+  assert.equal(movementEnergyCost(king), 1);
+  assert.equal(reproductionEnergyCost(king), 5);
+  assert.deepEqual(pieceLifeHistory(king), {
+    brood: 3,
+    metabolism: 3,
+    maturity: 1,
+  });
+  assert.equal(reproductiveOutput(king), 3);
+
+  assert.equal(energyCapacity(knight), 8);
+  assert.equal(movementEnergyCost(knight), 2);
+  assert.equal(reproductionEnergyCost(knight), 6);
+  assert.deepEqual(pieceLifeHistory(knight), {
+    brood: 3,
+    metabolism: 4,
+    maturity: 2,
+  });
+  assert.equal(reproductiveOutput(knight), 3);
+  assert.equal(negativeMutationChance(king), 1 / 5);
+  assert.equal(negativeMutationChance(knight), 1 / 3);
+});
 
 test("childhood begins only after Multicelularismo and Precocidade Sexual shortens it", () => {
   const unicellular = fixture([

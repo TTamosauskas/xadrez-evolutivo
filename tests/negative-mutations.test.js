@@ -126,7 +126,13 @@ test("nanism forces pawn form", () => {
       rank: 5,
       traits: [...animalTraits, "Nanismo"],
     });
-  assert.equal(p.rank, 0);
+  assert.equal(p.rank, 4);
+
+  const plant = newPiece(s, "amber", 3, 3, {
+    rank: 5,
+    traits: ["Fotossíntese", "Multicelularismo", "Nanismo"],
+  });
+  assert.equal(plant.rank, 0);
 });
 
 test("only-child is a lifetime one-offspring limit and respiratory insufficiency creates Energy debt", () => {
