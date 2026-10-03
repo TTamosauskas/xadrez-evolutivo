@@ -1587,10 +1587,6 @@ export function populationReproductionCooldown(
     : cooldown;
 }
 
-export function predationBirthLimit(population) {
-  return population >= 24 ? 0 : 1;
-}
-
 function reproductionPressure(state, population) {
   if (population >= 24)
     state.populationLatched = { blue: true, amber: true };
@@ -1751,12 +1747,11 @@ export function predatoryReproductionReady(state, parent) {
               state.populationLatched?.blue ||
               state.populationLatched?.amber
             ),
-    primitiveLocomotionReached =
-      has(parent, "Locomoção Primitiva") ||
-      (parent.ancestry ?? []).includes("Locomoção Primitiva"),
-    populationLimit = primitiveLocomotionReached
-      ? predationBirthLimit(population)
-      : 1,
+    populationLimit = populationReproductionLimit(
+      population,
+      pressureLatched,
+      state.geologicalStage,
+    ),
     competitivePressure = competitiveReproductionPressure(
       state,
       parent,
@@ -1955,16 +1950,11 @@ export function reproduce(
     baseWanted = paedogenic
       ? Math.min(1, lifetimeWanted)
       : lifetimeWanted,
-    populationLimit =
-      reason === "predação"
-        ? preLocomotionPredation
-          ? 1
-          : predationBirthLimit(population)
-        : populationReproductionLimit(
-            population,
-            pressureLatched,
-            state.geologicalStage,
-          ),
+    populationLimit = populationReproductionLimit(
+      population,
+      pressureLatched,
+      state.geologicalStage,
+    ),
     pressureLimit =
       reason === "predação" &&
       (competitivePressure.suppressPredation || replacement.suppressPredation)

@@ -107,7 +107,6 @@ import {
   tickReproduction,
   populationReproductionLimit,
   populationReproductionCooldown,
-  predationBirthLimit,
   metabolicReproductionCooldown,
   sexualMaturityRounds,
   applyRegressionEffect,
@@ -1983,8 +1982,6 @@ test("reproduction pressure uses hidden hysteresis without suppressing early rec
   assert.equal(populationReproductionCooldown(26, false, "ordovician"), 2);
   assert.equal(populationReproductionCooldown(30, false, "ordovician"), 3);
 
-  assert.equal(predationBirthLimit(23), 1);
-  assert.equal(predationBirthLimit(24), 0);
 });
 
 test("late competitive pressure starts after primitive locomotion", () => {
