@@ -60,7 +60,7 @@ export const NEGATIVE_TRAIT_RULES = Object.freeze({
   },
   Nanismo: {
     stage: "cambrian",
-    lineageAny: ["Vertebrado", "Artrópode"],
+    lineageAny: ["Vertebrado", "Artrópode", "Molusco"],
     somatic: false,
   },
   Gigantismo: {
@@ -272,8 +272,8 @@ export const GEOLOGICAL_STAGES = [
     group: "Fanerozoico · Paleozoica",
     period: "Cambriano",
     chronology: { eon: "Fanerozoico", era: "Paleozoica", period: "Cambriano" },
-    required: ["Locomoção Articulada", "Percepção Espacial", "Carapaça"],
-    cycles: [["Locomoção Articulada", "Percepção Espacial"], ["Carapaça"]],
+    required: ["Percepção Espacial", "Carapaça"],
+    cycles: [["Percepção Espacial"], ["Carapaça"]],
     habitat: { fertile: 58, hostile: 4, founderFertile: true, naturalBarriers: [0, 2], pattern: "reef" },
     events: { sea: 4, abundance: 4, "alluvial-river": 2, volcano: 1, earthquake: 1 },
     founderLayout: [[6, 1], [6, 4], [1, 3], [1, 6]],
@@ -534,6 +534,7 @@ export const TRAIT_STAGE = {
   "Intestino": "ediacaran",
   "Estômago Ácido": "silurian",
   "Artrópode": "cambrian",
+  Molusco: "cambrian",
   "Sistema Adipocinético": "ordovician",
   "Locomoção Articulada": "cambrian",
   "Jatopropulsão": "cambrian",
@@ -693,7 +694,7 @@ export const ACTIVE_TRAIT_FAMILIES = [
   },
   {
     id: "body-plan",
-    traits: ["Vertebrado", "Artrópode"],
+    traits: ["Vertebrado", "Artrópode", "Molusco"],
   },
   {
     id: "locomotion",
@@ -956,7 +957,7 @@ export const TRAIT_DEPENDENCIES = {
   Autotomia: {
     lineage: ["Simetria Bilateral", "Locomoção Primitiva"],
   },
-  Tinta: { lineage: ["Jatopropulsão", "Corpo Gelatinoso"] },
+  Tinta: { lineage: ["Molusco", "Jatopropulsão", "Corpo Gelatinoso"] },
   Alelopatia: { lineage: ["Traqueófitas", "Madeira"] },
   Hematofagia: { lineage: ["Carnívoro", "Presas"] },
   "Parasitismo de Ninhada": { lineage: ["Ovíparo", "Parasitismo"] },
@@ -1023,6 +1024,7 @@ export const TRAIT_DEPENDENCIES = {
   Testosterona: { lineage: ["Vertebrado", "Reprodução Sexuada"] },
   Corticosteroides: { lineage: ["Vertebrado", "Respiração aeróbia"] },
   "Artrópode": { lineage: ["Locomoção Primitiva", "Simetria Bilateral", "Cefalização"] },
+  Molusco: { lineage: ["Locomoção Primitiva", "Simetria Bilateral", "Cefalização"] },
   "Sistema Adipocinético": { lineage: ["Artrópode", "Locomoção Articulada"] },
   "Locomoção Articulada": {
     lineage: ["Locomoção Primitiva"],
@@ -1032,9 +1034,15 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Respiração aeróbia"],
     lineageAny: ["Fotossíntese", "Predação"],
   },
-  "Percepção Espacial": { lineage: ["Locomoção Articulada"] },
+  "Percepção Espacial": {
+    lineage: ["Locomoção Primitiva"],
+    lineageAny: ["Locomoção Articulada", "Jatopropulsão"],
+  },
   Escavador: { lineage: ["Locomoção Primitiva"] },
-  "Locomoção Terrestre": { lineage: ["Locomoção Articulada"] },
+  "Locomoção Terrestre": {
+    lineage: ["Locomoção Primitiva"],
+    lineageAny: ["Locomoção Articulada", "Molusco"],
+  },
   "Rim Concentrador": {
     lineage: ["Vertebrado", "Locomoção Terrestre", "Respiração Pulmonar"],
   },
@@ -1072,7 +1080,9 @@ export const TRAIT_DEPENDENCIES = {
   },
   Bipedalismo: { lineage: ["Vertebrado", "Locomoção Terrestre"] },
   Pulo: { lineage: ["Locomoção Articulada", "Locomoção Terrestre"] },
-  Jatopropulsão: { lineage: ["Multicelularismo", "Locomoção Primitiva"] },
+  Jatopropulsão: {
+    lineage: ["Molusco", "Multicelularismo", "Locomoção Primitiva"],
+  },
   Escalador: { lineage: ["Locomoção Terrestre"] },
   "Respiração Cutânea": { lineage: ["Locomoção Articulada"] },
   "Visão Binocular": { lineage: ["Predação"] },
@@ -1202,7 +1212,7 @@ export const TRAIT_DEPENDENCIES = {
   },
 };
 
-export const BODY_PLAN_TRAITS = new Set(["Vertebrado", "Artrópode"]);
+export const BODY_PLAN_TRAITS = new Set(["Vertebrado", "Artrópode", "Molusco"]);
 
 export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Simetria Bilateral",
@@ -1250,6 +1260,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Córtex Pré-Frontal",
   "Vertebrado",
   "Artrópode",
+  "Molusco",
   "Locomoção Articulada",
   "Locomoção Terrestre",
   "Rastejante",
@@ -1479,6 +1490,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Córtex Pré-Frontal",
   "Vertebrado",
   "Artrópode",
+  "Molusco",
   "Locomoção Articulada",
   "Locomoção Terrestre",
   "Rastejante",
@@ -1602,6 +1614,7 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Eucarionte: "shared",
   Endossimbiose: "shared",
   Biomineralização: "predation",
+  Molusco: "predation",
   "Imunidade Adaptativa": "predation",
   Dormência: "photosynthesis",
   Estômatos: "photosynthesis",
@@ -1731,14 +1744,17 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
 });
 
 export const TRAIT_INCOMPATIBILITIES = Object.freeze({
-  Fragmentação: ["Vertebrado", "Artrópode", "Ooteca"],
+  Fragmentação: ["Vertebrado", "Artrópode", "Molusco", "Ooteca"],
   Contorcionismo: ["Esclerotização"],
   Esclerotização: ["Contorcionismo"],
   Coprofagia: ["Mixotrofia"],
   Mixotrofia: ["Coprofagia"],
-  Vertebrado: ["Fragmentação"],
-  "Artrópode": ["Fragmentação", "Respiração Pulmonar"],
-  "Respiração Pulmonar": ["Artrópode"],
+  Vertebrado: ["Fragmentação", "Jatopropulsão"],
+  "Artrópode": ["Fragmentação", "Respiração Pulmonar", "Jatopropulsão"],
+  Molusco: ["Fragmentação", "Locomoção Articulada", "Respiração Pulmonar"],
+  "Locomoção Articulada": ["Molusco"],
+  Jatopropulsão: ["Vertebrado", "Artrópode", "Locomoção Articulada"],
+  "Respiração Pulmonar": ["Artrópode", "Molusco"],
   Ooteca: ["Fragmentação"],
   "Canibalismo Sexual": ["Acasalamento Múltiplo"],
   "Acasalamento Múltiplo": ["Canibalismo Sexual"],

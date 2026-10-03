@@ -39,6 +39,7 @@ import {
   inkCloudAt,
 } from "./state.js";
 import {
+  aquaticFertilityRegime,
   captureUnlocked,
   contactCaptureUnlocked,
 } from "./geology.js";
@@ -298,13 +299,18 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       !enemyCaptureAvailableWithoutFilial(state, p),
     terrestrialRestriction =
       has(p, "Locomoção Primitiva") &&
-      !has(p, "Locomoção Terrestre");
+      !has(p, "Locomoção Terrestre"),
+    aquaticMollusk =
+      has(p, "Molusco") &&
+      aquaticFertilityRegime(state);
   function add(r, c, path, extra = {}) {
     if (!inside(r, c) || ecologicalDomainBlocked(state, p.owner, r, c)) return;
+    const destinationTerrain = terrain(state, r, c);
     if (
       terrestrialRestriction &&
       !extra.stay &&
-      terrain(state, r, c) !== "fertile"
+      destinationTerrain !== "fertile" &&
+      !(aquaticMollusk && destinationTerrain === "neutral")
     )
       return;
     const victim = at(state, r, c),

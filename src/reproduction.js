@@ -136,6 +136,11 @@ export function normalizeBodyPlanRank(profile) {
     ![1, 2, 4].includes(profile.rank)
   )
     profile.rank = 2;
+  if (
+    has(profile, "Molusco") &&
+    ![2, 3, 4].includes(profile.rank)
+  )
+    profile.rank = 2;
   return profile;
 }
 
@@ -179,6 +184,8 @@ function nextDerivedRank(piece) {
   if (has(piece, "Fotossíntese"))
     return photosyntheticRankUnlocked(piece, next) ? next : null;
 
+  if (has(piece, "Molusco"))
+    return has(piece, "Jatopropulsão") ? next : null;
   if (!has(piece, "Locomoção Articulada")) return null;
   return has(piece, "Vertebrado") || has(piece, "Artrópode") ? next : null;
 }
@@ -252,8 +259,7 @@ export function applyRegressionEffect(state, piece) {
       "Predação",
       "Reparo Celular",
       "Multicelularismo",
-      "Vertebrado",
-      "Artrópode",
+      ...BODY_PLAN_TRAITS,
     ]),
     candidates = (piece.traits ?? []).filter(
       (trait) => !protectedTraits.has(trait),
@@ -428,7 +434,10 @@ function mutation(
       icon = traitName && TRAITS[traitName] ? TRAITS[traitName][0] : "🧬";
     p.newMutationToast = {
       trait: mutationTrait,
-      text: `Nova Mutação: ${icon} ${label}.`,
+      text:
+        choice.geneGain && BODY_PLAN_TRAITS.has(choice.geneGain)
+          ? `Novo plano corporal: ${icon} ${label}.`
+          : `Nova Mutação: ${icon} ${label}.`,
       outcome: label.startsWith("Perda de ")
         ? "mutation-loss"
         : "new-mutation",
