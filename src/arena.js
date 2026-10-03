@@ -342,6 +342,8 @@ export function arenaAllowedRanks(genome, branchId) {
       completed.includes("Jatopropulsão")
     )
       allowed = [2, 3, 4];
+    else if (completed.includes("Molusco") && completed.includes("Bisso"))
+      allowed = [2, 4];
     else allowed = [4];
   }
 
@@ -409,8 +411,14 @@ export function arenaRankRestrictionReason(genome, rank, branchId) {
     if (completed.includes("Molusco")) {
       if ([1, 5].includes(rank))
         return "Moluscos usam Rei, Bispo ou Torre.";
-      if ([2, 3].includes(rank) && !completed.includes("Jatopropulsão"))
-        return "Formas derivadas moluscas exigem Jatopropulsão.";
+      if (
+        rank === 2 &&
+        !completed.includes("Jatopropulsão") &&
+        !completed.includes("Bisso")
+      )
+        return "A forma Bispo de Moluscos exige Jatopropulsão ou Bisso.";
+      if (rank === 3 && !completed.includes("Jatopropulsão"))
+        return "A forma Torre de Moluscos exige Jatopropulsão.";
     }
     if (
       [1, 2, 3, 5].includes(rank) &&

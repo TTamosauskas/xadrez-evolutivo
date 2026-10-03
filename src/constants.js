@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 36;
+export const STATE_VERSION = 37;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const CHESS_FORMS = Object.freeze({
@@ -174,7 +174,39 @@ export const TRAITS = {
   ],
   Molusco: [
     "🐙",
-    "Plano corporal animal mutuamente exclusivo com Vertebrado e Artrópode. Em períodos aquáticos, o pé muscular permite terminar movimentos em Casas Neutras; Jatopropulsão libera as formas Bispo e Torre.",
+    "Plano corporal animal mutuamente exclusivo com Vertebrado e Artrópode. Em períodos aquáticos, o pé muscular permite terminar movimentos em Casas Neutras; Jatopropulsão libera Bispo e Torre, enquanto Bisso libera a forma Bispo.",
+  ],
+  Rádula: [
+    "👅",
+    "Pode gastar a ação para raspar uma Casa Fértil ortogonalmente adjacente, tornando-a neutra e recuperando até 2 Energia.",
+  ],
+  Bisso: [
+    "🧵",
+    "Permite ocupar e atravessar Barreiras Naturais e de Evento sem destruí-las. Representa uma rota bivalve incompatível com Rádula e Jatopropulsão.",
+  ],
+  "Concha Camerada": [
+    "🌀",
+    "Especialização de Carapaça: aumenta de 25% para 50% a chance de bloquear o risco de uma Casa Hostil.",
+  ],
+  "Ventosas Quimiotáteis": [
+    "🫳",
+    "Capturas adjacentes agarram a presa e impedem fugas por Tinta, Adrenalina, Movimento proteano e Ofuscamento por movimento; Autotomia continua funcional.",
+  ],
+  "Regeneração de Braços": [
+    "🦾",
+    "Após Autotomia, restaura automaticamente a forma original depois de 3 turnos próprios, sem consumir uma oportunidade reprodutiva.",
+  ],
+  "Visão Polarizada": [
+    "🧿",
+    "Detecta Camuflagem a até 2 casas e mantém Percepção Espacial de curto alcance dentro de nuvens de Tinta.",
+  ],
+  "Tentáculo Preênsil": [
+    "〰️",
+    "Gasta 1 Energia para puxar um inimigo a 2–3 casas em linha reta ou diagonal para uma casa adjacente. A presa não pode capturar esse Molusco no próximo turno. Recarga de 4 rodadas.",
+  ],
+  "Cromatóforos Neurais": [
+    "🎨",
+    "Permite entrar em Cripsis Cromática: a peça assume temporariamente a cor adversária e fica invertida; enquanto disfarçada não pode atacar nem ser atacada. No próximo turno próprio pode apenas mover para casa vazia ou esperar, então retorna ao normal. Recarga de 4 rodadas.",
   ],
   "Sistema Adipocinético": [
     "⛽",

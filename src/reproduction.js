@@ -184,8 +184,10 @@ function nextDerivedRank(piece) {
   if (has(piece, "Fotossíntese"))
     return photosyntheticRankUnlocked(piece, next) ? next : null;
 
-  if (has(piece, "Molusco"))
+  if (has(piece, "Molusco")) {
+    if (next === 2) return has(piece, "Jatopropulsão") || has(piece, "Bisso") ? next : null;
     return has(piece, "Jatopropulsão") ? next : null;
+  }
   if (!has(piece, "Locomoção Articulada")) return null;
   return has(piece, "Vertebrado") || has(piece, "Artrópode") ? next : null;
 }
@@ -2372,7 +2374,7 @@ export function reproduce(
 
   if (wanted <= 0) return 0;
 
-  if (parent.autotomyRecovery) {
+  if (parent.autotomyRecovery && !has(parent, "Regeneração de Braços")) {
     const restoredRank = parent.autotomyRecovery.originalRank;
     parent.rank = restoredRank;
     parent.autotomyRecovery = null;

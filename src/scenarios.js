@@ -280,6 +280,7 @@ function molluskFounderGenome(stageId) {
     "Locomoção Primitiva",
     "Cefalização",
     "Molusco",
+    "Rádula",
     "Jatopropulsão",
     "Percepção Espacial",
     "Carnívoro",
@@ -287,9 +288,15 @@ function molluskFounderGenome(stageId) {
     "Carapaça",
   ];
   if (index >= 1) animal.push("Ovíparo", "Camuflagem");
+  if (index >= 1 && index < 4) animal.push("Concha Camerada");
   if (index >= 2) animal.push("Locomoção Terrestre");
-  if (index >= 4) animal.push("Corpo Gelatinoso", "Tinta");
-  if (index >= 5) animal.push("Contorcionismo", "Mimetismo");
+  if (index >= 4)
+    animal.push("Corpo Gelatinoso", "Ventosas Quimiotáteis", "Tinta");
+  if (index >= 5)
+    animal.push("Contorcionismo", "Mimetismo", "Regeneração de Braços");
+  if (index >= 7)
+    animal.push("Visão Polarizada", "Tentáculo Preênsil");
+  if (index >= 8) animal.push("Cromatóforos Neurais");
   return {
     animal: [...new Set(animal)],
     rank: index === 0 ? 4 : index < 3 ? 2 : 3,
