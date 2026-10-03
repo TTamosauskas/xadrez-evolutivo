@@ -5772,7 +5772,7 @@ test("Mimetismo swaps with an attacker ally and redirects the capture", () => {
 });
 
 
-test("Haustório consumes only adjacent photosynthetic enemies without moving", () => {
+test("Haustório drains fertile terrain under an adjacent photosynthetic enemy without moving", () => {
   let s = fixture([
     {
       owner: "blue",
@@ -5797,24 +5797,28 @@ test("Haustório consumes only adjacent photosynthetic enemies without moving", 
     },
     { owner: "amber", r: 0, c: 0 },
   ]);
-  const plant = s.pieces[0];
+  const plant = s.pieces[0],
+    host = s.pieces[1],
+    hostCell = host.r * 8 + host.c;
+  s.board[hostCell] = "fertile";
   assert.ok(!plant.traits.includes("Predação"));
   assert.ok(
     movesFor(s, plant).some(
       (target) =>
-        target.r === 3 &&
-        target.c === 3 &&
-        target.capture &&
-        target.botanicalPredation === "Haustório",
+        target.r === host.r &&
+        target.c === host.c &&
+        !target.capture &&
+        target.haustoriumDrain,
     ),
   );
-  s = simulate(s, move(plant, 3, 3));
-  assert.ok(!s.pieces.some((piece) => piece.id === 2));
+  s = simulate(s, move(plant, host.r, host.c));
+  assert.ok(s.pieces.some((piece) => piece.id === host.id));
   assert.ok(
     s.pieces.some(
-      (piece) => piece.id === 1 && piece.r === 4 && piece.c === 4,
+      (piece) => piece.id === plant.id && piece.r === 4 && piece.c === 4,
     ),
   );
+  assert.equal(s.board[hostCell], "neutral");
   assertState(s);
 });
 
