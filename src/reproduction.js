@@ -1622,157 +1622,52 @@ export function reproductiveOutput(profile) {
   return Math.min(4, base);
 }
 
-export function reproductiveSuccessRate(state, parent = null, mates = []) {
-  const population = activePopulation(state),
-    base =
-      population <= 15
-        ? 0.9
-        : population <= 23
-          ? 0.8
-          : population <= 31
-            ? 0.7
-            : 0.6,
-    induced =
-      mates.length > 0 &&
-      [parent, ...mates].some((piece) => has(piece, "Ovulação Induzida"));
-  return Math.min(0.95, base + (induced ? 0.1 : 0));
+export function reproductiveSuccessRate(_state, parent = null, mates = []) {
+  const induced =
+    mates.length > 0 &&
+    [parent, ...mates].some((piece) => has(piece, "Ovulação Induzida"));
+  return Math.min(0.95, 0.9 + (induced ? 0.1 : 0));
 }
 
-export function populationReproductionLimit(
-  population,
-  pressureLatched = false,
-  stage = null,
-) {
-  if (population < 18) return Infinity;
-  if (population < 24) return pressureLatched ? 2 : Infinity;
-  if (stage === "ordovician" && population >= 26) return 1;
-  if (population < 28) return 2;
-  return 1;
+export function populationReproductionLimit() {
+  return Infinity;
 }
 
-export function populationReproductionCooldown(
-  population,
-  pressureLatched = false,
-  stage = null,
-) {
-  let cooldown;
-  if (population < 18) cooldown = 0;
-  else if (population < 24) cooldown = pressureLatched ? 1 : 0;
-  else if (population < 28) cooldown = 1;
-  else if (population < 32) cooldown = 2;
-  else cooldown = 3;
-  return stage === "ordovician" && population >= 26
-    ? cooldown + 1
-    : cooldown;
+export function populationReproductionCooldown() {
+  return 0;
 }
 
-function reproductionPressure(state, population) {
-  if (population >= 24)
-    state.populationLatched = { blue: true, amber: true };
-  else if (population < 16)
-    state.populationLatched = { blue: false, amber: false };
-  return !!(
-    state.populationLatched?.blue || state.populationLatched?.amber
-  );
+function reproductionPressure(state) {
+  state.populationLatched = { blue: false, amber: false };
+  return false;
 }
 
 export function noCaptureReproductionPressure(state) {
-  const elapsed = Math.max(
+  return {
+    elapsed: Math.max(
       0,
       round(state) - (state.lastSuccessfulCaptureRound ?? 0),
     ),
-    cooldown =
-      elapsed >= 36
-        ? 5
-        : elapsed >= 30
-          ? 4
-          : elapsed >= 24
-            ? 3
-            : elapsed >= 18
-              ? 2
-              : elapsed >= 12
-                ? 1
-                : 0,
-    lateReproductionLock = state.turn >= 120 && elapsed >= 36,
-    limit = lateReproductionLock ? 0 : elapsed >= 18 ? 1 : Infinity;
-  return { elapsed, cooldown, limit };
-}
-
-function competitiveReproductionPressure(
-  state,
-  parent,
-  pressureLatched,
-) {
-  const mobile =
-    has(parent, "Locomoção Primitiva") ||
-    (parent.ancestry ?? []).includes("Locomoção Primitiva");
-
-  if (!mobile || !pressureLatched || state.turn < 120)
-    return { limit: Infinity, cooldown: 0, suppressPredation: false };
-
-  const ownerPopulation = state.pieces.filter(
-      (piece) => piece.owner === parent.owner,
-    ).length,
-    rivalPopulation = state.pieces.length - ownerPopulation,
-    deficit = rivalPopulation - ownerPopulation;
-
-  if (deficit < 4)
-    return { limit: Infinity, cooldown: 0, suppressPredation: false };
-
-  return {
-    limit: 1,
-    cooldown: state.turn >= 180 ? 2 : 1,
-    suppressPredation: state.turn >= 180 && deficit >= 6,
+    cooldown: 0,
+    limit: Infinity,
   };
 }
 
-export function replacementReproductionPressure(state, parent = null) {
-  const pressure = replacementPressure(state),
-    ownerPopulation = parent
-      ? state.pieces.filter((piece) => piece.owner === parent.owner).length
-      : 0,
-    rivalPopulation = parent ? activePopulation(state) - ownerPopulation : 0;
+function competitiveReproductionPressure() {
+  return { limit: Infinity, cooldown: 0, suppressPredation: false };
+}
+
+export function replacementReproductionPressure(state) {
   return {
-    ...pressure,
-    cooldown: pressure.level,
-    limit: pressure.level >= 3 && state.turn >= 160 ? 0 : Infinity,
-    suppressPredation:
-      !!parent &&
-      pressure.level >= 2 &&
-      ownerPopulation >= rivalPopulation,
+    ...replacementPressure(state),
+    cooldown: 0,
+    limit: Infinity,
+    suppressPredation: false,
   };
 }
 
-export function dopaminePressureReductionAvailable(state, parent) {
-  if (!state || !parent || !has(parent, "Dopamina")) return false;
-  const population = activePopulation(state),
-    pressureLatched =
-      population >= 24
-        ? true
-        : population < 16
-          ? false
-          : !!(
-              state.populationLatched?.blue ||
-              state.populationLatched?.amber
-            ),
-    competitive = competitiveReproductionPressure(
-      state,
-      parent,
-      pressureLatched,
-    ),
-    noCapture = noCaptureReproductionPressure(state),
-    replacement = replacementReproductionPressure(state, parent);
-  return (
-    populationReproductionCooldown(
-      population,
-      pressureLatched,
-      state.geologicalStage,
-    ) +
-      competitive.cooldown +
-      noCapture.cooldown +
-      replacement.cooldown >
-    0
-  );
+export function dopaminePressureReductionAvailable() {
+  return false;
 }
 
 export function consumeReproductionResource(state, parent, cell) {
