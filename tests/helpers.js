@@ -32,9 +32,11 @@ export function fixture(
             ]
           : [trait],
       ),
-      baseTraits = requestedTraits.some((trait) =>
+      photosynthetic = requestedTraits.some((trait) =>
         ["Fotossíntese", "Quimiossíntese"].includes(trait),
-      )
+      ),
+      mollusk = requestedTraits.includes("Molusco"),
+      baseTraits = photosynthetic
         ? []
         : [
             "Reparo Celular",
@@ -43,9 +45,9 @@ export function fixture(
             "Ingestão",
             "Simetria Bilateral",
             "Locomoção Primitiva",
-            "Vertebrado",
-            "Locomoção Articulada",
-            "Locomoção Terrestre",
+            ...(mollusk
+              ? ["Cefalização"]
+              : ["Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"]),
           ],
       source = {
         ...spec,

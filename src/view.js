@@ -42,6 +42,7 @@ import {
   stageProgress,
   stageComplete,
   ENERGY_BRANCH_TRAITS,
+  BODY_PLAN_TRAITS,
 } from "./geology.js";
 import { hiddenRecessiveTraits } from "./genetics.js";
 import {
@@ -182,8 +183,10 @@ export function traitFrameEntries(
       .filter(
         (trait) =>
           contextualSet
-            ? contextualSet.has(trait)
-            : !established.has(trait) || trait === "Mixotrofia",
+            ? contextualSet.has(trait) || BODY_PLAN_TRAITS.has(trait)
+            : !established.has(trait) ||
+              trait === "Mixotrofia" ||
+              BODY_PLAN_TRAITS.has(trait),
       )
       .map((trait) => ({ trait, somatic: false })),
     ...(piece?.somaticMutations ?? [])
@@ -201,6 +204,8 @@ export function traitFrameEntries(
     )
     .sort(
       (a, b) =>
+        Number(BODY_PLAN_TRAITS.has(b.trait)) -
+          Number(BODY_PLAN_TRAITS.has(a.trait)) ||
         Number(a.somatic) - Number(b.somatic) ||
         Number(isNegativeTrait(a.trait)) - Number(isNegativeTrait(b.trait)) ||
         (TRAIT_DISPLAY_ORDER.get(a.trait) ?? Number.MAX_SAFE_INTEGER) -

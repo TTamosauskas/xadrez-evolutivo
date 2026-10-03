@@ -610,6 +610,12 @@ test("hostile terrain is red and terrain tones flatten from the Devonian", () =>
   devonianDom.window.close();
 });
 
+test("body-plan and semelparity icons remain distinct", () => {
+  assert.equal(TRAITS.Molusco[0], "🐙");
+  assert.equal(TRAITS.Semelparidade[0], "🎋");
+  assert.notEqual(TRAITS.Molusco[0], TRAITS.Semelparidade[0]);
+});
+
 test("diet and amniote traits use the intended compact icons", () => {
   assert.equal(TRAITS.Herbívoro[0], "🥬");
   assert.equal(TRAITS.Carnívoro[0], "🍖");
@@ -725,7 +731,7 @@ test("causal frame keeps Locomoção Terrestre and Voo when they explain differe
   assert.ok(contextual.has("Voo"));
 });
 
-test("non-contextual phenotype inventory stays in the selected panel instead of the board frame", () => {
+test("structural body plan stays on the board while other non-contextual phenotype stays in the selected panel", () => {
   const dom = setup(),
     s = createState(201),
     piece = s.pieces[0];
@@ -748,7 +754,7 @@ test("non-contextual phenotype inventory stays in the selected panel instead of 
       (badge) => badge.dataset.trait,
     ),
     selected = dom.window.document.getElementById("selected");
-  assert.deepEqual(frameTraits, []);
+  assert.deepEqual(frameTraits, ["Vertebrado"]);
   assert.match(selected.textContent, /Simetria Bilateral/);
   assert.match(selected.textContent, /Vertebrado/);
   assert.match(selected.textContent, /Resistência/);

@@ -88,7 +88,7 @@ test("mandatory innovation sequence follows the revised evolutionary milestones"
     tonian: ["Colônia", "Séssil"],
     cryogenian: ["Fragmentação"],
     ediacaran: ["Simetria Bilateral", "Locomoção Primitiva", "Cefalização", "Escavador", "Construtor de Nicho", "Biomineralização"],
-    cambrian: ["Locomoção Articulada", "Percepção Espacial", "Carapaça"],
+    cambrian: ["Percepção Espacial", "Carapaça"],
     ordovician: ["Embriófitas", "Tropismo"],
     silurian: ["Traqueófitas", "Estômatos", "Locomoção Terrestre", "Mandíbula"],
     devonian: ["Madeira", "Respiração Pulmonar", "Dentes"],
@@ -241,28 +241,32 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
         },
         canonicalBodyPlan =
           branch === "animal"
-            ? canonicalPreset.animal?.includes("Artrópode")
-              ? "Artrópode"
-              : canonicalPreset.animal?.includes("Vertebrado")
-                ? "Vertebrado"
-                : null
+            ? ["Vertebrado", "Artrópode", "Molusco"].find((plan) =>
+                canonicalPreset.animal?.includes(plan),
+              ) ?? null
             : null,
-        oppositeBodyPlan =
-          canonicalBodyPlan === "Vertebrado"
-            ? "Artrópode"
-            : canonicalBodyPlan === "Artrópode"
-              ? "Vertebrado"
-              : null,
+        otherBodyPlans = canonicalBodyPlan
+          ? ["Vertebrado", "Artrópode", "Molusco"].filter(
+              (plan) => plan !== canonicalBodyPlan,
+            )
+          : [],
         bodyPlanAppropriate = (trait) => {
-          if (!oppositeBodyPlan) return true;
-          const dependencies = TRAIT_DEPENDENCIES[trait] ?? {};
+          if (!otherBodyPlans.length) return true;
+          const dependencies = TRAIT_DEPENDENCIES[trait] ?? {},
+            alternatives = dependencies.lineageAny ?? [];
           return (
-            trait !== oppositeBodyPlan &&
-            !(dependencies.lineage ?? []).includes(oppositeBodyPlan) &&
-            !(dependencies.active ?? []).includes(oppositeBodyPlan) &&
+            !otherBodyPlans.includes(trait) &&
+            !(dependencies.lineage ?? []).some((dependency) =>
+              otherBodyPlans.includes(dependency),
+            ) &&
+            !(dependencies.active ?? []).some((dependency) =>
+              otherBodyPlans.includes(dependency),
+            ) &&
             !(
-              dependencies.lineageAny?.includes(oppositeBodyPlan) &&
-              !dependencies.lineageAny?.includes(canonicalBodyPlan)
+              alternatives.length &&
+              alternatives.every((dependency) =>
+                otherBodyPlans.includes(dependency),
+              )
             )
           );
         },
@@ -483,7 +487,7 @@ test("geological phases follow the expanded didactic sequence and declare mandat
     ["Biomineralização"],
   ]);
   assert.deepEqual(byId.cambrian.cycles, [
-    ["Locomoção Articulada", "Percepção Espacial"],
+    ["Percepção Espacial"],
     ["Carapaça"],
   ]);
   assert.deepEqual(byId.ordovician.cycles, [["Embriófitas"], ["Tropismo"]]);

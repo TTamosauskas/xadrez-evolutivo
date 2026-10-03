@@ -85,14 +85,12 @@ test("Cenários Alternativos sorteiam o plano do jogador e geram o plano corpora
       const state = createPeriodState(stageId, seed, null, "alternative"),
         blue = animalFounder(state, "blue"),
         amber = animalFounder(state, "amber"),
-        bluePlan = blue.traits.includes("Artrópode")
-          ? "Artrópode"
-          : "Vertebrado",
-        amberPlan = amber.traits.includes("Artrópode")
-          ? "Artrópode"
-          : "Vertebrado";
+        bluePlan = arenaBodyPlan(blue.traits),
+        amberPlan = arenaBodyPlan(amber.traits);
 
-      assert.equal(amberPlan, oppositeArenaBodyPlan(bluePlan));
+      assert.ok(ARENA_BODY_PLANS.includes(bluePlan));
+      assert.ok(ARENA_BODY_PLANS.includes(amberPlan));
+      assert.notEqual(amberPlan, bluePlan);
       assertNoFutureTraits(blue, stageId);
       assertNoFutureTraits(amber, stageId);
     }
@@ -100,7 +98,8 @@ test("Cenários Alternativos sorteiam o plano do jogador e geram o plano corpora
 
 test("Arena filtra mutações exclusivas depois da escolha do plano corporal", () => {
   const arthropod = new Set(arenaSelectableTraits("animal", "Artrópode")),
-    vertebrate = new Set(arenaSelectableTraits("animal", "Vertebrado"));
+    vertebrate = new Set(arenaSelectableTraits("animal", "Vertebrado")),
+    mollusk = new Set(arenaSelectableTraits("animal", "Molusco"));
 
   assert.ok(arthropod.has("Artrópode"));
   assert.equal(arthropod.has("Vertebrado"), false);
@@ -115,6 +114,14 @@ test("Arena filtra mutações exclusivas depois da escolha do plano corporal", (
   assert.equal(vertebrate.has("Ooteca"), false);
   assert.equal(vertebrate.has("Hipermetamorfose"), false);
   assert.equal(vertebrate.has("Recrutamento em Massa"), false);
+
+  assert.ok(mollusk.has("Molusco"));
+  assert.equal(mollusk.has("Vertebrado"), false);
+  assert.equal(mollusk.has("Artrópode"), false);
+  assert.ok(mollusk.has("Jatopropulsão"));
+  assert.ok(mollusk.has("Tinta"));
+  assert.equal(mollusk.has("Locomoção Articulada"), false);
+  assert.equal(mollusk.has("Respiração Pulmonar"), false);
 });
 
 test("Arena gera setups legais com o plano corporal solicitado", () => {
@@ -141,6 +148,8 @@ test("Arena gera setups legais com o plano corporal solicitado", () => {
 
   const random = randomArenaSetupSide(9910, "Artrópode");
   assert.equal(arenaBodyPlan(random.genomes[0]), "Artrópode");
+  const mollusk = randomArenaSetupSide(9911, "Molusco");
+  assert.equal(arenaBodyPlan(mollusk.genomes[0]), "Molusco");
 });
 
 test("Arena aceita confrontos gerados com planos corporais opostos", () => {
@@ -163,4 +172,17 @@ test("Arena aceita confrontos gerados com planos corporais opostos", () => {
 
   assert.ok(blueAnimal.traits.includes("Vertebrado"));
   assert.ok(amberAnimal.traits.includes("Artrópode"));
+});
+
+
+test("Arena exposes three mutually distinct body plans", () => {
+  assert.deepEqual(
+    [...ARENA_BODY_PLANS].sort(),
+    ["Artrópode", "Molusco", "Vertebrado"].sort(),
+  );
+  for (const plan of ARENA_BODY_PLANS) {
+    const other = oppositeArenaBodyPlan(plan);
+    assert.ok(ARENA_BODY_PLANS.includes(other));
+    assert.notEqual(other, plan);
+  }
 });

@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 35;
+export const STATE_VERSION = 36;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const CHESS_FORMS = Object.freeze({
@@ -37,6 +37,11 @@ export const EVOLUTION_PATHS = Object.freeze({
     CHESS_FORMS.KING,
     CHESS_FORMS.KNIGHT,
     CHESS_FORMS.BISHOP,
+  ]),
+  mollusk: Object.freeze([
+    CHESS_FORMS.KING,
+    CHESS_FORMS.BISHOP,
+    CHESS_FORMS.ROOK,
   ]),
 });
 export const CHESS_PIECE_VALUES = Object.freeze([1, 3, 3, 5, 2, 9]);
@@ -149,7 +154,7 @@ export const TRAITS = {
   ],
   Vertebrado: [
     "🐟",
-    "Plano corporal bilateral mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e permite ao ramo predatório evoluir da forma basal Rei para Cavalo, Bispo, Torre e Rainha.",
+    "Plano corporal bilateral mutuamente exclusivo com Artrópode e Molusco. Habilita Locomoção Articulada e permite ao ramo predatório evoluir da forma basal Rei para Cavalo, Bispo, Torre e Rainha.",
   ],
   Intestino: [
     "🪢",
@@ -165,7 +170,11 @@ export const TRAITS = {
   ],
   "Artrópode": [
     "🦞",
-    "Plano corporal bilateral mutuamente exclusivo com Vertebrado. Habilita Locomoção Articulada, limita formas derivadas a Cavalo e Bispo e dobra a produção-base de descendentes, até 6.",
+    "Plano corporal bilateral mutuamente exclusivo com Vertebrado e Molusco. Habilita Locomoção Articulada, limita formas derivadas a Cavalo e Bispo e dobra a produção-base de descendentes, até 6.",
+  ],
+  Molusco: [
+    "🐙",
+    "Plano corporal animal mutuamente exclusivo com Vertebrado e Artrópode. Em períodos aquáticos, o pé muscular permite terminar movimentos em Casas Neutras; Jatopropulsão libera as formas Bispo e Torre.",
   ],
   "Sistema Adipocinético": [
     "⛽",
@@ -237,7 +246,7 @@ export const TRAITS = {
   ],
   Jatopropulsão: [
     "🦑",
-    "Permite um impulso por pelo menos cinco casas livres, com até dez casas totais e no máximo uma curva de 90 graus; o destino deve permanecer vazio.",
+    "Especialização locomotora exclusiva de Moluscos: permite um impulso por pelo menos cinco casas livres, com até dez casas totais e no máximo uma curva de 90 graus; o destino deve permanecer vazio.",
   ],
   "Percepção Espacial": [
     "꩜",
@@ -801,7 +810,7 @@ export const TRAITS = {
   ],
   Tinta: [
     "🌫️",
-    "Ao sofrer uma captura com rota de fuga disponível, libera uma nuvem temporária, foge para uma casa adjacente e suprime capacidades sensoriais e ataques direcionados na região.",
+    "Defesa exclusiva de Moluscos com Jatopropulsão e corpo flexível: ao sofrer uma captura com rota de fuga disponível, libera uma nuvem temporária, foge para uma casa adjacente e suprime capacidades sensoriais e ataques direcionados na região.",
   ],
   Alelopatia: [
     "🍂",
@@ -1042,6 +1051,7 @@ export const purePredatoryBranch = (piece) =>
 export function evolutionaryPath(piece) {
   if (has(piece, "Artrópode")) return EVOLUTION_PATHS.arthropod;
   if (has(piece, "Vertebrado")) return EVOLUTION_PATHS.vertebrate;
+  if (has(piece, "Molusco")) return EVOLUTION_PATHS.mollusk;
   if (canPhotosynthesize(piece)) return EVOLUTION_PATHS.photosynthetic;
   if (purePredatoryBranch(piece)) return EVOLUTION_PATHS.predatory;
   return Number.isInteger(piece?.rank) ? [piece.rank] : [];
