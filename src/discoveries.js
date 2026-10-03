@@ -906,8 +906,12 @@ export function markDiscoveryRead(state, category, id) {
   return true;
 }
 
+const visibleDiscovery = (category, id) =>
+  !(category === "mutations" && String(id).startsWith("rank:"));
+
 export function isDiscoveryUnread(state, category, id) {
   return (
+    visibleDiscovery(category, id) &&
     state.discoveries?.[category]?.includes(id) &&
     !state.discoveries?.read?.includes(discoveryKey(category, id))
   );
@@ -926,9 +930,10 @@ export function unreadDiscoveries(state, category = null) {
 }
 
 export function discoveredContent(state, category, revealAll = false) {
-  const ids = revealAll
+  const ids = (revealAll
       ? Object.keys(DISCOVERY_CONTENT[category] ?? {})
-      : state.discoveries?.[category] ?? [],
+      : state.discoveries?.[category] ?? []
+    ).filter((id) => visibleDiscovery(category, id)),
     entries = ids
       .map((id) => DISCOVERY_CONTENT[category]?.[id])
       .filter(Boolean);
@@ -950,11 +955,7 @@ export function discoveredContent(state, category, revealAll = false) {
 }
 
 export function mutationDiscoveryId(label) {
-  if (TRAITS[label]) return label;
-  const prefix = "Mutação de peça: ";
-  if (!label?.startsWith(prefix)) return null;
-  const rank = PIECES.indexOf(label.slice(prefix.length));
-  return rank >= 0 ? `rank:${rank}` : null;
+  return TRAITS[label] ? label : null;
 }
 
 export function validDiscoveries(value) {
