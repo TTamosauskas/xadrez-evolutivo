@@ -1,0 +1,23 @@
+name: Temporary predation brood benchmark
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/predation-brood-benchmark.yml"
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Predation brood smoke
+        continue-on-error: true
+        run: GAMES=8 GOAL_TURNS=200 TURN_LIMIT=300 npm run simulate
