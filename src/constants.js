@@ -2,6 +2,42 @@ export const SIZE = 8;
 export const STATE_VERSION = 35;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
+export const CHESS_FORMS = Object.freeze({
+  PAWN: 0,
+  KNIGHT: 1,
+  BISHOP: 2,
+  ROOK: 3,
+  KING: 4,
+  QUEEN: 5,
+});
+export const EVOLUTION_PATHS = Object.freeze({
+  photosynthetic: Object.freeze([
+    CHESS_FORMS.PAWN,
+    CHESS_FORMS.KNIGHT,
+    CHESS_FORMS.BISHOP,
+    CHESS_FORMS.ROOK,
+    CHESS_FORMS.QUEEN,
+  ]),
+  predatory: Object.freeze([
+    CHESS_FORMS.KING,
+    CHESS_FORMS.KNIGHT,
+    CHESS_FORMS.BISHOP,
+    CHESS_FORMS.ROOK,
+    CHESS_FORMS.QUEEN,
+  ]),
+  vertebrate: Object.freeze([
+    CHESS_FORMS.KING,
+    CHESS_FORMS.KNIGHT,
+    CHESS_FORMS.BISHOP,
+    CHESS_FORMS.ROOK,
+    CHESS_FORMS.QUEEN,
+  ]),
+  arthropod: Object.freeze([
+    CHESS_FORMS.KING,
+    CHESS_FORMS.KNIGHT,
+    CHESS_FORMS.BISHOP,
+  ]),
+});
 export const CHESS_PIECE_VALUES = Object.freeze([1, 3, 3, 5, 2, 9]);
 export const SYMBOLS = {
   blue: ["♙", "♘", "♗", "♖", "♔", "♕"],
@@ -112,7 +148,7 @@ export const TRAITS = {
   ],
   Vertebrado: [
     "🐟",
-    "Plano corporal bilateral mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e a evolução completa de Peão até Cavalo, Bispo, Torre e Rainha; Rei continua disponível.",
+    "Plano corporal bilateral mutuamente exclusivo com Artrópode. Habilita Locomoção Articulada e permite ao ramo predatório evoluir da forma basal Rei para Cavalo, Bispo, Torre e Rainha.",
   ],
   Intestino: [
     "🪢",
@@ -917,8 +953,10 @@ export const has = (piece, trait) => {
 export function functionalSizeClass(piece) {
   if (!piece || !Number.isInteger(piece.rank) || has(piece, "Nanismo"))
     return "small";
-  if ([0, 4].includes(piece.rank)) return "small";
-  if ([1, 2].includes(piece.rank)) return "medium";
+  if ([CHESS_FORMS.PAWN, CHESS_FORMS.KING].includes(piece.rank))
+    return "small";
+  if ([CHESS_FORMS.KNIGHT, CHESS_FORMS.BISHOP].includes(piece.rank))
+    return "medium";
   return "large";
 }
 
@@ -936,7 +974,40 @@ export const canPhotosynthesize = (piece) =>
   has(piece, "Fotossíntese") || has(piece, "Mixotrofia");
 export const purePredatoryBranch = (piece) =>
   !!piece && has(piece, "Predação") && !canPhotosynthesize(piece);
+
+export function evolutionaryPath(piece) {
+  if (has(piece, "Artrópode")) return EVOLUTION_PATHS.arthropod;
+  if (has(piece, "Vertebrado")) return EVOLUTION_PATHS.vertebrate;
+  if (canPhotosynthesize(piece)) return EVOLUTION_PATHS.photosynthetic;
+  if (purePredatoryBranch(piece)) return EVOLUTION_PATHS.predatory;
+  return Number.isInteger(piece?.rank) ? [piece.rank] : [];
+}
+
+export function evolutionaryRank(piece) {
+  const path = evolutionaryPath(piece),
+    index = path.indexOf(piece?.rank);
+  return index >= 0 ? index : 0;
+}
+
+export function nextEvolutionaryForm(piece) {
+  const path = evolutionaryPath(piece),
+    index = path.indexOf(piece?.rank);
+  if (index < 0 || index >= path.length - 1) return null;
+  return path[index + 1];
+}
+
+export function previousEvolutionaryForm(piece) {
+  const path = evolutionaryPath(piece),
+    index = path.indexOf(piece?.rank);
+  if (index <= 0) return null;
+  return path[index - 1];
+}
+
 export const basalRankFor = (piece) =>
-  canPhotosynthesize(piece) ? 0 : purePredatoryBranch(piece) ? 4 : piece?.rank ?? 4;
+  canPhotosynthesize(piece)
+    ? CHESS_FORMS.PAWN
+    : purePredatoryBranch(piece)
+      ? CHESS_FORMS.KING
+      : piece?.rank ?? CHESS_FORMS.KING;
 export const distance = (a, b) =>
   Math.max(Math.abs(a.r - b.r), Math.abs(a.c - b.c));
