@@ -1673,6 +1673,7 @@ export function aggressivePartnersFor(
     if (
       candidate.id === p.id ||
       candidate.owner === p.owner ||
+      enemyInteractionBlocked(state, p, candidate) ||
       distance(p, candidate) !== 1 ||
       !has(candidate, "Reprodução Sexuada") ||
       !reproductionReady(state, candidate) ||
