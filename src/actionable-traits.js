@@ -169,6 +169,11 @@ export function actionableTraitsForPiece(state, piece) {
     if (action.type === "PHEROMONE_SIGNAL") actionable.add("Feromônios");
     if (action.type === "BIOLUMINESCENT_LURE")
       actionable.add("Bioluminescência Predatória");
+    if (action.type === "RADULA") actionable.add("Rádula");
+    if (action.type === "TENTACLE_PULL")
+      actionable.add("Tentáculo Preênsil");
+    if (action.type === "CHROMATOPHORES")
+      actionable.add("Cromatóforos Neurais");
     if (
       ["FEEDING_REACH", "EXTENDED_CAPTURE"].includes(action.type) &&
       action.trait
@@ -289,6 +294,16 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Imunidade Adaptativa");
   if (has(piece, "Estômatos")) actionable.add("Estômatos");
   if (
+    has(piece, "Concha Camerada") &&
+    terrain(state, piece.r, piece.c) === "hostile"
+  )
+    actionable.add("Concha Camerada");
+  if (piece.chromatophoreDisguise)
+    actionable.add("Cromatóforos Neurais");
+  if (piece.tentacleGuard && has(piece, "Tentáculo Preênsil"))
+    actionable.add("Tentáculo Preênsil");
+
+  if (
     has(piece, "Endotermia") &&
     terrain(state, piece.r, piece.c) === "hostile"
   ) {
@@ -305,6 +320,11 @@ export function actionableTraitsForPiece(state, piece) {
     (piece.autotomyRecovery || piece.rank > 0)
   )
     actionable.add("Autotomia");
+  if (
+    has(piece, "Regeneração de Braços") &&
+    Number.isInteger(piece.autotomyRecovery?.regenerationTurnsRemaining)
+  )
+    actionable.add("Regeneração de Braços");
 
   if (
     has(piece, "Tinta") &&
@@ -407,6 +427,8 @@ export function actionableTraitsForPiece(state, piece) {
     actionable.add("Escansão");
   if (targets.some((target) => target.bioadhesion))
     actionable.add("Bioadesão");
+  if (targets.some((target) => target.byssus))
+    actionable.add("Bisso");
   if (targets.some((target) => target.arboreal))
     actionable.add("Arborícola");
   if (targets.some((target) => target.phoresy))
@@ -945,8 +967,13 @@ function camouflageBlocksCurrentAttack(state, victim, attackers) {
     return false;
   const unmasked = stateWithoutCamouflage(state, victim);
   return attackers.some((attacker) => {
-    if (has(attacker, "Visão Binocular")) return false;
-    const d = distance(attacker, victim),
+    const d = distance(attacker, victim);
+    if (
+      has(attacker, "Visão Binocular") ||
+      (has(attacker, "Visão Polarizada") && d <= 2)
+    )
+      return false;
+    
       diagonalTegument =
         d === 1 &&
         Math.abs(attacker.r - victim.r) === 1 &&
@@ -968,6 +995,7 @@ const CAUSAL_ACTION_TRAITS = Object.freeze([
   "Locomoção Terrestre",
   "Percepção Espacial",
   "Visão Binocular",
+  "Visão Polarizada",
 ]);
 
 function stateWithPiece(state, piece) {
@@ -1158,6 +1186,15 @@ function markCaptureContext(state, attacker, victim, byId) {
     if (!nocturnalEvasion && has(victim, "Adrenalina"))
       victimTraits.add("Adrenalina");
 
+    if (
+      distance(attacker, victim) === 1 &&
+      has(attacker, "Ventosas Quimiotáteis") &&
+      ["Tinta", "Adrenalina", "Movimento proteano", "Ofuscamento por movimento"].some(
+        (trait) => has(victim, trait),
+      )
+    )
+      attackerTraits.add("Ventosas Quimiotáteis");
+
     if (!nocturnalEvasion && has(victim, "Velocidade")) {
       victimTraits.add("Velocidade");
       if (has(attacker, "Velocidade"))
@@ -1218,6 +1255,8 @@ function markCaptureContext(state, attacker, victim, byId) {
       }
       if (has(attacker, "Visão Binocular"))
         attackerTraits.add("Visão Binocular");
+      if (has(attacker, "Visão Polarizada") && d <= 2)
+        attackerTraits.add("Visão Polarizada");
     }
   }
 }
