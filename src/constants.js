@@ -808,6 +808,38 @@ export const TRAITS = {
     "✂️",
     "Quando uma captura seria concluída, perde uma forma para sobreviver. A próxima oportunidade reprodutiva restaura a forma original em vez de gerar prole.",
   ],
+  Rádula: [
+    "👅",
+    "Moluscos podem Vivificar uma Casa Fértil ortogonalmente adjacente: o substrato torna-se neutro e a criatura recupera até 2 Energia.",
+  ],
+  Bisso: [
+    "🧵",
+    "Moluscos conchados podem Vivificar uma Barreira Natural ou de Evento adjacente para fixar-se nela sem destruí-la.",
+  ],
+  "Concha Camerada": [
+    "🌀",
+    "Especialização conchífera de Moluscos: eleva de 25% para 50% a chance de Carapaça bloquear o risco de uma Casa Hostil.",
+  ],
+  "Ventosas Quimiotáteis": [
+    "🫳",
+    "Em capturas adjacentes, agarra a presa e impede fugas por Tinta, Adrenalina, Movimento proteano e Ofuscamento por movimento; Autotomia continua funcionando.",
+  ],
+  "Regeneração de Braços": [
+    "🦾",
+    "Após sobreviver por Autotomia, restaura automaticamente a forma original depois de três turnos próprios sem consumir a próxima reprodução.",
+  ],
+  "Visão Polarizada": [
+    "🧿",
+    "Detecta Camuflagem até duas casas e preserva Percepção Espacial de curto alcance mesmo dentro de uma nuvem de Tinta.",
+  ],
+  "Tentáculo Preênsil": [
+    "〰️",
+    "Pode atacar uma presa a duas ou três casas em linha reta ou diagonal para puxá-la à casa adjacente; custa 1 Energia e a presa não pode capturar esse Molusco em seu próximo turno. Recarga de quatro rodadas.",
+  ],
+  "Cromatóforos Neurais": [
+    "🎨",
+    "Pode Vivificar a própria casa para entrar em Cripsis Cromática: assume temporariamente a cor adversária e fica invertido; até sua próxima ação não pode atacar nem ser atacado. Ao mover ou esperar, volta ao normal e entra em recarga de quatro rodadas.",
+  ],
   Tinta: [
     "🌫️",
     "Defesa exclusiva de Moluscos com Jatopropulsão e corpo flexível: ao sofrer uma captura com rota de fuga disponível, libera uma nuvem temporária, foge para uma casa adjacente e suprime capacidades sensoriais e ataques direcionados na região.",
