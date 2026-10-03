@@ -130,14 +130,20 @@ test("Ventosas Quimiotáteis suppress Tinta in adjacent captures", () => {
         r: 4,
         c: 3,
         rank: 4,
-        traits: ["Molusco", ...(withSuckers ? ["Ventosas Quimiotáteis"] : [])],
+        traits: [
+          "Molusco",
+          "Locomoção Terrestre",
+          ...(withSuckers
+            ? ["Jatopropulsão", "Corpo Gelatinoso", "Ventosas Quimiotáteis"]
+            : []),
+        ],
       },
       {
         owner: "amber",
         r: 4,
         c: 4,
         rank: 2,
-        traits: ["Molusco", "Locomoção Terrestre", "Tinta"],
+        traits: ["Molusco", "Locomoção Terrestre", "Jatopropulsão", "Corpo Gelatinoso", "Tinta"],
       },
     ], 9704);
 
@@ -164,7 +170,7 @@ test("Regeneração de Braços restores a Mollusk form after three own turns", (
       r: 4,
       c: 4,
       rank: 2,
-      traits: ["Molusco", "Autotomia", "Ventosas Quimiotáteis", "Regeneração de Braços"],
+      traits: ["Molusco", "Jatopropulsão", "Corpo Gelatinoso", "Autotomia", "Ventosas Quimiotáteis", "Regeneração de Braços"],
     },
   ], 9705);
   const attacker = state.pieces[0],
