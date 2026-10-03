@@ -234,3 +234,20 @@ test("Micorrizas receives explicit strategic value during root ordering", () => 
   const action = { type: "MOVE", id: plant.id, r: target.r, c: target.c };
   assert.ok(actionPriority(state, action) >= 10);
 });
+
+
+test("long AI benchmarks use named difficulty profiles instead of tiny search caps", () => {
+  for (const relative of [
+    "../scripts/period-benchmark.js",
+    "../scripts/stall-diagnostics.js",
+    "./simulate.js",
+    "../scripts/aquatic-founder-benchmark.js",
+    "../scripts/land-transition-benchmark.js",
+  ]) {
+    const source = readFileSync(new URL(relative, import.meta.url), "utf8");
+    assert.match(source, /AI_DIFFICULTY/);
+    assert.match(source, /profile-node-cap/);
+    assert.doesNotMatch(source, /budget:\s*5/);
+    assert.doesNotMatch(source, /maxNodes:\s*(?:12|30)/);
+  }
+});

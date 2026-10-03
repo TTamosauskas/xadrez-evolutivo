@@ -14,6 +14,18 @@ const gamesPerStage = Number(process.env.GAMES_PER_STAGE ?? 6),
   turnLimit = Number(process.env.TURN_LIMIT ?? 300),
   commandLimit = Number(process.env.COMMAND_LIMIT ?? turnLimit * 4);
 
+const AI_POLICIES = new Set(["easy", "medium", "hard", "random", "mixed"]),
+  aiPolicy = process.env.AI_DIFFICULTY ?? "medium";
+if (!AI_POLICIES.has(aiPolicy))
+  throw Error(`AI_DIFFICULTY inválida: ${aiPolicy}`);
+
+function policyFor(seed) {
+  if (aiPolicy !== "mixed") return aiPolicy;
+  return seed % 4 === 0
+    ? "random"
+    : ["easy", "medium", "hard"][seed % 3];
+}
+
 const stageIndex = (id) => geologicalStage(id).index,
   available = (trait, stage) =>
     stageIndex(TRAIT_STAGE[trait] ?? "archean") <= stage.index;
@@ -236,15 +248,13 @@ function runGame(initial, seed) {
       action = { type: "RESOLVE_BLOCKED" };
       conwaySteps++;
     } else {
-      const actions = legalActions(s);
-      if (seed % 4 === 0) {
+      const actions = legalActions(s),
+        policy = policyFor(seed);
+      if (policy === "random") {
         random = (Math.imul(random, 1664525) + 1013904223) >>> 0;
         action = actions[random % actions.length] ?? { type: "PASS" };
       } else
-        action = chooseAction(s, ["easy", "medium", "hard"][seed % 3], {
-          budget: 5,
-          maxNodes: 30,
-        });
+        action = chooseAction(s, policy, { now: () => 0 });
       if (action.type === "PASS") passes++;
     }
 
@@ -319,6 +329,8 @@ function runGame(initial, seed) {
 
 const report = {
   gamesPerStage,
+  aiPolicy,
+  aiSearch: "profile-node-cap",
   paired: true,
   goalTurns,
   capTurns: turnLimit,

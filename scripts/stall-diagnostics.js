@@ -19,6 +19,18 @@ const TARGETS = new Set(["ediacaran", "silurian", "devonian"]),
   ),
   tailRounds = Number(process.env.DIAGNOSTIC_TAIL ?? 100);
 
+const AI_POLICIES = new Set(["easy", "medium", "hard", "random", "mixed"]),
+  aiPolicy = process.env.AI_DIFFICULTY ?? "medium";
+if (!AI_POLICIES.has(aiPolicy))
+  throw Error(`AI_DIFFICULTY inválida: ${aiPolicy}`);
+
+function policyFor(seed) {
+  if (aiPolicy !== "mixed") return aiPolicy;
+  return seed % 4 === 0
+    ? "random"
+    : ["easy", "medium", "hard"][seed % 3];
+}
+
 const stageIndex = (id) => geologicalStage(id).index,
   available = (trait, stage) =>
     stageIndex(TRAIT_STAGE[trait] ?? "archean") <= stage.index;
@@ -66,12 +78,6 @@ function historyThrough(stage) {
       ),
     ),
   ];
-}
-
-function policyFor(seed) {
-  return seed % 4 === 0
-    ? "random"
-    : ["easy", "medium", "hard"][seed % 3];
 }
 
 function actionsForOwner(state, owner) {
@@ -276,10 +282,7 @@ function runGame(initial, seed) {
       pseudo = (Math.imul(pseudo, 1664525) + 1013904223) >>> 0;
       action = actions[pseudo % actions.length] ?? { type: "PASS" };
     } else {
-      action = chooseAction(state, policy, {
-        budget: 5,
-        maxNodes: 30,
-      });
+      action = chooseAction(state, policy, { now: () => 0 });
     }
 
     const captureAttempt = isCaptureAction(state, action),
@@ -476,6 +479,8 @@ function aggregate(runs) {
 
 const report = {
   gamesPerStage,
+  aiPolicy,
+  aiSearch: "profile-node-cap",
   goalTurns,
   turnLimit,
   commandLimit,

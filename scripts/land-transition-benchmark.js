@@ -10,6 +10,18 @@ const LIMIT = Number(process.env.LAND_TRANSITION_TURN_LIMIT ?? 330);
 const COMMAND_LIMIT = LIMIT * 6;
 const STAGES = ["silurian", "devonian"];
 
+const AI_POLICIES = new Set(["easy", "medium", "hard", "random", "mixed"]),
+  aiPolicy = process.env.AI_DIFFICULTY ?? "medium";
+if (!AI_POLICIES.has(aiPolicy))
+  throw Error(`AI_DIFFICULTY inválida: ${aiPolicy}`);
+
+function policyFor(seed) {
+  if (aiPolicy !== "mixed") return aiPolicy;
+  return seed % 4 === 0
+    ? "random"
+    : ["easy", "medium", "hard"][seed % 3];
+}
+
 function run(initial, seed) {
   let state = clone(initial),
     pseudo = seed ^ 0x9e3779b9,
@@ -26,16 +38,13 @@ function run(initial, seed) {
     else if (mutuallyBlocked(state))
       action = { type: "CONWAY_STEP" };
     else {
-      const actions = legalActions(state);
-      if (seed % 4 === 0) {
+      const actions = legalActions(state),
+        policy = policyFor(seed);
+      if (policy === "random") {
         pseudo = (Math.imul(pseudo, 1664525) + 1013904223) >>> 0;
         action = actions[pseudo % actions.length] ?? { type: "PASS" };
       } else
-        action = chooseAction(
-          state,
-          ["easy", "medium", "hard"][seed % 3],
-          { now: () => 0, budget: 5, maxNodes: 12 },
-        );
+        action = chooseAction(state, policy, { now: () => 0 });
     }
     const next = transition(state, action);
     assert.notEqual(next, state);
@@ -103,6 +112,8 @@ for (const stage of STAGES) {
   }
   const row = {
     stage,
+    aiPolicy,
+    aiSearch: "profile-node-cap",
     withBarriers: summarize(withBarriers),
     withoutBarriers: summarize(withoutBarriers),
   };

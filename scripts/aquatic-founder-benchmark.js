@@ -14,6 +14,18 @@ const GOAL = Number(process.env.GOAL_TURNS ?? 200);
 const LIMIT = Number(process.env.AQUATIC_TURN_LIMIT ?? 330);
 const COMMAND_LIMIT = LIMIT * 6;
 
+const AI_POLICIES = new Set(["easy", "medium", "hard", "random", "mixed"]),
+  aiPolicy = process.env.AI_DIFFICULTY ?? "medium";
+if (!AI_POLICIES.has(aiPolicy))
+  throw Error(`AI_DIFFICULTY inválida: ${aiPolicy}`);
+
+function policyFor(seed) {
+  if (aiPolicy !== "mixed") return aiPolicy;
+  return seed % 4 === 0
+    ? "random"
+    : ["easy", "medium", "hard"][seed % 3];
+}
+
 const CASES = [
   { stage: "archean", cycle: 2, compareLegacy: true },
   { stage: "proterozoic", cycle: 1, compareLegacy: true },
@@ -67,12 +79,6 @@ function moveToLegacyEdges(state) {
   return state;
 }
 
-function policyFor(seed) {
-  return seed % 4 === 0
-    ? "random"
-    : ["easy", "medium", "hard"][seed % 3];
-}
-
 function run(initial, seed) {
   let state = clone(initial),
     pseudo = seed ^ 0x9e3779b9,
@@ -93,11 +99,7 @@ function run(initial, seed) {
         pseudo = (Math.imul(pseudo, 1664525) + 1013904223) >>> 0;
         action = actions[pseudo % actions.length] ?? { type: "PASS" };
       } else
-        action = chooseAction(state, policyFor(seed), {
-          now: () => 0,
-          budget: 5,
-          maxNodes: 12,
-        });
+        action = chooseAction(state, policyFor(seed), { now: () => 0 });
     }
     const next = transition(state, action);
     assert.notEqual(next, state);
@@ -157,6 +159,8 @@ for (const entry of CASES) {
   const row = {
     stage: entry.stage,
     cycle: entry.cycle,
+    aiPolicy,
+    aiSearch: "profile-node-cap",
     current: summarize(current),
     legacy: entry.compareLegacy ? summarize(legacy) : null,
   };
