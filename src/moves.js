@@ -101,19 +101,9 @@ export const adjacentAlliesCount = (state, p) =>
 export const decompositionImmune = (state, p) =>
   p?.decompositionImmunity?.cell === square(p.r, p.c) &&
   state.turn <= p.decompositionImmunity.throughTurn;
-export const dormant = (state, p) => {
-  const scavengerOnCarcass =
-    !!carcassAt(state, p.r, p.c) &&
-    (has(p, "Necrófago") || has(p, "Onívoro Oportunista"));
-  return (
-    has(p, "Dormência") &&
-    (terrain(state, p.r, p.c) === "hostile" ||
-      (!!captureDisturbanceAt(state, p.r, p.c) && !scavengerOnCarcass) ||
-      (!!organicResidueAt(state, p.r, p.c) &&
-        organicResidueHazardousTo(p))) &&
-    !decompositionImmune(state, p)
-  );
-};
+// Kept as a compatibility predicate for callers that share generic
+// "waiting" logic. Dormência now belongs to seeds, never to active pieces.
+export const dormant = () => false;
 export const hibernating = (state, p) =>
   !!p &&
   Number.isInteger(p.hibernationUntilTurn) &&
