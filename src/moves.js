@@ -1936,6 +1936,7 @@ export function parasitismTargets(state, p) {
   return state.pieces.filter(
     (otherPiece) =>
       otherPiece.owner !== p.owner &&
+      !enemyInteractionBlocked(state, p, otherPiece) &&
       distance(p, otherPiece) === 1 &&
       terrain(state, otherPiece.r, otherPiece.c) !== "hostile",
   );
@@ -1948,6 +1949,143 @@ export function canParasitize(state, p) {
 export const NITROGEN_FIXATION_COOLDOWN_ROUNDS = 4;
 export const PHEROMONE_COOLDOWN_ROUNDS = 3;
 export const BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS = 4;
+export const TENTACLE_COOLDOWN_ROUNDS = 4;
+export const CHROMATOPHORE_COOLDOWN_ROUNDS = 4;
+
+const enemyInteractionBlocked = (state, actor, target) =>
+  !!(
+    actor &&
+    target &&
+    target.owner !== actor.owner &&
+    (
+      target.chromatophoreDisguise ||
+      (
+        target.tentacleGuard?.targetId === actor.id &&
+        state.turn <= target.tentacleGuard.throughTurn
+      )
+    )
+  );
+
+export function radulaTargets(state, piece) {
+  if (
+    state.phase !== "move" ||
+    state.chain ||
+    !piece ||
+    piece.owner !== state.current ||
+    !has(piece, "Rádula") ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    energyValue(piece) >= energyCapacity(piece)
+  )
+    return [];
+
+  const normalFertile = new Set(
+      reproductionReady(state, piece) && canUseBasalFertility(state, piece)
+        ? movesFor(state, piece, { ignoreChain: true })
+            .filter(
+              (target) =>
+                !target.capture &&
+                terrain(state, target.r, target.c) === "fertile",
+            )
+            .map((target) => square(target.r, target.c))
+        : [],
+    ),
+    targets = [];
+
+  for (const [dr, dc] of ORTH) {
+    const r = piece.r + dr,
+      c = piece.c + dc;
+    if (
+      inside(r, c) &&
+      terrain(state, r, c) === "fertile" &&
+      !normalFertile.has(square(r, c)) &&
+      !at(state, r, c) &&
+      !eggAt(state, r, c) &&
+      !plantSeedAt(state, r, c) &&
+      !fragmentAt(state, r, c) &&
+      !barrierAt(state, r, c) &&
+      !lethalHazardAt(state, r, c) &&
+      !ecologicalDomainBlocked(state, piece.owner, r, c)
+    )
+      targets.push({ r, c });
+  }
+  return targets;
+}
+
+export function tentacleTargets(state, piece) {
+  if (
+    state.phase !== "move" ||
+    state.chain ||
+    !piece ||
+    piece.owner !== state.current ||
+    !has(piece, "Tentáculo Preênsil") ||
+    resting(state, piece) ||
+    dormant(state, piece) ||
+    energyValue(piece) < 1 ||
+    round(state) < (piece.tentacleReadyRound ?? 0)
+  )
+    return [];
+
+  const targets = [];
+  for (const [dr, dc] of [...ORTH, ...DIAG]) {
+    let pullCell = null;
+    for (let n = 1; n <= 3; n++) {
+      const r = piece.r + dr * n,
+        c = piece.c + dc * n;
+      if (!inside(r, c) || barrierAt(state, r, c)) break;
+      const occupant = at(state, r, c);
+      if (n === 1) {
+        if (
+          occupant ||
+          eggAt(state, r, c) ||
+          plantSeedAt(state, r, c) ||
+          fragmentAt(state, r, c) ||
+          lethalHazardAt(state, r, c) ||
+          terrain(state, r, c) === "hostile"
+        )
+          break;
+        pullCell = { r, c };
+        continue;
+      }
+      if (
+        eggAt(state, r, c) ||
+        plantSeedAt(state, r, c) ||
+        fragmentAt(state, r, c)
+      )
+        break;
+      if (!occupant) continue;
+      if (
+        occupant.owner !== piece.owner &&
+        !enemyInteractionBlocked(state, piece, occupant) &&
+        !hibernating(state, occupant) &&
+        pullCell
+      )
+        targets.push({
+          targetId: occupant.id,
+          r: pullCell.r,
+          c: pullCell.c,
+          distance: n,
+        });
+      break;
+    }
+  }
+  return targets;
+}
+
+export const chromatophoreActionAvailable = (state, piece) =>
+  !!(
+    state.phase === "move" &&
+    !state.chain &&
+    piece &&
+    piece.owner === state.current &&
+    has(piece, "Cromatóforos Neurais") &&
+    !resting(state, piece) &&
+    !dormant(state, piece) &&
+    (
+      piece.chromatophoreDisguise ||
+      round(state) >= (piece.chromatophoreReadyRound ?? 0)
+    )
+  );
 
 function signalingAligned(a, b) {
   const dr = Math.abs(a.r - b.r),
@@ -2444,6 +2582,34 @@ export function actionsForPiece(
   )
     return [];
 
+  if (piece.chromatophoreDisguise) {
+    const retreat = movesFor(source, piece)
+      .filter(
+        (target) =>
+          !target.capture &&
+          !target.eggCapture &&
+          !target.seedCapture &&
+          !target.fruitConsume &&
+          !target.synzooCollect &&
+          !target.stay &&
+          !target.haustoriumDrain &&
+          !target.mycorrhiza &&
+          !target.cutaneous &&
+          !target.vascular &&
+          !at(source, target.r, target.c),
+      )
+      .map((target) => ({
+        type: "MOVE",
+        id: piece.id,
+        r: target.r,
+        c: target.c,
+      }));
+    return [
+      ...retreat,
+      { type: "CHROMATOPHORES", id: piece.id },
+    ];
+  }
+
   const mates =
     source.chain && source.chain !== piece.id
       ? []
@@ -2463,7 +2629,7 @@ export function actionsForPiece(
       c: target.c,
     }));
 
-  return [
+  const actions = [
     ...movesFor(source, piece).map((target) => ({
       type: "MOVE",
       id: piece.id,
@@ -2502,6 +2668,20 @@ export function actionsForPiece(
       id: piece.id,
       targetId: target.targetId,
     })),
+    ...radulaTargets(source, piece).map((target) => ({
+      type: "RADULA",
+      id: piece.id,
+      r: target.r,
+      c: target.c,
+    })),
+    ...tentacleTargets(source, piece).map((target) => ({
+      type: "TENTACLE_PULL",
+      id: piece.id,
+      targetId: target.targetId,
+    })),
+    ...(chromatophoreActionAvailable(source, piece)
+      ? [{ type: "CHROMATOPHORES", id: piece.id }]
+      : []),
     ...(parthenogenesisAvailable(source, piece)
       ? [{ type: "PARTHENOGENESIS", id: piece.id }]
       : []),
@@ -2579,6 +2759,18 @@ export function actionsForPiece(
       c: target.c,
     })),
   ];
+
+  return actions.filter((action) => {
+    const target =
+      Number.isInteger(action.targetId)
+        ? source.pieces.find((candidate) => candidate.id === action.targetId)
+        : action.type === "MOVE" &&
+            Number.isInteger(action.r) &&
+            Number.isInteger(action.c)
+          ? at(source, action.r, action.c)
+          : null;
+    return !enemyInteractionBlocked(source, piece, target);
+  });
 }
 
 function actionsAfterPieceChange(state, piece, changes) {
@@ -2602,6 +2794,7 @@ export function vivificationActionsForPiece(state, piece) {
       action.type === "MONOCARP_STORE" ||
       action.type === "MONOCARP_BLOOM" ||
       action.type === "REJECT_BROOD_PARASITE" ||
+      action.type === "CHROMATOPHORES" ||
       (action.type === "PARASITIZE" &&
         !Number.isInteger(action.targetId)),
   );
