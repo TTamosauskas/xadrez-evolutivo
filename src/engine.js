@@ -3455,6 +3455,30 @@ function resolveRhizome(ctx, action) {
   settle(ctx);
 }
 
+function grappleSuppresses(state, attacker, victim, trait) {
+  if (
+    !attacker ||
+    !victim ||
+    distance(attacker, victim) !== 1 ||
+    !has(attacker, "Ventosas Quimiotáteis")
+  )
+    return false;
+  log(
+    state,
+    `${OWNERS[attacker.owner]}: 🫳 Ventosas Quimiotáteis agarraram a presa e impediram ${trait}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Ventosas Quimiotáteis",
+    `🫳 Ventosas agarraram a presa e impediram ${trait}.`,
+    {
+      pieceId: attacker.id,
+      outcome: "grappled-escape",
+    },
+  );
+  return true;
+}
+
 function triggerInkEscape(ctx, attacker, victim) {
   const state = ctx.state;
   if (
@@ -3463,6 +3487,7 @@ function triggerInkEscape(ctx, attacker, victim) {
     round(state) < (victim.inkReadyRound ?? 0)
   )
     return false;
+  if (grappleSuppresses(state, attacker, victim, "Tinta")) return false;
   const cells = proteanEscapeCells(state, victim);
   if (!cells.length) return false;
 
@@ -3600,6 +3625,21 @@ function executeMove(ctx, action) {
       matchingTargets.find((t) => t.cutaneous || t.vascular) ??
       matchingTargets[0];
   if (!target) throw Error("Escolha um destino disponível.");
+  if (p.chromatophoreDisguise) {
+    p.chromatophoreDisguise = false;
+    p.chromatophoreReadyRound =
+      round(state) + CHROMATOPHORE_COOLDOWN_ROUNDS;
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🎨 Cromatóforos Neurais retornaram ao padrão normal após o deslocamento.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Cromatóforos Neurais",
+      "🎨 O padrão cromático retornou ao estado normal.",
+      { pieceId: p.id, outcome: "chromatophore-revealed" },
+    );
+  }
   if (target.hypermetamorphosis) {
     p.hypermetamorphosisReady = false;
     log(
@@ -4098,6 +4138,20 @@ function executeMove(ctx, action) {
     victim.owner !== p.owner &&
     !target.crawler &&
     has(victim, "Camuflagem") &&
+    has(p, "Visão Polarizada") &&
+    distance(p, victim) <= 2
+  )
+    emitPassiveEffect(
+      state,
+      "Visão Polarizada",
+      "🧿 Visão Polarizada revelou a criatura camuflada.",
+      { pieceId: p.id, outcome: "polarized-camouflage-detection" },
+    );
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    !target.crawler &&
+    has(victim, "Camuflagem") &&
     has(p, "Visão Binocular") &&
     (
       distance(p, victim) > 1 ||
@@ -4436,7 +4490,13 @@ function executeMove(ctx, action) {
     victim.owner !== p.owner &&
     reactiveDefensesActive &&
     has(victim, "Ofuscamento por movimento") &&
-    aggressiveNeutralizedTrait !== "Ofuscamento por movimento"
+    aggressiveNeutralizedTrait !== "Ofuscamento por movimento" &&
+    !grappleSuppresses(
+      state,
+      p,
+      victim,
+      "Ofuscamento por movimento",
+    )
   ) {
     const cells = proteanEscapeCells(state, victim);
     if (movementDazzleReady(state, victim) && cells.length && random(state) < 1 / 4) {
@@ -4469,7 +4529,8 @@ function executeMove(ctx, action) {
     victim.owner !== p.owner &&
     reactiveDefensesActive &&
     has(victim, "Movimento proteano") &&
-    aggressiveNeutralizedTrait !== "Movimento proteano"
+    aggressiveNeutralizedTrait !== "Movimento proteano" &&
+    !grappleSuppresses(state, p, victim, "Movimento proteano")
   ) {
     if (
       has(p, "Interceptação preditiva") &&
@@ -4515,7 +4576,8 @@ function executeMove(ctx, action) {
     victim.owner !== p.owner &&
     reactiveDefensesActive &&
     has(victim, "Adrenalina") &&
-    aggressiveNeutralizedTrait !== "Adrenalina"
+    aggressiveNeutralizedTrait !== "Adrenalina" &&
+    !grappleSuppresses(state, p, victim, "Adrenalina")
   ) {
     if (triggerAdrenalineEscape(ctx, p, victim)) return;
   } else if (
