@@ -20,6 +20,27 @@ test("current save schema round-trips deterministic state", () => {
   assert.deepEqual(deserialize(JSON.stringify(state)), state);
 });
 
+test("v34 migration converts predatory Pawns to basal Kings preserving Energy deficit", () => {
+  const legacy = createState(3401),
+    piece = legacy.pieces.find((candidate) =>
+      candidate.traits.includes("Predação"),
+    );
+  assert.ok(piece);
+  piece.rank = 0;
+  piece.energy = 3;
+  piece.energyCapacitySnapshot = 5;
+  legacy.version = 34;
+
+  const restored = deserialize(JSON.stringify(legacy)),
+    migrated = restored.pieces.find((candidate) => candidate.id === piece.id);
+
+  assert.equal(restored.version, STATE_VERSION);
+  assert.equal(migrated.rank, 4);
+  assert.equal(migrated.energy, 6);
+  assert.equal(migrated.energyCapacitySnapshot, 8);
+  assertState(restored);
+});
+
 test("current saves retire Locomoção Avançada from state and genome", () => {
   const state = createState(11),
     piece = state.pieces[0];
