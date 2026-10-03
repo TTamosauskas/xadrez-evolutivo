@@ -215,7 +215,7 @@ export function ecologicalDomainBlocked(_state, _owner, _r, _c) {
 // O desfecho e a pressão ecológica consideram apenas organismos já ativos.
 // Ovos e sementes continuam recursos reprodutivos, sem sustentar uma linhagem.
 export const activePopulation = (state) => state.pieces.length;
-export const fertilityPaused = (state) => activePopulation(state) >= 24;
+export const fertilityPaused = () => false;
 
 export const REPLACEMENT_PRESSURE_WINDOW_ROUNDS = 10;
 
@@ -264,13 +264,8 @@ export function replacementPressure(state) {
     net = births - deaths,
     churn = Math.min(births, deaths);
 
-  let level = 0;
-  if (population >= 24 && (net >= 4 || churn >= 6)) level = 1;
-  if (population >= 28 && (net >= 6 || churn >= 10)) level = 2;
-  if (population >= 32 && (net >= 8 || churn >= 14)) level = 3;
-
   return {
-    level,
+    level: 0,
     population,
     births,
     deaths,
@@ -348,23 +343,8 @@ export function photosynthesisDelayTurns(state, piece = null) {
       waitRounds = Math.min(normalRounds, 1 + elapsedTurns);
     return waitRounds * 2;
   }
-  const population = activePopulation(state),
-    preArticulated =
-      piece &&
-      !(piece.traits ?? []).includes("Locomoção Articulada") &&
-      !(piece.ancestry ?? []).includes("Locomoção Articulada"),
-    base =
-      population >= 24
-        ? preArticulated
-          ? 12
-          : null
-        : population <= 11
-          ? 6
-          : population <= 17
-            ? 8
-            : 10;
-  if (base === null) return null;
-  const multicellularPhotosynthetic =
+  const base = 6,
+    multicellularPhotosynthetic =
       piece &&
       has(piece, "Fotossíntese") &&
       has(piece, "Multicelularismo"),
