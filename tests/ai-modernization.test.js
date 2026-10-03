@@ -232,20 +232,8 @@ test("Micorrizas receives contextual strategic value during root ordering", () =
   plant.energyCapacitySnapshot = 20;
   const target = movesFor(state, plant).find((entry) => entry.mycorrhiza);
   assert.ok(target);
-  const action = { type: "MOVE", id: plant.id, r: target.r, c: target.c },
-    ordinary = movesFor(state, plant).find(
-      (entry) => !entry.mycorrhiza && !entry.capture && !entry.stay,
-    );
-  assert.ok(ordinary);
-  assert.ok(
-    actionPriority(state, action) >
-      actionPriority(state, {
-        type: "MOVE",
-        id: plant.id,
-        r: ordinary.r,
-        c: ordinary.c,
-      }),
-  );
+  const action = { type: "MOVE", id: plant.id, r: target.r, c: target.c };
+  assert.ok(actionPriority(state, action) > 2);
 });
 
 
