@@ -352,11 +352,26 @@ export function photosynthesisDelayTurns(state, piece = null) {
     preArticulated =
       piece &&
       !(piece.traits ?? []).includes("Locomoção Articulada") &&
-      !(piece.ancestry ?? []).includes("Locomoção Articulada");
-  if (population >= 24) return preArticulated ? 12 : null;
-  if (population <= 11) return 6;
-  if (population <= 17) return 8;
-  return 10;
+      !(piece.ancestry ?? []).includes("Locomoção Articulada"),
+    base =
+      population >= 24
+        ? preArticulated
+          ? 12
+          : null
+        : population <= 11
+          ? 6
+          : population <= 17
+            ? 8
+            : 10;
+  if (base === null) return null;
+  const multicellularPhotosynthetic =
+      piece &&
+      has(piece, "Fotossíntese") &&
+      has(piece, "Multicelularismo"),
+    multicellularCost = multicellularPhotosynthetic ? 2 : 0,
+    megaphyllBonus =
+      multicellularPhotosynthetic && has(piece, "Megafilos") ? 2 : 0;
+  return base + multicellularCost - megaphyllBonus;
 }
 
 export function photosynthesisHasSpace(state, piece) {
@@ -747,6 +762,8 @@ export function newPiece(state, owner, r, c, source = {}) {
       endothermyUsedTurn: source.endothermyUsedTurn ?? null,
       nitrogenFixationReadyRound:
         source.nitrogenFixationReadyRound ?? bornRound,
+      mycorrhizaReadyRound:
+        source.mycorrhizaReadyRound ?? bornRound,
       biofilmSharedRound: source.biofilmSharedRound ?? null,
       webTrapped: source.webTrapped ?? null,
       webCreatedStationarySinceRound:

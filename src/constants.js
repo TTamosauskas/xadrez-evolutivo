@@ -411,8 +411,20 @@ export const TRAITS = {
     "Orienta a colocação da prole fotossintética para as casas válidas mais próximas de outra casa fértil.",
   ],
   Traqueófitas: [
-    "🍃",
+    "🪈",
     "Pode reproduzir sem se deslocar consumindo uma casa fértil adjacente e libera formas vegetais Torre e Rainha.",
+  ],
+  Micorrizas: [
+    "🧶",
+    "Uma vez a cada 5 rodadas, permite usar uma Casa Neutra adjacente como recurso de Vivificação sem alterar o terreno.",
+  ],
+  Megafilos: [
+    "🍃",
+    "Reduz em 2 turnos a espera de Fotossíntese de organismos multicelulares, compensando o custo basal adicional da multicelularidade.",
+  ],
+  Poliploidia: [
+    "♊",
+    "Em cada reprodução bem-sucedida, há 25% de chance de no máximo uma prole receber uma mutação positiva adicional, sem mutação extra de forma.",
   ],
   Madeira: [
     "🪵",
@@ -915,6 +927,27 @@ export const PATHOGEN_TRANSMISSION_IDS = Object.freeze([
   "fecal",
   "spore",
 ]);
+export const TRAIT_DETAILS = Object.freeze({
+  Micorrizas: Object.freeze({
+    life:
+      "Micorrizas são associações simbióticas entre raízes de plantas e fungos. As hifas ampliam a exploração do solo e facilitam a obtenção de nutrientes pouco móveis, enquanto a planta fornece compostos de carbono ao fungo.",
+    game:
+      "Uma vez a cada 5 rodadas, a peça pode usar uma Casa Neutra adjacente como recurso de Vivificação. A casa continua neutra após o uso.",
+  }),
+  Megafilos: Object.freeze({
+    life:
+      "Megafilos são folhas vascularizadas com lâmina ampla e sistemas de nervuras complexos, associados ao aumento da superfície fotossintética nas plantas vasculares.",
+    game:
+      "Fotossintéticos multicelulares esperam 2 turnos adicionais para completar Fotossíntese. Megafilos removem exatamente esse acréscimo, restaurando o ritmo anterior.",
+  }),
+  Poliploidia: Object.freeze({
+    life:
+      "Poliploidia é a presença de conjuntos adicionais completos de cromossomos. Duplicações genômicas foram recorrentes na evolução vegetal e podem fornecer cópias gênicas redundantes que posteriormente divergem em novas funções.",
+    game:
+      "Em cada reprodução bem-sucedida, há 25% de chance de no máximo uma prole com Poliploidia receber uma segunda mutação exclusivamente positiva. Essa mutação adicional não altera a forma da peça e não se repete recursivamente.",
+  }),
+});
+
 export const EVENTS = [
   ["volcano", "🌋", "Erupção Vulcânica", "cerca de 95% do tabuleiro fica hostil durante 5 turnos. Um pequeno núcleo de lava ☠️ é letal, e a mudança orgânica automática do tabuleiro fica suspensa durante o evento."],
   ["ice", "❄️", "Era Glacial", "cerca de 95% do tabuleiro fica hostil durante 5 turnos, e a mudança orgânica automática do tabuleiro fica suspensa durante o evento."],

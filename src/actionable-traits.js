@@ -177,12 +177,25 @@ export function actionableTraitsForPiece(state, piece) {
   }
 
   const targets = movesFor(state, piece);
+  if (targets.some((target) => target.mycorrhiza))
+    actionable.add("Micorrizas");
   if (targets.some((target) => target.haustoriumDrain))
     actionable.add("Haustório");
   if (targets.some((target) => target.botanicalPredation === "Carnivoria"))
     actionable.add("Carnivoria");
   if (targets.some((target) => target.botanicalCapture === "Hemiepifitismo"))
     actionable.add("Hemiepifitismo");
+
+  if (
+    has(piece, "Megafilos") &&
+    Number.isInteger(piece.photosynthesisSinceTurn)
+  )
+    actionable.add("Megafilos");
+  if (
+    has(piece, "Poliploidia") &&
+    reproductionReady(state, piece)
+  )
+    actionable.add("Poliploidia");
 
   const reproductiveReady =
       reproductionReady(state, piece) || paedogenesisReady(state, piece),

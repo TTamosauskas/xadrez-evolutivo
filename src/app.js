@@ -28,7 +28,7 @@ import {
 } from "./moves.js";
 import { at } from "./state.js";
 import { save, deserialize } from "./storage.js";
-import { PIECES, SYMBOLS, TRAITS } from "./constants.js";
+import { PIECES, SYMBOLS, TRAITS, TRAIT_DETAILS } from "./constants.js";
 import { howToPlayLines } from "./help.js";
 import {
   GEOLOGICAL_STAGES,
@@ -1329,6 +1329,25 @@ function info(title, lines, action = null, confirmLabel = null) {
         strong.textContent = name;
         copy.prepend(strong, document.createTextNode(": "));
         item.append(iconElement, copy);
+        const details = TRAIT_DETAILS[name];
+        if (details) {
+          const detailBox = document.createElement("div");
+          detailBox.className = "mutation-detail-sections";
+          const lifeHeading = document.createElement("strong");
+          lifeHeading.className = "mutation-detail-heading";
+          lifeHeading.textContent = "Na vida";
+          const life = document.createElement("p");
+          life.className = "mutation-detail-copy";
+          life.textContent = details.life;
+          const gameHeading = document.createElement("strong");
+          gameHeading.className = "mutation-detail-heading";
+          gameHeading.textContent = "No jogo";
+          const game = document.createElement("p");
+          game.className = "mutation-detail-copy";
+          game.textContent = details.game;
+          detailBox.append(lifeHeading, life, gameHeading, game);
+          copy.append(detailBox);
+        }
         return item;
       }
       const p = document.createElement("p");

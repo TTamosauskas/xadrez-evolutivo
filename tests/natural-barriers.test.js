@@ -167,6 +167,7 @@ test("Trepadeira fertilizes and reproduces while occupying natural and built bar
           "Fotossíntese",
           "Embriófitas",
           "Traqueófitas",
+          "Megafilos",
           "Trepadeira",
         ],
       },
