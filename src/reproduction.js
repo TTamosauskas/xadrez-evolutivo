@@ -184,8 +184,10 @@ function nextDerivedRank(piece) {
   if (has(piece, "Fotossíntese"))
     return photosyntheticRankUnlocked(piece, next) ? next : null;
 
-  if (has(piece, "Molusco"))
+  if (has(piece, "Molusco")) {
+    if (has(piece, "Bisso")) return next === 2 ? next : null;
     return has(piece, "Jatopropulsão") ? next : null;
+  }
   if (!has(piece, "Locomoção Articulada")) return null;
   return has(piece, "Vertebrado") || has(piece, "Artrópode") ? next : null;
 }
