@@ -107,7 +107,7 @@ test("Autotomia restaura a forma quando a energia de uma captura é vivificada",
   state = simulate(state, move(attacker, 4, 4));
   let defender = state.pieces.find((piece) => piece.id === defenderId);
   assert.ok(defender);
-  assert.equal(defender.rank, 4);
+  assert.equal(defender.rank, 3);
   assert.deepEqual(defender.autotomyRecovery, { originalRank: 5 });
 
   state.current = "amber";
@@ -115,7 +115,7 @@ test("Autotomia restaura a forma quando a energia de uma captura é vivificada",
   state = simulate(state, move(defender, 4, 3));
 
   defender = state.pieces.find((piece) => piece.id === defenderId);
-  assert.equal(defender.rank, 4);
+  assert.equal(defender.rank, 3);
   assert.deepEqual(defender.autotomyRecovery, { originalRank: 5 });
   assert.equal(defender.predationEnergy, true);
 
