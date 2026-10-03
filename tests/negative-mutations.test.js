@@ -18,7 +18,7 @@ import {
 import {
   pathogenMortalityChance,
 } from "../src/disease.js";
-import { square } from "../src/constants.js";
+import { square, TRAITS } from "../src/constants.js";
 import { energyValue } from "../src/energy.js";
 
 const animalTraits = [
@@ -68,6 +68,35 @@ test("negative mutation periods, Eoarchean runway and somatic eligibility follow
   assert.equal(SOMATIC_NEGATIVE_TRAITS.has("Deficiência Motora"), true);
   assert.equal(SOMATIC_NEGATIVE_TRAITS.has("Nanismo"), false);
   assert.equal(SOMATIC_NEGATIVE_TRAITS.has("Mutação Mutadora"), false);
+});
+
+test("Semelparidade uses bamboo icon and remains available to multicellular photosynthetic lineages", () => {
+  const s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 0,
+        traits: [
+          "Respiração anaeróbia",
+          "Fotossíntese",
+          "Multicelularismo",
+        ],
+      },
+      {
+        owner: "amber",
+        r: 0,
+        c: 0,
+        rank: 0,
+        traits: ["Respiração anaeróbia", "Fotossíntese"],
+      },
+    ], 8711),
+    plant = s.pieces[0];
+
+  s.geologicalStage = "orosirian";
+  s.cycle = 2;
+  assert.equal(TRAITS.Semelparidade[0], "🎋");
+  assert.equal(negativeTraitUnlocked(s, "Semelparidade", plant), true);
 });
 
 test("motor and sensory deficiencies constrain movement and capture", () => {

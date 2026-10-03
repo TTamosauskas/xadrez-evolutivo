@@ -145,7 +145,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   "Filho único": "Limita cada reprodução a 1 descendente.",
   Subfertilidade: "Tem 50% de chance de reprodução sem gerar prole.",
   "Má absorção Alimentar": "Consome recurso fértil extra e dobra a recuperação predatória.",
-  Semelparidade: "Morre após 3 reproduções bem-sucedidas.",
+  Semelparidade: "Morre após a primeira reprodução bem-sucedida.",
   "Regressão Evolutiva": "Oculta como recessivos cerca de metade dos fenótipos positivos.",
   Nanismo: "Força a forma basal do ramo: Peão em Fotossíntese e Rei em Predação.",
   Gigantismo: "Reduz pela metade o alcance de formas de longo alcance.",

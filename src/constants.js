@@ -671,7 +671,7 @@ export const TRAITS = {
     "Ao consumir uma Casa Fértil para reproduzir, consome também uma segunda Casa Fértil adjacente, quando houver; recursos alimentares como presa, ovo, carcaça e fezes dobram a carga energética reprodutiva.",
   ],
   Semelparidade: [
-    "🐙",
+    "🎋",
     "Permite apenas uma reprodução bem-sucedida durante toda a vida. Após reproduzir, o organismo morre.",
   ],
   "Regressão Evolutiva": [
