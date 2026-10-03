@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { EVENTS, TRAITS } from "../src/constants.js";
 import { GEOLOGICAL_STAGES, TRAIT_STAGE } from "../src/geology.js";
 import {
@@ -303,6 +304,7 @@ test("curated Biology media stays landscape and semantically representative", ()
       /^assets\/discoveries\/mutations\/media-[a-f0-9]{12}\.(?:jpg|png|webp|gif)$/,
       trait,
     );
+    assert.equal(existsSync(entry.image), true, `${trait}: arquivo local ausente`);
     assert.ok(entry.imageWidth >= 900, trait);
     assert.ok(entry.imageHeight >= 420, trait);
     assert.ok(entry.imageWidth / entry.imageHeight >= 1.2, trait);
