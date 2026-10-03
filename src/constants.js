@@ -809,7 +809,7 @@ export const TRAITS = {
     "Quando uma captura seria concluída, perde uma forma para sobreviver. A próxima oportunidade reprodutiva restaura a forma original em vez de gerar prole.",
   ],
   Rádula: [
-    "👅",
+    "🪚",
     "Moluscos podem Vivificar uma Casa Fértil ortogonalmente adjacente: o substrato torna-se neutro e a criatura recupera até 2 Energia.",
   ],
   Bisso: [
@@ -817,7 +817,7 @@ export const TRAITS = {
     "Moluscos conchados podem Vivificar uma Barreira Natural ou de Evento adjacente para fixar-se nela sem destruí-la.",
   ],
   "Concha Camerada": [
-    "🌀",
+    "🏺",
     "Especialização conchífera de Moluscos: eleva de 25% para 50% a chance de Carapaça bloquear o risco de uma Casa Hostil.",
   ],
   "Ventosas Quimiotáteis": [
@@ -833,7 +833,7 @@ export const TRAITS = {
     "Detecta Camuflagem até duas casas e preserva Percepção Espacial de curto alcance mesmo dentro de uma nuvem de Tinta.",
   ],
   "Tentáculo Preênsil": [
-    "〰️",
+    "➿",
     "Pode atacar uma presa a duas ou três casas em linha reta ou diagonal para puxá-la à casa adjacente; custa 1 Energia e a presa não pode capturar esse Molusco em seu próximo turno. Recarga de quatro rodadas.",
   ],
   "Cromatóforos Neurais": [
