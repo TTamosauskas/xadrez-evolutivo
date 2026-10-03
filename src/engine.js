@@ -798,7 +798,7 @@ export function hostileHazardKills(state, piece, normalHostile = false) {
     state,
     chamberedShell ? "Concha Camerada" : "Carapaça",
     chamberedShell
-      ? "🌀 Concha Camerada ampliou a proteção da Carapaça contra o ambiente hostil."
+      ? "🏺 Concha Camerada ampliou a proteção da Carapaça contra o ambiente hostil."
       : "🐚 Carapaça bloqueou o risco hostil.",
     { pieceId: piece.id, outcome: "blocked-hostile-risk" },
   );
@@ -5880,12 +5880,12 @@ function resolveRadula(ctx, action) {
   const gained = energyValue(piece) - before;
   log(
     state,
-    `${OWNERS[piece.owner]}: 👅 Rádula raspou ${coord(target.r, target.c)} e recuperou ${gained} Energia.`,
+    `${OWNERS[piece.owner]}: 🪚 Rádula raspou ${coord(target.r, target.c)} e recuperou ${gained} Energia.`,
   );
   emitPassiveEffect(
     state,
     "Rádula",
-    `👅 Rádula raspou o substrato e recuperou ${gained} Energia.`,
+    `🪚 Rádula raspou o substrato e recuperou ${gained} Energia.`,
     { pieceId: piece.id, outcome: "rasped-fertility", value: gained },
   );
   advanceTurn(ctx);
@@ -5948,12 +5948,12 @@ function resolveTentaclePull(ctx, action) {
   piece.tentacleReadyRound = round(state) + TENTACLE_COOLDOWN_ROUNDS;
   log(
     state,
-    `${OWNERS[piece.owner]}: 〰️ Tentáculo Preênsil puxou a presa para ${coord(option.landingR, option.landingC)}.`,
+    `${OWNERS[piece.owner]}: ➿ Tentáculo Preênsil puxou a presa para ${coord(option.landingR, option.landingC)}.`,
   );
   emitPassiveEffect(
     state,
     "Tentáculo Preênsil",
-    "〰️ Tentáculo puxou a presa; ela não pode contra-atacar este Molusco no próximo turno.",
+    "➿ Tentáculo puxou a presa; ela não pode contra-atacar este Molusco no próximo turno.",
     {
       pieceId: piece.id,
       outcome: "pulled-prey",
