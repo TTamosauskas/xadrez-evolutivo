@@ -1494,9 +1494,17 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         if (!dr && !dc) continue;
         const r = p.r + dr,
           c = p.c + dc;
+        const occupant = inside(r, c) ? at(state, r, c) : null,
+          haustoriumHost =
+            occupant &&
+            occupant.owner !== p.owner &&
+            has(p, "Haustório") &&
+            has(p, "Fotossíntese") &&
+            has(occupant, "Fotossíntese");
         if (
           inside(r, c) &&
           terrain(state, r, c) === "fertile" &&
+          !haustoriumHost &&
           (!barrierAt(state, r, c) || has(p, "Trepadeira"))
         )
           targets.push({
