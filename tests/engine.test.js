@@ -3497,6 +3497,7 @@ test("cycle innovation pressure blocks a seventh new positive mutation without b
       "Dormência",
       "Multicelularismo",
       "Resistência",
+      "Eucarionte",
     ],
     capped = makeState(cappedTraits),
     cappedBefore = capped.s.nextId;
