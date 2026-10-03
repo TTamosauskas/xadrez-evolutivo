@@ -235,6 +235,7 @@ const VIVIFICATION_LABELS = Object.freeze({
   MONOCARP_STORE: "🕰️ Acumular floração",
   MONOCARP_BLOOM: "🕰️ Florescer e morrer",
   REJECT_BROOD_PARASITE: "🪺 Rejeitar ovo parasita",
+  CHROMATOPHORES: "🎨 Cripsis Cromática",
 });
 const vivificationLabel = (action) =>
   VIVIFICATION_LABELS[action?.type] ?? "Vivificar";
@@ -256,6 +257,9 @@ const boardActionLabel = (action) => {
   if (action.type === "PHEROMONE_SIGNAL") return "👃 Feromônios";
   if (action.type === "BIOLUMINESCENT_LURE")
     return "🎣 Bioluminescência Predatória";
+  if (action.type === "RADULA") return "👅 Rádula";
+  if (action.type === "TENTACLE_PULL") return "〰️ Tentáculo Preênsil";
+  if (action.type === "CHROMATOPHORES") return "🎨 Cripsis Cromática";
   return action.type;
 };
 
@@ -454,7 +458,7 @@ $("board").addEventListener("click", (event) => {
   if (actor?.owner === state.current) {
     const targetActions = actionsForPiece(state, actor).filter(
       (action) =>
-        (["MOVE", "RHIZOME", "FIX_NITROGEN"].includes(action.type) &&
+        (["MOVE", "RHIZOME", "FIX_NITROGEN", "RADULA"].includes(action.type) &&
           action.r === r &&
           action.c === c) ||
         (p &&
@@ -468,6 +472,7 @@ $("board").addEventListener("click", (event) => {
             "EXTENDED_CAPTURE",
             "PHEROMONE_SIGNAL",
             "BIOLUMINESCENT_LURE",
+            "TENTACLE_PULL",
           ].includes(action.type) &&
           action.targetId === p.id),
     );
