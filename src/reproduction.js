@@ -275,11 +275,14 @@ function mutation(
   positiveOnly,
   excludedTraits = null,
   forcedGeneGain = null,
+  traitOnly = false,
 ) {
   const gains = [],
-    plantRankMutation = has(p, "Fotossíntese"),
+    plantRankMutation = !traitOnly && has(p, "Fotossíntese"),
     animalRankMutation =
-      !has(p, "Fotossíntese") && rankMutationUnlocked(state);
+      !traitOnly &&
+      !has(p, "Fotossíntese") &&
+      rankMutationUnlocked(state);
   if (plantRankMutation || animalRankMutation) {
     const nextRank = nextDerivedRank(p);
     if (nextRank !== null) gains.push({ rank: nextRank, weight: 1 });
@@ -839,10 +842,34 @@ function makeChildProfile(
   return child;
 }
 
+function applyPolyploidInnovation(state, brood) {
+  const candidates = (brood ?? []).filter((child) => has(child, "Poliploidia"));
+  if (!candidates.length || random(state) >= 1 / 4) return null;
+  const child = pick(state, candidates),
+    label = mutation(state, child, true, null, null, true);
+  if (!label) return null;
+  child.newMutationToast = {
+    trait: "Poliploidia",
+    text: `♊ Poliploidia gerou uma inovação genética adicional: ${label}.`,
+    outcome: "polyploid-positive-innovation",
+  };
+  emitPassiveEffect(
+    state,
+    "Poliploidia",
+    `♊ Poliploidia gerou uma inovação genética adicional: ${label}.`,
+    {
+      pieceId: child.id ?? null,
+      outcome: "polyploid-positive-innovation",
+    },
+  );
+  return label;
+}
+
 function makeRequestedBrood(count) {
   const brood = [];
   for (let i = 0; i < count; i++)
     brood.push(makeChildProfile(state, parent, mate, profile));
+  applyPolyploidInnovation(state, brood);
   if (brood.length)
     state.maxGenerationReached = Math.max(
       state.maxGenerationReached,
@@ -1512,10 +1539,15 @@ export function monocarpicBloom(ctx, parent) {
         cells.push({ r, c });
     }
 
-  const targets = shuffle(ctx.state, cells).slice(0, Math.min(wanted, cells.length));
+  const targets = shuffle(ctx.state, cells).slice(0, Math.min(wanted, cells.length)),
+    profiles = targets.map(() =>
+      makeChildProfile(ctx.state, parent, null, parent),
+    );
+  applyPolyploidInnovation(ctx.state, profiles);
   let laid = 0;
-  for (const target of targets) {
-    const profile = makeChildProfile(ctx.state, parent, null, parent);
+  for (let index = 0; index < targets.length; index++) {
+    const target = targets[index],
+      profile = profiles[index];
     ctx.state.plantSeeds.push({
       id: ctx.state.nextPlantSeed++,
       owner: parent.owner,
