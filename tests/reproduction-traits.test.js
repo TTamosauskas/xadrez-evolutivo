@@ -470,7 +470,7 @@ test("Vivificação infrutífera em Casa Fértil recupera exatamente 1 Energia",
         effect.outcome === "tutorial-infruitful-reproduction" &&
         effect.theme === "tutorial-tooltip" &&
         effect.text ===
-          "Reprodução infrutífera. Sem prole a peça recupera energia.",
+          "Reprodução infrutífera. Vivificar recuperou energia",
     ),
   );
   assertState(s);
