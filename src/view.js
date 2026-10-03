@@ -22,6 +22,7 @@ import {
   deterministicDeathNextTurn,
   reproductionReady,
   eventBarrierAt,
+  barrierAt,
   organicResidueAt,
   carcassAt,
   captureDisturbanceAt,
@@ -102,6 +103,10 @@ const VIVIFICATION_LABELS = Object.freeze({
   MONOCARP_STORE: "🕰️ Acumular floração",
   MONOCARP_BLOOM: "🕰️ Florescer e morrer",
   REJECT_BROOD_PARASITE: "🪺 Rejeitar ovo parasita",
+  RASP: "👅 Raspar substrato",
+  BYSSUS_ATTACH: "🧵 Fixar por Bisso",
+  CHROMATIC_CRYPSIS: "🎨 Cripsis Cromática",
+  CHROMATIC_WAIT: "🎨 Encerrar Cripsis",
 });
 const vivificationLabel = (action) =>
   VIVIFICATION_LABELS[action?.type] ?? "Vivificar";
@@ -1045,6 +1050,24 @@ export function render(
                   action.c === c,
               ) ?? null
             : null,
+        radulaAction =
+          actor
+            ? actorActions.find(
+                (action) =>
+                  action.type === "RASP" &&
+                  action.r === r &&
+                  action.c === c,
+              ) ?? null
+            : null,
+        byssusAction =
+          actor
+            ? actorActions.find(
+                (action) =>
+                  action.type === "BYSSUS_ATTACH" &&
+                  action.r === r &&
+                  action.c === c,
+              ) ?? null
+            : null,
         specialAction =
           actor && p
             ? actorActions.find(
@@ -1056,13 +1079,18 @@ export function render(
                     "HEMATOPHAGY",
                     "BROOD_PARASITIZE",
                     "EXTENDED_CAPTURE",
+                    "TENTACLE_PULL",
                   ].includes(action.type) && action.targetId === p.id,
               ) ?? null
             : null,
         specialActionIcon =
-          rhizomeAction
-            ? "🫚"
-            : targetEntry?.mycorrhiza
+          radulaAction
+            ? "👅"
+            : byssusAction
+              ? "🧵"
+              : rhizomeAction
+                ? "🫚"
+                : targetEntry?.mycorrhiza
               ? "🧶"
               : targetEntry?.haustoriumDrain
                 ? "🪝"
@@ -1082,7 +1110,9 @@ export function render(
                         specialAction?.type,
                       )
                     ? TRAITS[specialAction.trait]?.[0] ?? "🧬"
-                    : null,
+                    : specialAction?.type === "TENTACLE_PULL"
+                      ? "〰️"
+                      : null,
         attackTarget = captureTarget || parasitismTarget || !!specialAction,
         predatoryReproductionTarget = !!(
           actor &&
@@ -1192,6 +1222,8 @@ export function render(
           nicheBuildTarget ||
           nitrogenFixationTarget ||
           selfVivificationTarget ||
+          !!radulaAction ||
+          !!byssusAction ||
           !!rhizomeAction ||
           (originHere && origin?.selected),
         nurse = nursing.some((child) => child.id === p?.id),
@@ -1230,7 +1262,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${mineralRemnant ? " mineral-remnant" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${selectedCellHere ? " cell-selected-info" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction || rhizomeAction || targetEntry?.mycorrhiza || targetEntry?.haustoriumDrain || targetEntry?.botanicalPredation === "Carnivoria" || targetEntry?.botanicalCapture === "Hemiepifitismo" ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${nitrogenFixationTarget ? " nitrogen-fixation-target special-action-target" : ""}${pheromoneTarget ? " pheromone-target special-action-target" : ""}${bioluminescentLureTarget ? " bioluminescent-lure-target special-action-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${hypermetamorphosisTarget ? " hypermetamorphosis-target" : ""}${massRecruitmentTarget ? " mass-recruitment-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${mineralRemnant ? " mineral-remnant" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${selectedCellHere ? " cell-selected-info" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction || rhizomeAction || radulaAction || byssusAction || targetEntry?.mycorrhiza || targetEntry?.haustoriumDrain || targetEntry?.botanicalPredation === "Carnivoria" || targetEntry?.botanicalCapture === "Hemiepifitismo" ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${nitrogenFixationTarget ? " nitrogen-fixation-target special-action-target" : ""}${pheromoneTarget ? " pheromone-target special-action-target" : ""}${bioluminescentLureTarget ? " bioluminescent-lure-target special-action-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${hypermetamorphosisTarget ? " hypermetamorphosis-target" : ""}${massRecruitmentTarget ? " mass-recruitment-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -1238,7 +1270,7 @@ export function render(
       const terrainLabel = cellInfo.terrain.label,
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza, Respiração anaeróbia${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
-          : `${coord(r, c)}, ${terrainLabel}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : cellInfo.objectLabel ? `, ${cellInfo.objectLabel}` : barrier ? "" : ", vazia"}${cellInfo.accessibleFacts.length ? `, ${cellInfo.accessibleFacts.join(", ")}` : ""}${target ? ", destino disponível" : ""}${crawlerTarget ? ", travessia de borda por Rastejante" : ""}${lateralTarget ? targetEntry?.lateralSwapId ? ", troca lateral com aliado" : ", Movimento Lateral" : ""}${escalationTarget ? targetEntry?.escalationSwapId ? ", troca vertical por Escansão" : ", deslocamento por Escansão" : ""}${bioadhesionTarget ? targetEntry?.bioadhesionSwapId ? ", troca periférica por Bioadesão" : ", percurso do perímetro por Bioadesão" : ""}${arborealTarget ? ", travessia de dossel por Arborícola" : ""}${arborealSupport ? ", apoio de rota Arborícola" : ""}${phoresyTarget ? ", transporte por Forésia" : ""}${phoresyCarrier ? ", transportador aliado de Forésia" : ""}${serpentineTarget ? ", trajetória por Serpenteamento" : ""}${trailTarget ? ", extensão de Trilhas" : ""}${tigmotaxisTarget ? ", continuação por Tigmotaxia" : ""}${recoilTarget ? ", retorno por Recuo" : ""}${slidingTarget ? ", continuação por Deslizamento" : ""}${hypermetamorphosisTarget ? ", 🐞 geometria dispersiva por Hipermetamorfose" : ""}${massRecruitmentTarget ? ", 📣 captura coletiva por Recrutamento em Massa" : ""}${vivificationTarget ? nicheBuildTarget ? ", vivificação disponível: 🧱 criar barreira por Construtor de Nicho" : nitrogenFixationTarget ? ", ação disponível: ☁️ Fixação de Nitrogênio" : zoochoryResourceTarget ? targetEntry?.fruitConsume ? ", vivificação disponível: consumir fruto zoocórico" : ", vivificação disponível: armazenar semente sinzoocórica" : selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? has(actor, "Necrófago") ? ", vivificação disponível: Necrofagia" : ", vivificação disponível: Onívoro Oportunista" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : cannibalTarget ? ", alvo de Canibalismo" : granivoryReproductionTarget ? ", semente consumível por Granívoro com reprodução" : eggReproductionTarget ? has(actor, "Ovífagia") ? ", alvo de Ovífagia com reprodução" : ", ovo consumível por Onívoro Oportunista com reprodução" : predatoryReproductionTarget ? ", alvo de ataque com reprodução predatória" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${pheromoneTarget ? ", 👃 aliado alcançável por Feromônios" : ""}${bioluminescentLureTarget ? ", 🎣 presa atraível por Bioluminescência Predatória" : ""}${partner ? ", parceiro disponível" : ""}${aggressivePartner ? aggressiveCounter ? ", 🦆 parceiro adversário; contra-agressão letal" : ", 🦆 parceiro adversário para Cópula Agressiva" : ""}${filialCannibalTarget ? ", 🐹 cria filial consumível para restaurar Energia reprodutiva" : ""}${matriphagyTarget ? ", 🕷️ progenitor consumível por Matrifagia" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}${hierarchyRecommended ? ", 🐃 membro recomendado pela Hierarquia para sacrifício" : ""}${superBestMember ? ", 🐝 membro com melhor movimento sugerido pelo Superorganismo" : superMemberPulse ? ", membro sinalizado pelo Superorganismo" : ""}${superMoveTarget ? ", 🐝 movimento sugerido pelo Superorganismo" : ""}${serotoninTarget ? ", destino de reposicionamento por Serotonina" : ""}${cortexOffensive ? ", melhor posição ofensiva sugerida pelo Córtex Pré-Frontal" : ""}${cortexDefensive ? ", melhor posição defensiva sugerida pelo Córtex Pré-Frontal" : ""}`;
+          : `${coord(r, c)}, ${terrainLabel}${eventBarrier ? ", barreira temporária da Insularização" : naturalBarrier ? ", barreira natural" : builtBarrier ? ", barreira construída" : ""}${p ? `, ${PIECES[p.rank]} das ${OWNERS[p.owner]}${differentialTraits.length ? ", " + differentialTraits.join(", ") : ""}${(p.somaticMutations ?? []).length ? ", alterações somáticas: " + p.somaticMutations.join(", ") : ""}${juvenile(state, p) ? `, juvenil, maturidade em ${Math.max(0, p.maturesRound - currentRound)} rodada(s)` : senescent(state, p) ? `, senescente, idade ${pieceAge(state, p)} rodada(s)` : ""}${actionState?.waiting ? `, aguardando: ${actionState.reason}${actionState.remainingRounds ? ` por ${actionState.remainingRounds} rodada(s)` : ""}` : ""}` : cellInfo.objectLabel ? `, ${cellInfo.objectLabel}` : barrier ? "" : ", vazia"}${cellInfo.accessibleFacts.length ? `, ${cellInfo.accessibleFacts.join(", ")}` : ""}${target ? ", destino disponível" : ""}${crawlerTarget ? ", travessia de borda por Rastejante" : ""}${lateralTarget ? targetEntry?.lateralSwapId ? ", troca lateral com aliado" : ", Movimento Lateral" : ""}${escalationTarget ? targetEntry?.escalationSwapId ? ", troca vertical por Escansão" : ", deslocamento por Escansão" : ""}${bioadhesionTarget ? targetEntry?.bioadhesionSwapId ? ", troca periférica por Bioadesão" : ", percurso do perímetro por Bioadesão" : ""}${arborealTarget ? ", travessia de dossel por Arborícola" : ""}${arborealSupport ? ", apoio de rota Arborícola" : ""}${phoresyTarget ? ", transporte por Forésia" : ""}${phoresyCarrier ? ", transportador aliado de Forésia" : ""}${serpentineTarget ? ", trajetória por Serpenteamento" : ""}${trailTarget ? ", extensão de Trilhas" : ""}${tigmotaxisTarget ? ", continuação por Tigmotaxia" : ""}${recoilTarget ? ", retorno por Recuo" : ""}${slidingTarget ? ", continuação por Deslizamento" : ""}${hypermetamorphosisTarget ? ", 🐞 geometria dispersiva por Hipermetamorfose" : ""}${massRecruitmentTarget ? ", 📣 captura coletiva por Recrutamento em Massa" : ""}${vivificationTarget ? radulaAction ? ", vivificação disponível: 👅 Rádula" : byssusAction ? ", vivificação disponível: 🧵 Bisso" : nicheBuildTarget ? ", vivificação disponível: 🧱 criar barreira por Construtor de Nicho" : nitrogenFixationTarget ? ", ação disponível: ☁️ Fixação de Nitrogênio" : zoochoryResourceTarget ? targetEntry?.fruitConsume ? ", vivificação disponível: consumir fruto zoocórico" : ", vivificação disponível: armazenar semente sinzoocórica" : selfVivificationTarget ? `, vivificação disponível: ${vivificationActions.map(vivificationLabel).join(", ")}` : organicRecyclingTarget ? ", vivificação disponível: reciclar fezes" : scavengingReproductionTarget ? has(actor, "Necrófago") ? ", vivificação disponível: Necrofagia" : ", vivificação disponível: Onívoro Oportunista" : coprophagyReproductionTarget ? ", vivificação disponível: Coprofagia" : ", vivificação disponível: Reprodução" : ""}${attackTarget ? parasitismTarget ? ", alvo de ataque por Parasitismo" : cannibalTarget ? ", alvo de Canibalismo" : granivoryReproductionTarget ? ", semente consumível por Granívoro com reprodução" : eggReproductionTarget ? has(actor, "Ovífagia") ? ", alvo de Ovífagia com reprodução" : ", ovo consumível por Onívoro Oportunista com reprodução" : predatoryReproductionTarget ? ", alvo de ataque com reprodução predatória" : specialAction?.type === "TENTACLE_PULL" ? ", alvo de ataque por Tentáculo Preênsil" : ", alvo de ataque" : ""}${manipulate ? `, destino para transferir terreno ${state.manipulation?.terrain === "fertile" ? "fértil" : "hostil"}` : ""}${build ? ", destino para construir barreira" : ""}${pheromoneTarget ? ", 👃 aliado alcançável por Feromônios" : ""}${bioluminescentLureTarget ? ", 🎣 presa atraível por Bioluminescência Predatória" : ""}${partner ? ", parceiro disponível" : ""}${aggressivePartner ? aggressiveCounter ? ", 🦆 parceiro adversário; contra-agressão letal" : ", 🦆 parceiro adversário para Cópula Agressiva" : ""}${filialCannibalTarget ? ", 🐹 cria filial consumível para restaurar Energia reprodutiva" : ""}${matriphagyTarget ? ", 🕷️ progenitor consumível por Matrifagia" : ""}${nurse ? ", cria disponível para Lactação" : ""}${eggPlacementTarget ? ", local disponível para postura amniótica" : ""}${ovoviviparousTarget ? ", local disponível para postura ovovivípara" : ""}${domesticTarget ? ", local disponível para descendente domesticado" : ""}${socialTarget ? ", membro disponível para sacrifício por Sociabilidade" : ""}${hierarchyRecommended ? ", 🐃 membro recomendado pela Hierarquia para sacrifício" : ""}${superBestMember ? ", 🐝 membro com melhor movimento sugerido pelo Superorganismo" : superMemberPulse ? ", membro sinalizado pelo Superorganismo" : ""}${superMoveTarget ? ", 🐝 movimento sugerido pelo Superorganismo" : ""}${serotoninTarget ? ", destino de reposicionamento por Serotonina" : ""}${cortexOffensive ? ", melhor posição ofensiva sugerida pelo Córtex Pré-Frontal" : ""}${cortexDefensive ? ", melhor posição defensiva sugerida pelo Córtex Pré-Frontal" : ""}`;
       const baseAccessibleLabel = label,
         accessibleLabel = terminalDeath
           ? `${baseAccessibleLabel}, morte determinada no próximo turno: ${terminalDeath}`
@@ -1351,11 +1383,16 @@ export function render(
           contextualTraits.get(p.id) ?? new Set(),
         );
         if (traitFrame.total > 8) cell.classList.add("trait-dense");
+        const displayOwner = p.chromaticCrypsis
+          ? p.owner === "blue"
+            ? "amber"
+            : "blue"
+          : p.owner;
         cell.append(
           make(
             "span",
             SYMBOLS[p.owner][p.rank],
-            `piece ${p.owner}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting && actionState.reason !== "Sem ação legal disponível" ? " waiting" : ""}`,
+            `piece ${displayOwner}${p.chromaticCrypsis ? ` chromatic-crypsis chromatic-owner-${p.owner}` : ""}${juvenile(state, p) ? " juvenile" : ""}${has(p, "Nanismo") ? " nanism" : ""}${has(p, "Gigantismo") ? " gigantism" : ""}${senescent(state, p) ? " senescent" : ""}${actionState?.waiting && actionState.reason !== "Sem ação legal disponível" ? " waiting" : ""}`,
           ),
         );
 
@@ -1408,7 +1445,25 @@ export function render(
         )
           statusBadges.push("🧸");
         if (p.webTrapped) statusBadges.push("🕸️⏳");
-        if (p.autotomyRecovery) statusBadges.push("✂️↻");
+        if (Number.isInteger(p.autotomyRecovery?.turnsRemaining))
+          statusBadges.push(`🦾${p.autotomyRecovery.turnsRemaining}`);
+        else if (p.autotomyRecovery) statusBadges.push("✂️↻");
+        if (p.chromaticCrypsis) statusBadges.push("🎨");
+        else if (
+          Number.isInteger(p.chromaticReadyRound) &&
+          p.chromaticReadyRound > currentRound
+        )
+          statusBadges.push("🎨⏳");
+        if (
+          Number.isInteger(p.tentacleReadyRound) &&
+          p.tentacleReadyRound > currentRound
+        )
+          statusBadges.push("〰️⏳");
+        if (
+          p.byssusAttached?.cell === square(p.r, p.c) &&
+          barrierAt(state, p.r, p.c)
+        )
+          statusBadges.push("🧵");
         if (p.hypermetamorphosisReady) statusBadges.push("🐞");
         if (
           Number.isInteger(p.hematophagyDepletedUntilRound) &&
