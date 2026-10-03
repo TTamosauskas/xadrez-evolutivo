@@ -83,7 +83,7 @@ export const ARENA_PRESETS = Object.freeze({
     { id: "dickinsonia", stage: "ediacaran", label: "Dickinsonia", traits: ["Predação", "Multicelularismo", "Simetria Bilateral", "Locomoção Primitiva"], note: "Na Arena, Predação representa a raiz heterotrófica do Ramo Animal; não implica predação macroscópica para Dickinsonia." },
     { id: "anomalocaris", stage: "cambrian", label: "Anomalocaris", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Carnívoro", "Carapaça"] },
     { id: "nautiloid", stage: "ordovician", label: "Nautiloide gigante", traits: ["Predação", "Multicelularismo", "Ingestão", "Molusco", "Jatopropulsão", "Percepção Espacial", "Carnívoro", "Ovíparo", "Camuflagem", "Biomineralização", "Carapaça", "Rádula", "Concha Camerada"] },
-    { id: "bivalve", stage: "ordovician", label: "Bivalve bissado", traits: ["Predação", "Multicelularismo", "Ingestão", "Molusco", "Percepção Espacial", "Carapaça", "Bisso", "Ovíparo"] },
+    { id: "bivalve", stage: "ordovician", label: "Bivalve bissado", traits: ["Predação", "Multicelularismo", "Ingestão", "Molusco", "Carapaça", "Bisso", "Ovíparo"] },
     { id: "coleoid", stage: "carboniferous", label: "Cefalópode coleoide", traits: ["Predação", "Multicelularismo", "Ingestão", "Molusco", "Jatopropulsão", "Percepção Espacial", "Corpo Gelatinoso", "Tinta", "Ventosas Quimiotáteis", "Rádula", "Carnívoro", "Ovíparo", "Camuflagem"] },
     { id: "eurypterid", stage: "silurian", label: "Euriptérido", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Locomoção Terrestre", "Carnívoro", "Carapaça"] },
     { id: "dunkleosteus", stage: "devonian", label: "Dunkleosteus", traits: ["Predação", "Vertebrado", "Locomoção Articulada", "Carnívoro", "Mandíbula", "Carapaça"] },
