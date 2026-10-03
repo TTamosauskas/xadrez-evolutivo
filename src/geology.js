@@ -7,6 +7,7 @@ import {
   scenarioHabitatProfile,
   scenarioInnovationWeight,
 } from "./scenarios.js";
+import { CHESS_FORMS, EVOLUTION_PATHS } from "./constants.js";
 
 export const NEGATIVE_TRAIT_RULES = Object.freeze({
   Esterilidade: { stage: "eoarchean", somatic: true },
@@ -850,6 +851,7 @@ export const TRAIT_DEPENDENCIES = {
     active: ["Vertebrado"],
   },
   Fotossíntese: { lineage: ["Respiração anaeróbia"] },
+  Dormência: { lineage: ["Fotossíntese"] },
   Predação: { lineage: ["Respiração anaeróbia"] },
   Embriófitas: { lineage: ["Fotossíntese"] },
   Traqueófitas: { lineage: ["Embriófitas"] },
@@ -1374,6 +1376,7 @@ export function normalizeMulticellularTraits(traits) {
 }
 
 export const PLANT_DERIVED_TRAITS = new Set([
+  "Dormência",
   "Embriófitas",
   "Estômatos",
   "Traqueófitas",
@@ -1555,6 +1558,7 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Endossimbiose: "shared",
   Biomineralização: "predation",
   "Imunidade Adaptativa": "predation",
+  Dormência: "photosynthesis",
   Estômatos: "photosynthesis",
   Xerofitismo: "photosynthesis",
   Endotermia: "predation",
@@ -2374,16 +2378,38 @@ export function rankMutationUnlocked(state) {
   return currentGeologicalStage(state).index >= geologicalStage("cambrian").index;
 }
 
+export function photosyntheticRankCeiling(profile) {
+  if (!profile?.traits?.includes("Fotossíntese"))
+    return profile?.rank ?? CHESS_FORMS.PAWN;
+  const traits = new Set(profile.traits),
+    multicellular = traits.has("Multicelularismo"),
+    climbingOrSeedPlant =
+      traits.has("Trepadeira") ||
+      traits.has("Gimnospermas") ||
+      traits.has("Angiospermas"),
+    seedPlant = traits.has("Gimnospermas") || traits.has("Angiospermas"),
+    flowering = traits.has("Angiospermas"),
+    woodyFlowering = flowering && traits.has("Madeira");
+  if (woodyFlowering) return CHESS_FORMS.QUEEN;
+  if (flowering) return CHESS_FORMS.ROOK;
+  if (seedPlant) return CHESS_FORMS.BISHOP;
+  if (climbingOrSeedPlant) return CHESS_FORMS.KNIGHT;
+  if (multicellular) return CHESS_FORMS.KING;
+  return CHESS_FORMS.PAWN;
+}
+
+export function photosyntheticRankUnlocked(profile, rank) {
+  if (!profile?.traits?.includes("Fotossíntese")) return false;
+  const path = EVOLUTION_PATHS.photosynthetic,
+    rankIndex = path.indexOf(rank),
+    ceilingIndex = path.indexOf(photosyntheticRankCeiling(profile));
+  return rankIndex >= 0 && rankIndex <= ceilingIndex;
+}
+
 export function normalizePhotosyntheticRank(profile) {
   if (!profile?.traits?.includes("Fotossíntese")) return profile;
-  const multicellular = profile.traits.includes("Multicelularismo"),
-    vascular = profile.traits.includes("Traqueófitas"),
-    allowed = vascular
-      ? new Set([0, 1, 2, 3, 4, 5])
-      : multicellular
-        ? new Set([0, 1, 2, 4])
-        : new Set([0, 4]);
-  if (!allowed.has(profile.rank)) profile.rank = 0;
+  if (!photosyntheticRankUnlocked(profile, profile.rank))
+    profile.rank = photosyntheticRankCeiling(profile);
   return profile;
 }
 
