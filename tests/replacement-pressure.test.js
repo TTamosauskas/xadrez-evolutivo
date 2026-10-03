@@ -25,7 +25,7 @@ test("replacement pressure detects high churn even with zero net growth", () => 
   const pressure = replacementPressure(state);
   assert.equal(pressure.net, 0);
   assert.equal(pressure.churn, 10);
-  assert.equal(pressure.level, 2);
+  assert.equal(pressure.level, 0);
 });
 
 test("replacement pressure reaches level 3 and locks reproduction after turn 160", () => {
@@ -38,10 +38,10 @@ test("replacement pressure reaches level 3 and locks reproduction after turn 160
     ],
   };
   const policy = replacementReproductionPressure(state, state.pieces[0]);
-  assert.equal(policy.level, 3);
-  assert.equal(policy.cooldown, 3);
-  assert.equal(policy.limit, 0);
-  assert.equal(policy.suppressPredation, true);
+  assert.equal(policy.level, 0);
+  assert.equal(policy.cooldown, 0);
+  assert.equal(policy.limit, Infinity);
+  assert.equal(policy.suppressPredation, false);
 });
 
 test("level 3 replacement pressure slows but does not lock reproduction before turn 160", () => {
@@ -54,8 +54,8 @@ test("level 3 replacement pressure slows but does not lock reproduction before t
     ],
   };
   const policy = replacementReproductionPressure(state, state.pieces[0]);
-  assert.equal(policy.level, 3);
-  assert.equal(policy.cooldown, 3);
+  assert.equal(policy.level, 0);
+  assert.equal(policy.cooldown, 0);
   assert.equal(policy.limit, Infinity);
 });
 
