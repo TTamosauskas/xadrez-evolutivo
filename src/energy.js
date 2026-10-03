@@ -19,15 +19,13 @@ export function movementEnergyCost(piece) {
 }
 
 export function reproductionEnergyCost(piece) {
-  if (
+  const base =
     piece?.rank === CHESS_FORMS.KING &&
     (purePredatoryBranch(piece) || canPhotosynthesize(piece))
-  )
-    return 5;
-  return (
-    REPRODUCTION_ENERGY_COSTS[piece?.rank] ??
-    REPRODUCTION_ENERGY_COSTS[0]
-  );
+      ? 5
+      : REPRODUCTION_ENERGY_COSTS[piece?.rank] ??
+        REPRODUCTION_ENERGY_COSTS[0];
+  return Math.max(0, base - (piece?.carnivoryNutrition ? 2 : 0));
 }
 
 export function energyCapacity(piece) {
