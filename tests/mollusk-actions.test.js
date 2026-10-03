@@ -19,6 +19,8 @@ test("Rádula turns adjacent fertility into energy without offspring", () => {
   s.geologicalStage="cambrian";
   s.board[square(4,5)]="fertile";
   const p=s.pieces[0], count=s.pieces.length;
+  p.energy=0;
+  p.energyCapacitySnapshot=4;
   assert.ok(radulaTargets(s,p).some(t=>t.r===4&&t.c===5));
   s=simulate(s,{type:"RADULA",id:p.id,r:4,c:5});
   assert.equal(s.board[square(4,5)],"neutral");
@@ -47,7 +49,10 @@ test("Tentáculo pulls prey and blocks its immediate counterattack", () => {
     {owner:"amber",r:4,c:7,rank:3,traits:mol()},
   ],12006);
   s.geologicalStage="jurassic";
-  const a=s.pieces[0], id=s.pieces[1].id, before=energyValue(a);
+  const a=s.pieces[0], id=s.pieces[1].id;
+  a.energy=4;
+  a.energyCapacitySnapshot=4;
+  const before=energyValue(a);
   const option=tentacleTargets(s,a).find(t=>t.targetId===id);
   assert.deepEqual([option.r,option.c],[4,5]);
   s=simulate(s,{type:"TENTACLE_PULL",id:a.id,targetId:id});
