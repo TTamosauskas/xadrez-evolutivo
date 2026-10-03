@@ -42,6 +42,37 @@ const assertNoFutureTraits = (piece, stageId) => {
   }
 };
 
+test("Vida na Terra never seeds mutations exclusive to the Mollusk body plan", () => {
+  const molluskSelectable = new Set(arenaSelectableTraits("animal", "Molusco")),
+    vertebrateSelectable = new Set(
+      arenaSelectableTraits("animal", "Vertebrado"),
+    ),
+    arthropodSelectable = new Set(
+      arenaSelectableTraits("animal", "Artrópode"),
+    ),
+    molluskOnly = [...molluskSelectable].filter(
+      (trait) =>
+        !vertebrateSelectable.has(trait) &&
+        !arthropodSelectable.has(trait),
+    );
+
+  assert.ok(molluskOnly.includes("Molusco"));
+  assert.ok(molluskOnly.includes("Jatopropulsão"));
+  assert.ok(molluskOnly.includes("Tinta"));
+
+  for (const stage of GEOLOGICAL_STAGES) {
+    if (stage.id === "hadean") continue;
+    const state = createPeriodState(stage.id, 9690, null, "earth");
+    for (const piece of state.pieces)
+      for (const trait of molluskOnly)
+        assert.equal(
+          piece.traits.includes(trait),
+          false,
+          `${stage.id}: fundador de Vida na Terra contém ${trait}`,
+        );
+  }
+});
+
 test("Vida na Terra usa fundadores corporais canônicos opostos do Cambriano em diante", () => {
   const stages = [
     "cambrian",
