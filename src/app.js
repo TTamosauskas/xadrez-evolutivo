@@ -408,6 +408,7 @@ $("board").addEventListener("click", (event) => {
   }
   if (
     actor?.owner === state.current &&
+    !actor.chromatophoreDisguise &&
     nicheConstructionTargets(state, actor).some(
       (target) => target.r === r && target.c === c,
     )
@@ -424,6 +425,7 @@ $("board").addEventListener("click", (event) => {
   }
   if (
     actor?.owner === state.current &&
+    !actor.chromatophoreDisguise &&
     p &&
     aggressivePartnersFor(state, actor).some((mate) => mate.id === p.id)
   ) {
@@ -432,6 +434,7 @@ $("board").addEventListener("click", (event) => {
   }
   if (
     actor?.owner === state.current &&
+    !actor.chromatophoreDisguise &&
     p &&
     partnersFor(state, actor).some((mate) => mate.id === p.id)
   ) {
@@ -440,6 +443,7 @@ $("board").addEventListener("click", (event) => {
   }
   if (
     actor?.owner === state.current &&
+    !actor.chromatophoreDisguise &&
     p &&
     nursingTargets(state, actor).some((child) => child.id === p.id)
   ) {
@@ -448,6 +452,7 @@ $("board").addEventListener("click", (event) => {
   }
   if (
     actor?.owner === state.current &&
+    !actor.chromatophoreDisguise &&
     ovoviviparousPlacementTargets(state, actor).some(
       (target) => target.r === r && target.c === c,
     )
