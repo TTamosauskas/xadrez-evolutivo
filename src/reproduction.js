@@ -1491,6 +1491,56 @@ function layPlantSeeds(ctx, parent, brood) {
   return laid;
 }
 
+export function monocarpicBloom(ctx, parent) {
+  const charges = Math.max(0, Math.min(4, parent?.monocarpismCharges ?? 0));
+  if (!parent || !has(parent, "Monocarpismo") || !charges) return 0;
+
+  const wanted = [0, 4, 6, 8, 10][charges],
+    cells = [];
+  for (let dr = -3; dr <= 3; dr++)
+    for (let dc = -3; dc <= 3; dc++) {
+      if (!dr && !dc) continue;
+      const r = parent.r + dr,
+        c = parent.c + dc;
+      if (
+        inside(r, c) &&
+        distance(parent, { r, c }) <= 3 &&
+        !occupied(ctx.state, r, c, parent) &&
+        offspringTerrainAllowed(ctx.state, parent, r, c) &&
+        !ctx.reserved.has(square(r, c))
+      )
+        cells.push({ r, c });
+    }
+
+  const targets = shuffle(ctx.state, cells).slice(0, Math.min(wanted, cells.length));
+  let laid = 0;
+  for (const target of targets) {
+    const profile = makeChildProfile(ctx.state, parent, null, parent);
+    ctx.state.plantSeeds.push({
+      id: ctx.state.nextPlantSeed++,
+      owner: parent.owner,
+      r: target.r,
+      c: target.c,
+      parentId: parent.id,
+      profile,
+      age: 0,
+      movesRemaining: 3,
+      sprouting: false,
+      sproutReadyRound: null,
+      zoochory: zoochoryMode(profile),
+      transport: null,
+      mirmecochoryMoved: false,
+    });
+    ctx.state.maxGenerationReached = Math.max(
+      ctx.state.maxGenerationReached,
+      profile.generation,
+    );
+    laid++;
+  }
+  parent.monocarpismCharges = 0;
+  return laid;
+}
+
 export function pieceLifeHistory(profile) {
   if (profile?.rank === CHESS_FORMS.KING && purePredatoryBranch(profile))
     return Object.freeze({ brood: 3, metabolism: 3, maturity: 1 });
@@ -2100,7 +2150,8 @@ export function reproduce(
         const hadeanBasalFertility =
           state.geologicalStage === "hadean" && resourceKind === "fertile";
         if (hadeanBasalFertility) return;
-        const baseMetabolism = pieceLifeHistory(piece).metabolism,
+        const nutritionUsed = !!piece.carnivoryNutrition,
+          baseMetabolism = pieceLifeHistory(piece).metabolism,
           recovery = recoveryRounds(piece, feeder),
           cost = reproductionEnergyCost(piece),
           advanced = endosymbioticAdvanceIds.has(piece.id);
@@ -2125,6 +2176,19 @@ export function reproduce(
           );
         }
         piece.lastEnergyActivityTurn = state.turn;
+        if (nutritionUsed) {
+          delete piece.carnivoryNutrition;
+          emitPassiveEffect(
+            state,
+            "Carnivoria",
+            "🥓 A reserva nutricional reduziu em 2 o custo desta reprodução.",
+            {
+              pieceId: piece.id,
+              outcome: "spent-carnivory-nutrition",
+              value: 2,
+            },
+          );
+        }
         if (
           has(piece, "Ruminante") &&
           energyValue(piece) < reproductionEnergyCost(piece)
