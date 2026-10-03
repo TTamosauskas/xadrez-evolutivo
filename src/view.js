@@ -98,6 +98,8 @@ const VIVIFICATION_LABELS = Object.freeze({
   PUPATE: "Metamorfose",
   DETOXIFY: "⚗️ Detoxificar",
   PARASITIZE: "Parasitismo",
+  MONOCARP_STORE: "🕰️ Acumular floração",
+  MONOCARP_BLOOM: "🕰️ Florescer e morrer",
   REJECT_BROOD_PARASITE: "🪺 Rejeitar ovo parasita",
 });
 const vivificationLabel = (action) =>
