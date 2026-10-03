@@ -190,7 +190,7 @@ export const TRAITS = {
   ],
   "Ventosas Quimiotáteis": [
     "🫳",
-    "Capturas adjacentes agarram a presa e impedem fugas por Tinta, Adrenalina, Movimento proteano e Ofuscamento por movimento; Autotomia continua funcional.",
+    "Capturas adjacentes agarram a presa e impedem fugas reativas baseadas em deslocamento; Autotomia continua funcional.",
   ],
   "Regeneração de Braços": [
     "🦾",
