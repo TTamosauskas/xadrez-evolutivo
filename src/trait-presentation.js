@@ -11,7 +11,7 @@ export const TRAIT_SUMMARIES = Object.freeze({
   Vertebrado: "Libera formas até Rainha e Locomoção Articulada.",
   Adrenalina: "Tem 1/6 de chance de fugir diagonalmente de uma captura e deixar o agressor avançar.",
   Artrópode: "Libera formas até Bispo e dobra a prole-base, até 6.",
-  Molusco: "Em ambientes aquáticos pode ocupar Casas Neutras; Jatopropulsão libera Bispo e Torre, e Bisso libera Bispo.",
+  Molusco: "Em ambientes aquáticos pode ocupar Casas Neutras; Jatopropulsão libera Bispo e Torre.",
   Rádula: "Raspa uma Casa Fértil ortogonal adjacente, tornando-a neutra e recuperando até 2 Energia.",
   Bisso: "Permite ocupar Barreiras Naturais e de Evento sem destruí-las; libera Bispo na rota bivalve.",
   "Concha Camerada": "Com Carapaça, aumenta para 50% a chance de bloquear risco ambiental de Casa Hostil.",
