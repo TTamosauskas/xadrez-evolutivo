@@ -1431,7 +1431,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     basalFertility = canUseBasalFertility(state, p),
     canReproduce =
       reproductionReady(state, p) || paedogenesisReady(state, p);
-  const sharedBiofilmResource = biofilmResource(state, p);
+  const sharedBiofilmResource = biofilmResource(state, p),
+    mycorrhizaReady =
+      has(p, "Micorrizas") &&
+      has(p, "Fotossíntese") &&
+      round(state) >= (p.mycorrhizaReadyRound ?? 0);
   const storedPredationEnergy = !!p.predationEnergy;
   if (
     canReproduce &&
@@ -1445,6 +1449,27 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     (!collector || (!has(p, "Esterilidade") && p.seedUsedTurn !== state.turn))
   )
     targets.push({ r: p.r, c: p.c, path: [], stay: true, capture: false });
+  if (canReproduce && mycorrhizaReady)
+    for (const [dr, dc] of ORTH) {
+      const r = p.r + dr,
+        c = p.c + dc;
+      if (
+        inside(r, c) &&
+        terrain(state, r, c) === "neutral" &&
+        !at(state, r, c) &&
+        !eggAt(state, r, c) &&
+        !plantSeedAt(state, r, c) &&
+        !barrierAt(state, r, c)
+      )
+        targets.push({
+          r,
+          c,
+          path: [],
+          stay: true,
+          capture: false,
+          mycorrhiza: true,
+        });
+    }
   if (
     canReproduce &&
     canUseFertileResource(state, p) &&
