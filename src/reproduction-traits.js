@@ -302,7 +302,7 @@ export function canPupate(state, piece) {
     juvenile(state, piece) &&
     !piece.metamorphosisUsed &&
     !Number.isInteger(piece.pupaUntilRound) &&
-    [0, 1].includes(piece.rank)
+    [0, 1, 4].includes(piece.rank)
   );
 }
 
