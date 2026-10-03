@@ -128,7 +128,13 @@ test("Serpenteamento alcança casas livres das linhas horizontais superior e inf
 test("Serpenteamento interrompe a rota diante de peça, barreira e casa hostil", () => {
   const state = fixture([
       { owner: "blue", r: 4, c: 4, rank: 4 },
-      { owner: "amber", r: 3, c: 2, rank: 4 },
+      {
+        owner: "amber",
+        r: 3,
+        c: 2,
+        rank: 0,
+        traits: ["Fotossíntese"],
+      },
       { owner: "amber", r: 0, c: 0, rank: 4 },
     ]),
     actor = exactTraits(
