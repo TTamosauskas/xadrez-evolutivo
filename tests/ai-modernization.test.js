@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   AI_ACTION_TYPES,
+  AI_MOVE_MECHANIC_FLAGS,
   AI_SEARCH_PROFILES,
   chooseAction,
   captureGeometryPriority,
@@ -244,7 +245,6 @@ test("long AI benchmarks use named difficulty profiles instead of tiny search ca
     "./simulate.js",
     "../scripts/aquatic-founder-benchmark.js",
     "../scripts/land-transition-benchmark.js",
-    "../scripts/ai-intelligence-benchmark.js",
   ]) {
     const source = readFileSync(new URL(relative, import.meta.url), "utf8");
     assert.match(source, /AI_DIFFICULTY/);
@@ -254,6 +254,52 @@ test("long AI benchmarks use named difficulty profiles instead of tiny search ca
     assert.doesNotMatch(source, /now:\s*\(\)\s*=>\s*0/);
   }
 });
+
+test("dedicated AI intelligence benchmark compares named difficulties with real timing", () => {
+  const source = readFileSync(
+    new URL("../scripts/ai-intelligence-benchmark.js", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /AI_BENCH_DIFFICULTIES/);
+  assert.match(source, /easy,medium,hard/);
+  assert.doesNotMatch(source, /now:\s*\(\)\s*=>\s*0/);
+  assert.doesNotMatch(source, /budget:\s*5/);
+  assert.doesNotMatch(source, /maxNodes:\s*(?:12|30)/);
+});
+
+test("AI acknowledges every special boolean movement flag emitted by movement generators", () => {
+  const sources = [
+      "../src/moves.js",
+      "../src/locomotion.js",
+    ].map((relative) =>
+      readFileSync(new URL(relative, import.meta.url), "utf8"),
+    ),
+    emitted = [
+      ...new Set(
+        sources.flatMap((source) =>
+          [...source.matchAll(/\b([A-Za-z][A-Za-z0-9_]*)\s*:\s*true\b/g)].map(
+            (match) => match[1],
+          ),
+        ),
+      ),
+    ].filter(
+      (flag) =>
+        !new Set([
+          "ignoreChain",
+          "ignoreTurn",
+          "noContinuation",
+          "stay",
+          "waiting",
+        ]).has(flag),
+    ),
+    known = new Set(AI_MOVE_MECHANIC_FLAGS);
+
+  assert.deepEqual(
+    emitted.filter((flag) => !known.has(flag)).sort(),
+    [],
+  );
+});
+
 
 
 test("medium and hard convert a stalled capture opportunity instead of defaulting to easy reproduction", () => {

@@ -73,6 +73,41 @@ export const AI_ACTION_TYPES = Object.freeze([
   "PASS",
 ]);
 
+export const AI_MOVE_MECHANIC_FLAGS = Object.freeze([
+  "arboreal",
+  "bioadhesion",
+  "botanicalCapture",
+  "botanicalPredation",
+  "cephalization",
+  "crawler",
+  "cutaneous",
+  "echolocation",
+  "eggCapture",
+  "escalation",
+  "filialCannibal",
+  "fruitConsume",
+  "haustoriumDrain",
+  "hypermetamorphosis",
+  "jet",
+  "jump",
+  "knightCorrection",
+  "lateral",
+  "massRecruitment",
+  "matriphagy",
+  "mycorrhiza",
+  "phoresy",
+  "recoil",
+  "seedCapture",
+  "serpentine",
+  "sliding",
+  "synzooCollect",
+  "tigmotaxis",
+  "trail",
+  "trailExtension",
+  "vascular",
+  "webEscape",
+]);
+
 export const AI_SEARCH_PROFILES = Object.freeze({
   easy: Object.freeze({ budget: 0, maxNodes: 0, depth: 0, branchWidth: 0 }),
   medium: Object.freeze({ budget: 180, maxNodes: 320, depth: 1, branchWidth: 10 }),
@@ -347,12 +382,18 @@ function moveMechanicPriority(state, piece, target) {
   if (target.hypermetamorphosis) value += 3;
   if (target.massRecruitment) value += 4;
   if (target.cephalization) value += 3;
+  if (target.echolocation) value += 3;
+  if (target.recoil) value += 3;
+  if (target.sliding) value += 2;
+  if (target.tigmotaxis) value += 2;
+  if (target.trailExtension) value += 3;
+  else if (target.trail) value += 2;
+  if (target.knightCorrection) value += 1;
   if (target.phoresy) value += 3;
   if (target.arboreal) value += 3;
   if (target.bioadhesion) value += 3;
   if (target.escalation) value += 3;
   if (target.serpentine) value += 3;
-  if (target.trailExtension) value += 3;
   if (target.crawler || target.lateral || target.jet || target.jump) value += 2;
   if (
     target.stay &&
