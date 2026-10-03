@@ -236,23 +236,41 @@ test("Sacos Aéreos impose Knight as the minimum expressed offspring rank", () =
 });
 
 
-test("photosynthetic lineages are restricted to King and Pawn forms", () => {
-  const king = { rank: 4, traits: ["Fotossíntese"] },
-    pawn = { rank: 0, traits: ["Fotossíntese"] },
-    knightPlant = { rank: 1, traits: ["Fotossíntese"] },
-    queenPlant = { rank: 5, traits: ["Fotossíntese"] },
+test("photosynthetic forms normalize to the highest botanically unlocked form", () => {
+  const basalKing = { rank: 4, traits: ["Fotossíntese"] },
+    multicellularKing = {
+      rank: 4,
+      traits: ["Fotossíntese", "Multicelularismo"],
+    },
+    knightPlant = {
+      rank: 1,
+      traits: ["Fotossíntese", "Multicelularismo", "Trepadeira"],
+    },
+    queenPlant = {
+      rank: 5,
+      traits: [
+        "Fotossíntese",
+        "Multicelularismo",
+        "Gimnospermas",
+        "Angiospermas",
+        "Madeira",
+      ],
+    },
     animal = { rank: 1, traits: ["Predação"] };
-  assert.equal(normalizePhotosyntheticRank(king).rank, 4);
-  assert.equal(normalizePhotosyntheticRank(pawn).rank, 0);
-  assert.equal(normalizePhotosyntheticRank(knightPlant).rank, 0);
-  assert.equal(normalizePhotosyntheticRank(queenPlant).rank, 0);
+  assert.equal(normalizePhotosyntheticRank(basalKing).rank, 0);
+  assert.equal(normalizePhotosyntheticRank(multicellularKing).rank, 4);
+  assert.equal(normalizePhotosyntheticRank(knightPlant).rank, 1);
+  assert.equal(normalizePhotosyntheticRank(queenPlant).rank, 5);
   assert.equal(normalizePhotosyntheticRank(animal).rank, 1);
 });
 
 test("photosynthetic fecundity uses the calibrated 3 to 2 curve", () => {
   assert.equal(
-    reproductiveOutput({ rank: 4, traits: ["Fotossíntese"] }),
-    1,
+    reproductiveOutput({
+      rank: 4,
+      traits: ["Fotossíntese", "Multicelularismo"],
+    }),
+    3,
   );
   assert.equal(
     reproductiveOutput({ rank: 0, traits: ["Fotossíntese"] }),

@@ -24,6 +24,7 @@ import {
   aquaticTerrainCell,
   normalizeActiveTraits,
   normalizePhotosyntheticRank,
+  photosyntheticRankCeiling,
   PLANT_DERIVED_TRAITS,
   PLANT_INCOMPATIBLE_TRAITS,
   TRAIT_BRANCH_SCOPE,
@@ -1797,7 +1798,11 @@ function previewFounderProfiles(stageIndex) {
     return {
       historicalTraits,
       primary: {
-        rank: prePrimitiveLocomotion ? 4 : 0,
+        rank: plantTraits.includes("Fotossíntese")
+          ? photosyntheticRankCeiling({ traits: plantTraits })
+          : prePrimitiveLocomotion
+            ? 4
+            : 0,
         traits: plantTraits,
         ancestry: plantAncestry,
         recessiveTraits: earthFounderRecessives(
@@ -1857,7 +1862,11 @@ function previewFounderProfiles(stageIndex) {
   return {
     historicalTraits: [...new Set(historicalTraits)],
     primary: {
-      rank: prePrimitiveLocomotion ? 4 : 0,
+      rank: plantTraits.includes("Fotossíntese")
+        ? photosyntheticRankCeiling({ traits: plantTraits })
+        : prePrimitiveLocomotion
+          ? 4
+          : 0,
       traits: normalizeActiveTraits(plantTraits, "Fotossíntese"),
       ancestry: [...new Set(plantTraits)],
       recessiveTraits: earthFounderRecessives(

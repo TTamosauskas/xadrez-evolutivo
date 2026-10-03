@@ -4,14 +4,14 @@ import { context } from "../src/engine.js";
 import { tickReproduction } from "../src/reproduction.js";
 import { fixture } from "./helpers.js";
 
-function seedAt(state, r, c) {
+function seedAt(state, r, c, traits = []) {
   state.plantSeeds = [{
     id: state.nextPlantSeed++,
     owner: "blue",
     r,
     c,
     parentId: 1,
-    profile: { traits: [] },
+    profile: { traits },
     age: 0,
     movesRemaining: 3,
     sprouting: false,
@@ -40,7 +40,7 @@ function eggAtCell(state, r, c) {
 
 test("sementes e ovos são eliminados imediatamente em casas letais", () => {
   const seedState = fixture([], 1001);
-  seedAt(seedState, 3, 3);
+  seedAt(seedState, 3, 3, ["Fotossíntese", "Dormência"]);
   seedState.event = {
     id: "test-lethal",
     hazards: [27],
@@ -62,6 +62,25 @@ test("sementes e ovos são eliminados imediatamente em casas letais", () => {
   tickReproduction(context(eggState));
   assert.equal(eggState.eggs.length, 0);
   assert.ok(eggState.logs.some((entry) => /Ovo.*ambiente letal/.test(entry.text)));
+});
+
+test("Dormência mantém sementes fotossintéticas imóveis e protegidas em terreno hostil", () => {
+  const state = fixture([], 1);
+  seedAt(state, 3, 3, ["Fotossíntese", "Dormência"]);
+  state.board[27] = "hostile";
+  state.rng = 1;
+
+  tickReproduction(context(state));
+
+  assert.equal(state.plantSeeds.length, 1);
+  assert.equal(state.plantSeeds[0].age, 0);
+  assert.equal(state.plantSeeds[0].movesRemaining, 3);
+  assert.equal(state.plantSeeds[0].sprouting, false);
+
+  state.board[27] = "fertile";
+  state.turn = 2;
+  tickReproduction(context(state));
+  assert.equal(state.plantSeeds[0].age, 1);
 });
 
 test("sementes fazem teste de mortalidade de 50% em contato com casa hostil", () => {

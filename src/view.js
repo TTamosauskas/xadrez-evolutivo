@@ -111,7 +111,6 @@ const WAIT_STATUS_LABELS = Object.freeze({
   "Energia insuficiente": "energia insuficiente",
   Hibernação: "hibernação",
   "Descanso por Mutação Disfuncional": "mutação disfuncional",
-  "Dormência em terreno hostil": "dormência em terreno hostil",
   "Maturidade sexual": "maturidade sexual",
   "Sem ação legal disponível": "nenhuma ação disponível",
 });

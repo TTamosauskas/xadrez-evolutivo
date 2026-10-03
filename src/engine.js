@@ -1125,7 +1125,6 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
     (!!organicResidueAt(state, r, c) && organicResidueHazardousTo(piece));
   if (
     hazardous &&
-    !has(piece, "Dormência") &&
     !(
       piece.decompositionImmunity &&
       piece.decompositionImmunity.cell === destination &&
@@ -3676,7 +3675,6 @@ function executeMove(ctx, action) {
         (has(p, "Voo") || target.arboreal || target.phoresy) &&
         (r !== target.r || c !== target.c)
       ) &&
-      !(has(p, "Dormência") && r === target.r && c === target.c) &&
       !(
         p.decompositionImmunity &&
         p.decompositionImmunity.cell === square(r, c) &&
@@ -4705,7 +4703,6 @@ function executeMove(ctx, action) {
       carcassDisturbanceHazardousTo(state, p, p.r, p.c) ||
       (!!organicResidueAt(state, p.r, p.c) &&
         organicResidueHazardousTo(p))) &&
-    !has(p, "Dormência") &&
     !(
       p.decompositionImmunity &&
       p.decompositionImmunity.cell === cell &&

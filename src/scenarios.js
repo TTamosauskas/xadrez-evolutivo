@@ -39,12 +39,12 @@ export const EARTH_FOUNDER_GENOMES = Object.freeze({
   },
   siderian: {
     plant: ["Fotossíntese", "Reparo Celular", "Dormência"],
-    animal: ["Predação", "Reparo Celular", "Dormência"],
+    animal: ["Predação", "Reparo Celular"],
     rank: 4,
   },
   rhyacian: {
     plant: ["Fotossíntese", "Reparo Celular", "Dormência", "Respiração aeróbia", "Resistência"],
-    animal: ["Predação", "Reparo Celular", "Dormência", "Respiração aeróbia", "Resistência"],
+    animal: ["Predação", "Reparo Celular", "Respiração aeróbia", "Resistência"],
     rank: 4,
   },
   orosirian: {

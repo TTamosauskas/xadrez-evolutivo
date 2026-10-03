@@ -2,18 +2,28 @@ import {
   ENERGY_CAPACITIES,
   MOVEMENT_ENERGY_COSTS,
   REPRODUCTION_ENERGY_COSTS,
+  CHESS_FORMS,
+  canPhotosynthesize,
   purePredatoryBranch,
 } from "./constants.js";
 
 const hasTrait = (piece, trait) => piece?.traits?.includes(trait) ?? false;
 
 export function movementEnergyCost(piece) {
-  if (piece?.rank === 4 && purePredatoryBranch(piece)) return 1;
+  if (
+    piece?.rank === CHESS_FORMS.KING &&
+    (purePredatoryBranch(piece) || canPhotosynthesize(piece))
+  )
+    return 1;
   return MOVEMENT_ENERGY_COSTS[piece?.rank] ?? MOVEMENT_ENERGY_COSTS[0];
 }
 
 export function reproductionEnergyCost(piece) {
-  if (piece?.rank === 4 && purePredatoryBranch(piece)) return 5;
+  if (
+    piece?.rank === CHESS_FORMS.KING &&
+    (purePredatoryBranch(piece) || canPhotosynthesize(piece))
+  )
+    return 5;
   return (
     REPRODUCTION_ENERGY_COSTS[piece?.rank] ??
     REPRODUCTION_ENERGY_COSTS[0]
@@ -22,7 +32,8 @@ export function reproductionEnergyCost(piece) {
 
 export function energyCapacity(piece) {
   const base =
-    piece?.rank === 4 && purePredatoryBranch(piece)
+    piece?.rank === CHESS_FORMS.KING &&
+    (purePredatoryBranch(piece) || canPhotosynthesize(piece))
       ? 8
       : ENERGY_CAPACITIES[piece?.rank] ?? ENERGY_CAPACITIES[0];
   return base + (hasTrait(piece, "Endorfinas") ? movementEnergyCost(piece) : 0);

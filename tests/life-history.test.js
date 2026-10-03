@@ -56,6 +56,23 @@ test("Rei predatório basal é mais eficiente que Cavalo sem aumentar a ninhada"
   assert.equal(negativeMutationChance(knight), 1 / 3);
 });
 
+test("Rei fotossintético multicelular mantém economia de forma pequena inicial", () => {
+  const king = {
+    rank: 4,
+    traits: ["Fotossíntese", "Multicelularismo", "Reparo Celular"],
+  };
+
+  assert.equal(energyCapacity(king), 8);
+  assert.equal(movementEnergyCost(king), 1);
+  assert.equal(reproductionEnergyCost(king), 5);
+  assert.deepEqual(pieceLifeHistory(king), {
+    brood: 3,
+    metabolism: 4,
+    maturity: 2,
+  });
+  assert.equal(reproductiveOutput(king), 3);
+});
+
 test("childhood begins only after Multicelularismo and Precocidade Sexual shortens it", () => {
   const unicellular = fixture([
       { owner: "blue", r: 4, c: 4, rank: 5, traits: ["Fotossíntese"] },

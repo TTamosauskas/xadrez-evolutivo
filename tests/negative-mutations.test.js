@@ -117,7 +117,7 @@ test("gigantism halves long-range locomotion but preserves capture range", () =>
   );
 });
 
-test("nanism forces pawn form", () => {
+test("nanism forces the basal King form in its animal lineage", () => {
   const s = createState(9, {
       geologicalStage: "cambrian",
       naturalBarriers: false,
@@ -127,12 +127,7 @@ test("nanism forces pawn form", () => {
       traits: [...animalTraits, "Nanismo"],
     });
   assert.equal(p.rank, 4);
-
-  const plant = newPiece(s, "amber", 3, 3, {
-    rank: 5,
-    traits: ["Fotossíntese", "Multicelularismo", "Nanismo"],
-  });
-  assert.equal(plant.rank, 0);
+  assert.equal(p.traits.includes("Nanismo"), true);
 });
 
 test("only-child is a lifetime one-offspring limit and respiratory insufficiency creates Energy debt", () => {

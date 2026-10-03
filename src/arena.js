@@ -1,4 +1,4 @@
-import { TRAITS } from "./constants.js";
+import { EVOLUTION_PATHS, TRAITS } from "./constants.js";
 import {
   MULTICELLULAR_DEPENDENT_TRAITS,
   PLANT_DERIVED_TRAITS,
@@ -7,6 +7,7 @@ import {
   TRAIT_BRANCH_SCOPE,
   NEGATIVE_TRAITS,
   normalizeActiveTraits,
+  photosyntheticRankCeiling,
   traitCombinationValid,
 } from "./geology.js";
 import { ARENA_ENGINEERING_CHANGES } from "./scenarios.js";
@@ -67,7 +68,7 @@ const order = new Map(Object.keys(TRAITS).map((trait, index) => [trait, index]))
 
 export const ARENA_PRESETS = Object.freeze({
   animal: [
-    { id: "microbial-predator", stage: "archean", label: "Predador microbiano", traits: ["Predação", "Transferência Horizontal", "Dormência"] },
+    { id: "microbial-predator", stage: "archean", label: "Predador microbiano", traits: ["Predação", "Transferência Horizontal"] },
     { id: "protoanimal", stage: "proterozoic", label: "Protoanimal filtrador", traits: ["Predação", "Multicelularismo", "Ingestão", "Respiração aeróbia", "Reprodução Sexuada"] },
     { id: "dickinsonia", stage: "ediacaran", label: "Dickinsonia", traits: ["Predação", "Multicelularismo", "Simetria Bilateral", "Locomoção Primitiva"], note: "Na Arena, Predação representa a raiz heterotrófica do Ramo Animal; não implica predação macroscópica para Dickinsonia." },
     { id: "anomalocaris", stage: "cambrian", label: "Anomalocaris", traits: ["Predação", "Artrópode", "Locomoção Articulada", "Percepção Espacial", "Carnívoro", "Carapaça"] },
@@ -303,11 +304,12 @@ export function arenaAllowedRanks(genome, branchId) {
 
   let allowed;
   if (branchId === "plant") {
-    allowed = completed.includes("Traqueófitas")
-      ? [...ARENA_RANKS]
-      : completed.includes("Multicelularismo")
-        ? [0, 1, 2, 4]
-        : [0, 4];
+    const ceiling = photosyntheticRankCeiling({ traits: completed }),
+      ceilingIndex = EVOLUTION_PATHS.photosynthetic.indexOf(ceiling);
+    allowed = EVOLUTION_PATHS.photosynthetic.slice(
+      0,
+      Math.max(0, ceilingIndex) + 1,
+    );
   } else {
     const articulated = completed.includes("Locomoção Articulada");
     if (articulated && completed.includes("Vertebrado"))
@@ -350,14 +352,29 @@ export function arenaRankRestrictionReason(genome, rank, branchId) {
   if (completed.includes("Predação em Massa") && ![3, 5].includes(rank))
     return "Predação em Massa exige uma forma grande: Torre ou Rainha.";
   if (branchId === "plant") {
-    if (!completed.includes("Multicelularismo") && ![0, 4].includes(rank))
-      return "O ramo vegetal precisa de Multicelularismo para formas derivadas.";
+    if (rank === 4 && !completed.includes("Multicelularismo"))
+      return "Rei vegetal exige Multicelularismo.";
     if (
-      completed.includes("Multicelularismo") &&
-      !completed.includes("Traqueófitas") &&
-      [3, 5].includes(rank)
+      rank === 1 &&
+      !["Trepadeira", "Gimnospermas", "Angiospermas"].some((trait) =>
+        completed.includes(trait),
+      )
     )
-      return "Torre e Rainha vegetais exigem Traqueófitas.";
+      return "Cavalo vegetal exige Trepadeira ou uma inovação posterior de planta com sementes.";
+    if (
+      rank === 2 &&
+      !["Gimnospermas", "Angiospermas"].some((trait) =>
+        completed.includes(trait),
+      )
+    )
+      return "Bispo vegetal exige Gimnospermas ou Angiospermas.";
+    if (rank === 3 && !completed.includes("Angiospermas"))
+      return "Torre vegetal exige Angiospermas.";
+    if (
+      rank === 5 &&
+      (!completed.includes("Angiospermas") || !completed.includes("Madeira"))
+    )
+      return "Rainha vegetal exige Angiospermas e Madeira.";
   } else {
     if (rank === 0)
       return "Peão é exclusivo do ramo fotossintético.";

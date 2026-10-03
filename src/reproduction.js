@@ -3,6 +3,7 @@ import {
   PIECE_LIFE_HISTORY,
   PIECES,
   TRAITS,
+  CHESS_FORMS,
   has,
   inside,
   square,
@@ -74,9 +75,9 @@ import {
   deleteriousMutationUnlocked,
   negativeTraitUnlocked,
   innovationWeight,
-  pawnMutationUnlocked,
   rankMutationUnlocked,
   normalizePhotosyntheticRank,
+  photosyntheticRankUnlocked,
   traitLossAllowed,
   traitUnlocked,
   aquaticFertilityRegime,
@@ -175,12 +176,8 @@ function nextDerivedRank(piece) {
   const next = nextEvolutionaryForm(piece);
   if (next === null) return null;
 
-  if (has(piece, "Fotossíntese")) {
-    if (!has(piece, "Multicelularismo")) return null;
-    if ([1, 2].includes(next)) return next;
-    if ([3, 5].includes(next) && has(piece, "Traqueófitas")) return next;
-    return null;
-  }
+  if (has(piece, "Fotossíntese"))
+    return photosyntheticRankUnlocked(piece, next) ? next : null;
 
   if (!has(piece, "Locomoção Articulada")) return null;
   return has(piece, "Vertebrado") || has(piece, "Artrópode") ? next : null;
@@ -279,23 +276,13 @@ function mutation(
   excludedTraits = null,
   forcedGeneGain = null,
 ) {
-  const gains = [];
-  if (
-    p.rank === 4 &&
-    canPhotosynthesize(p) &&
-    (pawnMutationUnlocked(state, p) ||
-      (has(p, "Fotossíntese") && has(p, "Multicelularismo")))
-  )
-    gains.push({ rank: 0, weight: 1 });
-  else {
-    const plantRankMutation =
-        has(p, "Fotossíntese") && has(p, "Multicelularismo"),
-      animalRankMutation =
-        !has(p, "Fotossíntese") && rankMutationUnlocked(state);
-    if (plantRankMutation || animalRankMutation) {
-      const nextRank = nextDerivedRank(p);
-      if (nextRank !== null) gains.push({ rank: nextRank, weight: 1 });
-    }
+  const gains = [],
+    plantRankMutation = has(p, "Fotossíntese"),
+    animalRankMutation =
+      !has(p, "Fotossíntese") && rankMutationUnlocked(state);
+  if (plantRankMutation || animalRankMutation) {
+    const nextRank = nextDerivedRank(p);
+    if (nextRank !== null) gains.push({ rank: nextRank, weight: 1 });
   }
 
   for (const trait of genomeGainOptions(p).filter((trait) =>
@@ -723,7 +710,6 @@ function complementaryArcheanEnergyBranch(state, child) {
 
 function differentiatedRank(state, child) {
   if (!child || has(child, "Nanismo")) return null;
-  if (child.rank === 4 && canPhotosynthesize(child)) return 0;
   const next = nextDerivedRank(child);
   if (next === null) return null;
   if (canPhotosynthesize(child)) return next;
@@ -1283,6 +1269,11 @@ function propaguleSurvivesEnvironment(state, propagule, kind) {
 
   if (terrain(state, propagule.r, propagule.c) !== "hostile")
     return true;
+  if (
+    kind === "seed" &&
+    has(propagule.profile, "Dormência")
+  )
+    return true;
 
   const now = round(state);
   if (propagule.hostileRiskRound === now) return true;
@@ -1501,8 +1492,10 @@ function layPlantSeeds(ctx, parent, brood) {
 }
 
 export function pieceLifeHistory(profile) {
-  if (profile?.rank === 4 && purePredatoryBranch(profile))
+  if (profile?.rank === CHESS_FORMS.KING && purePredatoryBranch(profile))
     return Object.freeze({ brood: 3, metabolism: 3, maturity: 1 });
+  if (profile?.rank === CHESS_FORMS.KING && canPhotosynthesize(profile))
+    return Object.freeze({ brood: 3, metabolism: 4, maturity: 2 });
   return (
     PIECE_LIFE_HISTORY[profile?.rank] ??
     PIECE_LIFE_HISTORY[0]
@@ -1536,13 +1529,14 @@ export function sexualMaturityRounds(profile) {
 }
 
 export function reproductiveOutput(profile) {
-  if (profile?.rank === 4 && purePredatoryBranch(profile)) return 3;
+  if (profile?.rank === CHESS_FORMS.KING && purePredatoryBranch(profile))
+    return 3;
   if (!has(profile, "Fotossíntese"))
     return BIRTH_RATES[profile.rank];
   const advanced = ["Traqueófitas", "Gimnospermas", "Angiospermas"].some(
       (trait) => has(profile, trait),
     ),
-    base = profile.rank === 4 ? 1 : advanced ? 2 : 3;
+    base = advanced ? 2 : 3;
   return Math.min(4, base);
 }
 
@@ -2806,6 +2800,12 @@ export function tickReproduction(ctx) {
 
   for (const seed of [...state.plantSeeds]) {
     if (!resolveSeedEnvironment(state, seed)) continue;
+    const dormantSeed =
+      !seed.transport &&
+      terrain(state, seed.r, seed.c) === "hostile" &&
+      has(seed.profile, "Dormência");
+    if (dormantSeed) continue;
+
     if (seed.transport?.kind === "endozoocoria") {
       if (now < seed.transport.releaseRound) continue;
       const cell = seed.transport.cell,
