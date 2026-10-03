@@ -372,7 +372,35 @@ export const TRAITS = {
   ],
   Haustório: [
     "🪝",
-    "Permite consumir uma criatura fotossintética inimiga adjacente sem se deslocar. Uma captura bem-sucedida pode gerar um descendente por reprodução predatória.",
+    "Permite drenar uma Casa Fértil ocupada por uma peça fotossintética inimiga adjacente sem se deslocar; a peça permanece viva e o atacante recupera 1 Energia.",
+  ],
+  Carnivoria: [
+    "🥓",
+    "Permite capturar uma criatura inimiga não fotossintética adjacente sem se deslocar. A digestão gera uma reserva nutricional que reduz em 2 o custo da próxima reprodução.",
+  ],
+  Hemiepifitismo: [
+    "🪢",
+    "Permite capturar peças fotossintéticas inimigas usando a geometria de captura da forma; a interação representa substituição competitiva do hospedeiro e não gera Vivificação predatória.",
+  ],
+  Monocarpismo: [
+    "🕰️",
+    "Permite acumular até quatro investimentos reprodutivos e convertê-los em uma floração terminal de até 10 descendentes distribuídos a até três casas; a planta morre após a floração.",
+  ],
+  Sismonastia: [
+    "✔️",
+    "Ao sofrer uma tentativa de captura, tem 25% de chance de fechar estruturas e impedir a captura. Após funcionar, suspende Fotossíntese expansiva e reprodução até o próximo turno próprio.",
+  ],
+  "Polinização Deceptiva": [
+    "👅",
+    "Quando um Artrópode tenta capturar a planta e uma defesa impede a captura, há 50% de chance de converter o contato em uma reprodução sexuada de uma única prole, se houver parceiro compatível.",
+  ],
+  "Mimetismo Sexual": [
+    "😏",
+    "Especialização de Polinização Deceptiva: a área disponível para Reprodução Sexuada é expandida quando um Artrópode funciona como ponte entre plantas compatíveis.",
+  ],
+  "Armadilha Deceptiva": [
+    "💋",
+    "Especialização de Carnivoria: quando uma captura contra a planta falha, um agressor não fotossintético pode ser capturado pela armadilha, gerando a reserva nutricional de Carnivoria.",
   ],
   "Perfume Floral": [
     "🌹",
@@ -934,6 +962,8 @@ const TRAIT_CAPABILITY_IMPLICATIONS = {
   "Neocórtex Desenvolvido": ["Córtex Pré-Frontal"],
   Veneno: ["Toxicidade"],
   Peçonha: ["Veneno", "Toxicidade"],
+  "Armadilha Deceptiva": ["Carnivoria"],
+  "Mimetismo Sexual": ["Polinização Deceptiva"],
   Dentes: ["Mandíbula"],
   Presas: ["Dentes", "Mandíbula"],
 };
