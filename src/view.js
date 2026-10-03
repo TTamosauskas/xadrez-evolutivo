@@ -1062,7 +1062,7 @@ export function render(
               : targetEntry?.botanicalPredation === "Carnivoria"
                 ? "🥓"
                 : targetEntry?.botanicalCapture === "Hemiepifitismo"
-                  ? "🪢"
+                  ? "🧗"
             : specialAction?.type === "BIO_PROJECTILE"
               ? "🪲"
             : specialAction?.type === "ELECTRODISCHARGE"
@@ -1630,7 +1630,7 @@ export function render(
         ? { marker: "🥓", label: "Carnivoria · capturar heterótrofo e armazenar nutrientes" }
         : null,
       targets.some((target) => target.botanicalCapture === "Hemiepifitismo")
-        ? { marker: "🪢", label: "Hemiepifitismo · capturar planta hospedeira" }
+        ? { marker: "🧗", label: "Hemiepifitismo · capturar planta hospedeira" }
         : null,
       vivificationActions.some((action) => action.type === "MONOCARP_STORE")
         ? { marker: "🕰️", label: "Monocarpismo · acumular investimento reprodutivo" }
