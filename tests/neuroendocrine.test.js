@@ -406,7 +406,7 @@ test("Dopamina não aplica bônus quando a pressão reprodutiva global está des
   );
   assertState(baseline.s);
   assertState(rewarded.s);
-}
+});
 
 function placementFixture() {
   const s = fixture([
