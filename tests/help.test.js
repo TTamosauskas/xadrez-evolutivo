@@ -69,7 +69,7 @@ test("Como Jogar covers all scenarios, ecological events and Earth required inno
   assert.ok(text.includes("camada externa é ☠️ letal"));
   assert.ok(text.includes("No 2º Ciclo, o núcleo fértil se expande para 6×6"));
   assert.ok(text.includes("No 3º Ciclo, o tabuleiro aquático começa integralmente fértil"));
-  assert.ok(text.includes("posições iniciais dos Reis arqueanos variam"));
+  assert.ok(text.includes("posições iniciais das formas basais arqueanas variam"));
   assert.ok(text.includes("cada lado estabelece primeiro 🟢 Fotossíntese"));
   assert.ok(text.includes("Predação só se torna elegível"));
   assert.ok(text.includes("representantes mais derivados já registrados"));
