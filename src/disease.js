@@ -740,67 +740,14 @@ export function tryVectorPathogen(state, vector, agent = null) {
   return disease;
 }
 
-export function populationPathogenChance(gap) {
-  return Number(
-    Math.min(0.45, 0.05 + Math.max(0, gap) * 0.04).toFixed(2),
-  );
+export function populationPathogenChance() {
+  return 0;
 }
 
-export function checkPopulation(state) {
-  if (!pathogenUnlocked(state) || state.turn === 0 || state.turn % 2 !== 0)
-    return;
-  if (round(state) < state.populationDiseaseCooldownUntil) return;
-  if (
-    state.diseases.some(
-      (disease) =>
-        disease.source === "population" &&
-        disease.endRound > round(state),
-    )
-  )
-    return;
-
-  const counts = {
-      blue: state.pieces.filter((piece) => piece.owner === "blue").length,
-      amber: state.pieces.filter((piece) => piece.owner === "amber").length,
-    },
-    dominant =
-      counts.blue === counts.amber
-        ? pick(state, ["blue", "amber"])
-        : counts.blue > counts.amber
-          ? "blue"
-          : "amber",
-    gap = Math.abs(counts.blue - counts.amber);
-
-  if (
-    counts[dominant] < 17 ||
-    random(state) >= populationPathogenChance(gap)
-  )
-    return;
-
-  const enemies = state.pieces.filter((piece) => piece.owner === other(dominant)),
-    candidates = state.pieces.filter((piece) => piece.owner === dominant);
-  if (!candidates.length) return;
-
-  const score = (piece) =>
-      enemies.length
-        ? Math.min(...enemies.map((enemy) => distance(piece, enemy)))
-        : 0,
-    max = Math.max(...candidates.map(score)),
-    seed = pick(
-      state,
-      candidates.filter((piece) => score(piece) === max),
-    );
-  if (seed) {
-    const disease = startDisease(state, "population", seed, dominant);
-    state.populationDiseaseCooldownUntil =
-      (disease?.endRound ?? round(state)) + 6;
-    if (disease)
-      log(
-        state,
-        `☣️ Pressão demográfica: diferença ${gap} iniciou ${agentDefinition(disease).name} nas ${OWNERS[dominant]}.`,
-      );
-  }
+export function checkPopulation() {
+  return null;
 }
+
 
 export function leaveBacterialTrail(state, piece, cell = null) {
   if (!piece?.infection) return false;
