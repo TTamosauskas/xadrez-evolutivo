@@ -750,6 +750,12 @@ export function newPiece(state, owner, r, c, source = {}) {
         ? structuredClone(source.autotomyRecovery)
         : null,
       inkReadyRound: source.inkReadyRound ?? bornRound,
+      tentacleReadyRound: source.tentacleReadyRound ?? bornRound,
+      tentacleGuard: source.tentacleGuard
+        ? structuredClone(source.tentacleGuard)
+        : null,
+      chromatophoreReadyRound: source.chromatophoreReadyRound ?? bornRound,
+      chromatophoreDisguise: source.chromatophoreDisguise === true,
       broodParasite: source.broodParasite
         ? structuredClone(source.broodParasite)
         : null,
@@ -3361,7 +3367,8 @@ export function assertState(state) {
       cells.has(square(p.r, p.c)) ||
       (state.naturalBarriers.includes(square(p.r, p.c)) &&
         !p.traits?.includes("Escalador") &&
-        !p.traits?.includes("Trepadeira")) ||
+        !p.traits?.includes("Trepadeira") &&
+        !p.traits?.includes("Bisso")) ||
       (state.barriers.includes(square(p.r, p.c)) &&
         !p.traits?.includes("Trepadeira"))
     )
@@ -3432,10 +3439,25 @@ export function assertState(state) {
         p.hematophagyDepletedUntilRound !== null &&
         !integer(p.hematophagyDepletedUntilRound, 0)) ||
       (p.inkReadyRound !== undefined && !integer(p.inkReadyRound, 0)) ||
+      (p.tentacleReadyRound !== undefined &&
+        !integer(p.tentacleReadyRound, 0)) ||
+      (p.chromatophoreReadyRound !== undefined &&
+        !integer(p.chromatophoreReadyRound, 0)) ||
+      typeof (p.chromatophoreDisguise ?? false) !== "boolean" ||
+      (p.tentacleGuard !== undefined &&
+        p.tentacleGuard !== null &&
+        (!integer(p.tentacleGuard.targetId, 1) ||
+          !integer(p.tentacleGuard.throughTurn, 0))) ||
       (p.autotomyRecovery !== undefined &&
         p.autotomyRecovery !== null &&
         (!integer(p.autotomyRecovery.originalRank, 1, 5) ||
-          p.autotomyRecovery.originalRank <= p.rank)) ||
+          p.autotomyRecovery.originalRank <= p.rank ||
+          (p.autotomyRecovery.regenerationTurnsRemaining !== undefined &&
+            !integer(
+              p.autotomyRecovery.regenerationTurnsRemaining,
+              1,
+              3,
+            )))) ||
       (p.broodParasite !== undefined &&
         p.broodParasite !== null &&
         (!integer(p.broodParasite.parasiteId, 1) ||

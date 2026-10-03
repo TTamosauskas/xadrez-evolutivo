@@ -195,6 +195,10 @@ function normalizeCycleInnovationPressure(state) {
     piece.hematophagyDepletedUntilRound ??= null;
     piece.autotomyRecovery ??= null;
     piece.inkReadyRound ??= piece.bornRound ?? 0;
+    piece.tentacleReadyRound ??= piece.bornRound ?? 0;
+    piece.tentacleGuard ??= null;
+    piece.chromatophoreReadyRound ??= piece.bornRound ?? 0;
+    piece.chromatophoreDisguise ??= false;
     piece.broodParasite ??= null;
     piece.parasitoidism ??= null;
     piece.rumination ??= null;
