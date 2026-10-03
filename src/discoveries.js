@@ -529,7 +529,7 @@ export const MUTATION_DISCOVERY_TOPICS = {
   "Má absorção Alimentar": ["Má absorção", "Síndromes de má absorção reduzem o aproveitamento de nutrientes ingeridos; no jogo, a mesma reprodução exige um recurso fértil adicional quando disponível e a recuperação após reprodução por predação leva o dobro do intervalo."],
   Semelparidade: ["Semelparidade", "Semelparidade, em sentido biológico, concentra o investimento reprodutivo antes da morte; o jogo usa uma variante abstrata em que o custo fatal ocorre após três reproduções bem-sucedidas."],
   "Regressão Evolutiva": ["Regulação gênica", "Mudanças regulatórias podem reduzir ou silenciar a expressão de características sem apagar necessariamente os alelos; no jogo, parte dos fenótipos ativos torna-se recessiva."],
-  Nanismo: ["Nanismo", "Nanismo descreve fenótipos de crescimento corporal reduzido; no jogo, força a forma funcional de Peão e reduz o tamanho visual da peça."],
+  Nanismo: ["Nanismo", "Nanismo descreve fenótipos de crescimento corporal reduzido; no jogo, força a forma basal do ramo — Peão em Fotossíntese e Rei em Predação — e reduz o tamanho visual da peça."],
   Gigantismo: ["Gigantismo", "Gigantismo descreve aumento extremo de tamanho corporal; no jogo, amplia o tamanho visual e impõe um custo de mobilidade."],
   "Mutação Mutadora": ["Fenótipo mutador", "Fenótipos mutadores apresentam taxas de mutação elevadas, frequentemente por alterações em mecanismos de manutenção do genoma; no jogo, aumentam a chance de mutações negativas."],
   Hematofagia: [
