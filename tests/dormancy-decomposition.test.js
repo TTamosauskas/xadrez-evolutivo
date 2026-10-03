@@ -46,5 +46,6 @@ test("Dormência has no active-piece state", () => {
     piece = state.pieces[0];
   state.board[piece.r * 8 + piece.c] = "hostile";
 
+  assert.equal(piece.traits.includes("Dormência"), false);
   assert.equal(dormant(state, piece), false);
 });
