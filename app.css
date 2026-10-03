@@ -1438,6 +1438,12 @@ select {
   border-radius: 10px;
   background: #182112;
 }
+.discovery-detail[data-category="mutations"] img {
+  aspect-ratio: 16 / 9;
+  height: auto;
+  max-height: none;
+  object-position: center;
+}
 .discovery-detail-text {
   margin: 14px 0;
 }
