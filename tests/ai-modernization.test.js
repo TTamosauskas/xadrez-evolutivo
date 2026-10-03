@@ -7,10 +7,12 @@ import {
   chooseAction,
   captureGeometryPriority,
   evaluateForAI,
+  actionPriority,
   strategicPieceValue,
 } from "../src/ai.js";
 import { genomeFromTraits } from "../src/genetics.js";
 import { arenaAISide, arenaSetupGenomeValid } from "../src/arena.js";
+import { legalActions, movesFor } from "../src/moves.js";
 import { fixture } from "./helpers.js";
 
 test("AI explicitly tracks every legal action type exposed by moves.js", () => {
@@ -141,4 +143,94 @@ test("capture geometry gains extra weight in late stalled positions", () => {
   const stalled = captureGeometryPriority(state, rook, action);
 
   assert.ok(stalled > early);
+});
+
+
+test("medium and hard perform a shallow evaluation of every legal root before deepening", () => {
+  const state = fixture([
+      { owner: "blue", r: 4, c: 4, rank: 4 },
+      { owner: "blue", r: 6, c: 1, rank: 2 },
+      { owner: "amber", r: 1, c: 4, rank: 4 },
+      { owner: "amber", r: 1, c: 1, rank: 2 },
+    ], 9501),
+    roots = legalActions(state).length;
+
+  for (const difficulty of ["medium", "hard"]) {
+    const stats = {};
+    let tick = 0;
+    chooseAction(state, difficulty, {
+      now: () => tick++ * 1000,
+      budget: 1,
+      maxNodes: 1,
+      stats,
+    });
+    assert.equal(stats.completedRoots, roots);
+    assert.equal(stats.rootActions, roots);
+    assert.equal(stats.rootCoverage, 1);
+    assert.ok(stats.nodes >= roots);
+  }
+});
+
+test("Haustorio is evaluated as a drain action rather than a destructive capture", () => {
+  const state = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 0,
+        traits: [
+          "Respiração anaeróbia",
+          "Fotossíntese",
+          "Embriófitas",
+          "Traqueófitas",
+          "Gimnospermas",
+          "Angiospermas",
+          "Haustório",
+        ],
+      },
+      {
+        owner: "amber",
+        r: 4,
+        c: 5,
+        rank: 0,
+        traits: ["Respiração anaeróbia", "Fotossíntese"],
+      },
+    ], 9502),
+    plant = state.pieces[0];
+  state.board[4 * 8 + 5] = "fertile";
+  state.turn = 200;
+  state.lastSuccessfulCaptureRound = 0;
+
+  const target = movesFor(state, plant).find((entry) => entry.haustoriumDrain);
+  assert.ok(target);
+  const action = { type: "MOVE", id: plant.id, r: target.r, c: target.c };
+  assert.equal(
+    actionPriority(state, action, { resolutionLevel: 3 }),
+    actionPriority(state, action, { resolutionLevel: 0 }),
+  );
+});
+
+test("Micorrizas receives explicit strategic value during root ordering", () => {
+  const state = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 0,
+        traits: [
+          "Respiração anaeróbia",
+          "Fotossíntese",
+          "Embriófitas",
+          "Micorrizas",
+        ],
+      },
+      { owner: "amber", r: 0, c: 0, rank: 0, traits: ["Fotossíntese"] },
+    ], 9503),
+    plant = state.pieces[0];
+  plant.energy = 20;
+  plant.energyCapacitySnapshot = 20;
+  const target = movesFor(state, plant).find((entry) => entry.mycorrhiza);
+  assert.ok(target);
+  const action = { type: "MOVE", id: plant.id, r: target.r, c: target.c };
+  assert.ok(actionPriority(state, action) >= 10);
 });

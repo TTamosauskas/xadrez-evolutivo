@@ -328,6 +328,47 @@ function barrierPriority(state, action) {
   return 3 + balance.enemies * 2 - balance.allies;
 }
 
+function moveMechanicPriority(state, piece, target) {
+  if (!piece || !target) return 0;
+  let value = 0;
+  if (target.webEscape) value += 14;
+  if (target.mycorrhiza) value += 11;
+  if (target.cutaneous) value += 9;
+  if (target.vascular) value += 9;
+  if (target.seedCapture) value += 11;
+  if (target.fruitConsume) value += 7;
+  if (target.synzooCollect) value += 5;
+  if (target.haustoriumDrain) {
+    const deficit = Math.max(0, energyCapacity(piece) - energyValue(piece));
+    value += 6 + Math.min(4, deficit);
+  }
+  if (target.botanicalPredation) value += 7;
+  if (target.botanicalCapture) value += 6;
+  if (target.hypermetamorphosis) value += 5;
+  if (target.massRecruitment) value += 5;
+  if (target.cephalization) value += 4;
+  if (target.phoresy) value += 3;
+  if (target.arboreal) value += 3;
+  if (target.bioadhesion) value += 3;
+  if (target.escalation) value += 3;
+  if (target.serpentine) value += 3;
+  if (target.trailExtension) value += 3;
+  if (target.crawler || target.lateral || target.jet || target.jump) value += 2;
+  if (
+    target.stay &&
+    !target.webEscape &&
+    !target.haustoriumDrain &&
+    !target.mycorrhiza &&
+    !target.cutaneous &&
+    !target.vascular
+  ) {
+    if (piece.predationEnergy) value += 10;
+    else if ((piece.seeds ?? 0) > 0) value += 7;
+    else if (terrain(state, piece.r, piece.c) === "fertile") value += 5;
+  }
+  return value;
+}
+
 export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 0 } = {}) {
   if (a.type === "CHEMOSYNTHESIS") return 13;
   if (a.type === "FIX_NITROGEN")
@@ -466,13 +507,18 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
     victim = state.pieces.find(
       (piece) => piece.r === a.r && piece.c === a.c && piece.id !== p?.id,
     ),
-    enemyVictim = victim?.owner !== undefined && victim.owner !== state.current,
-    alliedVictim = victim?.owner === state.current,
+    enemyVictim =
+      !!moveTarget?.capture &&
+      victim?.owner !== undefined &&
+      victim.owner !== state.current,
+    alliedVictim =
+      !!moveTarget?.capture && victim?.owner === state.current,
     familyReproductionBonus = moveTarget?.filialCannibal
       ? 10
       : moveTarget?.matriphagy
         ? 11
         : 0,
+    mechanicValue = moveMechanicPriority(state, p, moveTarget),
     egg = eggAt(state, a.r, a.c),
     targetCell =
       Number.isInteger(a.r) && Number.isInteger(a.c) ? square(a.r, a.c) : null,
@@ -566,6 +612,7 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
         : 0;
   return (
     familyReproductionBonus +
+    mechanicValue +
     hunt +
     pursuit +
     resolutionCaptureBonus +
@@ -899,76 +946,124 @@ export function chooseAction(
   if (!actions.length) return { type: "PASS" };
 
   const cortexAvailable = actions.some(
-    (action) =>
-      action.type === "MOVE" &&
-      has(
-        state.pieces.find((piece) => piece.id === action.id),
-        "Neocórtex Desenvolvido",
-      ),
-  );
-
-  if (difficulty === "easy" && !cortexAvailable)
-    return state.scenario === "arena"
-      ? actions[(state.rng >>> 0) % actions.length]
-      : actions[(state.rng >>> 0) % Math.min(actions.length, 3)];
-
-  const profile = profileFor(
+      (action) =>
+        action.type === "MOVE" &&
+        has(
+          state.pieces.find((piece) => piece.id === action.id),
+          "Neocórtex Desenvolvido",
+        ),
+    ),
+    profile = profileFor(
       difficulty,
       cortexAvailable,
       { budget, maxNodes, depth, branchWidth },
     ),
-    deadline = now() + profile.budget,
+    startedAt = now(),
+    deadline = startedAt + profile.budget,
     owner = state.current,
+    effectiveMaxNodes = Math.max(profile.maxNodes, actions.length),
     context = {
       now,
       deadline,
-      maxNodes: profile.maxNodes,
+      maxNodes: effectiveMaxNodes,
       branchWidth: profile.branchWidth,
       priorityOptions,
       resolutionLevel: activeResolutionLevel,
       nodes: 0,
     };
 
-  let best = actions[0],
-    score = -Infinity,
-    completedRoots = 0;
-  for (const action of actions) {
-    if (context.nodes >= context.maxNodes || now() > deadline) break;
+  const roots = actions.map((action, order) => {
     const next = simulate(state, action),
-      turnAdvanced = next.current !== state.current,
-      actor =
-        action.type === "MOVE"
-          ? state.pieces.find((piece) => piece.id === action.id)
-          : null,
-      rootDepth =
-        difficulty === "medium" && has(actor, "Neocórtex Desenvolvido")
-          ? Math.max(2, profile.depth)
-          : profile.depth,
-      remainingDepth = Math.max(0, rootDepth - (turnAdvanced ? 1 : 0));
+      value =
+        evaluateForAI(next, owner, {
+          resolutionLevel: activeResolutionLevel,
+        }) + actionPriority(state, action, priorityOptions) * 0.08;
     context.nodes++;
+    return { action, next, value, order };
+  });
+  roots.sort((a, b) => b.value - a.value || a.order - b.order);
 
-    let value =
-      remainingDepth > 0 || next.current === state.current
-        ? searchValue(next, owner, remainingDepth, context)
-        : evaluateForAI(next, owner, {
-            resolutionLevel: activeResolutionLevel,
-          });
-    value += actionPriority(state, action, priorityOptions) * 0.08;
-
-    if (value > score) {
-      score = value;
-      best = action;
-    }
-    completedRoots++;
+  if (difficulty === "easy" && !cortexAvailable) {
+    const poolSize = Math.min(
+        roots.length,
+        state.scenario === "arena"
+          ? Math.max(3, Math.ceil(roots.length * 0.25))
+          : 3,
+      ),
+      chosen = roots[(state.rng >>> 0) % Math.max(1, poolSize)]?.action ??
+        roots[0].action;
+    if (stats && typeof stats === "object")
+      Object.assign(stats, {
+        nodes: context.nodes,
+        completedRoots: roots.length,
+        rootActions: roots.length,
+        rootCoverage: 1,
+        completedDepth: 0,
+        depth: profile.depth,
+        branchWidth: profile.branchWidth,
+        budget: profile.budget,
+      });
+    return chosen;
   }
 
+  const searchWidth = Math.min(
+      roots.length,
+      Math.max(1, profile.branchWidth || roots.length),
+    ),
+    candidates = roots.slice(0, searchWidth);
+  let completedDepth = 0,
+    attemptedSearchRoots = 0;
+
+  for (let iterationDepth = 1; iterationDepth <= profile.depth; iterationDepth++) {
+    const iteration = [];
+    let complete = true;
+    for (const candidate of candidates) {
+      if (
+        context.nodes >= context.maxNodes ||
+        context.now() > context.deadline
+      ) {
+        complete = false;
+        break;
+      }
+      const actor =
+          candidate.action.type === "MOVE"
+            ? state.pieces.find((piece) => piece.id === candidate.action.id)
+            : null,
+        searchDepth =
+          difficulty === "medium" && has(actor, "Neocórtex Desenvolvido")
+            ? Math.max(2, iterationDepth)
+            : iterationDepth,
+        value =
+          searchValue(
+            candidate.next,
+            owner,
+            searchDepth,
+            context,
+          ) + actionPriority(state, candidate.action, priorityOptions) * 0.08;
+      attemptedSearchRoots++;
+      iteration.push({ candidate, value });
+    }
+    if (!complete || iteration.length !== candidates.length) break;
+    for (const entry of iteration) entry.candidate.value = entry.value;
+    candidates.sort(
+      (a, b) => b.value - a.value || a.order - b.order,
+    );
+    completedDepth = iterationDepth;
+  }
+
+  roots.sort((a, b) => b.value - a.value || a.order - b.order);
   if (stats && typeof stats === "object")
     Object.assign(stats, {
       nodes: context.nodes,
-      completedRoots,
+      completedRoots: roots.length,
+      rootActions: roots.length,
+      rootCoverage: 1,
+      searchedRoots: candidates.length,
+      attemptedSearchRoots,
+      completedDepth,
       depth: profile.depth,
       branchWidth: profile.branchWidth,
       budget: profile.budget,
     });
-  return best;
+  return roots[0].action;
 }
