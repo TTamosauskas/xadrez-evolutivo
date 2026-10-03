@@ -1862,6 +1862,17 @@ function maturePhotosynthesis(state, owner) {
           ? `${OWNERS[p.owner]}: 🌿 Trepadeira fertilizou a barreira em ${coord(p.r, p.c)}.`
           : `${OWNERS[p.owner]}: 🟢 Fotossíntese tornou ${coord(p.r, p.c)} fértil.`,
       );
+      if (has(p, "Megafilos"))
+        emitPassiveEffect(
+          state,
+          "Megafilos",
+          "🍃 Megafilos aceleraram a Fotossíntese em 2 turnos.",
+          {
+            pieceId: p.id,
+            outcome: "accelerated-photosynthesis",
+            value: 2,
+          },
+        );
     }
   }
 }
@@ -3644,6 +3655,40 @@ function executeMove(ctx, action) {
     completeMove(ctx, p, false, false);
     return;
   }
+  if (target.mycorrhiza) {
+    const resource = square(target.r, target.c);
+    if (
+      !has(p, "Micorrizas") ||
+      terrain(state, target.r, target.c) !== "neutral" ||
+      round(state) < (p.mycorrhizaReadyRound ?? 0)
+    )
+      throw Error("Micorrizas indisponíveis.");
+    const born = reproduce(ctx, p, null, "Micorrizas", {
+      resourceReproduction: true,
+      resourceCell: resource,
+      resourceKind: "mycorrhiza",
+    });
+    if (born) {
+      p.mycorrhizaReadyRound = round(state) + 5;
+      log(
+        state,
+        `${OWNERS[p.owner]}: 🧶 Micorrizas sustentaram Vivificação em ${coord(target.r, target.c)} sem alterar o terreno.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Micorrizas",
+        "🧶 Micorrizas permitiram Vivificação usando uma Casa Neutra.",
+        {
+          pieceId: p.id,
+          outcome: "mycorrhizal-vivification",
+          value: 5,
+        },
+      );
+    }
+    if (born && deferReproductionPlacement(state, p)) return;
+    completeMove(ctx, p, false, false);
+    return;
+  }
   if (target.vascular) {
     const resource = square(target.r, target.c);
     if (state.board[resource] !== "fertile")
@@ -3657,7 +3702,7 @@ function executeMove(ctx, action) {
       consumeReproductionResource(state, p, resource);
       log(
         state,
-        `${OWNERS[p.owner]}: 🍃 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
+        `${OWNERS[p.owner]}: 🪈 Traqueófitas consumiu ${coord(target.r, target.c)} à distância.`,
       );
     }
     if (born && deferReproductionPlacement(state, p)) return;
