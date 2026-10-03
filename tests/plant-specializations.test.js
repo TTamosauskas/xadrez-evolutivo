@@ -66,57 +66,50 @@ test("photosynthetic specializations obey geological periods and lineage precede
   assert.equal(traitUnlocked(state, "Madeira", animal), false);
 });
 
-test("Haustório consumes only adjacent photosynthetic enemies and keeps the plant stationary", () => {
-  const state = blankState(702),
+test("Haustório drains fertile terrain under an adjacent photosynthetic enemy without killing it", () => {
+  let state = blankState(702),
     attacker = newPiece(state, "blue", 4, 4, {
       traits: plantLineage(["Haustório"]),
     }),
-    plantPrey = newPiece(state, "amber", 3, 4, {
+    plantHost = newPiece(state, "amber", 3, 4, {
       traits: plantLineage(),
     }),
-    animalPrey = newPiece(state, "amber", 4, 5, {
+    animal = newPiece(state, "amber", 4, 5, {
       rank: 4,
       traits: ["Multicelularismo", "Predação"],
     });
-  state.pieces.push(attacker, plantPrey, animalPrey);
+  state.pieces.push(attacker, plantHost, animal);
+  state.board[plantHost.r * 8 + plantHost.c] = "fertile";
 
   const targets = movesFor(state, attacker);
   assert.ok(
     targets.some(
       (target) =>
-        target.r === 3 &&
-        target.c === 4 &&
-        target.botanicalPredation === "Haustório",
-    ),
-  );
-  assert.equal(
-    targets.some((target) => target.r === 4 && target.c === 5),
-    false,
-  );
-
-  const next = transition(state, {
-    type: "MOVE",
-    id: attacker.id,
-    r: plantPrey.r,
-    c: plantPrey.c,
-  });
-  const survivor = next.pieces.find((piece) => piece.id === attacker.id);
-  assert.deepEqual([survivor.r, survivor.c], [4, 4]);
-  assert.equal(next.pieces.some((piece) => piece.id === plantPrey.id), false);
-  assert.equal(next.pieces.some((piece) => piece.id === animalPrey.id), true);
-  assert.equal(next.plantSeeds.length, 0);
-  assert.equal(survivor.predationEnergy, true);
-  assert.ok(
-    movesFor(next, survivor).some(
-      (target) =>
-        target.r === survivor.r &&
-        target.c === survivor.c &&
-        target.stay &&
+        target.r === plantHost.r &&
+        target.c === plantHost.c &&
+        target.haustoriumDrain &&
         !target.capture,
     ),
   );
+  assert.equal(
+    targets.some((target) => target.r === animal.r && target.c === animal.c),
+    false,
+  );
+
+  state = transition(state, {
+    type: "MOVE",
+    id: attacker.id,
+    r: plantHost.r,
+    c: plantHost.c,
+  });
+  const survivor = state.pieces.find((piece) => piece.id === attacker.id);
+  assert.deepEqual([survivor.r, survivor.c], [4, 4]);
+  assert.ok(state.pieces.some((piece) => piece.id === plantHost.id));
+  assert.ok(state.pieces.some((piece) => piece.id === animal.id));
+  assert.equal(state.board[plantHost.r * 8 + plantHost.c], "neutral");
+  assert.equal(!!survivor.predationEnergy, false);
   assert.ok(
-    next.logs.some((entry) => entry.text.includes("Haustório consumiu")),
+    state.logs.some((entry) => entry.text.includes("Haustório drenou")),
   );
 });
 

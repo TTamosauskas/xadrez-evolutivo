@@ -98,6 +98,8 @@ const VIVIFICATION_LABELS = Object.freeze({
   PUPATE: "Metamorfose",
   DETOXIFY: "⚗️ Detoxificar",
   PARASITIZE: "Parasitismo",
+  MONOCARP_STORE: "🕰️ Acumular floração",
+  MONOCARP_BLOOM: "🕰️ Florescer e morrer",
   REJECT_BROOD_PARASITE: "🪺 Rejeitar ovo parasita",
 });
 const vivificationLabel = (action) =>
@@ -1055,6 +1057,12 @@ export function render(
         specialActionIcon =
           rhizomeAction
             ? "🫚"
+            : targetEntry?.haustoriumDrain
+              ? "🪝"
+              : targetEntry?.botanicalPredation === "Carnivoria"
+                ? "🥓"
+                : targetEntry?.botanicalCapture === "Hemiepifitismo"
+                  ? "🧗"
             : specialAction?.type === "BIO_PROJECTILE"
               ? "🪲"
             : specialAction?.type === "ELECTRODISCHARGE"
@@ -1160,6 +1168,7 @@ export function render(
           fertileReproductionTarget ||
           (targetEntry &&
             !captureTarget &&
+            !targetEntry.haustoriumDrain &&
             (targetEntry.stay ||
               scavengingReproductionTarget ||
               coprophagyReproductionTarget))
@@ -1214,7 +1223,7 @@ export function render(
       const cell = make(
         "button",
         undefined,
-        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${mineralRemnant ? " mineral-remnant" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${selectedCellHere ? " cell-selected-info" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction || rhizomeAction ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${nitrogenFixationTarget ? " nitrogen-fixation-target special-action-target" : ""}${pheromoneTarget ? " pheromone-target special-action-target" : ""}${bioluminescentLureTarget ? " bioluminescent-lure-target special-action-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${hypermetamorphosisTarget ? " hypermetamorphosis-target" : ""}${massRecruitmentTarget ? " mass-recruitment-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}`,
+        `cell ${(r + c) % 2 ? "dark" : ""} ${cellTerrain}${singleToneTerrain ? " terrain-single-tone" : ""}${barrier ? " barrier" : ""}${naturalBarrier ? " natural-barrier" : ""}${builtBarrier ? " built-barrier" : ""}${eventBarrier ? " event-barrier" : ""}${fecalResidue ? " decomposition organic-residue" : ""}${carcass ? " carcass" : ""}${thanatosis ? " thanatosis" : ""}${captureDisturbance ? " capture-disturbance" : ""}${lethalHazard ? " lethal-hazard" : ""}${chemicalHazard ? " chemical-hazard" : ""}${web ? " web-cell" : ""}${inkCloud ? " ink-cloud" : ""}${allelopathy ? " allelopathy-zone" : ""}${mineralRemnant ? " mineral-remnant" : ""}${p || egg || plantSeed || fragment || originHere ? " occupied" : ""}${egg ? " egg" : ""}${plantSeed ? " plant-seed" : ""}${zoochoryClass}${trailOwners.size ? " trail-cell" : ""}${fragment ? " fragment" : ""}${actor?.id === p?.id && p || (originHere && origin?.selected) ? " selected" : ""}${selectedCellHere ? " cell-selected-info" : ""}${target ? " legal" : ""}${vivificationTarget ? " vivification-target" : ""}${attackTarget ? " attack-target" : ""}${specialAction || rhizomeAction || targetEntry?.haustoriumDrain || targetEntry?.botanicalPredation === "Carnivoria" || targetEntry?.botanicalCapture === "Hemiepifitismo" ? " special-action-target" : ""}${captureReproductionTarget ? " capture-reproduction-target" : ""}${manipulate ? ` manipulate-target manipulate-${state.manipulation?.terrain}` : ""}${build ? " build-target" : ""}${nitrogenFixationTarget ? " nitrogen-fixation-target special-action-target" : ""}${pheromoneTarget ? " pheromone-target special-action-target" : ""}${bioluminescentLureTarget ? " bioluminescent-lure-target special-action-target" : ""}${partner ? " partner" : ""}${aggressivePartner ? " aggressive-partner" : ""}${aggressiveCounter ? " aggressive-partner-counter" : ""}${filialCannibalTarget ? " filial-cannibal-target" : ""}${matriphagyTarget ? " matriphagy-target" : ""}${nurse ? " nurse-target" : ""}${eggPlacementTarget ? " egg-placement-target" : ""}${ovoviviparousTarget ? " ovoviviparous-target" : ""}${domesticTarget ? " domestic-placement-target" : ""}${socialTarget ? " social-sacrifice-target" : ""}${hierarchyRecommended ? " hierarchy-recommended-sacrifice" : ""}${superMemberPulse ? " superorganism-member-pulse" : ""}${superBestMember ? " superorganism-best-member" : ""}${superMoveTarget ? " superorganism-suggested-target" : ""}${serotoninTarget ? " serotonin-reposition-target" : ""}${hypermetamorphosisTarget ? " hypermetamorphosis-target" : ""}${massRecruitmentTarget ? " mass-recruitment-target" : ""}${jumpTarget ? " jump-target" : ""}${jetTarget ? " jet-target" : ""}${echolocationTarget ? " echolocation-target" : ""}${cortexOffensive ? " cortex-offensive-target" : ""}${cortexDefensive ? " cortex-defensive-target" : ""}`,
       );
       cell.type = "button";
       cell.dataset.r = r;
@@ -1613,6 +1622,38 @@ export function render(
             label: "Ataque",
             markerClass: "legend-action-ring attack",
           }
+        : null,
+      targets.some((target) => target.haustoriumDrain)
+        ? { marker: "🪝", label: "Haustório · drenar Casa Fértil do hospedeiro" }
+        : null,
+      targets.some((target) => target.botanicalPredation === "Carnivoria")
+        ? { marker: "🥓", label: "Carnivoria · capturar heterótrofo e armazenar nutrientes" }
+        : null,
+      targets.some((target) => target.botanicalCapture === "Hemiepifitismo")
+        ? { marker: "🧗", label: "Hemiepifitismo · capturar planta hospedeira" }
+        : null,
+      vivificationActions.some((action) => action.type === "MONOCARP_STORE")
+        ? { marker: "🕰️", label: "Monocarpismo · acumular investimento reprodutivo" }
+        : vivificationActions.some((action) => action.type === "MONOCARP_BLOOM")
+          ? { marker: "🕰️", label: "Monocarpismo · floração terminal" }
+          : null,
+      actor &&
+      has(actor, "Mimetismo Sexual") &&
+      mates.some((mate) => distance(actor, mate) > 1)
+        ? { marker: "😏", label: "Mimetismo Sexual · Artrópode amplia o alcance sexual" }
+        : null,
+      [...contextualTraits.values()].some((traits) => traits.has("Sismonastia"))
+        ? { marker: "✔️", label: "Sismonastia · defesa reativa de fechamento" }
+        : null,
+      [...contextualTraits.values()].some((traits) =>
+        traits.has("Polinização Deceptiva"),
+      )
+        ? { marker: "👅", label: "Polinização Deceptiva · captura frustrada pode gerar prole" }
+        : null,
+      [...contextualTraits.values()].some((traits) =>
+        traits.has("Armadilha Deceptiva"),
+      )
+        ? { marker: "💋", label: "Armadilha Deceptiva · defesa pode contracapturar agressor" }
         : null,
       boardElement.querySelector(".cell.serotonin-reposition-target")
         ? { marker: "😊", label: "Flexibilidade comportamental" }

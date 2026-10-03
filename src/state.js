@@ -382,10 +382,16 @@ export function photosynthesisHasSpace(state, piece) {
   return false;
 }
 
+export const sismonastiaClosed = (state, piece) =>
+  !!piece &&
+  Number.isInteger(piece.sismonastiaClosedThroughTurn) &&
+  state.turn <= piece.sismonastiaClosedThroughTurn;
+
 export function photosynthesisAvailable(state, piece) {
   return !!(
     piece &&
     canPhotosynthesize(piece) &&
+    !sismonastiaClosed(state, piece) &&
     terrain(state, piece.r, piece.c) === "neutral" &&
     photosynthesisDelayTurns(state, piece) !== null &&
     photosynthesisHasSpace(state, piece)
@@ -503,6 +509,7 @@ export const endosymbiosisAdvanceAvailable = (_state, piece) =>
 export const reproductionReady = (state, piece) =>
   !!piece &&
   has(piece, "Respiração anaeróbia") &&
+  !sismonastiaClosed(state, piece) &&
   !juvenile(state, piece) &&
   !naturallyInfertile(state, piece) &&
   !has(piece, "Esterilidade") &&

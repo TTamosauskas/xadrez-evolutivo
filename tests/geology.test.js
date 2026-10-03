@@ -2164,13 +2164,23 @@ test("Paleogene epochs now have mandatory milestones plus optional specializatio
   const expected = {
     paleocene: {
       required: ["Roedor"],
-      innovations: ["Roedor", "Garras", "Monogamia"],
+      innovations: [
+        "Roedor",
+        "Monocarpismo",
+        "Polinização Deceptiva",
+        "Garras",
+        "Monogamia",
+      ],
     },
     eocene: {
       required: ["Ecolocalização", "Predação em Massa"],
       innovations: [
         "Ecolocalização",
         "Predação em Massa",
+        "Carnivoria",
+        "Hemiepifitismo",
+        "Sismonastia",
+        "Mimetismo Sexual",
         "Ovulação Induzida",
         "Caça Cooperativa",
         "Epizoocoria",

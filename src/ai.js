@@ -44,6 +44,8 @@ export const AI_ACTION_TYPES = Object.freeze([
   "PHEROMONE_SIGNAL",
   "BIOLUMINESCENT_LURE",
   "PARTHENOGENESIS",
+  "MONOCARP_STORE",
+  "MONOCARP_BLOOM",
   "NURSE",
   "DETOXIFY",
   "LAY_OVOVIVIPAROUS",
@@ -381,6 +383,14 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
     return 8 + strategicPieceValue(state, mate) * 0.08;
   }
   if (a.type === "PARTHENOGENESIS") return 9;
+  if (a.type === "MONOCARP_STORE") {
+    const actor = state.pieces.find((piece) => piece.id === a.id);
+    return 5 + (actor?.monocarpismCharges ?? 0);
+  }
+  if (a.type === "MONOCARP_BLOOM") {
+    const actor = state.pieces.find((piece) => piece.id === a.id);
+    return 8 + (actor?.monocarpismCharges ?? 0) * 3;
+  }
   if (a.type === "AGGRESSIVE_MATE")
     return 9 + strategicPieceValue(
       state,
