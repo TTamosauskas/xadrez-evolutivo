@@ -29,6 +29,37 @@ import {
   reproductionEnergyCost,
 } from "../src/energy.js";
 
+test("Predação usa a ninhada normal da forma", () => {
+  const expected = [4, 3, 2, 2, 1, 1];
+  for (let rank = 0; rank < expected.length; rank++) {
+    const s = fixture([
+        {
+          owner: "blue",
+          r: 4,
+          c: 4,
+          rank,
+          traits: ["Respiração anaeróbia", "Predação"],
+        },
+        { owner: "amber", r: 0, c: 0, rank: 4 },
+      ]),
+      parent = s.pieces[0];
+
+    const born = reproduce(context(s), parent, null, "predação", {
+      immediateDevelopment: true,
+      ignoreReadiness: true,
+      ignoreSuccessPressure: true,
+    });
+
+    assert.equal(born, expected[rank], `rank ${rank}`);
+    assert.equal(
+      s.pieces.filter((piece) => piece.parentId === parent.id).length,
+      expected[rank],
+      `rank ${rank}`,
+    );
+    assertState(s);
+  }
+});
+
 test("Biofilme shares one occupied fertile resource across a connected network per round", () => {
   let s = fixture([
     {
