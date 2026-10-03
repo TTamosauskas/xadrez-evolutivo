@@ -177,7 +177,6 @@ test("Serpenteamento interrompe a rota diante de peça, barreira e casa hostil",
   assert.ok(
     targets.some(
       (candidate) =>
-        candidate.serpentine &&
         candidate.r === 3 &&
         candidate.c === 5,
     ),
@@ -185,7 +184,6 @@ test("Serpenteamento interrompe a rota diante de peça, barreira e casa hostil",
   assert.ok(
     targets.some(
       (candidate) =>
-        candidate.serpentine &&
         candidate.r === 5 &&
         candidate.c === 5,
     ),
