@@ -213,7 +213,7 @@ test("strongest survivor uses branch-specific piece value before genetic tie-bre
       "amber",
       (piece) => piece.traits.includes("Fotossíntese"),
     ).piece.id,
-    plantKing.id,
+    plantQueen.id,
   );
 });
 
