@@ -314,13 +314,14 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       builtBarrier = builtBarrierAt(state, r, c),
       naturalBarrier = naturalBarrierAt(state, r, c),
       eventBarrier = eventBarrierAt(state, r, c),
-      botanicalPredation =
+      botanicalPredation = extra.botanicalPredation ?? null,
+      hemiepiphyticCapture =
         victim?.owner !== undefined &&
         victim.owner !== p.owner &&
-        distance(p, victim) === 1 &&
         has(p, "Fotossíntese") &&
-        has(p, "Haustório") &&
+        has(p, "Hemiepifitismo") &&
         has(victim, "Fotossíntese"),
+      haustoriumDrain = !!extra.haustoriumDrain,
       directChild =
         !!victim &&
         (
@@ -386,14 +387,18 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       victim.owner !== p.owner &&
       !captureUnlocked(state, p) &&
       !contactCapture &&
-      !botanicalPredation
+      !botanicalPredation &&
+      !hemiepiphyticCapture &&
+      !haustoriumDrain
     )
       return;
     if (
       victim &&
       has(victim, "Multicelularismo") &&
       !has(p, "Ingestão") &&
-      !botanicalPredation
+      !botanicalPredation &&
+      !hemiepiphyticCapture &&
+      !haustoriumDrain
     )
       return;
     if (builtBarrier && !has(p, "Escavador")) return;
@@ -450,6 +455,8 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       c,
       path,
       capture: !!victim,
+      botanicalCapture: hemiepiphyticCapture ? "Hemiepifitismo" : null,
+      haustoriumDrain,
       cannibal,
       filialCannibal,
       matriphagy,
@@ -1370,7 +1377,11 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     cephalizationTargets();
   } else if (
     !has(p, "Séssil") &&
-    (captureUnlocked(state, p) || contactCaptureUnlocked(p))
+    (
+      captureUnlocked(state, p) ||
+      contactCaptureUnlocked(p) ||
+      (has(p, "Fotossíntese") && has(p, "Hemiepifitismo"))
+    )
   )
     chessTargets(true);
   if (has(p, "Fotossíntese") && has(p, "Haustório"))
@@ -1383,10 +1394,29 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
         if (
           victim &&
           victim.owner !== p.owner &&
-          has(victim, "Fotossíntese")
+          has(victim, "Fotossíntese") &&
+          terrain(state, r, c) === "fertile"
         )
           add(r, c, [], {
-            botanicalPredation: "Haustório",
+            haustoriumDrain: true,
+            stay: true,
+            capture: false,
+          });
+      }
+  if (has(p, "Fotossíntese") && has(p, "Carnivoria"))
+    for (let dr = -1; dr <= 1; dr++)
+      for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        const r = p.r + dr,
+          c = p.c + dc,
+          victim = at(state, r, c);
+        if (
+          victim &&
+          victim.owner !== p.owner &&
+          !canPhotosynthesize(victim)
+        )
+          add(r, c, [], {
+            botanicalPredation: "Carnivoria",
             stay: true,
           });
       }
@@ -1607,6 +1637,49 @@ export function parthenogenesisAvailable(state, p) {
   );
 }
 
+export function sexualMimicryBridge(state, p, mate) {
+  if (
+    !p ||
+    !mate ||
+    !has(p, "Mimetismo Sexual") ||
+    !has(p, "Fotossíntese") ||
+    p.owner !== mate.owner
+  )
+    return null;
+  return (
+    state.pieces.find(
+      (candidate) =>
+        candidate.id !== p.id &&
+        candidate.id !== mate.id &&
+        has(candidate, "Artrópode") &&
+        distance(p, candidate) <= 2 &&
+        distance(candidate, mate) <= 2,
+    ) ?? null
+  );
+}
+
+export function monocarpismStoreAvailable(state, p) {
+  return !!(
+    p &&
+    has(p, "Fotossíntese") &&
+    has(p, "Monocarpismo") &&
+    (p.monocarpismCharges ?? 0) < 4 &&
+    reproductionReady(state, p) &&
+    sexualReproductionResource(state, p, null)
+  );
+}
+
+export function monocarpismBloomAvailable(state, p) {
+  return !!(
+    p &&
+    has(p, "Fotossíntese") &&
+    has(p, "Monocarpismo") &&
+    (p.monocarpismCharges ?? 0) > 0 &&
+    !resting(state, p) &&
+    !dormant(state, p)
+  );
+}
+
 export function partnersFor(state, p, { requireResource = true } = {}) {
   if (
     !reproductionReady(state, p) ||
@@ -1634,7 +1707,11 @@ export function partnersFor(state, p, { requireResource = true } = {}) {
       !reproductionReady(state, x) ||
       resting(state, x) ||
       dormant(state, x) ||
-      (!has(p, "Promiscuidade") && distance(p, x) !== 1) ||
+      (
+        !has(p, "Promiscuidade") &&
+        distance(p, x) !== 1 &&
+        !sexualMimicryBridge(state, p, x)
+      ) ||
       (requireResource && !sexualReproductionResource(state, p, x))
     )
       return false;
@@ -2357,6 +2434,12 @@ export function actionsForPiece(
     ...(parthenogenesisAvailable(source, piece)
       ? [{ type: "PARTHENOGENESIS", id: piece.id }]
       : []),
+    ...(monocarpismStoreAvailable(source, piece)
+      ? [{ type: "MONOCARP_STORE", id: piece.id }]
+      : []),
+    ...(monocarpismBloomAvailable(source, piece)
+      ? [{ type: "MONOCARP_BLOOM", id: piece.id }]
+      : []),
     ...nursingTargets(source, piece).map((child) => ({
       type: "NURSE",
       id: piece.id,
@@ -2445,6 +2528,8 @@ export function vivificationActionsForPiece(state, piece) {
       action.type === "PUPATE" ||
       action.type === "DETOXIFY" ||
       action.type === "PARTHENOGENESIS" ||
+      action.type === "MONOCARP_STORE" ||
+      action.type === "MONOCARP_BLOOM" ||
       action.type === "REJECT_BROOD_PARASITE" ||
       (action.type === "PARASITIZE" &&
         !Number.isInteger(action.targetId)),
