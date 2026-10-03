@@ -151,9 +151,19 @@ export function predatoryReproductionAvailable(attacker, victim) {
 
 export function trophicSpecializationMatches(attacker, victim) {
   if (!attacker || !victim) return false;
+  if (has(attacker, "Onívoro")) return true;
   return canPhotosynthesize(victim)
     ? has(attacker, "Herbívoro")
     : has(attacker, "Carnívoro");
+}
+
+export function predatoryVivificationAvailable(attacker, victim) {
+  if (!predatoryReproductionAvailable(attacker, victim)) return false;
+  const specialized =
+    has(attacker, "Carnívoro") ||
+    has(attacker, "Herbívoro") ||
+    has(attacker, "Onívoro");
+  return !specialized || trophicSpecializationMatches(attacker, victim);
 }
 
 const HGT_BLOCKED_TRAITS = new Set([
