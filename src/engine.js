@@ -92,12 +92,17 @@ import {
   nitrogenFixationTargets,
   pheromoneTargets,
   bioluminescentLureTargets,
+  radulaTargets,
+  tentacleTargets,
+  chromatophoreActionAvailable,
   sexualMimicryBridge,
   monocarpismStoreAvailable,
   monocarpismBloomAvailable,
   NITROGEN_FIXATION_COOLDOWN_ROUNDS,
   PHEROMONE_COOLDOWN_ROUNDS,
   BIOLUMINESCENT_LURE_COOLDOWN_ROUNDS,
+  TENTACLE_COOLDOWN_ROUNDS,
+  CHROMATOPHORE_COOLDOWN_ROUNDS,
 } from "./moves.js";
 import {
   reproduce,
@@ -784,12 +789,18 @@ export function hostileHazardKills(state, piece, normalHostile = false) {
   }
   if (!has(piece, "Carapaça"))
     return !endothermyRescues(state, piece, normalHostile);
-  if (random(state) >= 1 / 4)
+  const armoredChance = has(piece, "Concha Camerada") ? 1 / 2 : 1 / 4;
+  if (random(state) >= armoredChance)
     return !endothermyRescues(state, piece, normalHostile);
+  const shellTrait = has(piece, "Concha Camerada")
+    ? "Concha Camerada"
+    : "Carapaça";
   emitPassiveEffect(
     state,
-    "Carapaça",
-    "🐚 Carapaça bloqueou o risco hostil.",
+    shellTrait,
+    has(piece, "Concha Camerada")
+      ? "🌀 Concha Camerada reforçou a proteção contra o ambiente hostil."
+      : "🐚 Carapaça bloqueou o risco hostil.",
     { pieceId: piece.id, outcome: "blocked-hostile-risk" },
   );
   return false;
@@ -2365,6 +2376,37 @@ function advanceHadeanEnvironment(state) {
   return true;
 }
 
+function tickMolluskRegeneration(state, owner) {
+  for (const piece of state.pieces) {
+    if (
+      piece.owner !== owner ||
+      !has(piece, "Regeneração de Braços") ||
+      !piece.autotomyRecovery ||
+      !Number.isInteger(piece.autotomyRecovery.regenerationTurnsRemaining)
+    )
+      continue;
+    piece.autotomyRecovery.regenerationTurnsRemaining--;
+    if (piece.autotomyRecovery.regenerationTurnsRemaining > 0) continue;
+    const restoredRank = piece.autotomyRecovery.originalRank;
+    piece.rank = restoredRank;
+    piece.autotomyRecovery = null;
+    log(
+      state,
+      `${OWNERS[piece.owner]}: 🦾 Regeneração de Braços restaurou a forma ${PIECES[restoredRank]}.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Regeneração de Braços",
+      `🦾 Regeneração completa: ${PIECES[restoredRank]} restaurado.`,
+      {
+        pieceId: piece.id,
+        outcome: "arm-regeneration-complete",
+        value: restoredRank,
+      },
+    );
+  }
+}
+
 function advanceTurn(ctx) {
   const state = ctx.state;
   if (resolveNeurodivergentActionEnd(ctx)) return;
@@ -2389,6 +2431,7 @@ function advanceTurn(ctx) {
     }
   tickParasitoidism(ctx, acting, before);
   tickRuminantRecovery(state, acting, before);
+  tickMolluskRegeneration(state, acting);
   recoverEnergyAfterTurn(state, acting, before);
   for (const p of state.pieces) {
     moveDirection(p);
@@ -2404,6 +2447,13 @@ function advanceTurn(ctx) {
   recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
+  for (const piece of state.pieces) {
+    if (
+      piece.tentacleGuard &&
+      state.turn > piece.tentacleGuard.throughTurn
+    )
+      piece.tentacleGuard = null;
+  }
   for (const piece of state.pieces)
     if (
       Number.isInteger(piece.sleepingThroughTurn) &&
@@ -3459,6 +3509,11 @@ function triggerInkEscape(ctx, attacker, victim) {
 
 function lowerAutotomyRank(piece) {
   if (!piece) return null;
+  if (has(piece, "Molusco"))
+    return new Map([
+      [3, 2],
+      [2, 4],
+    ]).get(piece.rank) ?? null;
   if (purePredatoryBranch(piece)) {
     if (piece.rank === 4) return null;
     if (piece.rank === 1) return 4;
@@ -3495,7 +3550,20 @@ function triggerAutotomy(ctx, attacker, victim) {
   if (!Number.isInteger(reducedRank)) return false;
   const originalRank = victim.rank;
   victim.rank = reducedRank;
-  victim.autotomyRecovery = { originalRank };
+  victim.autotomyRecovery = has(victim, "Regeneração de Braços")
+    ? { originalRank, regenerationTurnsRemaining: 3 }
+    : { originalRank };
+  if (has(victim, "Regeneração de Braços"))
+    emitPassiveEffect(
+      ctx.state,
+      "Regeneração de Braços",
+      "🦾 Regeneração iniciada: a forma original retorna em 3 turnos próprios.",
+      {
+        pieceId: victim.id,
+        outcome: "arm-regeneration-started",
+        value: 3,
+      },
+    );
   log(
     ctx.state,
     `${OWNERS[victim.owner]}: ✂️ Autotomia sacrificou a forma ${PIECES[originalRank]} e preservou a criatura como ${PIECES[reducedRank]}.`,
