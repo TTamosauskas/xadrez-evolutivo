@@ -4700,12 +4700,12 @@ function executeMove(ctx, action) {
       if (target.botanicalCapture === "Hemiepifitismo") {
         log(
           state,
-          `${OWNERS[p.owner]}: 🪢 Hemiepifitismo suprimiu a planta hospedeira em ${coord(victim.r, victim.c)} e ocupou seu espaço.`,
+          `${OWNERS[p.owner]}: 🧗 Hemiepifitismo suprimiu a planta hospedeira em ${coord(victim.r, victim.c)} e ocupou seu espaço.`,
         );
         emitPassiveEffect(
           state,
           "Hemiepifitismo",
-          "🪢 Hemiepifitismo substituiu competitivamente uma planta inimiga.",
+          "🧗 Hemiepifitismo substituiu competitivamente uma planta inimiga.",
           {
             pieceId: p.id,
             outcome: "captured-photosynthetic-host",
