@@ -268,7 +268,7 @@ test("Brotamento infrutífero encerra o turno sem lançar erro", () => {
     s.passiveEffects.some(
       (effect) =>
         effect.trait === "Reprodução infrutífera" &&
-        effect.outcome === "infruitful-reproduction",
+        effect.outcome === "tutorial-infruitful-reproduction",
     ),
   );
   assertState(s);
@@ -428,7 +428,7 @@ test("tentativa infrutífera elimina a ninhada inteira e emite feedback", () => 
     s.passiveEffects.some(
       (effect) =>
         effect.trait === "Reprodução infrutífera" &&
-        effect.outcome === "infruitful-reproduction",
+        effect.outcome === "tutorial-infruitful-reproduction",
     ),
   );
   assertState(s);
@@ -467,7 +467,10 @@ test("Vivificação infrutífera em Casa Fértil recupera exatamente 1 Energia",
     s.passiveEffects.some(
       (effect) =>
         effect.trait === "Reprodução infrutífera" &&
-        /recuperou 1 Energia/.test(effect.text),
+        effect.outcome === "tutorial-infruitful-reproduction" &&
+        effect.theme === "tutorial-tooltip" &&
+        effect.text ===
+          "Reprodução infrutífera. Sem prole a peça recupera energia.",
     ),
   );
   assertState(s);
