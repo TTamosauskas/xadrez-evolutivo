@@ -610,6 +610,12 @@ test("hostile terrain is red and terrain tones flatten from the Devonian", () =>
   devonianDom.window.close();
 });
 
+test("body-plan and semelparity icons remain distinct", () => {
+  assert.equal(TRAITS.Molusco[0], "🐙");
+  assert.equal(TRAITS.Semelparidade[0], "🎋");
+  assert.notEqual(TRAITS.Molusco[0], TRAITS.Semelparidade[0]);
+});
+
 test("diet and amniote traits use the intended compact icons", () => {
   assert.equal(TRAITS.Herbívoro[0], "🥬");
   assert.equal(TRAITS.Carnívoro[0], "🍖");

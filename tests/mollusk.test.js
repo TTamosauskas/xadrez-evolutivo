@@ -13,6 +13,9 @@ import {
   traitUnlocked,
 } from "../src/geology.js";
 import { movesFor } from "../src/moves.js";
+import { traitFrameEntries } from "../src/view.js";
+import { traitSummary } from "../src/trait-presentation.js";
+import { mutationExplanation } from "../src/mutation-explanation.js";
 import { fixture } from "./helpers.js";
 
 const molluskTraits = [
@@ -136,4 +139,42 @@ test("Jatopropulsão and Tinta are restricted to the mollusk lineage", () => {
     }),
     false,
   );
+});
+
+
+test("Molusco stays visible as a structural icon even when established or context-filtered", () => {
+  const piece = {
+      traits: [
+        "Molusco",
+        "Reparo Celular",
+        "Multicelularismo",
+        "Predação",
+        "Ingestão",
+        "Simetria Bilateral",
+        "Locomoção Primitiva",
+        "Cefalização",
+        "Jatopropulsão",
+        "Percepção Espacial",
+        "Carapaça",
+        "Camuflagem",
+        "Ovíparo",
+      ],
+    },
+    entries = traitFrameEntries(
+      piece,
+      new Set(["Molusco"]),
+      new Set(["Camuflagem"]),
+    );
+  assert.equal(entries.visible[0].trait, "Molusco");
+  assert.ok(entries.visible.some((entry) => entry.trait === "Camuflagem"));
+});
+
+test("Molusco legend and discovery explain its body-plan identity", () => {
+  assert.match(traitSummary("Molusco"), /Casas Neutras/);
+  assert.match(traitSummary("Jatopropulsão"), /molusca/i);
+  assert.match(traitSummary("Tinta"), /molusca/i);
+  const explanation = mutationExplanation("Molusco");
+  assert.equal(explanation?.title, "🐙 Molusco");
+  assert.match(explanation?.realWorld ?? "", /manto/i);
+  assert.match(explanation?.game ?? "", /plano corporal/i);
 });

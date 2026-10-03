@@ -124,3 +124,11 @@ test("tutorial and terrain toasts share the explanatory modal format", () => {
       "No jogo: Casas férteis fornecem energia para reprodução e outros efeitos benéficos.",
   });
 });
+
+
+test("Molusco uses the standard mutation explanation pipeline", () => {
+  const info = mutationExplanation("Molusco");
+  assert.equal(info?.title, "🐙 Molusco");
+  assert.match(info?.realWorld ?? "", /Moluscos/);
+  assert.match(info?.game ?? "", /Jatopropulsão/);
+});
