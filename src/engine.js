@@ -1428,6 +1428,13 @@ function behavioralDefenseTraits(state, attacker, victim) {
   if (has(victim, "Mimetismo") && mimicryModels(state, attacker, victim).length)
     traits.push("Mimetismo");
   if (
+    has(victim, "Simetria Radial") &&
+    !functionallySessile(victim) &&
+    victim.radialEscapeRound !== round(state) &&
+    radialSymmetryEscapeCells(state, victim).length
+  )
+    traits.push("Simetria Radial");
+  if (
     nocturnalRound(state) &&
     has(victim, "Notívago") &&
     !has(attacker, "Visão Noturna")
@@ -3572,8 +3579,10 @@ function triggerInkEscape(ctx, attacker, victim) {
   const cells = proteanEscapeCells(state, victim);
   if (!cells.length) return false;
 
-  if (distance(attacker, victim) === 1)
+  if (distance(attacker, victim) === 1) {
+    applyCnidocyteRetaliation(state, attacker, victim);
     inoculatePeconha(state, attacker, victim);
+  }
 
   const cloudCells = [];
   for (let dr = -1; dr <= 1; dr++)
@@ -4199,6 +4208,13 @@ function executeMove(ctx, action) {
       victim.owner !== p.owner &&
       distance(p, victim) === 1 &&
       has(p, "Ventosas Quimiotáteis");
+  let aggressiveNeutralizedTrait = null;
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Metagênese")
+  )
+    victim.metagenesisLastThreatRound = round(state);
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -4247,7 +4263,10 @@ function executeMove(ctx, action) {
   if (suctionGrip && reactiveDefensesActive) {
     const escapeCells = proteanEscapeCells(state, victim),
       blockedTrait =
-        has(victim, "Ofuscamento por movimento") &&
+        has(victim, "Simetria Radial") &&
+        radialSymmetryEscapeCells(state, victim).length
+          ? "Simetria Radial"
+          : has(victim, "Ofuscamento por movimento") &&
         aggressiveNeutralizedTrait !== "Ofuscamento por movimento" &&
         movementDazzleReady(state, victim)
           ? "Ofuscamento por movimento"
@@ -4448,10 +4467,22 @@ function executeMove(ctx, action) {
       return;
     }
   }
-  const aggressiveNeutralizedTrait =
+  aggressiveNeutralizedTrait =
     pieceCapture && victim.owner !== p.owner && reactiveDefensesActive
       ? aggressiveMimicrySuppression(state, p, victim)
       : null;
+
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    distance(p, victim) === 1 &&
+    reactiveDefensesActive &&
+    has(victim, "Simetria Radial") &&
+    !suctionGrip &&
+    aggressiveNeutralizedTrait !== "Simetria Radial" &&
+    offerRadialReposition(ctx, p, victim)
+  )
+    return;
 
   if (
     pieceCapture &&
@@ -4498,6 +4529,7 @@ function executeMove(ctx, action) {
   if (pieceCapture && victim.owner !== p.owner) {
     const group = sociableGroup(state, victim);
     if (group.length >= 4) {
+      applyCnidocyteRetaliation(state, p, victim);
       state.socialDefense = {
         attackerId: p.id,
         victimId: victim.id,
@@ -4557,6 +4589,7 @@ function executeMove(ctx, action) {
     const cells = proteanEscapeCells(state, p);
     if (cells.length && random(state) < 1 / 4) {
       const retreat = pick(state, cells);
+      applyCnidocyteRetaliation(state, p, victim);
       reactiveRelocation(
         ctx,
         p,
@@ -4589,6 +4622,7 @@ function executeMove(ctx, action) {
     const cells = proteanEscapeCells(state, victim);
     if (movementDazzleReady(state, victim) && cells.length && random(state) < 1 / 4) {
       const escape = pick(state, cells);
+      applyCnidocyteRetaliation(state, p, victim);
       reactiveRelocation(
         ctx,
         victim,
@@ -4635,6 +4669,7 @@ function executeMove(ctx, action) {
       const cells = proteanEscapeCells(state, victim);
       if (cells.length && random(state) < 1 / 4) {
         const target = pick(state, cells);
+        applyCnidocyteRetaliation(state, p, victim);
         reactiveRelocation(
           ctx,
           victim,
