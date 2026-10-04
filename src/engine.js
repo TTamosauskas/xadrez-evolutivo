@@ -74,6 +74,8 @@ import {
   eggPlacementTargets,
   domesticPlacementTargets,
   socialDefenseTargets,
+  radialSymmetryEscapeCells,
+  radialRepositionTargets,
   serotoninRepositionTargets,
   ovoviviparousPlacementTargets,
   canParasitize,
@@ -154,6 +156,7 @@ import {
   predatoryReproductionAvailable,
   predatoryVivificationAvailable,
   trophicSpecializationMatches,
+  functionallySessile,
 } from "./reproduction-traits.js";
 import {
   consumeOrganicResidue,
@@ -213,6 +216,53 @@ function consumePredationVivification(state, piece) {
   if (!piece?.predationEnergy) return false;
   return finalizePredationFeedingSite(state, piece.id);
 }
+function applyCnidocyteRetaliation(state, attacker, victim) {
+  if (
+    !attacker ||
+    !victim ||
+    attacker.owner === victim.owner ||
+    !has(victim, "Cnidócitos") ||
+    distance(attacker, victim) !== 1 ||
+    !state.pieces.some((piece) => piece.id === attacker.id)
+  )
+    return false;
+
+  applyEnergyDelta(attacker, -1, state.turn);
+  const toxic = has(victim, "Toxicidade"),
+    venomous = has(victim, "Veneno");
+  if (toxic) {
+    const currentRound = round(state);
+    attacker.intoxicationRestThroughRound = Math.max(
+      attacker.intoxicationRestThroughRound ?? -1,
+      currentRound + 1,
+    );
+  }
+  if (venomous) {
+    attacker.venom = {
+      remaining: Math.min(attacker.venom?.remaining ?? 2, 2),
+      infectedTurn: state.turn,
+      source: "Veneno",
+    };
+  }
+
+  const text = venomous
+    ? "💥 Cnidócitos inocularam Veneno: −1 Energia, intoxicação e morte em 2 turnos próprios."
+    : toxic
+      ? "💥 Cnidócitos descarregaram Toxicidade: −1 Energia e intoxicação por 1 turno próprio."
+      : "💥 Cnidócitos atingiram o agressor: −1 Energia.";
+  log(state, OWNERS[victim.owner] + ": " + text);
+  emitPassiveEffect(state, "Cnidócitos", text, {
+    pieceId: victim.id,
+    outcome: venomous
+      ? "venomous-cnidocyte-retaliation"
+      : toxic
+        ? "toxic-cnidocyte-retaliation"
+        : "cnidocyte-retaliation",
+    value: 1,
+  });
+  return true;
+}
+
 function applyChemicalCaptureDefense(state, dead, attacker) {
   if (!attacker || attacker.owner === dead.owner) return;
   if (has(dead, "Veneno")) {
@@ -472,6 +522,7 @@ function finishGame(
   state.eggPlacement = null;
   state.domesticPlacement = null;
   state.socialDefense = null;
+  state.radialReposition = null;
   state.serotoninReposition = null;
   log(state, reason);
 }
@@ -1013,6 +1064,7 @@ function immediateCaptureThreatNextTurn(state, piece, turn) {
     chainTrait: null,
     chainOrigin: null,
     neurofocus: null,
+    radialReposition: null,
     serotoninReposition: null,
   };
   return threatState.pieces
@@ -1025,6 +1077,43 @@ function immediateCaptureThreatNextTurn(state, piece, turn) {
           target.c === piece.c,
       ),
     );
+}
+
+function refreshMetagenesis(state) {
+  const currentRound = round(state);
+  for (const piece of state.pieces) {
+    if (piece.owner !== state.current || !has(piece, "Metagênese")) continue;
+    const directlyThreatened =
+      immediateCaptureThreatNextTurn(state, piece, state.turn) ||
+      (Number.isInteger(piece.metagenesisLastThreatRound) &&
+        currentRound - piece.metagenesisLastThreatRound < 1);
+    if (directlyThreatened) piece.metagenesisLastThreatRound = currentRound;
+
+    const lastThreat = piece.metagenesisLastThreatRound,
+      nextForm =
+        directlyThreatened ||
+        (Number.isInteger(lastThreat) && currentRound - lastThreat <= 2)
+          ? "medusa"
+          : "polyp",
+      previousForm =
+        piece.metagenesisForm === "medusa" ? "medusa" : "polyp";
+    piece.metagenesisForm = nextForm;
+    if (previousForm === nextForm) continue;
+
+    if (nextForm === "polyp") piece.stationarySinceRound = currentRound;
+    const text =
+      nextForm === "medusa"
+        ? "🔄 Metagênese: pressão predatória detectada — forma Medusa."
+        : "🔄 Metagênese: duas rodadas sem ameaça — forma Pólipo.";
+    log(state, OWNERS[piece.owner] + ": " + text);
+    emitPassiveEffect(state, "Metagênese", text, {
+      pieceId: piece.id,
+      outcome:
+        nextForm === "medusa"
+          ? "metagenesis-medusa"
+          : "metagenesis-polyp",
+    });
+  }
 }
 
 function safeForRestorativeSleep(state, piece, turn) {
@@ -1339,6 +1428,13 @@ function behavioralDefenseTraits(state, attacker, victim) {
   if (has(victim, "Mimetismo") && mimicryModels(state, attacker, victim).length)
     traits.push("Mimetismo");
   if (
+    has(victim, "Simetria Radial") &&
+    !functionallySessile(victim) &&
+    victim.radialEscapeRound !== round(state) &&
+    radialSymmetryEscapeCells(state, victim).length
+  )
+    traits.push("Simetria Radial");
+  if (
     nocturnalRound(state) &&
     has(victim, "Notívago") &&
     !has(attacker, "Visão Noturna")
@@ -1428,6 +1524,7 @@ function triggerAdrenalineEscape(ctx, attacker, victim) {
     cells = adrenalineEscapeCells(state, victim);
   if (!cells.length || random(state) >= 1 / 6) return false;
 
+  applyCnidocyteRetaliation(state, attacker, victim);
   const target = pick(state, cells),
     victimOrigin = { r: victim.r, c: victim.c };
   reactiveRelocation(
@@ -1460,6 +1557,31 @@ function triggerAdrenalineEscape(ctx, attacker, victim) {
   );
   advanceTurn(ctx);
   settle(ctx);
+  return true;
+}
+
+function offerRadialReposition(ctx, attacker, victim) {
+  const state = ctx.state,
+    targets = radialSymmetryEscapeCells(state, victim);
+  if (!targets.length) return false;
+
+  victim.radialEscapeRound = round(state);
+  if (has(victim, "Metagênese"))
+    victim.metagenesisLastThreatRound = round(state);
+  applyCnidocyteRetaliation(state, attacker, victim);
+  state.radialReposition = {
+    attackerId: attacker.id,
+    victimId: victim.id,
+    attackerOwner: attacker.owner,
+  };
+  state.current = victim.owner;
+  state.phase = "radial-reposition";
+  state.chain = null;
+  state.chainTrait = null;
+  log(
+    state,
+    OWNERS[victim.owner] + ": ✳️ Simetria Radial permite escolher uma Casa Neutra adjacente para escapar.",
+  );
   return true;
 }
 
@@ -1617,6 +1739,7 @@ function triggerPlantCaptureResponse(ctx, attacker, victim, defense) {
 }
 
 function finishFrustratedCapture(ctx, attacker, defense, victim = null) {
+  if (victim) applyCnidocyteRetaliation(ctx.state, attacker, victim);
   if (victim) inoculatePeconha(ctx.state, attacker, victim);
   if (victim && triggerPlantCaptureResponse(ctx, attacker, victim, defense))
     return;
@@ -1979,6 +2102,7 @@ function clearForNeurofocusContinuation(state) {
   state.eggPlacement = null;
   state.domesticPlacement = null;
   state.socialDefense = null;
+  state.radialReposition = null;
   state.serotoninReposition = null;
   state.phase = "move";
 }
@@ -2413,6 +2537,7 @@ function advanceTurn(ctx) {
   state.building = null;
   state.domesticPlacement = null;
   state.socialDefense = null;
+  state.radialReposition = null;
   state.serotoninReposition = null;
   state.phase = "move";
   for (const p of [...state.pieces])
@@ -2544,6 +2669,7 @@ function advanceTurn(ctx) {
     if (!extinction(state)) matureExtremophytes(state);
     if (!extinction(state)) checkPopulationClimate(ctx);
   }
+  refreshMetagenesis(state);
   maturePhotosynthesis(state, state.current);
   recordExtremophyteAdaptation(state);
   if (!extinction(state) && resolveEcologicalDomain(state)) return;
@@ -2651,6 +2777,7 @@ function settle(ctx) {
     state.phase === "egg-placement" ||
     state.phase === "domestic-placement" ||
     state.phase === "social-defense" ||
+    state.phase === "radial-reposition" ||
     state.phase === "serotonin-reposition"
   )
     return;
@@ -3453,8 +3580,10 @@ function triggerInkEscape(ctx, attacker, victim) {
   const cells = proteanEscapeCells(state, victim);
   if (!cells.length) return false;
 
-  if (distance(attacker, victim) === 1)
+  if (distance(attacker, victim) === 1) {
+    applyCnidocyteRetaliation(state, attacker, victim);
     inoculatePeconha(state, attacker, victim);
+  }
 
   const cloudCells = [];
   for (let dr = -1; dr <= 1; dr++)
@@ -4080,6 +4209,13 @@ function executeMove(ctx, action) {
       victim.owner !== p.owner &&
       distance(p, victim) === 1 &&
       has(p, "Ventosas Quimiotáteis");
+  let aggressiveNeutralizedTrait = null;
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    has(victim, "Metagênese")
+  )
+    victim.metagenesisLastThreatRound = round(state);
   if (
     pieceCapture &&
     victim.owner !== p.owner &&
@@ -4128,7 +4264,10 @@ function executeMove(ctx, action) {
   if (suctionGrip && reactiveDefensesActive) {
     const escapeCells = proteanEscapeCells(state, victim),
       blockedTrait =
-        has(victim, "Ofuscamento por movimento") &&
+        has(victim, "Simetria Radial") &&
+        radialSymmetryEscapeCells(state, victim).length
+          ? "Simetria Radial"
+          : has(victim, "Ofuscamento por movimento") &&
         aggressiveNeutralizedTrait !== "Ofuscamento por movimento" &&
         movementDazzleReady(state, victim)
           ? "Ofuscamento por movimento"
@@ -4329,10 +4468,22 @@ function executeMove(ctx, action) {
       return;
     }
   }
-  const aggressiveNeutralizedTrait =
+  aggressiveNeutralizedTrait =
     pieceCapture && victim.owner !== p.owner && reactiveDefensesActive
       ? aggressiveMimicrySuppression(state, p, victim)
       : null;
+
+  if (
+    pieceCapture &&
+    victim.owner !== p.owner &&
+    distance(p, victim) === 1 &&
+    reactiveDefensesActive &&
+    has(victim, "Simetria Radial") &&
+    !suctionGrip &&
+    aggressiveNeutralizedTrait !== "Simetria Radial" &&
+    offerRadialReposition(ctx, p, victim)
+  )
+    return;
 
   if (
     pieceCapture &&
@@ -4379,6 +4530,7 @@ function executeMove(ctx, action) {
   if (pieceCapture && victim.owner !== p.owner) {
     const group = sociableGroup(state, victim);
     if (group.length >= 4) {
+      applyCnidocyteRetaliation(state, p, victim);
       state.socialDefense = {
         attackerId: p.id,
         victimId: victim.id,
@@ -4438,6 +4590,7 @@ function executeMove(ctx, action) {
     const cells = proteanEscapeCells(state, p);
     if (cells.length && random(state) < 1 / 4) {
       const retreat = pick(state, cells);
+      applyCnidocyteRetaliation(state, p, victim);
       reactiveRelocation(
         ctx,
         p,
@@ -4470,6 +4623,7 @@ function executeMove(ctx, action) {
     const cells = proteanEscapeCells(state, victim);
     if (movementDazzleReady(state, victim) && cells.length && random(state) < 1 / 4) {
       const escape = pick(state, cells);
+      applyCnidocyteRetaliation(state, p, victim);
       reactiveRelocation(
         ctx,
         victim,
@@ -4516,6 +4670,7 @@ function executeMove(ctx, action) {
       const cells = proteanEscapeCells(state, victim);
       if (cells.length && random(state) < 1 / 4) {
         const target = pick(state, cells);
+        applyCnidocyteRetaliation(state, p, victim);
         reactiveRelocation(
           ctx,
           victim,
@@ -6405,6 +6560,47 @@ function resolveDomesticPlacement(ctx, action) {
   }
 }
 
+function resolveRadialReposition(ctx, action) {
+  const state = ctx.state,
+    pending = state.radialReposition,
+    victim = state.pieces.find(
+      (candidate) => candidate.id === pending?.victimId,
+    );
+  if (!pending || !victim)
+    throw Error("Reposicionamento por Simetria Radial indisponível.");
+
+  const target = radialRepositionTargets(state).find(
+    (candidate) => candidate.r === action.r && candidate.c === action.c,
+  );
+  if (!target)
+    throw Error("Escolha uma Casa Neutra destacada para a fuga radial.");
+
+  const origin = { r: victim.r, c: victim.c };
+  state.current = pending.attackerOwner;
+  state.radialReposition = null;
+  state.phase = "move";
+  reactiveRelocation(
+    ctx,
+    victim,
+    target.r,
+    target.c,
+    "fuga por Simetria Radial",
+  );
+  log(
+    state,
+    OWNERS[victim.owner] + ": ✳️ Simetria Radial desviou a criatura de " +
+      coord(origin.r, origin.c) + " para " + coord(target.r, target.c) + ".",
+  );
+  emitPassiveEffect(
+    state,
+    "Simetria Radial",
+    "✳️ Simetria Radial desviou a criatura para " + coord(target.r, target.c) + ".",
+    { pieceId: victim.id, outcome: "radial-escape" },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveSerotoninReposition(ctx, action) {
   const state = ctx.state,
     pending = state.serotoninReposition,
@@ -6758,6 +6954,11 @@ export function transition(previous, action) {
     state.phase === "social-defense"
   )
     resolveSocialDefense(ctx, action);
+  else if (
+    action.type === "RADIAL_REPOSITION" &&
+    state.phase === "radial-reposition"
+  )
+    resolveRadialReposition(ctx, action);
   else if (
     ["SEROTONIN_REPOSITION", "SKIP_SEROTONIN_REPOSITION"].includes(
       action.type,

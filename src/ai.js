@@ -66,6 +66,7 @@ export const AI_ACTION_TYPES = Object.freeze([
   "BUD",
   "PUPATE",
   "NICHE_BUILD",
+  "RADIAL_REPOSITION",
   "SEROTONIN_REPOSITION",
   "SKIP_SEROTONIN_REPOSITION",
   "MANIPULATE",
@@ -95,6 +96,7 @@ export const AI_MOVE_MECHANIC_FLAGS = Object.freeze([
   "hypermetamorphosis",
   "jet",
   "jump",
+  "metagenesis",
   "knightCorrection",
   "lateral",
   "massRecruitment",
@@ -539,6 +541,8 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
       : 6 + balance.allies * 2 - balance.enemies;
   }
   if (a.type === "SKIP_MANIPULATION") return -2;
+  if (a.type === "RADIAL_REPOSITION")
+    return 18 + placementPriority(state, a);
   if (a.type === "SEROTONIN_REPOSITION")
     return 8 + placementPriority(state, a);
   if (a.type === "SKIP_SEROTONIN_REPOSITION") return -3;
@@ -553,7 +557,11 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
   }
 
   const p = state.pieces.find(
-      (piece) => piece.id === (a.id ?? state.serotoninReposition?.id),
+      (piece) =>
+        piece.id ===
+        (a.id ??
+          state.radialReposition?.victimId ??
+          state.serotoninReposition?.id),
     ),
     moveTarget =
       a.type === "MOVE" && p
@@ -701,6 +709,7 @@ function evaluationStateForPiece(state, piece) {
     neurofocus: null,
     neurodivergenceAction: null,
     socialDefense: null,
+    radialReposition: null,
     serotoninReposition: null,
     manipulation: null,
     building: null,

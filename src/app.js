@@ -20,6 +20,7 @@ import {
   eggPlacementTargets,
   domesticPlacementTargets,
   socialDefenseTargets,
+  radialRepositionTargets,
   serotoninRepositionTargets,
   ovoviviparousPlacementTargets,
   parasitismTargets,
@@ -381,6 +382,15 @@ $("board").addEventListener("click", (event) => {
   if (state.phase === "social-defense") {
     if (p && socialDefenseTargets(state).some((piece) => piece.id === p.id))
       dispatch({ type: "SOCIAL_SACRIFICE", id: p.id });
+    return;
+  }
+  if (state.phase === "radial-reposition") {
+    if (
+      radialRepositionTargets(state).some(
+        (target) => target.r === r && target.c === c,
+      )
+    )
+      dispatch({ type: "RADIAL_REPOSITION", r, c });
     return;
   }
   if (state.phase === "serotonin-reposition") {

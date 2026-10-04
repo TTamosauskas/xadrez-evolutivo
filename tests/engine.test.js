@@ -1216,6 +1216,118 @@ test("venom excludes capture turn and kills after two later own turns", () => {
     s = simulate(s, { type: "PASS" });
   assert.ok(!s.pieces.some((p) => p.id === 1));
 });
+test("Simetria Radial forces a neutral escape and Cnidocytes retaliate on contact", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4 },
+    {
+      owner: "amber",
+      r: 4,
+      c: 4,
+      rank: 4,
+      traits: ["Cnidário", "Simetria Radial", "Cnidócitos", "Toxicidade"],
+    },
+  ]);
+  const attackerId = s.pieces[0].id,
+    victimId = s.pieces[1].id,
+    beforeEnergy = energyValue(s.pieces[0]);
+
+  s = transition(s, move(s.pieces[0], 4, 4));
+  assert.equal(s.phase, "radial-reposition");
+  assert.equal(s.current, "amber");
+  const attacker = s.pieces.find((piece) => piece.id === attackerId),
+    victim = s.pieces.find((piece) => piece.id === victimId);
+  assert.ok(attacker);
+  assert.ok(victim);
+  assert.equal(
+    energyValue(attacker),
+    beforeEnergy - movementEnergyCost(attacker) - 1,
+  );
+  assert.ok(Number.isInteger(attacker.intoxicationRestThroughRound));
+  assert.equal(victim.radialEscapeRound, round(s));
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Cnidócitos" &&
+        effect.outcome === "toxic-cnidocyte-retaliation",
+    ),
+  );
+
+  const choices = legalActions(s);
+  assert.ok(choices.length > 0);
+  assert.ok(choices.every((action) => action.type === "RADIAL_REPOSITION"));
+  const escape = choices[0];
+  s = transition(s, escape);
+  const escaped = s.pieces.find((piece) => piece.id === victimId);
+  assert.ok(escaped);
+  assert.deepEqual([escaped.r, escaped.c], [escape.r, escape.c]);
+  assert.equal(s.phase, "move");
+  assert.equal(s.current, "amber");
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Simetria Radial" &&
+        effect.outcome === "radial-escape",
+    ),
+  );
+  assertState(s);
+});
+
+test("Metagenesis switches to Medusa under capture pressure and returns to Polyp after two quiet rounds", () => {
+  let s = fixture([
+    { owner: "blue", r: 4, c: 3, rank: 4 },
+    {
+      owner: "amber",
+      r: 4,
+      c: 4,
+      rank: 4,
+      traits: [
+        "Cnidário",
+        "Brotamento",
+        "Reprodução Sexuada",
+        "Metagênese",
+      ],
+    },
+  ]);
+  const cnidarianId = s.pieces[1].id;
+  assert.equal(s.pieces[1].metagenesisForm, "polyp");
+
+  s = transition(s, { type: "PASS" });
+  let cnidarian = s.pieces.find((piece) => piece.id === cnidarianId);
+  assert.equal(s.current, "amber");
+  assert.equal(cnidarian.metagenesisForm, "medusa");
+  assert.ok(
+    movesFor(s, cnidarian).some(
+      (target) =>
+        !target.capture &&
+        target.metagenesis &&
+        ["neutral", "fertile"].includes(s.board[target.r * 8 + target.c]),
+    ),
+  );
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Metagênese" &&
+        effect.outcome === "metagenesis-medusa",
+    ),
+  );
+
+  const attacker = s.pieces.find((piece) => piece.owner === "blue");
+  attacker.r = 0;
+  attacker.c = 0;
+  for (let i = 0; i < 6; i++) s = transition(s, { type: "PASS" });
+
+  cnidarian = s.pieces.find((piece) => piece.id === cnidarianId);
+  assert.equal(cnidarian.metagenesisForm, "polyp");
+  assert.ok(
+    s.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Metagênese" &&
+        effect.outcome === "metagenesis-polyp",
+    ),
+  );
+  assertState(s);
+});
+
 test("Voo bypasses hostile traversal but not hostile landing; knight only tests landing", () => {
   let s = fixture([
     { owner: "blue", r: 6, c: 3, rank: 3 },

@@ -56,6 +56,8 @@ import {
   parentalCareProtects,
   predatoryReproductionAvailable,
   sortPreferredMates,
+  functionallySessile,
+  metagenesisForm,
 } from "./reproduction-traits.js";
 import { specialLocomotionTargets } from "./locomotion.js";
 const ORTH = [
@@ -118,6 +120,53 @@ export const resting = (state, p) =>
   intoxicationResting(state, p) ||
   hibernating(state, p) ||
   pupating(state, p);
+
+export function radialSymmetryEscapeCells(
+  state,
+  piece,
+  ignoreUsage = false,
+) {
+  if (
+    !piece ||
+    !has(piece, "Simetria Radial") ||
+    functionallySessile(piece) ||
+    (!ignoreUsage && piece.radialEscapeRound === round(state))
+  )
+    return [];
+  const targets = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const r = piece.r + dr,
+        c = piece.c + dc;
+      if (
+        !inside(r, c) ||
+        terrain(state, r, c) !== "neutral" ||
+        ecologicalDomainBlocked(state, piece.owner, r, c) ||
+        at(state, r, c) ||
+        eggAt(state, r, c) ||
+        plantSeedAt(state, r, c) ||
+        fragmentAt(state, r, c) ||
+        barrierAt(state, r, c) ||
+        lethalHazardAt(state, r, c)
+      )
+        continue;
+      targets.push({ r, c });
+    }
+  return targets;
+}
+
+export function radialRepositionTargets(state) {
+  const pending = state.radialReposition;
+  if (state.phase !== "radial-reposition" || !pending) return [];
+  const piece = state.pieces.find(
+    (candidate) =>
+      candidate.id === pending.victimId && candidate.owner === state.current,
+  );
+  return piece
+    ? radialSymmetryEscapeCells(state, piece, true)
+    : [];
+}
 
 export function serotoninRepositionTargets(state) {
   const pending = state.serotoninReposition;
@@ -309,6 +358,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     if (
       terrestrialRestriction &&
       !extra.stay &&
+      !extra.metagenesis &&
       destinationTerrain !== "fertile" &&
       !(aquaticMollusk && destinationTerrain === "neutral")
     )
@@ -712,6 +762,33 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
           });
         break;
       }
+    }
+  }
+
+  function metagenesisMovementTargets() {
+    if (metagenesisForm(p) !== "medusa") return;
+    for (const [dr, dc] of [...ORTH, ...DIAG]) {
+      const r = p.r + dr,
+        c = p.c + dc,
+        destination = terrain(state, r, c);
+      if (
+        !inside(r, c) ||
+        !["fertile", "neutral"].includes(destination) ||
+        at(state, r, c) ||
+        eggAt(state, r, c) ||
+        plantSeedAt(state, r, c) ||
+        fragmentAt(state, r, c) ||
+        barrierAt(state, r, c) ||
+        lethalHazardAt(state, r, c) ||
+        targets.some(
+          (target) => target.r === r && target.c === c && !target.capture,
+        )
+      )
+        continue;
+      add(r, c, [[r, c]], {
+        metagenesis: true,
+        noContinuation: true,
+      });
     }
   }
 
@@ -1316,7 +1393,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
       !has(p, "Cefalização") ||
       !has(p, "Predação") ||
       !has(p, "Locomoção Primitiva") ||
-      has(p, "Séssil") ||
+      functionallySessile(p) ||
       stalledRounds < 8
     )
       return;
@@ -1374,9 +1451,10 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     }
   }
 
+  metagenesisMovementTargets();
   const mobile =
     has(p, "Locomoção Primitiva") &&
-    !has(p, "Séssil");
+    !functionallySessile(p);
   if (mobile) {
     if (has(p, "Locomoção Articulada")) chessTargets(false);
     else {
@@ -1413,7 +1491,7 @@ export function movesFor(state, p, { ignoreChain = false } = {}) {
     massRecruitmentTargets();
     cephalizationTargets();
   } else if (
-    !has(p, "Séssil") &&
+    !functionallySessile(p) &&
     (
       captureUnlocked(state, p) ||
       contactCaptureUnlocked(p) ||
@@ -2923,6 +3001,12 @@ export function pieceActionState(state, piece) {
 
 export function legalActions(state) {
   if (state.result) return [];
+  if (state.phase === "radial-reposition")
+    return radialRepositionTargets(state).map((target) => ({
+      type: "RADIAL_REPOSITION",
+      r: target.r,
+      c: target.c,
+    }));
   if (state.phase === "serotonin-reposition")
     return [
       ...serotoninRepositionTargets(state).map((target) => ({

@@ -820,6 +820,14 @@ function addActiveStateTraits(state, piece, traits) {
         : "Bioluminescência",
     );
 
+  if (has(piece, "Metagênese")) traits.add("Metagênese");
+  if (
+    state.phase === "radial-reposition" &&
+    state.radialReposition?.victimId === piece.id &&
+    has(piece, "Simetria Radial")
+  )
+    traits.add("Simetria Radial");
+
   if (
     state.phase === "serotonin-reposition" &&
     state.serotoninReposition?.id === piece.id &&
@@ -1169,7 +1177,9 @@ function markCaptureContext(state, attacker, victim, byId) {
       if (has(attacker, "Presas")) attackerTraits.add("Presas");
     }
 
-    if (distance(attacker, victim) === 1)
+    if (distance(attacker, victim) === 1) {
+      if (has(victim, "Simetria Radial")) victimTraits.add("Simetria Radial");
+      if (has(victim, "Cnidócitos")) victimTraits.add("Cnidócitos");
       for (const trait of [
         "Contorcionismo",
         "Corpo Gelatinoso",
@@ -1177,6 +1187,7 @@ function markCaptureContext(state, attacker, victim, byId) {
         "Escamas",
       ])
         if (has(victim, trait)) victimTraits.add(trait);
+    }
     if (has(victim, "Sismonastia"))
       victimTraits.add("Sismonastia");
     if (

@@ -793,6 +793,12 @@ export function newPiece(state, owner, r, c, source = {}) {
       webCreatedStationarySinceRound:
         source.webCreatedStationarySinceRound ?? null,
       stationarySinceRound: source.stationarySinceRound ?? bornRound,
+      radialEscapeRound: source.radialEscapeRound ?? null,
+      metagenesisForm:
+        source.metagenesisForm ??
+        ((source.traits ?? []).includes("Metagênese") ? "polyp" : null),
+      metagenesisLastThreatRound:
+        source.metagenesisLastThreatRound ?? null,
       budded: source.budded ?? false,
       colonyId: source.colonyId ?? null,
       paedogenesisUsed: source.paedogenesisUsed ?? false,
@@ -1413,6 +1419,7 @@ export function createState(seed = Date.now(), options = {}) {
     eggPlacement: null,
     domesticPlacement: null,
     socialDefense: null,
+    radialReposition: null,
     serotoninReposition: null,
     movementTrace: null,
     nextId: 1,
@@ -3283,6 +3290,7 @@ export function assertState(state) {
       "egg-placement",
       "domestic-placement",
       "social-defense",
+      "radial-reposition",
       "serotonin-reposition",
       "collapse",
       "over",
@@ -3341,6 +3349,24 @@ export function assertState(state) {
       state.socialDefense.memberIds.some((id) => !integer(id, 1)))
   )
     throw Error("Sociabilidade inválida.");
+  if (
+    (state.phase === "radial-reposition" && !state.radialReposition) ||
+    (state.phase !== "radial-reposition" && state.radialReposition)
+  )
+    throw Error("Fase de Simetria Radial inválida.");
+  if (
+    state.radialReposition &&
+    (!integer(state.radialReposition.attackerId, 1) ||
+      !integer(state.radialReposition.victimId, 1) ||
+      !["blue", "amber"].includes(state.radialReposition.attackerOwner) ||
+      !state.pieces.some(
+        (piece) =>
+          piece.id === state.radialReposition.victimId &&
+          piece.owner === state.current &&
+          has(piece, "Simetria Radial"),
+      ))
+  )
+    throw Error("Reposicionamento radial inválido.");
   if (
     (state.phase === "serotonin-reposition" && !state.serotoninReposition) ||
     (state.phase !== "serotonin-reposition" && state.serotoninReposition)
@@ -3585,6 +3611,21 @@ export function assertState(state) {
         p.extremophyteCell !== square(p.r, p.c)) ||
       typeof p.oothecaPrimed !== "boolean" ||
       !integer(p.stationarySinceRound ?? p.bornRound, 0) ||
+      !(
+        p.radialEscapeRound === null ||
+        p.radialEscapeRound === undefined ||
+        integer(p.radialEscapeRound, 0)
+      ) ||
+      !(
+        p.metagenesisForm === null ||
+        p.metagenesisForm === undefined ||
+        ["polyp", "medusa"].includes(p.metagenesisForm)
+      ) ||
+      !(
+        p.metagenesisLastThreatRound === null ||
+        p.metagenesisLastThreatRound === undefined ||
+        integer(p.metagenesisLastThreatRound, 0)
+      ) ||
       typeof (p.budded ?? false) !== "boolean" ||
       !(p.colonyId === null || p.colonyId === undefined || integer(p.colonyId, 1)) ||
       typeof (p.paedogenesisUsed ?? false) !== "boolean" ||

@@ -36,19 +36,28 @@ export function fixture(
         ["Fotossíntese", "Quimiossíntese"].includes(trait),
       ),
       mollusk = requestedTraits.includes("Molusco"),
+      cnidarian = requestedTraits.includes("Cnidário"),
       baseTraits = photosynthetic
         ? []
-        : [
-            "Reparo Celular",
-            "Multicelularismo",
-            "Predação",
-            "Ingestão",
-            "Simetria Bilateral",
-            "Locomoção Primitiva",
-            ...(mollusk
-              ? ["Cefalização"]
-              : ["Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"]),
-          ],
+        : cnidarian
+          ? [
+              "Reparo Celular",
+              "Multicelularismo",
+              "Predação",
+              "Ingestão",
+              "Cnidário",
+            ]
+          : [
+              "Reparo Celular",
+              "Multicelularismo",
+              "Predação",
+              "Ingestão",
+              "Simetria Bilateral",
+              "Locomoção Primitiva",
+              ...(mollusk
+                ? ["Cefalização"]
+                : ["Vertebrado", "Locomoção Articulada", "Locomoção Terrestre"]),
+            ],
       source = {
         ...spec,
         traits: [...new Set([...baseTraits, ...requestedTraits])],
