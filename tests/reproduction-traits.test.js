@@ -103,6 +103,42 @@ test("Biofilme shares one occupied fertile resource across a connected network p
   assertState(s);
 });
 
+test("Metagenesis Polyp halves budding preparation and colony cooldown", () => {
+  let s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 4,
+      rank: 4,
+      traits: [
+        "Cnidário",
+        "Brotamento",
+        "Colônia",
+        "Reprodução Sexuada",
+        "Metagênese",
+        "Herbívoro",
+      ],
+      metagenesisForm: "polyp",
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const parentId = s.pieces[0].id,
+    parent = s.pieces[0];
+  s.turn = 4;
+  s.current = "blue";
+  parent.stationarySinceRound = 0;
+  s.board[parent.r * 8 + parent.c] = "fertile";
+
+  assert.equal(round(s), 2);
+  assert.equal(canBud(s, parent), true);
+  s = transition(s, { type: "BUD", id: parentId });
+
+  const after = s.pieces.find((piece) => piece.id === parentId);
+  assert.ok(after);
+  assert.equal(s.colonyCooldowns[after.colonyId], 4);
+  assertState(s);
+});
+
 test("Fixação de Nitrogênio fertilizes one adjacent neutral cell and enforces four rounds of recharge", () => {
   let s = fixture([
     {
