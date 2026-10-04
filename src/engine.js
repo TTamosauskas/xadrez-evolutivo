@@ -2544,7 +2544,18 @@ function triggerHostileCorrosion(ctx) {
       round(state) - (state.lastSuccessfulCaptureRound ?? 0),
     ),
     stagnating = stalledRounds >= 18,
-    periodic = state.turn >= 120 && state.turn % 5 === 0;
+    periodic = state.turn >= 120 && state.turn % 5 === 0,
+    passivePending = passiveProgressPending(state),
+    offensiveOptions = offensiveActionCount(state),
+    ecologicalResolutionDue =
+      !passivePending &&
+      ((state.turn >= 120 &&
+        offensiveOptions <= 1 &&
+        stalledRounds >= ECOLOGICAL_DOMAIN_LOW_PRESSURE_ROUNDS) ||
+        (offensiveOptions === 0 &&
+          stalledRounds >= ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS));
+
+  if (ecologicalResolutionDue) return false;
 
   if (!stagnating) {
     state.conwayStagnation = null;
