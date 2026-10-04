@@ -6788,7 +6788,8 @@ function logBoardChanges(previous, state) {
     beforeCarcasses = new Set(
       (previous.carcasses ?? []).map((entry) => entry.cell),
     ),
-    afterCarcasses = new Set((state.carcasses ?? []).map((entry) => entry.cell)),\n    beforeBarriers = new Set(previous.barriers ?? []),
+    afterCarcasses = new Set((state.carcasses ?? []).map((entry) => entry.cell)),
+    beforeBarriers = new Set(previous.barriers ?? []),
     afterBarriers = new Set(state.barriers ?? []),
     changes = [],
     changedCells = new Set();
