@@ -339,6 +339,8 @@ export function arenaAllowedRanks(genome, branchId) {
       allowed = [1, 2, 3, 4, 5];
     else if (articulated && completed.includes("Artrópode"))
       allowed = [1, 2, 4];
+    else if (completed.includes("Cnidário"))
+      allowed = [4];
     else if (
       completed.includes("Molusco") &&
       completed.includes("Jatopropulsão")
@@ -413,6 +415,8 @@ export function arenaRankRestrictionReason(genome, rank, branchId) {
       return "Peão é exclusivo do ramo fotossintético.";
     if (completed.includes("Artrópode") && [3, 5].includes(rank))
       return "Artrópodes não podem assumir Torre ou Rainha.";
+    if (completed.includes("Cnidário") && rank !== 4)
+      return "Cnidários permanecem na forma basal Rei nesta etapa.";
     if (completed.includes("Molusco")) {
       if ([1, 5].includes(rank))
         return "Moluscos usam Rei, Bispo ou Torre.";
