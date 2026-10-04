@@ -740,6 +740,47 @@ test("cellular repair gates multicellularity and body-plan branches stay distinc
   assert.equal(traitUnlocked(s, "Artrópode", p), true);
 });
 
+test("Cnidarian specializations unlock in sequence and radial symmetry excludes bilateral symmetry", () => {
+  const s = createState(114),
+    p = s.pieces[0];
+  s.geologicalStage = "ediacaran";
+  s.historicalTraits = [
+    "Respiração anaeróbia",
+    "Predação",
+    "Multicelularismo",
+    "Brotamento",
+    "Reprodução Sexuada",
+    "Cnidário",
+  ];
+  p.traits = [
+    "Respiração anaeróbia",
+    "Predação",
+    "Multicelularismo",
+    "Brotamento",
+    "Reprodução Sexuada",
+    "Cnidário",
+  ];
+  p.ancestry = [...p.traits];
+
+  assert.equal(TRAIT_STAGE["Simetria Radial"], "ediacaran");
+  assert.equal(TRAIT_STAGE.Cnidócitos, "ediacaran");
+  assert.equal(TRAIT_STAGE.Metagênese, "cambrian");
+  assert.equal(traitUnlocked(s, "Simetria Radial", p), true);
+  assert.equal(traitUnlocked(s, "Cnidócitos", p), true);
+  assert.equal(traitUnlocked(s, "Metagênese", p), false);
+
+  const radial = applyTraitMutation(p.traits, "Simetria Radial");
+  assert.ok(radial.includes("Simetria Radial"));
+  assert.equal(radial.includes("Simetria Bilateral"), false);
+
+  s.geologicalStage = "cambrian";
+  assert.equal(traitUnlocked(s, "Metagênese", p), true);
+
+  p.traits.push("Simetria Bilateral");
+  p.ancestry.push("Simetria Bilateral");
+  assert.equal(traitUnlocked(s, "Simetria Radial", p), false);
+});
+
 test("geological event pools gain pathogen outbreaks from the Proterozoic onward", () => {
   const ids = new Set(EVENTS.map((event) => event.id));
   for (const stage of GEOLOGICAL_STAGES)
