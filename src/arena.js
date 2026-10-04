@@ -47,6 +47,7 @@ export const ARENA_BODY_PLANS = Object.freeze([
   "Vertebrado",
   "Artrópode",
   "Molusco",
+  "Cnidário",
 ]);
 export const otherArenaBodyPlans = (bodyPlan) =>
   ARENA_BODY_PLANS.filter((candidate) => candidate !== bodyPlan);
