@@ -2725,7 +2725,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
     nonPhotosynthetic = strongestSurvivor(
       previous,
       winner,
-      (piece) => !canPhotosynthesize(piece),
+      (piece) =>
+        !canPhotosynthesize(piece) &&
+        (piece.traits ?? []).includes("Predação"),
     ),
     fallbackPhotosynthetic = strongestSurvivor(
       previous,
@@ -2735,7 +2737,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
     fallbackNonPhotosynthetic = strongestSurvivor(
       previous,
       null,
-      (piece) => !canPhotosynthesize(piece),
+      (piece) =>
+        !canPhotosynthesize(piece) &&
+        (piece.traits ?? []).includes("Predação"),
     ),
     extinctionFounder = previous.result?.extinctionFounder ?? null,
     photosyntheticExtinctionFounder =
@@ -2743,7 +2747,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
         ? extinctionFounder
         : null,
     nonPhotosyntheticExtinctionFounder =
-      extinctionFounder && !canPhotosynthesize(extinctionFounder)
+      extinctionFounder &&
+      !canPhotosynthesize(extinctionFounder) &&
+      (extinctionFounder.traits ?? []).includes("Predação")
         ? extinctionFounder
         : null,
     photosyntheticSource =
@@ -2843,7 +2849,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
   if (companion)
     log(
       state,
-      "Dupla fundadora simétrica: ambos os lados começam com uma linhagem fotossintética e uma não fotossintética, preservando a dominante e sua contraparte evolutiva.",
+      "Dupla fundadora simétrica: ambos os lados começam com uma linhagem fotossintética e uma predatória, preservando os dois ramos energéticos fundamentais.",
     );
   log(
     state,
