@@ -96,6 +96,7 @@ export const AI_MOVE_MECHANIC_FLAGS = Object.freeze([
   "hypermetamorphosis",
   "jet",
   "jump",
+  "metagenesis",
   "knightCorrection",
   "lateral",
   "massRecruitment",
