@@ -898,6 +898,70 @@ function orderedActions(state, limit = Infinity, priorityOptions = {}) {
     .slice(0, limit);
 }
 
+function directEnemyCaptureAction(state, action) {
+  if (action.type !== "MOVE") return false;
+  const piece = state.pieces.find((candidate) => candidate.id === action.id);
+  if (!piece) return false;
+  const target = movesFor(state, piece).find(
+      (candidate) => candidate.r === action.r && candidate.c === action.c,
+    ),
+    victim = state.pieces.find(
+      (candidate) =>
+        candidate.id !== piece.id &&
+        candidate.r === action.r &&
+        candidate.c === action.c,
+    );
+  return !!target?.capture && !!victim && victim.owner !== piece.owner;
+}
+
+function offensiveRootScore(state, action) {
+  if (directEnemyCaptureAction(state, action)) return 1000;
+  if (action.type !== "MOVE") return 0;
+  const piece = state.pieces.find((candidate) => candidate.id === action.id);
+  if (!piece) return 0;
+  return (
+    futureCaptureOptions(state, piece, action) * 20 +
+    captureGeometryPriority(state, piece, action)
+  );
+}
+
+function resolutionRootCandidates(state, roots, width, resolutionLevel) {
+  if (!resolutionLevel) return roots.slice(0, width);
+  const selected = [],
+    seen = new Set(),
+    keyFor = (entry) =>
+      JSON.stringify([
+        entry.action.type,
+        entry.action.id ?? null,
+        entry.action.targetId ?? null,
+        entry.action.r ?? null,
+        entry.action.c ?? null,
+      ]),
+    add = (entry) => {
+      const key = keyFor(entry);
+      if (seen.has(key) || selected.length >= width) return;
+      seen.add(key);
+      selected.push(entry);
+    },
+    offensive = roots
+      .map((entry) => ({
+        entry,
+        score: offensiveRootScore(state, entry.action),
+      }))
+      .filter(({ score }) => score > 0)
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          b.entry.value - a.entry.value ||
+          a.entry.order - b.entry.order,
+      ),
+    mandatory = resolutionLevel >= 2 ? 2 : 1;
+
+  for (const { entry } of offensive.slice(0, mandatory)) add(entry);
+  for (const entry of roots) add(entry);
+  return selected;
+}
+
 function searchValue(
   state,
   owner,
@@ -999,9 +1063,15 @@ export function chooseAction(
         ? resolutionPressureLevel(state)
         : 0,
     priorityOptions = {
-      geometryScale: difficulty === "hard" ? 0.75 : 1,
+      geometryScale:
+        difficulty === "hard"
+          ? activeResolutionLevel
+            ? 1 + activeResolutionLevel * 0.15
+            : 0.75
+          : 1 + activeResolutionLevel * 0.1,
       resolutionLevel: activeResolutionLevel,
     },
+    rootPriorityWeight = 0.08 + activeResolutionLevel * 0.06,
     actions = orderedActions(state, Infinity, priorityOptions);
   if (!actions.length) return { type: "PASS" };
 
@@ -1035,7 +1105,8 @@ export function chooseAction(
       value =
         evaluateForAI(next, owner, {
           resolutionLevel: activeResolutionLevel,
-        }) + actionPriority(state, action, priorityOptions) * 0.08;
+        }) +
+        actionPriority(state, action, priorityOptions) * rootPriorityWeight;
     context.nodes++;
     return { action, next, value, order };
   });
@@ -1072,7 +1143,19 @@ export function chooseAction(
           ? 2
           : 1,
     searchWidth = Math.min(roots.length, rootSearchWidth),
-    candidates = roots.slice(0, searchWidth);
+    directCaptureRoots = roots.filter((entry) =>
+      directEnemyCaptureAction(state, entry.action),
+    ),
+    forceCaptureResolution =
+      activeResolutionLevel >= 3 && directCaptureRoots.length > 0,
+    candidates = forceCaptureResolution
+      ? directCaptureRoots.slice(0, searchWidth)
+      : resolutionRootCandidates(
+          state,
+          roots,
+          searchWidth,
+          activeResolutionLevel,
+        );
   let completedDepth = 0,
     attemptedSearchRoots = 0;
 
@@ -1105,7 +1188,9 @@ export function chooseAction(
             owner,
             searchDepth,
             context,
-          ) + actionPriority(state, candidate.action, priorityOptions) * 0.08;
+          ) +
+          actionPriority(state, candidate.action, priorityOptions) *
+            rootPriorityWeight;
       attemptedSearchRoots++;
       iteration.push({ candidate, value });
     }
@@ -1130,6 +1215,8 @@ export function chooseAction(
       depth: profile.depth,
       branchWidth: profile.branchWidth,
       budget: profile.budget,
+      resolutionLevel: activeResolutionLevel,
+      forcedCaptureResolution: forceCaptureResolution,
     });
-  return roots[0].action;
+  return forceCaptureResolution ? candidates[0].action : roots[0].action;
 }
