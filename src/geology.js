@@ -60,7 +60,7 @@ export const NEGATIVE_TRAIT_RULES = Object.freeze({
   },
   Nanismo: {
     stage: "cambrian",
-    lineageAny: ["Vertebrado", "Artrópode", "Molusco"],
+    lineageAny: ["Vertebrado", "Artrópode", "Molusco", "Cnidário"],
     somatic: false,
   },
   Gigantismo: {
@@ -504,6 +504,7 @@ export const TRAIT_STAGE = {
   "Dormência": "neoarchean",
   "Multicelularismo": "orosirian",
   "Simetria Bilateral": "ediacaran",
+  Cnidário: "ediacaran",
   "Reprodução Sexuada": "calymmian",
   "Precocidade Sexual": "ediacaran",
   "Imortalidade Biológica": "ediacaran",
@@ -702,7 +703,7 @@ export const ACTIVE_TRAIT_FAMILIES = [
   },
   {
     id: "body-plan",
-    traits: ["Vertebrado", "Artrópode", "Molusco"],
+    traits: ["Vertebrado", "Artrópode", "Molusco", "Cnidário"],
   },
   {
     id: "locomotion",
@@ -862,6 +863,7 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Vertebrado", "Respiração Pulmonar"],
   },
   "Simetria Bilateral": { lineage: ["Multicelularismo"] },
+  Cnidário: { lineage: ["Multicelularismo", "Predação"] },
   "Reprodução Sexuada": {
     lineage: ["Respiração anaeróbia", "Multicelularismo"],
   },
@@ -932,7 +934,8 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Simetria Bilateral", "Locomoção Primitiva"],
   },
   "Corpo Gelatinoso": {
-    lineage: ["Multicelularismo", "Locomoção Primitiva"],
+    lineage: ["Multicelularismo"],
+    lineageAny: ["Locomoção Primitiva", "Cnidário"],
   },
   Esclerotização: {
     lineage: ["Artrópode", "Locomoção Articulada"],
@@ -1038,6 +1041,7 @@ export const TRAIT_DEPENDENCIES = {
   },
   "Vetor Patógeno": { lineage: ["Parasitismo"] },
   "Precocidade Sexual": { lineage: ["Reprodução Sexuada"] },
+  "Imortalidade Biológica": { lineage: ["Cnidário"] },
   "Locomoção Primitiva": { lineage: ["Predação"] },
   Cefalização: {
     lineage: ["Predação", "Multicelularismo", "Simetria Bilateral", "Locomoção Primitiva"],
@@ -1140,7 +1144,8 @@ export const TRAIT_DEPENDENCIES = {
     active: ["Predação"],
   },
   Bioluminescência: {
-    lineage: ["Reprodução Sexuada", "Visão Noturna"],
+    lineage: ["Reprodução Sexuada"],
+    lineageAny: ["Visão Noturna", "Cnidário"],
     active: ["Predação"],
   },
   "Bioluminescência Predatória": {
@@ -1209,7 +1214,7 @@ export const TRAIT_DEPENDENCIES = {
   "Má absorção Alimentar": { lineage: ["Multicelularismo", "Predação"] },
   Semelparidade: { lineage: ["Multicelularismo"] },
   "Regressão Evolutiva": { lineage: ["Reprodução Sexuada"] },
-  Nanismo: { lineageAny: ["Vertebrado", "Artrópode"] },
+  Nanismo: { lineageAny: ["Vertebrado", "Artrópode", "Cnidário"] },
   Gigantismo: { lineage: ["Locomoção Articulada"] },
   "Mutação Mutadora": { lineage: ["Reparo Celular"] },
   "Transferência Horizontal": { lineage: ["Respiração anaeróbia"] },
@@ -1240,7 +1245,12 @@ export const TRAIT_DEPENDENCIES = {
   },
 };
 
-export const BODY_PLAN_TRAITS = new Set(["Vertebrado", "Artrópode", "Molusco"]);
+export const BODY_PLAN_TRAITS = new Set([
+  "Vertebrado",
+  "Artrópode",
+  "Molusco",
+  "Cnidário",
+]);
 
 export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Simetria Bilateral",
@@ -1289,6 +1299,7 @@ export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Vertebrado",
   "Artrópode",
   "Molusco",
+  "Cnidário",
   "Locomoção Articulada",
   "Locomoção Terrestre",
   "Rastejante",
@@ -1527,6 +1538,7 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Vertebrado",
   "Artrópode",
   "Molusco",
+  "Cnidário",
   "Locomoção Articulada",
   "Locomoção Terrestre",
   "Rastejante",
@@ -1659,6 +1671,7 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Endossimbiose: "shared",
   Biomineralização: "predation",
   Molusco: "predation",
+  Cnidário: "predation",
   "Imunidade Adaptativa": "predation",
   Dormência: "photosynthesis",
   Estômatos: "photosynthesis",
@@ -1817,7 +1830,8 @@ export const TRAIT_INCOMPATIBILITIES = Object.freeze({
   "Canibalismo Sexual": ["Acasalamento Múltiplo"],
   "Acasalamento Múltiplo": ["Canibalismo Sexual"],
   "Imortalidade Biológica": ["Simetria Bilateral"],
-  "Simetria Bilateral": ["Imortalidade Biológica"],
+  Cnidário: ["Simetria Bilateral"],
+  "Simetria Bilateral": ["Imortalidade Biológica", "Cnidário"],
   Pedogênese: ["Precocidade Sexual"],
   "Precocidade Sexual": ["Pedogênese"],
   Semelparidade: ["Monocarpismo"],

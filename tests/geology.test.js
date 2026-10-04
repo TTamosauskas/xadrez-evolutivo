@@ -241,12 +241,12 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
         },
         canonicalBodyPlan =
           branch === "animal"
-            ? ["Vertebrado", "Artrópode", "Molusco"].find((plan) =>
+            ? ["Vertebrado", "Artrópode", "Molusco", "Cnidário"].find((plan) =>
                 canonicalPreset.animal?.includes(plan),
               ) ?? null
             : null,
         otherBodyPlans = canonicalBodyPlan
-          ? ["Vertebrado", "Artrópode", "Molusco"].filter(
+          ? ["Vertebrado", "Artrópode", "Molusco", "Cnidário"].filter(
               (plan) => plan !== canonicalBodyPlan,
             )
           : [],
@@ -677,7 +677,7 @@ test("Earth exposes required innovations only in their detailed phase window", (
   assert.equal(traitUnlocked(paleo, "Transferência Horizontal", basal), true);
   assert.equal(traitUnlocked(paleo, "Reparo Celular", basal), false);
 });
-test("cellular repair and bilateral symmetry gate complex body plans", () => {
+test("cellular repair gates multicellularity and body-plan branches stay distinct", () => {
   const s = createState(113),
     p = s.pieces[0];
 
@@ -706,13 +706,32 @@ test("cellular repair and bilateral symmetry gate complex body plans", () => {
   p.traits.push("Multicelularismo");
   p.ancestry.push("Multicelularismo");
   assert.equal(traitUnlocked(s, "Simetria Bilateral", p), true);
+  assert.equal(traitUnlocked(s, "Cnidário", p), true);
+  assert.equal(traitUnlocked(s, "Imortalidade Biológica", p), false);
+  assert.deepEqual(TRAIT_DEPENDENCIES["Corpo Gelatinoso"].lineageAny, [
+    "Locomoção Primitiva",
+    "Cnidário",
+  ]);
+  assert.deepEqual(TRAIT_DEPENDENCIES.Bioluminescência.lineageAny, [
+    "Visão Noturna",
+    "Cnidário",
+  ]);
+
+  const cnidarian = {
+    ...p,
+    traits: applyTraitMutation(p.traits, "Cnidário"),
+    ancestry: [...p.ancestry, "Cnidário"],
+  };
+  assert.equal(traitUnlocked(s, "Imortalidade Biológica", cnidarian), true);
+
+  p.traits.push("Simetria Bilateral");
+  p.ancestry.push("Simetria Bilateral");
+  assert.equal(traitUnlocked(s, "Cnidário", p), false);
 
   s.geologicalStage = "cambrian";
   p.traits.push("Locomoção Primitiva");
   p.ancestry.push("Locomoção Primitiva");
   assert.equal(traitUnlocked(s, "Vertebrado", p), false);
-  p.traits.push("Simetria Bilateral");
-  p.ancestry.push("Simetria Bilateral");
   assert.equal(traitUnlocked(s, "Vertebrado", p), false);
   assert.equal(traitUnlocked(s, "Artrópode", p), false);
   p.traits.push("Cefalização");
