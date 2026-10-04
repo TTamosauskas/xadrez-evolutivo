@@ -44,6 +44,19 @@ export const BIOLUMINESCENCE_RANGE = 3;
 export const METAMORPHOSIS_ROUNDS = 1;
 export const MARSUPIAL_CARRY_ROUNDS = 1;
 
+export const metagenesisForm = (piece) =>
+  has(piece, "Metagênese")
+    ? piece?.metagenesisForm === "medusa"
+      ? "medusa"
+      : "polyp"
+    : null;
+
+export const functionallySessile = (piece) => {
+  const form = metagenesisForm(piece);
+  if (form) return form === "polyp";
+  return has(piece, "Séssil");
+};
+
 const lineageReached = (piece, trait) =>
   has(piece, trait) || (piece?.ancestry ?? []).includes(trait);
 
@@ -171,6 +184,11 @@ const HGT_BLOCKED_TRAITS = new Set([
   "Predação",
   "Vertebrado",
   "Artrópode",
+  "Molusco",
+  "Cnidário",
+  "Simetria Radial",
+  Cnidócitos,
+  Metagênese,
   "Ovíparo",
   "Ovíparos Amniotas",
   "Ovovivíparo",
@@ -281,10 +299,12 @@ export function buddingCanProgress(state, piece) {
 
 export function canBud(state, piece) {
   if (!buddingCanProgress(state, piece)) return false;
+  const requiredStationaryRounds =
+    metagenesisForm(piece) === "polyp" ? 2 : BUDDING_STATIONARY_ROUNDS;
   if (
     round(state) -
       (piece.stationarySinceRound ?? piece.bornRound ?? round(state)) <
-    BUDDING_STATIONARY_ROUNDS
+    requiredStationaryRounds
   )
     return false;
   if (has(piece, "Colônia") && piece.colonyId) {
