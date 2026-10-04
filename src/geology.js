@@ -2113,7 +2113,7 @@ export function conwayUnlocked(stateOrStage) {
     typeof stateOrStage === "string"
       ? geologicalStage(stateOrStage)
       : currentGeologicalStage(stateOrStage);
-  return stage.index >= geologicalStage("devonian").index;
+  return stage.index >= geologicalStage("ediacaran").index;
 }
 
 export function nextGeologicalStage(id) {
