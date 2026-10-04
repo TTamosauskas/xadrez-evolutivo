@@ -320,6 +320,7 @@ test("hostile Corrosion starts at turn 120 from the Eoarchean and repeats every 
     });
     state.turn = turnBefore;
     state.current = "blue";
+    state.reproductions = { blue: 2, amber: 2 };
     const currentRound = round(state);
     state.lastSuccessfulCaptureRound = currentRound;
     for (const piece of state.pieces) {
@@ -367,6 +368,7 @@ test("hostile Corrosion activates on 18 rounds without capture and repeats every
   });
   state.turn = 35;
   state.current = "blue";
+  state.reproductions = { blue: 2, amber: 2 };
   state.lastSuccessfulCaptureRound = 0;
   for (const piece of state.pieces) {
     piece.bornRound = round(state);
