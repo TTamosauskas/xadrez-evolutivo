@@ -683,6 +683,19 @@ function evolveCellularTerrain(
   applyCellularTerrainConsequences(ctx, before);
 }
 
+export function advanceHostileConway(ctx) {
+  if (!conwayUnlocked(ctx.state)) return false;
+  const state = ctx.state,
+    before = [...state.board];
+  evolveCellularTerrain(ctx, {
+    type: "hostile",
+    rule: CELLULAR_RULES.CLASSIC,
+    profile: habitatProfile(state),
+    changeLimit: Infinity,
+  });
+  return before.some((terrain, cell) => terrain !== state.board[cell]);
+}
+
 function advanceBasalCellularHabitat(ctx, pressure = 0) {
   const state = ctx.state,
     stage = currentGeologicalStage(state),
