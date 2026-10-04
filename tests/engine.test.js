@@ -359,6 +359,64 @@ test("hostile Corrosion starts at turn 120 from the Eoarchean and repeats every 
   );
 });
 
+test("hostile Corrosion activates on 18 rounds without capture and repeats every five turns", () => {
+  let state = createState(1905, {
+    geologicalStage: "eoarchean",
+    cycle: 1,
+    canonicalPair: true,
+  });
+  state.turn = 35;
+  state.current = "blue";
+  state.lastSuccessfulCaptureRound = 0;
+  for (const piece of state.pieces) {
+    piece.bornRound = round(state);
+    piece.maturesRound = round(state);
+    piece.stationarySinceRound = round(state);
+  }
+
+  state = transition(state, { type: "PASS" });
+  assert.equal(state.turn, 36);
+  assert.ok(
+    state.logs.some((entry) =>
+      String(entry.text ?? entry).includes("Corrosão hostil") &&
+      String(entry.text ?? entry).includes("estagnação de 18 rodadas"),
+    ),
+  );
+  assert.deepEqual(state.conwayStagnation, {
+    startedTurn: 36,
+    level: 1,
+  });
+  assert.equal(state.conwayWatchUntil, 41);
+
+  const firstCount = state.logs.filter((entry) =>
+    String(entry.text ?? entry).includes("Corrosão hostil"),
+  ).length;
+  for (let i = 0; i < 4; i++)
+    state = transition(state, { type: "PASS" });
+  assert.equal(state.turn, 40);
+  assert.equal(
+    state.logs.filter((entry) =>
+      String(entry.text ?? entry).includes("Corrosão hostil"),
+    ).length,
+    firstCount,
+  );
+
+  state = transition(state, { type: "PASS" });
+  assert.equal(state.turn, 41);
+  assert.ok(
+    state.logs.filter((entry) =>
+      String(entry.text ?? entry).includes("Corrosão hostil"),
+    ).length > firstCount,
+  );
+  assert.equal(state.conwayWatchUntil, 46);
+
+  state.lastSuccessfulCaptureRound = round(state);
+  state = transition(state, { type: "PASS" });
+  assert.equal(state.conwayStagnation, null);
+  assert.equal(state.conwayWatchUntil, null);
+  assertState(state);
+});
+
 test("consumed aquatic fertility returns after three turns on detailed aquatic phases", () => {
   const s = createState(901, {
     geologicalStage: "paleoarchean",
