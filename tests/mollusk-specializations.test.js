@@ -24,6 +24,7 @@ import {
   round,
 } from "../src/state.js";
 import { energyValue } from "../src/energy.js";
+import { mutationExplanation } from "../src/mutation-explanation.js";
 
 const icons = {
   Rádula: "🪚",
@@ -83,6 +84,11 @@ test("Rádula vivifies adjacent fertile substrate into Energy", () => {
   const afterPiece = state.pieces.find((candidate) => candidate.id === piece.id);
   assert.equal(state.board[square(4, 5)], "neutral");
   assert.equal(energyValue(afterPiece), before + 2);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) => effect.trait === "Rádula" && /recuperou 2 Energia/u.test(effect.text),
+    ),
+  );
   assertState(state);
 });
 
@@ -104,6 +110,11 @@ test("Bisso uses a vivification action to occupy a natural barrier without destr
   assert.deepEqual([attached.r, attached.c], [4, 5]);
   assert.ok(state.naturalBarriers.includes(square(4, 5)));
   assert.equal(attached.byssusAttached.cell, square(4, 5));
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) => effect.trait === "Bisso" && /fixou/u.test(effect.text),
+    ),
+  );
   assertState(state);
 });
 
@@ -121,6 +132,13 @@ test("Concha Camerada raises Carapaça hostile protection from 25% to 50%", () =
   assert.equal(
     hostileHazardKills(specialized, specialized.pieces[0], true),
     false,
+  );
+  assert.ok(
+    specialized.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Concha Camerada" &&
+        effect.outcome === "blocked-hostile-risk",
+    ),
   );
 });
 
@@ -189,6 +207,13 @@ test("Regeneração de Braços restores a Mollusk form after three own turns", (
   let defender = state.pieces.find((piece) => piece.id === defenderId);
   assert.equal(defender.rank, 4);
   assert.equal(defender.autotomyRecovery.turnsRemaining, 3);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Regeneração de Braços" &&
+        /Regeneração iniciada/u.test(effect.text),
+    ),
+  );
 
   for (let ownTurn = 0; ownTurn < 3; ownTurn++) {
     state = simulate(state, { type: "PASS" });
@@ -197,6 +222,13 @@ test("Regeneração de Braços restores a Mollusk form after three own turns", (
   defender = state.pieces.find((piece) => piece.id === defenderId);
   assert.equal(defender.rank, 2);
   assert.equal(defender.autotomyRecovery, null);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Regeneração de Braços" &&
+        effect.outcome === "restored-autotomy-form",
+    ),
+  );
 });
 
 test("Visão Polarizada preserves short-range capture through Camuflagem and Tinta", () => {
@@ -227,6 +259,14 @@ test("Visão Polarizada preserves short-range capture through Camuflagem and Tin
   assert.ok(
     movesFor(state, hunter).some(
       (target) => target.r === prey.r && target.c === prey.c && target.capture,
+    ),
+  );
+  const captured = simulate(clone(state), move(hunter, prey.r, prey.c));
+  assert.ok(
+    captured.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Visão Polarizada" &&
+        effect.outcome === "neutralized-camouflage",
     ),
   );
 
@@ -273,6 +313,13 @@ test("Tentáculo Preênsil pulls a distant enemy and blocks its immediate counte
     ),
     false,
   );
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Tentáculo Preênsil" &&
+        effect.outcome === "pulled-prey",
+    ),
+  );
 });
 
 test("Cromatóforos Neurais use self-vivification and remove both attack directions temporarily", () => {
@@ -303,6 +350,13 @@ test("Cromatóforos Neurais use self-vivification and remove both attack directi
   const hidden = state.pieces.find((piece) => piece.id === blueId),
     amber = state.pieces.find((piece) => piece.id === amberId);
   assert.equal(hidden.chromaticCrypsis, true);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Cromatóforos Neurais" &&
+        effect.outcome === "entered-chromatic-crypsis",
+    ),
+  );
   assert.equal(
     actionsForPiece(state, amber).some(
       (candidate) =>
@@ -332,6 +386,13 @@ test("Cromatóforos Neurais use self-vivification and remove both attack directi
   const visible = state.pieces.find((piece) => piece.id === blueId);
   assert.equal(visible.chromaticCrypsis, false);
   assert.ok(visible.chromaticReadyRound > round(state) - 1);
+  assert.ok(
+    state.passiveEffects.some(
+      (effect) =>
+        effect.trait === "Cromatóforos Neurais" &&
+        effect.outcome === "left-chromatic-crypsis",
+    ),
+  );
   assertState(state);
 });
 
@@ -341,4 +402,14 @@ test("active Mollusk mutations explain their existing board-circle interaction",
   assert.match(TRAITS.Bisso[1], /círculo verde/iu);
   assert.match(TRAITS["Tentáculo Preênsil"][1], /círculo vermelho/iu);
   assert.match(TRAITS["Cromatóforos Neurais"][1], /círculo verde/iu);
+});
+
+
+test("every Mollusk specialization has a Saiba Mais-compatible explanatory modal", () => {
+  for (const trait of Object.keys(icons)) {
+    const explanation = mutationExplanation(trait);
+    assert.equal(explanation?.trait, trait, trait);
+    assert.match(explanation?.realWorld ?? "", /^Na vida:/u, trait);
+    assert.match(explanation?.game ?? "", /^No jogo:/u, trait);
+  }
 });

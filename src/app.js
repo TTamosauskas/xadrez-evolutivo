@@ -1313,6 +1313,8 @@ function openDiscovery(category, id) {
   $("discovery-list").hidden = true;
   const detail = $("discovery-detail");
   detail.hidden = false;
+  detail.dataset.category = category;
+  detail.dataset.discoveryId = id;
   $("discovery-detail-title").textContent = entry.title;
   $("discovery-detail-image").src = entry.image;
   $("discovery-detail-image").alt = `Ilustração de ${entry.title}`;

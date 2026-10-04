@@ -356,6 +356,17 @@ test("Biology media rejects the known out-of-context source matches", () => {
   }
 });
 
+test("Biology detail images use a consistent horizontal presentation", async () => {
+  const { readFile } = await import("node:fs/promises"),
+    css = await readFile("app.css", "utf8"),
+    app = await readFile("src/app.js", "utf8");
+  assert.match(
+    css,
+    /\.discovery-detail\[data-category="mutations"\] img\s*\{[^}]*aspect-ratio:\s*16\s*\/\s*9;/s,
+  );
+  assert.match(app, /detail\.dataset\.category\s*=\s*category/);
+});
+
 test("mutation Wikipedia links are direct article links", () => {
   for (const trait of Object.keys(TRAITS)) {
     const href = DISCOVERY_CONTENT.mutations[trait].wikipedia;
