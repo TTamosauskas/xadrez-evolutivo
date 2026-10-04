@@ -405,6 +405,19 @@ export function settlePredationFeedingSites(state) {
 }
 
 
+
+function tickOrganicResidue(state) {
+  const now = round(state);
+  state.deathSites = state.deathSites.filter((site) => now < site.dueRound);
+  state.fertileTraces = state.fertileTraces.filter(
+    (trace) => now < (trace.dueRound ?? Number.MAX_SAFE_INTEGER),
+  );
+}
+function tickCarcasses(state) {
+  const now = round(state);
+  state.carcasses = state.carcasses.filter((entry) => now < entry.dueRound);
+}
+
 function seedCluster(state, type) {
   const candidates = [];
   for (let r = 0; r < 8; r++)
