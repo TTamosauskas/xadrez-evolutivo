@@ -169,7 +169,7 @@ import {
   finalizePredationFeedingSite,
   settlePredationFeedingSites,
   advanceConway,
-  advanceHostileConway,
+  advanceHostileCorrosion,
   severeEventActive,
   tickSevereEventTurn,
   tickEnvironment,
@@ -2535,7 +2535,7 @@ function markLethalOccupants(state) {
   return marked;
 }
 
-function triggerLateHostileConway(ctx) {
+function triggerLateHostileCorrosion(ctx) {
   const state = ctx.state;
   if (
     state.turn < 120 ||
@@ -2544,12 +2544,12 @@ function triggerLateHostileConway(ctx) {
     state.result
   )
     return false;
-  const changed = advanceHostileConway(ctx);
+  const changed = advanceHostileCorrosion(ctx);
   log(
     state,
     changed
-      ? `🧬 Conway hostil remodelou o habitat no turno ${state.turn}.`
-      : `🧬 Conway hostil manteve o padrão do habitat no turno ${state.turn}.`,
+      ? `🧬 Corrosão hostil remodelou o habitat no turno ${state.turn}.`
+      : `🧬 Corrosão hostil manteve o padrão do habitat no turno ${state.turn}.`,
   );
   return true;
 }
@@ -2596,7 +2596,7 @@ function advanceTurn(ctx) {
   state.turn++;
   state.current = other(acting);
   markLethalOccupants(state);
-  triggerLateHostileConway(ctx);
+  triggerLateHostileCorrosion(ctx);
   if (extinction(state)) return;
   for (const piece of state.pieces)
     if (
