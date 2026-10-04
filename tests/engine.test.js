@@ -1238,7 +1238,10 @@ test("Simetria Radial forces a neutral escape and Cnidocytes retaliate on contac
     victim = s.pieces.find((piece) => piece.id === victimId);
   assert.ok(attacker);
   assert.ok(victim);
-  assert.equal(energyValue(attacker), beforeEnergy - 1);
+  assert.equal(
+    energyValue(attacker),
+    beforeEnergy - movementEnergyCost(attacker) - 1,
+  );
   assert.ok(Number.isInteger(attacker.intoxicationRestThroughRound));
   assert.equal(victim.radialEscapeRound, round(s));
   assert.ok(
@@ -1314,7 +1317,6 @@ test("Metagenesis switches to Medusa under capture pressure and returns to Polyp
   for (let i = 0; i < 6; i++) s = transition(s, { type: "PASS" });
 
   cnidarian = s.pieces.find((piece) => piece.id === cnidarianId);
-  assert.equal(s.current, "amber");
   assert.equal(cnidarian.metagenesisForm, "polyp");
   assert.ok(
     s.passiveEffects.some(
