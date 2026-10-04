@@ -36,21 +36,21 @@ test("first two Eoarchean cycle-1 reproductions force Fotossíntese then Predaç
       r: 5,
       c: 2,
       rank: 4,
-      traits: ["Respiração anaeróbia"],
+      traits: ["Respiração anaeróbia", "Quimiossíntese"],
     },
     {
       owner: "amber",
       r: 2,
       c: 5,
       rank: 4,
-      traits: ["Respiração anaeróbia"],
+      traits: ["Respiração anaeróbia", "Quimiossíntese"],
     },
   ]);
   s.scenario = "earth";
   s.geologicalStage = "eoarchean";
   s.cycle = 1;
   s.reproductions = { blue: 0, amber: 0 };
-  s.historicalTraits = ["Respiração anaeróbia"];
+  s.historicalTraits = ["Respiração anaeróbia", "Quimiossíntese"];
   s.cyclePositiveInnovations = [];
   s.seenMutations = [];
 
