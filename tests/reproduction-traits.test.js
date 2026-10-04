@@ -86,6 +86,57 @@ test("first two Eoarchean cycle-1 reproductions force Fotossíntese then Predaç
   assertState(s);
 });
 
+test("Eoarchean opening reproductions bypass stochastic failure for both sides", () => {
+  const nextRoll = (seed) =>
+    ((Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
+  let seed = 1;
+  while (nextRoll(seed) < 0.9) seed++;
+
+  const s = fixture([
+    {
+      owner: "blue",
+      r: 5,
+      c: 2,
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Quimiossíntese"],
+    },
+    {
+      owner: "amber",
+      r: 2,
+      c: 5,
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Quimiossíntese"],
+    },
+  ], seed);
+  s.scenario = "earth";
+  s.geologicalStage = "eoarchean";
+  s.cycle = 1;
+  s.reproductions = { blue: 0, amber: 0 };
+  s.historicalTraits = ["Respiração anaeróbia", "Quimiossíntese"];
+  s.cyclePositiveInnovations = [];
+  s.seenMutations = [];
+  s.disableReproductiveSuccessPressure = false;
+
+  for (const owner of ["blue", "amber"]) {
+    const parent = s.pieces.find((piece) => piece.owner === owner);
+    for (const expected of ["Fotossíntese", "Predação"]) {
+      const before = new Set(s.pieces.map((piece) => piece.id));
+      assert.ok(
+        reproduce(context(s), parent, null, "abertura eoarqueana", {
+          forcedCount: 1,
+          immediateDevelopment: true,
+          ignoreReadiness: true,
+        }) > 0,
+        `${owner}: ${expected}`,
+      );
+      const child = s.pieces.find((piece) => !before.has(piece.id));
+      assert.ok(child?.traits.includes(expected), `${owner}: ${expected}`);
+    }
+    assert.equal(s.reproductions[owner], 2);
+  }
+  assertState(s);
+});
+
 test("Predação usa a ninhada normal das formas válidas do ramo", () => {
   const cases = [
     [4, 3],
