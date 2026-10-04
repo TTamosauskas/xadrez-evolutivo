@@ -128,6 +128,7 @@ test("Metagenesis Polyp halves budding preparation and colony cooldown", () => {
   s.current = "blue";
   parent.stationarySinceRound = 0;
   s.board[parent.r * 8 + parent.c] = "fertile";
+  s.board[(parent.r + 1) * 8 + parent.c] = "fertile";
 
   assert.equal(round(s), 3);
   assert.equal(canBud(s, parent), true);
