@@ -862,6 +862,7 @@ test("Silurian keeps coastal fertility while cellular terrain begins before Devo
   assert.equal(aquaticTerrainCell(s, 1, 3), false);
   assert.equal(aquaticTerrainCell(s, 4, 5), false);
   assert.equal(conwayUnlocked(s), true);
+  assert.equal(conwayUnlocked("eoarchean"), true);
   assert.equal(conwayUnlocked("ediacaran"), true);
   assert.equal(conwayUnlocked("devonian"), true);
 
