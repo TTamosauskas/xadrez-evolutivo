@@ -1524,6 +1524,7 @@ function triggerAdrenalineEscape(ctx, attacker, victim) {
     cells = adrenalineEscapeCells(state, victim);
   if (!cells.length || random(state) >= 1 / 6) return false;
 
+  applyCnidocyteRetaliation(state, attacker, victim);
   const target = pick(state, cells),
     victimOrigin = { r: victim.r, c: victim.c };
   reactiveRelocation(
@@ -6559,6 +6560,47 @@ function resolveDomesticPlacement(ctx, action) {
   }
 }
 
+function resolveRadialReposition(ctx, action) {
+  const state = ctx.state,
+    pending = state.radialReposition,
+    victim = state.pieces.find(
+      (candidate) => candidate.id === pending?.victimId,
+    );
+  if (!pending || !victim)
+    throw Error("Reposicionamento por Simetria Radial indisponível.");
+
+  const target = radialRepositionTargets(state).find(
+    (candidate) => candidate.r === action.r && candidate.c === action.c,
+  );
+  if (!target)
+    throw Error("Escolha uma Casa Neutra destacada para a fuga radial.");
+
+  const origin = { r: victim.r, c: victim.c };
+  state.current = pending.attackerOwner;
+  state.radialReposition = null;
+  state.phase = "move";
+  reactiveRelocation(
+    ctx,
+    victim,
+    target.r,
+    target.c,
+    "fuga por Simetria Radial",
+  );
+  log(
+    state,
+    OWNERS[victim.owner] + ": ✳️ Simetria Radial desviou a criatura de " +
+      coord(origin.r, origin.c) + " para " + coord(target.r, target.c) + ".",
+  );
+  emitPassiveEffect(
+    state,
+    "Simetria Radial",
+    "✳️ Simetria Radial desviou a criatura para " + coord(target.r, target.c) + ".",
+    { pieceId: victim.id, outcome: "radial-escape" },
+  );
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
 function resolveSerotoninReposition(ctx, action) {
   const state = ctx.state,
     pending = state.serotoninReposition,
@@ -6912,6 +6954,11 @@ export function transition(previous, action) {
     state.phase === "social-defense"
   )
     resolveSocialDefense(ctx, action);
+  else if (
+    action.type === "RADIAL_REPOSITION" &&
+    state.phase === "radial-reposition"
+  )
+    resolveRadialReposition(ctx, action);
   else if (
     ["SEROTONIN_REPOSITION", "SKIP_SEROTONIN_REPOSITION"].includes(
       action.type,
