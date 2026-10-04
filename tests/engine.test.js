@@ -235,7 +235,7 @@ test("pre-Devonian aquatic periods keep fertility while hostile terrain evolves 
     assert.equal(aquaticFertilityRegime(state), true, id);
     assert.equal(
       conwayUnlocked(state),
-      stage.index >= GEOLOGICAL_STAGES.find((entry) => entry.id === "ediacaran").index,
+      stage.index >= GEOLOGICAL_STAGES.find((entry) => entry.id === "eoarchean").index,
       id,
     );
     assert.equal(cellularTerrainUnlocked(state), true, id);
