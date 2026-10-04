@@ -124,7 +124,7 @@ export const resting = (state, p) =>
 export function radialSymmetryEscapeCells(
   state,
   piece,
-  { ignoreUsage = false } = {},
+  ignoreUsage = false,
 ) {
   if (
     !piece ||
@@ -164,7 +164,7 @@ export function radialRepositionTargets(state) {
       candidate.id === pending.victimId && candidate.owner === state.current,
   );
   return piece
-    ? radialSymmetryEscapeCells(state, piece, { ignoreUsage: true })
+    ? radialSymmetryEscapeCells(state, piece, true)
     : [];
 }
 
