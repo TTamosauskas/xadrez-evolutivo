@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 37;
+export const STATE_VERSION = 38;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const CHESS_FORMS = Object.freeze({
@@ -179,7 +179,19 @@ export const TRAITS = {
   ],
   Cnidário: [
     "🪼",
-    "Plano corporal animal cnidário, mutuamente exclusivo com Simetria Bilateral, Vertebrado, Artrópode e Molusco. Nesta etapa permanece na forma basal Rei e preserva compatibilidade com estratégias clonais, corpo gelatinoso, defesas químicas e bioluminescência.",
+    "Plano corporal animal cnidário, mutuamente exclusivo com Simetria Bilateral, Vertebrado, Artrópode e Molusco. Permanece na forma basal Rei e abre especializações radiais, cnidócitos e ciclos de vida com pólipo e medusa.",
+  ],
+  "Simetria Radial": [
+    "✳️",
+    "Na primeira tentativa de captura por contato sofrida em cada rodada, pode escapar para uma Casa Neutra adjacente vazia e segura. A resposta fica suspensa enquanto a criatura está funcionalmente séssil.",
+  ],
+  Cnidócitos: [
+    "💥",
+    "Quando uma captura contra a criatura é frustrada, descarrega cnidócitos no agressor e reduz sua Energia em 1. Toxicidade amplia a descarga para intoxicação; Veneno também aplica morte diferida.",
+  ],
+  Metagênese: [
+    "🔄",
+    "Alterna automaticamente entre Pólipo e Medusa conforme a pressão predatória. Pólipo é séssil e acelera Brotamento; Medusa recupera mobilidade cnidária para Casas Férteis ou Neutras.",
   ],
   "Sistema Adipocinético": [
     "⛽",
