@@ -1124,9 +1124,6 @@ function markLethalHazard(ctx, event, indices) {
   state.carcasses = state.carcasses.filter(
     (entry) => !lethalSet.has(entry.cell),
   );
-  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
-    (entry) => !lethalSet.has(entry.cell),
-  );
   for (const piece of [...state.pieces])
     if (lethalSet.has(square(piece.r, piece.c)))
       ctx.kill(piece.id, "ambiente letal", null, true);
