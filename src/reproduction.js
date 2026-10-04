@@ -795,7 +795,7 @@ function makeChildProfile(
         ...new Set([...child.ancestry, openingEnergyBranch]),
       ];
       child.mutations++;
-      syncGenomePhenotype(child);
+      syncGenomePhenotype(child, openingEnergyBranch);
       mutationLabel = openingEnergyBranch;
       if (!state.seenMutations.includes(mutationLabel)) {
         state.seenMutations.push(mutationLabel);

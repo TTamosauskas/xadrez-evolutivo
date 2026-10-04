@@ -29,7 +29,7 @@ import {
   reproductionEnergyCost,
 } from "../src/energy.js";
 
-test("first two Eoarchean cycle-1 reproductions force Fotossíntese then Predação per side", () => {
+test("first two Eoarchean cycle-1 reproductions force Fotossíntese then Predação across descendant lineages", () => {
   const s = fixture([
     {
       owner: "blue",
@@ -71,7 +71,7 @@ test("first two Eoarchean cycle-1 reproductions force Fotossíntese then Predaç
 
     const secondBefore = new Set(s.pieces.map((piece) => piece.id));
     assert.ok(
-      reproduce(context(s), parent, null, "teste", {
+      reproduce(context(s), first, null, "teste", {
         forcedCount: 1,
         immediateDevelopment: true,
         ignoreReadiness: true,
@@ -79,6 +79,7 @@ test("first two Eoarchean cycle-1 reproductions force Fotossíntese then Predaç
       }) > 0,
     );
     const second = s.pieces.find((piece) => !secondBefore.has(piece.id));
+    assert.equal(second.parentId, first.id, owner);
     assert.ok(second.traits.includes("Predação"), owner);
     assert.equal(second.traits.includes("Fotossíntese"), false, owner);
     assert.equal(s.reproductions[owner], 2);
