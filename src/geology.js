@@ -934,7 +934,8 @@ export const TRAIT_DEPENDENCIES = {
     lineage: ["Simetria Bilateral", "Locomoção Primitiva"],
   },
   "Corpo Gelatinoso": {
-    lineage: ["Multicelularismo", "Locomoção Primitiva"],
+    lineage: ["Multicelularismo"],
+    lineageAny: ["Locomoção Primitiva", "Cnidário"],
   },
   Esclerotização: {
     lineage: ["Artrópode", "Locomoção Articulada"],
@@ -1040,6 +1041,7 @@ export const TRAIT_DEPENDENCIES = {
   },
   "Vetor Patógeno": { lineage: ["Parasitismo"] },
   "Precocidade Sexual": { lineage: ["Reprodução Sexuada"] },
+  "Imortalidade Biológica": { lineage: ["Cnidário"] },
   "Locomoção Primitiva": { lineage: ["Predação"] },
   Cefalização: {
     lineage: ["Predação", "Multicelularismo", "Simetria Bilateral", "Locomoção Primitiva"],
@@ -1142,7 +1144,8 @@ export const TRAIT_DEPENDENCIES = {
     active: ["Predação"],
   },
   Bioluminescência: {
-    lineage: ["Reprodução Sexuada", "Visão Noturna"],
+    lineage: ["Reprodução Sexuada"],
+    lineageAny: ["Visão Noturna", "Cnidário"],
     active: ["Predação"],
   },
   "Bioluminescência Predatória": {
@@ -1211,7 +1214,7 @@ export const TRAIT_DEPENDENCIES = {
   "Má absorção Alimentar": { lineage: ["Multicelularismo", "Predação"] },
   Semelparidade: { lineage: ["Multicelularismo"] },
   "Regressão Evolutiva": { lineage: ["Reprodução Sexuada"] },
-  Nanismo: { lineageAny: ["Vertebrado", "Artrópode", "Molusco", "Cnidário"] },
+  Nanismo: { lineageAny: ["Vertebrado", "Artrópode", "Cnidário"] },
   Gigantismo: { lineage: ["Locomoção Articulada"] },
   "Mutação Mutadora": { lineage: ["Reparo Celular"] },
   "Transferência Horizontal": { lineage: ["Respiração anaeróbia"] },
