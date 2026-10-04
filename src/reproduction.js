@@ -801,13 +801,32 @@ function makeChildProfile(
       mutationExclusions = new Set(excludedMutationTraits ?? []);
     if (state.geologicalStage === "hadean")
       mutationExclusions.add("Quimiossíntese");
-    if (mutationAttempt)
+    if (openingEnergyBranch) {
+      child.genome = forceGenomeTrait(child.genome, openingEnergyBranch);
+      child.ancestry = [
+        ...new Set([...child.ancestry, openingEnergyBranch]),
+      ];
+      child.mutations++;
+      syncGenomePhenotype(child);
+      mutationLabel = openingEnergyBranch;
+      if (!state.seenMutations.includes(mutationLabel)) {
+        state.seenMutations.push(mutationLabel);
+        child.newMutationToast = {
+          trait: mutationLabel,
+          text: `Nova Mutação: ${TRAITS[mutationLabel].icon} ${mutationLabel}.`,
+        };
+        log(
+          state,
+          `Nova Mutação: ${OWNERS[child.owner]} · ${TRAITS[mutationLabel].icon} ${mutationLabel}.`,
+        );
+      }
+    } else if (mutationAttempt)
       mutationLabel = mutation(
         state,
         child,
         !!mate,
         mutationExclusions.size ? mutationExclusions : null,
-        openingEnergyBranch,
+        null,
       );
     if (
       mutationLabel &&
