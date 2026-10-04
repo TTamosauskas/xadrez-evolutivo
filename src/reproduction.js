@@ -688,39 +688,17 @@ function pairSexualFounders(brood, sexualMutants) {
   );
 }
 
-function missingArcheanEnergyBranch(state, owner = null) {
+function eoarcheanOpeningEnergyBranch(state, owner) {
   if (
-    state.scenario !== "earth" ||
-    state.geologicalStage !== "eoarchean"
+    state.scenario === "arena" ||
+    state.geologicalStage !== "eoarchean" ||
+    state.cycle !== 1
   )
     return null;
-
-  const lineage = owner
-      ? state.pieces.filter((piece) => piece.owner === owner)
-      : state.pieces,
-    lineageHas = (trait) =>
-      lineage.some(
-        (piece) =>
-          has(piece, trait) ||
-          (piece.ancestry ?? []).includes(trait),
-      ),
-    photosynthesis = lineageHas("Fotossíntese"),
-    predation = lineageHas("Predação");
-
-  if (!photosynthesis) return "Fotossíntese";
-  if (!predation) return "Predação";
+  const reproductions = state.reproductions?.[owner] ?? 0;
+  if (reproductions === 0) return "Fotossíntese";
+  if (reproductions === 1) return "Predação";
   return null;
-}
-
-function complementaryArcheanEnergyBranch(state, child) {
-  const missing = missingArcheanEnergyBranch(state, child.owner);
-  if (
-    !missing ||
-    has(child, "Fotossíntese") ||
-    has(child, "Predação")
-  )
-    return null;
-  return traitUnlocked(state, missing, child) ? missing : null;
 }
 
 function differentiatedRank(state, child) {
@@ -806,44 +784,35 @@ function makeChildProfile(
       );
     }
   } else {
-    const eoarcheanEnergySequence =
-        state.scenario === "earth" &&
-        state.geologicalStage === "eoarchean",
-      missingEnergyBranch = missingArcheanEnergyBranch(
+    const openingEnergyBranch = eoarcheanOpeningEnergyBranch(
         state,
         parent.owner,
       ),
-      complementaryBranch = complementaryArcheanEnergyBranch(state, child),
       openingGuarantee =
         state.geologicalStage !== "hadean" &&
         round(state) >= 1 &&
-        (eoarcheanEnergySequence
-          ? !!complementaryBranch
-          : state.openingMutationSatisfied?.[parent.owner] === false &&
-            (!missingEnergyBranch || !!complementaryBranch)),
+        (
+          !!openingEnergyBranch ||
+          state.openingMutationSatisfied?.[parent.owner] === false
+        ),
       mutationAttempt =
         openingGuarantee ||
         random(state) < (state.event?.id === "solar" ? 1 : 1 / 3),
       mutationExclusions = new Set(excludedMutationTraits ?? []);
     if (state.geologicalStage === "hadean")
       mutationExclusions.add("Quimiossíntese");
-    if (
-      eoarcheanEnergySequence &&
-      missingEnergyBranch === "Fotossíntese"
-    )
-      mutationExclusions.add("Predação");
     if (mutationAttempt)
       mutationLabel = mutation(
         state,
         child,
         !!mate,
         mutationExclusions.size ? mutationExclusions : null,
-        complementaryBranch,
+        openingEnergyBranch,
       );
     if (
       mutationLabel &&
       state.openingMutationSatisfied &&
-      (!missingEnergyBranch || mutationLabel === missingEnergyBranch)
+      (!openingEnergyBranch || mutationLabel === openingEnergyBranch)
     )
       state.openingMutationSatisfied[parent.owner] = true;
   }
