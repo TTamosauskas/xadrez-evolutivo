@@ -2535,21 +2535,59 @@ function markLethalOccupants(state) {
   return marked;
 }
 
-function triggerLateHostileCorrosion(ctx) {
+function triggerHostileCorrosion(ctx) {
   const state = ctx.state;
-  if (
-    state.turn < 120 ||
-    state.turn % 5 !== 0 ||
-    !conwayUnlocked(state) ||
-    state.result
-  )
-    return false;
+  if (!conwayUnlocked(state) || state.result) return false;
+
+  const stalledRounds = Math.max(
+      0,
+      round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+    ),
+    stagnating = stalledRounds >= 18,
+    periodic = state.turn >= 120 && state.turn % 5 === 0,
+    passivePending = passiveProgressPending(state),
+    offensiveOptions = offensiveActionCount(state),
+    ecologicalResolutionDue =
+      !passivePending &&
+      ((state.turn >= 120 &&
+        offensiveOptions <= 1 &&
+        stalledRounds >= ECOLOGICAL_DOMAIN_LOW_PRESSURE_ROUNDS) ||
+        (offensiveOptions === 0 &&
+          stalledRounds >= ECOLOGICAL_DOMAIN_STALEMATE_ROUNDS));
+
+  if (ecologicalResolutionDue) return false;
+
+  if (!stagnating) {
+    state.conwayStagnation = null;
+    state.conwayWatchUntil = null;
+  } else if (!state.conwayStagnation) {
+    state.conwayStagnation = {
+      startedTurn: state.turn,
+      level: 1,
+    };
+  }
+
+  const stagnationDue =
+    stagnating &&
+    (state.conwayWatchUntil === null ||
+      state.conwayWatchUntil === undefined ||
+      state.turn >= state.conwayWatchUntil);
+
+  if (!periodic && !stagnationDue) return false;
+
   const changed = advanceHostileCorrosion(ctx);
+  if (stagnating) state.conwayWatchUntil = state.turn + 5;
+
+  const reason = periodic && stagnationDue
+    ? `turno ${state.turn} e estagnação de ${stalledRounds} rodadas`
+    : periodic
+      ? `turno ${state.turn}`
+      : `estagnação de ${stalledRounds} rodadas`;
   log(
     state,
     changed
-      ? `🧬 Corrosão hostil remodelou o habitat no turno ${state.turn}.`
-      : `🧬 Corrosão hostil manteve o padrão do habitat no turno ${state.turn}.`,
+      ? `🧬 Corrosão hostil remodelou o habitat por ${reason}.`
+      : `🧬 Corrosão hostil manteve o padrão do habitat por ${reason}.`,
   );
   return true;
 }
@@ -2596,7 +2634,7 @@ function advanceTurn(ctx) {
   state.turn++;
   state.current = other(acting);
   markLethalOccupants(state);
-  triggerLateHostileCorrosion(ctx);
+  triggerHostileCorrosion(ctx);
   if (extinction(state)) return;
   for (const piece of state.pieces)
     if (
