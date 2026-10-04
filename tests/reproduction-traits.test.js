@@ -29,6 +29,63 @@ import {
   reproductionEnergyCost,
 } from "../src/energy.js";
 
+test("first two Eoarchean cycle-1 reproductions force Fotossíntese then Predação per side", () => {
+  const s = fixture([
+    {
+      owner: "blue",
+      r: 5,
+      c: 2,
+      rank: 4,
+      traits: ["Respiração anaeróbia"],
+    },
+    {
+      owner: "amber",
+      r: 2,
+      c: 5,
+      rank: 4,
+      traits: ["Respiração anaeróbia"],
+    },
+  ]);
+  s.scenario = "earth";
+  s.geologicalStage = "eoarchean";
+  s.cycle = 1;
+  s.reproductions = { blue: 0, amber: 0 };
+  s.historicalTraits = ["Respiração anaeróbia"];
+  s.cyclePositiveInnovations = [];
+  s.seenMutations = [];
+
+  for (const owner of ["blue", "amber"]) {
+    const parent = s.pieces.find((piece) => piece.owner === owner);
+    const firstBefore = new Set(s.pieces.map((piece) => piece.id));
+    assert.ok(
+      reproduce(context(s), parent, null, "teste", {
+        forcedCount: 1,
+        immediateDevelopment: true,
+        ignoreReadiness: true,
+        ignoreSuccessPressure: true,
+      }) > 0,
+    );
+    const first = s.pieces.find((piece) => !firstBefore.has(piece.id));
+    assert.ok(first.traits.includes("Fotossíntese"), owner);
+    assert.equal(first.traits.includes("Predação"), false, owner);
+
+    const secondBefore = new Set(s.pieces.map((piece) => piece.id));
+    assert.ok(
+      reproduce(context(s), parent, null, "teste", {
+        forcedCount: 1,
+        immediateDevelopment: true,
+        ignoreReadiness: true,
+        ignoreSuccessPressure: true,
+      }) > 0,
+    );
+    const second = s.pieces.find((piece) => !secondBefore.has(piece.id));
+    assert.ok(second.traits.includes("Predação"), owner);
+    assert.equal(second.traits.includes("Fotossíntese"), false, owner);
+    assert.equal(s.reproductions[owner], 2);
+  }
+  assertState(s);
+});
+
 test("Predação usa a ninhada normal das formas válidas do ramo", () => {
   const cases = [
     [4, 3],
