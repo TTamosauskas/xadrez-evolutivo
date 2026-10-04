@@ -121,12 +121,16 @@ export const resting = (state, p) =>
   hibernating(state, p) ||
   pupating(state, p);
 
-export function radialSymmetryEscapeCells(state, piece) {
+export function radialSymmetryEscapeCells(
+  state,
+  piece,
+  { ignoreUsage = false } = {},
+) {
   if (
     !piece ||
     !has(piece, "Simetria Radial") ||
     functionallySessile(piece) ||
-    piece.radialEscapeRound === round(state)
+    (!ignoreUsage && piece.radialEscapeRound === round(state))
   )
     return [];
   const targets = [];
@@ -159,7 +163,9 @@ export function radialRepositionTargets(state) {
     (candidate) =>
       candidate.id === pending.victimId && candidate.owner === state.current,
   );
-  return piece ? radialSymmetryEscapeCells(state, piece) : [];
+  return piece
+    ? radialSymmetryEscapeCells(state, piece, { ignoreUsage: true })
+    : [];
 }
 
 export function serotoninRepositionTargets(state) {
