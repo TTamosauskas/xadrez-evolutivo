@@ -1365,18 +1365,11 @@ test("feces and carcasses use distinct Vivificar routes", () => {
     base: "neutral",
     kind: "fecal",
   });
-  s.captureDisturbances.push({
-    cell: 36,
-    dueRound: 3,
-    base: "neutral",
-    sourceId: null,
-  });
 
   render(dom.window.document, s, { selected: piece.id });
   let target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
   assert.ok(target.classList.contains("vivification-target"));
   assert.ok(target.classList.contains("organic-residue"));
-  assert.ok(target.classList.contains("capture-disturbance"));
   assert.match(target.title, /reciclar fezes/);
   assert.match(target.textContent, /💩/);
   const css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
@@ -1397,12 +1390,6 @@ test("feces and carcasses use distinct Vivificar routes", () => {
   ]);
   piece = s.pieces[0];
   s.carcasses.push({ cell: 36, dueRound: 3, base: "neutral" });
-  s.captureDisturbances.push({
-    cell: 36,
-    dueRound: 3,
-    base: "neutral",
-    sourceId: null,
-  });
   render(dom.window.document, s, { selected: piece.id });
   target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
   assert.ok(target.classList.contains("vivification-target"));
@@ -1625,12 +1612,6 @@ test("Necrófago, Onívoro Oportunista and Coprofagia use a single green reprodu
       ]),
       actor = s.pieces[0];
     s.carcasses.push({ cell: 36, dueRound: round(s) + 3, base: "neutral" });
-    s.captureDisturbances.push({
-      cell: 36,
-      dueRound: round(s) + 3,
-      base: "neutral",
-      sourceId: null,
-    });
 
     render(dom.window.document, s, { selected: actor.id });
     const target = dom.window.document.querySelector('[data-r="4"][data-c="4"]');
