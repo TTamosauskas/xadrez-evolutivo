@@ -685,7 +685,6 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
     placementPriority(state, a, p?.owner ?? state.current) * 0.25 +
     (egg && egg.owner !== state.current ? 6 + egg.brood.length : 0) -
     hostilePenalty -
-    disturbancePenalty -
     lethalPenalty
   );
 }
