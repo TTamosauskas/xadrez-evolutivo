@@ -8,7 +8,15 @@ import {
   canParasitize,
   canParasitizeSelf,
 } from "../src/moves.js";
-import { hostileHazardKills } from "../src/engine.js";
+import {
+  hostileHazardKills,
+  resolveEcologicalDomain,
+} from "../src/engine.js";
+import {
+  offensiveActionCount,
+  relieveOffensiveStagnation,
+} from "../src/environment.js";
+import { energyCapacity } from "../src/energy.js";
 import { noCaptureReproductionPressure } from "../src/reproduction.js";
 
 test("pressão sem captura continua escalando e bloqueia reprodução tardia", () => {
@@ -98,4 +106,69 @@ test("evento severo fica mais letal conforme cresce a seca de capturas", () => {
 
   assert.equal(hostileHazardKills(baseline, baseline.pieces[0]), false);
   assert.equal(hostileHazardKills(stalled, stalled.pieces[0]), true);
+});
+
+
+test("recuperação ordinária de Energia deixa de sustentar estagnação indefinida", () => {
+  const s = fixture([
+    { owner: "blue", r: 6, c: 1, rank: 0 },
+    { owner: "amber", r: 1, c: 6, rank: 0 },
+  ]);
+  s.turn = 60;
+  s.lastSuccessfulCaptureRound = 0;
+  for (const piece of s.pieces) {
+    piece.energy = Math.max(0, energyCapacity(piece) - 1);
+    piece.energyCapacitySnapshot = energyCapacity(piece);
+  }
+
+  assert.equal(offensiveActionCount(s), 0);
+  assert.equal(resolveEcologicalDomain(s), true);
+  assert.equal(s.result?.victoryType, "ecological-domain");
+});
+
+test("pressão ofensiva remove obstáculo que impede qualquer captura", () => {
+  const s = fixture([
+    {
+      owner: "blue",
+      r: 4,
+      c: 1,
+      rank: 3,
+      traits: ["Percepção Espacial"],
+    },
+    { owner: "amber", r: 4, c: 4, rank: 0 },
+  ]);
+  s.turn = 50;
+  s.lastSuccessfulCaptureRound = 0;
+  s.naturalBarriers = [square(4, 2)];
+
+  assert.equal(offensiveActionCount(s), 0);
+  const relief = relieveOffensiveStagnation(s, 2);
+
+  assert.equal(relief?.kind, "terrain");
+  assert.equal(relief?.cell, square(4, 2));
+  assert.ok(offensiveActionCount(s) > 0);
+});
+
+test("pressão ofensiva desloca um bloqueador após 24 rodadas sem captura", () => {
+  const s = fixture([
+    { owner: "blue", r: 4, c: 1, rank: 3 },
+    { owner: "blue", r: 4, c: 2, rank: 0 },
+    { owner: "amber", r: 4, c: 4, rank: 0 },
+  ]);
+  s.turn = 50;
+  s.lastSuccessfulCaptureRound = 0;
+
+  assert.equal(offensiveActionCount(s), 0);
+  const relief = relieveOffensiveStagnation(s, 2);
+
+  assert.equal(relief?.kind, "relocation");
+  assert.ok(offensiveActionCount(s) > 0);
+  assert.ok(
+    s.pieces.some(
+      (piece) =>
+        piece.id === relief.pieceId &&
+        piece.r === relief.r &&
+        piece.c === relief.c,
+    ),
+  );
 });

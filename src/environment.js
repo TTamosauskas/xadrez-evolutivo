@@ -1,4 +1,4 @@
-import { EVENTS, inside, square, has, distance } from "./constants.js";
+import { EVENTS, inside, square, has, distance, coord } from "./constants.js";
 import {
   at,
   eggAt,
@@ -1939,6 +1939,7 @@ function offensiveRelocation(state) {
           eggAt(state, r, c) ||
           plantSeedAt(state, r, c) ||
           barrierAt(state, r, c) ||
+          lethalHazardAt(state, r, c) ||
           state.board[square(r, c)] === "hostile"
         )
           continue;
@@ -1955,13 +1956,49 @@ function offensiveRelocation(state) {
               (piece.id < best.piece.id ||
                 (piece.id === best.piece.id && square(r, c) < best.cell))))
         )
-          best = { piece, r, c, cell: square(r, c), options };
+          best = {
+            piece,
+            fromR: origin.r,
+            fromC: origin.c,
+            r,
+            c,
+            cell: square(r, c),
+            options,
+          };
       }
   }
   if (!best) return null;
   best.piece.r = best.r;
   best.piece.c = best.c;
-  return best;
+  return {
+    pieceId: best.piece.id,
+    fromR: best.fromR,
+    fromC: best.fromC,
+    r: best.r,
+    c: best.c,
+    cell: best.cell,
+    options: best.options,
+  };
+}
+
+export function relieveOffensiveStagnation(state, pressure = 0) {
+  const stalledRounds = Math.max(
+    0,
+    round(state) - (state.lastSuccessfulCaptureRound ?? 0),
+  );
+  if (
+    pressure < 2 ||
+    stalledRounds < 18 ||
+    offensiveActionCount(state) > 0
+  )
+    return null;
+
+  const repair = offensiveTerrainRepair(state);
+  if (repair) return { kind: "terrain", ...repair };
+  if (stalledRounds < 24) return null;
+
+  const relocation = offensiveRelocation(state);
+  return relocation ? { kind: "relocation", ...relocation } : null;
 }
 
 export function tickEnvironment(ctx) {
@@ -1988,6 +2025,29 @@ export function tickEnvironment(ctx) {
         `Corredor ecológico abriu ${opened} passagem(ns) sob pressão ofensiva prolongada.`,
       );
     state.nextHabitatRound += habitatIntervalRounds(pressure);
+  }
+
+  if (cellularTerrainUnlocked(state) && !severeEventActive(state)) {
+    const relief = relieveOffensiveStagnation(
+      state,
+      habitatPressureLevel(state),
+    );
+    if (relief?.kind === "terrain")
+      log(
+        state,
+        `Pressão ofensiva removeu um obstáculo em ${coord(
+          Math.floor(relief.cell / 8),
+          relief.cell % 8,
+        )} e abriu ${relief.options} captura(s).`,
+      );
+    else if (relief?.kind === "relocation")
+      log(
+        state,
+        `Pressão ofensiva deslocou o organismo ${relief.pieceId} de ${coord(
+          relief.fromR,
+          relief.fromC,
+        )} para ${coord(relief.r, relief.c)} e abriu ${relief.options} captura(s).`,
+      );
   }
 
   while (state.maxGenerationReached >= state.nextEventGeneration) {

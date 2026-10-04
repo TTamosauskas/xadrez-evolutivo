@@ -648,20 +648,36 @@ function passiveProgressPending(state) {
   const now = round(state);
   if ((state.hadeanEnvironment?.pendingFertility?.length ?? 0) > 0)
     return true;
+
+  if ((state.eggs ?? []).length || (state.fragments ?? []).length) return true;
   if (
-    canWaitForRest(state, "blue") ||
-    canWaitForRest(state, "amber") ||
-    canWaitForBirth(state, "blue") ||
-    canWaitForBirth(state, "amber")
+    (state.plantSeeds ?? []).some(
+      (seed) =>
+        Number.isInteger(seed.transport?.releaseRound) ||
+        (seed.age ?? 0) < 3 ||
+        (seed.sprouting && Number.isInteger(seed.sproutReadyRound)),
+    )
   )
     return true;
+
   return state.pieces.some(
     (piece) =>
       Number.isInteger(piece.chemosynthesisReadyTurn) ||
       Number.isInteger(piece.photosynthesisReadyTurn) ||
       Number.isInteger(piece.extremophyteSinceRound) ||
-      energyValue(piece) < energyCapacity(piece) ||
-      juvenile(state, piece),
+      juvenile(state, piece) ||
+      hibernating(state, piece) ||
+      (Number.isInteger(piece.pupaUntilRound) && piece.pupaUntilRound > now) ||
+      (Number.isInteger(piece.neurodivergenceRestThroughRound) &&
+        piece.neurodivergenceRestThroughRound >= now) ||
+      (Number.isInteger(piece.intoxicationRestThroughRound) &&
+        piece.intoxicationRestThroughRound >= now) ||
+      (piece.pregnancies ?? []).some((entry) =>
+        Number.isInteger(entry.dueRound),
+      ) ||
+      (piece.marsupialPouch ?? []).some((entry) =>
+        Number.isInteger(entry.releaseRound),
+      ),
   );
 }
 

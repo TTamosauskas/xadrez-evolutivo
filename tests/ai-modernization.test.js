@@ -370,3 +370,64 @@ test("medium and hard convert a stalled capture opportunity instead of defaultin
     assert.deepEqual(chosen, capture);
   }
 });
+
+
+test("nível máximo de resolução força captura legal após 24 rodadas de seca", () => {
+  const state = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 4,
+        rank: 3,
+      },
+      {
+        owner: "blue",
+        r: 6,
+        c: 6,
+        rank: 0,
+        traits: [
+          "Respiração anaeróbia",
+          "Reparo Celular",
+          "Eucarionte",
+          "Multicelularismo",
+          "Fotossíntese",
+          "Embriófitas",
+          "Traqueófitas",
+        ],
+        energy: 20,
+        energyCapacitySnapshot: 20,
+      },
+      {
+        owner: "amber",
+        r: 4,
+        c: 5,
+        rank: 0,
+        traits: [
+          "Respiração anaeróbia",
+          "Reparo Celular",
+          "Eucarionte",
+          "Multicelularismo",
+          "Fotossíntese",
+        ],
+      },
+    ], 9505),
+    capture = { type: "MOVE", id: state.pieces[0].id, r: 4, c: 5 };
+
+  state.turn = 60;
+  state.lastSuccessfulCaptureRound = 0;
+
+  for (const [difficulty, maxNodes] of [
+    ["medium", 80],
+    ["hard", 240],
+  ]) {
+    const stats = {},
+      chosen = chooseAction(state, difficulty, {
+        now: () => 0,
+        maxNodes,
+        stats,
+      });
+    assert.deepEqual(chosen, capture);
+    assert.equal(stats.resolutionLevel, 3);
+    assert.equal(stats.forcedCaptureResolution, true);
+  }
+});
