@@ -677,7 +677,7 @@ test("Earth exposes required innovations only in their detailed phase window", (
   assert.equal(traitUnlocked(paleo, "Transferência Horizontal", basal), true);
   assert.equal(traitUnlocked(paleo, "Reparo Celular", basal), false);
 });
-test("cellular repair and bilateral symmetry gate complex body plans", () => {
+test("cellular repair gates multicellularity and body-plan branches stay distinct", () => {
   const s = createState(113),
     p = s.pieces[0];
 
@@ -707,6 +707,22 @@ test("cellular repair and bilateral symmetry gate complex body plans", () => {
   p.ancestry.push("Multicelularismo");
   assert.equal(traitUnlocked(s, "Simetria Bilateral", p), true);
   assert.equal(traitUnlocked(s, "Cnidário", p), true);
+  assert.equal(traitUnlocked(s, "Imortalidade Biológica", p), false);
+  assert.deepEqual(TRAIT_DEPENDENCIES["Corpo Gelatinoso"].lineageAny, [
+    "Locomoção Primitiva",
+    "Cnidário",
+  ]);
+  assert.deepEqual(TRAIT_DEPENDENCIES.Bioluminescência.lineageAny, [
+    "Visão Noturna",
+    "Cnidário",
+  ]);
+
+  const cnidarian = {
+    ...p,
+    traits: applyTraitMutation(p.traits, "Cnidário"),
+    ancestry: [...p.ancestry, "Cnidário"],
+  };
+  assert.equal(traitUnlocked(s, "Imortalidade Biológica", cnidarian), true);
 
   p.traits.push("Simetria Bilateral");
   p.ancestry.push("Simetria Bilateral");
