@@ -522,6 +522,7 @@ function finishGame(
   state.eggPlacement = null;
   state.domesticPlacement = null;
   state.socialDefense = null;
+  state.radialReposition = null;
   state.serotoninReposition = null;
   log(state, reason);
 }
@@ -1063,6 +1064,7 @@ function immediateCaptureThreatNextTurn(state, piece, turn) {
     chainTrait: null,
     chainOrigin: null,
     neurofocus: null,
+    radialReposition: null,
     serotoninReposition: null,
   };
   return threatState.pieces
@@ -1075,6 +1077,43 @@ function immediateCaptureThreatNextTurn(state, piece, turn) {
           target.c === piece.c,
       ),
     );
+}
+
+function refreshMetagenesis(state) {
+  const currentRound = round(state);
+  for (const piece of state.pieces) {
+    if (piece.owner !== state.current || !has(piece, "Metagênese")) continue;
+    const directlyThreatened =
+      immediateCaptureThreatNextTurn(state, piece, state.turn) ||
+      (Number.isInteger(piece.metagenesisLastThreatRound) &&
+        currentRound - piece.metagenesisLastThreatRound < 1);
+    if (directlyThreatened) piece.metagenesisLastThreatRound = currentRound;
+
+    const lastThreat = piece.metagenesisLastThreatRound,
+      nextForm =
+        directlyThreatened ||
+        (Number.isInteger(lastThreat) && currentRound - lastThreat <= 2)
+          ? "medusa"
+          : "polyp",
+      previousForm =
+        piece.metagenesisForm === "medusa" ? "medusa" : "polyp";
+    piece.metagenesisForm = nextForm;
+    if (previousForm === nextForm) continue;
+
+    if (nextForm === "polyp") piece.stationarySinceRound = currentRound;
+    const text =
+      nextForm === "medusa"
+        ? "🔄 Metagênese: pressão predatória detectada — forma Medusa."
+        : "🔄 Metagênese: duas rodadas sem ameaça — forma Pólipo.";
+    log(state, OWNERS[piece.owner] + ": " + text);
+    emitPassiveEffect(state, "Metagênese", text, {
+      pieceId: piece.id,
+      outcome:
+        nextForm === "medusa"
+          ? "metagenesis-medusa"
+          : "metagenesis-polyp",
+    });
+  }
 }
 
 function safeForRestorativeSleep(state, piece, turn) {
@@ -2055,6 +2094,7 @@ function clearForNeurofocusContinuation(state) {
   state.eggPlacement = null;
   state.domesticPlacement = null;
   state.socialDefense = null;
+  state.radialReposition = null;
   state.serotoninReposition = null;
   state.phase = "move";
 }
@@ -2489,6 +2529,7 @@ function advanceTurn(ctx) {
   state.building = null;
   state.domesticPlacement = null;
   state.socialDefense = null;
+  state.radialReposition = null;
   state.serotoninReposition = null;
   state.phase = "move";
   for (const p of [...state.pieces])
@@ -2620,6 +2661,7 @@ function advanceTurn(ctx) {
     if (!extinction(state)) matureExtremophytes(state);
     if (!extinction(state)) checkPopulationClimate(ctx);
   }
+  refreshMetagenesis(state);
   maturePhotosynthesis(state, state.current);
   recordExtremophyteAdaptation(state);
   if (!extinction(state) && resolveEcologicalDomain(state)) return;
@@ -2727,6 +2769,7 @@ function settle(ctx) {
     state.phase === "egg-placement" ||
     state.phase === "domestic-placement" ||
     state.phase === "social-defense" ||
+    state.phase === "radial-reposition" ||
     state.phase === "serotonin-reposition"
   )
     return;
