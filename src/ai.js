@@ -1058,10 +1058,7 @@ export function chooseAction(
     stats = null,
   } = {},
 ) {
-  const activeResolutionLevel =
-      difficulty === "medium" || difficulty === "hard"
-        ? resolutionPressureLevel(state)
-        : 0,
+  const activeResolutionLevel = resolutionPressureLevel(state),
     priorityOptions = {
       geometryScale:
         difficulty === "hard"
@@ -1113,14 +1110,22 @@ export function chooseAction(
   roots.sort((a, b) => b.value - a.value || a.order - b.order);
 
   if (difficulty === "easy" && !cortexAvailable) {
-    const poolSize = Math.min(
-        roots.length,
+    const forcedCaptures =
+        activeResolutionLevel >= 3
+          ? roots.filter((entry) =>
+              directEnemyCaptureAction(state, entry.action),
+            )
+          : [],
+      selectionRoots = forcedCaptures.length ? forcedCaptures : roots,
+      poolSize = Math.min(
+        selectionRoots.length,
         state.scenario === "arena"
-          ? Math.max(3, Math.ceil(roots.length * 0.25))
+          ? Math.max(3, Math.ceil(selectionRoots.length * 0.25))
           : 3,
       ),
-      chosen = roots[(state.rng >>> 0) % Math.max(1, poolSize)]?.action ??
-        roots[0].action;
+      chosen =
+        selectionRoots[(state.rng >>> 0) % Math.max(1, poolSize)]?.action ??
+        selectionRoots[0].action;
     if (stats && typeof stats === "object")
       Object.assign(stats, {
         nodes: context.nodes,
@@ -1131,6 +1136,8 @@ export function chooseAction(
         depth: profile.depth,
         branchWidth: profile.branchWidth,
         budget: profile.budget,
+        resolutionLevel: activeResolutionLevel,
+        forcedCaptureResolution: forcedCaptures.length > 0,
       });
     return chosen;
   }
