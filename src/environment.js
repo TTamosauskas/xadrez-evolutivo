@@ -544,14 +544,12 @@ function hostilePressurePreference(state) {
 }
 
 function habitatPressureLevel(state) {
+  if (eoarcheanOpeningBranchesPending(state)) return 0;
   const now = round(state),
-    openingPending = eoarcheanOpeningBranchesPending(state),
-    stalledRounds = openingPending
-      ? 0
-      : Math.max(
-          0,
-          now - (state.lastSuccessfulCaptureRound ?? 0),
-        ),
+    stalledRounds = Math.max(
+      0,
+      now - (state.lastSuccessfulCaptureRound ?? 0),
+    ),
     population = activePopulation(state),
     offensive = offensiveActionCount(state),
     replacement = replacementPressure(state);
