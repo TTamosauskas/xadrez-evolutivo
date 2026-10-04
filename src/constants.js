@@ -43,6 +43,7 @@ export const EVOLUTION_PATHS = Object.freeze({
     CHESS_FORMS.BISHOP,
     CHESS_FORMS.ROOK,
   ]),
+  cnidarian: Object.freeze([CHESS_FORMS.KING]),
 });
 export const CHESS_PIECE_VALUES = Object.freeze([1, 3, 3, 5, 2, 9]);
 export const SYMBOLS = {
@@ -175,6 +176,10 @@ export const TRAITS = {
   Molusco: [
     "🐙",
     "Plano corporal animal mutuamente exclusivo com Vertebrado e Artrópode. Em períodos aquáticos, o pé muscular permite terminar movimentos em Casas Neutras; Jatopropulsão libera as formas Bispo e Torre.",
+  ],
+  Cnidário: [
+    "🪼",
+    "Plano corporal animal cnidário, mutuamente exclusivo com Simetria Bilateral, Vertebrado, Artrópode e Molusco. Nesta etapa permanece na forma basal Rei e preserva compatibilidade com estratégias clonais, corpo gelatinoso, defesas químicas e bioluminescência.",
   ],
   "Sistema Adipocinético": [
     "⛽",
@@ -1081,6 +1086,7 @@ export const purePredatoryBranch = (piece) =>
   !!piece && has(piece, "Predação") && !canPhotosynthesize(piece);
 
 export function evolutionaryPath(piece) {
+  if (has(piece, "Cnidário")) return EVOLUTION_PATHS.cnidarian;
   if (has(piece, "Artrópode")) return EVOLUTION_PATHS.arthropod;
   if (has(piece, "Vertebrado")) return EVOLUTION_PATHS.vertebrate;
   if (has(piece, "Molusco")) return EVOLUTION_PATHS.mollusk;
