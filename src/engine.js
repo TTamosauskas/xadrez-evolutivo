@@ -41,7 +41,6 @@ import {
   ecologicalDomainBlocked,
   organicResidueAt,
   carcassAt,
-  captureDisturbanceAt,
   lethalHazardAt,
   organicResidueHazardousTo,
   inkCloudAt,
@@ -164,7 +163,6 @@ import {
   consumeCarcass,
   markCarcass,
   markOrganicResidue,
-  markCaptureDisturbance,
   beginPredationFeedingSite,
   finalizePredationFeedingSite,
   settlePredationFeedingSites,
@@ -858,9 +856,6 @@ export function hostileHazardKills(state, piece, normalHostile = false) {
 }
 const canConsumeCarcass = (piece) =>
   !!piece && (has(piece, "Necrófago") || has(piece, "Onívoro Oportunista"));
-const carcassDisturbanceHazardousTo = (state, piece, r, c) =>
-  !!captureDisturbanceAt(state, r, c) &&
-  !(carcassAt(state, r, c) && canConsumeCarcass(piece));
 const multicellularLineage = (piece) =>
   has(piece, "Multicelularismo") ||
   (piece?.ancestry ?? []).includes("Multicelularismo");
@@ -1123,7 +1118,6 @@ function safeForRestorativeSleep(state, piece, turn) {
     has(piece, "Ciclo de Sono") &&
     terrain(state, piece.r, piece.c) !== "hostile" &&
     !lethalHazardAt(state, piece.r, piece.c) &&
-    !carcassDisturbanceHazardousTo(state, piece, piece.r, piece.c) &&
     !(
       organicResidueAt(state, piece.r, piece.c) &&
       organicResidueHazardousTo(piece)
@@ -1249,7 +1243,6 @@ function reactiveRelocation(ctx, piece, r, c, reason) {
 
   const hazardous =
     terrain(state, r, c) === "hostile" ||
-    carcassDisturbanceHazardousTo(state, piece, r, c) ||
     (!!organicResidueAt(state, r, c) && organicResidueHazardousTo(piece));
   if (
     hazardous &&
@@ -2704,7 +2697,6 @@ function advanceTurn(ctx) {
       if (
         state.geologicalStage !== "hadean" &&
         (terrain(state, p.r, p.c) === "hostile" ||
-          carcassDisturbanceHazardousTo(state, p, p.r, p.c) ||
           (!!organicResidueAt(state, p.r, p.c) &&
             organicResidueHazardousTo(p))) &&
         !dormant(state, p) &&
@@ -2814,9 +2806,6 @@ function resolveThanatosis(state) {
     revived.stationarySinceRound = round(state);
     state.carcasses = state.carcasses.filter(
       (carcass) => carcass.cell !== entry.cell,
-    );
-    state.captureDisturbances = (state.captureDisturbances ?? []).filter(
-      (disturbance) => disturbance.cell !== entry.cell,
     );
     state.pieces.push(revived);
     log(
@@ -3256,7 +3245,6 @@ function resolveMassPredation(ctx, predator, primaryVictim) {
     if (!killed) continue;
     consumed++;
     markCarcass(state, cell);
-    markCaptureDisturbance(state, cell, predator.id);
   }
   if (consumed) {
     log(
@@ -4024,8 +4012,7 @@ function executeMove(ctx, action) {
       !target.stay &&
       !state.event?.hazards.includes(landingCell) &&
       !hasOrganicResidue(state, landingCell) &&
-      !carcassAt(state, target.r, target.c) &&
-      !state.captureDisturbances?.some((entry) => entry.cell === landingCell);
+      !carcassAt(state, target.r, target.c);
   let manipulation =
     stableLanding &&
     ["fertile", "hostile"].includes(landingTerrain) &&
@@ -4113,7 +4100,6 @@ function executeMove(ctx, action) {
   for (const [r, c] of target.path)
     if (
       (terrain(state, r, c) === "hostile" ||
-        carcassDisturbanceHazardousTo(state, p, r, c) ||
         (!!organicResidueAt(state, r, c) &&
           organicResidueHazardousTo(p))) &&
       !(
@@ -4157,7 +4143,6 @@ function executeMove(ctx, action) {
     !target.stay &&
     !landingPieceCapture &&
     (terrain(state, target.r, target.c) === "hostile" ||
-      carcassDisturbanceHazardousTo(state, p, target.r, target.c) ||
       (!!organicResidueAt(state, target.r, target.c) &&
         organicResidueHazardousTo(p)))
   )
@@ -4458,7 +4443,6 @@ function executeMove(ctx, action) {
       const origin = square(p.r, p.c);
       ctx.kill(p.id, "defesa por Espinhos", victim);
       markCarcass(state, origin);
-      markCaptureDisturbance(state, origin);
       log(
         state,
         `${OWNERS[victim.owner]}: 🌵 Espinhos matou o agressor durante a tentativa de captura.`,
@@ -4523,7 +4507,6 @@ function executeMove(ctx, action) {
       const origin = square(p.r, p.c);
       ctx.kill(p.id, "defesa por Chifre", victim);
       markCarcass(state, origin);
-      markCaptureDisturbance(state, origin);
       log(
         state,
         `${OWNERS[victim.owner]}: 🫎 Chifre matou o agressor durante a tentativa de captura.`,
@@ -4581,7 +4564,6 @@ function executeMove(ctx, action) {
       if (killed) {
         const redirectedCell = square(victimOrigin.r, victimOrigin.c);
         markCarcass(state, redirectedCell);
-        markCaptureDisturbance(state, redirectedCell);
       }
       log(
         state,
@@ -5272,7 +5254,6 @@ function executeMove(ctx, action) {
   if (
     pieceCapture &&
     (landingTerrain === "hostile" ||
-      carcassDisturbanceHazardousTo(state, p, p.r, p.c) ||
       (!!organicResidueAt(state, p.r, p.c) &&
         organicResidueHazardousTo(p))) &&
     !(
@@ -5289,7 +5270,6 @@ function executeMove(ctx, action) {
         markCarcass(state, cell);
       if (capturedPieceKilled) {
         markCarcass(state, cell);
-        markCaptureDisturbance(state, cell);
       }
       advanceTurn(ctx);
       settle(ctx);
@@ -5658,7 +5638,6 @@ function executeMove(ctx, action) {
       );
     else if (!cannibalConsumption && !predationCapture) {
       markCarcass(state, captureCell);
-      markCaptureDisturbance(state, captureCell, p.id);
     }
     if (!predationCapture)
       p.decompositionImmunity = {
@@ -6731,7 +6710,6 @@ function resolveSocialDefense(ctx, action) {
   state.socialDefense = null;
   state.phase = "move";
   ctx.kill(sacrifice.id, "sacrifício por Sociabilidade", null, true);
-  markCaptureDisturbance(state, cell);
   log(
     state,
     `${OWNERS[defender]}: 🐜 Sociabilidade sacrificou uma peça em ${coord(sacrifice.r, sacrifice.c)} e impediu a captura original.`,
@@ -6811,12 +6789,6 @@ function logBoardChanges(previous, state) {
       (previous.carcasses ?? []).map((entry) => entry.cell),
     ),
     afterCarcasses = new Set((state.carcasses ?? []).map((entry) => entry.cell)),
-    beforeDisturbance = new Set(
-      (previous.captureDisturbances ?? []).map((entry) => entry.cell),
-    ),
-    afterDisturbance = new Set(
-      (state.captureDisturbances ?? []).map((entry) => entry.cell),
-    ),
     beforeBarriers = new Set(previous.barriers ?? []),
     afterBarriers = new Set(state.barriers ?? []),
     changes = [],
@@ -6831,9 +6803,7 @@ function logBoardChanges(previous, state) {
         ? " · fezes"
         : afterCarcasses.has(cell)
           ? " · carcaça"
-          : afterDisturbance.has(cell)
-            ? " · perturbação"
-            : "";
+          : "";
     changes.push(
       `${coord(r, c)} ${TERRAIN_LOG_LABEL[previous.board[cell]]}→${TERRAIN_LOG_LABEL[state.board[cell]]}${overlay}`,
     );
@@ -6858,16 +6828,6 @@ function logBoardChanges(previous, state) {
     if (!afterCarcasses.has(cell) && !changedCells.has(cell))
       changes.push(
         `${coord(Math.floor(cell / 8), cell % 8)} · carcaça encerrada`,
-      );
-  for (const cell of afterDisturbance)
-    if (!beforeDisturbance.has(cell) && !changedCells.has(cell))
-      changes.push(
-        `${coord(Math.floor(cell / 8), cell % 8)} · perturbação temporária`,
-      );
-  for (const cell of beforeDisturbance)
-    if (!afterDisturbance.has(cell) && !changedCells.has(cell))
-      changes.push(
-        `${coord(Math.floor(cell / 8), cell % 8)} · perturbação encerrada`,
       );
   for (const cell of afterBarriers)
     if (!beforeBarriers.has(cell))

@@ -18,7 +18,6 @@ import {
   barrierAt,
   organicResidueAt,
   carcassAt,
-  captureDisturbanceAt,
   lethalHazardAt,
   reproductionReady,
   terrain,
@@ -663,12 +662,6 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
       targetCell !== null &&
       !!carcassAt(state, a.r, a.c) &&
       (has(p, "Necrófago") || has(p, "Onívoro Oportunista")),
-    disturbancePenalty =
-      targetCell !== null &&
-      captureDisturbanceAt(state, a.r, a.c) &&
-      !scavengerSafe
-        ? 8
-        : 0,
     lethalPenalty =
       targetCell !== null && lethalHazardAt(state, a.r, a.c) ? 10000 : 0,
     hostilePenalty =
@@ -692,7 +685,6 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
     placementPriority(state, a, p?.owner ?? state.current) * 0.25 +
     (egg && egg.owner !== state.current ? 6 + egg.brood.length : 0) -
     hostilePenalty -
-    disturbancePenalty -
     lethalPenalty
   );
 }

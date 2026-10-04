@@ -31,7 +31,6 @@ import {
   ecologicalDomainBlocked,
   organicResidueAt,
   carcassAt,
-  captureDisturbanceAt,
   lethalHazardAt,
   chemosynthesisExhaustedAt,
   organicResidueHazardousTo,
@@ -236,7 +235,6 @@ function constructionCellAvailable(state, parent, r, c) {
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
       ...state.carcasses.map((entry) => entry.cell),
-      ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
       ...(state.event?.lethalHazards ?? []),
     ]);
   return (

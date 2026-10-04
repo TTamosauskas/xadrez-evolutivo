@@ -187,7 +187,6 @@ function addNaturalBarriers(state, count, near = []) {
         ...(state.origin ? [square(state.origin.r, state.origin.c)] : []),
         ...state.deathSites.map((site) => site.cell),
         ...state.fertileTraces.map((trace) => trace.cell),
-        ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
         ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
         ...(state.event?.hazards ?? []),
       ]),
@@ -265,9 +264,6 @@ export function consumeOrganicResidue(state, cell) {
   if (!site && !trace) return false;
   state.deathSites = state.deathSites.filter((d) => d.cell !== cell);
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
-  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
-    (entry) => entry.cell !== cell,
-  );
   state.plantSeeds = (state.plantSeeds ?? []).filter(
     (seed) =>
       !(
@@ -302,7 +298,6 @@ export function markOrganicResidue(
     ];
   state.fertileTraces = state.fertileTraces.filter((t) => t.cell !== cell);
   state.carcasses = state.carcasses.filter((entry) => entry.cell !== cell);
-  markCaptureDisturbance(state, cell, null, 3);
   if (existing) {
     existing.dueRound = dueRound;
     existing.base = base;
@@ -337,14 +332,10 @@ export function markCarcass(state, cell) {
   } else {
     state.carcasses.push({ cell, dueRound, base });
   }
-  markCaptureDisturbance(state, cell, null, 3);
 }
 export function consumeCarcass(state, cell) {
   if (!carcassSiteAt(state, cell)) return false;
   state.carcasses = state.carcasses.filter((entry) => entry.cell !== cell);
-  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
-    (entry) => entry.cell !== cell,
-  );
   return true;
 }
 
@@ -362,7 +353,6 @@ export function finalizePredationFeedingSite(state, sourceId) {
   state.predationFeedingSites = sites.filter((entry) => entry !== site);
   restorePredationFeedingBase(state, site);
   markCarcass(state, site.cell);
-  markCaptureDisturbance(state, site.cell, sourceId, 3);
   const source = state.pieces.find((piece) => piece.id === sourceId);
   if (source) {
     source.predationEnergy = false;
@@ -414,30 +404,7 @@ export function settlePredationFeedingSites(state) {
   }
 }
 
-export function markCaptureDisturbance(
-  state,
-  cell,
-  sourceId = null,
-  durationRounds = 1,
-) {
-  state.captureDisturbances ??= [];
-  const existing = state.captureDisturbances.find(
-      (entry) => entry.cell === cell,
-    ),
-    dueRound = round(state) + durationRounds,
-    entry = {
-      cell,
-      dueRound: existing ? Math.max(existing.dueRound, dueRound) : dueRound,
-      base:
-        existing?.base ??
-        (state.event?.hazards.includes(cell)
-          ? state.event.snapshots[cell] ?? "neutral"
-          : state.board[cell]),
-      sourceId: sourceId ?? existing?.sourceId ?? null,
-    };
-  if (existing) Object.assign(existing, entry);
-  else state.captureDisturbances.push(entry);
-}
+
 
 function tickOrganicResidue(state) {
   const now = round(state);
@@ -450,20 +417,7 @@ function tickCarcasses(state) {
   const now = round(state);
   state.carcasses = state.carcasses.filter((entry) => now < entry.dueRound);
 }
-function tickCaptureDisturbances(state) {
-  const now = round(state),
-    active = [];
-  for (const entry of state.captureDisturbances ?? []) {
-    if (now < entry.dueRound) {
-      active.push(entry);
-      continue;
-    }
-    if (state.event?.hazards.includes(entry.cell))
-      state.event.snapshots[entry.cell] = entry.base;
-    else state.board[entry.cell] = entry.base;
-  }
-  state.captureDisturbances = active;
-}
+
 function seedCluster(state, type) {
   const candidates = [];
   for (let r = 0; r < 8; r++)
@@ -554,7 +508,6 @@ function cellularProtectedCells(state) {
     ...state.naturalBarriers,
     ...state.deathSites.map((site) => site.cell),
     ...state.fertileTraces.map((trace) => trace.cell),
-    ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
     ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
   ]);
 }
@@ -852,7 +805,6 @@ function habitatDriftCandidates(state, type) {
       ...state.naturalBarriers,
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
-      ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
       ...(state.extremophyteFertility ?? []).map((entry) => entry.cell),
     ]),
     current = allCells().filter(
@@ -1183,9 +1135,6 @@ function markLethalHazard(ctx, event, indices) {
     (trace) => !lethalSet.has(trace.cell),
   );
   state.carcasses = state.carcasses.filter(
-    (entry) => !lethalSet.has(entry.cell),
-  );
-  state.captureDisturbances = (state.captureDisturbances ?? []).filter(
     (entry) => !lethalSet.has(entry.cell),
   );
   for (const piece of [...state.pieces])
@@ -1905,7 +1854,6 @@ export function openOffensiveHabitatCorridor(state, pressure = 0) {
       ...state.deathSites.map((site) => site.cell),
       ...state.fertileTraces.map((trace) => trace.cell),
       ...state.carcasses.map((entry) => entry.cell),
-      ...(state.captureDisturbances ?? []).map((entry) => entry.cell),
       ...(state.event?.hazards ?? []),
     ]),
     limit = pressure >= 3 ? 2 : 1;
@@ -2023,7 +1971,6 @@ export function tickEnvironment(ctx) {
   tickSevereEventTurn(state);
   tickOrganicResidue(state);
   tickCarcasses(state);
-  tickCaptureDisturbances(state);
   depletePausedFertility(state);
 
   state.nextHabitatRound ??= 5;

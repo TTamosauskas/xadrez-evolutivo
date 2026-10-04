@@ -168,9 +168,6 @@ export const chemosynthesisExhaustedAt = (state, r, c) =>
       entry.cell === square(r, c) &&
       entry.eventKey === chemosynthesisEventKey(state),
   );
-export const captureDisturbanceAt = (state, r, c) =>
-  state.captureDisturbances?.find((entry) => entry.cell === square(r, c)) ??
-  null;
 export const predationFeedingSiteAt = (state, r, c) =>
   (state.predationFeedingSites ?? []).find(
     (entry) => entry.cell === square(r, c),
@@ -314,7 +311,6 @@ export function restoreAquaticFertility(state) {
       state.naturalBarriers?.includes(entry.cell) ||
       state.deathSites?.some((site) => site.cell === entry.cell) ||
       state.carcasses?.some((site) => site.cell === entry.cell) ||
-      state.captureDisturbances?.some((item) => item.cell === entry.cell) ||
       state.event?.hazards?.includes(entry.cell)
     )
       return true;
@@ -1515,7 +1511,7 @@ export function createState(seed = Date.now(), options = {}) {
     mineralRemnants: [],
     chemosynthesisExhausted: [],
     thanatosis: [],
-    captureDisturbances: [],
+    captureDisturbances: [], // legacy inert field; retained for save/test compatibility
     predationFeedingSites: [],
     fertilityRecovery: [],
     extremophyteFertility: [],
@@ -2729,7 +2725,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
     nonPhotosynthetic = strongestSurvivor(
       previous,
       winner,
-      (piece) => !canPhotosynthesize(piece),
+      (piece) =>
+        !canPhotosynthesize(piece) &&
+        (piece.traits ?? []).includes("Predação"),
     ),
     fallbackPhotosynthetic = strongestSurvivor(
       previous,
@@ -2739,7 +2737,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
     fallbackNonPhotosynthetic = strongestSurvivor(
       previous,
       null,
-      (piece) => !canPhotosynthesize(piece),
+      (piece) =>
+        !canPhotosynthesize(piece) &&
+        (piece.traits ?? []).includes("Predação"),
     ),
     extinctionFounder = previous.result?.extinctionFounder ?? null,
     photosyntheticExtinctionFounder =
@@ -2747,7 +2747,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
         ? extinctionFounder
         : null,
     nonPhotosyntheticExtinctionFounder =
-      extinctionFounder && !canPhotosynthesize(extinctionFounder)
+      extinctionFounder &&
+      !canPhotosynthesize(extinctionFounder) &&
+      (extinctionFounder.traits ?? []).includes("Predação")
         ? extinctionFounder
         : null,
     photosyntheticSource =
@@ -2847,7 +2849,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
   if (companion)
     log(
       state,
-      "Dupla fundadora simétrica: ambos os lados começam com uma linhagem fotossintética e uma não fotossintética, preservando a dominante e sua contraparte evolutiva.",
+      "Dupla fundadora simétrica: ambos os lados começam com uma linhagem fotossintética e uma predatória, preservando os dois ramos energéticos fundamentais.",
     );
   log(
     state,
@@ -3097,10 +3099,6 @@ export function assertState(state) {
         typeof entry.eventKey !== "string" ||
         !entry.eventKey
     ) ||
-    !(
-      state.captureDisturbances === undefined ||
-      Array.isArray(state.captureDisturbances)
-    ) ||
     !Array.isArray(state.fertilityRecovery) ||
     !Array.isArray(state.extremophyteFertility) ||
     !Array.isArray(state.eggs) ||
@@ -3187,19 +3185,6 @@ export function assertState(state) {
     ) ||
     new Set(state.carcasses.map((entry) => entry.cell)).size !==
       state.carcasses.length ||
-    (state.captureDisturbances ?? []).some(
-      (entry) =>
-        !integer(entry.cell, 0, 63) ||
-        !integer(entry.dueRound, 1) ||
-        !["neutral", "fertile", "hostile"].includes(entry.base) ||
-        !(
-          entry.sourceId === null ||
-          entry.sourceId === undefined ||
-          integer(entry.sourceId, 1)
-        ),
-    ) ||
-    new Set((state.captureDisturbances ?? []).map((entry) => entry.cell)).size !==
-      (state.captureDisturbances ?? []).length ||
     !(
       state.eggPlacement === null ||
       (state.eggPlacement &&

@@ -3140,7 +3140,6 @@ test("Predação stores one vivification charge and reproduces only on a later a
   assert.equal(parent.predationEnergy, false);
   assert.equal(s.board[36], "neutral");
   assert.equal(s.carcasses[0]?.cell, 36);
-  assert.equal(s.captureDisturbances[0]?.cell, 36);
   assert.equal(
     predatoryReproductionAvailable(
       {
@@ -3264,7 +3263,7 @@ test("Necrófago consumes carcass without changing its underlying terrain", () =
   }
 });
 
-test("capture without trophic reproduction keeps disturbance for the carcass lifetime", () => {
+test("capture without trophic reproduction leaves a carcass after the predator departs", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
     { owner: "amber", r: 4, c: 4 },
@@ -3287,10 +3286,7 @@ test("capture without trophic reproduction keeps disturbance for the carcass lif
   );
   assert.ok(departure);
   s = simulate(s, move(attacker, departure.r, departure.c));
-  const disturbance = s.captureDisturbances[0];
   assert.equal(s.carcasses[0]?.cell, 36);
-  assert.equal(disturbance?.cell, 36);
-  assert.equal(disturbance?.sourceId, attacker.id);
   assert.equal(s.board[36], "neutral");
 
   s = simulate(s, { type: "PASS" });
@@ -3299,13 +3295,12 @@ test("capture without trophic reproduction keeps disturbance for the carcass lif
   s = simulate(s, { type: "PASS" });
   s = simulate(s, { type: "PASS" });
   s = simulate(s, { type: "PASS" });
-  assert.equal(s.captureDisturbances.length, 0);
   assert.equal(s.carcasses.length, 0);
   assert.ok(s.pieces.some((piece) => piece.id === attacker.id));
   assertState(s);
 });
 
-test("capture disturbance preserves fertile terrain underneath", () => {
+test("predation feeding site preserves fertile terrain underneath", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3 },
     { owner: "amber", r: 4, c: 4 },
@@ -3371,7 +3366,6 @@ test("leaving a predation feeding site turns the green cell into remains", () =>
   assert.equal(predator.predationEnergy, false);
   assert.equal(s.board[36], "neutral");
   assert.equal(s.carcasses[0]?.cell, 36);
-  assert.equal(s.captureDisturbances[0]?.cell, 36);
   assertState(s);
 });
 
@@ -3456,21 +3450,14 @@ test("Coprofagia consumes feces for exactly one descendant without consuming fer
   assertState(s);
 });
 
-test("Necrófago removes the red disturbance when consuming its carcass", () => {
+test("Necrófago consumes its carcass without a disturbance overlay", () => {
   let s = fixture([
     { owner: "blue", r: 4, c: 3, rank: 3, traits: ["Necrófago"] },
     { owner: "amber", r: 0, c: 0 },
   ]);
   s.carcasses.push({ cell: 36, dueRound: 3, base: "neutral" });
-  s.captureDisturbances.push({
-    cell: 36,
-    dueRound: 1,
-    base: "neutral",
-    sourceId: null,
-  });
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.equal(s.carcasses.length, 0);
-  assert.equal(s.captureDisturbances.length, 0);
   assert.ok(s.pieces.filter((piece) => piece.owner === "blue").length > 1);
   assertState(s);
 });
@@ -3527,7 +3514,7 @@ test("post-Hadean phases no longer need an opening mutation to create an energy 
   assertState(state);
 });
 
-test("same-branch offspring do not spend the guarantee reserved for the missing Archean branch", () => {
+test("first Eoarchean reproduction keeps Fotossíntese first for an already photosynthetic lineage", () => {
   const s = createState(1195, {
     scenario: "earth",
     geologicalStage: "eoarchean",
@@ -3543,7 +3530,7 @@ test("same-branch offspring do not spend the guarantee reserved for the missing 
   const parent = newPiece(s, "blue", 5, 2, {
       rank: 4,
       traits: ["Fotossíntese"],
-      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Quimiossíntese", "Fotossíntese"],
     }),
     rival = newPiece(s, "amber", 2, 5, {
       rank: 4,
@@ -3552,12 +3539,16 @@ test("same-branch offspring do not spend the guarantee reserved for the missing 
     });
   s.pieces.push(parent, rival);
 
+  const before = new Set(s.pieces.map((piece) => piece.id));
   reproduce(context(s), parent, null, "teste", {
     forcedCount: 1,
     ignoreReadiness: true,
     immediateDevelopment: true,
   });
-  assert.equal(s.openingMutationSatisfied.blue, false);
+  const child = s.pieces.find((piece) => !before.has(piece.id));
+  assert.ok(child.traits.includes("Fotossíntese"));
+  assert.equal(child.traits.includes("Predação"), false);
+  assert.equal(s.reproductions.blue, 1);
   assert.equal(s.historicalTraits.includes("Predação"), false);
   assertState(s);
 });
@@ -5181,7 +5172,6 @@ test("Espinhos has a one-in-ten chance to kill the aggressor on a capture attemp
   s = simulate(s, move(attacker, 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === attacker.id));
   assert.ok(s.pieces.some((piece) => piece.id === defender.id));
-  assert.ok(s.captureDisturbances.some((entry) => entry.cell === 35));
   assert.equal(s.passiveEffects.at(-1)?.trait, "Espinhos");
   assert.equal(s.passiveEffects.at(-1)?.outcome, "killed-attacker");
   assertState(s);
@@ -5849,7 +5839,6 @@ test("Chifre can kill an unarmored aggressor before capture", () => {
   s = simulate(s, move(s.pieces[0], 4, 4));
   assert.ok(!s.pieces.some((piece) => piece.id === 1));
   assert.ok(s.pieces.some((piece) => piece.id === 2 && piece.r === 4 && piece.c === 4));
-  assert.ok(s.captureDisturbances.some((entry) => entry.cell === 35));
   assert.equal(s.passiveEffects.at(-1)?.trait, "Chifre");
   assert.equal(s.passiveEffects.at(-1)?.outcome, "killed-attacker");
   assertState(s);
