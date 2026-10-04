@@ -34,6 +34,7 @@ import {
   mutuallyBlocked,
   applyNaturalDeaths,
   resolveEcologicalDomain,
+  lethalDeathsDue,
 } from "../src/engine.js";
 import {
   energyCapacity,
