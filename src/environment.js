@@ -18,6 +18,7 @@ import {
   fertilityPaused,
   stomataOpen,
   lethalHazardAt,
+  eoarcheanOpeningBranchesPending,
 } from "./state.js";
 import {
   eventWeights,
@@ -544,10 +545,13 @@ function hostilePressurePreference(state) {
 
 function habitatPressureLevel(state) {
   const now = round(state),
-    stalledRounds = Math.max(
-      0,
-      now - (state.lastSuccessfulCaptureRound ?? 0),
-    ),
+    openingPending = eoarcheanOpeningBranchesPending(state),
+    stalledRounds = openingPending
+      ? 0
+      : Math.max(
+          0,
+          now - (state.lastSuccessfulCaptureRound ?? 0),
+        ),
     population = activePopulation(state),
     offensive = offensiveActionCount(state),
     replacement = replacementPressure(state);
@@ -1982,6 +1986,7 @@ function offensiveRelocation(state) {
 }
 
 export function relieveOffensiveStagnation(state, pressure = 0) {
+  if (eoarcheanOpeningBranchesPending(state)) return null;
   const stalledRounds = Math.max(
     0,
     round(state) - (state.lastSuccessfulCaptureRound ?? 0),
