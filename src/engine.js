@@ -60,6 +60,8 @@ import {
   parthenogenesisAvailable,
   sexualReproductionResource,
   legalActions,
+  canWaitForRest,
+  canWaitForBirth,
   dormant,
   hibernating,
   adjacentAlliesCount,
