@@ -4012,7 +4012,7 @@ function executeMove(ctx, action) {
       !target.stay &&
       !state.event?.hazards.includes(landingCell) &&
       !hasOrganicResidue(state, landingCell) &&
-      !carcassAt(state, target.r, target.c) &&;
+      !carcassAt(state, target.r, target.c);
   let manipulation =
     stableLanding &&
     ["fertile", "hostile"].includes(landingTerrain) &&
