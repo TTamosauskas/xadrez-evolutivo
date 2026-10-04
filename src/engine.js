@@ -6802,7 +6802,7 @@ function logBoardChanges(previous, state) {
         ? " · fezes"
         : afterCarcasses.has(cell)
           ? " · carcaça"
-            : "";
+          : "";
     changes.push(
       `${coord(r, c)} ${TERRAIN_LOG_LABEL[previous.board[cell]]}→${TERRAIN_LOG_LABEL[state.board[cell]]}${overlay}`,
     );
@@ -6827,16 +6827,6 @@ function logBoardChanges(previous, state) {
     if (!afterCarcasses.has(cell) && !changedCells.has(cell))
       changes.push(
         `${coord(Math.floor(cell / 8), cell % 8)} · carcaça encerrada`,
-      );
-  for (const cell of afterDisturbance)
-    if (!beforeDisturbance.has(cell) && !changedCells.has(cell))
-      changes.push(
-        `${coord(Math.floor(cell / 8), cell % 8)} · perturbação temporária`,
-      );
-  for (const cell of beforeDisturbance)
-    if (!afterDisturbance.has(cell) && !changedCells.has(cell))
-      changes.push(
-        `${coord(Math.floor(cell / 8), cell % 8)} · perturbação encerrada`,
       );
   for (const cell of afterBarriers)
     if (!beforeBarriers.has(cell))
