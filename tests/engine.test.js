@@ -282,7 +282,7 @@ test("Eoarchean cycle one founders always start outside lethal edge cells", () =
   }
 });
 
-test("a creature occupying a lethal Eoarchean cell dies when the turn resolves", () => {
+test("a creature occupying an unmarked lethal Eoarchean cell is scheduled for death", () => {
   let state = createState(1901, {
     geologicalStage: "eoarchean",
     cycle: 1,
@@ -293,8 +293,16 @@ test("a creature occupying a lethal Eoarchean cell dies when the turn resolves",
   victim.c = 0;
   const victimId = victim.id;
   assert.equal(lethalHazardAt(state, victim.r, victim.c), true);
+  assert.equal(victim.lethalDeathRound, undefined);
 
   state = transition(state, { type: "PASS" });
+  const doomed = state.pieces.find((piece) => piece.id === victimId);
+  assert.ok(doomed);
+  assert.ok(Number.isInteger(doomed.lethalDeathRound));
+
+  state = transition(state, { type: "PASS" });
+  assert.equal(lethalDeathsDue(state), true);
+  state = transition(state, { type: "RESOLVE_LETHAL" });
   assert.equal(
     state.pieces.some((piece) => piece.id === victimId),
     false,
@@ -326,8 +334,8 @@ test("hostile Conway starts at turn 120 from the Ediacaran and repeats every fiv
   assert.equal(at120.turn, 120);
   assert.ok(
     at120.logs.some((entry) =>
-      String(entry).includes("Conway hostil") &&
-      String(entry).includes("turno 120"),
+      String(entry.text ?? entry).includes("Conway hostil") &&
+      String(entry.text ?? entry).includes("turno 120"),
     ),
   );
 
@@ -335,8 +343,8 @@ test("hostile Conway starts at turn 120 from the Ediacaran and repeats every fiv
   assert.equal(at125.turn, 125);
   assert.ok(
     at125.logs.some((entry) =>
-      String(entry).includes("Conway hostil") &&
-      String(entry).includes("turno 125"),
+      String(entry.text ?? entry).includes("Conway hostil") &&
+      String(entry.text ?? entry).includes("turno 125"),
     ),
   );
 
@@ -344,7 +352,7 @@ test("hostile Conway starts at turn 120 from the Ediacaran and repeats every fiv
   assert.equal(beforeThreshold.turn, 115);
   assert.equal(
     beforeThreshold.logs.some((entry) =>
-      String(entry).includes("Conway hostil"),
+      String(entry.text ?? entry).includes("Conway hostil"),
     ),
     false,
   );
