@@ -662,12 +662,6 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
       targetCell !== null &&
       !!carcassAt(state, a.r, a.c) &&
       (has(p, "Necrófago") || has(p, "Onívoro Oportunista")),
-    disturbancePenalty =
-      targetCell !== null &&
-      captureDisturbanceAt(state, a.r, a.c) &&
-      !scavengerSafe
-        ? 8
-        : 0,
     lethalPenalty =
       targetCell !== null && lethalHazardAt(state, a.r, a.c) ? 10000 : 0,
     hostilePenalty =
