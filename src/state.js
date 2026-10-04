@@ -3092,10 +3092,6 @@ export function assertState(state) {
         typeof entry.eventKey !== "string" ||
         !entry.eventKey
     ) ||
-    !(
-      state.captureDisturbances === undefined ||
-      Array.isArray(state.captureDisturbances)
-    ) ||
     !Array.isArray(state.fertilityRecovery) ||
     !Array.isArray(state.extremophyteFertility) ||
     !Array.isArray(state.eggs) ||
