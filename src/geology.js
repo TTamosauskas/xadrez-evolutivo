@@ -1966,7 +1966,12 @@ export function applyTraitMutation(traits, trait) {
 export function applyTraitLoss(traits, ancestry, trait) {
   const next = (traits ?? []).filter((candidate) => candidate !== trait),
     family = activeTraitFamily(trait);
-  if (!family || family.id === "energy") return normalizeActiveTraits(next);
+  if (
+    !family ||
+    family.id === "energy" ||
+    family.id === "body-symmetry"
+  )
+    return normalizeActiveTraits(next);
   const activeFamilyMember = next.some((candidate) =>
     family.traits.includes(candidate),
   );
