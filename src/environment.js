@@ -683,13 +683,13 @@ function evolveCellularTerrain(
   applyCellularTerrainConsequences(ctx, before);
 }
 
-export function advanceHostileConway(ctx) {
+export function advanceHostileCorrosion(ctx) {
   if (!conwayUnlocked(ctx.state)) return false;
   const state = ctx.state,
     before = [...state.board];
   evolveCellularTerrain(ctx, {
     type: "hostile",
-    rule: CELLULAR_RULES.CLASSIC,
+    rule: CELLULAR_RULES.CORROSION,
     profile: habitatProfile(state),
     changeLimit: Infinity,
   });
