@@ -2526,14 +2526,13 @@ function tickArmRegeneration(state, owner) {
   }
 }
 
-function resolveLethalOccupants(ctx) {
-  const state = ctx.state;
-  let deaths = 0;
-  for (const piece of [...state.pieces]) {
+function markLethalOccupants(state) {
+  let marked = 0;
+  for (const piece of state.pieces) {
     if (!lethalHazardAt(state, piece.r, piece.c)) continue;
-    if (ctx.kill(piece.id, "ambiente letal", null, true)) deaths++;
+    if (markLethalDeath(state, piece, "ambiente letal")) marked++;
   }
-  return deaths;
+  return marked;
 }
 
 function triggerLateHostileConway(ctx) {
@@ -2596,8 +2595,7 @@ function advanceTurn(ctx) {
   recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
-  resolveLethalOccupants(ctx);
-  if (extinction(state)) return;
+  markLethalOccupants(state);
   triggerLateHostileConway(ctx);
   if (extinction(state)) return;
   for (const piece of state.pieces)
@@ -2801,8 +2799,7 @@ function resolveThanatosis(state) {
 function settle(ctx) {
   const state = ctx.state;
   resolveThanatosis(state);
-  resolveLethalOccupants(ctx);
-  if (extinction(state)) return;
+  markLethalOccupants(state);
   recycleOccupiedOrganicResidue(state);
   if (
     state.result ||
