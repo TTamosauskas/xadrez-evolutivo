@@ -241,12 +241,12 @@ test("Earth canonical founders keep the complete intended phenotype and lineage 
         },
         canonicalBodyPlan =
           branch === "animal"
-            ? ["Vertebrado", "Artrópode", "Molusco"].find((plan) =>
+            ? ["Vertebrado", "Artrópode", "Molusco", "Cnidário"].find((plan) =>
                 canonicalPreset.animal?.includes(plan),
               ) ?? null
             : null,
         otherBodyPlans = canonicalBodyPlan
-          ? ["Vertebrado", "Artrópode", "Molusco"].filter(
+          ? ["Vertebrado", "Artrópode", "Molusco", "Cnidário"].filter(
               (plan) => plan !== canonicalBodyPlan,
             )
           : [],
@@ -706,13 +706,16 @@ test("cellular repair and bilateral symmetry gate complex body plans", () => {
   p.traits.push("Multicelularismo");
   p.ancestry.push("Multicelularismo");
   assert.equal(traitUnlocked(s, "Simetria Bilateral", p), true);
+  assert.equal(traitUnlocked(s, "Cnidário", p), true);
+
+  p.traits.push("Simetria Bilateral");
+  p.ancestry.push("Simetria Bilateral");
+  assert.equal(traitUnlocked(s, "Cnidário", p), false);
 
   s.geologicalStage = "cambrian";
   p.traits.push("Locomoção Primitiva");
   p.ancestry.push("Locomoção Primitiva");
   assert.equal(traitUnlocked(s, "Vertebrado", p), false);
-  p.traits.push("Simetria Bilateral");
-  p.ancestry.push("Simetria Bilateral");
   assert.equal(traitUnlocked(s, "Vertebrado", p), false);
   assert.equal(traitUnlocked(s, "Artrópode", p), false);
   p.traits.push("Cefalização");
