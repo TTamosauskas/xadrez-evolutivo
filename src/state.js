@@ -191,6 +191,28 @@ export const organicResidueHazardousTo = (piece) =>
   !canPhotosynthesize(piece) &&
   !has(piece, "Coprofagia");
 export const round = (state) => Math.floor(state.turn / 2);
+
+export function eoarcheanOpeningEnergyBranch(state, owner) {
+  if (
+    !state ||
+    state.scenario === "arena" ||
+    state.geologicalStage !== "eoarchean" ||
+    state.cycle !== 1 ||
+    !["blue", "amber"].includes(owner)
+  )
+    return null;
+  const reproductions = state.reproductions?.[owner] ?? 0;
+  if (reproductions === 0) return "Fotossíntese";
+  if (reproductions === 1) return "Predação";
+  return null;
+}
+
+export function eoarcheanOpeningBranchesPending(state, owner = null) {
+  if (owner) return eoarcheanOpeningEnergyBranch(state, owner) !== null;
+  return ["blue", "amber"].some(
+    (candidate) => eoarcheanOpeningEnergyBranch(state, candidate) !== null,
+  );
+}
 export const ECOLOGICAL_DOMAIN_START_TURN = 200;
 export const ECOLOGICAL_DOMAIN_REQUIRED_TURNS = 3;
 export const ECOLOGICAL_DOMAIN_REQUIRED_QUADRANTS = 3;
