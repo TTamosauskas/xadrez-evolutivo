@@ -141,6 +141,10 @@ const traitFallbacks = Object.freeze({
 });
 
 const fileOverrides = Object.freeze({
+  "Simetria Radial":
+    "OCNMS - deep water anemone-nopin (28127779305).jpg",
+  Cnidócitos: "Nematocyst1.jpg",
+  Metagênese: "Aurelia Strobila.jpg",
   "Caça Cooperativa": "Wild Dogs Mudumalai.jpg",
   Sociabilidade: "GeladaTroopSimienMountains.jpg",
   "Plantas Domesticadas": "Corn field.jpg",
@@ -192,6 +196,9 @@ const fileOverrides = Object.freeze({
 });
 
 const semanticQueries = Object.freeze({
+  "Simetria Radial": "sea anemone radial symmetry photo",
+  Cnidócitos: "nematocyst cnidocyte micrograph",
+  Metagênese: "Aurelia polyp strobilation microscopy",
   "Respiração anaeróbia": "anaerobic bacteria microscopy",
   "Respiração aeróbia": "aerobic respiration mitochondria",
   Fotossíntese: "leaf sunlight photosynthesis",

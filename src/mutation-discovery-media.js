@@ -1853,5 +1853,32 @@ export const MUTATION_DISCOVERY_MEDIA = Object.freeze({
     "license": "Public domain",
     "width": 1200,
     "height": 792
-  }
+  },
+  "Simetria Radial": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/Simetria_radial",
+    "image": "assets/discoveries/mutations/media-8a8e09f87b5c.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:OCNMS_-_deep_water_anemone-nopin_(28127779305).jpg",
+    "author": "National Marine Sanctuaries",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 900
+  },
+  "Cnidócitos": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/Cnidoblasto",
+    "image": "assets/discoveries/mutations/media-6d5dbb850fe1.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Nematocyst1.jpg",
+    "author": "David D. Brand (Dbrand at English Wikipedia)",
+    "license": "Public domain",
+    "width": 1200,
+    "height": 802
+  },
+  "Metagênese": {
+    "wikipedia": "https://pt.wikipedia.org/wiki/Scyphozoa",
+    "image": "assets/discoveries/mutations/media-2a8415ab1f75.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Aurelia_Strobila.jpg",
+    "author": "Circa24",
+    "license": "CC BY-SA 3.0",
+    "width": 1200,
+    "height": 900
+  },
 });

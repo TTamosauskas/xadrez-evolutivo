@@ -1332,3 +1332,23 @@ Imagens pesquisadas e copiadas da Wikipedia/Wikimedia. Consulte a fonte indicada
 - Autor/crédito: Thomas Splettstoesser (www.scistyle.com)
 - Licença: CC BY-SA 4.0
 
+## media-8a8e09f87b5c.jpg
+
+- Usada em: Simetria Radial
+- Fonte: https://commons.wikimedia.org/wiki/File:OCNMS_-_deep_water_anemone-nopin_(28127779305).jpg
+- Autor/crédito: National Marine Sanctuaries
+- Licença: Public domain
+
+## media-6d5dbb850fe1.jpg
+
+- Usada em: Cnidócitos
+- Fonte: https://commons.wikimedia.org/wiki/File:Nematocyst1.jpg
+- Autor/crédito: David D. Brand (Dbrand at English Wikipedia)
+- Licença: Public domain
+
+## media-2a8415ab1f75.jpg
+
+- Usada em: Metagênese
+- Fonte: https://commons.wikimedia.org/wiki/File:Aurelia_Strobila.jpg
+- Autor/crédito: Circa24
+- Licença: CC BY-SA 3.0
