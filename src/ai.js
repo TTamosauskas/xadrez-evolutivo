@@ -27,6 +27,8 @@ import {
   expressedPositiveGenes,
   carriedNegativeMutations,
   hiddenPositiveRecessives,
+  eoarcheanOpeningEnergyBranch,
+  eoarcheanOpeningBranchesPending,
 } from "./state.js";
 import {
   canUseBasalFertility,
@@ -275,6 +277,7 @@ export function captureGeometryPriority(state, piece, action) {
 }
 
 export function resolutionPressureLevel(state) {
+  if (eoarcheanOpeningBranchesPending(state)) return 0;
   const elapsed = Math.max(
     0,
     round(state) - (state.lastSuccessfulCaptureRound ?? 0),
@@ -582,6 +585,18 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
       : moveTarget?.matriphagy
         ? 11
         : 0,
+    openingEnergyBranch = p
+      ? eoarcheanOpeningEnergyBranch(state, p.owner)
+      : null,
+    openingReproductionBonus =
+      openingEnergyBranch &&
+      moveTarget?.stay &&
+      reproductionReady(state, p) &&
+      !moveTarget.webEscape &&
+      !moveTarget.haustoriumDrain &&
+      !moveTarget.botanicalPredation
+        ? 10000
+        : 0,
     mechanicValue = moveMechanicPriority(state, p, moveTarget),
     egg = eggAt(state, a.r, a.c),
     targetCell =
@@ -671,6 +686,7 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
         ? 8
         : 0;
   return (
+    openingReproductionBonus +
     familyReproductionBonus +
     mechanicValue +
     hunt +

@@ -51,6 +51,7 @@ import {
   photosynthesisDelayTurns,
   lethalHazardAt,
   allelopathySourceAt,
+  eoarcheanOpeningEnergyBranch,
 } from "./state.js";
 import {
   BASAL_GENETIC_TRAIT,
@@ -686,19 +687,6 @@ function pairSexualFounders(brood, sexualMutants) {
     ...prioritized,
     ...brood.filter((child) => !selected.has(child)),
   );
-}
-
-function eoarcheanOpeningEnergyBranch(state, owner) {
-  if (
-    state.scenario === "arena" ||
-    state.geologicalStage !== "eoarchean" ||
-    state.cycle !== 1
-  )
-    return null;
-  const reproductions = state.reproductions?.[owner] ?? 0;
-  if (reproductions === 0) return "Fotossíntese";
-  if (reproductions === 1) return "Predação";
-  return null;
 }
 
 function differentiatedRank(state, child) {
@@ -1926,6 +1914,7 @@ export function reproduce(
   options = {},
 ) {
   const state = ctx.state,
+    openingEnergyBranch = eoarcheanOpeningEnergyBranch(state, parent.owner),
     existingPieceIds = new Set(state.pieces.map((piece) => piece.id)),
     mates = [...new Map(
       [mate, options.additionalMate]
@@ -2034,9 +2023,10 @@ export function reproduce(
       pressureLatched,
       state.geologicalStage,
     ),
-    pressureLimit =
-      reason === "predação" &&
-      (competitivePressure.suppressPredation || replacement.suppressPredation)
+    pressureLimit = openingEnergyBranch
+      ? Infinity
+      : reason === "predação" &&
+          (competitivePressure.suppressPredation || replacement.suppressPredation)
         ? 0
         : Math.min(
             populationLimit,
@@ -2341,7 +2331,11 @@ export function reproduce(
     failIfSubfertile = () => {
       if (mates.length)
         transmitSexualPathogen(state, [parent, ...mates]);
-      if (!has(profile, "Subfertilidade") || random(state) >= 0.5)
+      if (
+        openingEnergyBranch ||
+        !has(profile, "Subfertilidade") ||
+        random(state) >= 0.5
+      )
         return false;
       markReproductiveAttempt();
       if (Number.isInteger(options.resourceCell))
@@ -2389,6 +2383,7 @@ export function reproduce(
   }
 
   if (
+    !openingEnergyBranch &&
     !options.ignoreSuccessPressure &&
     !state.disableReproductiveSuccessPressure
   ) {

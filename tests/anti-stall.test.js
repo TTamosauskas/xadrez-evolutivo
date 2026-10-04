@@ -172,3 +172,35 @@ test("pressão ofensiva desloca um bloqueador após 24 rodadas sem captura", () 
     ),
   );
 });
+
+
+test("anti-stall waits until both Eoarchean sides complete Fotossíntese and Predação", () => {
+  const s = fixture([
+    {
+      owner: "blue",
+      r: 5,
+      c: 2,
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Quimiossíntese"],
+    },
+    {
+      owner: "amber",
+      r: 2,
+      c: 5,
+      rank: 4,
+      traits: ["Respiração anaeróbia", "Quimiossíntese"],
+    },
+  ]);
+  s.scenario = "earth";
+  s.geologicalStage = "eoarchean";
+  s.cycle = 1;
+  s.reproductions = { blue: 2, amber: 1 };
+  s.turn = 240;
+  s.lastSuccessfulCaptureRound = 0;
+
+  assert.equal(resolveEcologicalDomain(s), false);
+  assert.equal(relieveOffensiveStagnation(s, 3), null);
+
+  s.reproductions.amber = 2;
+  assert.equal(resolveEcologicalDomain(s), true);
+});

@@ -52,6 +52,7 @@ import {
   hadeanOuterCell,
   hadeanPlayableCell,
   recordDemographicDelta,
+  eoarcheanOpeningBranchesPending,
 } from "./state.js";
 import {
   movesFor,
@@ -646,6 +647,7 @@ function hadeanPlayableAreaOccupied(state) {
 
 function passiveProgressPending(state) {
   const now = round(state);
+  if (eoarcheanOpeningBranchesPending(state)) return true;
   if ((state.hadeanEnvironment?.pendingFertility?.length ?? 0) > 0)
     return true;
 
@@ -697,6 +699,8 @@ export function resolveEcologicalDomain(state) {
       "ocupação total das 16 casas jogáveis do núcleo 4×4",
     );
   }
+
+  if (eoarcheanOpeningBranchesPending(state)) return false;
 
   const sideHibernation = Object.fromEntries(
     ["blue", "amber"].map((owner) => {
@@ -2546,7 +2550,12 @@ function markLethalOccupants(state) {
 
 function triggerHostileCorrosion(ctx) {
   const state = ctx.state;
-  if (!conwayUnlocked(state) || state.result) return false;
+  if (
+    !conwayUnlocked(state) ||
+    state.result ||
+    eoarcheanOpeningBranchesPending(state)
+  )
+    return false;
 
   const stalledRounds = Math.max(
       0,

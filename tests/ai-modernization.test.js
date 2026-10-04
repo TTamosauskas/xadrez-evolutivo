@@ -10,11 +10,13 @@ import {
   evaluateForAI,
   actionPriority,
   strategicPieceValue,
+  resolutionPressureLevel,
 } from "../src/ai.js";
 import { genomeFromTraits } from "../src/genetics.js";
 import { arenaAISide, arenaSetupGenomeValid } from "../src/arena.js";
 import { legalActions, movesFor } from "../src/moves.js";
 import { fixture } from "./helpers.js";
+import { simulate } from "../src/engine.js";
 
 test("AI explicitly tracks every legal action type exposed by moves.js", () => {
   const source = readFileSync(new URL("../src/moves.js", import.meta.url), "utf8"),
@@ -429,5 +431,69 @@ test("nível máximo de resolução força captura legal após 24 rodadas de sec
     assert.deepEqual(chosen, capture);
     assert.equal(stats.resolutionLevel, 3);
     assert.equal(stats.forcedCaptureResolution, true);
+  }
+});
+
+
+test("AI completes the two mandatory Eoarchean opening branches before stall aggression", () => {
+  const makeState = (reproductions) => {
+    const state = fixture([
+      {
+        owner: "blue",
+        r: 5,
+        c: 2,
+        rank: 4,
+        traits: ["Respiração anaeróbia", "Quimiossíntese"],
+      },
+      {
+        owner: "amber",
+        r: 2,
+        c: 5,
+        rank: 4,
+        traits: ["Respiração anaeróbia", "Quimiossíntese"],
+      },
+    ], 9601 + reproductions);
+    state.scenario = "earth";
+    state.geologicalStage = "eoarchean";
+    state.cycle = 1;
+    state.current = "blue";
+    state.turn = 60;
+    state.lastSuccessfulCaptureRound = 0;
+    state.reproductions = { blue: reproductions, amber: 2 };
+    state.historicalTraits = ["Respiração anaeróbia", "Quimiossíntese"];
+    state.cyclePositiveInnovations = [];
+    state.seenMutations = [];
+    const parent = state.pieces.find((piece) => piece.owner === "blue");
+    state.board[parent.r * 8 + parent.c] = "fertile";
+    return { state, parent };
+  };
+
+  for (const [reproductions, expected] of [
+    [0, "Fotossíntese"],
+    [1, "Predação"],
+  ]) {
+    const { state, parent } = makeState(reproductions),
+      stats = {},
+      action = chooseAction(state, "hard", {
+        now: () => 0,
+        maxNodes: 240,
+        stats,
+      });
+
+    assert.equal(resolutionPressureLevel(state), 0);
+    assert.deepEqual(action, {
+      type: "MOVE",
+      id: parent.id,
+      r: parent.r,
+      c: parent.c,
+    });
+    assert.equal(stats.resolutionLevel, 0);
+
+    const next = simulate(state, action),
+      child = next.pieces.find(
+        (piece) => piece.owner === "blue" && piece.parentId === parent.id,
+      );
+    assert.ok(child?.traits.includes(expected), expected);
+    assert.equal(next.reproductions.blue, reproductions + 1);
   }
 });

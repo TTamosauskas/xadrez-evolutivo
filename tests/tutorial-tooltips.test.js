@@ -59,6 +59,7 @@ test("first infruitful reproduction emits one anchored tooltip and later failure
   state.pieces = [parent, newPiece(state, "amber", 0, 0, { rank: 4 })];
   state.phase = "move";
   state.origin = null;
+  state.reproductions = { blue: 2, amber: 2 };
   state.disableReproductiveSuccessPressure = false;
 
   const nextRoll = (seed) =>
