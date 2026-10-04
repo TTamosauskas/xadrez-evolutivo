@@ -168,9 +168,6 @@ export const chemosynthesisExhaustedAt = (state, r, c) =>
       entry.cell === square(r, c) &&
       entry.eventKey === chemosynthesisEventKey(state),
   );
-export const captureDisturbanceAt = (state, r, c) =>
-  state.captureDisturbances?.find((entry) => entry.cell === square(r, c)) ??
-  null;
 export const predationFeedingSiteAt = (state, r, c) =>
   (state.predationFeedingSites ?? []).find(
     (entry) => entry.cell === square(r, c),
@@ -314,7 +311,6 @@ export function restoreAquaticFertility(state) {
       state.naturalBarriers?.includes(entry.cell) ||
       state.deathSites?.some((site) => site.cell === entry.cell) ||
       state.carcasses?.some((site) => site.cell === entry.cell) ||
-      state.captureDisturbances?.some((item) => item.cell === entry.cell) ||
       state.event?.hazards?.includes(entry.cell)
     )
       return true;
@@ -1515,7 +1511,6 @@ export function createState(seed = Date.now(), options = {}) {
     mineralRemnants: [],
     chemosynthesisExhausted: [],
     thanatosis: [],
-    captureDisturbances: [],
     predationFeedingSites: [],
     fertilityRecovery: [],
     extremophyteFertility: [],
@@ -3187,19 +3182,6 @@ export function assertState(state) {
     ) ||
     new Set(state.carcasses.map((entry) => entry.cell)).size !==
       state.carcasses.length ||
-    (state.captureDisturbances ?? []).some(
-      (entry) =>
-        !integer(entry.cell, 0, 63) ||
-        !integer(entry.dueRound, 1) ||
-        !["neutral", "fertile", "hostile"].includes(entry.base) ||
-        !(
-          entry.sourceId === null ||
-          entry.sourceId === undefined ||
-          integer(entry.sourceId, 1)
-        ),
-    ) ||
-    new Set((state.captureDisturbances ?? []).map((entry) => entry.cell)).size !==
-      (state.captureDisturbances ?? []).length ||
     !(
       state.eggPlacement === null ||
       (state.eggPlacement &&
