@@ -1511,6 +1511,7 @@ export function createState(seed = Date.now(), options = {}) {
     mineralRemnants: [],
     chemosynthesisExhausted: [],
     thanatosis: [],
+    captureDisturbances: [], // legacy inert field; retained for save/test compatibility
     predationFeedingSites: [],
     fertilityRecovery: [],
     extremophyteFertility: [],
