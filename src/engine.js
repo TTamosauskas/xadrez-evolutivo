@@ -74,6 +74,8 @@ import {
   eggPlacementTargets,
   domesticPlacementTargets,
   socialDefenseTargets,
+  radialSymmetryEscapeCells,
+  radialRepositionTargets,
   serotoninRepositionTargets,
   ovoviviparousPlacementTargets,
   canParasitize,
@@ -154,6 +156,7 @@ import {
   predatoryReproductionAvailable,
   predatoryVivificationAvailable,
   trophicSpecializationMatches,
+  functionallySessile,
 } from "./reproduction-traits.js";
 import {
   consumeOrganicResidue,
@@ -213,6 +216,53 @@ function consumePredationVivification(state, piece) {
   if (!piece?.predationEnergy) return false;
   return finalizePredationFeedingSite(state, piece.id);
 }
+function applyCnidocyteRetaliation(state, attacker, victim) {
+  if (
+    !attacker ||
+    !victim ||
+    attacker.owner === victim.owner ||
+    !has(victim, "Cnidócitos") ||
+    distance(attacker, victim) !== 1 ||
+    !state.pieces.some((piece) => piece.id === attacker.id)
+  )
+    return false;
+
+  applyEnergyDelta(attacker, -1, state.turn);
+  const toxic = has(victim, "Toxicidade"),
+    venomous = has(victim, "Veneno");
+  if (toxic) {
+    const currentRound = round(state);
+    attacker.intoxicationRestThroughRound = Math.max(
+      attacker.intoxicationRestThroughRound ?? -1,
+      currentRound + 1,
+    );
+  }
+  if (venomous) {
+    attacker.venom = {
+      remaining: Math.min(attacker.venom?.remaining ?? 2, 2),
+      infectedTurn: state.turn,
+      source: "Veneno",
+    };
+  }
+
+  const text = venomous
+    ? "💥 Cnidócitos inocularam Veneno: −1 Energia, intoxicação e morte em 2 turnos próprios."
+    : toxic
+      ? "💥 Cnidócitos descarregaram Toxicidade: −1 Energia e intoxicação por 1 turno próprio."
+      : "💥 Cnidócitos atingiram o agressor: −1 Energia.";
+  log(state, OWNERS[victim.owner] + ": " + text);
+  emitPassiveEffect(state, "Cnidócitos", text, {
+    pieceId: victim.id,
+    outcome: venomous
+      ? "venomous-cnidocyte-retaliation"
+      : toxic
+        ? "toxic-cnidocyte-retaliation"
+        : "cnidocyte-retaliation",
+    value: 1,
+  });
+  return true;
+}
+
 function applyChemicalCaptureDefense(state, dead, attacker) {
   if (!attacker || attacker.owner === dead.owner) return;
   if (has(dead, "Veneno")) {
@@ -1463,6 +1513,31 @@ function triggerAdrenalineEscape(ctx, attacker, victim) {
   return true;
 }
 
+function offerRadialReposition(ctx, attacker, victim) {
+  const state = ctx.state,
+    targets = radialSymmetryEscapeCells(state, victim);
+  if (!targets.length) return false;
+
+  victim.radialEscapeRound = round(state);
+  if (has(victim, "Metagênese"))
+    victim.metagenesisLastThreatRound = round(state);
+  applyCnidocyteRetaliation(state, attacker, victim);
+  state.radialReposition = {
+    attackerId: attacker.id,
+    victimId: victim.id,
+    attackerOwner: attacker.owner,
+  };
+  state.current = victim.owner;
+  state.phase = "radial-reposition";
+  state.chain = null;
+  state.chainTrait = null;
+  log(
+    state,
+    OWNERS[victim.owner] + ": ✳️ Simetria Radial permite escolher uma Casa Neutra adjacente para escapar.",
+  );
+  return true;
+}
+
 function offerSerotoninReposition(ctx, attacker, defense) {
   const state = ctx.state;
   if (!has(attacker, "Serotonina")) return false;
@@ -1617,6 +1692,7 @@ function triggerPlantCaptureResponse(ctx, attacker, victim, defense) {
 }
 
 function finishFrustratedCapture(ctx, attacker, defense, victim = null) {
+  if (victim) applyCnidocyteRetaliation(ctx.state, attacker, victim);
   if (victim) inoculatePeconha(ctx.state, attacker, victim);
   if (victim && triggerPlantCaptureResponse(ctx, attacker, victim, defense))
     return;
