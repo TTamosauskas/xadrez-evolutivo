@@ -124,18 +124,18 @@ test("Metagenesis Polyp halves budding preparation and colony cooldown", () => {
   ]);
   const parentId = s.pieces[0].id,
     parent = s.pieces[0];
-  s.turn = 4;
+  s.turn = 6;
   s.current = "blue";
   parent.stationarySinceRound = 0;
   s.board[parent.r * 8 + parent.c] = "fertile";
 
-  assert.equal(round(s), 2);
+  assert.equal(round(s), 3);
   assert.equal(canBud(s, parent), true);
   s = transition(s, { type: "BUD", id: parentId });
 
   const after = s.pieces.find((piece) => piece.id === parentId);
   assert.ok(after);
-  assert.equal(s.colonyCooldowns[after.colonyId], 4);
+  assert.equal(s.colonyCooldowns[after.colonyId], 5);
   assertState(s);
 });
 
