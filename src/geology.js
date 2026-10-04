@@ -505,6 +505,9 @@ export const TRAIT_STAGE = {
   "Multicelularismo": "orosirian",
   "Simetria Bilateral": "ediacaran",
   Cnidário: "ediacaran",
+  "Simetria Radial": "ediacaran",
+  Cnidócitos: "ediacaran",
+  Metagênese: "cambrian",
   "Reprodução Sexuada": "calymmian",
   "Precocidade Sexual": "ediacaran",
   "Imortalidade Biológica": "ediacaran",
@@ -706,6 +709,10 @@ export const ACTIVE_TRAIT_FAMILIES = [
     traits: ["Vertebrado", "Artrópode", "Molusco", "Cnidário"],
   },
   {
+    id: "body-symmetry",
+    traits: ["Simetria Bilateral", "Simetria Radial"],
+  },
+  {
     id: "locomotion",
     traits: [
       "Locomoção Articulada",
@@ -864,6 +871,11 @@ export const TRAIT_DEPENDENCIES = {
   },
   "Simetria Bilateral": { lineage: ["Multicelularismo"] },
   Cnidário: { lineage: ["Multicelularismo", "Predação"] },
+  "Simetria Radial": { lineage: ["Cnidário"] },
+  Cnidócitos: { lineage: ["Cnidário"] },
+  Metagênese: {
+    lineage: ["Cnidário", "Brotamento", "Reprodução Sexuada"],
+  },
   "Reprodução Sexuada": {
     lineage: ["Respiração anaeróbia", "Multicelularismo"],
   },
@@ -1254,6 +1266,9 @@ export const BODY_PLAN_TRAITS = new Set([
 
 export const MULTICELLULAR_DEPENDENT_TRAITS = new Set([
   "Simetria Bilateral",
+  "Simetria Radial",
+  Cnidócitos,
+  Metagênese,
   "Biomineralização",
   "Imunidade Adaptativa",
   "Endotermia",
@@ -1519,6 +1534,9 @@ export const PLANT_INCOMPATIBLE_TRAITS = new Set([
   "Placenta",
   "Biotransformação Hepática",
   "Simetria Bilateral",
+  "Simetria Radial",
+  Cnidócitos,
+  Metagênese,
   "Locomoção Primitiva",
   "Cefalização",
   "Jatopropulsão",
@@ -1672,6 +1690,9 @@ export const TRAIT_BRANCH_SCOPE = Object.freeze({
   Biomineralização: "predation",
   Molusco: "predation",
   Cnidário: "predation",
+  "Simetria Radial": "predation",
+  Cnidócitos: "predation",
+  Metagênese: "predation",
   "Imunidade Adaptativa": "predation",
   Dormência: "photosynthesis",
   Estômatos: "photosynthesis",
@@ -1831,7 +1852,8 @@ export const TRAIT_INCOMPATIBILITIES = Object.freeze({
   "Acasalamento Múltiplo": ["Canibalismo Sexual"],
   "Imortalidade Biológica": ["Simetria Bilateral"],
   Cnidário: ["Simetria Bilateral"],
-  "Simetria Bilateral": ["Imortalidade Biológica", "Cnidário"],
+  "Simetria Radial": ["Simetria Bilateral"],
+  "Simetria Bilateral": ["Imortalidade Biológica", "Cnidário", "Simetria Radial"],
   Pedogênese: ["Precocidade Sexual"],
   "Precocidade Sexual": ["Pedogênese"],
   Semelparidade: ["Monocarpismo"],
