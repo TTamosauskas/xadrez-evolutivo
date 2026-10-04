@@ -2002,7 +2002,7 @@ test("board shows low Energy while selected details keep cellular counters", () 
     boardStatus = cell.querySelector(".piece-status")?.textContent ?? "",
     selected = d.getElementById("selected").textContent;
 
-  assert.match(boardStatus, /🪫/);
+  assert.match(boardStatus, /🥵/);
   assert.match(boardStatus, /👃⏳/);
   assert.match(boardStatus, /🎣⏳/);
   assert.doesNotMatch(boardStatus, /🔋⏳/);
@@ -2816,7 +2816,7 @@ test("piece badges represent low Energy without a legacy recovery counter", () =
       (node) => node.textContent,
     );
 
-  assert.ok(badges.includes("🪫"));
+  assert.ok(badges.includes("🥵"));
   assert.ok(badges.includes("🧸"));
   assert.ok(badges.includes("🎯"));
   assert.ok(badges.includes("🌰"));

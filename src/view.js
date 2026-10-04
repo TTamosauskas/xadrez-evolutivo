@@ -1456,7 +1456,7 @@ export function render(
         if (neurodivergenceResting(state, p)) statusBadges.push("♾️⏳");
         if (intoxicationResting(state, p)) statusBadges.push("😵‍💫");
         if (energyValue(p) < movementEnergyCost(p))
-          statusBadges.push("🪫");
+          statusBadges.push("🥵");
         if (p.sleepingThroughTurn === state.turn) statusBadges.push("😴");
         if (
           Number.isInteger(p.hibernationUntilTurn) &&
@@ -1654,7 +1654,7 @@ export function render(
       state.pieces.some(
         (piece) => energyValue(piece) < movementEnergyCost(piece),
       )
-        ? { marker: "🪫", label: "Energia insuficiente para locomoção" }
+        ? { marker: "🥵", label: "Energia insuficiente para locomoção" }
         : null,
       state.pieces.some(
         (piece) =>

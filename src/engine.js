@@ -169,6 +169,7 @@ import {
   finalizePredationFeedingSite,
   settlePredationFeedingSites,
   advanceConway,
+  advanceHostileConway,
   severeEventActive,
   tickSevereEventTurn,
   tickEnvironment,
@@ -2525,6 +2526,34 @@ function tickArmRegeneration(state, owner) {
   }
 }
 
+function markLethalOccupants(state) {
+  let marked = 0;
+  for (const piece of state.pieces) {
+    if (!lethalHazardAt(state, piece.r, piece.c)) continue;
+    if (markLethalDeath(state, piece, "ambiente letal")) marked++;
+  }
+  return marked;
+}
+
+function triggerLateHostileConway(ctx) {
+  const state = ctx.state;
+  if (
+    state.turn < 120 ||
+    state.turn % 5 !== 0 ||
+    !conwayUnlocked(state) ||
+    state.result
+  )
+    return false;
+  const changed = advanceHostileConway(ctx);
+  log(
+    state,
+    changed
+      ? `🧬 Conway hostil remodelou o habitat no turno ${state.turn}.`
+      : `🧬 Conway hostil manteve o padrão do habitat no turno ${state.turn}.`,
+  );
+  return true;
+}
+
 function advanceTurn(ctx) {
   const state = ctx.state;
   if (resolveNeurodivergentActionEnd(ctx)) return;
@@ -2566,6 +2595,9 @@ function advanceTurn(ctx) {
   recordExtremophyteAdaptation(state, acting);
   state.turn++;
   state.current = other(acting);
+  markLethalOccupants(state);
+  triggerLateHostileConway(ctx);
+  if (extinction(state)) return;
   for (const piece of state.pieces)
     if (
       Number.isInteger(piece.sleepingThroughTurn) &&
@@ -2767,6 +2799,7 @@ function resolveThanatosis(state) {
 function settle(ctx) {
   const state = ctx.state;
   resolveThanatosis(state);
+  markLethalOccupants(state);
   recycleOccupiedOrganicResidue(state);
   if (
     state.result ||
