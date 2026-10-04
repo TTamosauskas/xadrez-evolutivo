@@ -18,7 +18,6 @@ import {
   barrierAt,
   organicResidueAt,
   carcassAt,
-  captureDisturbanceAt,
   lethalHazardAt,
   reproductionReady,
   terrain,
