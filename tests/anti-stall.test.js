@@ -123,12 +123,18 @@ test("recuperação ordinária de Energia deixa de sustentar estagnação indefi
 
   assert.equal(offensiveActionCount(s), 0);
   assert.equal(resolveEcologicalDomain(s), true);
-  assert.equal(s.result?.reason, "ecological-domain");
+  assert.equal(s.result?.victoryType, "ecological-domain");
 });
 
 test("pressão ofensiva remove obstáculo que impede qualquer captura", () => {
   const s = fixture([
-    { owner: "blue", r: 4, c: 1, rank: 3 },
+    {
+      owner: "blue",
+      r: 4,
+      c: 1,
+      rank: 3,
+      traits: ["Percepção Espacial"],
+    },
     { owner: "amber", r: 4, c: 4, rank: 0 },
   ]);
   s.turn = 50;
