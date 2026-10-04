@@ -208,7 +208,7 @@ test("first round-5 cellular habitat update preserves geological bounds", () => 
   }
 });
 
-test("pre-Devonian periods keep aquatic fertility while hostile terrain evolves cellularly", () => {
+test("pre-Devonian aquatic periods keep fertility while hostile terrain evolves cellularly", () => {
   const hadean = createCampaignState(898);
   assert.equal(aquaticFertilityRegime(hadean), true);
   assert.equal(cellularTerrainUnlocked(hadean), false);
@@ -232,7 +232,11 @@ test("pre-Devonian periods keep aquatic fertility while hostile terrain evolves 
       fertileBefore = state.board.filter((cell) => cell === "fertile").length,
       hostileBefore = state.board.filter((cell) => cell === "hostile").length;
     assert.equal(aquaticFertilityRegime(state), true, id);
-    assert.equal(conwayUnlocked(state), false, id);
+    assert.equal(
+      conwayUnlocked(state),
+      stage.index >= GEOLOGICAL_STAGES.find((entry) => entry.id === "ediacaran").index,
+      id,
+    );
     assert.equal(cellularTerrainUnlocked(state), true, id);
     state.turn = 10;
     tickEnvironment(context(state));
@@ -246,7 +250,7 @@ test("pre-Devonian periods keep aquatic fertility while hostile terrain evolves 
       hostileBefore,
       id,
     );
-    advanceConway(context(state));
+    if (!conwayUnlocked(state)) advanceConway(context(state));
     assertState(state);
   }
 
@@ -255,11 +259,97 @@ test("pre-Devonian periods keep aquatic fertility while hostile terrain evolves 
     naturalBarriers: true,
   });
   assert.equal(aquaticFertilityRegime(silurian), false);
-  assert.equal(conwayUnlocked(silurian), false);
+  assert.equal(conwayUnlocked(silurian), true);
   assert.equal(cellularTerrainUnlocked(silurian), true);
   assertState(hadean);
   assertState(silurian);
 });
+test("Eoarchean cycle one founders always start outside lethal edge cells", () => {
+  for (let seed = 1; seed <= 64; seed++) {
+    const state = createState(seed, {
+      geologicalStage: "eoarchean",
+      cycle: 1,
+      canonicalPair: true,
+    });
+    assert.ok(state.pieces.length >= 2);
+    assert.ok(
+      state.pieces.every(
+        (piece) => !lethalHazardAt(state, piece.r, piece.c),
+      ),
+      "seed " + seed,
+    );
+    assertState(state);
+  }
+});
+
+test("a creature occupying a lethal Eoarchean cell dies when the turn resolves", () => {
+  let state = createState(1901, {
+    geologicalStage: "eoarchean",
+    cycle: 1,
+    canonicalPair: true,
+  });
+  const victim = state.pieces.find((piece) => piece.owner === state.current);
+  victim.r = 0;
+  victim.c = 0;
+  const victimId = victim.id;
+  assert.equal(lethalHazardAt(state, victim.r, victim.c), true);
+
+  state = transition(state, { type: "PASS" });
+  assert.equal(
+    state.pieces.some((piece) => piece.id === victimId),
+    false,
+  );
+  assertState(state);
+});
+
+test("hostile Conway starts at turn 120 from the Ediacaran and repeats every five turns", () => {
+  const triggerAt = (turnBefore, seed) => {
+    let state = createState(seed, {
+      geologicalStage: "ediacaran",
+      cycle: 1,
+      canonicalPair: true,
+    });
+    state.turn = turnBefore;
+    state.current = "blue";
+    const currentRound = round(state);
+    state.lastSuccessfulCaptureRound = currentRound;
+    for (const piece of state.pieces) {
+      piece.bornRound = currentRound;
+      piece.maturesRound = currentRound;
+      piece.stationarySinceRound = currentRound;
+    }
+    state = transition(state, { type: "PASS" });
+    return state;
+  };
+
+  const at120 = triggerAt(119, 1902);
+  assert.equal(at120.turn, 120);
+  assert.ok(
+    at120.logs.some((entry) =>
+      String(entry).includes("Conway hostil") &&
+      String(entry).includes("turno 120"),
+    ),
+  );
+
+  const at125 = triggerAt(124, 1903);
+  assert.equal(at125.turn, 125);
+  assert.ok(
+    at125.logs.some((entry) =>
+      String(entry).includes("Conway hostil") &&
+      String(entry).includes("turno 125"),
+    ),
+  );
+
+  const beforeThreshold = triggerAt(114, 1904);
+  assert.equal(beforeThreshold.turn, 115);
+  assert.equal(
+    beforeThreshold.logs.some((entry) =>
+      String(entry).includes("Conway hostil"),
+    ),
+    false,
+  );
+});
+
 test("consumed aquatic fertility returns after three turns on detailed aquatic phases", () => {
   const s = createState(901, {
     geologicalStage: "paleoarchean",
