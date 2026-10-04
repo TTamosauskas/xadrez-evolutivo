@@ -58,6 +58,124 @@ test("new campaigns default to Vida na Terra while low-level legacy states stay 
   assert.equal(createState(1).scenario, "alternative");
 });
 
+test("Eoarchean opens with Fotossíntese and Predação on both sides in every campaign scenario", () => {
+  for (const scenario of ["earth", "alternative"])
+    for (let seed = 1; seed <= 32; seed++) {
+      let previous = createCampaignState(seed, scenario);
+      previous.historicalTraits = [
+        ...new Set([
+          ...previous.historicalTraits,
+          "Quimiossíntese",
+        ]),
+      ];
+      previous.hadeanTutorial = {
+        moved: true,
+        divided: true,
+        captured: true,
+        fertile: true,
+      };
+      const survivor = newPiece(previous, "blue", 3, 3, {
+        rank: 4,
+        traits: ["Quimiossíntese"],
+        ancestry: ["Respiração anaeróbia", "Quimiossíntese"],
+      });
+      previous.pieces = [survivor];
+      previous.result = {
+        winner: "blue",
+        reason: "teste",
+        extinctionFounder: structuredClone(survivor),
+      };
+      previous.phase = "over";
+
+      const state = createSuccessorState(previous, 1000 + seed);
+      assert.equal(state.geologicalStage, "eoarchean", scenario);
+      assert.equal(state.pieces.length, 4, scenario);
+      for (const owner of ["blue", "amber"]) {
+        const pieces = state.pieces.filter((piece) => piece.owner === owner);
+        assert.equal(
+          pieces.filter((piece) => piece.traits.includes("Fotossíntese")).length,
+          1,
+          `${scenario} ${owner} Fotossíntese seed ${seed}`,
+        );
+        assert.equal(
+          pieces.filter((piece) => piece.traits.includes("Predação")).length,
+          1,
+          `${scenario} ${owner} Predação seed ${seed}`,
+        );
+      }
+    }
+});
+
+test("alternative Eoarchean succession restores Predação instead of generic non-photosynthetic metabolism", () => {
+  const previous = createState(1771, {
+    scenario: "alternative",
+    geologicalStage: "eoarchean",
+    cycle: 1,
+    totalCycles: 1,
+    historicalTraits: [
+      "Respiração anaeróbia",
+      "Quimiossíntese",
+      "Fotossíntese",
+      "Predação",
+    ],
+    naturalBarriers: false,
+  });
+  previous.pieces = [];
+  previous.nextId = 1;
+  previous.energyBranchRepresentatives = {
+    Fotossíntese: null,
+    Predação: null,
+  };
+  previous.pieces.push(
+    newPiece(previous, "blue", 5, 2, {
+      rank: 4,
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+    }),
+    newPiece(previous, "blue", 5, 3, {
+      rank: 4,
+      traits: ["Quimiossíntese"],
+      ancestry: ["Respiração anaeróbia", "Quimiossíntese"],
+    }),
+    newPiece(previous, "amber", 2, 4, {
+      rank: 4,
+      traits: ["Fotossíntese"],
+      ancestry: ["Respiração anaeróbia", "Fotossíntese"],
+    }),
+    newPiece(previous, "amber", 2, 5, {
+      rank: 4,
+      traits: ["Quimiossíntese"],
+      ancestry: ["Respiração anaeróbia", "Quimiossíntese"],
+    }),
+  );
+  previous.result = { winner: "blue", reason: "teste" };
+  previous.phase = "over";
+
+  const state = createSuccessorState(previous, 1772);
+  assert.equal(state.geologicalStage, "eoarchean");
+  assert.equal(state.cycle, 2);
+  for (const owner of ["blue", "amber"]) {
+    const pieces = state.pieces.filter((piece) => piece.owner === owner);
+    assert.equal(
+      pieces.filter((piece) => piece.traits.includes("Fotossíntese")).length,
+      1,
+    );
+    assert.equal(
+      pieces.filter((piece) => piece.traits.includes("Predação")).length,
+      1,
+    );
+    assert.equal(
+      pieces.some(
+        (piece) =>
+          piece.traits.includes("Quimiossíntese") &&
+          !piece.traits.includes("Predação") &&
+          !piece.traits.includes("Fotossíntese"),
+      ),
+      false,
+    );
+  }
+});
+
 test("Vida na Terra separa Peão fotossintético de Rei predatório basal", () => {
   let sawBasalPredatoryKing = false,
     sawPhotosyntheticPawn = false;
