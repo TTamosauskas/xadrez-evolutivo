@@ -690,7 +690,7 @@ function pairSexualFounders(brood, sexualMutants) {
 
 function missingArcheanEnergyBranch(state, owner = null) {
   if (
-    state.scenario !== "earth" ||
+    state.scenario === "arena" ||
     state.geologicalStage !== "eoarchean"
   )
     return null;
@@ -698,12 +698,7 @@ function missingArcheanEnergyBranch(state, owner = null) {
   const lineage = owner
       ? state.pieces.filter((piece) => piece.owner === owner)
       : state.pieces,
-    lineageHas = (trait) =>
-      lineage.some(
-        (piece) =>
-          has(piece, trait) ||
-          (piece.ancestry ?? []).includes(trait),
-      ),
+    lineageHas = (trait) => lineage.some((piece) => has(piece, trait)),
     photosynthesis = lineageHas("Fotossíntese"),
     predation = lineageHas("Predação");
 
@@ -807,7 +802,7 @@ function makeChildProfile(
     }
   } else {
     const eoarcheanEnergySequence =
-        state.scenario === "earth" &&
+        state.scenario !== "arena" &&
         state.geologicalStage === "eoarchean",
       missingEnergyBranch = missingArcheanEnergyBranch(
         state,
