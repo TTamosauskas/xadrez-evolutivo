@@ -94,6 +94,7 @@ import {
   paedogenesisReady,
   buddingResource,
   canUseFertileResource,
+  metagenesisForm,
 } from "./reproduction-traits.js";
 import { offspringPlacementPreference } from "./positioning.js";
 import {
@@ -2542,19 +2543,26 @@ export function reproduce(
     }
     if (paedogenic) parent.paedogenesisUsed = true;
     if (options.budding) {
-      const buddingGap = Math.max(
-        0,
-        reproductionEnergyCost(parent) - energyValue(parent),
-      );
-      if (buddingGap < BUDDING_STATIONARY_ROUNDS)
+      const buddingCadence =
+          metagenesisForm(parent) === "polyp"
+            ? 2
+            : BUDDING_STATIONARY_ROUNDS,
+        buddingGap = Math.max(
+          0,
+          reproductionEnergyCost(parent) - energyValue(parent),
+        );
+      if (buddingGap < buddingCadence)
         applyEnergyDelta(
           parent,
-          -(BUDDING_STATIONARY_ROUNDS - buddingGap),
+          -(buddingCadence - buddingGap),
           state.turn,
         );
       if (has(parent, "Colônia") && parent.colonyId)
         state.colonyCooldowns[parent.colonyId] =
-          round(state) + COLONY_BUD_COOLDOWN;
+          round(state) +
+          (metagenesisForm(parent) === "polyp"
+            ? 2
+            : COLONY_BUD_COOLDOWN);
     }
     state.reproductions[parent.owner]++;
     tryVectorPathogen(state, parent);
