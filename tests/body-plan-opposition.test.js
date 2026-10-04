@@ -206,10 +206,10 @@ test("Arena aceita confrontos gerados com planos corporais opostos", () => {
 });
 
 
-test("Arena exposes three mutually distinct body plans", () => {
+test("Arena exposes four mutually distinct body plans", () => {
   assert.deepEqual(
     [...ARENA_BODY_PLANS].sort(),
-    ["Artrópode", "Molusco", "Vertebrado"].sort(),
+    ["Artrópode", "Cnidário", "Molusco", "Vertebrado"].sort(),
   );
   for (const plan of ARENA_BODY_PLANS) {
     const other = oppositeArenaBodyPlan(plan);
