@@ -235,7 +235,7 @@ test("pre-Devonian aquatic periods keep fertility while hostile terrain evolves 
     assert.equal(aquaticFertilityRegime(state), true, id);
     assert.equal(
       conwayUnlocked(state),
-      stage.index >= GEOLOGICAL_STAGES.find((entry) => entry.id === "ediacaran").index,
+      stage.index >= GEOLOGICAL_STAGES.find((entry) => entry.id === "eoarchean").index,
       id,
     );
     assert.equal(cellularTerrainUnlocked(state), true, id);
@@ -311,10 +311,10 @@ test("a creature occupying an unmarked lethal Eoarchean cell is scheduled for de
   assertState(state);
 });
 
-test("hostile Conway starts at turn 120 from the Ediacaran and repeats every five turns", () => {
+test("hostile Corrosion starts at turn 120 from the Eoarchean and repeats every five turns", () => {
   const triggerAt = (turnBefore, seed) => {
     let state = createState(seed, {
-      geologicalStage: "ediacaran",
+      geologicalStage: "eoarchean",
       cycle: 1,
       canonicalPair: true,
     });
@@ -335,7 +335,7 @@ test("hostile Conway starts at turn 120 from the Ediacaran and repeats every fiv
   assert.equal(at120.turn, 120);
   assert.ok(
     at120.logs.some((entry) =>
-      String(entry.text ?? entry).includes("Conway hostil") &&
+      String(entry.text ?? entry).includes("Corrosão hostil") &&
       String(entry.text ?? entry).includes("turno 120"),
     ),
   );
@@ -344,7 +344,7 @@ test("hostile Conway starts at turn 120 from the Ediacaran and repeats every fiv
   assert.equal(at125.turn, 125);
   assert.ok(
     at125.logs.some((entry) =>
-      String(entry.text ?? entry).includes("Conway hostil") &&
+      String(entry.text ?? entry).includes("Corrosão hostil") &&
       String(entry.text ?? entry).includes("turno 125"),
     ),
   );
@@ -353,7 +353,7 @@ test("hostile Conway starts at turn 120 from the Ediacaran and repeats every fiv
   assert.equal(beforeThreshold.turn, 115);
   assert.equal(
     beforeThreshold.logs.some((entry) =>
-      String(entry.text ?? entry).includes("Conway hostil"),
+      String(entry.text ?? entry).includes("Corrosão hostil"),
     ),
     false,
   );
