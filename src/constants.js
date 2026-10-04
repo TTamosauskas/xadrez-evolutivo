@@ -179,7 +179,7 @@ export const TRAITS = {
   ],
   Cnidário: [
     "🪼",
-    "Plano corporal animal cnidário, mutuamente exclusivo com Simetria Bilateral, Vertebrado, Artrópode e Molusco. Permanece na forma basal Rei e abre especializações radiais, cnidócitos e ciclos de vida com pólipo e medusa.",
+    "Plano corporal animal cnidário, incompatível com a organização bilateral e com outros planos corporais animais especializados. Permanece na forma basal Rei e abre especializações próprias de defesa, simetria e ciclo de vida.",
   ],
   "Simetria Radial": [
     "✳️",
@@ -187,7 +187,7 @@ export const TRAITS = {
   ],
   Cnidócitos: [
     "💥",
-    "Quando uma captura contra a criatura é frustrada, descarrega cnidócitos no agressor e reduz sua Energia em 1. Toxicidade amplia a descarga para intoxicação; Veneno também aplica morte diferida.",
+    "Quando uma captura contra a criatura é frustrada, descarrega células urticantes no agressor e reduz sua Energia em 1. Defesas químicas já presentes na linhagem podem ampliar a descarga com intoxicação ou morte diferida.",
   ],
   Metagênese: [
     "🔄",
