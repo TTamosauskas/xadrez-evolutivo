@@ -2665,14 +2665,19 @@ export function createSuccessorState(previous, seed = Date.now()) {
         previous,
         previous.result?.extinctionFounder,
       ),
-      founders = extinctionFounder
-        ? {
-            primary: extinctionFounder,
-            companion: canPhotosynthesize(extinctionFounder)
-              ? preview.companion
-              : preview.primary,
-          }
-        : { primary: preview.primary, companion: preview.companion },
+      photosyntheticFounder =
+        extinctionFounder && canPhotosynthesize(extinctionFounder)
+          ? extinctionFounder
+          : preview.primary,
+      predatoryFounder =
+        extinctionFounder?.traits?.includes("Predação") &&
+        !canPhotosynthesize(extinctionFounder)
+          ? extinctionFounder
+          : preview.companion,
+      founders = {
+        primary: photosyntheticFounder,
+        companion: predatoryFounder,
+      },
       state = createState(seed, {
         scenario: previous.scenario,
         geologicalStage: candidate.id,
@@ -2697,7 +2702,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
       });
     log(
       state,
-      `Transição Evolutiva: inicia-se ${candidate.group} · ${candidate.period} · 1º Ciclo. A linhagem basal mantém Respiração anaeróbia; as próximas inovações dependem dos ciclos geológicos.`,
+      `Transição Evolutiva: inicia-se ${candidate.group} · ${candidate.period} · 1º Ciclo. Cada lado começa com uma linhagem fotossintética e uma predatória.`,
     );
     return state;
   }
@@ -2729,7 +2734,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
     nonPhotosynthetic = strongestSurvivor(
       previous,
       winner,
-      (piece) => !canPhotosynthesize(piece),
+      (piece) =>
+        !canPhotosynthesize(piece) &&
+        (piece.traits ?? []).includes("Predação"),
     ),
     fallbackPhotosynthetic = strongestSurvivor(
       previous,
@@ -2739,7 +2746,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
     fallbackNonPhotosynthetic = strongestSurvivor(
       previous,
       null,
-      (piece) => !canPhotosynthesize(piece),
+      (piece) =>
+        !canPhotosynthesize(piece) &&
+        (piece.traits ?? []).includes("Predação"),
     ),
     extinctionFounder = previous.result?.extinctionFounder ?? null,
     photosyntheticExtinctionFounder =
@@ -2747,7 +2756,9 @@ export function createSuccessorState(previous, seed = Date.now()) {
         ? extinctionFounder
         : null,
     nonPhotosyntheticExtinctionFounder =
-      extinctionFounder && !canPhotosynthesize(extinctionFounder)
+      extinctionFounder &&
+      !canPhotosynthesize(extinctionFounder) &&
+      (extinctionFounder.traits ?? []).includes("Predação")
         ? extinctionFounder
         : null,
     photosyntheticSource =
@@ -2847,7 +2858,7 @@ export function createSuccessorState(previous, seed = Date.now()) {
   if (companion)
     log(
       state,
-      "Dupla fundadora simétrica: ambos os lados começam com uma linhagem fotossintética e uma não fotossintética, preservando a dominante e sua contraparte evolutiva.",
+      "Dupla fundadora simétrica: ambos os lados começam com uma linhagem fotossintética e uma predatória, preservando os dois ramos energéticos fundamentais.",
     );
   log(
     state,
