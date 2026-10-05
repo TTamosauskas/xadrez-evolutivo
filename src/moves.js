@@ -110,6 +110,8 @@ export const hibernating = (state, p) =>
   !!p &&
   Number.isInteger(p.hibernationUntilTurn) &&
   state.turn < p.hibernationUntilTurn;
+export const estivating = (_state, p) =>
+  !!p && p.estivating === true && has(p, "Estivação");
 export const pupating = (state, p) =>
   Number.isInteger(p?.pupaUntilRound) && round(state) < p.pupaUntilRound;
 export const resting = (state, p) =>
@@ -118,7 +120,17 @@ export const resting = (state, p) =>
   neurodivergenceResting(state, p) ||
   intoxicationResting(state, p) ||
   hibernating(state, p) ||
+  estivating(state, p) ||
   pupating(state, p);
+
+export const estivationAvailable = (state, p) =>
+  !!p &&
+  has(p, "Estivação") &&
+  has(p, "Molusco") &&
+  has(p, "Locomoção Terrestre") &&
+  terrain(state, p.r, p.c) === "hostile" &&
+  !lethalHazardAt(state, p.r, p.c) &&
+  !resting(state, p);
 
 export function radialSymmetryEscapeCells(
   state,
@@ -2641,6 +2653,7 @@ export function actionsForPiece(
     !state.pieces.some((candidate) => candidate.id === piece.id) ||
     piece.hadeanHostileDeathPending ||
     hibernating(state, piece) ||
+    estivating(state, piece) ||
     (Number.isInteger(piece.lethalDeathRound) &&
       /hostil/i.test(piece.lethalDeathReason ?? ""))
   )
@@ -2837,6 +2850,9 @@ export function actionsForPiece(
     ...(chromaticCrypsisAvailable(source, piece)
       ? [{ type: "CHROMATIC_CRYPSIS", id: piece.id }]
       : []),
+    ...(estivationAvailable(source, piece)
+      ? [{ type: "ESTIVATE", id: piece.id }]
+      : []),
   ];
 
   return actions.filter((action) => {
@@ -2887,6 +2903,7 @@ export function vivificationActionsForPiece(state, piece) {
       action.type === "MONOCARP_BLOOM" ||
       action.type === "CHROMATIC_CRYPSIS" ||
       action.type === "CHROMATIC_WAIT" ||
+      action.type === "ESTIVATE" ||
       action.type === "REJECT_BROOD_PARASITE" ||
       (action.type === "PARASITIZE" &&
         !Number.isInteger(action.targetId)),
@@ -2931,6 +2948,12 @@ export function pieceActionState(state, piece) {
       waiting: true,
       reason: "Hibernação",
       remainingRounds: Math.max(1, piece.hibernationUntilTurn - state.turn),
+    };
+  if (estivating(state, piece))
+    return {
+      waiting: true,
+      reason: "Estivação",
+      remainingRounds: null,
     };
   if (
     energyValue(piece) < energyCapacity(piece) &&
