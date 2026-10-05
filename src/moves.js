@@ -110,8 +110,11 @@ export const hibernating = (state, p) =>
   !!p &&
   Number.isInteger(p.hibernationUntilTurn) &&
   state.turn < p.hibernationUntilTurn;
-export const estivating = (_state, p) =>
-  !!p && p.estivating === true && has(p, "Estivação");
+export const estivating = (state, p) =>
+  !!p &&
+  p.estivating === true &&
+  has(p, "Estivação") &&
+  terrain(state, p.r, p.c) === "hostile";
 export const pupating = (state, p) =>
   Number.isInteger(p?.pupaUntilRound) && round(state) < p.pupaUntilRound;
 export const resting = (state, p) =>
