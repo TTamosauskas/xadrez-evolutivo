@@ -49,6 +49,7 @@ export const AI_ACTION_TYPES = Object.freeze([
   "TENTACLE_PULL",
   "CHROMATIC_CRYPSIS",
   "CHROMATIC_WAIT",
+  "ESTIVATE",
   "PARTHENOGENESIS",
   "MONOCARP_STORE",
   "MONOCARP_BLOOM",
@@ -308,14 +309,17 @@ export function strategicPieceValue(state, piece) {
       (piece.pupaUntilRound ?? 0) > currentRound ||
       (piece.neurodivergenceRestThroughRound ?? -1) >= currentRound ||
       (piece.intoxicationRestThroughRound ?? -1) >= currentRound ||
+      !!piece.estivating ||
       !!piece.webTrapped,
     terrainPenalty = lethalHazardAt(state, piece.r, piece.c)
       ? 18
       : terrain(state, piece.r, piece.c) === "hostile"
-        ? has(piece, "Endotermia") ||
-          has(piece, "Extremotolerância")
-          ? 0.75
-          : 2.5
+        ? piece.estivating
+          ? 0.5
+          : has(piece, "Endotermia") ||
+              has(piece, "Extremotolerância")
+            ? 0.75
+            : 2.5
         : 0;
   return (
     8 +
@@ -442,6 +446,18 @@ export function actionPriority(state, a, { geometryScale = 1, resolutionLevel = 
   }
   if (a.type === "CHROMATIC_CRYPSIS") return 7;
   if (a.type === "CHROMATIC_WAIT") return 1;
+  if (a.type === "ESTIVATE") {
+    const piece = state.pieces.find((candidate) => candidate.id === a.id);
+    if (!piece) return -100;
+    const safeExit = movesFor(state, piece).some(
+        (target) =>
+          !target.stay &&
+          terrain(state, target.r, target.c) !== "hostile" &&
+          !lethalHazardAt(state, target.r, target.c),
+      ),
+      deficit = Math.max(0, energyCapacity(piece) - energyValue(piece));
+    return (safeExit ? 6 : 22) + Math.min(4, deficit);
+  }
   if (a.type === "EXTENDED_CAPTURE") {
     const target = state.pieces.find((piece) => piece.id === a.targetId);
     return (a.trait === "Tromba" ? 16 : 13) + strategicPieceValue(state, target) * 0.16;

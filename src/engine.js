@@ -65,6 +65,8 @@ import {
   canWaitForBirth,
   dormant,
   hibernating,
+  estivating,
+  estivationAvailable,
   adjacentAlliesCount,
   intoxicationResting,
   manipulationTargets,
@@ -826,6 +828,23 @@ export function hostileHazardKills(state, piece, normalHostile = false) {
     severeRisk =
       stalledRounds >= 30 ? 5 / 6 : stalledRounds >= 18 ? 3 / 4 : 2 / 3,
     baseRisk = severeHazard ? severeRisk : 1 / 2;
+  if (
+    normalHostile &&
+    !severeHazard &&
+    state.event?.source !== "population" &&
+    estivating(state, piece)
+  ) {
+    if (piece.estivationProtectionRound !== round(state)) {
+      piece.estivationProtectionRound = round(state);
+      emitPassiveEffect(
+        state,
+        "Estivação",
+        "☀️ Estivação suprimiu o risco ambiental hostil comum.",
+        { pieceId: piece.id, outcome: "blocked-hostile-risk" },
+      );
+    }
+    return false;
+  }
   if (random(state) >= baseRisk) return false;
   if (
     normalHostile &&
@@ -1002,6 +1021,30 @@ function clearEnergyStateForHibernation(piece) {
   delete piece.lastReactiveEnergyExertionTurn;
   delete piece.sleepingThroughTurn;
   delete piece.restorativeSleepCharge;
+}
+
+function refreshEstivation(state) {
+  let ended = 0;
+  for (const piece of state.pieces) {
+    if (!piece.estivating) continue;
+    if (has(piece, "Estivação") && terrain(state, piece.r, piece.c) === "hostile")
+      continue;
+    delete piece.estivating;
+    delete piece.estivationStartedTurn;
+    delete piece.estivationProtectionRound;
+    ended++;
+    log(
+      state,
+      `${OWNERS[piece.owner]}: ☀️ Estivação encerrada; a criatura retomou a atividade.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Estivação",
+      "☀️ Estivação encerrada · atividade restaurada.",
+      { pieceId: piece.id, outcome: "estivation-ended" },
+    );
+  }
+  return ended;
 }
 
 function refreshHibernation(state) {
@@ -2851,6 +2894,7 @@ function resolveThanatosis(state) {
 function settle(ctx) {
   const state = ctx.state;
   resolveThanatosis(state);
+  refreshEstivation(state);
   markLethalOccupants(state);
   recycleOccupiedOrganicResidue(state);
   if (
@@ -3618,6 +3662,33 @@ function resolveChemosynthesis(ctx, action) {
     );
   }
   if (born > 0 && deferReproductionPlacement(state, piece)) return;
+  advanceTurn(ctx);
+  settle(ctx);
+}
+
+function resolveEstivation(ctx, action) {
+  const state = ctx.state,
+    piece = state.pieces.find(
+      (candidate) =>
+        candidate.id === action.id && candidate.owner === state.current,
+    );
+  if (!piece || !estivationAvailable(state, piece))
+    throw Error("Estivação indisponível.");
+
+  piece.estivating = true;
+  piece.estivationStartedTurn = state.turn;
+  delete piece.estivationProtectionRound;
+  clearEnergyStateForHibernation(piece);
+  log(
+    state,
+    `${OWNERS[piece.owner]}: ☀️ Estivação iniciada em ${coord(piece.r, piece.c)}; metabolismo reduzido enquanto o terreno permanecer hostil.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Estivação",
+    "☀️ Estivação iniciada · risco hostil comum suspenso enquanto a criatura permanece inativa.",
+    { pieceId: piece.id, outcome: "estivation-started" },
+  );
   advanceTurn(ctx);
   settle(ctx);
 }
@@ -6988,6 +7059,8 @@ export function transition(previous, action) {
     resolveExtendedCapture(ctx, action);
   else if (action.type === "RHIZOME" && state.phase === "move")
     resolveRhizome(ctx, action);
+  else if (action.type === "ESTIVATE" && state.phase === "move")
+    resolveEstivation(ctx, action);
   else if (
     action.type === "LAY_OVOVIVIPAROUS" &&
     state.phase === "move"

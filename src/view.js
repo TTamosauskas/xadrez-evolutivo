@@ -107,6 +107,7 @@ const VIVIFICATION_LABELS = Object.freeze({
   BYSSUS_ATTACH: "🧵 Fixar por Bisso",
   CHROMATIC_CRYPSIS: "🎨 Cripsis Cromática",
   CHROMATIC_WAIT: "🎨 Encerrar Cripsis",
+  ESTIVATE: "☀️ Estivar",
 });
 const vivificationLabel = (action) =>
   VIVIFICATION_LABELS[action?.type] ?? "Vivificar";
@@ -118,6 +119,7 @@ const WAIT_STATUS_LABELS = Object.freeze({
   "Intoxicação por Toxicidade": "intoxicação",
   "Energia insuficiente": "energia insuficiente",
   Hibernação: "hibernação",
+  Estivação: "estivação",
   "Descanso por Mutação Disfuncional": "mutação disfuncional",
   "Maturidade sexual": "maturidade sexual",
   "Sem ação legal disponível": "nenhuma ação disponível",

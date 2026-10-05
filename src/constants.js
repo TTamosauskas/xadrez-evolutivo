@@ -177,6 +177,10 @@ export const TRAITS = {
     "🐙",
     "Plano corporal animal mutuamente exclusivo com Vertebrado e Artrópode. Em períodos aquáticos, o pé muscular permite terminar movimentos em Casas Neutras; Jatopropulsão libera as formas Bispo e Torre.",
   ],
+  Estivação: [
+    "☀️",
+    "Adaptação de Moluscos terrestres a calor e dessecação: em Casa Hostil, pode gastar a ação para entrar em hipometabolismo. Enquanto a casa permanecer hostil, fica inativa e continua capturável, mas evita o risco ambiental hostil comum; eventos severos e ambientes letais continuam perigosos. Desperta automaticamente quando o terreno melhora.",
+  ],
   Cnidário: [
     "🪼",
     "Plano corporal animal cnidário, incompatível com a organização bilateral e com outros planos corporais animais especializados. Permanece na forma basal Rei e abre especializações próprias de defesa, simetria e ciclo de vida.",

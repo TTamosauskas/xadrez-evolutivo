@@ -771,6 +771,8 @@ export function newPiece(state, owner, r, c, source = {}) {
       tentacleReadyRound: source.tentacleReadyRound ?? bornRound,
       chromaticReadyRound: source.chromaticReadyRound ?? bornRound,
       chromaticCrypsis: source.chromaticCrypsis ?? false,
+      estivating: source.estivating ?? false,
+      estivationStartedTurn: source.estivationStartedTurn ?? null,
       tentacleProtection: source.tentacleProtection
         ? structuredClone(source.tentacleProtection)
         : null,
@@ -3582,6 +3584,12 @@ export function assertState(state) {
         integer(p.hibernationUntilTurn, 0)
       ) ||
       typeof (p.hibernationRearmPending ?? false) !== "boolean" ||
+      typeof (p.estivating ?? false) !== "boolean" ||
+      !(
+        p.estivationStartedTurn === undefined ||
+        p.estivationStartedTurn === null ||
+        integer(p.estivationStartedTurn, 0)
+      ) ||
       typeof (p.restorativeSleepCharge ?? false) !== "boolean" ||
       !(
         p.sleepingThroughTurn === undefined ||

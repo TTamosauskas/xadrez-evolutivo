@@ -35,6 +35,7 @@ const icons = {
   "Visão Polarizada": "🧿",
   "Tentáculo Preênsil": "➿",
   "Cromatóforos Neurais": "🎨",
+  Estivação: "☀️",
 };
 
 test("Mollusk specializations use unique icons, stages and lineage rules", () => {
@@ -47,6 +48,7 @@ test("Mollusk specializations use unique icons, stages and lineage rules", () =>
     "Visão Polarizada": "jurassic",
     "Tentáculo Preênsil": "jurassic",
     "Cromatóforos Neurais": "cretaceous",
+    Estivação: "permian",
   };
   for (const [trait, icon] of Object.entries(icons)) {
     assert.equal(TRAITS[trait][0], icon);
