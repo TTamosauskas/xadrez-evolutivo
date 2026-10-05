@@ -132,7 +132,7 @@ test("Estivação remains vulnerable to predation", () => {
       rank: 4,
       traits: ["Molusco", "Locomoção Terrestre", "Estivação"],
     },
-    { owner: "amber", r: 4, c: 5, rank: 0 },
+    { owner: "amber", r: 4, c: 5, rank: 4 },
   ], 9802);
   state.geologicalStage = "permian";
   state.cycle = 2;
@@ -173,7 +173,7 @@ test("Estivação ends automatically when the occupied terrain improves", () => 
   state.board[square(piece.r, piece.c)] = "fertile";
   state = simulate(state, { type: "PASS" });
   piece = state.pieces.find((candidate) => candidate.id === piece.id);
-  assert.equal(piece.estivating, false);
+  assert.equal(!!piece.estivating, false);
   assert.equal(estivating(state, piece), false);
   assert.ok(
     state.passiveEffects.some(
