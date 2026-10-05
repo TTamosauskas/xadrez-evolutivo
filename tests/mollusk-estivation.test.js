@@ -33,7 +33,7 @@ const molluskState = (seed = 9801) => {
     { owner: "amber", r: 0, c: 0, rank: 0 },
   ], seed);
   state.geologicalStage = "permian";
-  state.cycle = 2;
+  state.cycle = 1;
   state.board[square(4, 4)] = "hostile";
   return state;
 };
@@ -135,7 +135,7 @@ test("Estivação remains vulnerable to predation", () => {
     { owner: "amber", r: 4, c: 5, rank: 4 },
   ], 9802);
   state.geologicalStage = "permian";
-  state.cycle = 2;
+  state.cycle = 1;
   state.board[square(4, 4)] = "hostile";
   const blue = state.pieces[0],
     estivate = actionsForPiece(state, blue).find(
