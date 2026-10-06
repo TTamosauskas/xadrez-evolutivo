@@ -8,7 +8,7 @@ import {
 } from "./energy.js";
 
 export const SAVE_KEY = `xadrez-evolutivo-save-v${STATE_VERSION}`;
-const LEGACY_SAVE_VERSIONS = [37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
+const LEGACY_SAVE_VERSIONS = [38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17];
 const legacySaveKey = (version) => `xadrez-evolutivo-save-v${version}`;
 
 const LEGACY_TRAIT_NAMES = Object.freeze({
@@ -18,7 +18,6 @@ const LEGACY_TRAIT_NAMES = Object.freeze({
 const RETIRED_TRAITS = new Set([
   "Locomoção Avançada",
   "Carnivoria Botânica",
-  "Regeneração",
 ]);
 
 function removeRetiredTraits(value) {
@@ -41,6 +40,23 @@ function removeRetiredTraits(value) {
     if (typeof child === "string" && RETIRED_TRAITS.has(child))
       delete value[key];
     else removeRetiredTraits(child);
+  }
+}
+
+function removeLegacyRegeneration(value) {
+  if (Array.isArray(value)) {
+    for (let i = value.length - 1; i >= 0; i--) {
+      const child = value[i];
+      if (child === "Regeneração") value.splice(i, 1);
+      else removeLegacyRegeneration(child);
+    }
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  delete value.Regeneração;
+  for (const [key, child] of Object.entries(value)) {
+    if (child === "Regeneração") delete value[key];
+    else removeLegacyRegeneration(child);
   }
 }
 
@@ -147,10 +163,6 @@ function normalizePathogenEvolution(state) {
 function normalizeCycleInnovationPressure(state) {
   removeRetiredTraits(state);
   normalizeStoredGenomes(state);
-  for (const piece of state.pieces ?? []) {
-    delete piece.regenerationUsed;
-    delete piece.regenerationRestThroughRound;
-  }
   state.chainTrait ??= null;
   if (
     state.chainTrait !== "Bipedalismo" ||
@@ -553,6 +565,7 @@ function migrateLegacy(data) {
     for (const piece of state.pieces ?? []) delete piece.decompositionImmunity;
   }
   migrateDetailedGeology(state);
+  if (data.version <= 38) removeLegacyRegeneration(state);
   if (data.version <= 33) migrateUnifiedEnergy(state);
   state.version = STATE_VERSION;
   normalizeLegacyTraitNames(state);

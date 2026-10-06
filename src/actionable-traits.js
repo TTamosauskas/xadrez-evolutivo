@@ -771,6 +771,7 @@ export function actionableTraitsForPiece(state, piece) {
 
 const ACTIVE_WAIT_TRAITS = Object.freeze({
   Metamorfose: "Metamorfose",
+  "Recuperação por Regeneração": "Regeneração",
   "Descanso por Mutação Disfuncional": "Mutação Disfuncional",
 });
 

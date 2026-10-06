@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 38;
+export const STATE_VERSION = 39;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const CHESS_FORMS = Object.freeze({
@@ -184,6 +184,10 @@ export const TRAITS = {
   Cnidário: [
     "🪼",
     "Plano corporal animal cnidário, incompatível com a organização bilateral e com outros planos corporais animais especializados. Permanece na forma basal Rei e abre especializações próprias de defesa, simetria e ciclo de vida.",
+  ],
+  Regeneração: [
+    "♻️",
+    "Especialização exclusiva de Cnidários: uma vez por vida, sobrevive a uma morte não causada por captura e descansa na rodada seguinte. Senescência natural, Semelparidade e ambientes letais continuam fatais.",
   ],
   "Simetria Radial": [
     "✳️",

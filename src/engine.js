@@ -360,6 +360,28 @@ export function context(state) {
         );
         return false;
       }
+      if (
+        !force &&
+        !attacker &&
+        has(dead, "Cnidário") &&
+        has(dead, "Regeneração") &&
+        !dead.regenerationUsed
+      ) {
+        dead.regenerationUsed = true;
+        dead.regenerationRestThroughRound = round(state) + 1;
+        if (["Veneno", "Peçonha"].includes(reason)) delete dead.venom;
+        log(
+          state,
+          `${OWNERS[dead.owner]}: ♻️ Regeneração evitou a morte por ${reason}.`,
+        );
+        emitPassiveEffect(
+          state,
+          "Regeneração",
+          "♻️ Regeneração evitou a morte.",
+          { pieceId: dead.id, outcome: "prevented-death" },
+        );
+        return false;
+      }
       const bonded = dead.pairedWithId
         ? state.pieces.find((piece) => piece.id === dead.pairedWithId)
         : null;

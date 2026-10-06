@@ -482,7 +482,11 @@ export function deterministicDeathNextTurn(state, piece) {
   if (!piece) return null;
 
   const now = round(state),
-    reachesNextRound = state.turn % 2 === 1;
+    reachesNextRound = state.turn % 2 === 1,
+    regenerationAvailable =
+      has(piece, "Cnidário") &&
+      has(piece, "Regeneração") &&
+      !piece.regenerationUsed;
 
   if (piece.semelparityDeathPending) {
     const pregnancies = piece.pregnancies ?? [];
@@ -503,7 +507,8 @@ export function deterministicDeathNextTurn(state, piece) {
     piece.owner === state.current &&
     piece.venom &&
     piece.venom.remaining <= 1 &&
-    piece.venom.infectedTurn < state.turn
+    piece.venom.infectedTurn < state.turn &&
+    !regenerationAvailable
   )
     return piece.venom.source === "Peçonha" ? "Peçonha" : "Veneno";
 
@@ -527,7 +532,8 @@ export function deterministicDeathNextTurn(state, piece) {
   if (
     has(piece, "Mutação Letal") &&
     Number.isInteger(piece.deleteriousDue) &&
-    piece.deleteriousDue <= now + 1
+    piece.deleteriousDue <= now + 1 &&
+    !regenerationAvailable
   )
     return "Mutação Letal";
 
@@ -3471,6 +3477,10 @@ export function assertState(state) {
       !integer(p.lifetimeOffspring ?? 0, 0) ||
       typeof (p.semelparityDeathPending ?? false) !== "boolean" ||
       ![1, -1].includes(p.pawnDir) ||
+      (p.regenerationUsed !== undefined &&
+        typeof p.regenerationUsed !== "boolean") ||
+      (p.regenerationRestThroughRound !== undefined &&
+        !integer(p.regenerationRestThroughRound)) ||
       (p.neurodivergenceRestThroughRound !== undefined &&
         p.neurodivergenceRestThroughRound !== null &&
         !integer(p.neurodivergenceRestThroughRound)) ||
