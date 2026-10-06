@@ -3477,6 +3477,10 @@ export function assertState(state) {
       !integer(p.lifetimeOffspring ?? 0, 0) ||
       typeof (p.semelparityDeathPending ?? false) !== "boolean" ||
       ![1, -1].includes(p.pawnDir) ||
+      (p.regenerationUsed !== undefined &&
+        typeof p.regenerationUsed !== "boolean") ||
+      (p.regenerationRestThroughRound !== undefined &&
+        !integer(p.regenerationRestThroughRound)) ||
       (p.neurodivergenceRestThroughRound !== undefined &&
         p.neurodivergenceRestThroughRound !== null &&
         !integer(p.neurodivergenceRestThroughRound)) ||
