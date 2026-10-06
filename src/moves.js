@@ -85,6 +85,9 @@ export const dysfunctionalResting = (state, p) =>
   has(p, "Mutação Disfuncional") &&
   Number.isInteger(p.lastMoveRound) &&
   round(state) + 1 <= p.lastMoveRound + 1;
+export const regenerationResting = (state, p) =>
+  Number.isInteger(p?.regenerationRestThroughRound) &&
+  round(state) <= p.regenerationRestThroughRound;
 export const neurodivergenceResting = (state, p) =>
   Number.isInteger(p?.neurodivergenceRestThroughRound) &&
   round(state) <= p.neurodivergenceRestThroughRound;
@@ -120,6 +123,7 @@ export const pupating = (state, p) =>
 export const resting = (state, p) =>
   p?.hadeanHostileDeathPending ||
   dysfunctionalResting(state, p) ||
+  regenerationResting(state, p) ||
   neurodivergenceResting(state, p) ||
   intoxicationResting(state, p) ||
   hibernating(state, p) ||
@@ -2957,6 +2961,15 @@ export function pieceActionState(state, piece) {
       waiting: true,
       reason: "Estivação",
       remainingRounds: null,
+    };
+  if (regenerationResting(state, piece))
+    return {
+      waiting: true,
+      reason: "Recuperação por Regeneração",
+      remainingRounds: Math.max(
+        1,
+        piece.regenerationRestThroughRound - currentRound + 1,
+      ),
     };
   if (
     energyValue(piece) < energyCapacity(piece) &&
