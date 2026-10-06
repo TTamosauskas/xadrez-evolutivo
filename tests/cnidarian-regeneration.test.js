@@ -12,7 +12,7 @@ import { fixture, move } from "./helpers.js";
 test("Regeneração pertence ao Cambriano e exige linhagem Cnidária", () => {
   const state = createState(3901, {
       scenario: "earth",
-      geologicalStage: "ordovician",
+      geologicalStage: "cambrian",
       cycle: 1,
     }),
     base = state.pieces[0],
