@@ -30,6 +30,7 @@ import {
   nicheConstructionTargets,
   adjacentAlliesCount,
   neurodivergenceResting,
+  parasitismEncapsulated,
   pieceActionState,
 } from "./moves.js";
 import {
@@ -245,6 +246,7 @@ export function actionableTraitsForPiece(state, piece) {
 
   if (
     has(piece, "Parasitoidismo") &&
+    !parasitismEncapsulated(state, piece) &&
     !piece.parasitoidism &&
     !state.pieces.some(
       (candidate) => candidate.parasitoidism?.sourceId === piece.id,
