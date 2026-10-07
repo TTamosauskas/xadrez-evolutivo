@@ -2809,3 +2809,62 @@ test("piece badges represent low Energy without a legacy recovery counter", () =
   );
   dom.window.close();
 });
+
+test("Nacarização shows only the encapsulated parasite as a large central pearl and keeps Mollusk cooldown in the legend", () => {
+  const dom = setup(),
+    s = fixture([
+      {
+        owner: "blue",
+        r: 4,
+        c: 3,
+        rank: 4,
+        traits: ["Parasitismo"],
+      },
+      {
+        owner: "amber",
+        r: 4,
+        c: 4,
+        rank: 4,
+        traits: ["Molusco", "Biomineralização", "Carapaça", "Bisso", "Nacarização"],
+      },
+    ], 9910),
+    parasite = s.pieces[0],
+    mollusk = s.pieces[1],
+    now = round(s);
+
+  parasite.parasitismEncapsulatedUntilRound = now + 3;
+  mollusk.nacarizationReadyRound = now + 4;
+
+  render(dom.window.document, s, { selected: mollusk.id });
+  const d = dom.window.document,
+    parasiteCell = d.querySelector(
+      `[data-r="${parasite.r}"][data-c="${parasite.c}"]`,
+    ),
+    molluskCell = d.querySelector(
+      `[data-r="${mollusk.r}"][data-c="${mollusk.c}"]`,
+    ),
+    pearl = parasiteCell.querySelector(".parasitism-encapsulated-mark"),
+    css = readFileSync(new URL("../app.css", import.meta.url), "utf8"),
+    pearlRule =
+      css.match(/\.parasitism-encapsulated-mark\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.equal(pearl?.textContent, "🔮");
+  assert.match(pearlRule, /left:\s*50%/);
+  assert.match(pearlRule, /top:\s*50%/);
+  assert.match(pearlRule, /font-size:\s*clamp\(30px/);
+  assert.equal(
+    [...molluskCell.querySelectorAll(".status-badge")].some(
+      (badge) => badge.textContent.includes("🔮"),
+    ),
+    false,
+  );
+  assert.match(
+    d.getElementById("board-legend").textContent,
+    /Parasita encapsulado/,
+  );
+  assert.match(
+    d.getElementById("board-legend").textContent,
+    /Nacarização em recarga/,
+  );
+  dom.window.close();
+});
