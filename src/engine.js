@@ -69,6 +69,7 @@ import {
   estivationAvailable,
   adjacentAlliesCount,
   intoxicationResting,
+  parasitismEncapsulated,
   manipulationTargets,
   constructionTargets,
   nicheConstructionTargets,
@@ -2293,6 +2294,42 @@ function tickRuminantRecovery(state, acting, before) {
   }
 }
 
+const NACARIZATION_COOLDOWN_ROUNDS = 4;
+const PARASITISM_ENCAPSULATION_ROUNDS = 3;
+
+function nacarizationReady(state, piece) {
+  return !!(
+    piece &&
+    has(piece, "Molusco") &&
+    has(piece, "Nacarização") &&
+    round(state) >= (piece.nacarizationReadyRound ?? 0)
+  );
+}
+
+function triggerNacarization(state, host, parasite, attack) {
+  const now = round(state);
+  host.nacarizationReadyRound = now + NACARIZATION_COOLDOWN_ROUNDS;
+  parasite.parasitismEncapsulatedUntilRound = Math.max(
+    parasite.parasitismEncapsulatedUntilRound ?? 0,
+    now + PARASITISM_ENCAPSULATION_ROUNDS,
+  );
+  log(
+    state,
+    `${OWNERS[host.owner]}: 🔮 Nacarização encapsulou ${attack} em ${coord(host.r, host.c)}.`,
+  );
+  emitPassiveEffect(
+    state,
+    "Nacarização",
+    `🔮 Nacarização encapsulou ${attack}; capacidades parasitárias do agressor foram suspensas.`,
+    {
+      pieceId: host.id,
+      sourceId: parasite.id,
+      outcome: "encapsulated-parasite",
+      value: PARASITISM_ENCAPSULATION_ROUNDS,
+    },
+  );
+}
+
 function tickParasitoidism(ctx, acting, before) {
   const state = ctx.state;
   for (const host of [...state.pieces]) {
@@ -2311,6 +2348,23 @@ function tickParasitoidism(ctx, acting, before) {
     host.owner = originalOwner;
     host.pawnDir = originalOwner === "blue" ? -1 : 1;
     host.parasitoidism = null;
+    if (status.nacarizationProtected) {
+      log(
+        state,
+        `${OWNERS[originalOwner]}: 🔮 Nacarização completou o encapsulamento e devolveu o controle do hospedeiro em ${coord(host.r, host.c)}.`,
+      );
+      emitPassiveEffect(
+        state,
+        "Nacarização",
+        "🔮 O parasitoide foi encapsulado antes da fase letal.",
+        {
+          pieceId: host.id,
+          sourceId,
+          outcome: "survived-parasitoidism",
+        },
+      );
+      continue;
+    }
     const killed = ctx.kill(
       host.id,
       "Parasitoidismo",
@@ -5042,6 +5096,7 @@ function executeMove(ctx, action) {
     victim.owner !== p.owner &&
     distance(p, victim) === 1 &&
     has(p, "Parasitoidismo") &&
+    !parasitismEncapsulated(state, p) &&
     !p.parasitoidism &&
     !victim.parasitoidism &&
     !canPhotosynthesize(victim) &&
@@ -5057,28 +5112,36 @@ function executeMove(ctx, action) {
       if (partner?.pairedWithId === victim.id) partner.pairedWithId = null;
       victim.pairedWithId = null;
     }
+    const nacarizationProtected = nacarizationReady(state, victim);
+    if (nacarizationProtected)
+      triggerNacarization(state, victim, p, "o Parasitoidismo");
     victim.owner = p.owner;
     victim.pawnDir = p.owner === "blue" ? -1 : 1;
     victim.parasitoidism = {
       originalOwner,
       controllerOwner: p.owner,
       sourceId: p.id,
-      remaining: 3,
+      remaining: nacarizationProtected ? 1 : 3,
       infectedTurn: state.turn,
+      nacarizationProtected,
     };
     state.lastSuccessfulCaptureRound = round(state);
     log(
       state,
-      `${OWNERS[p.owner]}: 🌀 Parasitoidismo assumiu o controle temporário da criatura em ${coord(victim.r, victim.c)}.`,
+      nacarizationProtected
+        ? `${OWNERS[p.owner]}: 🌀 Parasitoidismo assumiu o controle por apenas um turno em ${coord(victim.r, victim.c)} antes do encapsulamento.`
+        : `${OWNERS[p.owner]}: 🌀 Parasitoidismo assumiu o controle temporário da criatura em ${coord(victim.r, victim.c)}.`,
     );
     emitPassiveEffect(
       state,
       "Parasitoidismo",
-      "🌀 Hospedeiro controlado por três turnos antes da morte parasitoide.",
+      nacarizationProtected
+        ? "🌀 Hospedeiro controlado por um turno; 🔮 Nacarização impedirá a fase letal."
+        : "🌀 Hospedeiro controlado por três turnos antes da morte parasitoide.",
       {
         pieceId: p.id,
         outcome: "parasitoid-controlled-host",
-        value: 3,
+        value: nacarizationProtected ? 1 : 3,
       },
     );
     advanceTurn(ctx);
@@ -5904,6 +5967,26 @@ function resolveBroodParasitism(ctx, action) {
   if (!parasite || !host)
     throw Error("Parasitismo de Ninhada indisponível.");
 
+  if (
+    nacarizationReady(state, host) &&
+    has(host, "Incubação")
+  ) {
+    triggerNacarization(state, host, parasite, "o Parasitismo de Ninhada");
+    log(
+      state,
+      `${OWNERS[host.owner]}: 🪺 Incubação reconheceu a ninhada invasora e 🔮 Nacarização a encapsulou automaticamente.`,
+    );
+    emitPassiveEffect(
+      state,
+      "Incubação",
+      "🪺 Incubação reconheceu a ninhada parasita sem consumir a ação do hospedeiro.",
+      { pieceId: host.id, outcome: "auto-rejected-brood-parasite" },
+    );
+    advanceTurn(ctx);
+    settle(ctx);
+    return;
+  }
+
   host.broodParasite = {
     parasiteId: parasite.id,
     parasiteOwner: parasite.owner,
@@ -6019,11 +6102,24 @@ function resolveParasitism(ctx, action) {
   );
   if (!target)
     throw Error("Escolha uma criatura adversária adjacente para o Parasitismo.");
-  state.board[square(target.r, target.c)] = "hostile";
-  log(
-    state,
-    `${OWNERS[p.owner]}: 🪱 Parasitismo atacou o habitat em ${coord(target.r, target.c)}.`,
-  );
+  if (nacarizationReady(state, target)) {
+    const cell = square(target.r, target.c),
+      degradedFertility = state.board[cell] === "fertile";
+    if (degradedFertility) state.board[cell] = "neutral";
+    triggerNacarization(state, target, p, "o Parasitismo");
+    log(
+      state,
+      degradedFertility
+        ? `${OWNERS[target.owner]}: 🔮 Nacarização conteve o ataque; a Casa Fértil em ${coord(target.r, target.c)} tornou-se Neutra.`
+        : `${OWNERS[target.owner]}: 🔮 Nacarização conteve o ataque e preservou o habitat em ${coord(target.r, target.c)}.`,
+    );
+  } else {
+    state.board[square(target.r, target.c)] = "hostile";
+    log(
+      state,
+      `${OWNERS[p.owner]}: 🪱 Parasitismo atacou o habitat em ${coord(target.r, target.c)}.`,
+    );
+  }
 
   advanceTurn(ctx);
   settle(ctx);
