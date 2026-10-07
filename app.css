@@ -295,6 +295,7 @@ main {
 .movement-trace-destination-hidden .trait-frame,
 .movement-trace-destination-hidden .piece-status,
 .movement-trace-destination-hidden .piece-pathogen-infection,
+.movement-trace-destination-hidden .parasitism-encapsulated-mark,
 .movement-trace-destination-hidden .pathogen-overlay {
   visibility: hidden !important;
 }
@@ -888,6 +889,18 @@ main {
   font-size: clamp(14px, 2.2vw, 22px);
   line-height: 1;
   filter: drop-shadow(0 2px 2px #000c);
+  pointer-events: none;
+}
+
+.parasitism-encapsulated-mark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 18;
+  transform: translate(-50%, -50%);
+  font-size: clamp(30px, 5.4vw, 54px);
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px #000c);
   pointer-events: none;
 }
 

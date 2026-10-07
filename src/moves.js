@@ -94,6 +94,9 @@ export const neurodivergenceResting = (state, p) =>
 export const intoxicationResting = (state, p) =>
   Number.isInteger(p?.intoxicationRestThroughRound) &&
   round(state) <= p.intoxicationRestThroughRound;
+export const parasitismEncapsulated = (state, p) =>
+  Number.isInteger(p?.parasitismEncapsulatedUntilRound) &&
+  round(state) < p.parasitismEncapsulatedUntilRound;
 export const adjacentAlliesCount = (state, p) =>
   p
     ? state.pieces.filter(
@@ -2016,6 +2019,7 @@ function parasitismReady(state, p) {
     p.owner === state.current &&
     !ecologicalDomainBlocked(state, p.owner, p.r, p.c) &&
     has(p, "Parasitismo") &&
+    !parasitismEncapsulated(state, p) &&
     !resting(state, p) &&
     !dormant(state, p)
   );
@@ -2582,6 +2586,7 @@ export function broodParasitismTargets(state, piece) {
   if (
     !piece ||
     !has(piece, "Parasitismo de Ninhada") ||
+    parasitismEncapsulated(state, piece) ||
     resting(state, piece) ||
     dormant(state, piece)
   )

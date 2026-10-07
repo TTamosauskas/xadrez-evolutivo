@@ -404,3 +404,23 @@ test("load migrates legacy development keys and saves use v21", () => {
 test("save key follows the centralized state version", () => {
   assert.equal(SAVE_KEY, `xadrez-evolutivo-save-v${STATE_VERSION}`);
 });
+
+test("v39 save migrates to v40 with Nacarização locus initialized ancestrally", () => {
+  const legacy = createState(3901),
+    piece = legacy.pieces[0];
+  legacy.version = 39;
+  delete piece.genome.Nacarização;
+
+  const restored = deserialize(JSON.stringify(legacy)),
+    migrated = restored.pieces.find((candidate) => candidate.id === piece.id);
+
+  assert.equal(restored.version, STATE_VERSION);
+  assert.equal(STATE_VERSION, 40);
+  assert.ok(Array.isArray(migrated.genome.Nacarização));
+  assert.ok(
+    migrated.genome.Nacarização.every(
+      (allele) => allele.value === "ancestral",
+    ),
+  );
+  assertState(restored);
+});

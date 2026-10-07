@@ -29,6 +29,7 @@ import { mutationExplanation } from "../src/mutation-explanation.js";
 const icons = {
   Rádula: "🪚",
   Bisso: "🧵",
+  Nacarização: "🔮",
   "Concha Camerada": "🏺",
   "Ventosas Quimiotáteis": "🫳",
   "Regeneração de Braços": "🦾",
@@ -42,6 +43,7 @@ test("Mollusk specializations use unique icons, stages and lineage rules", () =>
   const stages = {
     Rádula: "cambrian",
     Bisso: "ordovician",
+    Nacarização: "silurian",
     "Concha Camerada": "ordovician",
     "Ventosas Quimiotáteis": "carboniferous",
     "Regeneração de Braços": "permian",

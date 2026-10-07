@@ -776,6 +776,9 @@ export function newPiece(state, owner, r, c, source = {}) {
       inkReadyRound: source.inkReadyRound ?? bornRound,
       tentacleReadyRound: source.tentacleReadyRound ?? bornRound,
       chromaticReadyRound: source.chromaticReadyRound ?? bornRound,
+      nacarizationReadyRound: source.nacarizationReadyRound ?? bornRound,
+      parasitismEncapsulatedUntilRound:
+        source.parasitismEncapsulatedUntilRound ?? null,
       chromaticCrypsis: source.chromaticCrypsis ?? false,
       estivating: source.estivating ?? false,
       estivationStartedTurn: source.estivationStartedTurn ?? null,
@@ -3495,6 +3498,11 @@ export function assertState(state) {
         !integer(p.tentacleReadyRound, 0)) ||
       (p.chromaticReadyRound !== undefined &&
         !integer(p.chromaticReadyRound, 0)) ||
+      (p.nacarizationReadyRound !== undefined &&
+        !integer(p.nacarizationReadyRound, 0)) ||
+      (p.parasitismEncapsulatedUntilRound !== undefined &&
+        p.parasitismEncapsulatedUntilRound !== null &&
+        !integer(p.parasitismEncapsulatedUntilRound, 0)) ||
       typeof (p.chromaticCrypsis ?? false) !== "boolean" ||
       (p.tentacleProtection !== undefined &&
         p.tentacleProtection !== null &&
@@ -3526,7 +3534,9 @@ export function assertState(state) {
           p.owner !== p.parasitoidism.controllerOwner ||
           !integer(p.parasitoidism.sourceId, 1) ||
           !integer(p.parasitoidism.remaining, 1, 3) ||
-          !integer(p.parasitoidism.infectedTurn, 0))) ||
+          !integer(p.parasitoidism.infectedTurn, 0) ||
+          (p.parasitoidism.nacarizationProtected !== undefined &&
+            typeof p.parasitoidism.nacarizationProtected !== "boolean"))) ||
       (p.rumination !== undefined &&
         p.rumination !== null &&
         (typeof p.rumination.block !== "string" ||

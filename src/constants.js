@@ -1,5 +1,5 @@
 export const SIZE = 8;
-export const STATE_VERSION = 39;
+export const STATE_VERSION = 40;
 export const OWNERS = { blue: "Brancas", amber: "Pretas" };
 export const PIECES = ["Peão", "Cavalo", "Bispo", "Torre", "Rei", "Rainha"];
 export const CHESS_FORMS = Object.freeze({
@@ -840,6 +840,10 @@ export const TRAITS = {
   Bisso: [
     "🧵",
     "Clique no círculo verde ⭕ de uma Barreira Natural ou de Evento adjacente para fixar-se nela sem destruí-la.",
+  ],
+  Nacarização: [
+    "🔮",
+    "Especialização bivalve de Biomineralização: quando disponível, encapsula a próxima agressão parasitária, reduz seu impacto e suspende temporariamente as capacidades parasitárias do agressor. Depois entra em recarga por quatro rodadas.",
   ],
   "Concha Camerada": [
     "🏺",
