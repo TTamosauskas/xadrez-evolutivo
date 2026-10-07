@@ -843,7 +843,7 @@ export const TRAITS = {
   ],
   Nacarização: [
     "🔮",
-    "Especialização bivalve de Biomineralização: encapsula agressões parasitárias quando disponível. Parasitismo degrada no máximo uma Casa Fértil para Neutra; Parasitoidismo controla por apenas um turno; com Incubação, Parasitismo de Ninhada é rejeitado automaticamente. Depois entra em recarga por quatro rodadas.",
+    "Especialização bivalve de Biomineralização: quando disponível, encapsula a próxima agressão parasitária, reduz seu impacto e suspende temporariamente as capacidades parasitárias do agressor. Depois entra em recarga por quatro rodadas.",
   ],
   "Concha Camerada": [
     "🏺",
