@@ -548,6 +548,7 @@ export const MUTATION_DISCOVERY_TOPICS = {
   ],
   Rádula: ["Rádula", "A rádula é uma faixa denticulada usada por muitos moluscos para raspar ou cortar alimento; no jogo, converte fertilidade adjacente em Energia."],
   Bisso: ["Bisso", "Fios de bisso fixam diversos bivalves a substratos submersos; no jogo, permitem ocupar barreiras naturais ou temporárias sem destruí-las."],
+  Nacarização: ["Nacarização e formação de pérolas", "Bivalves podem encapsular corpos estranhos e parasitas com material orgânico e mineral; em alguns casos, o invasor calcificado participa da formação de uma pérola. No jogo, essa resposta contém agressões parasitárias e cria uma janela temporária de resistência."],
   "Concha Camerada": ["Concha camerada", "Câmaras internas e o sifúnculo participam do controle de flutuabilidade em cefalópodes conchíferos; no jogo, especializam a proteção ambiental da Carapaça."],
   "Ventosas Quimiotáteis": ["Ventosas de cefalópodes", "Ventosas combinam aderência, tato e quimiorrecepção; no jogo, seguram a presa e neutralizam fugas reativas baseadas em deslocamento."],
   "Regeneração de Braços": ["Regeneração em cefalópodes", "Cefalópodes conseguem regenerar braços, musculatura e tecido nervoso; no jogo, uma forma perdida por Autotomia retorna depois de três turnos próprios."],
