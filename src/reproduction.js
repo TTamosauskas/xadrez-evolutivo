@@ -2190,8 +2190,16 @@ export function reproduce(
           resourceKind === "fertile" &&
           options.fertileReproduction &&
           piece.id === parent.id
-        )
+        ) {
+          const beforeHarvest = energyValue(piece);
           restoreEnergy(piece, HADEAN_FERTILE_ENERGY_GAIN);
+          const harvested = energyValue(piece) - beforeHarvest;
+          if (harvested)
+            log(
+              state,
+              `${OWNERS[piece.owner]}: Casa Fértil forneceu +${harvested} Energia durante a reprodução.`,
+            );
+        }
         if (advanced) {
           applyEnergyDelta(piece, -2, state.turn);
           piece.endosymbiosisEnergyDebt = true;
