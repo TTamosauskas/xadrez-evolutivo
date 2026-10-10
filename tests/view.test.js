@@ -474,12 +474,12 @@ test("Hadean green Energy requires fertile ground and an available stationary re
   let current = status();
   assert.ok(current.filled.classList.contains("reproduction-ready"));
   assert.equal(current.hint?.textContent, label);
-  assert.equal(current.track.getAttribute("aria-valuenow"), "11");
+  assert.equal(current.track.getAttribute("aria-valuenow"), "8");
   assert.equal(current.track.getAttribute("aria-valuemax"), "11");
 
   state.board[square] = "neutral";
   current = status();
-  assert.equal(current.track.getAttribute("aria-valuenow"), "11");
+  assert.equal(current.track.getAttribute("aria-valuenow"), "8");
   assert.equal(current.filled.classList.contains("reproduction-ready"), false);
   assert.equal(current.hint, null);
 
@@ -501,7 +501,7 @@ test("Hadean green Energy requires fertile ground and an available stationary re
   dom.window.close();
 });
 
-test("Hadean reproduction can preserve 11/11 without leaving an outdated green indicator", () => {
+test("Hadean reproduction decreases stored Energy despite fertile resource gain", () => {
   const dom = setup();
   const doc = dom.window.document;
   let state = createCampaignState(401);
@@ -511,6 +511,7 @@ test("Hadean reproduction can preserve 11/11 without leaving an outdated green i
   const initialId = parent.id;
   const position = { r: parent.r, c: parent.c };
   render(doc, state, { selected: initialId });
+  assert.match(doc.querySelector("#selected .selected-energy").textContent, /Energia 8\/11/);
   assert.equal(
     doc.querySelector("#selected .selected-energy-fill").classList.contains("reproduction-ready"),
     true,
@@ -523,7 +524,7 @@ test("Hadean reproduction can preserve 11/11 without leaving an outdated green i
   assert.equal(state.board[position.r * 8 + position.c], "neutral");
   render(doc, state, { selected: initialId });
   const panel = doc.querySelector("#selected .selected-energy");
-  assert.match(panel.textContent, /Energia 11\/11/);
+  assert.match(panel.textContent, /Energia 2\/11/);
   assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), false);
   assert.equal(panel.querySelector(".selected-energy-reproduction-ready"), null);
   dom.window.close();

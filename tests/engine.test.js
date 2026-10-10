@@ -652,7 +652,7 @@ test("each original Hadean King guarantees chemosynthesis on its first reproduct
   );
   assert.equal(
     energyValue(s.pieces.find((piece) => piece.id === blue.id)),
-    energyCapacity(s.pieces.find((piece) => piece.id === blue.id)),
+    2,
   );
   assert.equal(
     s.passiveEffects.some(
@@ -678,9 +678,80 @@ test("each original Hadean King guarantees chemosynthesis on its first reproduct
   assert.ok(amberFirstChild.traits.includes("Quimiossíntese"));
   assert.equal(
     energyValue(s.pieces.find((piece) => piece.id === amber.id)),
-    energyCapacity(s.pieces.find((piece) => piece.id === amber.id)),
+    2,
   );
   assertState(s);
+});
+
+test("Hadean organisms start with an 8/11 reserve, pay reproduction, and harvest the fertile resource", () => {
+  let state = createCampaignState(401);
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  const founder = state.pieces.find((piece) => piece.owner === "blue");
+  assert.equal(energyCapacity(founder), 11);
+  assert.equal(reproductionEnergyCost(founder), 8);
+  assert.equal(energyValue(founder), 8);
+
+  const ids = new Set(state.pieces.map((piece) => piece.id));
+  state = transition(state, {
+    type: "MOVE",
+    id: founder.id,
+    r: founder.r,
+    c: founder.c,
+  });
+  const parent = state.pieces.find((piece) => piece.id === founder.id),
+    child = state.pieces.find((piece) => piece.owner === "blue" && !ids.has(piece.id));
+  assert.ok(child, "first fertile reproduction must still produce an offspring");
+  assert.equal(energyValue(parent), 2, "eight spent, two harvested from the consumed fertile cell");
+  assert.ok(
+    state.logs.some((entry) => /Casa Fértil forneceu \+2 Energia durante a reprodução/.test(entry.text)),
+    "the history must explain the resulting 2/11 reserve",
+  );
+  assert.equal(energyValue(child), Math.min(energyCapacity(child), reproductionEnergyCost(child)));
+  assert.equal(energyCapacity(parent), 11);
+  assert.equal(state.board[square(parent.r, parent.c)], "neutral");
+  assertState(state);
+});
+
+test("Hadean fertile ground restores two Energy per own turn, but neutral rest restores one", () => {
+  let state = createCampaignState(402);
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  const founder = state.pieces.find((piece) => piece.owner === "blue");
+  const cell = square(founder.r, founder.c);
+  assert.equal(state.board[cell], "fertile");
+  assert.equal(energyValue(founder), 8);
+
+  state = transition(state, { type: "PASS" });
+  assert.equal(energyValue(state.pieces.find((piece) => piece.id === founder.id)), 10);
+  // Simulate an active organism that remains on a fertile square.
+  // Environmental uptake must work even without an inactive turn.
+  state = transition(state, { type: "PASS" });
+  state = transition(state, { type: "PASS" });
+  assert.equal(energyValue(state.pieces.find((piece) => piece.id === founder.id)), 11);
+
+  const current = state.pieces.find((piece) => piece.id === founder.id);
+  current.energy = 5;
+  state.board[cell] = "neutral";
+  if (state.current !== "blue") state = transition(state, { type: "PASS" });
+  state = transition(state, { type: "PASS" });
+  assert.equal(energyValue(state.pieces.find((piece) => piece.id === founder.id)), 6);
+  assertState(state);
+});
+
+test("Hadean active creatures still harvest fertile energy without being marked as resting", () => {
+  let state = createCampaignState(430);
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  const founder = state.pieces.find((piece) => piece.owner === "blue");
+  founder.energy = 4;
+  founder.lastEnergyActivityTurn = state.turn;
+
+  state = transition(state, { type: "PASS" });
+  const refreshed = state.pieces.find((piece) => piece.id === founder.id);
+  assert.equal(energyValue(refreshed), 6);
+  assert.equal(refreshed.restorativeSleepCharge, undefined);
+  assertState(state);
 });
 
 test("later Hadean offspring use an exact 50 percent chemosynthesis gate", () => {
@@ -909,7 +980,7 @@ test("Hadean chemosynthesis turns a cell fertile one turn after hostile pressure
   assert.equal(s.hadeanTutorial.fertile, true);
   assert.equal(
     energyValue(s.pieces.find((piece) => piece.id === sample.child.id)),
-    energyBeforeConversion,
+    Math.min(energyCapacity(sample.child), energyBeforeConversion + 1),
   );
   assert.equal(
     s.passiveEffects.some(

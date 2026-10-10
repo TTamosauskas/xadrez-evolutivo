@@ -9,6 +9,9 @@ import {
 
 const hasTrait = (piece, trait) => piece?.traits?.includes(trait) ?? false;
 
+// Replenishment supplied by a fertile cell during the Hadean stage.
+export const HADEAN_FERTILE_ENERGY_GAIN = 2;
+
 export function movementEnergyCost(piece) {
   if (
     piece?.rank === CHESS_FORMS.KING &&
