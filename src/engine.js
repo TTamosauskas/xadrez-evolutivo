@@ -1284,6 +1284,7 @@ function recoverEnergyAfterTurn(state, owner, turn) {
       const before = energyValue(piece);
       restoreEnergy(piece, fertileHadean ? HADEAN_FERTILE_ENERGY_GAIN : 1);
       if (
+        inactive &&
         before < movementEnergyCost(piece) &&
         safeForRestorativeSleep(state, piece, turn)
       ) {
