@@ -3,6 +3,7 @@ import {
   applyEnergyDelta,
   canSpendEnergy,
   energyCapacity,
+  HADEAN_FERTILE_ENERGY_GAIN,
   energyValue,
   movementEnergyCost,
   reproductionEnergyCost,
@@ -1273,10 +1274,15 @@ function recordExertion(state, piece, { reactive = false } = {}) {
 function recoverEnergyAfterTurn(state, owner, turn) {
   for (const piece of state.pieces) {
     if (piece.owner !== owner) continue;
-    const inactive = piece.lastEnergyActivityTurn !== turn;
-    if (inactive && energyValue(piece) < energyCapacity(piece)) {
+    const inactive = piece.lastEnergyActivityTurn !== turn,
+      fertileHadean =
+        state.geologicalStage === "hadean" &&
+        terrain(state, piece.r, piece.c) === "fertile";
+    // Hadean cells harvest the environment even if active; elsewhere,
+    // the existing one-point recovery continues to require inactivity.
+    if ((inactive || fertileHadean) && energyValue(piece) < energyCapacity(piece)) {
       const before = energyValue(piece);
-      restoreEnergy(piece, 1);
+      restoreEnergy(piece, fertileHadean ? HADEAN_FERTILE_ENERGY_GAIN : 1);
       if (
         before < movementEnergyCost(piece) &&
         safeForRestorativeSleep(state, piece, turn)
