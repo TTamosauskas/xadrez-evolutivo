@@ -1905,7 +1905,18 @@ export function render(
             : `Energia ${visibleEnergy}/${energyMax}`,
           "selected-energy-label",
         ),
-        energyReadyToReproduce = rawEnergy >= reproductionEnergyCost(actor),
+        energyReadyToReproduce =
+          state.geologicalStage === "hadean"
+            ? terrain(state, actor.r, actor.c) === "fertile" &&
+              canUseBasalFertility(state, actor) &&
+              movesFor(state, actor).some(
+                (target) =>
+                  target.stay &&
+                  !target.webEscape &&
+                  target.r === actor.r &&
+                  target.c === actor.c,
+              )
+            : rawEnergy >= reproductionEnergyCost(actor),
         energyTrack = make("div", undefined, "selected-energy-track"),
         energyFill = make("div", undefined, "selected-energy-fill"),
         energyCosts = make(
@@ -1924,7 +1935,7 @@ export function render(
       energyPanel.append(energyLabel, energyTrack, energyCosts);
       if (energyReadyToReproduce)
         energyPanel.append(
-          make("div", "Energia disponivel para reprodução", "selected-energy-reproduction-ready"),
+          make("div", "Energia disponível para reprodução", "selected-energy-reproduction-ready"),
         );
     }
     const actionableTraits = actionableTraitsForPiece(state, actor),
