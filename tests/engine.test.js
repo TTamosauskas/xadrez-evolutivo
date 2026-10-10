@@ -959,7 +959,7 @@ test("Hadean chemosynthesis turns a cell fertile one turn after hostile pressure
   assert.equal(s.hadeanTutorial.fertile, true);
   assert.equal(
     energyValue(s.pieces.find((piece) => piece.id === sample.child.id)),
-    energyBeforeConversion,
+    Math.min(energyCapacity(sample.child), energyBeforeConversion + 1),
   );
   assert.equal(
     s.passiveEffects.some(
