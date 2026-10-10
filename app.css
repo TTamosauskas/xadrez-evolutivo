@@ -1834,3 +1834,92 @@ summary {
 .piece.chromatic-crypsis.chromatic-owner-amber {
   box-shadow: 0 0 0 2px #242623;
 }
+
+/* P0: read-only strategic intelligence, layered over existing action markers. */
+.cell.legal.strategic-risk-caution {
+  outline: 2px dotted #e5cb87;
+  outline-offset: -4px;
+}
+.cell.legal.strategic-risk-high {
+  outline: 3px dashed #e5a05a;
+  outline-offset: -4px;
+}
+.cell.legal.strategic-risk-lethal {
+  outline: 3px dashed #ed6e70;
+  outline-offset: -4px;
+}
+.strategic-summary {
+  background: #273127;
+  border: 1px solid #52614a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+.strategic-summary-title {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.strategic-summary-line {
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 3px 0;
+}
+.strategic-preview,
+.strategic-outcome {
+  border: 1px solid #66785f;
+  border-radius: 9px;
+  background: #252d24;
+  margin: 8px 0;
+  padding: 10px 12px;
+  line-height: 1.45;
+}
+.strategic-preview[hidden],
+.strategic-outcome[hidden] {
+  display: none;
+}
+.strategic-preview-title,
+.strategic-outcome-title {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.strategic-preview-detail,
+.strategic-outcome-detail,
+.strategic-preview-risk {
+  margin: 4px 0;
+  font-size: 13px;
+}
+.strategic-preview-risk {
+  color: #f5bc8f;
+  font-weight: 650;
+}
+.strategic-preview-note {
+  display: block;
+  color: var(--muted);
+  margin-top: 6px;
+  font-size: 11px;
+}
+.strategic-outcome[data-tone="danger"] {
+  border-color: #bc6964;
+}
+.strategic-outcome[data-tone="warning"] {
+  border-color: #bc9d56;
+}
+.strategic-action-hint {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+@media (max-width: 760px) {
+  .strategic-preview, .strategic-outcome {
+    margin: 8px 0;
+    padding: 8px 10px;
+  }
+  .strategic-summary {
+    padding: 8px 10px;
+  }
+}

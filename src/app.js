@@ -8,7 +8,9 @@ import {
   arenaSurvivorSelections,
 } from "./state.js";
 import { Controller } from "./controller.js";
-import { render } from "./view.js";
+import { render, renderStrategicPreview, renderOutcomeInsight } from "./view.js";
+import { previewAction } from "./strategic-insights.js";
+import { summarizeRealizedOutcome } from "./event-insights.js";
 import {
   movesFor,
   partnersFor,
@@ -75,7 +77,11 @@ let selected = null,
   selectedScenario = "earth",
   arenaFlow = null,
   mutationDialogResume = false,
-  activeTutorialTooltip = null;
+  activeTutorialTooltip = null,
+  inspectedAction = null,
+  lastOutcome = null,
+  lastBoardPointer = null,
+  pendingRiskAction = null;
 const tutorialTooltipQueue = [];
 try {
   const savedScenario = localStorage.getItem("xe_scenario");
@@ -162,6 +168,10 @@ const controller = new Controller(
   createCampaignState(Date.now(), selectedScenario),
   {
     report,
+    onTransition: (before, after, action) => {
+      inspectedAction = null;
+      lastOutcome = summarizeRealizedOutcome(before, after, action);
+    },
     toast: (effect) =>
       effect.theme === "tutorial-tooltip"
         ? showTutorialTooltip(effect)
@@ -176,6 +186,8 @@ const controller = new Controller(
         mode: controller.mode,
         showResult,
       });
+      renderStrategicPreview(document, state, inspectedAction?.action, inspectedAction?.count ?? 0);
+      renderOutcomeInsight(document, lastOutcome);
       renderTutorialTooltip();
       animateMovementTrace(document, movementTrace, {
         fast: controller.mode === "auto",
@@ -206,6 +218,9 @@ $("difficulty").value = controller.difficulty;
 
 let cycleStartState = clone(controller.state);
 function replaceCycleState(next) {
+  inspectedAction = null;
+  lastOutcome = null;
+  pendingRiskAction = null;
   activeTutorialTooltip = null;
   tutorialTooltipQueue.length = 0;
   document.querySelector(".board-tutorial-tooltip")?.remove();
@@ -213,7 +228,28 @@ function replaceCycleState(next) {
   cycleStartState = clone(next);
 }
 
-function dispatch(action) {
+function dispatch(action, { confirmed = false } = {}) {
+  const touch = lastBoardPointer === "touch";
+  lastBoardPointer = null;
+  if (!confirmed && touch && action.type === "MOVE") {
+    const insight = previewAction(controller.state, action);
+    if (insight && ["high", "lethal"].includes(insight.riskLevel)) {
+      pendingRiskAction = action;
+      const box = $("strategic-confirm-copy");
+      box.replaceChildren();
+      const title = document.createElement("p");
+      title.textContent = insight.title;
+      box.append(title);
+      for (const reason of insight.risks) {
+        const line = document.createElement("p");
+        line.textContent = reason;
+        box.append(line);
+      }
+      $("strategic-confirm-dialog").showModal();
+      return;
+    }
+  }
+  inspectedAction = null;
   const revision = controller.state.revision;
   const previousSelection = selected,
     previousSelectedCell = selectedCell;
@@ -223,6 +259,16 @@ function dispatch(action) {
     selectedCell = previousSelectedCell;
   }
 }
+$("strategic-confirm-cancel").addEventListener("click", () => {
+  pendingRiskAction = null;
+  $("strategic-confirm-dialog").close();
+});
+$("strategic-confirm-accept").addEventListener("click", () => {
+  const action = pendingRiskAction;
+  pendingRiskAction = null;
+  $("strategic-confirm-dialog").close();
+  if (action) dispatch(action, { confirmed: true });
+});
 
 const VIVIFICATION_LABELS = Object.freeze({
   MOVE: "Reproduzir",
@@ -291,6 +337,13 @@ function chooseActions(
     button.type = "button";
     button.className = "primary";
     button.textContent = label(action);
+    const insight = previewAction(controller.state, action);
+    if (insight) {
+      const hint = document.createElement("small");
+      hint.className = "strategic-action-hint";
+      hint.textContent = [insight.cost, ...insight.risks, ...insight.effects.slice(0, 1)].filter(Boolean).join(" · ");
+      button.append(hint);
+    }
     button.dataset.vivifyAction = JSON.stringify(action);
     options.append(button);
   }
@@ -312,6 +365,60 @@ function chooseVivification(actions) {
     label: vivificationLabel,
   });
 }
+function inspectBoardCell(cell) {
+  const state = controller.state;
+  if (!cell || state.result || state.notices.length || state.phase !== "move" ||
+      controller.mode === "auto" ||
+      (controller.mode === "single" && state.current === "amber")) {
+    inspectedAction = null;
+    renderStrategicPreview(document, state, null);
+    return;
+  }
+  const actor = state.pieces.find(
+    (piece) => piece.id === (state.neurofocus ?? state.chain ?? selected),
+  );
+  if (!actor || actor.owner !== state.current) {
+    inspectedAction = null;
+    renderStrategicPreview(document, state, null);
+    return;
+  }
+  const r = Number(cell.dataset.r), c = Number(cell.dataset.c);
+  const target = at(state, r, c);
+  const available = actionsForPiece(state, actor);
+  const candidates = available.filter((action) =>
+    (Number.isInteger(action.r) && Number.isInteger(action.c) &&
+      action.r === r && action.c === c) ||
+    (target && action.targetId === target.id) ||
+    (target && action.type === "PARTNER" && action.id === target.id)
+  );
+  inspectedAction = candidates.length
+    ? { action: candidates[0], count: candidates.length } : null;
+  renderStrategicPreview(document, state, inspectedAction?.action, inspectedAction?.count ?? 0);
+}
+$("board").addEventListener("pointerdown", (event) => {
+  lastBoardPointer = event.pointerType;
+});
+$("board").addEventListener("pointerover", (event) => {
+  const cell = event.target.closest(".cell");
+  if (cell && !cell.contains(event.relatedTarget)) inspectBoardCell(cell);
+});
+$("board").addEventListener("focusin", (event) => {
+  const cell = event.target.closest(".cell");
+  if (cell) inspectBoardCell(cell);
+});
+$("board").addEventListener("pointerout", (event) => {
+  const cell = event.target.closest(".cell");
+  if (cell && !cell.contains(event.relatedTarget)) {
+    inspectedAction = null;
+    renderStrategicPreview(document, controller.state, null);
+  }
+});
+$("board").addEventListener("focusout", (event) => {
+  if (!event.relatedTarget?.closest?.(".cell")) {
+    inspectedAction = null;
+    renderStrategicPreview(document, controller.state, null);
+  }
+});
 $("board").addEventListener("click", (event) => {
   const cell = event.target.closest(".cell");
   if (!cell || controller.paused) return;
@@ -509,6 +616,7 @@ $("board").addEventListener("click", (event) => {
     selected = null;
     selectedCell = { r, c };
   }
+  inspectedAction = null;
   controller.refresh();
 });
 $("board").addEventListener("keydown", (event) => {
