@@ -316,6 +316,7 @@ function chooseActions(
     const detail = describe?.(action);
     if (detail) {
       const small = document.createElement("small");
+      button.classList.add("vivify-choice-with-detail");
       small.className = "action-choice-detail";
       small.textContent = detail;
       button.append(small);
