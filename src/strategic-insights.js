@@ -86,7 +86,7 @@ function pathExposure(state, piece, target) {
   return { hostile, lethal, other, examples };
 }
 
-export function actionRisk(state, piece, action, target = null) {
+export function actionRisk(state, piece, action, target = null, moveCount = null) {
   if (!piece || action?.type !== "MOVE") return { level: "none", reasons: [] };
   const entry = target ?? movementTarget(state, piece, action);
   if (!entry || entry.stay) return { level: "none", reasons: [] };
@@ -103,7 +103,7 @@ export function actionRisk(state, piece, action, target = null) {
   if (exposure.other)
     reasons.push(`${exposure.other} exposição(ões) a resíduo ambiental prejudicial.`);
   if (has(piece, "Ataxia") &&
-      movesFor(state, piece).filter((move) => !move.stay).length > 1)
+      (moveCount ?? movesFor(state, piece).filter((move) => !move.stay).length) > 1)
     reasons.push("Ataxia: o motor pode redirecionar a jogada para outro destino legal (25% por tentativa).");
   return {
     level: exposure.lethal ? "lethal" :
