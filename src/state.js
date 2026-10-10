@@ -70,6 +70,7 @@ import {
 import {
   canAdvanceReproductionWithEndosymbiosis,
   energyCapacity,
+  reproductionEnergyCost,
   energyReadyForReproduction,
 } from "./energy.js";
 export const clone = (value) => structuredClone(value);
@@ -858,9 +859,13 @@ export function newPiece(state, owner, r, c, source = {}) {
     state.colonyCooldowns[piece.colonyId] ??= bornRound;
   }
   const normalized = normalizePhotosyntheticRank(piece);
+  // Hadean organisms begin with enough stored energy to reproduce,
+  // but do not emerge with a permanently full reservoir.
   normalized.energy = Number.isFinite(source.energy)
     ? Math.min(energyCapacity(normalized), source.energy)
-    : energyCapacity(normalized);
+    : state.geologicalStage === "hadean"
+      ? Math.min(energyCapacity(normalized), reproductionEnergyCost(normalized))
+      : energyCapacity(normalized);
   normalized.energyCapacitySnapshot = energyCapacity(normalized);
   return normalized;
 }
