@@ -2018,6 +2018,7 @@ export function render(
         );
     }
     const actionableTraits = actionableTraitsForPiece(state, actor),
+      eukaryoteRemaining = Math.max(0, 2 - (actor.eukaryoteBufferUses ?? 0)),
       traitOrder = (a, b) =>
         Number(actionableTraits.has(b)) -
           Number(actionableTraits.has(a)) ||
@@ -2041,7 +2042,9 @@ export function render(
             "small",
             somatic
               ? `${traitSummary(trait, TRAITS[trait][1])} Alteração somática; não é herdada.`
-              : traitSummary(trait, TRAITS[trait][1]),
+              : trait === "Eucarionte"
+                ? `${traitSummary(trait, TRAITS[trait][1])} · ${eukaryoteRemaining} amortecimento${eukaryoteRemaining === 1 ? "" : "s"} restante${eukaryoteRemaining === 1 ? "" : "s"}.`
+                : traitSummary(trait, TRAITS[trait][1]),
           ),
         );
         return row;
@@ -2050,7 +2053,7 @@ export function render(
         .filter(
           (trait) =>
             TRAITS[trait] &&
-            !established.has(trait) &&
+            (!established.has(trait) || trait === "Eucarionte") &&
             !isNegativeTrait(trait),
         )
         .sort(traitOrder)
@@ -2068,10 +2071,6 @@ export function render(
       if (TRAITS[trait]) disadvantages.push(traitRow(trait, true));
 
     const statusDetails = [],
-      eukaryoteRemaining = Math.max(
-        0,
-        2 - (actor.eukaryoteBufferUses ?? 0),
-      ),
       selectedWaitStatus = compactWaitStatus(actorActionState);
     if (actorActionState.waiting)
       statusDetails.push(
@@ -2093,14 +2092,6 @@ export function render(
           make("p", blocker, "selected-status selected-reproduction-blocker"),
         );
     }
-    if (has(actor, "Eucarionte"))
-      statusDetails.push(
-        make(
-          "p",
-          `🔘 Eucarionte · ${eukaryoteRemaining} amortecimento${eukaryoteRemaining === 1 ? "" : "s"} restante${eukaryoteRemaining === 1 ? "" : "s"}.`,
-          "selected-status",
-        ),
-      );
     if (
       juvenile(state, actor) &&
       actorActionState.reason !== "Maturidade sexual"
@@ -2185,7 +2176,7 @@ export function render(
           (trait) =>
             TRAITS[trait] &&
             (established.has(trait)
-              ? (actor.traits ?? []).includes(trait)
+              ? trait !== "Eucarionte" && (actor.traits ?? []).includes(trait)
               : !(actor.traits ?? []).includes(trait) &&
                 !recessiveSet.has(trait)),
         )
