@@ -834,9 +834,6 @@ export function render(
     }
 
     mobileSummary.append(heading, details);
-    const strategicMobile = pieceStrategicSummary(state, actor);
-    if (strategicMobile)
-      mobileSummary.append(make("div", strategicMobile.status, "mobile-strategic-summary"));
     mobileSummary.hidden = false;
   } else if (!state.result && origin?.selected) {
     const heading = make("div", undefined, "mobile-selected-heading");
