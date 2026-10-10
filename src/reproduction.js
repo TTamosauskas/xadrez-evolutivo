@@ -21,6 +21,7 @@ import {
   applyEnergyDelta,
   energyValue,
   reproductionEnergyCost,
+  HADEAN_FERTILE_ENERGY_GAIN,
   restoreEnergy,
   spendEnergy,
 } from "./energy.js";
@@ -2036,9 +2037,6 @@ export function reproduce(
           ),
     wanted = Math.min(baseWanted, pressureLimit),
     recoveryRounds = (piece, feeder = false) => {
-      const hadeanBasalFertility =
-        state.geologicalStage === "hadean" && resourceKind === "fertile";
-      if (hadeanBasalFertility) return 0;
       let metabolic = metabolicReproductionCooldown(piece);
       if (has(piece, "Insuficiência Respiratória"))
         metabolic *= 2;
@@ -2169,9 +2167,6 @@ export function reproduce(
     },
     applyEnergyCost = () => {
       const apply = (piece, feeder = false) => {
-        const hadeanBasalFertility =
-          state.geologicalStage === "hadean" && resourceKind === "fertile";
-        if (hadeanBasalFertility) return;
         const nutritionUsed = !!piece.carnivoryNutrition,
           baseMetabolism = pieceLifeHistory(piece).metabolism,
           recovery = recoveryRounds(piece, feeder),
@@ -2183,6 +2178,16 @@ export function reproduce(
           applyEnergyDelta(piece, -cost, state.turn);
         const modifier = recovery - baseMetabolism;
         if (modifier) applyEnergyDelta(piece, -modifier, state.turn);
+        // The consumed fertile resource supplies energy, but never waives
+        // the real reproductive cost. This also leaves the founder able
+        // to move after its opening Hadean reproduction.
+        if (
+          state.geologicalStage === "hadean" &&
+          resourceKind === "fertile" &&
+          options.fertileReproduction &&
+          piece.id === parent.id
+        )
+          restoreEnergy(piece, HADEAN_FERTILE_ENERGY_GAIN);
         if (advanced) {
           applyEnergyDelta(piece, -2, state.turn);
           piece.endosymbiosisEnergyDebt = true;
