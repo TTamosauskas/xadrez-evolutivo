@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { fixture, move } from "./helpers.js";
 import { clone } from "../src/state.js";
 import { movesFor } from "../src/moves.js";
-import { energyValue } from "../src/energy.js";
+import { energyValue, reproductionEnergyCost } from "../src/energy.js";
 import {
   previewAction, actionRisk, pieceStrategicSummary,
 } from "../src/strategic-insights.js";
@@ -113,4 +113,13 @@ test("causal summary identifies a single recorded death and avoids inventing cau
   after.logs = clone(before.logs);
   const fallback = summarizeRealizedOutcome(before, after, { type: "MOVE" });
   assert.match(fallback.detail, /Consulte o Log/);
+});
+
+test("partner previews use the initiating parent instead of the target's energy profile", () => {
+  const state = basicState();
+  const [parent, partner] = state.pieces;
+  const insight = previewAction(state, {
+    type: "AGGRESSIVE_MATE", parentId: parent.id, id: partner.id,
+  });
+  assert.match(insight.cost, new RegExp(String(reproductionEnergyCost(parent))));
 });
