@@ -898,6 +898,10 @@ function spawnChild(state, profile, r, c) {
         outcome: profile.newMutationToast.outcome ?? "new-mutation",
       },
     );
+  // A newborn did not rest during the turn in which it was created.
+  // Without this, partial Hadean birth reserves are immediately refilled.
+  if (state.geologicalStage === "hadean")
+    child.lastEnergyActivityTurn = state.turn;
   child.maturesRound = has(child, "Multicelularismo")
     ? round(state) + sexualMaturityRounds(child)
     : round(state);
