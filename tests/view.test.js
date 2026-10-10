@@ -23,6 +23,7 @@ import {
   contextualTraitsForBoard,
 } from "../src/actionable-traits.js";
 import { context, transition } from "../src/engine.js";
+import { movesFor } from "../src/moves.js";
 import { startEvent } from "../src/environment.js";
 import { startDisease } from "../src/disease.js";
 import {
@@ -527,6 +528,84 @@ test("Hadean reproduction decreases stored Energy despite fertile resource gain"
   assert.match(panel.textContent, /Energia 2\/11/);
   assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), false);
   assert.equal(panel.querySelector(".selected-energy-reproduction-ready"), null);
+  dom.window.close();
+});
+
+test("contextual UX: fertile Hadean shows bounded energy recovery and the next goal", () => {
+  const dom = setup(), doc = dom.window.document;
+  let state = createCampaignState(401);
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  const founder = state.pieces.find((piece) => piece.owner === "blue");
+  const cell = founder.r * 8 + founder.c;
+
+  render(doc, state, { selected: founder.id });
+  assert.match(doc.querySelector(".selected-energy-costs").textContent, /Reproduzir −8 · Casa Fértil \+2 se houver prole/);
+  assert.match(doc.querySelector("#round").textContent, /Próx\.: Quimiossíntese/);
+  assert.match(doc.querySelector(".selected-energy-costs").title, /\+2 por turno próprio/);
+
+  state.board[cell] = "neutral";
+  render(doc, state, { selected: founder.id });
+  assert.doesNotMatch(doc.querySelector(".selected-energy-costs").textContent, /Casa Fértil \+2/);
+  dom.window.close();
+});
+
+test("contextual UX: show at most one reproduction blocker when another action remains", () => {
+  const dom = setup(), doc = dom.window.document;
+  const state = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 0 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const piece = state.pieces[0];
+  piece.energy = 3;
+  render(doc, state, { selected: piece.id });
+  let blockers = doc.querySelectorAll("#selected .selected-reproduction-blocker");
+  assert.equal(blockers.length, 1);
+  assert.match(blockers[0].textContent, /Reprodução: faltam 2 de Energia/);
+
+  piece.energy = reproductionEnergyCost(piece);
+  render(doc, state, { selected: piece.id });
+  blockers = doc.querySelectorAll("#selected .selected-reproduction-blocker");
+  assert.equal(blockers.length, 0);
+  dom.window.close();
+});
+
+test("contextual UX: only dangerous legal destinations have discrete risk badges", () => {
+  const dom = setup(), doc = dom.window.document;
+  const state = fixture([
+    {
+      owner: "blue", r: 4, c: 4, rank: 4,
+      traits: ["Locomoção Primitiva", "Locomoção Terrestre"],
+    },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  state.geologicalStage = "hadean";
+  state.board.fill("neutral");
+  const piece = state.pieces[0];
+  piece.energy = energyCapacity(piece);
+  const moves = movesFor(state, piece);
+  const legal = moves.find(
+    (move) => !move.stay && move.r >= 2 && move.r <= 5 && move.c >= 2 && move.c <= 5,
+  );
+  assert.ok(legal, "fixture must offer a legal Hadean destination");
+  const targetCell = legal.r * 8 + legal.c;
+  state.board[targetCell] = "hostile";
+  const target = () => doc.querySelector(`[data-r="${legal.r}"][data-c="${legal.c}"]`);
+
+  render(doc, state, { selected: piece.id });
+  assert.ok(target().classList.contains("legal"));
+  assert.ok(target().querySelector(".legal-risk-indicator"));
+  assert.match(target().getAttribute("aria-label"), /50% de risco de morte/);
+  assert.equal(doc.querySelectorAll(".legal-risk-indicator").length, 1);
+
+  state.board[targetCell] = "neutral";
+  render(doc, state, { selected: piece.id });
+  assert.equal(target().querySelector(".legal-risk-indicator"), null);
+
+  state.board[targetCell] = "hostile";
+  piece.traits.push("Quimiossíntese");
+  render(doc, state, { selected: piece.id });
+  assert.equal(target().querySelector(".legal-risk-indicator"), null);
   dom.window.close();
 });
 
