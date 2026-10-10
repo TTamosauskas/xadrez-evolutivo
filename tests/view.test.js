@@ -389,6 +389,67 @@ test("selected piece shows a compact unified Energy bar", () => {
   dom.window.close();
 });
 
+
+test("energy fill turns Vivificar green at the basic reproductive cost", () => {
+  const dom = setup();
+  const d = dom.window.document;
+  const state = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 0 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const piece = state.pieces[0];
+  const cost = reproductionEnergyCost(piece);
+  const text = "Energia disponivel para reprodução";
+  const draw = (energy) => {
+    piece.energy = energy;
+    render(d, state, { selected: piece.id });
+    return d.querySelector("#selected .selected-energy");
+  };
+  let panel = draw(cost - 1);
+  assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), false);
+  assert.equal(panel.querySelector(".selected-energy-reproduction-ready"), null);
+  assert.doesNotMatch(panel.textContent, /Energia disponivel para reprodução/);
+
+  panel = draw(cost);
+  assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), true);
+  assert.equal(panel.querySelector(".selected-energy-reproduction-ready")?.textContent, text);
+  assert.equal(panel.querySelector(".selected-energy-track")?.getAttribute("aria-valuenow"), String(cost));
+  panel = draw(cost + 1);
+  assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), true);
+
+  panel = draw(cost - 1);
+  assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), false);
+  assert.equal(panel.querySelector(".selected-energy-reproduction-ready"), null);
+
+  const css = readFileSync(new URL("../app.css", import.meta.url), "utf8");
+  assert.match(css, /\.selected-energy-fill\.reproduction-ready\s*\{\s*background:\s*#5bd66c;/);
+  assert.match(css, /\.cell\.vivification-target::after,[\s\S]*?border:\s*4px solid #5bd66c;/);
+  dom.window.close();
+});
+
+test("reproduction-ready bar follows the creature's actual basic energy cost", () => {
+  const dom = setup(), d = dom.window.document;
+  const state = fixture([
+    { owner: "blue", r: 4, c: 4, rank: 0 },
+    { owner: "amber", r: 0, c: 0 },
+  ]);
+  const piece = state.pieces[0];
+  piece.carnivoryNutrition = true;
+  const reducedCost = reproductionEnergyCost(piece);
+  piece.energy = reducedCost;
+  render(d, state, { selected: piece.id });
+  let panel = d.querySelector("#selected .selected-energy");
+  assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), true);
+  assert.match(panel.textContent, /Energia disponivel para reprodução/);
+
+  piece.carnivoryNutrition = false;
+  render(d, state, { selected: piece.id });
+  panel = d.querySelector("#selected .selected-energy");
+  assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), false);
+  assert.equal(panel.querySelector(".selected-energy-reproduction-ready"), null);
+  dom.window.close();
+});
+
 test("mobile selected-piece summary stays below the board", () => {
   const dom = setup(),
     s = fixture([

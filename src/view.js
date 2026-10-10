@@ -84,7 +84,6 @@ import {
   parasitismEncapsulated,
 } from "./moves.js";
 import { corticalMoveSuggestions } from "./positioning.js";
-import { actionRisk, pieceStrategicSummary, previewAction } from "./strategic-insights.js";
 import {
   hierarchySacrificeRecommendation,
   superorganismRecommendation,
@@ -639,7 +638,6 @@ export function render(
     state.phase === "move" && actor && actor.owner === state.current
       ? movesFor(state, actor)
       : [],
-    movementOptionCount = targets.filter((target) => !target.stay).length,
     actorActions =
       state.phase === "move" && actor && actor.owner === state.current
         ? actionsForPiece(state, actor)
@@ -1276,13 +1274,6 @@ export function render(
       cell.type = "button";
       cell.dataset.r = r;
       cell.dataset.c = c;
-      const moveRisk = actor && targetEntry && state.phase === "move"
-        ? actionRisk(state, actor, { type: "MOVE", id: actor.id, r, c }, targetEntry, movementOptionCount)
-        : null;
-      if (moveRisk && moveRisk.level !== "none") {
-        cell.classList.add(`strategic-risk-${moveRisk.level}`);
-        cell.dataset.strategicRisk = moveRisk.level;
-      }
       const terrainLabel = cellInfo.terrain.label,
         label = originHere
           ? `${coord(r, c)}, Rei ancestral cinza, Respiração anaeróbia${origin?.selected ? ", Vivificar disponível; selecionado; toque novamente para iniciar" : "; selecione para iniciar"}`
@@ -1298,11 +1289,8 @@ export function render(
         accessibleLabel = terminalDeath
           ? `${baseAccessibleLabel}, morte determinada no próximo turno: ${terminalDeath}`
           : baseAccessibleLabel;
-      const strategicAccessible = moveRisk?.reasons?.length
-        ? `${accessibleLabel}. Análise de risco: ${moveRisk.reasons.join(" ")}`
-        : accessibleLabel;
-      cell.setAttribute("aria-label", strategicAccessible);
-      cell.title = strategicAccessible;
+      cell.setAttribute("aria-label", accessibleLabel);
+      cell.title = accessibleLabel;
       if (web)
         cell.append(make("span", "🕸️", "decomposition-mark web-mark"));
       if (inkCloud)
@@ -1917,6 +1905,7 @@ export function render(
             : `Energia ${visibleEnergy}/${energyMax}`,
           "selected-energy-label",
         ),
+        energyReadyToReproduce = rawEnergy >= reproductionEnergyCost(actor),
         energyTrack = make("div", undefined, "selected-energy-track"),
         energyFill = make("div", undefined, "selected-energy-fill"),
         energyCosts = make(
@@ -1924,6 +1913,7 @@ export function render(
           `Mover −${movementEnergyCost(actor)} · Reproduzir −${reproductionEnergyCost(actor)}`,
           "selected-energy-costs",
         );
+      if (energyReadyToReproduce) energyFill.classList.add("reproduction-ready");
       energyFill.style.width = `${(visibleEnergy / energyMax) * 100}%`;
       energyTrack.setAttribute("role", "progressbar");
       energyTrack.setAttribute("aria-label", "Energia");
@@ -1932,6 +1922,10 @@ export function render(
       energyTrack.setAttribute("aria-valuenow", String(visibleEnergy));
       energyTrack.append(energyFill);
       energyPanel.append(energyLabel, energyTrack, energyCosts);
+      if (energyReadyToReproduce)
+        energyPanel.append(
+          make("div", "Energia disponivel para reprodução", "selected-energy-reproduction-ready"),
+        );
     }
     const actionableTraits = actionableTraitsForPiece(state, actor),
       traitOrder = (a, b) =>
@@ -2098,22 +2092,11 @@ export function render(
             (TRAIT_DISPLAY_ORDER.get(a) ?? Number.MAX_SAFE_INTEGER) -
             (TRAIT_DISPLAY_ORDER.get(b) ?? Number.MAX_SAFE_INTEGER),
         ),
-      strategic = pieceStrategicSummary(state, actor),
-      strategicPanel = make("div", undefined, "strategic-summary"),
       selectedContent = [
         heading,
         energyPanel,
-        strategicPanel,
         ...statusDetails,
       ];
-    if (strategic) {
-      strategicPanel.append(
-        make("strong", "Situação estratégica", "strategic-summary-title"),
-        make("p", strategic.status, "strategic-summary-line"),
-        make("p", `${strategic.moveCount} destino(s) de movimento · ${strategic.actionCount} ação(ões) disponível(is)`, "strategic-summary-line"),
-        make("p", strategic.reproduction, "strategic-summary-line"),
-      );
-    }
 
     if (advantages.length)
       selectedContent.push(
@@ -2354,38 +2337,4 @@ export function render(
     }
     if (!dialog.open) dialog.showModal();
   } else if (dialog.open) dialog.close();
-}
-
-/** Updates only the contextual inspector; moving the pointer never rebuilds the board. */
-export function renderStrategicPreview(doc, state, action, alternativeCount = 0) {
-  const host = doc.getElementById("strategic-preview");
-  if (!host) return;
-  const preview = previewAction(state, action);
-  host.replaceChildren();
-  host.hidden = !preview;
-  if (!preview) return;
-  const make = (...args) => element(doc, ...args);
-  host.append(make("strong", preview.title, "strategic-preview-title"));
-  if (alternativeCount > 1)
-    host.append(make("p", `Este alvo oferece ${alternativeCount} ações. A prévia detalhada aparece na escolha da ação.`, "strategic-preview-detail"));
-  if (preview.cost)
-    host.append(make("p", preview.cost, "strategic-preview-detail"));
-  for (const effect of preview.effects.slice(0, 3))
-    host.append(make("p", effect, "strategic-preview-detail"));
-  for (const risk of preview.risks.slice(0, 3))
-    host.append(make("p", risk, "strategic-preview-risk"));
-  host.append(make("small", preview.note, "strategic-preview-note"));
-}
-
-export function renderOutcomeInsight(doc, insight) {
-  const host = doc.getElementById("strategic-outcome");
-  if (!host) return;
-  host.replaceChildren();
-  host.hidden = !insight;
-  if (!insight) return;
-  host.dataset.tone = insight.tone ?? "neutral";
-  host.append(
-    element(doc, "strong", insight.title, "strategic-outcome-title"),
-    element(doc, "p", insight.detail, "strategic-outcome-detail"),
-  );
 }
