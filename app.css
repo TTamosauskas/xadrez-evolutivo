@@ -517,6 +517,25 @@ main {
   border: 3px solid #fff0b0;
   background: transparent;
 }
+/* Only actionable destinations with known environmental danger gain a badge. */
+.cell .legal-risk-indicator {
+  position: absolute;
+  z-index: 8;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  padding: 1px 3px;
+  border-radius: 5px;
+  background: #1d231ce6;
+  color: #ffe08c;
+  font-size: clamp(10px, 1.5vw, 14px);
+  font-weight: 900;
+  line-height: 1.1;
+  pointer-events: none;
+}
+.cell.lethal-hazard .legal-risk-indicator {
+  color: #ffbbb3;
+}
 .cell.aggressive-partner::before {
   content: "";
   position: absolute;
@@ -1511,6 +1530,21 @@ select {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+}
+#vivify-options {
+  flex-wrap: wrap;
+}
+#vivify-options .vivify-choice-with-detail {
+  width: 100%;
+  text-align: left;
+}
+.action-choice-detail {
+  display: block;
+  margin-top: 3px;
+  color: #d2d8c8;
+  font-size: 11px;
+  font-weight: 450;
+  line-height: 1.4;
 }
 .evolutionary-end-summary {
   padding: 2px 0 4px;
