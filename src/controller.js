@@ -13,6 +13,7 @@ export class Controller {
     state,
     {
       render = () => {},
+      onTransition = () => {},
       report = () => {},
       toast = () => {},
       workerFactory = () =>
@@ -33,6 +34,7 @@ export class Controller {
   ) {
     this.state = assertState(state);
     this.render = render;
+    this.onTransition = onTransition;
     this.report = report;
     this.toast = toast;
     this.workerFactory = workerFactory;
@@ -314,7 +316,9 @@ export class Controller {
       if (pendingConway !== null) this.clearTimer(pendingConway);
       this.pendingMovementTrace = next.movementTrace ?? null;
       next.movementTrace = null;
+      const previous = this.state;
       this.state = next;
+      this.onTransition(previous, next, action);
 
       if (this.neocortexPending) {
         const pending = this.neocortexPending;
