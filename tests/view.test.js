@@ -2222,7 +2222,7 @@ test("board shows low Energy while selected details keep cellular counters", () 
   const eukaryote = [...d.querySelectorAll("#selected .selected-trait")]
     .find((row) => row.textContent.includes("Eucarionte"));
   assert.ok(eukaryote);
-  assert.equal(eukaryote.querySelector("span")?.textContent, "🔘");
+  assert.equal(eukaryote.querySelector(":scope > :first-child > span")?.textContent, "🔘");
   assert.match(eukaryote.querySelector("small")?.textContent ?? "", /1 amortecimento restante/);
   assert.equal(d.querySelectorAll("#selected .selected-status").length > 0, true);
   assert.equal([...d.querySelectorAll("#selected .selected-status")].some(
