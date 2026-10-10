@@ -399,7 +399,7 @@ test("energy fill turns Vivificar green at the basic reproductive cost", () => {
   ]);
   const piece = state.pieces[0];
   const cost = reproductionEnergyCost(piece);
-  const text = "Energia disponivel para reprodução";
+  const text = "Energia disponível para reprodução";
   const draw = (energy) => {
     piece.energy = energy;
     render(d, state, { selected: piece.id });
@@ -408,7 +408,7 @@ test("energy fill turns Vivificar green at the basic reproductive cost", () => {
   let panel = draw(cost - 1);
   assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), false);
   assert.equal(panel.querySelector(".selected-energy-reproduction-ready"), null);
-  assert.doesNotMatch(panel.textContent, /Energia disponivel para reprodução/);
+  assert.doesNotMatch(panel.textContent, /Energia disponível para reprodução/);
 
   panel = draw(cost);
   assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), true);
@@ -440,11 +440,90 @@ test("reproduction-ready bar follows the creature's actual basic energy cost", (
   render(d, state, { selected: piece.id });
   let panel = d.querySelector("#selected .selected-energy");
   assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), true);
-  assert.match(panel.textContent, /Energia disponivel para reprodução/);
+  assert.match(panel.textContent, /Energia disponível para reprodução/);
 
   piece.carnivoryNutrition = false;
   render(d, state, { selected: piece.id });
   panel = d.querySelector("#selected .selected-energy");
+  assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), false);
+  assert.equal(panel.querySelector(".selected-energy-reproduction-ready"), null);
+  dom.window.close();
+});
+
+test("Hadean green Energy requires fertile ground and an available stationary reproduction", () => {
+  const dom = setup();
+  const doc = dom.window.document;
+  let state = createCampaignState(401);
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  const founder = state.pieces.find((piece) => piece.owner === "blue");
+  const square = founder.r * 8 + founder.c;
+  const label = "Energia disponível para reprodução";
+  const status = () => {
+    render(doc, state, { selected: founder.id });
+    const panel = doc.querySelector("#selected .selected-energy");
+    return {
+      filled: panel.querySelector(".selected-energy-fill"),
+      hint: panel.querySelector(".selected-energy-reproduction-ready"),
+      track: panel.querySelector(".selected-energy-track"),
+    };
+  };
+
+  assert.equal(state.geologicalStage, "hadean");
+  assert.equal(state.board[square], "fertile");
+  let current = status();
+  assert.ok(current.filled.classList.contains("reproduction-ready"));
+  assert.equal(current.hint?.textContent, label);
+  assert.equal(current.track.getAttribute("aria-valuenow"), "11");
+  assert.equal(current.track.getAttribute("aria-valuemax"), "11");
+
+  state.board[square] = "neutral";
+  current = status();
+  assert.equal(current.track.getAttribute("aria-valuenow"), "11");
+  assert.equal(current.filled.classList.contains("reproduction-ready"), false);
+  assert.equal(current.hint, null);
+
+  state.board[square] = "hostile";
+  current = status();
+  assert.equal(current.filled.classList.contains("reproduction-ready"), false);
+  assert.equal(current.hint, null);
+
+  state.board[square] = "fertile";
+  founder.traits.push("Esterilidade");
+  current = status();
+  assert.equal(current.filled.classList.contains("reproduction-ready"), false);
+  assert.equal(current.hint, null);
+
+  founder.traits.pop();
+  current = status();
+  assert.equal(current.filled.classList.contains("reproduction-ready"), true);
+  assert.equal(current.hint?.textContent, label);
+  dom.window.close();
+});
+
+test("Hadean reproduction can preserve 11/11 without leaving an outdated green indicator", () => {
+  const dom = setup();
+  const doc = dom.window.document;
+  let state = createCampaignState(401);
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  const parent = state.pieces.find((piece) => piece.owner === "blue");
+  const initialId = parent.id;
+  const position = { r: parent.r, c: parent.c };
+  render(doc, state, { selected: initialId });
+  assert.equal(
+    doc.querySelector("#selected .selected-energy-fill").classList.contains("reproduction-ready"),
+    true,
+  );
+
+  state = transition(state, { type: "MOVE", id: initialId, ...position });
+  const survivor = state.pieces.find((piece) => piece.id === initialId);
+  assert.ok(survivor);
+  assert.equal(energyCapacity(survivor), 11);
+  assert.equal(state.board[position.r * 8 + position.c], "neutral");
+  render(doc, state, { selected: initialId });
+  const panel = doc.querySelector("#selected .selected-energy");
+  assert.match(panel.textContent, /Energia 11\/11/);
   assert.equal(panel.querySelector(".selected-energy-fill").classList.contains("reproduction-ready"), false);
   assert.equal(panel.querySelector(".selected-energy-reproduction-ready"), null);
   dom.window.close();
