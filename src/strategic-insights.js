@@ -137,8 +137,10 @@ export function pieceStrategicSummary(state, piece) {
 
 export function previewAction(state, action) {
   if (!action) return null;
-  const piece = state.pieces.find((candidate) => candidate.id === (action.id ?? action.parentId)) ??
-    state.pieces.find((candidate) => candidate.id === (state.chain ?? state.neurofocus));
+  const actorId = action.parentId ??
+    (action.type === "PARTNER" && state.phase === "partner" ? state.partner?.id : action.id) ??
+    state.chain ?? state.neurofocus;
+  const piece = state.pieces.find((candidate) => candidate.id === actorId);
   const result = {
     title: ACTION_LABELS[action.type] ?? action.type,
     cost: null,
@@ -153,7 +155,9 @@ export function previewAction(state, action) {
     result.title = target.stay ? "Vivificação / ação estacionária" :
       target.capture ? `Captura em ${coord(action.r, action.c)}` :
       `Mover para ${coord(action.r, action.c)}`;
-    if (target.stay || target.cutaneous || target.vascular ||
+    if (target.webEscape)
+      result.cost = "Libertação da teia: consome a ação disponível.";
+    else if (target.stay || target.cutaneous || target.vascular ||
         target.mycorrhiza || target.haustoriumDrain)
       result.cost = `Custo reprodutivo básico: ${reproductionEnergyCost(piece)} Energia; condições e efeitos especiais podem alterar o saldo.`;
     else {
@@ -164,7 +168,7 @@ export function previewAction(state, action) {
         : `Esforço locomotor básico: ${movementEnergyCost(piece)} Energia; recuperações posteriores podem alterar o saldo.`;
     }
     if (target.capture) result.effects.push("Captura potencial; defesas e respostas reativas podem modificar o resultado.");
-    if (target.stay || target.cutaneous || target.vascular || target.mycorrhiza ||
+    if ((target.stay && !target.webEscape) || target.cutaneous || target.vascular || target.mycorrhiza ||
         target.haustoriumDrain || target.botanicalPredation)
       result.effects.push("Ação ligada a recurso ou reprodução; nascimento e consumo dependem das condições efetivas.");
     if (target.fruitConsume || target.synzooCollect)
