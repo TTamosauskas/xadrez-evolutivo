@@ -639,6 +639,7 @@ export function render(
     state.phase === "move" && actor && actor.owner === state.current
       ? movesFor(state, actor)
       : [],
+    movementOptionCount = targets.filter((target) => !target.stay).length,
     actorActions =
       state.phase === "move" && actor && actor.owner === state.current
         ? actionsForPiece(state, actor)
@@ -1276,7 +1277,7 @@ export function render(
       cell.dataset.r = r;
       cell.dataset.c = c;
       const moveRisk = actor && targetEntry && state.phase === "move"
-        ? actionRisk(state, actor, { type: "MOVE", id: actor.id, r, c }, targetEntry)
+        ? actionRisk(state, actor, { type: "MOVE", id: actor.id, r, c }, targetEntry, movementOptionCount)
         : null;
       if (moveRisk && moveRisk.level !== "none") {
         cell.classList.add(`strategic-risk-${moveRisk.level}`);
