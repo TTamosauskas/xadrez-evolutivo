@@ -8,6 +8,7 @@ import {
   arenaSurvivorSelections,
 } from "./state.js";
 import { Controller } from "./controller.js";
+import { reproductionEnergyCost } from "./energy.js";
 import { render } from "./view.js";
 import {
   movesFor,
@@ -269,12 +270,33 @@ const boardActionLabel = (action) => {
   return action.type;
 };
 
+// Descriptions are shown only when there is an actual choice to make.
+function vivificationActionDetail(action) {
+  const state = controller.state,
+    piece = state.pieces.find((candidate) => candidate.id === action.id);
+  if (!piece) return null;
+  if (action.type === "MOVE" && action.r === piece.r && action.c === piece.c) {
+    const basic = reproductionEnergyCost(piece),
+      fertile = state.geologicalStage === "hadean" &&
+        state.board[piece.r * 8 + piece.c] === "fertile";
+    return fertile
+      ? `Custo básico: −${basic} Energia · Casa Fértil devolve até +2 se houver prole`
+      : `Custo básico: −${basic} Energia`;
+  }
+  if (action.type === "BUD")
+    return `Usa Energia reprodutiva (custo básico: ${reproductionEnergyCost(piece)})`;
+  if (action.type === "CHEMOSYNTHESIS")
+    return "Ação de adaptação do ambiente.";
+  return null;
+}
+
 function chooseActions(
   actions,
   {
     title = "Escolha a ação",
     copy = "Mais de uma ação está disponível para este alvo.",
     label = boardActionLabel,
+    describe = null,
   } = {},
 ) {
   if (actions.length === 1) {
@@ -291,6 +313,14 @@ function chooseActions(
     button.type = "button";
     button.className = "primary";
     button.textContent = label(action);
+    const detail = describe?.(action);
+    if (detail) {
+      const small = document.createElement("small");
+      button.classList.add("vivify-choice-with-detail");
+      small.className = "action-choice-detail";
+      small.textContent = detail;
+      button.append(small);
+    }
     button.dataset.vivifyAction = JSON.stringify(action);
     options.append(button);
   }
@@ -303,6 +333,7 @@ function chooseVivification(actions) {
       title: "Ação biológica",
       copy: "Escolha a ação a realizar com esta criatura.",
       label: vivificationLabel,
+      describe: vivificationActionDetail,
     });
     return;
   }
@@ -310,6 +341,7 @@ function chooseVivification(actions) {
     title: "Vivificar",
     copy: "Mais de uma ação pode ser realizada nesta casa. Escolha como vivificar.",
     label: vivificationLabel,
+    describe: vivificationActionDetail,
   });
 }
 $("board").addEventListener("click", (event) => {

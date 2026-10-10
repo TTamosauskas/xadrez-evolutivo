@@ -151,6 +151,50 @@ const maxPieceWaitTurns = (state, piece, actionState) => {
   return Math.max(0, ...waits);
 };
 
+// Contextual hints are intentionally short: only the first relevant blocker
+// appears, and existing global waiting messages take precedence.
+function reproductionBlockerHint(state, piece, actions, actionState) {
+  if (
+    !piece ||
+    state.phase !== "move" ||
+    piece.owner !== state.current ||
+    actionState.waiting ||
+    !has(piece, "Respiração anaeróbia") ||
+    has(piece, "Esterilidade") ||
+    juvenile(state, piece)
+  ) return null;
+  if (
+    actions.some(
+      (action) =>
+        action.type === "MOVE" &&
+        action.r === piece.r &&
+        action.c === piece.c,
+    )
+  ) return null;
+
+  const cost = reproductionEnergyCost(piece),
+    stored = energyValue(piece);
+  if (stored < cost && !reproductionReady(state, piece)) {
+    const capacity = energyCapacity(piece),
+      withEnergy = {
+        ...piece,
+        energy: capacity,
+        energyCapacitySnapshot: capacity,
+      };
+    if (reproductionReady(state, withEnergy))
+      return `Reprodução: faltam ${cost - stored} de Energia.`;
+  }
+  if (
+    state.geologicalStage === "hadean" &&
+    reproductionReady(state, piece) &&
+    canUseBasalFertility(state, piece) &&
+    terrain(state, piece.r, piece.c) !== "fertile" &&
+    !piece.predationEnergy
+  )
+    return "Reprodução nesta casa: requer Casa Fértil.";
+  return null;
+}
+
 const TRAIT_FRAME_LIMIT = 12;
 const TRAIT_DISPLAY_ORDER = new Map(
   Object.keys(TRAITS).map((trait, index) => [trait, index]),
@@ -748,6 +792,11 @@ export function render(
         : geological.id === "hadean"
           ? `${geological.group} · ${geological.period} · 1º Ciclo · Tutorial ${hadeanTutorialDone}/3 · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"}`
           : `${geological.group} · ${geological.period} · ${state.cycle}º Ciclo · ${state.turn} ${state.turn === 1 ? "Turno" : "Turnos"} · ${historicalGeneration}ª Geração`;
+  // Keep the next already-known objective in the existing header.
+  if (!state.result && state.phase !== "origin" && state.scenario !== "arena") {
+    const nextObjective = stageProgress(state).missing[0];
+    if (nextObjective) $("round").append(doc.createTextNode(` · Próx.: ${nextObjective}`));
+  }
   const mobileSummary = $("mobile-selected-summary");
   mobileSummary.replaceChildren();
   mobileSummary.hidden = true;
@@ -1265,7 +1314,18 @@ export function render(
           : "",
         selectedCellHere =
           selectedCell?.r === r && selectedCell?.c === c,
-        cellInfo = cellSelectionInfo(state, r, c);
+        cellInfo = cellSelectionInfo(state, r, c),
+        destinationRisk =
+          actor && targetEntry && !targetEntry.stay && lethalHazard
+            ? "Ambiente letal no destino"
+            : actor &&
+                targetEntry &&
+                !targetEntry.stay &&
+                state.geologicalStage === "hadean" &&
+                cellTerrain === "hostile" &&
+                !has(actor, "Quimiossíntese")
+              ? "Casa Hostil: 50% de risco de morte por rodada"
+              : null;
       const cell = make(
         "button",
         undefined,
@@ -1288,9 +1348,21 @@ export function render(
         baseAccessibleLabel = `${label}${encapsulatedParasiteLabel}`,
         accessibleLabel = terminalDeath
           ? `${baseAccessibleLabel}, morte determinada no próximo turno: ${terminalDeath}`
-          : baseAccessibleLabel;
-      cell.setAttribute("aria-label", accessibleLabel);
-      cell.title = accessibleLabel;
+          : baseAccessibleLabel,
+        accessibleRiskLabel = destinationRisk
+          ? `${accessibleLabel}, alerta: ${destinationRisk}`
+          : accessibleLabel;
+      cell.setAttribute("aria-label", accessibleRiskLabel);
+      cell.title = accessibleRiskLabel;
+      if (destinationRisk) {
+        const riskMarker = make(
+          "span",
+          lethalHazard ? "☠" : "!",
+          "legal-risk-indicator",
+        );
+        riskMarker.setAttribute("aria-hidden", "true");
+        cell.append(riskMarker);
+      }
       if (web)
         cell.append(make("span", "🕸️", "decomposition-mark web-mark"));
       if (inkCloud)
@@ -1919,11 +1991,18 @@ export function render(
             : rawEnergy >= reproductionEnergyCost(actor),
         energyTrack = make("div", undefined, "selected-energy-track"),
         energyFill = make("div", undefined, "selected-energy-fill"),
+        fertileHadean =
+          state.geologicalStage === "hadean" &&
+          terrain(state, actor.r, actor.c) === "fertile" &&
+          canUseBasalFertility(state, actor),
         energyCosts = make(
           "div",
-          `Mover −${movementEnergyCost(actor)} · Reproduzir −${reproductionEnergyCost(actor)}`,
+          `Mover −${movementEnergyCost(actor)} · Reproduzir −${reproductionEnergyCost(actor)}${fertileHadean ? " · Casa Fértil +2 se houver prole" : ""}`,
           "selected-energy-costs",
         );
+      if (fertileHadean)
+        energyCosts.title =
+          "Em Casa Fértil, recupera +2 por turno próprio. Se gerar prole, o recurso consumido devolve até +2 Energia.";
       if (energyReadyToReproduce) energyFill.classList.add("reproduction-ready");
       energyFill.style.width = `${(visibleEnergy / energyMax) * 100}%`;
       energyTrack.setAttribute("role", "progressbar");
@@ -2002,6 +2081,18 @@ export function render(
           "selected-status",
         ),
       );
+    else {
+      const blocker = reproductionBlockerHint(
+        state,
+        actor,
+        actorActions,
+        actorActionState,
+      );
+      if (blocker)
+        statusDetails.push(
+          make("p", blocker, "selected-status selected-reproduction-blocker"),
+        );
+    }
     if (has(actor, "Eucarionte"))
       statusDetails.push(
         make(
