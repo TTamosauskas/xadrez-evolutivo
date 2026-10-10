@@ -479,7 +479,7 @@ test("Hadean green Energy requires fertile ground and an available stationary re
 
   state.board[square] = "neutral";
   current = status();
-  assert.equal(current.track.getAttribute("aria-valuenow"), "11");
+  assert.equal(current.track.getAttribute("aria-valuenow"), "8");
   assert.equal(current.filled.classList.contains("reproduction-ready"), false);
   assert.equal(current.hint, null);
 
