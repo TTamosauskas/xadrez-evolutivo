@@ -703,6 +703,10 @@ test("Hadean organisms start with an 8/11 reserve, pay reproduction, and harvest
     child = state.pieces.find((piece) => piece.owner === "blue" && !ids.has(piece.id));
   assert.ok(child, "first fertile reproduction must still produce an offspring");
   assert.equal(energyValue(parent), 2, "eight spent, two harvested from the consumed fertile cell");
+  assert.ok(
+    state.logs.some((entry) => /Casa Fértil forneceu \+2 Energia durante a reprodução/.test(entry.text)),
+    "the history must explain the resulting 2/11 reserve",
+  );
   assert.equal(energyValue(child), Math.min(energyCapacity(child), reproductionEnergyCost(child)));
   assert.equal(energyCapacity(parent), 11);
   assert.equal(state.board[square(parent.r, parent.c)], "neutral");
@@ -720,6 +724,8 @@ test("Hadean fertile ground restores two Energy per own turn, but neutral rest r
 
   state = transition(state, { type: "PASS" });
   assert.equal(energyValue(state.pieces.find((piece) => piece.id === founder.id)), 10);
+  // Simulate an active organism that remains on a fertile square.
+  // Environmental uptake must work even without an inactive turn.
   state = transition(state, { type: "PASS" });
   state = transition(state, { type: "PASS" });
   assert.equal(energyValue(state.pieces.find((piece) => piece.id === founder.id)), 11);
@@ -730,6 +736,21 @@ test("Hadean fertile ground restores two Energy per own turn, but neutral rest r
   if (state.current !== "blue") state = transition(state, { type: "PASS" });
   state = transition(state, { type: "PASS" });
   assert.equal(energyValue(state.pieces.find((piece) => piece.id === founder.id)), 6);
+  assertState(state);
+});
+
+test("Hadean active creatures still harvest fertile energy without being marked as resting", () => {
+  let state = createCampaignState(430);
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  state = transition(state, { type: "ORIGIN_CLICK" });
+  const founder = state.pieces.find((piece) => piece.owner === "blue");
+  founder.energy = 4;
+  founder.lastEnergyActivityTurn = state.turn;
+
+  state = transition(state, { type: "PASS" });
+  const refreshed = state.pieces.find((piece) => piece.id === founder.id);
+  assert.equal(energyValue(refreshed), 6);
+  assert.equal(refreshed.restorativeSleepCharge, undefined);
   assertState(state);
 });
 
