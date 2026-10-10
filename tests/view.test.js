@@ -2215,9 +2215,63 @@ test("board shows low Energy while selected details keep cellular counters", () 
   assert.doesNotMatch(boardStatus, /🌀3/);
   assert.doesNotMatch(boardStatus, /🦂2/);
 
-  assert.match(selected, /🔘 Eucarionte · 1 amortecimento restante\./);
+  assert.doesNotMatch(selected, /🔘 Eucarionte · 1 amortecimento restante\./);
+  const advantagesTitle = [...d.querySelectorAll("#selected .selected-group-heading")]
+    .find((heading) => heading.textContent === "Vantagens Evolutivas");
+  assert.ok(advantagesTitle);
+  const eukaryote = [...d.querySelectorAll("#selected .selected-trait")]
+    .find((row) => row.textContent.includes("Eucarionte"));
+  assert.ok(eukaryote);
+  assert.equal(eukaryote.querySelector("span")?.textContent, "🔘");
+  assert.match(eukaryote.querySelector("small")?.textContent ?? "", /1 amortecimento restante/);
+  assert.equal(d.querySelectorAll("#selected .selected-status").length > 0, true);
+  assert.equal([...d.querySelectorAll("#selected .selected-status")].some(
+    (row) => row.textContent.includes("Eucarionte")), false);
+
   assert.match(selected, /Energia 0\/8 · dívida 2/);
   assert.match(selected, /Dívida energética · 2 ponto\(s\) a recuperar\./);
+  dom.window.close();
+});
+
+test("Eucarionte stays in Vantagens Evolutivas even when shared by all organisms, and never repeats in Legado", () => {
+  const dom = setup(),
+    doc = dom.window.document,
+    state = fixture([
+      { owner: "blue", r: 4, c: 4, traits: ["Eucarionte"] },
+      { owner: "amber", r: 0, c: 0, traits: ["Eucarionte"] },
+    ]),
+    organism = state.pieces[0];
+
+  const assertEukaryote = (remaining) => {
+    render(doc, state, { selected: organism.id });
+    const panel = doc.getElementById("selected"),
+      title = [...panel.querySelectorAll(".selected-group-heading")].find(
+        (heading) => heading.textContent === "Vantagens Evolutivas",
+      ),
+      advantage = title?.nextElementSibling,
+      legacy = panel.querySelector(".legacy-toggle");
+    assert.ok(title, "expressed Eucarionte must appear under Vantagens");
+    assert.ok(advantage.classList.contains("selected-trait"));
+    assert.match(advantage.textContent, /🔘 Eucarionte/);
+    assert.match(advantage.querySelector("small")?.textContent ?? "",
+      new RegExp(`${remaining} amortecimento${remaining === 1 ? "" : "s"} restante${remaining === 1 ? "" : "s"}`));
+    assert.equal([...panel.querySelectorAll(".selected-status")].some(
+      (node) => node.textContent.includes("Eucarionte")), false);
+    assert.doesNotMatch(legacy?.textContent ?? "", /Eucarionte/);
+    assert.equal([...panel.querySelectorAll(".selected-trait")]
+      .filter((node) => node.textContent.includes("Eucarionte")).length, 1);
+  };
+
+  for (const spent of [0, 1, 2]) {
+    organism.eukaryoteBufferUses = spent;
+    assertEukaryote(2 - spent);
+  }
+
+  organism.traits = organism.traits.filter((trait) => trait !== "Eucarionte");
+  render(doc, state, { selected: organism.id });
+  const panel = doc.getElementById("selected");
+  assert.equal([...panel.querySelectorAll(".selected-trait")]
+    .some((row) => row.textContent.includes("Eucarionte")), false);
   dom.window.close();
 });
 
