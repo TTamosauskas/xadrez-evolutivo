@@ -616,6 +616,7 @@ $("board").addEventListener("click", (event) => {
     selected = null;
     selectedCell = { r, c };
   }
+  inspectedAction = null;
   controller.refresh();
 });
 $("board").addEventListener("keydown", (event) => {
